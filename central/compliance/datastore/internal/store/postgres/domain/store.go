@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -63,9 +62,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ComplianceDomain) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -82,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoComplianceDomains(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceDomain) error {
+func insertIntoComplianceDomains(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceDomain) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -274,12 +270,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ComplianceDomain")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -297,12 +288,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ComplianceDomain")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -321,12 +307,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -366,13 +347,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
-
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return 0, err
 	}
@@ -385,12 +360,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComplianceDomain")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return false, err
 	}
@@ -412,12 +382,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ComplianceDoma
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, false, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, false, err
 	}
@@ -441,15 +406,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -480,15 +437,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -531,12 +480,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ComplianceDomainIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -556,6 +500,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComplianceDomain) error) error {
 	var sacQueryFilter *v1.Query
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
+	}
 	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ComplianceDomain](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return err
@@ -579,16 +527,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComplianceDom
 }
 
 //// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
 
 //// Interface functions - END
 

@@ -15,7 +15,6 @@ import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
 import util.ChaosMonkey
-import util.Env
 import util.Helpers
 import util.Timer
 
@@ -38,6 +37,7 @@ class AdmissionControllerTest extends BaseSpecification {
     private ChaosMonkey chaosMonkey
 
     static final private String GCR_NGINX         = "qagcrnginx"
+    static final private String GCR_NGINX_IMAGE   = "us.gcr.io/stackrox-ci/nginx:1.10.1"
     static final private String BUSYBOX_NO_BYPASS = "busybox-no-bypass"
     static final private String BUSYBOX_BYPASS    = "busybox-bypass"
 
@@ -46,7 +46,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.10.1")
+            .setImage(GCR_NGINX_IMAGE)
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
@@ -84,7 +84,7 @@ class AdmissionControllerTest extends BaseSpecification {
         assert gcrId != ""
 
         // Pre run scan to avoid timeouts with inline scans in the tests below
-        ImageService.scanImage(GCR_NGINX)
+        ImageService.scanImage(GCR_NGINX_IMAGE)
     }
 
     def setup() {
@@ -241,11 +241,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Suppress CVE and check that the deployment can now launch"
 
         def cve = "CVE-2019-3462"
-        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
-            CVEService.suppressImageCVE(cve)
-        } else {
-            CVEService.suppressCVE(cve)
-        }
+        CVEService.suppressImageCVE(cve)
 
         log.info("Suppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
@@ -259,11 +255,8 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Unsuppress CVE"
-        if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
-            CVEService.unsuppressImageCVE(cve)
-        } else {
-            CVEService.unsuppressCVE(cve)
-        }
+        CVEService.unsuppressImageCVE(cve)
+
         log.info("Unsuppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))

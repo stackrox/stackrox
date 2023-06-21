@@ -2,15 +2,10 @@ import React, { useState, useEffect, ReactElement } from 'react';
 import { FormGroup, Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 import { useField } from 'formik';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { getPolicyCategories as getPolicyCategoriesNonPostgres } from 'services/PoliciesService';
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import { PolicyCategory } from 'types/policy.proto';
 
 function PolicyCategoriesSelectField(): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPolicyCategoriesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
     // manage state for Categories select below
     const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
@@ -19,10 +14,6 @@ function PolicyCategoriesSelectField(): ReactElement {
 
     function onCategoriesToggle(isOpen) {
         setIsCategoriesOpen(isOpen);
-    }
-
-    function onCreateCategory(newCategory) {
-        setPolicyCategories([...policyCategories, newCategory]);
     }
 
     function onSelectHandler(selectedCategories) {
@@ -40,24 +31,12 @@ function PolicyCategoriesSelectField(): ReactElement {
     }
 
     useEffect(() => {
-        if (isPolicyCategoriesEnabled) {
-            getPolicyCategories()
-                .then((data) => {
-                    setPolicyCategories(data);
-                })
-                .catch(() => {});
-        } else {
-            getPolicyCategoriesNonPostgres()
-                .then((data) => {
-                    setPolicyCategories(data.map((name) => ({ id: name, name, isDefault: false })));
-                })
-                .catch(() => {});
-        }
-
-        return () => {
-            setPolicyCategories([]);
-        };
-    }, [isPolicyCategoriesEnabled]);
+        getPolicyCategories()
+            .then((data) => {
+                setPolicyCategories(data);
+            })
+            .catch(() => {});
+    }, []);
 
     return (
         <FormGroup
@@ -74,11 +53,8 @@ function PolicyCategoriesSelectField(): ReactElement {
                 selections={field.value}
                 onSelect={onSelectHandler(field.value)}
                 onToggle={onCategoriesToggle}
-                onCreateOption={
-                    isPolicyCategoriesEnabled ? () => undefined as void : onCreateCategory
-                }
                 onClear={clearSelection}
-                isCreatable={!isPolicyCategoriesEnabled}
+                isCreatable={false}
             >
                 {policyCategories.map(({ id, name }) => (
                     <SelectOption key={id} value={name} />

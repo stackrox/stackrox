@@ -1,5 +1,7 @@
 import static util.Helpers.withRetry
 
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
@@ -48,7 +50,7 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int RETRIES = 45
     static final private int DELETION_RETRIES = 60
-    static final private int PAUSE_SECS = 10
+    static final private int PAUSE_SECS = 2
 
     // Values used within testing for permission sets.
     // These include:
@@ -233,8 +235,30 @@ splunk:
     @SuppressWarnings(["JUnitPublicProperty"])
     Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
 
+    private ScheduledFuture<?> annotateTaskHandle
+
+    def setup() {
+        // We use this hack to speed up declarative config volume reconciliation.
+        // The reason this works is because kubelet reconciles volume from secret when:
+        // 1) Something about the pod changes
+        // 2) Somewhat around 1 minute passes
+        // Updating value of annotation thus triggers reconciliation of declarative config.
+        annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
+            @Override
+            void run() {
+                try {
+                    def value = String.valueOf(System.currentTimeMillis())
+                    orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", value)
+                } catch (Exception e) {
+                    log.error( "Failed adding annotation to central", e)
+                }
+            }
+        }, 0, 1, TimeUnit.SECONDS)
+    }
+
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+        annotateTaskHandle.cancel(true)
     }
 
     @Tag("BAT")
@@ -512,7 +536,7 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and one for the config map.
+            // Expect 7 integration health status for the created resources and one for the config map.
             assert response.healthsCount == CREATED_RESOURCES + 1
             for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
@@ -595,11 +619,14 @@ splunk:
         }
 
         when:
-        def authProvidersResponse = AuthProviderService.getAuthProviders()
-        def authProvider = authProvidersResponse.getAuthProvidersList().find {
-            it.getName() == AUTH_PROVIDER_KEY
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProvidersResponse = AuthProviderService.getAuthProviders()
+            authProvider = authProvidersResponse.getAuthProvidersList().find {
+                it.getName() == AUTH_PROVIDER_KEY
+            }
+            assert authProvider
         }
-        assert authProvider
         def imperativeGroup = Group.newBuilder()
                 .setRoleName(ROLE_KEY)
                 .setProps(GroupProperties.newBuilder()
@@ -799,15 +826,18 @@ splunk:
     // shares the same values.
     // The retrieved auth provider from the API will be returned, which will have the ID field populated.
     private AuthProvider verifyDeclarativeAuthProvider(AuthProvider expectedAuthProvider) {
-        def authProviderResponse = AuthProviderService.getAuthProviderService().
-                getAuthProviders(
-                        AuthproviderService.GetAuthProvidersRequest.newBuilder()
-                                .setName(expectedAuthProvider.getName()).build()
-                )
-        assert authProviderResponse.getAuthProvidersCount() == 1 :
-                "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
-                        "got ${authProviderResponse.getAuthProvidersCount()}"
-        def authProvider = authProviderResponse.getAuthProviders(0)
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProviderResponse = AuthProviderService.getAuthProviderService().
+                    getAuthProviders(
+                            AuthproviderService.GetAuthProvidersRequest.newBuilder()
+                                    .setName(expectedAuthProvider.getName()).build()
+                    )
+            assert authProviderResponse.getAuthProvidersCount() == 1 :
+                    "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
+                            "got ${authProviderResponse.getAuthProvidersCount()}"
+            authProvider = authProviderResponse.getAuthProviders(0)
+        }
         assert authProvider
         assert authProvider.getName() == expectedAuthProvider.getName()
         assert authProvider.getType() == expectedAuthProvider.getType()

@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
-	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
+	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
@@ -44,7 +44,6 @@ import (
 	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
-	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
@@ -79,7 +78,6 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
-	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -90,16 +88,15 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
-	"github.com/stackrox/rox/central/option"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
+	"github.com/stackrox/rox/central/private"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -115,7 +112,6 @@ import (
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
@@ -137,9 +133,9 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
-	"github.com/stackrox/rox/central/telemetry/gatherers"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
+	"github.com/stackrox/rox/central/trace"
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
@@ -211,10 +207,6 @@ var (
 )
 
 const (
-	ssoURLPathPrefix = "/sso/"
-	//#nosec G101 -- This is a false positive
-	tokenRedirectURLPath = "/auth/response/generic"
-
 	grpcServerWatchdogTimeout = 20 * time.Second
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
@@ -266,21 +258,16 @@ func main() {
 	ensureDB(ctx)
 
 	// Need to remove the backup clone and set the current version
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		sourceMap, config, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			log.Errorf("Unable to get Postgres DB config: %v", err)
-		}
-
-		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-		if err != nil {
-			log.Errorf("Failed to remove backup DB: %v", err)
-		}
-		versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
-	} else {
-		// Update last associated software version on DBs.
-		migrations.SetCurrent(option.CentralOptions.DBPathBase)
+	sourceMap, config, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		log.Errorf("Unable to get Postgres DB config: %v", err)
 	}
+
+	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+	if err != nil {
+		log.Errorf("Failed to remove backup DB: %v", err)
+	}
+	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
 	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {
@@ -291,19 +278,43 @@ func main() {
 	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
+	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
+		privateServer := private.NewHTTPServer(metrics.HTTPSingleton())
+		privateServer.AddRoutes(privateRoutes())
+		privateServer.RunForever()
+	}
+
 	go startGRPCServer()
 
 	waitForTerminationSignal()
 }
 
-func ensureDB(ctx context.Context) {
-	var versionStore vStore.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versionStore = vStore.NewPostgres(globaldb.InitializePostgres(ctx))
-	} else {
-		versionStore = vStore.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+// privateRoutes returns list of route-handler pairs to be served on "private" port.
+// Private port is not exposed to the internet and thus requires no authorization.
+// There are 3 ways to access private port:
+// * kubectl port-forward to central pod
+// * kubectl exec into central pod
+// * modifying central service definition
+func privateRoutes() []*private.Route {
+	result := make([]*private.Route, 0)
+	debugRoutes := debugRoutes()
+	for _, r := range debugRoutes {
+		result = append(result, &private.Route{
+			Route:         r.Route,
+			ServerHandler: r.ServerHandler,
+			Compression:   r.Compression,
+		})
 	}
+	result = append(result, &private.Route{
+		Route:         "/diagnostics",
+		ServerHandler: debugService.Singleton().PrivateDiagnosticsHandler(),
+		Compression:   true,
+	})
+	return result
+}
 
+func ensureDB(ctx context.Context) {
+	versionStore := vStore.NewPostgres(globaldb.InitializePostgres(ctx))
 	err := version.Ensure(versionStore)
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
@@ -316,21 +327,18 @@ func startServices() {
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		apiTokenExpiration.Singleton().Start()
-	}
+	apiTokenExpiration.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.AuthzTraceSink) []pkgGRPC.APIService {
+func servicesToRegister() []pkgGRPC.APIService {
 	// PLEASE KEEP THE FOLLOWING LIST SORTED.
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
 		authService.New(),
-		authProviderSvc.New(registry, groupDataStore.Singleton()),
+		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		centralHealthService.Singleton(),
@@ -341,18 +349,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
-		debugService.New(
-			clusterDataStore.Singleton(),
-			connection.ManagerSingleton(),
-			gatherers.Singleton(),
-			logimbueStore.Singleton(),
-			authzTraceSink,
-			registry,
-			groupDataStore.Singleton(),
-			roleDataStore.Singleton(),
-			configDS.Singleton(),
-			notifierDS.Singleton(),
-		),
+		debugService.Singleton(),
 		declarativeConfigHealthService.Singleton(),
 		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
@@ -394,16 +391,12 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
-	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		servicesToRegister = append(servicesToRegister, clusterCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, nodeCVEService.Singleton())
-		servicesToRegister = append(servicesToRegister, collectionService.Singleton())
-		servicesToRegister = append(servicesToRegister, policyCategoryService.Singleton())
-		servicesToRegister = append(servicesToRegister, processListeningOnPorts.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+		clusterCVEService.Singleton(),
+		imageCVEService.Singleton(),
+		nodeCVEService.Singleton(),
+		collectionService.Singleton(),
+		policyCategoryService.Singleton(),
+		processListeningOnPorts.Singleton(),
 	}
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
@@ -453,13 +446,7 @@ func startGRPCServer() {
 			sac.ResourceScopeKeys(resources.Access)))
 
 	// Create the registry of applied auth providers.
-	registry, err := authproviders.NewStoreBackedRegistry(
-		ssoURLPathPrefix, tokenRedirectURLPath,
-		authProviderDS.Singleton(), jwt.IssuerFactorySingleton(),
-		mapper.FactorySingleton())
-	if err != nil {
-		log.Panicf("Could not create auth provider registry: %v", err)
-	}
+	registry := authProviderRegistry.Singleton()
 
 	// env.EnableOpenShiftAuth signals the desire but does not guarantee Central
 	// is configured correctly to talk to the OpenShift's OAuth server. If this
@@ -485,7 +472,7 @@ func startGRPCServer() {
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton(registry).ReconcileDeclarativeConfigurations()
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
 	}
 
 	clusterInitBackend := backend.Singleton()
@@ -534,7 +521,7 @@ func startGRPCServer() {
 	}
 
 	// This adds an on-demand global tracing for the built-in authorization.
-	authzTraceSink := observe.NewAuthzTraceSink()
+	authzTraceSink := trace.AuthzTraceSinkSingleton()
 	config.UnaryInterceptors = append(config.UnaryInterceptors,
 		observe.AuthzTraceInterceptor(authzTraceSink),
 	)
@@ -559,13 +546,13 @@ func startGRPCServer() {
 				gs.AddGatherer(signatureIntegrationDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
-				gs.AddGatherer(declarativeconfig.ManagerSingleton(registry).Gather())
+				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
 			}
 		}
 	}
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(servicesToRegister(registry, authzTraceSink)...)
+	server.Register(servicesToRegister()...)
 
 	startServices()
 	startedSig := server.Start()
@@ -713,73 +700,47 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   false,
 			EnableAudit:   true,
 		},
-	}
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		customRoutes = append(customRoutes, routes.CustomRoute{
+		{
 			Route:      "/db/backup",
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
 			ServerHandler: notImplementedOnManagedServices(
-				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), false),
+				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
 			),
 			Compression: true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
+		},
+		{
 			Route:      "/api/extensions/backup",
 			Authorizer: user.WithRole(accesscontrol.Admin),
 			ServerHandler: notImplementedOnManagedServices(
-				globaldbHandlers.BackupDB(nil, nil, globaldb.GetPostgres(), listener.Singleton(), true),
+				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
 			),
 			Compression: true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
+		},
+		{
 			Route:         "/api/export/csv/node/cve",
 			Authorizer:    user.With(permissions.View(resources.Node)),
 			ServerHandler: nodeCveCsv.NodeCVECSVHandler(),
 			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
+		},
+		{
 			Route:         "/api/export/csv/image/cve",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
 			ServerHandler: imageCveCsv.ImageCVECSVHandler(),
 			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
+		},
+		{
 			Route:         "/api/export/csv/cluster/cve",
 			Authorizer:    user.With(permissions.View(resources.Cluster)),
 			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
 			Compression:   true,
-		})
-	} else {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), false)),
+		},
+		{
+			Route:         "/api/extensions/clusters/helm-config.yaml",
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
+			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
 			Compression:   true,
-		})
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, listener.Singleton(), true)),
-			Compression:   true,
-		})
-
-		// v1 style restore endpoint, not supported for Postgres
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/db/restore",
-			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
-			EnableAudit:   true,
-		})
+		},
 	}
-
-	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/api/extensions/clusters/helm-config.yaml",
-		Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
-		ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
-		Compression:   true,
-	})
-
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
 	// worthy of compression in definition's bundle. Ignore all other types (e.g.,
@@ -808,7 +769,8 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	customRoutes = append(customRoutes, debugRoutes()...)
+	debugRoutes := utils.IfThenElse(env.PrivateDiagnosticsEnabled.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
+	customRoutes = append(customRoutes, debugRoutes...)
 	return
 }
 
@@ -856,9 +818,7 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
-	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		stoppables = append(stoppables, stoppableWithName{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"})
+		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 	}
 
 	var wg sync.WaitGroup

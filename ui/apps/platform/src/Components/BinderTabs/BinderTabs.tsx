@@ -15,14 +15,8 @@ function BinderTabHeader({
     onSelectTab,
     dataTestId = 'tab',
 }: BinderTabHeaderProps): ReactElement {
-    const className = `${
-        isActive ? 'bg-primary-300' : 'bg-primary-100'
-    } rounded-tr-none first:rounded-tl-lg last:rounded-tr-lg border-b border-primary-300 border-r border-t`;
-    const buttonClassName = `${
-        isActive
-            ? 'bg-primary-200 p-3 text-base-500 text-primary-700 font-700'
-            : 'bg-base-200 text-base-500'
-    } p-3 uppercase text-sm`;
+    const className = 'border-base-400 border'; // 400 instead of 300 to contrast with bg-base-200
+    const buttonClassName = `${isActive ? 'bg-primary-200' : 'bg-base-100'} text-base-600 p-3`;
 
     return (
         <li key={title} className={className} data-testid={dataTestId}>

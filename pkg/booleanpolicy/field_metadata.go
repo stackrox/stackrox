@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -812,25 +811,23 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
 
-	if features.NetworkPolicySystemPolicy.Enabled() {
-		f.registerFieldMetadata(fieldnames.HasIngressNetworkPolicy,
-			querybuilders.ForFieldLabel(augmentedobjs.HasIngressPolicyCustomTag), nil,
-			func(*validateConfiguration) *regexp.Regexp {
-				return booleanValueRegex
-			},
-			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-			[]RuntimeFieldType{}, operatorsForbidden,
-		)
+	f.registerFieldMetadata(fieldnames.HasIngressNetworkPolicy,
+		querybuilders.ForFieldLabel(augmentedobjs.HasIngressPolicyCustomTag), nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, operatorsForbidden,
+	)
 
-		f.registerFieldMetadata(fieldnames.HasEgressNetworkPolicy,
-			querybuilders.ForFieldLabel(augmentedobjs.HasEgressPolicyCustomTag), nil,
-			func(*validateConfiguration) *regexp.Regexp {
-				return booleanValueRegex
-			},
-			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-			[]RuntimeFieldType{}, operatorsForbidden,
-		)
-	}
+	f.registerFieldMetadata(fieldnames.HasEgressNetworkPolicy,
+		querybuilders.ForFieldLabel(augmentedobjs.HasEgressPolicyCustomTag), nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, operatorsForbidden,
+	)
 
 	return f
 }

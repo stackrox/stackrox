@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
-	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
@@ -66,7 +65,6 @@ var (
 )
 
 type datastoreImpl struct {
-	indexer                   index.Indexer
 	clusterStorage            clusterStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore
@@ -155,7 +153,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
+func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 	clusters, err := ds.collectClusters(ctx)
 	if err != nil {
 		return err
@@ -178,7 +176,7 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
-	return ds.indexer.AddClusters(clusters)
+	return nil
 }
 
 func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
@@ -431,8 +429,7 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		clusterHealthStatus.GetSensorHealthStatus() != storage.ClusterHealthStatus_UNINITIALIZED {
 		trackClusterInitialized(cluster)
 	}
-
-	return ds.indexer.AddCluster(cluster)
+	return nil
 }
 
 func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error {
@@ -509,7 +506,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
 	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
-	return ds.indexer.DeleteCluster(id)
+	return nil
 }
 
 func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
@@ -548,10 +545,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeK8SRoles(ctx, cluster)
 	ds.removeRoleBindings(ctx, cluster)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
-			log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
-		}
+	if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
+		log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
 	}
 
 	if done != nil {
@@ -733,7 +728,7 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 	for _, alert := range alerts {
 		ids = append(ids, alert.GetId())
 	}
-	resolvedAlerts, err := ds.alertDataStore.MarkAlertStaleBatch(ctx, ids...)
+	resolvedAlerts, err := ds.alertDataStore.MarkAlertsResolvedBatch(ctx, ids...)
 	if err != nil {
 		return err
 	}
@@ -838,9 +833,6 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	}
 
 	if err := ds.clusterStorage.Upsert(ctx, cluster); err != nil {
-		return err
-	}
-	if err := ds.indexer.AddCluster(cluster); err != nil {
 		return err
 	}
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())

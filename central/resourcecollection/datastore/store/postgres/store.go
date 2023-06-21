@@ -62,9 +62,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -113,11 +110,11 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	return nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collections_Id string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(_ context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		collections_Id,
+		collectionID,
 		idx,
 		obj.GetId(),
 	}
@@ -211,7 +208,7 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx *postgres.Tx, ob
 	return err
 }
 
-func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx *postgres.Tx, collections_Id string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
+func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx *postgres.Tx, collectionID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
 
 	inputRows := [][]interface{}{}
 
@@ -234,7 +231,7 @@ func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, 
 
 		inputRows = append(inputRows, []interface{}{
 
-			collections_Id,
+			collectionID,
 
 			idx,
 
@@ -370,9 +367,9 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ResourceCollection")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	q := search.ConjunctionQuery(
@@ -388,9 +385,9 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ResourceCollection")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	q := search.ConjunctionQuery(
@@ -407,9 +404,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	// Batch the deletes
@@ -447,9 +444,9 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return 0, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return 0, err
 	}
 
 	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
@@ -460,9 +457,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ResourceCollection")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return false, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return false, err
 	}
 
 	q := search.ConjunctionQuery(
@@ -482,9 +479,9 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ResourceCollec
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, false, err
 	}
 
 	q := search.ConjunctionQuery(
@@ -506,9 +503,9 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
 	}
 	pagination := query.GetPagination()
 	q := search.ConjunctionQuery(
@@ -537,9 +534,9 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, nil, err
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -580,9 +577,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ResourceCollectionIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
 	}
 	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -600,9 +597,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceCollection) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ResourceCollection](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -627,16 +624,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ResourceColle
 }
 
 //// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
 
 //// Interface functions - END
 

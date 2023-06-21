@@ -94,6 +94,10 @@ var (
 			FieldsToCompare: fieldsToCompareForExclusions,
 			PolicyFileName:  "secret_env.json",
 		},
+		{
+			FieldsToCompare: fieldsToCompareForExclusions,
+			PolicyFileName:  "apt.json",
+		},
 	}
 )
 

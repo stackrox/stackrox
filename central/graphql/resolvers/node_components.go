@@ -15,7 +15,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -79,9 +78,6 @@ type NodeComponentResolver interface {
 // NodeComponent returns a node component based on an input id (name:version)
 func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponent")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return resolver.nodeComponentV2(ctx, args)
-	}
 
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -98,11 +94,6 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 // NodeComponents returns node components that match the input query.
 func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponents")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := queryWithNodeIDRegexFilter(q.String())
-
-		return resolver.nodeComponentsV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
-	}
 
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -132,11 +123,6 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 // NodeComponentCount returns count of node components that match the input query
 func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponentCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := queryWithNodeIDRegexFilter(args.String())
-
-		return resolver.componentCountV2(ctx, RawQuery{Query: &query})
-	}
 
 	if err := readNodes(ctx); err != nil {
 		return 0, err
@@ -171,12 +157,6 @@ func (resolver *nodeComponentResolver) nodeComponentScopeContext(ctx context.Con
 	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
-	}
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return scoped.Context(resolver.ctx, scoped.Scope{
-			Level: v1.SearchCategory_IMAGE_COMPONENTS,
-			ID:    resolver.data.GetId(),
-		})
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
@@ -311,7 +291,7 @@ func (resolver *nodeComponentResolver) NodeVulnerabilities(ctx context.Context, 
 
 	// Short path. Full node is embedded when node scan resolver is called.
 	embeddedComponent := embeddedobjs.NodeComponentFromContext(resolver.ctx)
-	if embeddedComponent == nil || !env.PostgresDatastoreEnabled.BooleanSetting() {
+	if embeddedComponent == nil {
 		return resolver.root.NodeVulnerabilities(resolver.nodeComponentScopeContext(ctx), args)
 	}
 
@@ -349,40 +329,6 @@ func (resolver *nodeComponentResolver) Source(_ context.Context) string {
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score
 func (resolver *nodeComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeComponents, "TopNodeVulnerability")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := resolver.nodeComponentQuery()
-		query.Pagination = &v1.QueryPagination{
-			SortOptions: []*v1.QuerySortOption{
-				{
-					Field:    search.CVSS.String(),
-					Reversed: true,
-				},
-				{
-					Field:    search.CVE.String(),
-					Reversed: true,
-				},
-			},
-			Limit:  1,
-			Offset: 0,
-		}
-
-		vulnLoader, err := loaders.GetCVELoader(ctx)
-		if err != nil {
-			return nil, err
-		}
-		vulns, err := vulnLoader.FromQuery(ctx, query)
-		if err != nil || len(vulns) == 0 {
-			return nil, err
-		} else if len(vulns) > 1 {
-			return nil, errors.New("multiple vulnerabilities matched for top node component vulnerability")
-		}
-
-		res, err := resolver.root.wrapCVEWithContext(ctx, vulns[0], true, nil)
-		if err != nil {
-			return nil, err
-		}
-		return res, nil
-	}
 
 	// Short path. Full node is embedded when node scan resolver is called.
 	if embeddedComponent := embeddedobjs.NodeComponentFromContext(resolver.ctx); embeddedComponent != nil {

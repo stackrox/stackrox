@@ -7,7 +7,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -34,9 +33,4 @@ func New(storage store.Store) DataStore {
 // NewPostgres returns a ready-to-use DataStore instance plugged to postgres.
 func NewPostgres(pool postgres.DB) DataStore {
 	return newPostgres(pool)
-}
-
-// NewRocks returns a ready-to-use DataStore instance plugged to rocksdb.
-func NewRocks(rocksDBInstance *rocksdb.RocksDB) DataStore {
-	return newRocks(rocksDBInstance)
 }

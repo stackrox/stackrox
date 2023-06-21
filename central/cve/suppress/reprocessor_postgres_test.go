@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package suppress
 
@@ -66,7 +65,7 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 
 	cveStore := cvePG.New(s.db)
 	cveIndexer := cvePG.NewIndexer(s.db)
-	cveDataStore, err := cveDS.New(cveStore, cveIndexer, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
+	cveDataStore, err := cveDS.New(cveStore, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
 	s.NoError(err)
 	s.cveDataStore = cveDataStore
 

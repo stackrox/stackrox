@@ -44,16 +44,17 @@ var (
 )
 
 const (
+	// ListeningEndpointsTableName specifies the name of the table in postgres.
 	ListeningEndpointsTableName = "listening_endpoints"
 )
 
 // ListeningEndpoints holds the Gorm model for Postgres table `listening_endpoints`.
 type ListeningEndpoints struct {
-	Id                 string             `gorm:"column:id;type:uuid;primaryKey"`
+	ID                 string             `gorm:"column:id;type:uuid;primaryKey"`
 	Port               uint32             `gorm:"column:port;type:bigint"`
 	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
-	ProcessIndicatorId string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
+	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
 	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
-	DeploymentId       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
+	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }

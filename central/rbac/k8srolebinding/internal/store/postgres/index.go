@@ -7,11 +7,9 @@ import (
 
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -26,40 +24,14 @@ type indexerImpl struct {
 	db postgres.DB
 }
 
-func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "K8SRoleBinding")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_ROLEBINDINGS, q, b.db)
 }
 
-func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "K8SRoleBinding")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_ROLEBINDINGS, q, b.db)
-}
-
-//// Stubs for satisfying interfaces
-
-func (b *indexerImpl) AddK8SRoleBinding(deployment *storage.K8SRoleBinding) error {
-	return nil
-}
-
-func (b *indexerImpl) AddK8SRoleBindings(_ []*storage.K8SRoleBinding) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteK8SRoleBinding(id string) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteK8SRoleBindings(_ []string) error {
-	return nil
-}
-
-func (b *indexerImpl) MarkInitialIndexingComplete() error {
-	return nil
-}
-
-func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
-	return false, nil
 }

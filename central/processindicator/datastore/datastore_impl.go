@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -35,7 +34,6 @@ type datastoreImpl struct {
 	// logically belongs to the datastore implementation of PLOP, but this way
 	// it would be an import cycle, so call the Store directly.
 	plopStorage plopStore.Store
-	indexer     index.Indexer
 	searcher    search.Searcher
 
 	prunerFactory         pruner.Factory
@@ -99,22 +97,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	err := ds.storage.UpsertMany(ctx, indicators)
-	if err != nil {
-		return err
-	}
-	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
-		return err
-	}
-
-	keys := make([]string, 0, len(indicators))
-	for _, indicator := range indicators {
-		keys = append(keys, indicator.GetId())
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
-		return errors.Wrap(err, "error acknowledging added process indexing")
-	}
-	return nil
+	return ds.storage.UpsertMany(ctx, indicators)
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
@@ -147,13 +130,6 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 	}
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return err
-	}
-
-	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
-		return err
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
-		return errors.Wrap(err, "error acknowledging indicator removal")
 	}
 
 	// Clean up correlated ProcessListeningOnPort objects. Probably could be
@@ -285,47 +261,4 @@ func (ds *datastoreImpl) Stop() {
 
 func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
 	return concurrency.WaitInContext(ds.stopper.Client().Stopped(), cancelWhen)
-}
-
-func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
-	log.Info("[STARTUP] Reindexing all processes")
-
-	indicators := make([]*storage.ProcessIndicator, 0, maxBatchSize)
-	var count int
-	err := ds.storage.Walk(ctx, func(pi *storage.ProcessIndicator) error {
-		indicators = append(indicators, pi)
-		if len(indicators) == maxBatchSize {
-			if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
-				return err
-			}
-			count += maxBatchSize
-			indicators = indicators[:0]
-			log.Infof("[STARTUP] Successfully indexed %d processes", count)
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
-		return err
-	}
-	count += len(indicators)
-	log.Infof("[STARTUP] Successfully indexed all %d processes", count)
-
-	// Clear the keys because we just re-indexed everything
-	keys, err := ds.storage.GetKeysToIndex(ctx)
-	if err != nil {
-		return err
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
-		return err
-	}
-
-	// Write out that initial indexing is complete
-	if err := ds.indexer.MarkInitialIndexingComplete(); err != nil {
-		return err
-	}
-
-	return nil
 }

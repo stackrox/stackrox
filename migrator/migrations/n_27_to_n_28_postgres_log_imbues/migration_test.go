@@ -2,7 +2,6 @@
 // Regenerate with central/logimbue/store/postgres/gen.go.
 
 //go:build sql_integration
-// +build sql_integration
 
 package n27ton28
 

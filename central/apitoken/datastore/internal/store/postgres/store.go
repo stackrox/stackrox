@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ApiTokensSchema
+	schema         = pkgSchema.APITokensSchema
 	targetResource = resources.Integration
 )
 
@@ -62,9 +62,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.TokenMetadata) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -81,7 +78,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoApiTokens(ctx context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {
+func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -102,7 +99,7 @@ func insertIntoApiTokens(ctx context.Context, batch *pgx.Batch, obj *storage.Tok
 	return nil
 }
 
-func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
+func (s *storeImpl) copyFromAPITokens(ctx context.Context, tx *postgres.Tx, objs ...*storage.TokenMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -194,7 +191,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 		return err
 	}
 
-	if err := s.copyFromApiTokens(ctx, tx, objs...); err != nil {
+	if err := s.copyFromAPITokens(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -215,7 +212,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) 
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := insertIntoApiTokens(ctx, batch, obj); err != nil {
+		if err := insertIntoAPITokens(ctx, batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)
@@ -283,9 +280,9 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TokenMetadata")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	q := search.ConjunctionQuery(
@@ -301,9 +298,9 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TokenMetadata")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	q := search.ConjunctionQuery(
@@ -320,9 +317,9 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 
 	// Batch the deletes
@@ -360,9 +357,9 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return 0, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return 0, err
 	}
 
 	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
@@ -373,9 +370,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TokenMetadata")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return false, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return false, err
 	}
 
 	q := search.ConjunctionQuery(
@@ -395,9 +392,9 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata,
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, false, err
 	}
 
 	q := search.ConjunctionQuery(
@@ -419,9 +416,9 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
 	}
 	pagination := query.GetPagination()
 	q := search.ConjunctionQuery(
@@ -450,9 +447,9 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, nil, err
 	}
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -493,9 +490,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TokenMetadataIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil, nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
 	}
 	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -513,9 +510,9 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return nil
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return err
 	}
 	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.TokenMetadata](ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -541,16 +538,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata
 
 //// Stubs for satisfying legacy interfaces
 
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
-
 //// Interface functions - END
 
 //// Used for testing
@@ -563,10 +550,10 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableApiTokens(ctx, db)
+	dropTableAPITokens(ctx, db)
 }
 
-func dropTableApiTokens(ctx context.Context, db postgres.DB) {
+func dropTableAPITokens(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS api_tokens CASCADE")
 
 }

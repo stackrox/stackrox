@@ -5,36 +5,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
-	cveSAC "github.com/stackrox/rox/central/cve/sac"
-	"github.com/stackrox/rox/central/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
-	"github.com/stackrox/rox/central/idmap"
-	imageSAC "github.com/stackrox/rox/central/image/sac"
 	"github.com/stackrox/rox/central/namespace/index"
-	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
 	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
-	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	dackboxPkg "github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
@@ -59,27 +42,13 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
-	ds := &datastoreImpl{
-		store:           nsStore,
-		indexer:         indexer,
-		deployments:     deploymentDataStore,
-		namespaceRanker: namespaceRanker,
-		idMapStorage:    idMapStorage,
+func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
+	return &datastoreImpl{
+		store:             nsStore,
+		deployments:       deploymentDataStore,
+		namespaceRanker:   namespaceRanker,
+		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
-	} else {
-		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
-	}
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Namespace)))
-	if err := ds.buildIndex(ctx); err != nil {
-		return nil, err
-	}
-	return ds, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -91,29 +60,12 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	namespaceRanker := ranking.NamespaceRanker()
-	idMapStore := idmap.StorageSingleton()
-	return New(dbstore, nil, indexer, deploymentStore, namespaceRanker, idMapStore)
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackboxPkg.DackBox, keyFence concurrency.KeyFence) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
-	indexer := index.New(bleveIndex)
-	deploymentStore, err := deploymentDataStore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
-	if err != nil {
-		return nil, err
-	}
-	namespaceRanker := ranking.NamespaceRanker()
-	idMapStore := idmap.StorageSingleton()
-	return New(dbstore, dacky, indexer, deploymentStore, namespaceRanker, idMapStore)
+	return New(dbstore, indexer, deploymentStore, namespaceRanker), nil
 }
 
 var (
 	namespaceSAC                     = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper         = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
 	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
-
-	log = logging.LoggerForModule()
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.Namespace.String(),
@@ -127,35 +79,7 @@ type datastoreImpl struct {
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
 
-	idMapStorage idmap.Storage
-
 	deployments deploymentDataStore.DataStore
-}
-
-func (b *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	log.Info("[STARTUP] initializing namespaces")
-	var namespaces []*storage.NamespaceMetadata
-	walkFn := func() error {
-		namespaces = namespaces[:0]
-		return b.store.Walk(ctx, func(ns *storage.NamespaceMetadata) error {
-			namespaces = append(namespaces, ns)
-			return nil
-		})
-	}
-	if err := walkFn(); err != nil {
-		return err
-	}
-	if b.idMapStorage != nil {
-		b.idMapStorage.OnNamespaceAdd(namespaces...)
-	}
-	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed namespaces")
-	return nil
 }
 
 // GetNamespace returns namespace with given id.
@@ -174,7 +98,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 	return namespace, true, err
 }
 
-// GetAllNamespaces retrieves namespaces matching the request from bolt
+// GetAllNamespaces retrieves namespaces matching the request
 func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	var allowedNamespaces []*storage.NamespaceMetadata
 	walkFn := func() error {
@@ -213,7 +137,7 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 	return namespaces, nil
 }
 
-// AddNamespace adds a namespace to bolt
+// AddNamespace adds a namespace.
 func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -221,13 +145,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(ctx, namespace); err != nil {
-		return err
-	}
-	if b.idMapStorage != nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.idMapStorage.OnNamespaceAdd(namespace)
-	}
-	return b.indexer.AddNamespaceMetadata(namespace)
+	return b.store.Upsert(ctx, namespace)
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -238,10 +156,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(ctx, namespace); err != nil {
-		return err
-	}
-	return b.indexer.AddNamespaceMetadata(namespace)
+	return b.store.Upsert(ctx, namespace)
 }
 
 // RemoveNamespace removes a namespace.
@@ -255,13 +170,10 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	if err := b.store.Delete(ctx, id); err != nil {
 		return err
 	}
-	if b.idMapStorage != nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.idMapStorage.OnNamespaceRemove(id)
-	}
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace
 	b.namespaceRanker.Remove(id)
 
-	return b.indexer.DeleteNamespaceMetadata(id)
+	return nil
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -311,7 +223,7 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 		}
 		if !exists {
 			// This could be due to a race where it's deleted in the time between
-			// the search and the query to Bolt.
+			// the search and the query.
 			continue
 		}
 		nsSlice = append(nsSlice, ns)
@@ -335,28 +247,10 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher))
+func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
+	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(searcher))
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
 	// This is currently required due to the priority searcher
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-}
-
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
-	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, filteredSearcher, namespaceRanker)
-	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-	return defaultSortedSearcher
-}
-
-func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	prioritySortedSearcher := sorted.Searcher(searcher, search.NamespacePriority, namespaceRanker)
-
-	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
-		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToDeploymentPath, deploymentSAC.GetSACFilter()),
-		search.ImageCount.String():      counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToImagePath, imageSAC.GetSACFilter()),
-		search.CVECount.String():        counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToCVEPath, cveSAC.GetSACFilter()),
-	})
 }

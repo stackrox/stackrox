@@ -6,11 +6,16 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/central/compliance/standards/index"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	standardPredicateFactory = predicate.NewFactory("standard", &v1.ComplianceStandard{})
+	controlPredicateFactory  = predicate.NewFactory("control", &v1.ComplianceControl{})
 )
 
 // Registry stores compliance standards by their ID.
@@ -20,17 +25,15 @@ type Registry struct {
 	categoriesByID map[string]*Category
 	controlsByID   map[string]*Control
 
-	indexer       index.Indexer
 	checkRegistry framework.CheckRegistry
 }
 
 // NewRegistry creates and returns a new standards registry.
-func NewRegistry(indexer index.Indexer, checkRegistry framework.CheckRegistry, standardMDs ...metadata.Standard) (*Registry, error) {
+func NewRegistry(checkRegistry framework.CheckRegistry, standardMDs ...metadata.Standard) (*Registry, error) {
 	r := &Registry{
 		standardsByID:  make(map[string]*Standard),
 		categoriesByID: make(map[string]*Category),
 		controlsByID:   make(map[string]*Control),
-		indexer:        indexer,
 		checkRegistry:  checkRegistry,
 	}
 	if err := r.RegisterStandards(standardMDs...); err != nil {
@@ -63,19 +66,9 @@ func (r *Registry) DeleteStandard(id string) error {
 		return nil
 	}
 	delete(r.standardsByID, id)
-	if r.indexer != nil {
-		if err := r.indexer.DeleteStandard(id); err != nil {
-			return err
-		}
-	}
 	for id := range r.controlsByID {
 		if ChildOfStandard(id, standard.ID) {
 			delete(r.controlsByID, id)
-			if r.indexer != nil {
-				if err := r.indexer.DeleteControl(id); err != nil {
-					return err
-				}
-			}
 			r.checkRegistry.Delete(id)
 		}
 	}
@@ -94,12 +87,6 @@ func (r *Registry) DeleteControl(id string) error {
 
 	r.checkRegistry.Delete(id)
 	delete(r.controlsByID, id)
-	if r.indexer == nil {
-		return nil
-	}
-	if err := r.indexer.DeleteControl(id); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -120,11 +107,7 @@ func (r *Registry) RegisterStandard(standardMD metadata.Standard, overwrite bool
 	for _, ctrl := range standard.controls {
 		r.controlsByID[ctrl.QualifiedID()] = ctrl
 	}
-
-	if r.indexer == nil {
-		return nil
-	}
-	return r.indexer.IndexStandard(standard.ToProto())
+	return nil
 }
 
 // LookupStandard returns the standard object with the given ID.
@@ -266,14 +249,40 @@ func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 
 // SearchStandards searches across standards
 func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-	return r.indexer.SearchStandards(q)
+	// Predicate search does not support sorting, but sort options are not used in the current code path for
+	// the calls to this function
+	var results []search.Result
+	for _, standard := range r.AllStandards() {
+		pred, err := standardPredicateFactory.GeneratePredicate(q)
+		if err != nil {
+			return nil, errors.Wrap(err, "generating predicate for query")
+		}
+		result, ok := pred.Evaluate(standard.ToProto())
+		if ok {
+			result.ID = standard.ID
+			results = append(results, *result)
+		}
+	}
+	return results, nil
 }
 
 // SearchControls searches across controls
 func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-	return r.indexer.SearchControls(q)
+	// Predicate search does not support sorting, but sort options are not used in the current code path for
+	// the calls to this function
+	pred, err := controlPredicateFactory.GeneratePredicate(q)
+	if err != nil {
+		return nil, errors.Wrap(err, "generating predicate for query")
+	}
+	var results []search.Result
+	for _, standard := range r.AllStandards() {
+		for _, control := range standard.ToProto().GetControls() {
+			result, ok := pred.Evaluate(control)
+			if ok {
+				result.ID = control.Id
+				results = append(results, *result)
+			}
+		}
+	}
+	return results, nil
 }

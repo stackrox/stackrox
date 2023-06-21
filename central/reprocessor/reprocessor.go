@@ -8,7 +8,6 @@ import (
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -18,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -60,13 +58,9 @@ var (
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
-		var dackboxIndexQueue queue.WaitableQueue
-		if !env.PostgresDatastoreEnabled.BooleanSetting() {
-			dackboxIndexQueue = dackbox.GetIndexQueue()
-		}
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
-			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton(), dackboxIndexQueue)
+			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton())
 	})
 	return loop
 }
@@ -86,10 +80,10 @@ type Loop interface {
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater, indexQueue queue.WaitableQueue) Loop {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, acUpdater activeComponentsUpdater.Updater) Loop {
 	return newLoopWithDuration(
 		connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, watchedImages,
-		env.ReprocessInterval.DurationSetting(), 15*time.Second, env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater, indexQueue)
+		env.ReprocessInterval.DurationSetting(), 15*time.Second, env.ActiveVulnRefreshInterval.DurationSetting(), acUpdater)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -98,7 +92,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, deploymentRiskDuration time.Duration,
-	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater, indexQueue queue.WaitableQueue) *loopImpl {
+	activeComponentTickerDuration time.Duration, acUpdater activeComponentsUpdater.Updater) *loopImpl {
 	return &loopImpl{
 		enrichAndDetectTickerDuration: enrichAndDetectDuration,
 		deploymentRiskTickerDuration:  deploymentRiskDuration,
@@ -127,7 +121,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		signatureVerificationSig: concurrency.NewSignal(),
 
 		connManager: connManager,
-		indexQueue:  indexQueue,
 	}
 }
 
@@ -170,7 +163,6 @@ type loopImpl struct {
 	reprocessingInProgress concurrency.Flag
 
 	connManager connection.Manager
-	indexQueue  queue.WaitableQueue
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -286,9 +278,6 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
 				nReprocessed.Inc()
-				if !env.PostgresDatastoreEnabled.BooleanSetting() {
-					l.waitForIndexing()
-				}
 			}
 		}(id)
 	}
@@ -327,11 +316,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 			return nil, false
 		}
 	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		l.waitForIndexing()
-	}
-
 	return image, true
 }
 
@@ -343,16 +327,6 @@ func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 	}
 
 	return search.ResultsToIDs(results), nil
-}
-
-func (l *loopImpl) waitForIndexing() {
-	indexingCompleted := concurrency.NewSignal()
-	l.indexQueue.PushSignal(&indexingCompleted)
-
-	select {
-	case <-indexingCompleted.Done():
-	case <-l.stopSig.Done():
-	}
 }
 
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,

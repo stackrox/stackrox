@@ -18,13 +18,6 @@ source "$ROOT/tests/e2e/lib.sh"
 # shellcheck source=../../tests/e2e/run.sh
 source "$ROOT/tests/e2e/run.sh"
 
-# test_sensor_wip is here to unlock the changes in the openshift/release repo.
-# Once they are merged, we will open another PR where we switch to test_sensor
-# TODO(ROX-17674): Remove test_sensor_wip
-test_sensor_wip() {
-    info "Placeholder for sensor integration tests"
-}
-
 test_sensor() {
     info "Starting sensor integration tests"
 
@@ -39,15 +32,8 @@ test_sensor() {
     test_preamble
     setup_deployment_env false false
     remove_existing_stackrox_resources
-    setup_default_TLS_certs
-    "$ROOT/tests/complianceoperator/create.sh"
-
-    deploy_stackrox
-    deploy_optional_e2e_components
 
     rm -f FAIL
-
-    prepare_for_endpoints_test
 
     info "Sensor k8s integration tests"
     make sensor-integration-test || touch FAIL
@@ -56,14 +42,8 @@ test_sensor() {
     store_test_results junit-reports reports
     store_test_results "test-output/test.log" "sensor-integration"
     [[ ! -f FAIL ]] || die "sensor-integration e2e tests failed"
-
-    # Give some time for previous tests to finish up
-    wait_for_api
-
-    collect_and_check_stackrox_logs "/tmp/sensor-integration-test-logs" "initial_tests"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    # TODO(ROX-17674): Switch to test_sensor
-    test_sensor_wip "$*"
+    test_sensor "$*"
 fi

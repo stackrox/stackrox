@@ -11,7 +11,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # also not set to expire
 INITIAL_POSTGRES_TAG="3.74.0-1-gfe924fce30"
 INITIAL_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
-CURRENT_TAG="$(make --quiet tag)"
+CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -229,6 +229,9 @@ test_upgrade_paths() {
 
     # Cleanup the scaled sensor before smoke tests
     "${REPO_FOR_TIME_TRAVEL}"/deploy/k8s/sensor-deploy/delete-sensor.sh
+
+    # Remove scaled Sensor from Central
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
 
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version

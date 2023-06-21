@@ -39,7 +39,7 @@ func (s *PolicyCategoryDatastoreTestSuite) SetupTest() {
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.edgeDataStore = policyCategoryEdgeDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.datastore = newWithoutDefaults(s.store, s.indexer, nil, s.edgeDataStore)
+	s.datastore = newWithoutDefaults(s.store, nil, s.edgeDataStore)
 
 	s.hasReadWriteWorkflowAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -49,9 +49,6 @@ func (s *PolicyCategoryDatastoreTestSuite) SetupTest() {
 
 func (s *PolicyCategoryDatastoreTestSuite) TestAddNewPolicyCategory() {
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationCtx, gomock.Any()).Return(nil).Times(1)
-
-	s.indexer.EXPECT().AddPolicyCategory(gomock.Any()).Return(nil).AnyTimes()
-
 	_, err := s.datastore.AddPolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, fixtures.GetPolicyCategory())
 	s.NoError(err, "expected no error trying to add a category with permissions")
 }
@@ -69,9 +66,6 @@ func (s *PolicyCategoryDatastoreTestSuite) TestDeletePolicyCategory() {
 
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, "category-id").Return(c, true, nil).Times(1)
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationCtx, gomock.Any()).Return(nil).AnyTimes()
-
-	s.indexer.EXPECT().DeletePolicyCategory(gomock.Any()).Return(nil).AnyTimes()
-
 	err := s.datastore.DeletePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id)
 	s.NoError(err, "expected no error trying to delete a category with permissions")
 }
@@ -91,9 +85,6 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategory() {
 
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationCtx, gomock.Any()).Return(nil).AnyTimes()
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, c.GetId()).Return(c, true, nil)
-
-	s.indexer.EXPECT().AddPolicyCategory(gomock.Any()).Return(nil).AnyTimes()
-
 	c, err := s.datastore.RenamePolicyCategory(s.hasReadWriteWorkflowAdministrationCtx, c.Id, "Boo's Special Category New Name")
 	s.NoError(err, "expected no error trying to rename a category with permissions")
 	s.Equal("Boo'S Special Category New Name", c.GetName(), "expected category to be renamed, but it is not")

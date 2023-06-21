@@ -12,8 +12,8 @@ func ConvertTestParent1FromProto(obj *storage.TestParent1) (*TestParent1, error)
 		return nil, err
 	}
 	model := &TestParent1{
-		Id:         obj.GetId(),
-		ParentId:   obj.GetParentId(),
+		ID:         obj.GetId(),
+		ParentID:   obj.GetParentId(),
 		Val:        obj.GetVal(),
 		Serialized: serialized,
 	}
@@ -21,11 +21,11 @@ func ConvertTestParent1FromProto(obj *storage.TestParent1) (*TestParent1, error)
 }
 
 // ConvertTestParent1_Child1RefFromProto converts a `*storage.TestParent1_Child1Ref` to Gorm model
-func ConvertTestParent1_Child1RefFromProto(obj *storage.TestParent1_Child1Ref, idx int, test_parent1_Id string) (*TestParent1Childrens, error) {
+func ConvertTestParent1_Child1RefFromProto(obj *storage.TestParent1_Child1Ref, idx int, testParent1ID string) (*TestParent1Childrens, error) {
 	model := &TestParent1Childrens{
-		TestParent1Id: test_parent1_Id,
+		TestParent1ID: testParent1ID,
 		Idx:           idx,
-		ChildId:       obj.GetChildId(),
+		ChildID:       obj.GetChildId(),
 	}
 	return model, nil
 }

@@ -6,13 +6,10 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/secret/convert"
 )
@@ -22,7 +19,6 @@ var (
 		Field: search.CreatedTime.String(),
 	}
 
-	secretSACSearchHelper         = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
 	secretSACPostgresSearchHelper = sac.ForResource(resources.Secret).MustCreatePgSearchHelper()
 )
 
@@ -115,14 +111,8 @@ func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchRes
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	var filteredSearcher search.Searcher
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Make the UnsafeSearcher safe.
-		filteredSearcher = secretSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher)
-	} else {
-		filteredSearcher = secretSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	}
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := secretSACPostgresSearchHelper.FilteredSearcher(searcher)
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -64,9 +63,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.Deployment) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -136,11 +132,11 @@ func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.D
 	return nil
 }
 
-func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj *storage.Container, deployments_Id string, idx int) error {
+func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(deployments_Id),
+		pgutils.NilOrUUID(deploymentID),
 		idx,
 		obj.GetImage().GetId(),
 		obj.GetImage().GetName().GetRegistry(),
@@ -163,38 +159,38 @@ func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj 
 	var query string
 
 	for childIndex, child := range obj.GetConfig().GetEnv() {
-		if err := insertIntoDeploymentsContainersEnvs(ctx, batch, child, deployments_Id, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsContainersEnvs(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetConfig().GetEnv()))
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
 	for childIndex, child := range obj.GetVolumes() {
-		if err := insertIntoDeploymentsContainersVolumes(ctx, batch, child, deployments_Id, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsContainersVolumes(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetVolumes()))
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
 	for childIndex, child := range obj.GetSecrets() {
-		if err := insertIntoDeploymentsContainersSecrets(ctx, batch, child, deployments_Id, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsContainersSecrets(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetSecrets()))
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetSecrets()))
 	return nil
 }
 
-func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersEnvs(_ context.Context, batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deploymentID string, deploymentContainerIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(deployments_Id),
-		deployments_containers_idx,
+		pgutils.NilOrUUID(deploymentID),
+		deploymentContainerIdx,
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
@@ -207,12 +203,12 @@ func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, 
 	return nil
 }
 
-func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batch, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersVolumes(_ context.Context, batch *pgx.Batch, obj *storage.Volume, deploymentID string, deploymentContainerIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(deployments_Id),
-		deployments_containers_idx,
+		pgutils.NilOrUUID(deploymentID),
+		deploymentContainerIdx,
 		idx,
 		obj.GetName(),
 		obj.GetSource(),
@@ -227,12 +223,12 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batc
 	return nil
 }
 
-func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.EmbeddedSecret, deployments_Id string, deployments_containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersSecrets(_ context.Context, batch *pgx.Batch, obj *storage.EmbeddedSecret, deploymentID string, deploymentContainerIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(deployments_Id),
-		deployments_containers_idx,
+		pgutils.NilOrUUID(deploymentID),
+		deploymentContainerIdx,
 		idx,
 		obj.GetName(),
 		obj.GetPath(),
@@ -244,11 +240,11 @@ func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batc
 	return nil
 }
 
-func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig, deployments_Id string, idx int) error {
+func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig, deploymentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(deployments_Id),
+		pgutils.NilOrUUID(deploymentID),
 		idx,
 		obj.GetContainerPort(),
 		obj.GetProtocol(),
@@ -261,22 +257,22 @@ func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *stor
 	var query string
 
 	for childIndex, child := range obj.GetExposureInfos() {
-		if err := insertIntoDeploymentsPortsExposureInfos(ctx, batch, child, deployments_Id, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsPortsExposureInfos(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_ports_exposure_infos where deployments_Id = $1 AND deployments_ports_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(deployments_Id), idx, len(obj.GetExposureInfos()))
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetExposureInfos()))
 	return nil
 }
 
-func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_ports_idx int, idx int) error {
+func insertIntoDeploymentsPortsExposureInfos(_ context.Context, batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deploymentID string, deploymentPortIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(deployments_Id),
-		deployments_ports_idx,
+		pgutils.NilOrUUID(deploymentID),
+		deploymentPortIdx,
 		idx,
 		obj.GetLevel(),
 		obj.GetServiceName(),
@@ -430,7 +426,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, ob
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postgres.Tx, deployments_Id string, objs ...*storage.Container) error {
+func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
 
 	inputRows := [][]interface{}{}
 
@@ -477,7 +473,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(deployments_Id),
+			pgutils.NilOrUUID(deploymentID),
 
 			idx,
 
@@ -527,13 +523,13 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromDeploymentsContainersEnvs(ctx, tx, deployments_Id, idx, obj.GetConfig().GetEnv()...); err != nil {
+		if err = s.copyFromDeploymentsContainersEnvs(ctx, tx, deploymentID, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deployments_Id, idx, obj.GetVolumes()...); err != nil {
+		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deploymentID, idx, obj.GetVolumes()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersSecrets(ctx, tx, deployments_Id, idx, obj.GetSecrets()...); err != nil {
+		if err = s.copyFromDeploymentsContainersSecrets(ctx, tx, deploymentID, idx, obj.GetSecrets()...); err != nil {
 			return err
 		}
 	}
@@ -541,7 +537,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
+func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
 
 	inputRows := [][]interface{}{}
 
@@ -570,9 +566,9 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *p
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(deployments_Id),
+			pgutils.NilOrUUID(deploymentID),
 
-			deployments_containers_idx,
+			deploymentContainerIdx,
 
 			idx,
 
@@ -602,7 +598,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *p
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.Volume) error {
+func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.Volume) error {
 
 	inputRows := [][]interface{}{}
 
@@ -635,9 +631,9 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(deployments_Id),
+			pgutils.NilOrUUID(deploymentID),
 
-			deployments_containers_idx,
+			deploymentContainerIdx,
 
 			idx,
 
@@ -671,7 +667,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.EmbeddedSecret) error {
+func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.EmbeddedSecret) error {
 
 	inputRows := [][]interface{}{}
 
@@ -698,9 +694,9 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(deployments_Id),
+			pgutils.NilOrUUID(deploymentID),
 
-			deployments_containers_idx,
+			deploymentContainerIdx,
 
 			idx,
 
@@ -728,7 +724,7 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.Tx, deployments_Id string, objs ...*storage.PortConfig) error {
+func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.Tx, deploymentID string, objs ...*storage.PortConfig) error {
 
 	inputRows := [][]interface{}{}
 
@@ -755,7 +751,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(deployments_Id),
+			pgutils.NilOrUUID(deploymentID),
 
 			idx,
 
@@ -785,7 +781,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromDeploymentsPortsExposureInfos(ctx, tx, deployments_Id, idx, obj.GetExposureInfos()...); err != nil {
+		if err = s.copyFromDeploymentsPortsExposureInfos(ctx, tx, deploymentID, idx, obj.GetExposureInfos()...); err != nil {
 			return err
 		}
 	}
@@ -793,7 +789,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx *postgres.Tx, deployments_Id string, deployments_ports_idx int, objs ...*storage.PortConfig_ExposureInfo) error {
+func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentPortIdx int, objs ...*storage.PortConfig_ExposureInfo) error {
 
 	inputRows := [][]interface{}{}
 
@@ -828,9 +824,9 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(deployments_Id),
+			pgutils.NilOrUUID(deploymentID),
 
-			deployments_ports_idx,
+			deploymentPortIdx,
 
 			idx,
 
@@ -986,12 +982,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -1009,12 +1000,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -1033,12 +1019,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -1078,13 +1059,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return 0, err
 	}
@@ -1097,12 +1072,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Deployment")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return false, err
 	}
@@ -1124,12 +1094,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Deployment, bo
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, false, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, false, err
 	}
@@ -1153,15 +1118,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -1192,15 +1149,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1243,12 +1192,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.DeploymentIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -1268,15 +1212,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Deployment) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -1303,16 +1239,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Deployment) e
 }
 
 //// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
 
 //// Interface functions - END
 

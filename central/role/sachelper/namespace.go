@@ -3,9 +3,7 @@ package sachelper
 import (
 	"context"
 
-	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
@@ -56,8 +54,5 @@ func listNamespaceNamesInScope(
 }
 
 func getNamespacesOptionsMap() search.OptionsMap {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return schema.NamespacesSchema.OptionsMap
-	}
-	return namespaceMappings.OptionsMap
+	return schema.NamespacesSchema.OptionsMap
 }

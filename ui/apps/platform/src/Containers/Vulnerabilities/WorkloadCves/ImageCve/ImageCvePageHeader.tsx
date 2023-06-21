@@ -10,6 +10,7 @@ import {
     List,
     ListItem,
 } from '@patternfly/react-core';
+import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import uniqBy from 'lodash/uniqBy';
 import { getDateTime } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';
@@ -91,6 +92,7 @@ function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
                                     rel="noopener noreferrer"
                                 >
                                     {getDistroLinkText(distro)}
+                                    <ExternalLinkAltIcon className="pf-u-display-inline pf-u-ml-sm" />
                                 </a>
                             </ListItem>
                         ))}

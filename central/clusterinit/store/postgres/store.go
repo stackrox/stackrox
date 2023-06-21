@@ -59,9 +59,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.InitBundleMeta) error) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -78,7 +75,7 @@ func New(db postgres.DB) Store {
 
 //// Helper functions
 
-func insertIntoClusterInitBundles(ctx context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {
+func insertIntoClusterInitBundles(_ context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -497,16 +494,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.InitBundleMet
 }
 
 //// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed.
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed.
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return nil, nil
-}
 
 //// Interface functions - END
 

@@ -37,6 +37,7 @@ var (
 )
 
 const (
+	// TestSingleKeyStructsTableName specifies the name of the table in postgres.
 	TestSingleKeyStructsTableName = "test_single_key_structs"
 )
 

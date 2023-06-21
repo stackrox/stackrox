@@ -193,8 +193,8 @@ $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [
 # Use one-liner above.
 
 # 4. Run bundle.
-$ bin/operator-sdk-1.24.1 run bundle \
-  quay.io/rhacs-eng/stackrox-operator-bundle:v$(make --quiet tag) \
+$ .gotools/bin/operator-sdk run bundle \
+  quay.io/rhacs-eng/stackrox-operator-bundle:v$(make --quiet --no-print-directory tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
   --namespace bundle-test

@@ -283,6 +283,11 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
 
+    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
+       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
+       kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
+    fi
+
     # Every E2E test should have ROX_RESYNC_DISABLED="true"
     kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
 }
@@ -363,15 +368,9 @@ setup_generated_certs_for_test() {
 
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
-    local version
-    version=$(kubectl version --output json)
-    local majorVersion
-    majorVersion=$(echo "$version" | jq -r .serverVersion.major)
-    local minorVersion
-    minorVersion=$(echo "$version" | jq -r .serverVersion.minor)
 
-    # PodSecurityPolicy was removed in version 1.25
-    if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
+    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
         ci_export "POD_SECURITY_POLICIES" "false"
         info "POD_SECURITY_POLICIES set to false"
     else

@@ -27,8 +27,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
@@ -92,7 +90,6 @@ func New(
 	rbds roleBindingDataStore.DataStore,
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
-	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker,
 	indexer index.Indexer,
 	networkBaselineMgr networkBaselineManager.Manager,
@@ -116,19 +113,13 @@ func New(
 		cm:                        cm,
 		notifier:                  notifier,
 		clusterRanker:             clusterRanker,
-		indexer:                   indexer,
 		networkBaselineMgr:        networkBaselineMgr,
 		idToNameCache:             simplecache.New(),
 		nameToIDCache:             simplecache.New(),
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
-	} else {
-		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
-	}
-
-	if err := ds.buildIndex(sac.WithAllAccess(context.Background())); err != nil {
+	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
+	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}
 

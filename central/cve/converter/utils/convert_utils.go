@@ -10,8 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/env"
-	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 )
@@ -193,53 +191,6 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 	return ret, nil
 }
 
-// ProtoCVEToEmbeddedCVE converts a *storage.CVE to *storage.EmbeddedVulnerability.
-// It converts all the fields except FixedBy which gets set depending on the CVE.
-func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability {
-	embeddedCVE := &storage.EmbeddedVulnerability{
-		Cve:                   protoCVE.GetId(),
-		Cvss:                  protoCVE.GetCvss(),
-		Summary:               protoCVE.GetSummary(),
-		Link:                  protoCVE.GetLink(),
-		CvssV2:                protoCVE.GetCvssV2(),
-		CvssV3:                protoCVE.GetCvssV3(),
-		PublishedOn:           protoCVE.GetPublishedOn(),
-		LastModified:          protoCVE.GetLastModified(),
-		FirstSystemOccurrence: protoCVE.GetCreatedAt(),
-		Suppressed:            protoCVE.GetSuppressed(),
-		SuppressActivation:    protoCVE.GetSuppressActivation(),
-		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
-
-		// In dackbox, when reading out the image vulnerabilities, severity is overwritten during merge.
-		Severity: protoCVE.GetSeverity(),
-	}
-	if protoCVE.CvssV3 != nil {
-		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
-	} else {
-		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
-	}
-	embeddedCVE.VulnerabilityType = protoToEmbeddedVulnType(protoCVE.GetType())
-	for _, vulnType := range protoCVE.GetTypes() {
-		embeddedCVE.VulnerabilityTypes = append(embeddedCVE.VulnerabilityTypes, protoToEmbeddedVulnType(vulnType))
-	}
-	return embeddedCVE
-}
-
-// ProtoCVEToImageCVE coverts a *storage.CVE object to *storage.ImageCVE object.
-// It converts all the fields except Fixed By which gets set depending on the CVE.
-func ProtoCVEToImageCVE(protoCVE *storage.CVE) *storage.ImageCVE {
-	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
-	return EmbeddedVulnerabilityToImageCVE("", embeddedVuln)
-}
-
-// ProtoCVEToNodeCVE coverts a *storage.CVE object to *storage.NodeCVE object.
-// It converts all the fields except Fixed By which gets set depending on the CVE.
-func ProtoCVEToNodeCVE(protoCVE *storage.CVE) *storage.NodeCVE {
-	embeddedVuln := ProtoCVEToEmbeddedCVE(protoCVE)
-	nodeVulnerability := nodeConverter.EmbeddedVulnerabilityToNodeVulnerability(embeddedVuln)
-	return NodeVulnerabilityToNodeCVE("", nodeVulnerability)
-}
-
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
 // It converts all the fields except except Fixed By which gets set depending on the CVE
 func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
@@ -323,25 +274,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ret.Severity = from.GetSeverity()
-		return ret
-	}
-
-	// If the OS is empty, then the OS is unknown and we don't need to save
-	// any distro specific settings
-	if os == "" {
-		return ret
-	}
-	ret.DistroSpecifics = map[string]*storage.CVE_DistroSpecific{
-		os: {
-			Severity:     from.GetSeverity(),
-			Cvss:         ret.Cvss,
-			CvssV2:       ret.CvssV2,
-			CvssV3:       ret.CvssV3,
-			ScoreVersion: ret.ScoreVersion,
-		},
-	}
+	ret.Severity = from.GetSeverity()
 	return ret
 }
 

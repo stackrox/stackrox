@@ -4,15 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/sync"
 	bolt "go.etcd.io/bbolt"
@@ -25,7 +22,6 @@ type storeImpl struct {
 }
 
 func (s *storeImpl) GetIDs(_ context.Context) ([]string, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policyIDs []string
 	err := s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
@@ -46,16 +42,6 @@ func (s *storeImpl) DeleteMany(_ context.Context, _ []string) error {
 }
 
 //// Stubs for satisfying legacy interfaces
-
-// AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(_ context.Context, _ ...string) error {
-	return nil
-}
-
-// GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
-	return nil, nil
-}
 
 func (s *storeImpl) wasDefaultPolicyRemoved(id string) (bool, error) {
 	var wasRemoved bool
@@ -86,7 +72,6 @@ func (s *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *storage.P
 
 // Get returns policy with given id.
 func (s *storeImpl) Get(_ context.Context, id string) (policy *storage.Policy, exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Policy")
 	policy = new(storage.Policy)
 	err = s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
@@ -103,7 +88,6 @@ func (s *storeImpl) Get(_ context.Context, id string) (policy *storage.Policy, e
 
 // GetAll retrieves policies matching the request from bolt
 func (s *storeImpl) GetAll(_ context.Context) ([]*storage.Policy, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
 	err := s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
@@ -120,7 +104,6 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.Policy, error) {
 }
 
 func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Policy, []int, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
 	var missingIndices []int
 	err := s.View(func(tx *bolt.Tx) error {
@@ -146,8 +129,6 @@ func (s *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Policy,
 
 // Upsert updates a policy to bolt
 func (s *storeImpl) Upsert(_ context.Context, policy *storage.Policy) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
-
 	// Have to lock here because this is an upsert, not an update.
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -229,7 +210,6 @@ func (s *storeImpl) Upsert(_ context.Context, policy *storage.Policy) error {
 
 // Delete removes a policy.
 func (s *storeImpl) Delete(_ context.Context, id string) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Policy")
 	var policy storage.Policy
 	err := s.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)

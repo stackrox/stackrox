@@ -38,15 +38,15 @@ function ProcessesDiscoveryCardHeader({
 
     const trimmedName = name.length > 48 ? `${name.substring(0, 48)}...` : name;
     const backgroundClass = suspicious ? suspiciousProcessClassName : headerClassName;
-    const textClass = suspicious ? 'text-alert-800' : 'text-primary-800';
+    const textClass = suspicious ? 'text-alert-700' : 'text-base-600';
     return (
         <div
             className={`${titleClassName} ${backgroundClass}`}
             data-testid={suspicious ? 'suspicious-process' : 'process'}
         >
             <div className={`p-3 ${textClass} flex flex-col`}>
-                <h1 className="text-lg font-700">{trimmedName}</h1>
-                <h2 className="text-sm font-600">{`in container ${containerName} `}</h2>
+                <h1 className="font-700">{trimmedName}</h1>
+                <h2 className="text-sm">{`in container ${containerName} `}</h2>
             </div>
             <div className="flex content-center">
                 {suspicious && (
@@ -55,14 +55,14 @@ function ProcessesDiscoveryCardHeader({
                             <button
                                 type="button"
                                 onClick={addBaseline}
-                                className="border rounded p-px mr-3 ml-3 border-alert-800 flex items-center hover:bg-alert-300"
+                                className="border rounded p-px mr-3 ml-3 border-alert-300 flex items-center hover:bg-alert-200"
                             >
-                                <Icon.Plus className="h-4 w-4 text-alert-800" />
+                                <Icon.Plus className="h-4 w-4 text-alert-700" />
                             </button>
                         </Tooltip>
                     </div>
                 )}
-                <button type="button" className={`pl-3 pr-3 ${suspicious && 'text-alert-800'}`}>
+                <button type="button" className={`pl-3 pr-3 ${suspicious && 'text-alert-700'}`}>
                     {icon}
                 </button>
             </div>

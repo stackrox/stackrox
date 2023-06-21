@@ -19,8 +19,13 @@ import util.Timer
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
 
 @Retry(count = 1)
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class TLSChallengeTest extends BaseSpecification {
     @Shared
     private EnvVar originalCentralEndpoint = new EnvVar()

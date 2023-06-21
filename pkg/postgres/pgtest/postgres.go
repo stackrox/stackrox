@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	pkgEnv "github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -161,16 +160,6 @@ func CloseGormDB(t testing.TB, db *gorm.DB) {
 
 // SkipIfPostgresEnabled skips the tests if the Postgres flag is on
 func SkipIfPostgresEnabled(t testing.TB) {
-	if pkgEnv.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skipping test because Postgres is enabled")
-		t.SkipNow()
-	}
-}
-
-// SkipIfPostgresDisabled skips the tests if the Postgres flag is off
-func SkipIfPostgresDisabled(t testing.TB) {
-	if !pkgEnv.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skipping test because Postgres is disabled")
-		t.SkipNow()
-	}
+	t.Skip("Skipping test because Postgres is enabled")
+	t.SkipNow()
 }

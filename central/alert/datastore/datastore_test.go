@@ -14,9 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -39,7 +36,6 @@ type alertDataStoreTestSuite struct {
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
-	indexer   *indexMocks.MockIndexer
 	searcher  *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
@@ -57,16 +53,10 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
-		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-	}
-
 	var err error
-	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher)
 	s.Require().NoError(err)
 }
 
@@ -118,12 +108,8 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(nil)
-	s.indexer.EXPECT().AddListAlerts([]*storage.ListAlert{
-		fillSortHelperFields(convert.AlertToListAlert(alerttest.NewFakeAlert())),
-	}).Return(errFake)
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 
-	// We don't expect AckKeysIndexed, since the error returned from the above call will prevent this.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
@@ -133,7 +119,6 @@ func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{fakeAlert}).Return(errFake)
 
-	// No AckKeysIndexed call due to error on upsert.
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
@@ -144,10 +129,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatch() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
-	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), fakeAlert.GetId()).Times(1).Return(nil)
-
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
 
 	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
@@ -158,7 +140,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatchWhenStorageFails() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, []int{0}, errFake)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, alerttest.FakeAlertID)
 
 	s.Equal(errFake, err)
 }
@@ -168,7 +150,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleBatchWhenTheAlertWasNotFound
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{fakeAlert.GetId()}).Return(nil, []int{0}, nil)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, fakeAlert.GetId())
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, fakeAlert.GetId())
 
 	s.NoError(err)
 }
@@ -178,10 +160,7 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{fakeAlert.GetId()}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil)
-	s.indexer.EXPECT().AddListAlerts(gomock.Any()).Return(nil)
-	s.storage.EXPECT().AckKeysIndexed(gomock.Any(), gomock.Any()).Return(nil)
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasWriteCtx, fakeAlert.GetId())
-
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasWriteCtx, fakeAlert.GetId())
 	s.NoError(err)
 }
 
@@ -218,22 +197,14 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return(nil, nil)
-		s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-	}
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
-	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher)
 	s.NoError(err)
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 	s.storage.EXPECT().Upsert(gomock.Any(), alerttest.NewFakeAlert()).Times(0)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Times(0)
-
 	err := s.dataStore.UpsertAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -244,96 +215,9 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 
 	s.storage.EXPECT().GetMany(gomock.Any(), []string{alerttest.FakeAlertID}).Return([]*storage.Alert{fakeAlert}, nil, nil)
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0)
-	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
-	_, err := s.dataStore.MarkAlertStaleBatch(s.hasReadCtx, alerttest.FakeAlertID)
+	_, err := s.dataStore.MarkAlertsResolvedBatch(s.hasReadCtx, alerttest.FakeAlertID)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
-}
-
-func TestAlertReindexSuite(t *testing.T) {
-	suite.Run(t, new(AlertReindexSuite))
-}
-
-type AlertReindexSuite struct {
-	suite.Suite
-
-	storage  *storeMocks.MockStore
-	indexer  *indexMocks.MockIndexer
-	searcher *searchMocks.MockSearcher
-
-	mockCtrl *gomock.Controller
-}
-
-func (suite *AlertReindexSuite) SetupTest() {
-	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
-	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
-}
-
-func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
-
-	fullAlert1 := fixtures.GetAlertWithID("A")
-	fullAlert2 := fixtures.GetAlertWithID("B")
-	alert1 := convert.AlertToListAlert(fullAlert1)
-	alert2 := convert.AlertToListAlert(fullAlert2)
-
-	alerts := []*storage.Alert{fullAlert1, fullAlert2}
-	listAlerts := []*storage.ListAlert{alert1, alert2}
-
-	suite.storage.EXPECT().GetIDs(gomock.Any()).Return([]string{"A", "B"}, nil)
-	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B"}).Return(alerts, nil, nil)
-	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
-
-	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"D", "E"}, nil)
-	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"D", "E"}).Return(nil)
-
-	suite.indexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
-
-	_, err := New(suite.storage, suite.indexer, suite.searcher)
-	suite.NoError(err)
-}
-
-func (suite *AlertReindexSuite) TestReconciliationPartialReindex() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-	fullAlert1 := fixtures.GetAlertWithID("A")
-	fullAlert2 := fixtures.GetAlertWithID("B")
-	fullAlert3 := fixtures.GetAlertWithID("C")
-	alert1 := convert.AlertToListAlert(fullAlert1)
-	alert2 := convert.AlertToListAlert(fullAlert2)
-	alert3 := convert.AlertToListAlert(fullAlert3)
-
-	alerts := []*storage.Alert{fullAlert1, fullAlert2, fullAlert3}
-	listAlerts := []*storage.ListAlert{alert1, alert2, alert3}
-
-	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(alerts, nil, nil)
-	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
-
-	_, err := New(suite.storage, suite.indexer, suite.searcher)
-	suite.NoError(err)
-	// Make listAlerts just A,B so C should be deleted
-	alerts2 := []*storage.Alert{fullAlert1, fullAlert2}
-	listAlerts2 := []*storage.ListAlert{alert1, alert2}
-	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
-	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
-
-	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(alerts2, []int{2}, nil)
-	suite.indexer.EXPECT().AddListAlerts(listAlerts2).Return(nil)
-	suite.indexer.EXPECT().DeleteListAlerts([]string{"C"}).Return(nil)
-	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
-
-	_, err = New(suite.storage, suite.indexer, suite.searcher)
-	suite.NoError(err)
 }

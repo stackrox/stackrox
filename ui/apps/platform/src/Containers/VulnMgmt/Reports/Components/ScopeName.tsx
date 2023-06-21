@@ -3,33 +3,15 @@ import { useHistory } from 'react-router-dom';
 import { Alert, Button, ButtonVariant } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { getEntityPath } from 'Containers/AccessControl/accessControlPaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { collectionsBasePath } from 'routePaths';
 import { ReportScope } from 'hooks/useFetchReport';
 
 type ScopeNameProps = {
     reportScope: ReportScope | null;
-    // TODO This isn't a prop-type, and it -is- used. Not sure why the lint error needs to be suppressed
-    // eslint-disable-next-line react/no-unused-prop-types
     canWriteReports: boolean;
 };
 
-function AccessScopeName({ reportScope }: ScopeNameProps): ReactElement {
-    if (!reportScope) {
-        return <em>No resource scope specified</em>;
-    }
-
-    const url = getEntityPath('ACCESS_SCOPE', reportScope.id);
-
-    return (
-        <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-            {reportScope.name}
-        </Button>
-    );
-}
-
-function CollectionScopeName({ reportScope, canWriteReports }: ScopeNameProps): ReactElement {
+function ScopeName({ reportScope, canWriteReports }: ScopeNameProps): ReactElement {
     const history = useHistory();
 
     if (!reportScope) {
@@ -64,17 +46,6 @@ function CollectionScopeName({ reportScope, canWriteReports }: ScopeNameProps): 
         <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
             {reportScope.name}
         </Button>
-    );
-}
-
-function ScopeName(props: ScopeNameProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCollectionsEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    return isCollectionsEnabled ? (
-        <CollectionScopeName {...props} />
-    ) : (
-        <AccessScopeName {...props} />
     );
 }
 

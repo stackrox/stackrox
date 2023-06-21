@@ -20,6 +20,10 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
+    # Needed for FS permissions sensitive tests, see ROX-14204.
+    - name: Create user
+      run: useradd tester
+
     - name: Checkout
       uses: actions/checkout@v3
       with:
@@ -29,12 +33,17 @@ jobs:
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
+        su tester -c "git config --global --add safe.directory \"$(pwd)\""
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      env:
+        TMPDIR: ${{ runner.temp }}
+      run: |
+        chmod a+wx . roxctl/connectivity-map "$TMPDIR"
+        ${{ matrix.gotags }} su tester -c "make go-unit-tests"
 
     - name: Generate junit report
       if: always()

@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getDescriptionListGroup,
     getHelperElementByLabel,
@@ -9,7 +8,6 @@ import { tryDeleteCollection } from '../../collections/Collections.helpers';
 import { tryDeleteIntegration } from '../../integrations/integrations.helpers';
 
 import {
-    accessScopesAlias,
     collectionsAlias,
     interactAndVisitVulnerabilityReporting,
     interactAndWaitToCreateReport,
@@ -22,18 +20,12 @@ import {
 describe('Vulnerability Management Reporting form', () => {
     withAuth();
 
-    const isCollectionsEnabled = hasFeatureFlag('ROX_POSTGRES_DATASTORE');
-
     it('should navigate from table by button', () => {
         visitVulnerabilityReporting();
 
-        interactAndWaitToCreateReport(
-            () => {
-                cy.get('a:contains("Create report")').click();
-            },
-            undefined,
-            isCollectionsEnabled
-        );
+        interactAndWaitToCreateReport(() => {
+            cy.get('a:contains("Create report")').click();
+        });
 
         cy.location('search').should('eq', '?action=create');
 
@@ -54,26 +46,16 @@ describe('Vulnerability Management Reporting form', () => {
     });
 
     it('should navigate by url', () => {
-        const notifiersAliasMap = {
+        const staticResponseMap = {
             [notifiersAlias]: {
                 fixture: 'integrations/notifiers.json',
             },
-        };
-        const accessScopeMap = {
-            [accessScopesAlias]: {
-                fixture: 'scopes/resourceScopes.json',
-            },
-        };
-        const collectionsMap = {
             [collectionsAlias]: {
                 fixture: 'collections/collections.json',
             },
         };
-        const staticResponseMap = isCollectionsEnabled
-            ? { ...notifiersAliasMap, ...collectionsMap }
-            : { ...notifiersAliasMap, ...accessScopeMap };
 
-        visitVulnerabilityReportingToCreate(staticResponseMap, isCollectionsEnabled);
+        visitVulnerabilityReportingToCreate(staticResponseMap);
 
         cy.get('h1:contains("Create an image vulnerability report")');
 
@@ -132,10 +114,6 @@ describe('Vulnerability Management Reporting form', () => {
     });
 
     it('should allow creation of a report configuration', () => {
-        if (!isCollectionsEnabled) {
-            return;
-        }
-
         const reportName = 'report config -e2e test-';
         const reportDescription = 'ui e2e test report';
         const collectionName = 'stackrox ns collection -e2e test-';
@@ -147,7 +125,7 @@ describe('Vulnerability Management Reporting form', () => {
         tryDeleteCollection(collectionName);
         tryDeleteIntegration(integrationsSource, emailNotifierName);
 
-        visitVulnerabilityReportingToCreate({}, isCollectionsEnabled);
+        visitVulnerabilityReportingToCreate({});
 
         cy.get('h1:contains("Create an image vulnerability report")');
 

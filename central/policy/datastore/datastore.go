@@ -5,7 +5,6 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
@@ -37,33 +36,27 @@ type DataStore interface {
 	ImportPolicies(ctx context.Context, policies []*storage.Policy, overwrite bool) (responses []*v1.ImportPolicyResponse, allSucceeded bool, err error)
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher,
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(storage store.Store, searcher search.Searcher,
 	clusterDatastore clusterDS.DataStore,
 	notifierDatastore notifierDS.DataStore,
 	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	ds := &datastoreImpl{
 		storage:             storage,
-		indexer:             indexer,
 		searcher:            searcher,
 		clusterDatastore:    clusterDatastore,
 		notifierDatastore:   notifierDatastore,
 		categoriesDatastore: categoriesDatastore,
 	}
-
-	if err := ds.buildIndex(); err != nil {
-		panic("unable to load search index for policies")
-	}
 	return ds
 }
 
 // newWithoutDefaults should be used only for testing purposes.
-func newWithoutDefaults(storage boltdb.Store, indexer index.Indexer,
+func newWithoutDefaults(storage boltdb.Store,
 	searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
 	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	return &datastoreImpl{
 		storage:             storage,
-		indexer:             indexer,
 		searcher:            searcher,
 		clusterDatastore:    clusterDatastore,
 		notifierDatastore:   notifierDatastore,

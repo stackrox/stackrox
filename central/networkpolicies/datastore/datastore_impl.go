@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -73,7 +72,7 @@ func getQuery(clusterID, namespace string) *v1.Query {
 }
 
 func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() && !stringutils.AllEmpty(clusterID, namespace) {
+	if !stringutils.AllEmpty(clusterID, namespace) {
 		return ds.storage.GetByQuery(ctx, getQuery(clusterID, namespace))
 	}
 	var netPols []*storage.NetworkPolicy
@@ -101,37 +100,10 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 }
 
 func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if stringutils.AllEmpty(clusterID, namespace) {
-			return ds.storage.Count(ctx)
-		}
-		return ds.searcher.Count(ctx, getQuery(clusterID, namespace))
+	if stringutils.AllEmpty(clusterID, namespace) {
+		return ds.storage.Count(ctx)
 	}
-	if namespace == "" {
-		netPols, err := ds.GetNetworkPolicies(ctx, clusterID, "")
-		if err != nil {
-			return 0, err
-		}
-		return len(netPols), nil
-	}
-
-	scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)}
-	if ok, err := netpolSAC.AccessAllowed(ctx, storage.Access_READ_ACCESS, scopeKeys...); err != nil || !ok {
-		return 0, err
-	}
-	var count int
-	err := pgutils.RetryIfPostgres(
-		func() error {
-			count = 0
-			return ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
-				count++
-			})
-		},
-	)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return ds.searcher.Count(ctx, getQuery(clusterID, namespace))
 }
 
 func (ds *datastoreImpl) UpsertNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {

@@ -35,13 +35,14 @@ var (
 )
 
 const (
+	// ProcessBaselineResultsTableName specifies the name of the table in postgres.
 	ProcessBaselineResultsTableName = "process_baseline_results"
 )
 
 // ProcessBaselineResults holds the Gorm model for Postgres table `process_baseline_results`.
 type ProcessBaselineResults struct {
-	DeploymentId string `gorm:"column:deploymentid;type:uuid;primaryKey"`
-	ClusterId    string `gorm:"column:clusterid;type:uuid;index:processbaselineresults_sac_filter,type:btree"`
+	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
+	ClusterID    string `gorm:"column:clusterid;type:uuid;index:processbaselineresults_sac_filter,type:btree"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:processbaselineresults_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

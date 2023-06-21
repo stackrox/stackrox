@@ -1,7 +1,7 @@
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
-import { visit } from '../../helpers/visit';
+import { visit, visitWithStaticResponseForCapabilities } from '../../helpers/visit';
 
 import { selectors } from './integrations.selectors';
 
@@ -246,6 +246,43 @@ export function visitIntegrationsTable(integrationSource, integrationType, stati
     );
 
     assertIntegrationsTable(integrationSource, integrationType);
+}
+
+/**
+ * Visit an integrations page with
+ * static response either body or fixture
+ * optional segments for additional path beyond integrations dashboard
+ *
+ * @param {{ body: { [key: string]: 'CapabilityAvailable' | 'CapabilityDisabled' } } | { fixture: string }} staticResponseForCapabilities
+ * @param string [integrationSource]
+ * @param string [integrationType]
+ * @param string [integrationId]
+ * @param {String('view' | 'edit' | 'create')} [integrationAction]
+ */
+export function visitIntegrationsWithStaticResponseForCapabilities(
+    staticResponseForCapabilities,
+    integrationSource,
+    integrationType,
+    integrationId,
+    integrationAction
+) {
+    visitWithStaticResponseForCapabilities(
+        getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
+        staticResponseForCapabilities
+    );
+}
+export function visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+    staticResponseForCapabilities,
+    integrationSource,
+    integrationType,
+    integrationId,
+    integrationAction
+) {
+    visitWithStaticResponseForCapabilities(
+        getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
+        staticResponseForCapabilities
+    );
+    cy.location('pathname').should('eq', basePath);
 }
 
 // interact on dashboard

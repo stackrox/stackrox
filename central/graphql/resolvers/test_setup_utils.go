@@ -147,9 +147,7 @@ func CreateTestImageComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres
 	indexer := imageComponentPostgres.NewIndexer(testDB.DB)
 	searcher := imageComponentSearch.NewV2(storage, indexer)
 
-	return imageComponentDS.New(
-		nil, storage, indexer, searcher, mockRisk, ranking.NewRanker(),
-	)
+	return imageComponentDS.New(storage, searcher, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestImageCVEDatastore creates imageCVE datastore for testing
@@ -160,7 +158,7 @@ func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imag
 	storage := imageCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := imageCVEPostgres.NewIndexer(testDB.DB)
 	searcher := imageCVESearch.New(storage, indexer)
-	datastore, err := imageCVEDS.New(storage, indexer, searcher, nil)
+	datastore, err := imageCVEDS.New(storage, searcher, nil)
 	assert.NoError(t, err)
 
 	return datastore
@@ -175,7 +173,7 @@ func CreateTestImageComponentCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestP
 	indexer := imageComponentCVEEdgePostgres.NewIndexer(testDB.DB)
 	searcher := imageComponentCVEEdgeSearch.NewV2(storage, indexer)
 
-	return imageComponentCVEEdgeDS.New(nil, storage, indexer, searcher)
+	return imageComponentCVEEdgeDS.New(storage, searcher)
 }
 
 // CreateTestImageComponentEdgeDatastore creates edge datastore for edge table between image and imageComponent
@@ -193,7 +191,7 @@ func CreateTestImageCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) 
 	storage := imageCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := imageCVEEdgePostgres.NewIndexer(testDB.DB)
 	searcher := imageCVEEdgeSearch.NewV2(storage, indexer)
-	return imageCVEEdgeDS.New(nil, storage, searcher)
+	return imageCVEEdgeDS.New(storage, searcher)
 }
 
 // CreateTestDeploymentDatastore creates deployment datastore for testing
@@ -203,7 +201,7 @@ func CreateTestDeploymentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ct
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
-	ds, err := deploymentDatastore.NewTestDataStore(t, deploymentStore, nil, testDB.DB, nil, nil, imageDatastore, nil, nil, mockRisk, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	ds, err := deploymentDatastore.NewTestDataStore(t, deploymentStore, testDB.DB, imageDatastore, nil, nil, mockRisk, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
 	assert.NoError(t, err)
 	return ds
 }
@@ -216,7 +214,7 @@ func CreateTestClusterCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) cl
 	storage := clusterCVEPostgres.NewFullTestStore(t, testDB.DB, clusterCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
 	indexer := clusterCVEPostgres.NewIndexer(testDB.DB)
 	searcher := clusterCVESearch.New(storage, indexer)
-	datastore, err := clusterCVEDataStore.New(storage, indexer, searcher)
+	datastore, err := clusterCVEDataStore.New(storage, searcher)
 	assert.NoError(t, err, "failed to create cluster CVE datastore")
 	return datastore
 }
@@ -226,10 +224,10 @@ func CreateTestClusterCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres
 	ctx := context.Background()
 	clusterCVEEdgePostgres.Destroy(ctx, testDB.DB)
 
-	storage := clusterCVEEdgePostgres.NewFullTestStore(t, clusterCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
+	storage := clusterCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := clusterCVEEdgePostgres.NewIndexer(testDB.DB)
 	searcher := clusterCVEEdgeSearch.NewV2(storage, indexer)
-	datastore, err := clusterCVEEdgeDataStore.New(nil, storage, indexer, searcher)
+	datastore, err := clusterCVEEdgeDataStore.New(storage, searcher)
 	assert.NoError(t, err, "failed to create cluster-CVE edge datastore")
 	return datastore
 }
@@ -241,8 +239,7 @@ func CreateTestNamespaceDatastore(t testing.TB, testDB *pgtest.TestPostgres) nam
 
 	storage := namespacePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := namespacePostgres.NewIndexer(testDB.DB)
-	datastore, err := namespaceDataStore.New(storage, nil, indexer, nil, ranking.NamespaceRanker(), nil)
-	assert.NoError(t, err, "failed to create namespace datastore")
+	datastore := namespaceDataStore.New(storage, indexer, nil, ranking.NamespaceRanker())
 	return datastore
 }
 
@@ -263,7 +260,7 @@ func CreateTestClusterDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl 
 	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes()
 	datastore, err := clusterDataStore.New(storage, clusterHealthPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)),
 		clusterCVEDS, nil, nil, namespaceDS, nil, nodeDataStore, nil, nil,
-		netFlows, netEntities, nil, nil, nil, connMgr, nil, nil, ranking.ClusterRanker(), indexer, nil)
+		netFlows, netEntities, nil, nil, nil, connMgr, nil, ranking.ClusterRanker(), indexer, nil)
 	assert.NoError(t, err, "failed to create cluster datastore")
 	return datastore
 }
@@ -276,7 +273,7 @@ func CreateTestNodeCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) nodeC
 	storage := nodeCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := nodeCVEPostgres.NewIndexer(testDB.DB)
 	searcher := nodeCVESearch.New(storage, indexer)
-	datastore, err := nodeCVEDataStore.New(storage, indexer, searcher, concurrency.NewKeyFence())
+	datastore, err := nodeCVEDataStore.New(storage, searcher, concurrency.NewKeyFence())
 	assert.NoError(t, err, "failed to create node CVE datastore")
 	return datastore
 }
@@ -290,7 +287,7 @@ func CreateTestNodeComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres,
 	storage := nodeComponentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := nodeComponentPostgres.NewIndexer(testDB.DB)
 	searcher := nodeComponentSearch.New(storage, indexer)
-	return nodeComponentDataStore.New(storage, indexer, searcher, mockRisk, ranking.NewRanker())
+	return nodeComponentDataStore.New(storage, searcher, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestNodeDatastore creates node datastore for testing
@@ -302,7 +299,7 @@ func CreateTestNodeDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *go
 	storage := nodePostgres.CreateTableAndNewStore(ctx, t, testDB.DB, testDB.GetGormDB(t), false)
 	indexer := nodePostgres.NewIndexer(testDB.DB)
 	searcher := nodeSearch.NewV2(storage, indexer)
-	return nodeDS.NewWithPostgres(storage, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	return nodeDS.NewWithPostgres(storage, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 }
 
 // CreateTestNodeComponentCveEdgeDatastore creates edge datastore for edge table between nodeComponent and nodeCVE
@@ -313,7 +310,7 @@ func CreateTestNodeComponentCveEdgeDatastore(t testing.TB, testDB *pgtest.TestPo
 	storage := nodeComponentCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := nodeComponentCVEEdgePostgres.NewIndexer(testDB.DB)
 	searcher := nodeComponentCVEEdgeSearch.New(storage, indexer)
-	return nodeComponentCVEEdgeDataStore.New(storage, indexer, searcher)
+	return nodeComponentCVEEdgeDataStore.New(storage, searcher)
 }
 
 func registerImageLoader(_ testing.TB, ds imageDS.DataStore) {

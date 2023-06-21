@@ -56,16 +56,17 @@ var (
 )
 
 const (
+	// ImageCveEdgesTableName specifies the name of the table in postgres.
 	ImageCveEdgesTableName = "image_cve_edges"
 )
 
 // ImageCveEdges holds the Gorm model for Postgres table `image_cve_edges`.
 type ImageCveEdges struct {
-	Id                   string                     `gorm:"column:id;type:varchar;primaryKey"`
+	ID                   string                     `gorm:"column:id;type:varchar;primaryKey"`
 	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`
 	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
-	ImageId              string                     `gorm:"column:imageid;type:varchar;index:imagecveedges_imageid,type:hash"`
-	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar;index:imagecveedges_imagecveid,type:hash"`
+	ImageID              string                     `gorm:"column:imageid;type:varchar;index:imagecveedges_imageid,type:hash"`
+	ImageCveID           string                     `gorm:"column:imagecveid;type:varchar;index:imagecveedges_imagecveid,type:hash"`
 	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
 	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

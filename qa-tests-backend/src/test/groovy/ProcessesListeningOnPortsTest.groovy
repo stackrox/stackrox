@@ -34,7 +34,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(TCPCONNECTIONTARGET1)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(80)
                     .addPort(8080)
                     .addLabel("app", TCPCONNECTIONTARGET1)
@@ -44,7 +44,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                                       "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET2)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8081, "TCP")
                     .addLabel("app", TCPCONNECTIONTARGET2)
                     .setExposeAsService(true)
@@ -52,7 +52,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET3)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8082, "TCP")
                     .addLabel("app", TCPCONNECTIONTARGET3)
                     .setExposeAsService(true)

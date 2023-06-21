@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -53,9 +52,6 @@ type NodeVulnerabilityResolver interface {
 func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerability")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return resolver.nodeVulnerabilityV2(ctx, args)
-	}
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -72,10 +68,6 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilities")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withNodeCveTypeFiltering(args.String())
-		return resolver.nodeVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -108,10 +100,6 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args Paginate
 func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withNodeCveTypeFiltering(args.String())
-		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
-	}
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
@@ -133,10 +121,6 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 func (resolver *Resolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withNodeCveTypeFiltering(args.String())
-		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
-	}
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}

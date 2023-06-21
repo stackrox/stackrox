@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -136,22 +135,13 @@ func Format(results []Result) (*bytes.Buffer, error) {
 
 // GetClusterName returns name of cluster containing the Deployment
 func (dep *Deployment) GetClusterName() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return dep.ClusterName
-	}
-	return dep.Cluster.GetName()
+	return dep.ClusterName
 }
 
 func (img *Image) getComponents() []*ImageComponent {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return img.ImageComponents
-	}
-	return img.Components
+	return img.ImageComponents
 }
 
 func (component *ImageComponent) getVulnerabilities() []*ImageVulnerability {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return component.ImageVulnerabilities
-	}
-	return component.Vulns
+	return component.ImageVulnerabilities
 }

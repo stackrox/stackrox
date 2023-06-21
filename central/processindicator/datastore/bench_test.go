@@ -29,7 +29,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 	indexer := postgresStore.NewIndexer(db)
 	searcher := search.New(store, indexer)
 
-	datastore, err := New(store, plopStore, indexer, searcher, nil)
+	datastore, err := New(store, plopStore, searcher, nil)
 	require.NoError(b, err)
 
 	ctx := sac.WithAllAccess(context.Background())

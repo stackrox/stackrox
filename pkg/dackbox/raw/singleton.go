@@ -3,7 +3,6 @@ package raw
 import (
 	"log"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
@@ -70,18 +69,4 @@ func initialize() {
 			log.Panicf("could not load stored indices: %v", err)
 		}
 	})
-}
-
-// StartIndexer starts lazy indexer
-func StartIndexer(index bleve.Index) {
-	initialize()
-	lazyStarted.Do(func() {
-		lazy := indexer.NewLazy(toIndex, registry, index, dackBox.AckIndexed)
-		lazy.Start()
-	})
-}
-
-// RegisterIndex registers bucket for indexing
-func RegisterIndex(prefix []byte, wrapper indexer.Wrapper) {
-	registry.RegisterWrapper(prefix, wrapper)
 }

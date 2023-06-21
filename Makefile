@@ -351,13 +351,16 @@ build-prep: deps
 .PHONY: cli-build
 cli-build: cli-linux cli-darwin cli-windows
 
-.PHONY: cli
-cli: cli-build
+.PHONY: cli-install
+cli-install:
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
+
+.PHONY: cli
+cli: cli-build cli-install
 
 cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
 cli-darwin: cli_darwin-amd64 cli_darwin-arm64
@@ -368,6 +371,9 @@ cli_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+
+.PHONY: cli_host-arch
+cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
 
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
@@ -433,7 +439,7 @@ endif
 .PHONY: scale-build
 scale-build: build-prep
 	@echo "+ $@"
-	CGO_ENABLED=0 $(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler scale/chaos
+	CGO_ENABLED=0 $(GOBUILD) scale/profiler scale/chaos
 
 .PHONY: webhookserver-build
 webhookserver-build: build-prep
@@ -496,7 +502,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' 'migrator/migrations/m_16?_*/migration_test.go' 'migrator/migrations/m_17?_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/service/service_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' '*processlisteningonport/datastore/datastore_impl_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' 'migrator/migrations/m_16?_*/migration_test.go' 'migrator/migrations/m_17?_*/migration_test.go' 'migrator/migrations/m_18?_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/service/service_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' '*processlisteningonport/datastore/datastore_impl_test.go' '*central/apitoken/expiration/expiration_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -634,8 +640,6 @@ endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bin/linux_$(GOARCH)/mocksensor scale/image/bin/mocksensor
-	cp bin/linux_$(GOARCH)/mockcollector scale/image/bin/mockcollector
 	cp bin/linux_$(GOARCH)/profiler scale/image/bin/profiler
 	cp bin/linux_$(GOARCH)/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*

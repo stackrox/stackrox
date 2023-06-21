@@ -49,7 +49,7 @@ func (s *gathererTestSuite) SetupSuite() {
 
 	installationStore := installationPostgres.New(s.tp.DB)
 
-	s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(nil, nil, nil, newPostgresGatherer(s.tp.DB, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
+	s.gatherer = newCentralGatherer(installationStore, newDatabaseGatherer(newPostgresGatherer(s.tp.DB, adminConfig)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
 }
 
 func (s *gathererTestSuite) TearDownSuite() {

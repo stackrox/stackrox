@@ -54,12 +54,22 @@ import (
 
 type logsMode int
 
+// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
+// 0 - don't collect any telemetry data
+// 1 - collect telemetry data for central only
+// 2 - collect telemetry data from sensors and central
+type telemetryMode int
+
 const (
 	cpuProfileDuration = 30 * time.Second
 
 	noLogs logsMode = iota
 	localLogs
 	fullK8sIntrospectionData
+
+	noTelemetry telemetryMode = iota
+	telemetryCentralOnly
+	telemetryCentralAndSensors
 
 	centralClusterPrefix = "_central-cluster"
 
@@ -96,6 +106,7 @@ type Service interface {
 	v1.DebugServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+	PrivateDiagnosticsHandler() http.HandlerFunc
 }
 
 // New returns a Service that implements v1.DebugServiceServer
@@ -130,6 +141,17 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+}
+
+// PrivateDiagnosticsHandler returns handler to be served on "private" port.
+// Private port is not exposed via k8s Service and only accessible to callers with k8s/Openshift cluster access.
+// This handler shouldn't be exposed to other callers as it has no authorization and can elevate customer permissions.
+func (s *serviceImpl) PrivateDiagnosticsHandler() http.HandlerFunc {
+	return func(responseWriter http.ResponseWriter, r *http.Request) {
+		// Adding scope checker as no authorizer is used, ergo no identity in context by default.
+		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
+		s.getDiagnosticDumpWithCentral(responseWriter, r.WithContext(ctx), true)
+	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -475,18 +497,20 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
 
-// DebugHandler is an HTTP handler that outputs debugging information
+// CustomRoutes returns route-handler pairs to be served on HTTP port.
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
 			Route:         "/debug/dump",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
+			Compression:   true,
 		},
 		{
 			Route:         "/api/extensions/diagnostics",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
+			Compression:   true,
 		},
 		{
 			Route:         "/debug/versions.json",
@@ -499,12 +523,8 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 }
 
 type debugDumpOptions struct {
-	logs logsMode
-	// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
-	// 0 - don't collect any telemetry data
-	// 1 - collect telemetry data for central only
-	// 2 - collect telemetry data from sensors and central
-	telemetryMode     int
+	logs              logsMode
+	telemetryMode     telemetryMode
 	withCPUProfile    bool
 	withLogImbue      bool
 	withAccessControl bool
@@ -558,10 +578,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 		}
 
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			if err := getCentralDBData(ctx, zipWriter); err != nil {
-				log.Error(err)
-			}
+		if err := getCentralDBData(ctx, zipWriter); err != nil {
+			log.Error(err)
 		}
 	}
 
@@ -575,8 +593,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		}
 	}
 
-	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
-		telemetryData := s.telemetryGatherer.Gather(debugDumpCtx, opts.telemetryMode >= 2, opts.withCentral)
+	if s.telemetryGatherer != nil && opts.telemetryMode > noTelemetry {
+		telemetryData := s.telemetryGatherer.Gather(debugDumpCtx, opts.telemetryMode >= telemetryCentralAndSensors, opts.withCentral)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
@@ -642,7 +660,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 		withAccessControl: true,
 		withNotifiers:     true,
 		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
-		telemetryMode:     0,
+		telemetryMode:     noTelemetry,
 	}
 
 	query := r.URL.Query()
@@ -663,7 +681,8 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	telemetryModeStr := query.Get("telemetry")
 	if telemetryModeStr != "" {
 		var err error
-		opts.telemetryMode, err = strconv.Atoi(telemetryModeStr)
+		telemetryModeInt, err := strconv.Atoi(telemetryModeStr)
+		opts.telemetryMode = telemetryMode(telemetryModeInt)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "invalid telemetry mode value: %q\n", telemetryModeStr)
@@ -678,15 +697,19 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 // getDiagnosticDump aims to provide a snapshot of some state information for
 // triaging. The size and download times of this dump shall stay reasonable.
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
+	s.getDiagnosticDumpWithCentral(w, r, env.EnableCentralDiagnostics.BooleanSetting())
+}
+
+func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
 	opts := debugDumpOptions{
 		logs:              fullK8sIntrospectionData,
-		telemetryMode:     2,
+		telemetryMode:     telemetryCentralAndSensors,
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
-		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
+		withCentral:       withCentral,
 		withNotifiers:     true,
 	}
 
@@ -727,10 +750,8 @@ func buildVersions(ctx context.Context) version.Versions {
 		versions = version.GetAllVersionsUnified()
 	}
 	// Add the database version if Postgres
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		versions.Database = "PostgresDB"
-		versions.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
-	}
+	versions.Database = "PostgresDB"
+	versions.DatabaseServerVersion = globaldb.GetPostgresVersion(ctx, globaldb.GetPostgres())
 
 	return versions
 }

@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     assertAccessControlEntityDoesNotExist,
@@ -79,13 +78,7 @@ describe('Access Control Permission sets', () => {
     });
 
     it('direct link to default Admin has all read and write access', () => {
-        /*
-         * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
-         * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
-         */
-        const targetID = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'ffffffff-ffff-fff4-f5ff-ffffffffffff'
-            : 'io.stackrox.authz.permissionset.admin';
+        const targetID = 'ffffffff-ffff-fff4-f5ff-ffffffffffff';
         visitAccessControlEntity(entitiesKey, targetID);
 
         cy.get(selectors.form.inputName).should('have.value', 'Admin');
@@ -124,13 +117,7 @@ describe('Access Control Permission sets', () => {
     });
 
     it('direct link to default Analyst has all (but Administration) read and no write access', () => {
-        /*
-         * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
-         * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
-         */
-        const targetID = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'ffffffff-ffff-fff4-f5ff-fffffffffffe'
-            : 'io.stackrox.authz.permissionset.analyst';
+        const targetID = 'ffffffff-ffff-fff4-f5ff-fffffffffffe';
         visitAccessControlEntity(entitiesKey, targetID);
 
         cy.get(selectors.form.inputName).should('have.value', 'Analyst');
@@ -181,13 +168,7 @@ describe('Access Control Permission sets', () => {
     });
 
     it('direct link to default Continuous Integration has limited read and write accesss', () => {
-        /*
-         * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
-         * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
-         */
-        const targetID = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'ffffffff-ffff-fff4-f5ff-fffffffffffd'
-            : 'io.stackrox.authz.permissionset.continuousintegration';
+        const targetID = 'ffffffff-ffff-fff4-f5ff-fffffffffffd';
         visitAccessControlEntity(entitiesKey, targetID);
 
         cy.get(selectors.form.inputName).should('have.value', 'Continuous Integration');
@@ -258,13 +239,7 @@ describe('Access Control Permission sets', () => {
     });
 
     it('direct link to default None has no read nor write access', () => {
-        /*
-         * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
-         * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
-         */
-        const targetID = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'ffffffff-ffff-fff4-f5ff-fffffffffffc'
-            : 'io.stackrox.authz.permissionset.none';
+        const targetID = 'ffffffff-ffff-fff4-f5ff-fffffffffffc';
         visitAccessControlEntity(entitiesKey, targetID);
 
         cy.get(selectors.form.inputName).should('have.value', 'None');
@@ -300,13 +275,7 @@ describe('Access Control Permission sets', () => {
     });
 
     it('direct link to default Sensor Creator has limited read and write access', () => {
-        /*
-         * TODO: ROX-13585 - remove the pre-postgres constants once the migration to postgres
-         * is completed and the support for BoltDB, RocksDB and Bleve is dropped.
-         */
-        const targetID = hasFeatureFlag('ROX_POSTGRES_DATASTORE')
-            ? 'ffffffff-ffff-fff4-f5ff-fffffffffffa'
-            : 'io.stackrox.authz.permissionset.sensorcreator';
+        const targetID = 'ffffffff-ffff-fff4-f5ff-fffffffffffa';
         visitAccessControlEntity(entitiesKey, targetID);
 
         cy.get(selectors.form.inputName).should('have.value', 'Sensor Creator');

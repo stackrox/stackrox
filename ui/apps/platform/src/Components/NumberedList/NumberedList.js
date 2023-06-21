@@ -5,7 +5,7 @@ import { Tooltip } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 
-const leftSideClasses = 'p-2 text-sm text-primary-800 font-600 w-full';
+const leftSideClasses = 'p-2 text-sm text-primary-800 w-full';
 
 const NumberedList = ({ data, linkLeftOnly }) => {
     const list = data.map(({ text, subText, url, component, tooltip }, i) => {

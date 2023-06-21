@@ -36,14 +36,15 @@ var (
 )
 
 const (
+	// ComplianceRunMetadataTableName specifies the name of the table in postgres.
 	ComplianceRunMetadataTableName = "compliance_run_metadata"
 )
 
 // ComplianceRunMetadata holds the Gorm model for Postgres table `compliance_run_metadata`.
 type ComplianceRunMetadata struct {
-	RunId           string     `gorm:"column:runid;type:varchar;primaryKey"`
-	StandardId      string     `gorm:"column:standardid;type:varchar"`
-	ClusterId       string     `gorm:"column:clusterid;type:uuid;index:compliancerunmetadata_sac_filter,type:hash"`
+	RunID           string     `gorm:"column:runid;type:varchar;primaryKey"`
+	StandardID      string     `gorm:"column:standardid;type:varchar"`
+	ClusterID       string     `gorm:"column:clusterid;type:uuid;index:compliancerunmetadata_sac_filter,type:hash"`
 	FinishTimestamp *time.Time `gorm:"column:finishtimestamp;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

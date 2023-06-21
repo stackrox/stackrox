@@ -90,11 +90,11 @@ jobs:
         with:
           ref: ${{ github.ref_name }}
       - uses: stackrox/actions/infra/install-infractl@v1
-      - uses: 'google-github-actions/auth@v1'
+      - uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
         with:
           install_components: "gke-gcloud-auth-plugin"
       - name: Prepare clusters for upgrade test
@@ -118,6 +118,8 @@ jobs:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
+              "text": "Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone. Consult the upgrade test documentation for next steps.",
+
               "blocks": [
                 {
                   "type": "section",
@@ -153,6 +155,8 @@ jobs:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
+              "text": "Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone. Investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run.",
+
               "blocks": [
                 {
                   "type": "section",

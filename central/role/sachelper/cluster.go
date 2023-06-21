@@ -3,9 +3,7 @@ package sachelper
 import (
 	"context"
 
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
@@ -70,8 +68,5 @@ func hasClusterIDInScope(
 }
 
 func getClustersOptionsMap() search.OptionsMap {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return schema.ClustersSchema.OptionsMap
-	}
-	return clusterMappings.OptionsMap
+	return schema.ClustersSchema.OptionsMap
 }

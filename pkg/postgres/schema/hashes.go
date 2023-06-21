@@ -31,11 +31,12 @@ var (
 )
 
 const (
+	// HashesTableName specifies the name of the table in postgres.
 	HashesTableName = "hashes"
 )
 
 // Hashes holds the Gorm model for Postgres table `hashes`.
 type Hashes struct {
-	ClusterId  string `gorm:"column:clusterid;type:varchar;primaryKey"`
+	ClusterID  string `gorm:"column:clusterid;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

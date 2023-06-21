@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package datastore
 
@@ -43,7 +42,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	store := pgStore.CreateTableAndNewStore(ctx, b, db, gormDB, false)
 	indexer := pgStore.NewIndexer(db)
 	searcher := search.NewV2(store, indexer)
-	datastore := NewWithPostgres(store, indexer, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	datastore := NewWithPostgres(store, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
 	nodes := make([]*storage.Node, 0, 100)

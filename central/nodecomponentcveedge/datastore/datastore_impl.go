@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/index"
 	"github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
 	pgStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,7 +12,6 @@ import (
 
 type datastoreImpl struct {
 	storage  pgStore.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

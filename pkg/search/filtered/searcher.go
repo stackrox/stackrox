@@ -5,7 +5,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
@@ -18,7 +17,7 @@ type Filter interface {
 }
 
 // UnsafeSearcher generates a Searcher from an UnsafeSearcher by filtering its outputs with the input filter.
-func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filter Filter) search.Searcher {
+func UnsafeSearcher(searcher search.Searcher, filter Filter) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 			results, err := searcher.Search(ctx, q)

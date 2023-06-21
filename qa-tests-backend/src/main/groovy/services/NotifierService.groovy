@@ -15,11 +15,6 @@ class NotifierService extends BaseService {
     // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
     private static final String PAGERDUTY_API_KEY = null
 
-    // SLACK_MAIN_WEBHOOK is the webhook URL for #acs-slack-integration-testing
-    public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
-    // SLACK_ALT_WEBHOOK is the webhook URL for #acs-slack-integration-testing-2
-    public static final SLACK_ALT_WEBHOOK = Env.mustGetSlackAltWebhook()
-
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
@@ -118,7 +113,7 @@ class NotifierService extends BaseService {
                 .setType("slack")
                 .setName(name)
                 .setLabelKey(labelKey)
-                .setLabelDefault(SLACK_MAIN_WEBHOOK)
+                .setLabelDefault(Env.mustGetSlackMainWebhook())
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }

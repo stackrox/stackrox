@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
-	podIndex "github.com/stackrox/rox/central/pod/index"
 	podStore "github.com/stackrox/rox/central/pod/store"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -33,7 +32,6 @@ var (
 
 type datastoreImpl struct {
 	podStore    podStore.Store
-	podIndexer  podIndex.Indexer
 	podSearcher podSearch.Searcher
 
 	indicators    piDS.DataStore
@@ -42,17 +40,14 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage podStore.Store, indexer podIndex.Indexer, searcher podSearch.Searcher,
-	indicators piDS.DataStore, processFilter filter.Filter) (*datastoreImpl, error) {
-	ds := &datastoreImpl{
+func newDatastoreImpl(storage podStore.Store, searcher podSearch.Searcher, indicators piDS.DataStore, processFilter filter.Filter) *datastoreImpl {
+	return &datastoreImpl{
 		podStore:      storage,
-		podIndexer:    indexer,
 		podSearcher:   searcher,
 		indicators:    indicators,
 		processFilter: processFilter,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	return ds, nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -104,12 +99,6 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 
 		if err := ds.podStore.Upsert(ctx, pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
-		}
-		if err := ds.podIndexer.AddPod(pod); err != nil {
-			return errors.Wrapf(err, "inserting pod %q to index", pod.GetName())
-		}
-		if err := ds.podStore.AckKeysIndexed(ctx, pod.GetId()); err != nil {
-			return errors.Wrapf(err, "could not acknowledge indexing for %q", pod.GetName())
 		}
 		return nil
 	})
@@ -173,16 +162,7 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	ds.processFilter.DeleteByPod(pod)
 
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.podStore.Delete(ctx, id); err != nil {
-			return err
-		}
-		if err := ds.podIndexer.DeletePod(id); err != nil {
-			return err
-		}
-		if err := ds.podStore.AckKeysIndexed(ctx, id); err != nil {
-			return err
-		}
-		return nil
+		return ds.podStore.Delete(ctx, id)
 	})
 	if err != nil {
 		return err

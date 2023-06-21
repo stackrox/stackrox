@@ -44,13 +44,14 @@ var (
 )
 
 const (
+	// TestShortCircuitsTableName specifies the name of the table in postgres.
 	TestShortCircuitsTableName = "test_short_circuits"
 )
 
 // TestShortCircuits holds the Gorm model for Postgres table `test_short_circuits`.
 type TestShortCircuits struct {
-	Id             string `gorm:"column:id;type:varchar;primaryKey"`
-	ChildId        string `gorm:"column:childid;type:varchar"`
-	G2GrandchildId string `gorm:"column:g2grandchildid;type:varchar"`
+	ID             string `gorm:"column:id;type:varchar;primaryKey"`
+	ChildID        string `gorm:"column:childid;type:varchar"`
+	G2GrandchildID string `gorm:"column:g2grandchildid;type:varchar"`
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }

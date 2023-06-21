@@ -7,11 +7,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/cve/converter/utils"
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -22,9 +20,6 @@ import (
 
 var (
 	imageScanOperatingSystem = "crime-stories"
-
-	dontWaitForIndexing = false
-	waitForIndexing     = true
 )
 
 func TestImageComponentCVEEdgeDatastoreSAC(t *testing.T) {
@@ -34,36 +29,29 @@ func TestImageComponentCVEEdgeDatastoreSAC(t *testing.T) {
 type imageComponentCVEEdgeDatastoreSACTestSuite struct {
 	suite.Suite
 
-	dackboxTestStore dackboxTestUtils.DackboxTestDataStore
-	datastore        DataStore
+	testGraphDatastore graphDBTestUtils.TestGraphDataStore
+	datastore          DataStore
 
 	testContexts map[string]context.Context
 }
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-	} else {
-		rocksengine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		dacky := s.dackboxTestStore.GetDackbox()
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), rocksengine, bleveIndex, dacky)
-		s.Require().NoError(err)
-	}
+	pool := s.testGraphDatastore.GetPostgresPool()
+	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
+	s.Require().NoError(err)
+
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 }
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
+	s.testGraphDatastore.Cleanup(s.T())
 }
 
-func (s *imageComponentCVEEdgeDatastoreSACTestSuite) cleanImageToVulnerabilitiesGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph(waitForIndexing))
+func (s *imageComponentCVEEdgeDatastoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
+	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
@@ -77,10 +65,7 @@ func getCveID(vulnerability *storage.EmbeddedVulnerability, os string) string {
 func getEdgeID(component *storage.EmbeddedImageScanComponent, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	componentID := getComponentID(component, os)
 	convertedCVEID := getCveID(vulnerability, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{componentID, convertedCVEID})
-	}
-	return edges.EdgeID{ParentID: componentID, ChildID: convertedCVEID}.ToString()
+	return pgSearch.IDFromPks([]string{componentID, convertedCVEID})
 }
 
 type edgeTestCase struct {
@@ -205,8 +190,8 @@ var (
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve1edge
 	for _, c := range testCases {
@@ -221,8 +206,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleCom
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-4567-0002 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve2edge
 	for _, c := range testCases {
@@ -237,8 +222,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleCom
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test exists for Component3 to CVE-3456-0004 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp3cve4edge
 	for _, c := range testCases {
@@ -253,8 +238,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedCom
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test read for Component1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve1edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
@@ -279,8 +264,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test read for Component1 to CVE-4567-0002 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp1cve2edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
@@ -305,8 +290,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test read for Component3 to CVE-3456-0004 edge
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	targetEdgeID := cmp3cve4edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedImageComponent1s2x3(), imageScanOperatingSystem)
@@ -331,8 +316,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompon
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -352,8 +337,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -376,8 +361,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {
@@ -400,8 +385,8 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 
 func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
 	for _, c := range testCases {
 		s.Run(c.contextKey, func() {

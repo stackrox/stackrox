@@ -6,19 +6,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -33,18 +26,10 @@ func TestNamespaceDataStoreSAC(t *testing.T) {
 type namespaceDatastoreSACSuite struct {
 	suite.Suite
 
-	// Elements for bleve+rocksdb mode
-	engine   *rocksdb.RocksDB
-	index    bleve.Index
-	dacky    *dackbox.DackBox
 	keyFence concurrency.KeyFence
-	indexQ   queue.WaitableQueue
-
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
-
-	datastore DataStore
-
+	datastore  DataStore
 	optionsMap searchPkg.OptionsMap
 
 	testContexts     map[string]context.Context
@@ -53,38 +38,18 @@ type namespaceDatastoreSACSuite struct {
 
 func (s *namespaceDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(s.T())
-		s.Require().NotNil(s.pgtestbase)
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-		s.Require().NoError(err)
-		s.optionsMap = schema.NamespacesSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("namespaceSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		s.keyFence = concurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.pgtestbase = pgtest.ForT(s.T())
+	s.Require().NotNil(s.pgtestbase)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.optionsMap = schema.NamespacesSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Namespace)
 }
 
 func (s *namespaceDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.DB.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pgtestbase.DB.Close()
 }
 
 func (s *namespaceDatastoreSACSuite) SetupTest() {

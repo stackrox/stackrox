@@ -3,12 +3,11 @@ import {
     GetImageVulnerabilitiesData,
     GetImageVulnerabilitiesVars,
     GET_IMAGE_VULNERABILITIES,
-    GET_IMAGE_VULNERABILITIES_LEGACY,
 } from './imageVulnerabilities.graphql';
 
-function useImageVulnerabilities({ imageId, vulnsQuery, pagination, showVMUpdates = false }) {
+function useImageVulnerabilities({ imageId, vulnsQuery, pagination }) {
     const client = useApolloClient();
-    const queryToUse = showVMUpdates ? GET_IMAGE_VULNERABILITIES : GET_IMAGE_VULNERABILITIES_LEGACY;
+    const queryToUse = GET_IMAGE_VULNERABILITIES;
 
     const {
         loading: isLoading,
@@ -24,15 +23,9 @@ function useImageVulnerabilities({ imageId, vulnsQuery, pagination, showVMUpdate
     });
 
     async function refetchQuery() {
-        if (showVMUpdates) {
-            await client.refetchQueries({
-                include: [GET_IMAGE_VULNERABILITIES],
-            });
-        } else {
-            await client.refetchQueries({
-                include: [GET_IMAGE_VULNERABILITIES_LEGACY],
-            });
-        }
+        await client.refetchQueries({
+            include: [GET_IMAGE_VULNERABILITIES],
+        });
     }
 
     return { isLoading, data, error, refetchQuery };

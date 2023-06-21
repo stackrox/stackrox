@@ -8,6 +8,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+
+### Removed Features
+
+### Deprecated Features
+- RBAC risk was deprecated in release 4.0 due to poor performance.
+
+### Technical Changes
+
+- ROX-16962: A new parameter `spec.admissionControl.replicas` has been added to the `SecuredCluster` CRD.
+
+## [4.1.0]
+
+
+
+### Added Features
 - Two new default permission sets `Vulnerability Management Consumer` and `Vulnerability Management Admin` have been added for vulnerability management.
   - `Vulnerability Management Consumer` provides read-only access to analyze vulnerabilities and initiate risk acceptance process.
   - `Vulnerability Management Admin` provides administrative access to analyze vulnerabilities, generate reports, and manage risk acceptance process.
@@ -38,6 +53,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default permission set `Vulnerability Management Approver` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Admin` permission set instead. When `Vulnerability Management Approver` permission set is removed existing roles using it will be updated to use `Vulnerability Management Admin`.
 - The default permission set `Vulnerability Management Requester` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Consumer` permission set instead. When `Vulnerability Management Requester` permission set is removed existing roles using it will be updated to use `Vulnerability Management Consumer`.
 - The default permission set `Vulnerability Report Creator` is deprecated and will be removed in a future release. Customers are advised to use `Vulnerability Management Admin` permission set instead. When `Vulnerability Report Creator` permission set is removed existing roles using it will be updated to use `Vulnerability Management Admin`.
+- `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` APIs used to defer image vulnerabilities globally and undo deferral are deprecated and will be removed in a future release. Once removed, use Risk Acceptance workflow to defer image vulnerabilities globally.
 
 ### Technical Changes
 - The Central PVC stackrox-db is no longer required after this upgrade. To obsolete existing PVC, please check the docs online.

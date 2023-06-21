@@ -6,18 +6,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/alert/mappings"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -37,9 +32,6 @@ func TestAlertDatastoreSAC(t *testing.T) {
 type alertDatastoreSACTestSuite struct {
 	suite.Suite
 
-	engine *rocksdb.RocksDB
-	index  bleve.Index
-
 	pool postgres.DB
 
 	optionsMap searchPkg.OptionsMap
@@ -52,36 +44,18 @@ type alertDatastoreSACTestSuite struct {
 
 func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	alertObj := "alertSACTest"
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.DB
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.AlertsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp(alertObj)
-		s.NoError(err)
-		s.index, err = globalindex.TempInitializeIndices(alertObj)
-		s.NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+	s.optionsMap = schema.AlertsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
-	}
+	s.pool.Close()
 }
 
 func (s *alertDatastoreSACTestSuite) SetupTest() {
@@ -143,7 +117,7 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
+func (s *alertDatastoreSACTestSuite) TestMarkAlertResolved() {
 	cases := map[string]crudTest{
 		"(full) read-only cannot mark alert stale": {
 			scopeKey:      testutils.UnrestrictedReadCtx,
@@ -203,21 +177,17 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
-			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert1.GetId())
+			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
 				// hence `missing` var is set indicate that the record is missing.
-			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.Equal(c.expectedError, err)
 			}
-			_, err = s.datastore.MarkAlertStaleBatch(ctx, alert2.GetId())
+			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
 				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
 				// hence `missing` var is set indicate that the record is missing.
-			} else if !env.PostgresDatastoreEnabled.BooleanSetting() {
-				s.Equal(c.expectedError, err)
 			}
 		})
 	}

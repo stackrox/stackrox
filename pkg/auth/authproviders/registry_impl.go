@@ -23,7 +23,7 @@ var (
 // NewStoreBackedRegistry creates a new auth provider registry that is backed by a store. It also can handle HTTP requests,
 // where every incoming HTTP request URL is expected to refer to a path under `urlPathPrefix`. The redirect URL for
 // clients upon successful/failed authentication is `clientRedirectURL`.
-func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory) (Registry, error) {
+func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory) Registry {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	registry := &registryImpl{
 		ServeMux:      http.NewServeMux(),
@@ -38,7 +38,7 @@ func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Stor
 		roleMapperFactory: roleMapperFactory,
 	}
 
-	return registry, nil
+	return registry
 }
 
 type registryImpl struct {
