@@ -148,6 +148,8 @@ class BaseSpecification extends Specification {
 
         setupCoreImageIntegration()
 
+        RestAssured.useRelaxedHTTPSValidation()
+
         addShutdownHook {
             LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
@@ -189,14 +191,13 @@ class BaseSpecification extends Specification {
     long orchestratorCreateTime = System.currentTimeSeconds()
 
     @Shared
-    private long testStartTimeMillis
+    private long testSpecStartTimeMillis
 
     def setupSpec() {
         log.info("Starting testsuite")
 
-        testStartTimeMillis = System.currentTimeMillis()
+        testSpecStartTimeMillis = System.currentTimeMillis()
 
-        RestAssured.useRelaxedHTTPSValidation()
         globalSetup()
 
         try {

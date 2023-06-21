@@ -688,7 +688,7 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "delete a deployment"
         Deployment delete = deployments.find { it.name == NOCONNECTIONSOURCE }
-        orchestrator.deleteDeployment(delete)
+        orchestrator.deleteDeployment(delete)testSpecStartTimeMillis
         Services.waitForSRDeletion(delete)
 
         when:
