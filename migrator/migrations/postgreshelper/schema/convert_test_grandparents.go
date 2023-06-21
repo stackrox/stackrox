@@ -22,9 +22,9 @@ func ConvertTestGrandparentFromProto(obj *storage.TestGrandparent) (*TestGrandpa
 }
 
 // ConvertTestGrandparent_EmbeddedFromProto converts a `*storage.TestGrandparent_Embedded` to Gorm model
-func ConvertTestGrandparent_EmbeddedFromProto(obj *storage.TestGrandparent_Embedded, idx int, test_grandparents_Id string) (*TestGrandparentsEmbeddeds, error) {
+func ConvertTestGrandparent_EmbeddedFromProto(obj *storage.TestGrandparent_Embedded, idx int, testGrandparentID string) (*TestGrandparentsEmbeddeds, error) {
 	model := &TestGrandparentsEmbeddeds{
-		TestGrandparentsID: test_grandparents_Id,
+		TestGrandparentsID: testGrandparentID,
 		Idx:                idx,
 		Val:                obj.GetVal(),
 	}
@@ -32,10 +32,10 @@ func ConvertTestGrandparent_EmbeddedFromProto(obj *storage.TestGrandparent_Embed
 }
 
 // ConvertTestGrandparent_Embedded_Embedded2FromProto converts a `*storage.TestGrandparent_Embedded_Embedded2` to Gorm model
-func ConvertTestGrandparent_Embedded_Embedded2FromProto(obj *storage.TestGrandparent_Embedded_Embedded2, idx int, test_grandparents_Id string, test_grandparents_embeddeds_idx int) (*TestGrandparentsEmbeddedsEmbedded2, error) {
+func ConvertTestGrandparent_Embedded_Embedded2FromProto(obj *storage.TestGrandparent_Embedded_Embedded2, idx int, testGrandparentID string, testGrandparentEmbeddedIdx int) (*TestGrandparentsEmbeddedsEmbedded2, error) {
 	model := &TestGrandparentsEmbeddedsEmbedded2{
-		TestGrandparentsID:           test_grandparents_Id,
-		TestGrandparentsEmbeddedsIdx: test_grandparents_embeddeds_idx,
+		TestGrandparentsID:           testGrandparentID,
+		TestGrandparentsEmbeddedsIdx: testGrandparentEmbeddedIdx,
 		Idx:                          idx,
 		Val:                          obj.GetVal(),
 	}

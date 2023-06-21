@@ -116,11 +116,11 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	return nil
 }
 
-func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *storage.Subject, role_bindings_Id string, idx int) error {
+func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(role_bindings_Id),
+		pgutils.NilOrUUID(roleBindingID),
 		idx,
 		obj.GetKind(),
 		obj.GetName(),
@@ -235,7 +235,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, o
 	return err
 }
 
-func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgres.Tx, role_bindings_Id string, objs ...*storage.Subject) error {
+func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
 
 	inputRows := [][]interface{}{}
 
@@ -260,7 +260,7 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(role_bindings_Id),
+			pgutils.NilOrUUID(roleBindingID),
 
 			idx,
 
