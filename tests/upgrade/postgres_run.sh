@@ -357,10 +357,10 @@ deploy_scaled_workload() {
     info "Deploying a scaled workload"
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-#    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
-#    MAIN_IMAGE_TAG="$EARLIER_TAG" \
-#    CLUSTER="scale-remote" \
-#    ./deploy/k8s/sensor.sh
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+    CLUSTER="scale-remote" \
+    ./deploy/k8s/sensor.sh
     roxctl version
     MAIN_IMAGE_TAG="$EARLIER_TAG" \
     CLUSTER="scale-remote" \
