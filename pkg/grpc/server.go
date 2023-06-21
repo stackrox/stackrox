@@ -103,7 +103,8 @@ type apiImpl struct {
 	config             Config
 	requestInfoHandler *requestinfo.Handler
 
-	grpcServer *grpc.Server
+	grpcServer          *grpc.Server
+	grpcShutdownStarted concurrency.Signal
 }
 
 // A Config configures the server.
@@ -130,8 +131,9 @@ type Config struct {
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
 	return &apiImpl{
-		config:             config,
-		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
+		config:              config,
+		requestInfoHandler:  requestinfo.NewRequestInfoHandler(),
+		grpcShutdownStarted: concurrency.NewSignal(),
 	}
 }
 
@@ -224,7 +226,11 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		if err := server.Serve(lis); err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal("The local API server should never terminate")
+
+		// If finishing with no error and shutdown was not requested, crash
+		if !a.grpcShutdownStarted.IsDone() {
+			log.Fatal("The local API server should never terminate unless explicitly requested")
+		}
 	}()
 	return dialContext
 }
@@ -341,6 +347,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 
 func (a *apiImpl) stop(finishedSig *concurrency.Signal) {
 	defer finishedSig.Signal()
+	a.grpcShutdownStarted.Signal()
 	a.grpcServer.GracefulStop()
 }
 
@@ -397,7 +404,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	errC := make(chan error, len(allSrvAndLiss))
 
 	for _, srvAndLis := range allSrvAndLiss {
-		go serveBlocking(srvAndLis, errC)
+		go a.serveBlocking(srvAndLis, errC)
 	}
 
 	if startedSig != nil {
@@ -409,12 +416,19 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	}
 }
 
-func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
+func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
-		if srvAndLis.endpoint.Optional {
-			log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+		// If gRPC shutdown was requested, then we should only log that the endpoint is stopping. Otherwise, this is happening
+		// for unknown reasons and an error will be reported.
+		if a.grpcShutdownStarted.IsDone() {
+			log.Infof("gRPC Stop requested: Endpoint shutting down: %s %s", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr())
 		} else {
-			errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+			if srvAndLis.endpoint.Optional {
+				log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+			} else {
+				errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+			}
 		}
+
 	}
 }
