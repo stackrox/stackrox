@@ -153,7 +153,7 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.setup()
         } catch (Exception e) {
-            log.error("Error setting up orchestrator", e)
+            LOG.error("Error setting up orchestrator", e)
             throw e
         }
 
@@ -176,7 +176,7 @@ class BaseSpecification extends Specification {
             try {
                 orchestrator.cleanup()
             } catch (Exception e) {
-                log.error("Failed to clean up orchestrator", e)
+                LOG.error("Failed to clean up orchestrator", e)
                 throw e
             }
         }
