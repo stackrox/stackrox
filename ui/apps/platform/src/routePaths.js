@@ -92,10 +92,13 @@ export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcc
 
 // VM 2.0 "Vulnerabilities" paths
 export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/workload-cves/cves/:cveId`;
 export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
 export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
+
+export const vulnerabilityReportingPath = `${vulnerabilitiesBasePath}/vulnerability-reporting`;
 
 /**
  * New Framwork-related route paths
@@ -154,6 +157,7 @@ const vulnManagementPathToLabelMap = {
 const vulnerabilitiesPathToLabelMap = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
+    [vulnerabilityReportingPath]: 'Vulnerability Reporting',
 };
 
 export const basePathToLabelMap = {
