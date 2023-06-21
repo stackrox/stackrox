@@ -8,7 +8,7 @@ const ReduxPasswordField = ({ name, placeholder, disabled }) => (
         name={name}
         component="input"
         type="password"
-        className={`bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 leading-normal min-h-10 ${
+        className={`bg-base-100 border-2 rounded p-2 border-base-300 w-full text-base-600 leading-normal min-h-10 ${
             disabled ? 'bg-base-200' : 'hover:border-base-400'
         }`}
         placeholder={placeholder}

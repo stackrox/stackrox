@@ -7,7 +7,7 @@ import { findUpgradeState, formatSensorVersion, sensorUpgradeStyles } from '../c
 import { SensorUpgradeStatus } from '../clusterTypes';
 
 const trClassName = 'align-top leading-normal';
-const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
+const thClassName = 'font-700 pl-0 pr-1 py-0 text-left';
 const tdClassName = 'p-0 text-left';
 
 const testId = 'sensorUpgrade';
