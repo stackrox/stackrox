@@ -1,33 +1,31 @@
 package grpc
 
 import (
-	"os"
+	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestMaxResponseMsgSize_Unset(t *testing.T) {
-	require.NoError(t, os.Unsetenv(maxResponseMsgSizeSetting.EnvVar()))
-
-	assert.Equal(t, defaultMaxResponseMsgSize, maxResponseMsgSize())
+type APIServerSuite struct {
+	suite.Suite
 }
 
-func TestMaxResponseMsgSize_Empty(t *testing.T) {
-	require.NoError(t, os.Setenv(maxResponseMsgSizeSetting.EnvVar(), ""))
-
-	assert.Equal(t, defaultMaxResponseMsgSize, maxResponseMsgSize())
+func Test_APIServerSuite(t *testing.T) {
+	suite.Run(t, new(APIServerSuite))
 }
 
-func TestMaxResponseMsgSize_Invalid(t *testing.T) {
-	require.NoError(t, os.Setenv(maxResponseMsgSizeSetting.EnvVar(), "notAnInt"))
+func (a *APIServerSuite) TestEnvValues() {
+	cases := map[string]int{
+		"":         defaultMaxResponseMsgSize,
+		"notAnInt": defaultMaxResponseMsgSize,
+		"1337":     1337,
+	}
 
-	assert.Equal(t, defaultMaxResponseMsgSize, maxResponseMsgSize())
-}
-
-func TestMaxResponseMsgSize_Valid(t *testing.T) {
-	require.NoError(t, os.Setenv(maxResponseMsgSizeSetting.EnvVar(), "1337"))
-
-	assert.Equal(t, 1337, maxResponseMsgSize())
+	for envValue, expected := range cases {
+		a.Run(fmt.Sprintf("%s=%d", envValue, expected), func() {
+			a.T().Setenv(maxResponseMsgSizeSetting.EnvVar(), envValue)
+			a.Assert().Equal(expected, maxResponseMsgSize())
+		})
+	}
 }

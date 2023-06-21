@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -56,19 +55,12 @@ func init() {
 var (
 	log = logging.LoggerForModule()
 
-	maxResponseMsgSizeSetting = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
+	maxResponseMsgSizeSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
 	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
 func maxResponseMsgSize() int {
-	if setting := maxResponseMsgSizeSetting.Setting(); setting != "" {
-		value, err := strconv.Atoi(setting)
-		if err == nil {
-			return value
-		}
-		log.Warnf("Invalid value %q for %s: %v", setting, maxResponseMsgSizeSetting.EnvVar(), err)
-	}
-	return defaultMaxResponseMsgSize
+	return maxResponseMsgSizeSetting.IntegerSetting()
 }
 
 type server interface {
