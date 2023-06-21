@@ -169,7 +169,6 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
 
         cleanup:
         deleteNetworkEntity(externalSource30ID)
-        deleteNetworkEntity(externalSource31ID)
     }
 
     @Tag("NetworkFlowVisualization")
