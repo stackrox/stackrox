@@ -10,29 +10,19 @@ import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
-import entityTypes from 'constants/entityTypes';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import parseURL from 'utils/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { WorkflowState } from 'utils/WorkflowState';
-import { getUseCaseEntityMap } from 'utils/entityRelationships';
+import { getVulnerabilityManagementEntityTypes } from 'utils/entityRelationships';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowListPageLayout = ({ location }) => {
     const [isExporting, setIsExporting] = useState(false);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const useCaseEntityMap = getUseCaseEntityMap();
-    if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
-        const newTypes = useCaseEntityMap['vulnerability-management'].filter(
-            (entityType) => entityType !== entityTypes.COMPONENT
-        );
-        useCaseEntityMap['vulnerability-management'] = newTypes;
-    }
 
     const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
@@ -79,25 +69,6 @@ const WorkflowListPageLayout = ({ location }) => {
         entityContext[entityType] = entityId;
     }
 
-    // TODO: remove all this feature flag check after VM updates have been live for one release
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    const useCaseOptions = useCaseEntityMap[useCase].filter((option) => {
-        if (showVmUpdates) {
-            if (option === entityTypes.CVE || option === entityTypes.COMPONENT) {
-                return false;
-            }
-        } else if (
-            option === entityTypes.IMAGE_COMPONENT ||
-            option === entityTypes.NODE_COMPONENT ||
-            option === entityTypes.IMAGE_CVE ||
-            option === entityTypes.NODE_CVE ||
-            option === entityTypes.CLUSTER_CVE
-        ) {
-            return false;
-        }
-        return true;
-    });
-
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-col relative h-full">
@@ -120,7 +91,10 @@ const WorkflowListPageLayout = ({ location }) => {
                             />
                         </div>
                         <div className="flex items-center pl-2">
-                            <EntitiesMenu text="All Entities" options={useCaseOptions} />
+                            <EntitiesMenu
+                                text="All Entities"
+                                options={getVulnerabilityManagementEntityTypes()}
+                            />
                         </div>
                     </div>
                 </PageHeader>

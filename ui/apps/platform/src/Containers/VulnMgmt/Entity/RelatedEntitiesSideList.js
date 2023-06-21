@@ -5,18 +5,12 @@ import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { getEntityTypesByRelationship } from 'utils/entityRelationships';
-import relationshipTypes from 'constants/relationshipTypes';
+import { getVulnerabilityManagementEntityTypesByRelationship } from 'utils/entityRelationships';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import filterEntityRelationship from 'Containers/VulnMgmt/VulnMgmt.utils/filterEntityRelationship';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
@@ -26,11 +20,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
 
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
-    const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
-        // @TODO: Remove the following filter step once ROX_POSTGRES_DATASTORE is ON
-        .filter((matchEntity) => {
-            return filterEntityRelationship(showVMUpdates, matchEntity);
-        })
+    const matches = getVulnerabilityManagementEntityTypesByRelationship(entityType, 'MATCHES')
         .map((matchEntity) => {
             let countKeyToUse = countKeyMap[matchEntity];
             if (countKeyMap[matchEntity].includes('k8sVulnCount')) {
@@ -51,11 +41,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                 (matchObj.count && !entityContext[matchObj.entity])
             );
         });
-    const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
-        // @TODO: Remove the following filter step once ROX_POSTGRES_DATASTORE is ON
-        .filter((containEntity) => {
-            return filterEntityRelationship(showVMUpdates, containEntity);
-        })
+    const contains = getVulnerabilityManagementEntityTypesByRelationship(entityType, 'CONTAINS')
         .map((containEntity) => {
             let countKeyToUse = countKeyMap[containEntity];
             if (countKeyMap[containEntity].includes('k8sVulnCount')) {

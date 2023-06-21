@@ -6,13 +6,11 @@ import startCase from 'lodash/startCase';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
-import useCaseTypes from 'constants/useCaseTypes';
 import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
-import { getUseCaseEntityMap } from 'utils/entityRelationships';
+import { getConfigurationManagementEntityTypes } from 'utils/entityRelationships';
 
 const EntityPageHeader = ({ entityType, entityId, urlParams, isExporting, setIsExporting }) => {
-    const useCaseEntityMap = getUseCaseEntityMap();
     const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
     const { entityName } = useEntityName(entityType, safeEntityId);
 
@@ -44,7 +42,7 @@ const EntityPageHeader = ({ entityType, entityId, urlParams, isExporting, setIsE
                 <div className="flex items-center pl-2">
                     <EntitiesMenu
                         text="All Entities"
-                        options={useCaseEntityMap[useCaseTypes.CONFIG_MANAGEMENT]}
+                        options={getConfigurationManagementEntityTypes()}
                     />
                 </div>
             </div>
