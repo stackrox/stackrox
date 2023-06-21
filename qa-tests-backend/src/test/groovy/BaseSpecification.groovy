@@ -66,7 +66,7 @@ class BaseSpecification extends Specification {
 
     public static strictIntegrationTesting = false
 
-    Map<String, List<String>> resourceRecord = [:]
+    private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
 
@@ -162,6 +162,11 @@ class BaseSpecification extends Specification {
             LOG.error("Error setting up orchestrator", e)
             throw e
         }
+        
+        // ROX-9950 Limit to GKE due to issues on other providers.
+        if (orchestrator.isGKE()) {
+            recordResourcesAtSpecStart()
+        }
 
         addShutdownHook {
             LOG.info "Performing global shutdown"
@@ -184,6 +189,11 @@ class BaseSpecification extends Specification {
             } catch (Exception e) {
                 LOG.error("Failed to clean up orchestrator", e)
                 throw e
+            }
+            
+            // ROX-9950 Limit to GKE due to issues on other providers.
+            if (orchestrator.isGKE()) {
+                compareResourcesAtSpecEnd()
             }
         }
 
@@ -222,8 +232,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        recordResourcesAtSpecStart()
     }
 
     static setupCoreImageIntegration() {
@@ -289,11 +297,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        // https://issues.redhat.com/browse/ROX-9950 -- fails on OSD-on-AWS
-        if (orchestrator.isGKE()) {
-            compareResourcesAtSpecEnd()
-        }
     }
 
     def compareResourcesAtSpecEnd() {
