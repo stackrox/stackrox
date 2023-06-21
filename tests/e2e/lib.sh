@@ -624,7 +624,7 @@ wait_for_api() {
 
     info "Central deployment is ready."
     info "Waiting for Central API endpoint"
-
+    sleep 30
     API_HOSTNAME=localhost
     API_PORT=8000
     LOAD_BALANCER="${LOAD_BALANCER:-}"
