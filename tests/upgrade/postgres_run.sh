@@ -101,6 +101,7 @@ test_upgrade_paths() {
     # Use roxctl to generate helm files and deploy older central backed by RocksDB         #
     ########################################################################################
     deploy_earlier_central
+    kubectl get pods -n stackrox -o wide
     wait_for_api
     setup_client_TLS_certs
 

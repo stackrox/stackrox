@@ -632,6 +632,8 @@ wait_for_api() {
         API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
         API_PORT=443
     fi
+    info "SHREWS"
+    kubectl -n stackrox get svc/central-loadbalancer -o json
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
     info "METADATA_URL is set to ${METADATA_URL}"
