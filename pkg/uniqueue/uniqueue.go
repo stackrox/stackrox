@@ -12,6 +12,9 @@ var (
 	log                     = logging.LoggerForModule()
 )
 
+// UniQueue is a queue of unique elements.
+// It uses channels to push and pop from the internal queue.
+// It is thread safe.
 type UniQueue[T comparable] struct {
 	stopper      concurrency.Stopper
 	mu           sync.Mutex
@@ -22,6 +25,7 @@ type UniQueue[T comparable] struct {
 	inQueue      map[T]struct{}
 }
 
+// NewUniQueue creates a new UniQueue.
 func NewUniQueue[T comparable](size int) *UniQueue[T] {
 	return &UniQueue[T]{
 		stopper:      concurrency.NewStopper(),
@@ -33,6 +37,7 @@ func NewUniQueue[T comparable](size int) *UniQueue[T] {
 	}
 }
 
+// PushC returns the channel from which the client can push elements to the UniQueue.
 func (q *UniQueue[T]) PushC() chan<- T {
 	if q.inQueue == nil {
 		log.Panic("Start must be called before PushC")
@@ -40,6 +45,7 @@ func (q *UniQueue[T]) PushC() chan<- T {
 	return q.backChannel
 }
 
+// PopC returns the channel from which the client can pop elements from the UniQueue.
 func (q *UniQueue[T]) PopC() <-chan T {
 	if q.inQueue == nil {
 		log.Panic("Start must be called before PopC")
@@ -47,6 +53,8 @@ func (q *UniQueue[T]) PopC() <-chan T {
 	return q.frontChannel
 }
 
+// Start initializes and runs the UniQueue.
+// It must be called before attempting to push or pop any elements.
 func (q *UniQueue[T]) Start() error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -77,6 +85,7 @@ func (q *UniQueue[T]) run() {
 	q.inQueue = nil
 }
 
+// Stop the UniQueue.
 func (q *UniQueue[T]) Stop() {
 	if !q.stopper.Client().Stopped().IsDone() {
 		defer func() {
@@ -143,10 +152,12 @@ func (q *UniQueue[T]) removeFromQueue(el T) bool {
 	return false
 }
 
-func (q *UniQueue[T]) isEmpty() bool {
+// IsEmpty indicates whether the UniQueue is empty or not.
+func (q *UniQueue[T]) IsEmpty() bool {
 	return len(q.queueChannel) == 0 && len(q.frontChannel) == 0
 }
 
+// Size returns the number of elements in the UniQueue.
 func (q *UniQueue[T]) Size() int {
 	q.mu.Lock()
 	defer q.mu.Unlock()
