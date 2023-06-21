@@ -16,6 +16,7 @@ type Store interface {
 	// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 	// the older database.  In that case we will need to process the serialized data.
 	GetPreviousVersion() (*storage.Version, error)
+	// UpdateVersion sets the version in the database
 	UpdateVersion(*storage.Version) error
 }
 

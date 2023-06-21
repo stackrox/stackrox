@@ -7,6 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
@@ -75,7 +76,7 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 		requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
 
 		var toBeFreedBytes int64
-		exists, err := pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase)
+		exists, err := pgadmin.CheckIfDBExists(globaldb.GetPostgres(), "central_previous")
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to determine if %s database exists", migrations.PreviousDatabase)
 		}
