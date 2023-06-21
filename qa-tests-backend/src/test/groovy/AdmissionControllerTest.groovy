@@ -38,6 +38,7 @@ class AdmissionControllerTest extends BaseSpecification {
     private ChaosMonkey chaosMonkey
 
     static final private String GCR_NGINX         = "qagcrnginx"
+    static final private String GCR_NGINX_IMAGE   = "us.gcr.io/stackrox-ci/nginx:1.10.1"
     static final private String BUSYBOX_NO_BYPASS = "busybox-no-bypass"
     static final private String BUSYBOX_BYPASS    = "busybox-bypass"
 
@@ -46,7 +47,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.10.1")
+            .setImage(GCR_NGINX_IMAGE)
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
@@ -84,7 +85,7 @@ class AdmissionControllerTest extends BaseSpecification {
         assert gcrId != ""
 
         // Pre run scan to avoid timeouts with inline scans in the tests below
-        ImageService.scanImage(GCR_NGINX)
+        ImageService.scanImage(GCR_NGINX_IMAGE)
     }
 
     def setup() {
