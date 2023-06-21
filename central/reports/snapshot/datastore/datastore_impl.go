@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -107,7 +106,6 @@ func (ds *datastoreImpl) AddReportSnapshot(ctx context.Context, snap *storage.Re
 	if snap.ReportId == "" {
 		return errors.New("New report snapshot must have a non-empty report id")
 	}
-	snap.ReportId = uuid.NewV4().String()
 	if err := ds.storage.Upsert(ctx, snap); err != nil {
 		return err
 	}
