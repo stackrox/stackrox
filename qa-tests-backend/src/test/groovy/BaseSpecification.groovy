@@ -70,7 +70,13 @@ class BaseSpecification extends Specification {
 
     public static String coreImageIntegrationId = null
 
-    private static synchronized globalSetup() {
+    private static synchronizedGlobalSetup() {
+        synchronized(BaseSpecification) {
+            globalSetup()
+        }
+    }
+
+    private static globalSetup() {
         if (globalSetupDone) {
             return
         }
@@ -212,7 +218,7 @@ class BaseSpecification extends Specification {
 
         testSpecStartTimeMillis = System.currentTimeMillis()
 
-        globalSetup()
+        synchronizedGlobalSetup()
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
