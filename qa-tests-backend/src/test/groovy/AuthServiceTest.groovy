@@ -48,8 +48,7 @@ class AuthServiceTest extends BaseSpecification {
 
     def "Verify response for auth token"() {
         when:
-        Assume.assumeTrue(allAccessToken != null)
-        BaseService.useApiToken(allAccessToken)
+        useTokenServiceAuth()
 
         AuthServiceOuterClass.AuthStatus status = AuthService.getAuthStatus()
 
