@@ -14,6 +14,7 @@ import {
     testIntegrationInFormWithStoredCredentials,
     testIntegrationInFormWithoutStoredCredentials,
     visitIntegrationsTable,
+    visitIntegrationsWithStaticResponseForCapabilities,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';
 
@@ -142,6 +143,7 @@ describe('Image Integrations', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Registry ID').clear().type('12345');
         getInputByLabel('Region').clear().type('us-west-1');
+        cy.get('label:contains("Use container IAM role")').click(); // turn on Use IAM Role
 
         testIntegrationInFormWithStoredCredentials(
             integrationSource,
@@ -152,6 +154,20 @@ describe('Image Integrations', () => {
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
+    });
+
+    it('should not render IAM Role on ECR form, when that capability is disabled', () => {
+        visitIntegrationsWithStaticResponseForCapabilities(
+            {
+                body: { centralScanningCanUseContainerIamRoleForEcr: 'CapabilityDisabled' },
+            },
+            'imageIntegrations',
+            'ecr',
+            '',
+            'create'
+        );
+
+        cy.get('label:contains("Use container IAM role")').should('not.exist');
     });
 
     it('should create a new Google Container Registry integration', () => {
