@@ -24,7 +24,7 @@ type DataStore interface {
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ReportMetadata, bool, error)
-	GetMany(ctx context.Context, id []string) ([]*storage.ReportMetadata, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ReportMetadata, error)
 	// AddReportMetadata adds the given ReportMetadata object; Populates the `ReportId` field on the object and returns
 	// the generated `ReportId`
 	AddReportMetadata(ctx context.Context, report *storage.ReportMetadata) (string, error)
@@ -34,7 +34,7 @@ type DataStore interface {
 	Walk(ctx context.Context, fn func(report *storage.ReportMetadata) error) error
 }
 
-// New returns a new instance of a DataStore and a QueryResolver.
+// New returns a new instance of a DataStore
 func New(storage pgStore.Store, searcher search.Searcher) (DataStore, error) {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil, nil
