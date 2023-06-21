@@ -12,80 +12,77 @@ import (
 	"go.uber.org/atomic"
 )
 
+var (
+	queueSize      = 5
+	frontValue     = 0
+	backValue      = 3
+	numsToPush     = []int{1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2}
+	expectedSlice  = []int{frontValue, 1, 2, backValue}
+	expectedMap    = map[int]struct{}{frontValue: {}, 1: {}, 2: {}, backValue: {}}
+	defaultTimeout = 1 * time.Second
+)
+
 func TestAdd(t *testing.T) {
-	q := NewUniQueue[int](6)
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
-	numsToPush := []int{1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3}
-	expected := []int{0, 1, 2, 3}
-	pushC := q.PushC()
-	// We push the first item that would be put in the frontChannel
-	pushC <- 0
-	require.True(t, waitWithRetry(func() bool {
-		return len(q.PopC()) > 0
-	}))
-	// The rest of the items can be pushed
-	for _, n := range numsToPush {
-		pushC <- n
-	}
-	assert.True(t, waitWithRetry(func() bool {
-		return q.Size() == 3
-	}))
+	pushElement(t, q)
 	var queueContent []int
-	for i := 0; i < len(expected); i++ {
+	for i := 0; i < len(expectedSlice); i++ {
 		n := <-q.PopC()
 		queueContent = append(queueContent, n)
 	}
 
-	assert.Equal(t, expected, queueContent)
+	assert.Equal(t, expectedSlice, queueContent)
 	assert.Len(t, q.frontChannel, 0)
 	q.Stop()
 }
 
 func TestCallStartTwice(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
 	assert.Error(t, q.Start())
 }
 
 func TestStop(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
 	q.Stop()
 	_, ok := <-q.backChannel
-	assert.False(t, ok)
+	assert.False(t, ok, "The backChannel should be closed after stopping")
 	_, ok = <-q.queueChannel
-	assert.False(t, ok)
+	assert.False(t, ok, "The queueChannel should be closed after stopping")
 	_, ok = <-q.frontChannel
-	assert.False(t, ok)
-	assert.Nil(t, q.inQueue)
-	assert.True(t, q.stopper.Client().Stopped().IsDone())
+	assert.False(t, ok, "The frontChannel should be closed after stopping")
+	assert.Nil(t, q.inQueue, "The inQueue map should be empty after stopping")
+	assert.True(t, q.stopper.Client().Stopped().IsDone(), "The stopper should be stopped")
 }
 
 func TestStartAfterStop(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
 	q.Stop()
 	assert.NoError(t, q.Start())
 }
 
 func TestPushCPanicsIfStartIsNotCalled(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	callPushC := func() {
 		q.PushC()
 	}
-	assert.Panics(t, callPushC)
+	assert.Panics(t, callPushC, "PushC should panic if it's called before Start")
 }
 
 func TestPopCPanicsIfStartIsNotCalled(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	callPopC := func() {
 		q.PopC()
 	}
-	assert.Panics(t, callPopC)
+	assert.Panics(t, callPopC, "PopC should panic if it's called before Start")
 }
 
-func TestStartFromDifferentRoutines(t *testing.T) {
-	q := NewUniQueue[int](5)
+func TestStartFromDifferentRoutines(_ *testing.T) {
+	// This test should fail if we have data races at start
+	q := NewUniQueue[int](queueSize)
 	go func() {
 		utils.IgnoreError(q.Start)
 	}()
@@ -95,7 +92,8 @@ func TestStartFromDifferentRoutines(t *testing.T) {
 }
 
 func TestStopFromDifferentRoutines(t *testing.T) {
-	q := NewUniQueue[int](5)
+	// This test should fail if we have data races at start
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
 	go func() {
 		q.Stop()
@@ -106,13 +104,11 @@ func TestStopFromDifferentRoutines(t *testing.T) {
 }
 
 func TestAddFromDifferentRoutines(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
-	numsToPush := []int{1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2}
-	expected := []int{0, 1, 2, 3}
 	pushC := q.PushC()
 	// We push the first item that would be put in the frontChannel
-	pushC <- 0
+	pushC <- frontValue
 	require.True(t, waitWithRetry(func() bool {
 		return len(q.PopC()) > 0
 	}))
@@ -133,43 +129,24 @@ func TestAddFromDifferentRoutines(t *testing.T) {
 	}()
 	wg.Wait()
 	// We push a different value to make sure we read all elements
-	pushC <- 3
-	assert.True(t, waitWithRetry(func() bool {
-		return q.Size() == 3
+	pushC <- backValue
+	require.True(t, waitWithRetry(func() bool {
+		return q.Size() == len(expectedSlice)
 	}))
 	var queueContent []int
-	for i := 0; i < len(expected); i++ {
+	for i := 0; i < len(expectedSlice); i++ {
 		n := <-q.PopC()
 		queueContent = append(queueContent, n)
 	}
-	assert.Equal(t, expected, queueContent)
+	assert.Equal(t, expectedSlice, queueContent)
 	assert.Len(t, q.frontChannel, 0)
 	q.Stop()
 }
 
 func TestReadFromDifferentRoutines(t *testing.T) {
-	q := NewUniQueue[int](5)
+	q := NewUniQueue[int](queueSize)
 	assert.NoError(t, q.Start())
-	numsToPush := []int{1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3}
-	expected := map[int]struct{}{
-		0: {},
-		1: {},
-		2: {},
-		3: {},
-	}
-	pushC := q.PushC()
-	// We push the first item that would be put in the frontChannel
-	pushC <- 0
-	require.True(t, waitWithRetry(func() bool {
-		return len(q.PopC()) > 0
-	}))
-	// The rest of the items can be pushed
-	for _, n := range numsToPush {
-		pushC <- n
-	}
-	assert.True(t, waitWithRetry(func() bool {
-		return q.Size() == 3
-	}))
+	pushElement(t, q)
 	assert.True(t, waitWithRetry(func() bool {
 		return len(q.backChannel) == 0
 	}))
@@ -188,7 +165,7 @@ func TestReadFromDifferentRoutines(t *testing.T) {
 				assert.True(t, ok)
 				poppedContent1 = append(poppedContent1, n)
 				numReads.Add(1)
-				if numReads.Load() == int32(len(expected)) {
+				if numReads.Load() == int32(len(expectedMap)) {
 					cancelFn()
 					return
 				}
@@ -206,7 +183,7 @@ func TestReadFromDifferentRoutines(t *testing.T) {
 				assert.True(t, ok)
 				poppedContent2 = append(poppedContent2, n)
 				numReads.Add(1)
-				if numReads.Load() == int32(len(expected)) {
+				if numReads.Load() == int32(len(expectedMap)) {
 					cancelFn()
 					return
 				}
@@ -221,14 +198,32 @@ func TestReadFromDifferentRoutines(t *testing.T) {
 	for _, el := range poppedContent2 {
 		poppedContentMap[el] = struct{}{}
 	}
-	assert.Equal(t, len(poppedContentMap), len(expected))
-	assert.Equal(t, expected, poppedContentMap)
+	assert.Equal(t, len(poppedContentMap), len(expectedMap))
+	assert.Equal(t, expectedMap, poppedContentMap)
 	assert.Len(t, q.frontChannel, 0)
 	q.Stop()
 }
 
+func pushElement(t *testing.T, q *UniQueue[int]) {
+	pushC := q.PushC()
+	// We push the frontValue item that would be put in the frontChannel
+	pushC <- frontValue
+	require.True(t, waitWithRetry(func() bool {
+		return len(q.PopC()) > 0
+	}))
+	// The rest of the items can be pushed
+	for _, n := range numsToPush {
+		pushC <- n
+	}
+	// We push a different value to make sure we read all elements
+	pushC <- backValue
+	require.True(t, waitWithRetry(func() bool {
+		return q.Size() == len(expectedSlice)
+	}))
+}
+
 func waitWithRetry(fn func() bool) bool {
-	timeout := time.After(3 * time.Second)
+	timeout := time.After(defaultTimeout)
 	for {
 		select {
 		case <-timeout:

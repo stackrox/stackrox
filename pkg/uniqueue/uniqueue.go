@@ -161,5 +161,5 @@ func (q *UniQueue[T]) IsEmpty() bool {
 func (q *UniQueue[T]) Size() int {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	return len(q.inQueue)
+	return len(q.inQueue) + len(q.frontChannel)
 }
