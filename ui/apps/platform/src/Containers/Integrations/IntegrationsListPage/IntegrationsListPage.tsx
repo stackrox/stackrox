@@ -7,10 +7,11 @@ import {
     BreadcrumbItem,
     Divider,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
@@ -43,6 +44,16 @@ function IntegrationsListPage({
     const { source, type } = useParams();
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
+
+    const history = useHistory();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+    if (!canUseCloudBackupIntegrations && source === 'backups') {
+        history.replace(integrationsPath);
+    }
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
