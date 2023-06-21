@@ -3,9 +3,11 @@ package updater
 import (
 	"compress/gzip"
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
@@ -23,9 +25,9 @@ import (
 	"github.com/stackrox/scanner/v4/updater/manual"
 )
 
-// ExportAction is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
+// Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a gzip file
-func ExportAction(ctx context.Context) error {
+func Export(ctx context.Context) error {
 	updaterStore, err := jsonblob.New()
 	if err != nil {
 		return err
@@ -98,8 +100,9 @@ func ExportAction(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempDir)
+	//defer os.RemoveAll(tempDir)
 	outputFile, err := os.Create(filepath.Join(tempDir, "output.json.gz"))
+	fmt.Println("Temporary directory path:", tempDir)
 	if err != nil {
 		return err
 	}
@@ -108,38 +111,55 @@ func ExportAction(ctx context.Context) error {
 	defer gzipWriter.Close()
 
 	httpClient := http.DefaultClient
-	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
-		updates.WithOutOfTree(updaters),
-	)
-	if err != nil {
+	err = retryWithBackoff(3, 5*time.Second, func() error {
+		updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
+			updates.WithOutOfTree(updaters),
+		)
+		if err != nil {
+			return err
+		}
+		if err := updaterSetMgr.Run(ctx); err != nil {
+			return err
+		}
+		err = updaterStore.Store(gzipWriter)
 		return err
-	}
-	if err := updaterSetMgr.Run(ctx); err != nil {
-		return err
-	}
-	err = updaterStore.Store(gzipWriter)
+	})
+
 	if err != nil {
 		return err
 	}
 
 	configStore, err := jsonblob.New()
-	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), httpClient,
-		updates.WithConfigs(cfgs),
-		updates.WithFactories(facs),
-	)
-	if err := configMgr.Run(ctx); err != nil {
+	err = retryWithBackoff(3, 5*time.Second, func() error {
+		configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), httpClient,
+			updates.WithConfigs(cfgs),
+			updates.WithFactories(facs),
+		)
+		if err != nil {
+			return err
+		}
+		if err := configMgr.Run(ctx); err != nil {
+			return err
+		}
+		err = configStore.Store(gzipWriter)
 		return err
-	}
+	})
 
-	err = configStore.Store(gzipWriter)
-	if err != nil {
-		return err
-	}
-
-	err = gzipWriter.Flush()
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func retryWithBackoff(maxAttempts int, backoff time.Duration, fn func() error) error {
+	var err error
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		err = fn()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(backoff)
+	}
+	return err
 }

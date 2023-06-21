@@ -9,7 +9,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	err := updater.ExportAction(ctx)
+	err := updater.Export(ctx)
 	if err != nil {
 		zlog.Error(context.Background()).Msg(err.Error())
 	}
