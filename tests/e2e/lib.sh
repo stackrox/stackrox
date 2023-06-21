@@ -42,6 +42,7 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+# shellcheck disable=SC2120
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
         die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
@@ -54,13 +55,13 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
     helm repo update
 
-    if helm search repo stackrox-oss -l | grep -E "(stackrox-oss/stackrox-central-services)\s+("${CENTRAL_CHART_VERSION_OVERRIDE}")"; then
+    if helm search repo stackrox-oss -l | grep -E "(stackrox-oss/stackrox-central-services)\s+(${CENTRAL_CHART_VERSION_OVERRIDE})"; then
         ci_export CENTRAL_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-central-services"
     else
         echo "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
     fi
 
-    if helm search repo stackrox-oss -l | grep -E "(stackrox-oss/stackrox-secured-cluster-services)\s+("${SENSOR_CHART_VERSION_OVERRIDE}")"; then
+    if helm search repo stackrox-oss -l | grep -E "(stackrox-oss/stackrox-secured-cluster-services)\s+(${SENSOR_CHART_VERSION_OVERRIDE})"; then
         ci_export SENSOR_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-secured-cluster-services"
     else
         echo "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
