@@ -10,6 +10,7 @@ import {
     CardBody,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Link } from 'react-router-dom';
 
 import { ReportConfiguration } from 'types/reportConfigurationService.proto';
 import { ReportStatus } from 'types/report.proto';
@@ -17,6 +18,7 @@ import { Report } from 'Containers/Vulnerabilities/VulnerablityReporting/types';
 import usePermissions from 'hooks/usePermissions';
 
 import PageTitle from 'Components/PageTitle';
+import { vulnerabilityReportingCreatePath } from 'routePaths';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
@@ -113,9 +115,11 @@ function VulnReportsPage() {
                     </FlexItem>
                     <FlexItem>
                         {canCreateReports && (
-                            <Button variant="primary" onClick={() => {}}>
-                                Create report
-                            </Button>
+                            <Link to={vulnerabilityReportingCreatePath}>
+                                <Button variant="primary" onClick={() => {}}>
+                                    Create report
+                                </Button>
+                            </Link>
                         )}
                     </FlexItem>
                 </Flex>

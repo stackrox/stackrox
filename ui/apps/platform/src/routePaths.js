@@ -100,6 +100,9 @@ export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBaseP
 export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
 
 export const vulnerabilityReportingPath = `${vulnerabilitiesBasePath}/vulnerability-reporting`;
+export const vulnerabilityReportingCreatePath = `${vulnerabilityReportingPath}/create`;
+export const vulnerabilityReportingEditPath = `${vulnerabilityReportingPath}/edit/:reportId`;
+export const vulnerabilityReportingClonePath = `${vulnerabilityReportingPath}/clone/:reportId`;
 
 /**
  * New Framwork-related route paths
