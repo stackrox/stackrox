@@ -672,7 +672,7 @@ class NetworkFlowTest extends BaseSpecification {
         "Check timestamp for each edge"
         for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
             assert edge.lastActiveTimestamp <= currentTime + 2000 //allow up to 2 sec leeway
-            assert edge.lastActiveTimestamp >= testStartTimeMillis
+            assert edge.lastActiveTimestamp >= testSpecStartTimeMillis
         }
     }
 
@@ -688,7 +688,7 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "delete a deployment"
         Deployment delete = deployments.find { it.name == NOCONNECTIONSOURCE }
-        orchestrator.deleteDeployment(delete)testSpecStartTimeMillis
+        orchestrator.deleteDeployment(delete)
         Services.waitForSRDeletion(delete)
 
         when:
