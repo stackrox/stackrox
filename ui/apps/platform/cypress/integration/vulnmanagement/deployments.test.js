@@ -89,6 +89,6 @@ describe('Vulnerability Management Deployments', () => {
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 7, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 7);
     });
 });

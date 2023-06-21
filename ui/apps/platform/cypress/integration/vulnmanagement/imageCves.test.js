@@ -127,15 +127,15 @@ describe('Vulnerability Management Image CVEs', () => {
     // Some tests might fail in local deployment.
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 10, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 10);
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 10, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 10);
     });
 
     it('should display links for image-components', () => {
-        verifySecondaryEntities(entitiesKey, 'image-components', 10, /^\d+ image components?$/);
+        verifySecondaryEntities(entitiesKey, 'image-components', 10);
     });
 
     // @TODO: Rework this test. Seems like each of these do the same thing

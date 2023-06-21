@@ -144,7 +144,7 @@ describe('Vulnerability Management Node CVEs', () => {
             this.skip();
         }
 
-        verifySecondaryEntities(entitiesKey, 'nodes', 10, /^\d+ nodes?$/);
+        verifySecondaryEntities(entitiesKey, 'nodes', 10);
     });
 
     it('should display links for node-components', function () {
@@ -152,6 +152,6 @@ describe('Vulnerability Management Node CVEs', () => {
             this.skip();
         }
 
-        verifySecondaryEntities(entitiesKey, 'node-components', 10, /^\d+ node components?$/);
+        verifySecondaryEntities(entitiesKey, 'node-components', 10);
     });
 });

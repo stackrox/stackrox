@@ -131,10 +131,10 @@ describe('Vulnerability Management Image Components', () => {
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 7, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 7);
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 8, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 8);
     });
 });
