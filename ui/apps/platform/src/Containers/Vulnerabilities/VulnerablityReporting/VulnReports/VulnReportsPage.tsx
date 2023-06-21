@@ -2,8 +2,21 @@ import React from 'react';
 import { PageSection, Title, Divider, Flex, FlexItem, Button } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
+import usePermissions from 'hooks/usePermissions';
 
 function VulnReportsPage() {
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+
+    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
+    const hasImageReadAccess = hasReadAccess('Image');
+    const hasAccessScopeReadAccess = hasReadAccess('Access');
+    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
+    const canCreateReports =
+        hasWorkflowAdministrationWriteAccess &&
+        hasImageReadAccess &&
+        hasAccessScopeReadAccess &&
+        hasNotifierIntegrationReadAccess;
+
     return (
         <>
             <PageTitle title="Vulnerability reporting" />
@@ -26,9 +39,11 @@ function VulnReportsPage() {
                         </Flex>
                     </FlexItem>
                     <FlexItem>
-                        <Button variant="primary" onClick={() => {}}>
-                            Create report
-                        </Button>
+                        {canCreateReports && (
+                            <Button variant="primary" onClick={() => {}}>
+                                Create report
+                            </Button>
+                        )}
                     </FlexItem>
                 </Flex>
             </PageSection>

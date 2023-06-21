@@ -42,9 +42,7 @@ function NavigationSidebar({
     isFeatureFlagEnabled,
 }: NavigationSidebarProps): ReactElement {
     const location: Location = useLocation();
-    const isWorkloadCvesEnabled =
-        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-        isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    const isWorkloadCvesEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES');
     const isReportingEnhancementsEnabled = isFeatureFlagEnabled(
         'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
     );
@@ -56,7 +54,7 @@ function NavigationSidebar({
     ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
-    if (hasReadAccess('WorkflowAdministration') && !isReportingEnhancementsEnabled) {
+    if (hasReadAccess('WorkflowAdministration')) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 
