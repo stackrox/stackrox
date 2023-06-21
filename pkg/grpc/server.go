@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	"github.com/stackrox/rox/pkg/sync"
 	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -112,6 +113,9 @@ type apiImpl struct {
 
 	gRPCServer    *grpc.Server
 	allSrvAndLiss []serverAndListener
+
+	stopRequested concurrency.Signal
+	stopCompleted *sync.WaitGroup
 }
 
 // A Config configures the server.
@@ -140,11 +144,18 @@ func NewAPI(config Config) API {
 	return &apiImpl{
 		config:             config,
 		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
+		stopRequested:      concurrency.NewSignal(),
+		stopCompleted:      &sync.WaitGroup{},
 	}
 }
 
 func (a *apiImpl) Start() *concurrency.Signal {
 	startedSig := concurrency.NewSignal()
+	if a.stopRequested.IsDone() {
+		log.Errorf("Should not call Start() after explicitly stopping server")
+		return nil
+	}
+
 	go a.run(&startedSig)
 	return &startedSig
 }
@@ -223,10 +234,16 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 	log.Info("Launching backend gRPC listener")
 	// Launch the GRPC listener
 	go func() {
+		a.stopCompleted.Add(1)
+		defer a.stopCompleted.Done()
 		if err := server.Serve(lis); err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal("The local API server should never terminate")
+		if a.stopRequested.IsDone() {
+			log.Infof("Local API server terminating: stop requested")
+		} else {
+			log.Fatal("The local API server should never terminate without explicitly being stopped")
+		}
 	}()
 	return dialContext
 }
@@ -339,24 +356,27 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 }
 
 func (a *apiImpl) Stop() *concurrency.Signal {
+	a.stopRequested.Signal()
 	sig := concurrency.NewSignal()
-	go func() {
-		defer sig.Signal()
-		var multiErr error
-		for _, srv := range a.allSrvAndLiss {
-			// stop listeners
-			multiErr = multierror.Append(multiErr, srv.listener.Close())
+	var multiErr error
+	log.Infof("stopping %d servers and listeners: \n%+v", len(a.allSrvAndLiss), a.allSrvAndLiss)
+	for idx, srv := range a.allSrvAndLiss {
+		// stop listeners
+		log.Infof("stopping %s", srv.listener.Addr())
+		if err := srv.listener.Close(); err != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrapf(err, "listener(%d) (%s)", idx, srv.endpoint.ListenEndpoint))
 		}
+	}
 
-		if multiErr != nil {
-			log.Warnf("could not stop listeners: %s", multiErr.Error())
-		}
+	if multiErr != nil {
+		log.Warnf("could not stop listeners: %s", multiErr.Error())
+	}
 
-		a.gRPCServer.Stop()
+	a.gRPCServer.Stop()
 
-		log.Infof("Sensor gRPC fully stopped")
-	}()
-
+	log.Infof("Sensor gRPC fully stopped")
+	a.stopCompleted.Wait()
+	sig.Signal()
 	return &sig
 }
 
@@ -411,8 +431,9 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 	errC := make(chan error, len(a.allSrvAndLiss))
 
+	a.stopCompleted.Add(len(a.allSrvAndLiss))
 	for _, srvAndLis := range a.allSrvAndLiss {
-		go serveBlocking(srvAndLis, errC)
+		go a.serveBlocking(srvAndLis, errC)
 	}
 
 	if startedSig != nil {
@@ -424,8 +445,15 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	}
 }
 
-func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
+func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
+	defer a.stopCompleted.Done()
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
+		if a.stopRequested.IsDone() {
+			// If stop was requested, listener will exit with error
+			log.Warnf("Stopping serving endpoint %s on %s: stop requested", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr())
+			return
+		}
+
 		if srvAndLis.endpoint.Optional {
 			log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
 		} else {
