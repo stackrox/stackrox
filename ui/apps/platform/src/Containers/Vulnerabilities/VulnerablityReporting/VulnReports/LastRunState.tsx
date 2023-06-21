@@ -15,7 +15,7 @@ function LastRunState({ reportStatus }: LastRunStateProps): ReactElement {
     if (reportStatus.runState === 'SUCCESS' || reportStatus.runState === 'FAILURE') {
         statusText = getDateTime(reportStatus.runTime);
     } else if (reportStatus.runState === 'PREPARING') {
-        statusIcon = <Spinner isSVG size="sm" aria-label="Preparing report" />;
+        statusIcon = <Spinner isSVG size="sm" aria-label="Preparing report" aria-valuetext="" />;
         statusText = 'Preparing';
     } else {
         statusText = 'Never run';

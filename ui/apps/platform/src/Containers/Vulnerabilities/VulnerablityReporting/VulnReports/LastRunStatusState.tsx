@@ -18,12 +18,12 @@ function LastRunStatusState({ reportStatus }: LastRunStatusStateProps): ReactEle
     let statusText = '-';
 
     if (reportStatus.runState === 'SUCCESS') {
-        statusIcon = <CheckCircleIcon color={successColor} />;
+        statusIcon = <CheckCircleIcon color={successColor} title="Success icon" />;
     }
     if (reportStatus.runState === 'FAILURE') {
         statusIcon = (
             <Tooltip content={reportStatus.errorMsg || genericMsg}>
-                <ExclamationCircleIcon color={errorColor} />
+                <ExclamationCircleIcon color={errorColor} title="Error icon" />
             </Tooltip>
         );
     }
