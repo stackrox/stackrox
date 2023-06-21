@@ -70,7 +70,7 @@ class BaseSpecification extends Specification {
 
     public static String coreImageIntegrationId = null
 
-    private static globalSetup() {
+    private static synchronized globalSetup() {
         if (globalSetupDone) {
             return
         }
