@@ -150,6 +150,13 @@ class BaseSpecification extends Specification {
 
         RestAssured.useRelaxedHTTPSValidation()
 
+        try {
+            orchestrator.setup()
+        } catch (Exception e) {
+            log.error("Error setting up orchestrator", e)
+            throw e
+        }
+
         addShutdownHook {
             LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
@@ -164,6 +171,13 @@ class BaseSpecification extends Specification {
             LOG.info "Removing core image registry integration"
             if (coreImageIntegrationId != null) {
                 ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+            }
+
+            try {
+                orchestrator.cleanup()
+            } catch (Exception e) {
+                log.error("Failed to clean up orchestrator", e)
+                throw e
             }
         }
 
@@ -200,12 +214,6 @@ class BaseSpecification extends Specification {
 
         globalSetup()
 
-        try {
-            orchestrator.setup()
-        } catch (Exception e) {
-            log.error("Error setting up orchestrator", e)
-            throw e
-        }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
@@ -275,13 +283,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        try {
-            orchestrator.cleanup()
-        } catch (Exception e) {
-            log.error("Failed to clean up orchestrator", e)
-            throw e
-        }
 
         // https://issues.redhat.com/browse/ROX-9950 -- fails on OSD-on-AWS
         if (orchestrator.isGKE()) {
