@@ -618,6 +618,9 @@ spec:
           repository.
         displayName: Scanner Component Settings
         path: scanner
+      - description: The number of replicas of the admission control pod.
+        displayName: Replicas
+        path: admissionControl.replicas
       - description: Allows you to specify additional trusted Root CAs.
         displayName: TLS
         path: tls

@@ -225,6 +225,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
+	acv.SetInt32("replicas", admissionControl.Replicas)
 
 	return &acv
 }

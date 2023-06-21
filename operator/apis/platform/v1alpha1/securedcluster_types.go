@@ -134,6 +134,13 @@ type AdmissionControlComponentSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
 	DeploymentSpec `json:",inline"`
+
+	// The number of replicas of the admission control pod.
+	//+kubebuilder:validation:Default=3
+	//+kubebuilder:default=3
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=8
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // ImageScanPolicy defines whether images should be scanned at admission control time.
