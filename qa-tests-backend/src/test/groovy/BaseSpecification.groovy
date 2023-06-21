@@ -259,13 +259,19 @@ class BaseSpecification extends Specification {
         //Always make sure to revert back to the allAccessToken before each test
         resetAuth()
 
-        if (ClusterService.isEKS() && System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+        if (ClusterService.isEKS()) {
             // Avoid EKS k8s client time out which occurs at approx. 15 minutes.
-            orchestrator = OrchestratorType.create(
-                    Env.mustGetOrchestratorType(),
-                    Constants.ORCHESTRATOR_NAMESPACE
-            )
-            orchestratorCreateTime = System.currentTimeSeconds()
+            synchronized(orchestrator) {
+                // synchronized() because orchestrator would be shared amongst
+                // concurrent feature threads.
+                if (System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+                    orchestrator = OrchestratorType.create(
+                            Env.mustGetOrchestratorType(),
+                            Constants.ORCHESTRATOR_NAMESPACE
+                    )
+                    orchestratorCreateTime = System.currentTimeSeconds()
+                }
+            }
         }
     }
 
