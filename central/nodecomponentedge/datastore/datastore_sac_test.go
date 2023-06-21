@@ -19,9 +19,6 @@ import (
 
 const (
 	nodeScanOperatingSystem = "Linux"
-
-	dontWaitForIndexing = false
-	waitForIndexing     = true
 )
 
 func TestNodeComponentEdgeDatastoreSAC(t *testing.T) {
@@ -45,14 +42,12 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
+	err = s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
+	s.Require().NoError(err)
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
 	s.testGraphDatastore.Cleanup(s.T())
-}
-
-func (s *nodeComponentEdgeDatastoreSACTestSuite) cleanupNodeToVulnerabilityGraph() {
-	s.Require().NoError(s.testGraphDatastore.CleanNodeToVulnerabilitiesGraph())
 }
 
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
@@ -177,9 +172,6 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 	// Inject the fixture graph and test for node1 to component1 edge
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	node1 := nodeIDs[0]
@@ -197,9 +189,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 	// Inject the fixture graph and test for node1 to component1 edge
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	node1 := nodeIDs[0]
@@ -228,9 +217,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixture graph and test for node1 to component1 edge and node2 to component 4 edges
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
@@ -284,9 +270,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
@@ -308,9 +291,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
@@ -337,9 +317,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
@@ -366,9 +343,6 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
-	defer s.cleanupNodeToVulnerabilityGraph()
-	s.Require().NoError(err)
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
