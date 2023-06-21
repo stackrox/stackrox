@@ -95,13 +95,13 @@ func (s *ServerLifecycleTest) SetupTest() {
 
 var _ suite.SetupTestSuite = &ServerLifecycleTest{}
 
-//func (s *ServerLifecycleTest) Test_NewAPI() {
-//	api := NewAPI(s.conf)
-//
-//	started := api.Start()
-//	started.Wait()
-//	api.Stop().Wait()
-//}
+func (s *ServerLifecycleTest) Test_NewAPI() {
+	api := NewAPI(s.conf)
+
+	started := api.Start()
+	started.Wait()
+	api.Stop().Wait()
+}
 
 func (s *ServerLifecycleTest) Test_NewAPI_TestEndpointAvailable() {
 	api := NewAPI(s.conf)
@@ -116,16 +116,16 @@ func (s *ServerLifecycleTest) Test_NewAPI_TestEndpointAvailable() {
 	api.Stop().Wait()
 }
 
-//func (s *ServerLifecycleTest) Test_NewAPI_StartAndStop() {
-//	api1 := NewAPI(s.conf)
-//	api1.Start().Wait()
-//
-//	api1.Stop().Wait()
-//
-//	api2 := NewAPI(s.conf)
-//	api2.Start().Wait()
-//	api2.Stop().Wait()
-//}
+func (s *ServerLifecycleTest) Test_NewAPI_StartAndStop() {
+	api1 := NewAPI(s.conf)
+	api1.Start().Wait()
+
+	api1.Stop().Wait()
+
+	api2 := NewAPI(s.conf)
+	api2.Start().Wait()
+	api2.Stop().Wait()
+}
 
 func (s *ServerLifecycleTest) Test_NewAPI_TestEndpointNotAvailableAfterStop() {
 	api := NewAPI(s.conf)
@@ -133,9 +133,9 @@ func (s *ServerLifecycleTest) Test_NewAPI_TestEndpointNotAvailableAfterStop() {
 	api.Stop().Wait()
 
 	s.Require().False(s.testEndpointReached.IsDone())
-	r, err := s.httpClient.Get("https://localhost:8080/test")
-	content, _ := io.ReadAll(r.Body)
-	s.T().Logf("## RESPONSE FROM API: %s", content)
+	_, err := s.httpClient.Get("https://localhost:8080/test")
+	//content, _ := io.ReadAll(r.Body)
+	//s.T().Logf("## RESPONSE FROM API: %s", content)
 	//s.Assert().Equal(404, r.StatusCode)
 	//defer r.Body.Close()
 	//content, err := io.ReadAll(r.Body)

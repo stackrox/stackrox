@@ -74,6 +74,7 @@ func maxResponseMsgSize() int {
 
 type server interface {
 	Serve(l net.Listener) error
+	Shutdown(ctx context.Context) error
 }
 
 type serverAndListener struct {
@@ -361,8 +362,15 @@ func (a *apiImpl) Stop() *concurrency.Signal {
 	var multiErr error
 	log.Infof("stopping %d servers and listeners: \n%+v", len(a.allSrvAndLiss), a.allSrvAndLiss)
 	for idx, srv := range a.allSrvAndLiss {
-		// stop listeners
 		log.Infof("stopping %s", srv.listener.Addr())
+
+		shutdownWithTimeout, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		if err := srv.srv.Shutdown(shutdownWithTimeout); err != nil {
+			multiErr = multierror.Append(multiErr, errors.Wrapf(err, "shutting down server(%d) (%s)", idx, srv.endpoint.ListenEndpoint))
+		}
+		cancel()
+
+		// stop listeners
 		if err := srv.listener.Close(); err != nil {
 			multiErr = multierror.Append(multiErr, errors.Wrapf(err, "listener(%d) (%s)", idx, srv.endpoint.ListenEndpoint))
 		}

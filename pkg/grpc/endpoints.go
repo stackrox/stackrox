@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
+	"github.com/stackrox/rox/pkg/grpc/wrapper"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -200,7 +201,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 	if grpcLis != nil {
 		result = append(result, serverAndListener{
-			srv:      grpcSrv,
+			srv:      wrapper.GRPC(grpcSrv),
 			listener: grpcLis,
 			endpoint: c,
 		})
