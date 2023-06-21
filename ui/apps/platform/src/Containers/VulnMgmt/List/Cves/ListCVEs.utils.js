@@ -32,7 +32,6 @@ export function getFilteredCVEColumns(columns, workflowState, isFeatureFlagEnabl
         workflowState.getSingleAncestorOfType(entityTypes.CLUSTER) &&
         currentEntityType === entityTypes.CLUSTER_CVE;
 
-    // TODO: remove this temporary conditional check, after generic CVE list is removed
     const shouldKeepCveType = currentEntityType === entityTypes.CLUSTER_CVE;
 
     const shouldKeepSeverity =
@@ -40,7 +39,6 @@ export function getFilteredCVEColumns(columns, workflowState, isFeatureFlagEnabl
 
     return columns.filter((col) => {
         switch (col.accessor) {
-            // TODO: remove after generic CVE list is removed
             case 'vulnerabilityTypes': {
                 return !!shouldKeepCveType;
             }
