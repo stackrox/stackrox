@@ -123,14 +123,14 @@ describe('Vulnerability Management Clusters', () => {
     });
 
     it('should display links for namespaces', () => {
-        verifySecondaryEntities(entitiesKey, 'namespaces', 7, /^\d+ namespaces?$/);
+        verifySecondaryEntities(entitiesKey, 'namespaces', 7);
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 7, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 7);
     });
 
     it('should display links for nodes', () => {
-        verifySecondaryEntities(entitiesKey, 'nodes', 7, /^\d+ nodes?$/);
+        verifySecondaryEntities(entitiesKey, 'nodes', 7);
     });
 });

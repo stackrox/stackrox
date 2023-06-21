@@ -332,8 +332,10 @@ function verifyTableLink(
             // 4. Visit single page for primary entity.
             cy.get(selectors.sidePanelExternalLinkButton).click(); // does not make requests
 
-            // 5. Visit list page for secondary entities.
-            cy.get(relatedEntitiesSelector).click(); // might make some requests
+            // 5. Visit single page list for secondary entities.
+            interactAndWaitForResponses(() => {
+                cy.get(relatedEntitiesSelector).click();
+            }, getRouteMatcherMapForGraphQL([opnameForEntities[entitiesKey2]]));
 
             cy.get(
                 `li[data-testid="grouped-tab"] a[data-testid="tab"].active:contains("${headingPlural[entitiesKey2]}")`
