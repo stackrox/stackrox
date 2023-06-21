@@ -174,7 +174,7 @@ class LoginPage extends Component {
         if (authorizeRoxctlMode) {
             authProviders = authProviders.filter((provider) => provider.type !== 'basic');
             title = 'Authorize roxctl';
-            if (authProviders?.length === 0) {
+            if (authProviders.length === 0) {
                 return (
                     <Alert
                         variant="danger"
@@ -319,6 +319,9 @@ const LoadingOrForm = ({ authProviders, authorizeRoxctlMode = false }) => {
     }
 
     const options = authProvidersToSelectOptions(availableAuthProviders);
+    // In case of roxctl authorize mode, we filter out the basic auth provider. This could lead
+    // to us having no auth provider within the initial values, hence we need to be able to handle
+    // the empty list of auth providers here.
     const initialValues = { authProvider: options[0]?.value };
     return <Form initialValues={initialValues} authorizeRoxctlMode={authorizeRoxctlMode} />;
 };
