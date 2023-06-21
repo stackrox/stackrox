@@ -150,6 +150,7 @@ class BaseSpecification extends Specification {
             tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }
 
+        assert tokenResp
         allAccessToken = tokenResp.token
         assert allAccessToken
 
