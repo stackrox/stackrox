@@ -213,7 +213,7 @@ class BaseSpecification extends Specification {
 
     static setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
-                Constants.CORE_IMAGE_INTEGRATION_NAME)
+                Constants.CORE_IMAGE_INTEGRATION_NAME)?.id
         if (!coreImageIntegrationId) {
             LOG.info "Adding core image registry integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
