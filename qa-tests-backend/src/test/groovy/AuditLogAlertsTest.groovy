@@ -11,7 +11,6 @@ import objects.Secret
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
-import util.Helpers
 
 import spock.lang.Requires
 import spock.lang.Stepwise
@@ -179,9 +178,9 @@ class AuditLogAlertsTest extends BaseSpecification {
         and:
         "Feature is disabled and then re-enabled"
         assert ClusterService.updateAuditLogDynamicConfig(true)
-        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate to sensor before re-enabling
+        sleep(5000) // wait 5s for it to propagate to sensor before re-enabling
         assert ClusterService.updateAuditLogDynamicConfig(false)
-        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate again
+        sleep(5000) // wait 5s for it to propagate again
 
         and:
         "Another violation is generated"

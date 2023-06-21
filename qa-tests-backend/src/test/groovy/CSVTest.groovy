@@ -13,11 +13,9 @@ import services.GraphQLService
 import services.ImageService
 import util.Env
 
-import spock.lang.Retry
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Retry(count = 0)
 @Unroll
 @Tag("BAT")
 class CSVTest extends BaseSpecification {

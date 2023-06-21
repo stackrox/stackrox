@@ -243,24 +243,12 @@ class NetworkFlowTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    def rebuildForRetries() {
-        if (Helpers.getAttemptCount() > 1) {
-            log.info ">>>> Recreating test deployments prior to retest <<<<<"
-            destroyDeployments()
-            sleep(5000)
-            createDeployments()
-            sleep(5000)
-            log.info ">>>> Done <<<<<"
-        }
-    }
-
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z, skipping for 1st release
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
@@ -340,7 +328,6 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == sourceDeployment }?.deploymentUid
@@ -395,7 +382,6 @@ class NetworkFlowTest extends BaseSpecification {
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
-        rebuildForRetries()
         "Two deployments, A and B, where B communicates to A in short consistent intervals"
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
@@ -462,7 +448,6 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify network flows with graph filtering"() {
         given:
         "Two deployments, A and B, where B communicates to A"
-        rebuildForRetries()
         String sourceUid = deployments.find { it.name == TCPCONNECTIONSOURCE }?.deploymentUid
         assert sourceUid != null
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
@@ -610,7 +595,6 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
