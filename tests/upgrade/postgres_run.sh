@@ -108,8 +108,8 @@ test_upgrade_paths() {
     restore_backup_test
     wait_for_api
 
-    # Run with some scale to have data populated to migrate
-    deploy_scaled_workload
+#    # Run with some scale to have data populated to migrate
+#    deploy_scaled_workload
 
     # Add some access scopes and see that they survive the upgrade and rollback process
     createRocksDBScopes
@@ -119,6 +119,9 @@ test_upgrade_paths() {
     export API_TOKEN="$(roxcurl /v1/apitokens/generate -d '{"name": "helm-upgrade-test", "role": "Admin"}' | jq -r '.token')"
 
     cd "$TEST_ROOT"
+
+    # Run with some scale to have data populated to migrate
+    deploy_scaled_workload
 
     ########################################################################################
     # Use helm to upgrade to a Postgres release.                                           #
@@ -354,7 +357,11 @@ deploy_scaled_workload() {
     info "Deploying a scaled workload"
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+#    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+#    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+#    CLUSTER="scale-remote" \
+#    ./deploy/k8s/sensor.sh
+    roxctl version
     MAIN_IMAGE_TAG="$EARLIER_TAG" \
     CLUSTER="scale-remote" \
     ./deploy/k8s/sensor.sh
