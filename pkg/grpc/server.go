@@ -92,12 +92,18 @@ type API interface {
 	Start() *concurrency.Signal
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
+
+	// Stop will shutdown all listeners and stop the HTTP/gRPC multiplexed server. This process will run in the background
+	// and returns a signal that can be checked for when the shutdown finished.
+	Stop() *concurrency.Signal
 }
 
 type apiImpl struct {
 	apiServices        []APIService
 	config             Config
 	requestInfoHandler *requestinfo.Handler
+
+	grpcServer *grpc.Server
 }
 
 // A Config configures the server.
@@ -137,6 +143,12 @@ func (a *apiImpl) Start() *concurrency.Signal {
 
 func (a *apiImpl) Register(services ...APIService) {
 	a.apiServices = append(a.apiServices, services...)
+}
+
+func (a *apiImpl) Stop() *concurrency.Signal {
+	finishedSig := concurrency.NewSignal()
+	go a.stop(&finishedSig)
+	return &finishedSig
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
@@ -327,12 +339,17 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
+func (a *apiImpl) stop(finishedSig *concurrency.Signal) {
+	defer finishedSig.Signal()
+	a.grpcServer.GracefulStop()
+}
+
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}
 
-	grpcServer := grpc.NewServer(
+	a.grpcServer = grpc.NewServer(
 		grpc.Creds(credsFromConn{}),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
@@ -351,10 +368,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	)
 
 	for _, service := range a.apiServices {
-		service.RegisterServiceServer(grpcServer)
+		service.RegisterServiceServer(a.grpcServer)
 	}
 
-	dialCtxFunc := a.listenOnLocalEndpoint(grpcServer)
+	dialCtxFunc := a.listenOnLocalEndpoint(a.grpcServer)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
 	if err != nil {
 		log.Panicf("Could not connect to local endpoint: %v", err)
@@ -364,7 +381,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
-		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, grpcServer)
+		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.grpcServer)
 		if err != nil {
 			if endpointCfg.Optional {
 				log.Errorf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)

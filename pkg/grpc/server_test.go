@@ -45,6 +45,7 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
 			api.Start().Wait()
+			api.Stop().Wait()
 		})
 	}
 }
