@@ -4,7 +4,6 @@ import io.stackrox.proto.storage.RoleOuterClass
 import services.AuthService
 import services.BaseService
 
-import org.junit.Assume
 import spock.lang.Tag
 
 @Tag("BAT")

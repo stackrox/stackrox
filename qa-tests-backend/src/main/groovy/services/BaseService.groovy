@@ -104,10 +104,12 @@ class BaseService {
         }
     }
 
-    static ThreadLocal<ManagedChannel> transportChannel = ThreadLocal.withInitial(() -> null)
-    static ThreadLocal<ClientInterceptor> authInterceptor = ThreadLocal.withInitial(() -> null)
-    static ThreadLocal<Channel> effectiveChannel = ThreadLocal.withInitial(() -> null)
-    private static ThreadLocal<boolean> useClientCert = ThreadLocal.withInitial(() -> false)
+    // codenarc-disable FieldName
+    private static final ThreadLocal<ManagedChannel> transportChannel = ThreadLocal.withInitial(() -> null)
+    private static final ThreadLocal<ClientInterceptor> authInterceptor = ThreadLocal.withInitial(() -> null)
+    private static final ThreadLocal<Channel> effectiveChannel = ThreadLocal.withInitial(() -> null)
+    private static final ThreadLocal<boolean> useClientCert = ThreadLocal.withInitial(() -> false)
+    // codenarc-enable FieldName
 
     static initializeChannel() {
         if (transportChannel.get() == null) {
