@@ -32,6 +32,7 @@ jobs:
     - name: Ignore dubious repository ownership
       run: |
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        # shellcheck disable=SC2016
         git config --global --add safe.directory "$(pwd)"
         su tester -c 'git config --global --add safe.directory "$(pwd)"'
 
