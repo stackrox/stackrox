@@ -91,6 +91,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 		// represents the index of this specific child among the parent's children).
 		for _, parentPrimaryKey := range parentPrimaryKeys {
 			var columnNameInChild string
+			var columnNameInChildForCodeVariables string
 			// If a column in a child table references a column "X" in the parent table, we
 			// name the column in the child "parent_table_name_X".
 			// We keep this name even in the grandchild, and do not continuously add prefixes in front.
@@ -100,11 +101,12 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 			} else {
 				columnNameInChild = parentPrimaryKey.ColumnName
 			}
+			columnNameInChildForCodeVariables = snakeCaseToSingularLowerCamelCase(columnNameInChild)
 			additionalFields = append(additionalFields, Field{
 				Schema: s,
-				Name:   columnNameInChild,
+				Name:   columnNameInChildForCodeVariables,
 				ObjectGetter: ObjectGetter{
-					value:    columnNameInChild,
+					value:    columnNameInChildForCodeVariables,
 					variable: true,
 				},
 				ColumnName: columnNameInChild,

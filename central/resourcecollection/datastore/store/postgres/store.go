@@ -110,11 +110,11 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	return nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(_ context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collections_Id string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(_ context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		collections_Id,
+		collectionID,
 		idx,
 		obj.GetId(),
 	}
@@ -208,7 +208,7 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx *postgres.Tx, ob
 	return err
 }
 
-func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx *postgres.Tx, collections_Id string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
+func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, tx *postgres.Tx, collectionID string, objs ...*storage.ResourceCollection_EmbeddedResourceCollection) error {
 
 	inputRows := [][]interface{}{}
 
@@ -231,7 +231,7 @@ func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, 
 
 		inputRows = append(inputRows, []interface{}{
 
-			collections_Id,
+			collectionID,
 
 			idx,
 
