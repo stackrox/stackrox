@@ -67,8 +67,6 @@ func (f *localFetchArena) Realizer(_ context.Context) indexer.Realizer {
 }
 
 // Get downloads the image's manifest and returns the related claircore.Manifest.
-//
-// Get also downloads each previously unseen layer of the image into the arena's root directory.
 func (f *localFetchArena) Get(ctx context.Context, image string, opts ...Option) (*claircore.Manifest, error) {
 	// Parse the image name before doing anything else,
 	// as there is no reason to do anything if the image is not properly referenced.
