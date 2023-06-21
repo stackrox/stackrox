@@ -133,7 +133,7 @@ class BaseService {
         if (authInterceptor == null) {
             effectiveChannel.set(transportChannel.get())
         } else {
-            effectiveChannel.set(ClientInterceptors.intercept(transportChannel.get(), authInterceptor))
+            effectiveChannel.set(ClientInterceptors.intercept(transportChannel.get(), authInterceptor.get()))
         }
     }
 
