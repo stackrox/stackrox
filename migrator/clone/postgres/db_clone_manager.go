@@ -17,7 +17,7 @@ const (
 	BackupClone = migrations.BackupDatabase
 
 	// PreviousClone - previous postgres clone used for rollback
-	PreviousClone = "central_previous"
+	PreviousClone = migrations.PreviousDatabase
 
 	// TempClone - temp postgres clone
 	TempClone = "central_temp"

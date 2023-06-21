@@ -61,7 +61,8 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 	if env.ManagedCentral.BooleanSetting() {
 		upgradeStatus.CanRollbackAfterUpgrade = true
 	} else {
-		var toBeFreedBytes int64
+		// Need to keep the checks for PreviousDatabase for now as we could be migrating from a
+		// version that supported a previous database.
 		exists, err := pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to determine if %s database exists", migrations.PreviousDatabase)
