@@ -330,23 +330,14 @@ function launch_central {
 
       local helm_chart="$unzip_dir/chart"
 
-      # set custom central version if the CENTRAL_CHART_VERSION_OVERRIDE env is set and equal a release version
-      # this has to happen after linting since helm lint does not recognize the --version flag
-      if [[ "${CENTRAL_CHART_VERSION_OVERRIDE}" =~ ^v?([0-9]+)\.([0-9]+)\.(x|[0-9]+)$ ]]; then
+      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
+        helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
+      fi
+
+      if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ]]; then
         helm_args+=(
           --version="${CENTRAL_CHART_VERSION_OVERRIDE}"
         )
-        # make sure the helm chart is available on the cluster
-        helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
-        helm repo update
-        if helm search repo stackrox-oss -l | grep -E '(stackrox-oss/stackrox-central-services)\s+(\d+\.\d+\.\d+)\s+('${SENSOR_CHART_VERSION_OVERRIDE}')'; then
-          helm_args+=(
-            --version="${SENSOR_CHART_VERSION_OVERRIDE}"
-          )
-          helm_chart="stackrox-oss/stackrox-central-services"
-        else
-          echo "stackrox-central-services helm chart for version "${SENSOR_CHART_VERSION_OVERRIDE}" not found in stackrox-oss repo"
-        fi
       fi
 
       set -x
@@ -598,21 +589,16 @@ function launch_sensor {
 
       local helm_chart="$k8s_dir/sensor-deploy/chart"
 
-      # set custom sensor version if the SENSOR_CHART_VERSION_OVERRIDE env is set and equal to a release tag
-      # in this case we need to find the right helm chart from the stackrox-oss repo
-      if [[ "${SENSOR_CHART_VERSION_OVERRIDE}" =~ ^v?([0-9]+)\.([0-9]+)\.(x|[0-9]+)$ ]]; then
-        # make sure the helm chart is available on the cluster
-        helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
-        helm repo update
-        if helm search repo stackrox-oss -l | grep -E '(stackrox-oss/stackrox-secured-cluster-services)\s+(\d+\.\d+\.\d+)\s+('${SENSOR_CHART_VERSION_OVERRIDE}')'; then
-          helm_args+=(
-            --version="${SENSOR_CHART_VERSION_OVERRIDE}"
-          )
-          helm_chart="stackrox-oss/stackrox-secured-cluster-services"
-        else
-          echo "stackrox-secured-cluster-services helm chart for version "${SENSOR_CHART_VERSION_OVERRIDE}" not found in stackrox-oss repo"
-        fi
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
+
+      if [[ -n "${SENSOR_CHART_VERSION_OVERRIDE}" ]]; then
+        helm_args+=(
+          --version="${SENSOR_CHART_VERSION_OVERRIDE}"
+        )
+      fi
+
       set -x
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
