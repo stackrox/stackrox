@@ -31,38 +31,38 @@ class BaseService {
     }
 
     static useApiToken(String apiToken) {
-        updateAuthConfig(useClientCert, new AuthInterceptor(apiToken))
+        updateAuthConfig(useClientCert.get(), new AuthInterceptor(apiToken))
     }
 
     static useBasicAuth() {
-        updateAuthConfig(useClientCert, new AuthInterceptor(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD))
+        updateAuthConfig(useClientCert.get(), new AuthInterceptor(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD))
     }
 
     static useNoAuthorizationHeader() {
-        updateAuthConfig(useClientCert, null)
+        updateAuthConfig(useClientCert.get(), null)
     }
 
     static setUseClientCert(boolean use) {
-        updateAuthConfig(use, authInterceptor)
+        updateAuthConfig(use, authInterceptor.get())
     }
 
     private static updateAuthConfig(boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
+        if (useClientCert.get() == newUseClientCert && authInterceptor.get() == newAuthInterceptor) {
             return
         }
-        if (useClientCert != newUseClientCert) {
-            if (transportChannel != null) {
-                transportChannel.shutdownNow()
-                transportChannel = null
-                effectiveChannel = null
+        if (useClientCert.get() != newUseClientCert) {
+            if (transportChannel.get() != null) {
+                transportChannel.get().shutdownNow()
+                transportChannel.set(null)
+                effectiveChannel.set(null)
             }
         }
-        if (authInterceptor != newAuthInterceptor) {
-            effectiveChannel = null
+        if (authInterceptor.get() != newAuthInterceptor) {
+            effectiveChannel.set(null)
         }
 
-        useClientCert = newUseClientCert
-        authInterceptor = newAuthInterceptor
+        useClientCert.set(newUseClientCert)
+        authInterceptor.set(newAuthInterceptor)
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -104,13 +104,13 @@ class BaseService {
         }
     }
 
-    static ManagedChannel transportChannel = null
-    static ClientInterceptor authInterceptor = null
-    static Channel effectiveChannel = null
-    private static boolean useClientCert = false
+    static ThreadLocal<ManagedChannel> transportChannel = ThreadLocal.withInitial(() -> null)
+    static ThreadLocal<ClientInterceptor> authInterceptor = ThreadLocal.withInitial(() -> null)
+    static ThreadLocal<Channel> effectiveChannel = ThreadLocal.withInitial(() -> null)
+    private static ThreadLocal<boolean> useClientCert = ThreadLocal.withInitial(() -> false)
 
     static initializeChannel() {
-        if (transportChannel == null) {
+        if (transportChannel.get() == null) {
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -119,26 +119,26 @@ class BaseService {
             }
             def sslContext = sslContextBuilder.build()
 
-            transportChannel = NettyChannelBuilder
+            transportChannel.set(NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
                     .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
-                    .build()
-            effectiveChannel = null
+                    .build())
+            effectiveChannel.set(null)
         }
 
         if (authInterceptor == null) {
-            effectiveChannel = transportChannel
+            effectiveChannel.set(transportChannel.get())
         } else {
-            effectiveChannel = ClientInterceptors.intercept(transportChannel, authInterceptor)
+            effectiveChannel.set(ClientInterceptors.intercept(transportChannel.get(), authInterceptor))
         }
     }
 
     static Channel getChannel() {
-        if (effectiveChannel == null) {
+        if (effectiveChannel.get() == null) {
             initializeChannel()
         }
-        return effectiveChannel
+        return effectiveChannel.get()
     }
 }
