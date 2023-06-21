@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -25,13 +24,6 @@ func (factory) UpdaterSet(context.Context) (s driver.UpdaterSet, err error) {
 }
 
 type updater struct {
-	c    *http.Client
-	root *url.URL
-	// Allow is a bool-and-map-of-bool.
-	//
-	// If populated, only extant entries are allowed. If not populated,
-	// everything is allowed. It uses a bool to make a conditional simpler later.
-	allow map[string]bool
 }
 
 var _ driver.Updater = (*updater)(nil)
