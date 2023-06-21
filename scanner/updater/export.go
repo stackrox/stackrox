@@ -3,10 +3,8 @@ package updater
 import (
 	"compress/gzip"
 	"context"
-	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/quay/claircore/alpine"
@@ -22,7 +20,7 @@ import (
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater/osv"
 	"github.com/quay/zlog"
-	"github.com/stackrox/scanner/v4/updater/manual"
+	"github.com/stackrox/stackrox/scanner/v4/updater/manual"
 )
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
@@ -45,9 +43,8 @@ func Export(ctx context.Context) error {
 	}
 
 	appendUpdaterSet(aws.UpdaterSet(ctx))
-	appendUpdaterSet(manual.Factory.UpdaterSet(ctx))
+	appendUpdaterSet(manual.UpdaterSet(ctx, nil))
 	appendUpdaterSet(oracle.UpdaterSet(ctx))
-	appendUpdaterSet(osv.Factory.UpdaterSet(ctx))
 	appendUpdaterSet(photon.UpdaterSet(ctx))
 	appendUpdaterSet(suse.UpdaterSet(ctx))
 
@@ -71,6 +68,8 @@ func Export(ctx context.Context) error {
 		return err
 	}
 
+	osvFac := osv.Factory
+
 	cfgs := map[string]driver.ConfigUnmarshaler{
 		"debian": func(v interface{}) error {
 			v.(*debian.FactoryConfig).MirrorURL = `https://deb.debian.org/`
@@ -87,6 +86,11 @@ func Export(ctx context.Context) error {
 			v.(*ubuntu.FactoryConfig).Name = "ubuntu"
 			return nil
 		},
+		"osv": func(v interface{}) error {
+			cfg := v.(*osv.FactoryConfig)
+			cfg.URL = osv.DefaultURL
+			return nil
+		},
 	}
 
 	facs := map[string]driver.UpdaterSetFactory{
@@ -94,15 +98,11 @@ func Export(ctx context.Context) error {
 		"alpine": alpineFac,
 		"rhel":   rhelFac,
 		"ubuntu": ubuntuFac,
+		"osv":    osvFac,
 	}
 
-	tempDir, err := os.MkdirTemp("", "output")
-	if err != nil {
-		return err
-	}
-	//defer os.RemoveAll(tempDir)
-	outputFile, err := os.Create(filepath.Join(tempDir, "output.json.gz"))
-	fmt.Println("Temporary directory path:", tempDir)
+	os.Mkdir("tmp", 0700)
+	outputFile, err := os.Create("tmp/output.json.gz")
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,8 @@ func Export(ctx context.Context) error {
 	defer gzipWriter.Close()
 
 	httpClient := http.DefaultClient
-	err = retryWithBackoff(3, 5*time.Second, func() error {
+
+	err = retryWithBackoff(3, 3*time.Second, func() error {
 		updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
 			updates.WithOutOfTree(updaters),
 		)
@@ -124,27 +125,27 @@ func Export(ctx context.Context) error {
 		err = updaterStore.Store(gzipWriter)
 		return err
 	})
-
 	if err != nil {
 		return err
 	}
 
 	configStore, err := jsonblob.New()
-	err = retryWithBackoff(3, 5*time.Second, func() error {
-		configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), httpClient,
+
+	err = retryWithBackoff(3, 3*time.Second, func() error {
+		configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
 			updates.WithConfigs(cfgs),
 			updates.WithFactories(facs),
 		)
-		if err != nil {
-			return err
-		}
 		if err := configMgr.Run(ctx); err != nil {
 			return err
 		}
+
 		err = configStore.Store(gzipWriter)
+		if err != nil {
+			return err
+		}
 		return err
 	})
-
 	if err != nil {
 		return err
 	}

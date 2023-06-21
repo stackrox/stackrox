@@ -4,13 +4,12 @@ import (
 	"context"
 
 	"github.com/quay/zlog"
-	"github.com/stackrox/scanner/v4/updater"
+	"github.com/stackrox/stackrox/scanner/v4/updater"
 )
 
 func main() {
 	ctx := context.Background()
-	err := updater.Export(ctx)
-	if err != nil {
-		zlog.Error(context.Background()).Msg(err.Error())
+	if err := updater.Export(ctx); err != nil {
+		zlog.Error(ctx).Err(err).Send()
 	}
 }
