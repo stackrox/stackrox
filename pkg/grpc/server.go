@@ -71,6 +71,8 @@ type serverAndListener struct {
 	srv      server
 	listener net.Listener
 	endpoint *EndpointConfig
+
+	stopper func()
 }
 
 // APIService is the service interface
@@ -401,6 +403,8 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		}
 	}
 
+	go a.runStopperOnRequest(allSrvAndLiss)
+
 	errC := make(chan error, len(allSrvAndLiss))
 
 	for _, srvAndLis := range allSrvAndLiss {
@@ -430,5 +434,14 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 			}
 		}
 
+	}
+}
+
+func (a *apiImpl) runStopperOnRequest(listeners []serverAndListener) {
+	a.grpcShutdownStarted.Wait()
+	for _, listener := range listeners {
+		if listener.stopper != nil {
+			listener.stopper()
+		}
 	}
 }

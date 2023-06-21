@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -196,6 +197,11 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			srv:      httpSrv,
 			listener: httpLis,
 			endpoint: c,
+			stopper: func() {
+				if err := httpSrv.Shutdown(context.Background()); err != nil {
+					log.Warnf("stopping HTTP listener: %s", err)
+				}
+			},
 		})
 	}
 	if grpcLis != nil {
