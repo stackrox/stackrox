@@ -124,10 +124,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 				expectedExposureInfos: nil,
 			}
 
-			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
-			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
 
@@ -167,11 +164,8 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 			},
 		},
 	}
-	s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
-		defer messageReceived.Done()
-	})
 
-	s.mockOutput.EXPECT().Send(&expectedDeployment).Times(1).Do(func(arg0 interface{}) {
+	s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
@@ -198,10 +192,7 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 	s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
 	s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
 
-	s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
-		defer messageReceived.Done()
-	})
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 1}).Times(3).Do(func(arg0 interface{}) {
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{}).Times(4).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
@@ -232,10 +223,7 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 			s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
 			s.mockOutput.EXPECT()
 
-			s.mockOutput.EXPECT().Send(&resourceActionMatcher{resourceAction: action}).Times(1).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
-			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&resourceActionMatcher{resourceAction: action}).Times(2).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
 
@@ -262,7 +250,7 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 
 	s.givenBuildDependenciesError(&messageReceived, "1234")
 
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 0}).Times(1).Do(func(arg0 interface{}) {
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{}).Times(1).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
@@ -291,7 +279,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
 
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 0}).Times(1).Do(func(arg0 interface{}) {
+	s.mockOutput.EXPECT().Send(&messageCounterMatcher{}).Times(1).Do(func(arg0 interface{}) {
 		defer messageReceived.Done()
 	})
 
@@ -383,10 +371,7 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 
 			s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
 
-			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: 1}).Times(testCase.expectedDeploymentProcessed).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: len(testCase.forwardedMessages)}).Times(testCase.expectedDeploymentProcessed + 1).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
 
@@ -554,10 +539,11 @@ func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
 }
 
 type deploymentMatcher struct {
-	id                    string
-	permissionLevel       storage.PermissionLevel
-	expectedExposureInfos []*storage.PortConfig_ExposureInfo
-	error                 string
+	id                                    string
+	permissionLevel                       storage.PermissionLevel
+	expectedExposureInfos                 []*storage.PortConfig_ExposureInfo
+	error                                 string
+	eventsReceivedFromDispatcherProcessed bool
 }
 
 func (m *deploymentMatcher) Matches(target interface{}) bool {
@@ -566,8 +552,12 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 		m.error = "received message isn't a resource event"
 		return false
 	}
+	if !m.eventsReceivedFromDispatcherProcessed && len(event.ForwardMessages) < 1 {
+		m.eventsReceivedFromDispatcherProcessed = true
+		return true
+	}
 
-	if len(event.ForwardMessages) < 1 {
+	if len(event.ForwardMessages) < 1 && m.eventsReceivedFromDispatcherProcessed {
 		m.error = fmt.Sprintf("not enough ForwardMessages: %d", len(event.ForwardMessages))
 		return false
 	}
@@ -632,9 +622,15 @@ func (m *detectionObjectMatcher) String() string {
 	return fmt.Sprintf("expected %v: error %s", m.expected, m.error)
 }
 
+// messageCounterMatcher makes sure every message sent after resolving the deployment
+// has exactly one ForwardMessage. It also makes sure that if the resolver is supposed
+// to forward any messages coming from the dispatchers (numEvents) those are also sent.
 type messageCounterMatcher struct {
-	numEvents int
-	error     string
+	// numEvents is the number of ForwardMessages coming from the dispatchers
+	// most test do not specify any so this will be zero most of the time.
+	numEvents                             int
+	error                                 string
+	eventsReceivedFromDispatcherProcessed bool
 }
 
 func (m *messageCounterMatcher) Matches(target interface{}) bool {
@@ -643,13 +639,15 @@ func (m *messageCounterMatcher) Matches(target interface{}) bool {
 		m.error = "received message isn't a resource event"
 		return false
 	}
-
-	if len(event.ForwardMessages) != m.numEvents {
-		m.error = fmt.Sprintf("expected %d events but received %d", m.numEvents, len(event.ForwardMessages))
-		return false
+	if !m.eventsReceivedFromDispatcherProcessed && len(event.ForwardMessages) == m.numEvents {
+		m.eventsReceivedFromDispatcherProcessed = true
+		return true
 	}
-
-	return true
+	if len(event.ForwardMessages) == 1 {
+		return true
+	}
+	m.error = fmt.Sprintf("expected %d events but received %d", m.numEvents, len(event.ForwardMessages))
+	return false
 }
 
 func (m *messageCounterMatcher) String() string {
@@ -657,8 +655,9 @@ func (m *messageCounterMatcher) String() string {
 }
 
 type resourceActionMatcher struct {
-	resourceAction central.ResourceAction
-	error          string
+	resourceAction                        central.ResourceAction
+	error                                 string
+	eventsReceivedFromDispatcherProcessed bool
 }
 
 func (m *resourceActionMatcher) Matches(target interface{}) bool {
@@ -668,7 +667,12 @@ func (m *resourceActionMatcher) Matches(target interface{}) bool {
 		return false
 	}
 
-	if len(event.ForwardMessages) < 1 {
+	if !m.eventsReceivedFromDispatcherProcessed && len(event.ForwardMessages) < 1 {
+		m.eventsReceivedFromDispatcherProcessed = true
+		return true
+	}
+
+	if len(event.ForwardMessages) < 1 && m.eventsReceivedFromDispatcherProcessed {
 		m.error = fmt.Sprintf("not enough ForwardMessages: %d", len(event.ForwardMessages))
 		return false
 	}
