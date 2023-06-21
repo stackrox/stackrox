@@ -10,7 +10,6 @@ import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
 
-import spock.lang.Retry
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -183,7 +182,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         return isPostgresRun() ? GET_NODE_COMPONENTS_QUERY : GET_COMPONENTS_QUERY
     }
 
-    @Retry(count = 1)
     @Unroll
     def "Verify role based scoping on vuln mgmt: node-role Node:*"() {
         when:
@@ -225,7 +223,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
     }
 
-    @Retry(count = 1)
     @Unroll
     def "Verify role based scoping on vuln mgmt: image-role Image:*"() {
         when:
@@ -279,7 +276,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         BaseService.useBasicAuth()
     }
 
-    @Retry(count = 1)
     @Unroll
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
@@ -335,7 +331,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         NODE_IMAGE_ROLE | "Component:*" | "ImageComponent:*" | "NodeComponent:*"
     }
 
-    @Retry(count = 0)
     @Unroll
     def "Verify permissions on vuln mgmt: role with no CVE permissions is rejected"() {
         when:

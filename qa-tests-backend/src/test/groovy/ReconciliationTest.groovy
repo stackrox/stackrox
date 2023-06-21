@@ -23,10 +23,8 @@ import util.Timer
 import util.Env
 
 import spock.lang.IgnoreIf
-import spock.lang.Retry
 import spock.lang.Tag
 
-@Retry(count = 0)
 class ReconciliationTest extends BaseSpecification {
 
     private static final Map<String, Integer> EXPECTED_MIN_DELETIONS_BY_KEY = [

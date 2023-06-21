@@ -66,7 +66,7 @@ class ChaosMonkey {
                         orchestrator.deletePod(it.metadata.namespace, it.metadata.name, gracePeriod)
                     }
                 }
-                Helpers.sleepWithRetryBackoff(1000)
+                sleep(1000)
             }
         }
     }
@@ -97,7 +97,7 @@ class ChaosMonkey {
                 log.info "ChaosMonkey: All admission control pod replicas ready: ${readyPodNames}"
                 break
             }
-            Helpers.sleepWithRetryBackoff(1000)
+            sleep(1000)
         }
     }
 }

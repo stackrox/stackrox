@@ -30,10 +30,8 @@ import services.RoleService
 
 import org.junit.Rule
 import org.junit.rules.Timeout
-import spock.lang.Retry
 import spock.lang.Tag
 
-@Retry(count = 0)
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
