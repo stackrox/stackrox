@@ -133,6 +133,6 @@ describe('Vulnerability Management Node Components', () => {
     });
 
     it('should display links for nodes', () => {
-        verifySecondaryEntities(entitiesKey, 'nodes', 6, /^\d+ nodes?$/);
+        verifySecondaryEntities(entitiesKey, 'nodes', 6);
     });
 });

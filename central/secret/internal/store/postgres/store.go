@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -114,11 +113,11 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	return nil
 }
 
-func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secrets_Id string, idx int) error {
+func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(secrets_Id),
+		pgutils.NilOrUUID(secretID),
 		idx,
 		obj.GetType(),
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
@@ -130,22 +129,22 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secrets_Id, idx, childIndex); err != nil {
+		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secretID, idx, childIndex); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from secrets_files_registries where secrets_Id = $1 AND secrets_files_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(secrets_Id), idx, len(obj.GetImagePullSecret().GetRegistries()))
+	batch.Queue(query, pgutils.NilOrUUID(secretID), idx, len(obj.GetImagePullSecret().GetRegistries()))
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_files_idx int, idx int) error {
+func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pgutils.NilOrUUID(secrets_Id),
-		secrets_files_idx,
+		pgutils.NilOrUUID(secretID),
+		secretFileIdx,
 		idx,
 		obj.GetName(),
 	}
@@ -247,7 +246,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx *postgres.Tx, objs .
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
+func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, secretID string, objs ...*storage.SecretDataFile) error {
 
 	inputRows := [][]interface{}{}
 
@@ -272,7 +271,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(secrets_Id),
+			pgutils.NilOrUUID(secretID),
 
 			idx,
 
@@ -300,7 +299,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
+		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secretID, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
 			return err
 		}
 	}
@@ -308,7 +307,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *postgres.Tx, secrets_Id string, secrets_files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *postgres.Tx, secretID string, secretFileIdx int, objs ...*storage.ImagePullSecret_Registry) error {
 
 	inputRows := [][]interface{}{}
 
@@ -333,9 +332,9 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *post
 
 		inputRows = append(inputRows, []interface{}{
 
-			pgutils.NilOrUUID(secrets_Id),
+			pgutils.NilOrUUID(secretID),
 
-			secrets_files_idx,
+			secretFileIdx,
 
 			idx,
 
@@ -481,12 +480,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -504,12 +498,7 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Secret")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -528,12 +517,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}
@@ -573,13 +557,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return 0, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
-
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return 0, err
 	}
@@ -592,12 +570,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Secret")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return false, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return false, err
 	}
@@ -619,12 +592,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Secret, bool, 
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, false, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, false, err
 	}
@@ -648,15 +616,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -687,15 +647,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -738,12 +690,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.SecretIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
-	if err != nil {
-		return nil, err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return nil, err
 	}
@@ -763,15 +710,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // Walk iterates over all of the objects in the store and applies the closure.
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Secret) error) error {
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
-	if err != nil {
-		return err
-	}
-	sacQueryFilter, err = sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
 		return err
 	}

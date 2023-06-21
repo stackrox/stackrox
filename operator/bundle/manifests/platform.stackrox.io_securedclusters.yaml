@@ -83,6 +83,12 @@ spec:
                     description: If you want this component to only run on specific
                       nodes, you can configure a node selector here.
                     type: object
+                  replicas:
+                    default: 3
+                    description: The number of replicas of the admission control pod.
+                    format: int32
+                    minimum: 1
+                    type: integer
                   resources:
                     description: Allows overriding the default resource settings for
                       this component. Please consult the documentation for an overview

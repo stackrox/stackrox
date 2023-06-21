@@ -120,6 +120,7 @@ function S3IntegrationForm({
     isEditable = false,
 }: IntegrationFormProps<S3Integration>): ReactElement {
     const formInitialValues = { ...defaultValues, ...initialValues };
+
     if (initialValues) {
         formInitialValues.externalBackup = {
             ...formInitialValues.externalBackup,

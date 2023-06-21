@@ -173,7 +173,7 @@ function CVEsTable({
                                         onToggle: () => expandedRowSet.toggle(cve),
                                     }}
                                 />
-                                <Td>
+                                <Td dataLabel="CVE">
                                     <Button
                                         variant={ButtonVariant.link}
                                         isInline
@@ -183,7 +183,7 @@ function CVEsTable({
                                         {cve}
                                     </Button>
                                 </Td>
-                                <Td>
+                                <Td dataLabel="Images by severity">
                                     <SeverityCountLabels
                                         criticalCount={criticalCount}
                                         importantCount={importantCount}
@@ -192,7 +192,7 @@ function CVEsTable({
                                         filteredSeverities={filteredSeverities}
                                     />
                                 </Td>
-                                <Td>
+                                <Td dataLabel="Top CVSS">
                                     <CvssTd
                                         cvss={topCVSS}
                                         scoreVersion={
@@ -202,11 +202,11 @@ function CVEsTable({
                                         }
                                     />
                                 </Td>
-                                <Td>
+                                <Td dataLabel="Affected images">
                                     {/* TODO: fix upon PM feedback */}
                                     {affectedImageCount}/{unfilteredImageCount} affected images
                                 </Td>
-                                <Td>
+                                <Td dataLabel="First discovered">
                                     <DateDistanceTd date={firstDiscoveredInSystem} />
                                 </Td>
                             </Tr>

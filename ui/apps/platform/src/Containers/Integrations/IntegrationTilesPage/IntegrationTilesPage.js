@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { PageSection, Title } from '@patternfly/react-core';
 
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { integrationsPath } from 'routePaths';
 import { selectors } from 'reducers';
@@ -21,6 +22,11 @@ const IntegrationTilesPage = ({
     signatureIntegrations,
 }) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
 
     function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
@@ -114,9 +120,14 @@ const IntegrationTilesPage = ({
                 >
                     {notifierTiles}
                 </IntegrationsSection>
-                <IntegrationsSection headerName="Backup Integrations" testId="backup-integrations">
-                    {backupTiles}
-                </IntegrationsSection>
+                {canUseCloudBackupIntegrations && (
+                    <IntegrationsSection
+                        headerName="Backup Integrations"
+                        testId="backup-integrations"
+                    >
+                        {backupTiles}
+                    </IntegrationsSection>
+                )}
                 <IntegrationsSection headerName="Authentication Tokens" testId="token-integrations">
                     {authProviderTiles}
                 </IntegrationsSection>

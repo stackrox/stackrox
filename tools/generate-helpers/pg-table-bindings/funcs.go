@@ -77,24 +77,6 @@ func applyPointwise(ss []string, f func(string) string) {
 	}
 }
 
-var (
-	acronymsToUpperCase = map[string]struct{}{
-		"API":  {},
-		"CPU":  {},
-		"ID":   {},
-		"UID":  {},
-		"UUID": {},
-	}
-)
-
-func upperCaseAcronyms(s string) string {
-	uc := strings.ToUpper(s)
-	if _, found := acronymsToUpperCase[uc]; found {
-		return uc
-	}
-	return s
-}
-
 func lowerCamelCase(s string) string {
 	words := splitWords(s)
 	if len(words) == 0 {
@@ -105,7 +87,7 @@ func lowerCamelCase(s string) string {
 		return "id"
 	}
 	applyPointwise(words[1:], strings.Title)
-	applyPointwise(words, upperCaseAcronyms)
+	applyPointwise(words, stringutils.UpperCaseAcronyms)
 	return strings.Join(words, "")
 }
 
@@ -115,7 +97,7 @@ func upperCamelCase(s string) string {
 		return ""
 	}
 	applyPointwise(words, strings.Title)
-	applyPointwise(words, upperCaseAcronyms)
+	applyPointwise(words, stringutils.UpperCaseAcronyms)
 	return strings.Join(words, "")
 }
 
@@ -146,7 +128,12 @@ func dict(values ...interface{}) (map[string]interface{}, error) {
 	return dict, nil
 }
 
+func arr(els ...any) []any {
+	return els
+}
+
 var funcMap = template.FuncMap{
+	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
 	"upperCamelCase":               upperCamelCase,
 	"valueExpansion":               valueExpansion,

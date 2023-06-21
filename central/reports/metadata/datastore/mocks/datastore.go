@@ -113,18 +113,18 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockDataStore) GetMany(ctx context.Context, id []string) ([]*storage.ReportMetadata, error) {
+func (m *MockDataStore) GetMany(ctx context.Context, ids []string) ([]*storage.ReportMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMany", ctx, id)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.ReportMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockDataStoreMockRecorder) GetMany(ctx, id interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockDataStore)(nil).GetMany), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockDataStore)(nil).GetMany), ctx, ids)
 }
 
 // Search mocks base method.

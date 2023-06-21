@@ -42,7 +42,6 @@ import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
-import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
@@ -272,7 +271,6 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Retry(count = 0)
     @IgnoreIf({ Env.BUILD_TAG == null || !Env.BUILD_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:

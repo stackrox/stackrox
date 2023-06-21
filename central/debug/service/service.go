@@ -106,6 +106,7 @@ type Service interface {
 	v1.DebugServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+	PrivateDiagnosticsHandler() http.HandlerFunc
 }
 
 // New returns a Service that implements v1.DebugServiceServer
@@ -140,6 +141,17 @@ type serviceImpl struct {
 	roleDataStore        roleDS.DataStore
 	configDataStore      configDS.DataStore
 	notifierDataStore    notifierDS.DataStore
+}
+
+// PrivateDiagnosticsHandler returns handler to be served on "private" port.
+// Private port is not exposed via k8s Service and only accessible to callers with k8s/Openshift cluster access.
+// This handler shouldn't be exposed to other callers as it has no authorization and can elevate customer permissions.
+func (s *serviceImpl) PrivateDiagnosticsHandler() http.HandlerFunc {
+	return func(responseWriter http.ResponseWriter, r *http.Request) {
+		// Adding scope checker as no authorizer is used, ergo no identity in context by default.
+		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
+		s.getDiagnosticDumpWithCentral(responseWriter, r.WithContext(ctx), true)
+	}
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -485,18 +497,20 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
 
-// DebugHandler is an HTTP handler that outputs debugging information
+// CustomRoutes returns route-handler pairs to be served on HTTP port.
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
 		{
 			Route:         "/debug/dump",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
+			Compression:   true,
 		},
 		{
 			Route:         "/api/extensions/diagnostics",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
+			Compression:   true,
 		},
 		{
 			Route:         "/debug/versions.json",
@@ -683,6 +697,10 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 // getDiagnosticDump aims to provide a snapshot of some state information for
 // triaging. The size and download times of this dump shall stay reasonable.
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
+	s.getDiagnosticDumpWithCentral(w, r, env.EnableCentralDiagnostics.BooleanSetting())
+}
+
+func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
 	opts := debugDumpOptions{
@@ -691,7 +709,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withCPUProfile:    false,
 		withLogImbue:      true,
 		withAccessControl: true,
-		withCentral:       env.EnableCentralDiagnostics.BooleanSetting(),
+		withCentral:       withCentral,
 		withNotifiers:     true,
 	}
 
