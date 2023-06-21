@@ -94,7 +94,8 @@
                 "POLICY_CATEGORY_EDGE",
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
-                "REPORT_METADATA"
+                "REPORT_METADATA",
+                "REPORT_SNAPSHOT"
               ]
             },
             "collectionFormat": "multi"
@@ -188,7 +189,8 @@
                 "POLICY_CATEGORY_EDGE",
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
-                "REPORT_METADATA"
+                "REPORT_METADATA",
+                "REPORT_SNAPSHOT"
               ]
             },
             "collectionFormat": "multi"
@@ -276,7 +278,8 @@
                 "POLICY_CATEGORY_EDGE",
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
-                "REPORT_METADATA"
+                "REPORT_METADATA",
+                "REPORT_SNAPSHOT"
               ]
             },
             "collectionFormat": "multi"
@@ -413,10 +416,11 @@
         "POLICY_CATEGORY_EDGE",
         "PROCESS_LISTENING_ON_PORT",
         "API_TOKEN",
-        "REPORT_METADATA"
+        "REPORT_METADATA",
+        "REPORT_SNAPSHOT"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 53"
+      "title": "Next available tag: 54"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

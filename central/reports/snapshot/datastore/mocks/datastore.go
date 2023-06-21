@@ -37,19 +37,18 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// AddReportMetadata mocks base method.
-func (m *MockDataStore) AddReportMetadata(ctx context.Context, report *storage.ReportMetadata) (string, error) {
+// AddReportSnapshot mocks base method.
+func (m *MockDataStore) AddReportSnapshot(ctx context.Context, report *storage.ReportSnapshot) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddReportMetadata", ctx, report)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "AddReportSnapshot", ctx, report)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// AddReportMetadata indicates an expected call of AddReportMetadata.
-func (mr *MockDataStoreMockRecorder) AddReportMetadata(ctx, report interface{}) *gomock.Call {
+// AddReportSnapshot indicates an expected call of AddReportSnapshot.
+func (mr *MockDataStoreMockRecorder) AddReportSnapshot(ctx, report interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReportMetadata", reflect.TypeOf((*MockDataStore)(nil).AddReportMetadata), ctx, report)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReportSnapshot", reflect.TypeOf((*MockDataStore)(nil).AddReportSnapshot), ctx, report)
 }
 
 // Count mocks base method.
@@ -67,18 +66,18 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// DeleteReportMetadata mocks base method.
-func (m *MockDataStore) DeleteReportMetadata(ctx context.Context, id string) error {
+// DeleteReportSnapshot mocks base method.
+func (m *MockDataStore) DeleteReportSnapshot(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteReportMetadata", ctx, id)
+	ret := m.ctrl.Call(m, "DeleteReportSnapshot", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteReportMetadata indicates an expected call of DeleteReportMetadata.
-func (mr *MockDataStoreMockRecorder) DeleteReportMetadata(ctx, id interface{}) *gomock.Call {
+// DeleteReportSnapshot indicates an expected call of DeleteReportSnapshot.
+func (mr *MockDataStoreMockRecorder) DeleteReportSnapshot(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReportMetadata", reflect.TypeOf((*MockDataStore)(nil).DeleteReportMetadata), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReportSnapshot", reflect.TypeOf((*MockDataStore)(nil).DeleteReportSnapshot), ctx, id)
 }
 
 // Exists mocks base method.
@@ -97,10 +96,10 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ReportMetadata, bool, error) {
+func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ReportSnapshot, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.ReportMetadata)
+	ret0, _ := ret[0].(*storage.ReportSnapshot)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -113,10 +112,10 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockDataStore) GetMany(ctx context.Context, ids []string) ([]*storage.ReportMetadata, error) {
+func (m *MockDataStore) GetMany(ctx context.Context, ids []string) ([]*storage.ReportSnapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
-	ret0, _ := ret[0].([]*storage.ReportMetadata)
+	ret0, _ := ret[0].([]*storage.ReportSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -142,19 +141,19 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
-// SearchReportMetadatas mocks base method.
-func (m *MockDataStore) SearchReportMetadatas(ctx context.Context, q *v1.Query) ([]*storage.ReportMetadata, error) {
+// SearchReportSnapshots mocks base method.
+func (m *MockDataStore) SearchReportSnapshots(ctx context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchReportMetadatas", ctx, q)
-	ret0, _ := ret[0].([]*storage.ReportMetadata)
+	ret := m.ctrl.Call(m, "SearchReportSnapshots", ctx, q)
+	ret0, _ := ret[0].([]*storage.ReportSnapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchReportMetadatas indicates an expected call of SearchReportMetadatas.
-func (mr *MockDataStoreMockRecorder) SearchReportMetadatas(ctx, q interface{}) *gomock.Call {
+// SearchReportSnapshots indicates an expected call of SearchReportSnapshots.
+func (mr *MockDataStoreMockRecorder) SearchReportSnapshots(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchReportMetadatas", reflect.TypeOf((*MockDataStore)(nil).SearchReportMetadatas), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchReportSnapshots", reflect.TypeOf((*MockDataStore)(nil).SearchReportSnapshots), ctx, q)
 }
 
 // SearchResults mocks base method.
@@ -172,22 +171,8 @@ func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), ctx, q)
 }
 
-// UpdateReportMetadata mocks base method.
-func (m *MockDataStore) UpdateReportMetadata(ctx context.Context, report *storage.ReportMetadata) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateReportMetadata", ctx, report)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateReportMetadata indicates an expected call of UpdateReportMetadata.
-func (mr *MockDataStoreMockRecorder) UpdateReportMetadata(ctx, report interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateReportMetadata", reflect.TypeOf((*MockDataStore)(nil).UpdateReportMetadata), ctx, report)
-}
-
 // Walk mocks base method.
-func (m *MockDataStore) Walk(ctx context.Context, fn func(*storage.ReportMetadata) error) error {
+func (m *MockDataStore) Walk(ctx context.Context, fn func(*storage.ReportSnapshot) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)
