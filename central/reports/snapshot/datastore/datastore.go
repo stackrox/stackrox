@@ -33,19 +33,19 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore
-func New(storage pgStore.Store, searcher search.Searcher) (DataStore, error) {
+func New(storage pgStore.Store, searcher search.Searcher) DataStore {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
-		return nil, nil
+		return nil
 	}
 	ds := &datastoreImpl{
 		storage:  storage,
 		searcher: searcher,
 	}
-	return ds, nil
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(store, indexer)

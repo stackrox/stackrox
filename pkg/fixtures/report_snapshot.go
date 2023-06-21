@@ -41,6 +41,7 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 						MailingLists: []string{"foo@yahoo.com"},
 					},
 				},
+				NotifierName: "email-notifier-yahoo",
 			},
 			{
 				NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
@@ -48,6 +49,7 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 						MailingLists: []string{"bar@gmail.com"},
 					},
 				},
+				NotifierName: "email-notifier-gmail",
 			},
 		},
 		Requester: &storage.SlimUser{

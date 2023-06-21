@@ -6,7 +6,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -15,11 +14,9 @@ var (
 )
 
 func initialize() {
-	var err error
 	storage := pgStore.New(globaldb.GetPostgres())
 	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	ds, err = New(storage, search.New(storage, indexer))
-	utils.CrashOnError(err)
+	ds = New(storage, search.New(storage, indexer))
 }
 
 // Singleton returns a singleton instance of ReportSnapshot datastore

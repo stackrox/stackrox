@@ -39,8 +39,7 @@ func (s *ReportMetadataDatastoreTestSuite) SetupSuite() {
 
 	var err error
 	s.testDB = pgtest.ForT(s.T())
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportConfigStore, err = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.NoError(err)
 
