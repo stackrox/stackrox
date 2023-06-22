@@ -82,6 +82,7 @@ class ClusterTestSetsRunner:
                 hold = err
 
         if hold is not None:
+            print(f"Exception \"{str(hold)}\" raised in ClusterTestRunner", file=sys.stderr)
             raise hold
 
     def run_test_set(self, test_set):
