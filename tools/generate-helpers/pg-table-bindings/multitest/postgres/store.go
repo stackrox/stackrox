@@ -78,12 +78,17 @@ func New(db postgres.DB) Store {
 			targetResource,
 			schema,
 			metrics.SetPostgresOperationDurationTime,
+			pkGetter,
 		),
 		db: db,
 	}
 }
 
 //// Helper functions
+
+func pkGetter(obj *storage.TestMultiKeyStruct) string {
+	return obj.GetKey1()
+}
 
 func insertIntoTestMultiKeyStructs(ctx context.Context, batch *pgx.Batch, obj *storage.TestMultiKeyStruct) error {
 
@@ -438,54 +443,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestMultiKey
 
 		return s.copyFrom(ctx, objs...)
 	})
-}
-
-// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
-func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.TestMultiKeyStruct, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestMultiKeyStruct")
-
-	if len(identifiers) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, nil, err
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.TestMultiKeyStruct](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.TestMultiKeyStruct, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetKey1()] = msg
-	}
-	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input identifiers
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.TestMultiKeyStruct, 0, len(resultsByID))
-	for i, identifier := range identifiers {
-		if result, ok := resultsByID[identifier]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
 }
 
 // Delete removes the object associated to the specified ID from the store.

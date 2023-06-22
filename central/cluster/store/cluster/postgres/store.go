@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
@@ -77,12 +76,17 @@ func New(db postgres.DB) Store {
 			targetResource,
 			schema,
 			metrics.SetPostgresOperationDurationTime,
+			pkGetter,
 		),
 		db: db,
 	}
 }
 
 //// Helper functions
+
+func pkGetter(obj *storage.Cluster) string {
+	return obj.GetId()
+}
 
 func insertIntoClusters(_ context.Context, batch *pgx.Batch, obj *storage.Cluster) error {
 
@@ -179,54 +183,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) err
 		}
 	}
 	return s.upsert(ctx, objs...)
-}
-
-// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
-func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.Cluster, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
-
-	if len(identifiers) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, nil, err
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Cluster](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.Cluster, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input identifiers
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.Cluster, 0, len(resultsByID))
-	for i, identifier := range identifiers {
-		if result, ok := resultsByID[identifier]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
 }
 
 //// Stubs for satisfying legacy interfaces
