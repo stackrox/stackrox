@@ -73,8 +73,11 @@ type deduperImpl struct {
 }
 
 func pruneInvalidAlerts(existingHashes map[string]uint64) {
-	// Due to a bug where we are not skipping deduping on ATTEMPTED alerts
-	// we need to prune the invalid entries
+	// In the hash deduper, we were treating attempted alerts as normal alerts that could be potentially deduped
+	// even though they are more like runtime alerts. This would lead to the "hash" maps growing until we hit the
+	// max number of hashes and resetting. This ensures that we remove them from the "hash" maps because the only
+	// valid alerts are deploy time alerts where the id of the alert result is the same id as a deployment.
+	// This prunes all alert results in the "hash" maps that do not have a corresponding deployment in the hash map.
 	for k := range existingHashes {
 		if strings.HasPrefix(k, alertResourceKey) {
 			depKey := buildKey(deploymentResourceKey, getIDFromKey(k))
