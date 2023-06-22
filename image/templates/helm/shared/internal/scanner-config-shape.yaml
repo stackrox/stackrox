@@ -11,6 +11,7 @@ scanner:
     disable: null # bool
     minReplicas: null # int
     maxReplicas: null # int
+  affinity: null # dict
   resources: null # string | dict
   image:
     registry: null # string
