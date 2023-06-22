@@ -6,7 +6,7 @@ import PageTitle from 'Components/PageTitle';
 function VulnReportsPage() {
     return (
         <>
-            <PageTitle title="Vulnerability reporting - create" />
+            <PageTitle title="Create vulnerability report" />
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
@@ -19,9 +19,7 @@ function VulnReportsPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
-                <PageSection isCenterAligned />
-            </PageSection>
+            <PageSection padding={{ default: 'noPadding' }} />
         </>
     );
 }
