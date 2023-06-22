@@ -3,30 +3,12 @@ package types
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/tecbot/gorocksdb"
-	bolt "go.etcd.io/bbolt"
-	"gorm.io/gorm"
 )
 
 var (
 	// DefaultMigrationTimeout -- default timeout for migration postgres statements
 	DefaultMigrationTimeout = env.PostgresDefaultMigrationStatementTimeout.DurationSetting()
 )
-
-// Databases encapsulates all the different databases we are using
-// This struct helps avoid adding a new parameter when we switch DBs
-type Databases struct {
-	BoltDB *bolt.DB
-
-	// TODO(cdu): deprecate this and change to use *rocksdb.RocksDB.
-	RocksDB *gorocksdb.DB
-
-	PkgRocksDB *rocksdb.RocksDB
-	GormDB     *gorm.DB
-	PostgresDB postgres.DB
-}
 
 // A Migration represents a migration.
 type Migration struct {
