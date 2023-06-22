@@ -305,7 +305,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestSearch() {
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIndexing() {
 	ii := &storage.ImageIntegration{
-		Id:        "id1",
+		Id:        uuid.NewV4().String(),
 		ClusterId: clusterID,
 		Name:      "imageIntegration1",
 	}

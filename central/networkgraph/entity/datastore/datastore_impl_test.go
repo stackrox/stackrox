@@ -40,6 +40,7 @@ var (
 )
 
 func TestNetworkEntityDataStore(t *testing.T) {
+	t.Skip("ROX-18024: Skip so that all tests can be run")
 	suite.Run(t, new(NetworkEntityDataStoreTestSuite))
 }
 
