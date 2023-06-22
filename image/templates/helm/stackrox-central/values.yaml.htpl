@@ -120,6 +120,8 @@
 #
 #  nodeSelector: null
 #
+#  nodeAffinity: null
+#
 #  jwtSigner:
 #    key: null
 #    generate: null
@@ -277,6 +279,8 @@
 #    limits:
 #      memory: "4Gi"
 #      cpu: "2000m"
+#
+#  nodeAffinity: null
 #
 #  image:
 #    registry: null
