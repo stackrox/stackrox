@@ -1,19 +1,23 @@
-import * as api from '../constants/apiEndpoints';
-import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
-import { interactAndWaitForResponses } from './request';
-import { visit } from './visit';
-import selectSelectors from '../selectors/select';
-import navSelectors from '../selectors/navigation';
-import { visitMainDashboard } from './main';
+import { visitFromLeftNav } from '../../helpers/nav';
+import { interactAndWaitForResponses } from '../../helpers/request';
+import { visit } from '../../helpers/visit';
+import selectSelectors from '../../selectors/select';
 
 const networkGraphClusterAlias = 'networkgraph/cluster/id';
 
 const routeMatcherMapForClusterInNetworkGraph = {
     [networkGraphClusterAlias]: {
         method: 'GET',
-        url: api.network.networkGraph,
+        url: '/v1/networkgraph/cluster/*',
     },
 };
+
+// select
+
+const navSelector = 'nav[aria-label="Breadcrumb"]';
+const clusterSelect = `${navSelector} .cluster-select > button`;
+const namespaceSelect = `${navSelector} .namespace-select > button`;
+const deploymentSelect = `${navSelector} .deployment-select > button`;
 
 const clusterNamespacesTarget =
     '/v1/sac/clusters/*/namespaces?permissions=NetworkGraph&permissions=Deployment';
@@ -23,7 +27,7 @@ export function selectCluster() {
 
     // no longer necessary to await getting NS, because in one-cluster environments, we now pre-select the cluster
     interactAndWaitForResponses(() => {
-        cy.get(networkGraphSelectors.selector.clusterSelect).click();
+        cy.get(clusterSelect).click();
         cy.get(`${selectSelectors.patternFlySelect.openMenu} span:first`).click();
     });
 }
@@ -32,26 +36,26 @@ export function selectCluster() {
 
 export function selectNamespace(namespace) {
     interactAndWaitForResponses(() => {
-        cy.get(networkGraphSelectors.selector.namespaceSelect).click();
+        cy.get(namespaceSelect).click();
         // Exact match to distinguish stackrox from stackrox-operator namespaces.
         cy.get(
             `${selectSelectors.patternFlySelect.openMenu} .pf-c-menu__list-item [data-testid="namespace-name"]`
         )
             .contains(new RegExp(`^${namespace}$`))
             .click();
-        cy.get(networkGraphSelectors.selector.namespaceSelect).click();
+        cy.get(namespaceSelect).click();
     }, routeMatcherMapForClusterInNetworkGraph);
 }
 
 export function selectDeployment(deployment) {
     interactAndWaitForResponses(() => {
-        cy.get(networkGraphSelectors.selector.deploymentSelect).click();
+        cy.get(deploymentSelect).click();
         cy.get(
             `${selectSelectors.patternFlySelect.openMenu} .pf-c-menu__list-item [data-testid="deployment-name"]`
         )
             .contains(new RegExp(`^${deployment}$`))
             .click();
-        cy.get(networkGraphSelectors.selector.deploymentSelect).click();
+        cy.get(deploymentSelect).click();
     }, routeMatcherMapForClusterInNetworkGraph);
 }
 
@@ -69,26 +73,11 @@ const routeMatcherMapToVisitNetworkGraph = {
     },
     [networkPoliciesGraphEpochAlias]: {
         method: 'GET',
-        url: `${api.network.epoch}?clusterId=*`, // either id or null if no cluster selected
+        url: '/v1/networkpolicies/graph/epoch?clusterId=*', // either id or null if no cluster selected
     },
 };
 
 export const basePath = '/main/network-graph';
-
-// TODO: replace this custom implementation with the version from
-//    import { visitFromLeftNav } from './nav';
-// after the old network graph goes away in the left nav
-function visitFromLeftNav(itemText, routeMatcherMap, staticResponseMap) {
-    visitMainDashboard();
-
-    interactAndWaitForResponses(
-        () => {
-            cy.get(`${navSelectors.navLinks}:contains("${itemText}")`).first().click();
-        },
-        routeMatcherMap,
-        staticResponseMap
-    );
-}
 
 export function visitNetworkGraphFromLeftNav() {
     visitFromLeftNav('Network Graph', routeMatcherMapToVisitNetworkGraph);
