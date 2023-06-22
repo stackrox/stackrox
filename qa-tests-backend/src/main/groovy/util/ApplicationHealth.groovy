@@ -13,6 +13,7 @@ class ApplicationHealth {
     Integer waitTimeForHealthiness
     final Integer delayBetweenChecks = 5
     final Map<String, String> readyLogMessages = [
+            "admission-control": "Applied new admission control settings",
             "collector": "Sensor connectivity is successful",
             "sensor": "TLS-enabled multiplexed HTTP/gRPC server listening on",
     ]
@@ -30,6 +31,12 @@ class ApplicationHealth {
     void waitForCollectorHealthiness() {
         Deployment collector = new DaemonSet().setNamespace(Constants.STACKROX_NAMESPACE).setName("collector")
         waitForHealthiness(collector)
+    }
+
+    void waitForAdmissionControllerHealthiness() {
+        Deployment admissionController = new DaemonSet().setNamespace(Constants.STACKROX_NAMESPACE)
+            .setName("admission-control")
+        waitForHealthiness(admissionController)
     }
 
     void waitForHealthiness(Deployment deployment) {
