@@ -31,8 +31,8 @@ type PermissionChecker interface {
 	DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
 }
 
-// GenericSingleIDStore implements subset of Store interface for resources with single ID.
-type GenericSingleIDStore[T any, PT singleID[T]] struct {
+// GenericStore implements subset of Store interface for resources with single ID.
+type GenericStore[T any, PT singleID[T]] struct {
 	db                               postgres.DB
 	typ                              string
 	targetResource                   permissions.ResourceMetadata
@@ -41,15 +41,20 @@ type GenericSingleIDStore[T any, PT singleID[T]] struct {
 	permissionChecker                PermissionChecker
 }
 
+// GenericSingleIDStore implements subset of Store interface for resources with single ID.
+type GenericSingleIDStore[T any, PT singleID[T]] struct {
+	*GenericStore[T, PT]
+}
+
 type singleID[T any] interface {
 	proto.Unmarshaler
 	*T
 }
 
-// NewGenericSingleIDStore returns new subStore implementation for given resource.
+// NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericSingleIDStore[T any, PT singleID[T]](db postgres.DB, typ string, targetResource permissions.ResourceMetadata, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericSingleIDStore[T, PT] {
-	return &GenericSingleIDStore[T, PT]{
+func NewGenericStore[T any, PT singleID[T]](db postgres.DB, typ string, targetResource permissions.ResourceMetadata, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericStore[T, PT] {
+	return &GenericStore[T, PT]{
 		db:                               db,
 		typ:                              typ,
 		targetResource:                   targetResource,
@@ -58,10 +63,10 @@ func NewGenericSingleIDStore[T any, PT singleID[T]](db postgres.DB, typ string, 
 	}
 }
 
-// NewGenericSingleIDStoreWithPermissionChecker returns new subStore implementation for given resource.
+// NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericSingleIDStoreWithPermissionChecker[T any, PT singleID[T]](db postgres.DB, typ string, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericSingleIDStore[T, PT] {
-	return &GenericSingleIDStore[T, PT]{
+func NewGenericStoreWithPermissionChecker[T any, PT singleID[T]](db postgres.DB, typ string, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericStore[T, PT] {
+	return &GenericStore[T, PT]{
 		db:                               db,
 		typ:                              typ,
 		schema:                           schema,
@@ -70,12 +75,38 @@ func NewGenericSingleIDStoreWithPermissionChecker[T any, PT singleID[T]](db post
 	}
 }
 
-func (s *GenericSingleIDStore[T, PT]) hasPermissionsChecker() bool {
+// NewGenericSingleIDStore returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGenericSingleIDStore[T any, PT singleID[T]](db postgres.DB, typ string, targetResource permissions.ResourceMetadata, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericSingleIDStore[T, PT] {
+	return &GenericSingleIDStore[T, PT]{GenericStore: &GenericStore[T, PT]{
+		db:                               db,
+		typ:                              typ,
+		targetResource:                   targetResource,
+		schema:                           schema,
+		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+	},
+	}
+}
+
+// NewGenericSingleIDStoreWithPermissionChecker returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGenericSingleIDStoreWithPermissionChecker[T any, PT singleID[T]](db postgres.DB, typ string, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericSingleIDStore[T, PT] {
+	return &GenericSingleIDStore[T, PT]{GenericStore: &GenericStore[T, PT]{
+		db:                               db,
+		typ:                              typ,
+		schema:                           schema,
+		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		permissionChecker:                checker,
+	},
+	}
+}
+
+func (s *GenericStore[T, PT]) hasPermissionsChecker() bool {
 	return s.permissionChecker != nil
 }
 
 // Count returns the number of objects in the store.
-func (s *GenericSingleIDStore[T, PT]) Count(ctx context.Context) (int, error) {
+func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count, s.typ)
 
 	var sacQueryFilter *v1.Query
@@ -94,6 +125,122 @@ func (s *GenericSingleIDStore[T, PT]) Count(ctx context.Context) (int, error) {
 	}
 
 	return RunCountRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+}
+
+// GetByQuery returns the objects from the store matching the query.
+func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery, s.typ)
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, err
+		}
+		sacQueryFilter = filter
+	}
+
+	pagination := query.GetPagination()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+	q.Pagination = pagination
+
+	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return rows, nil
+}
+
+// GetIDs returns all the IDs for the store.
+func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll, s.typ+"IDs")
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, err
+		}
+		sacQueryFilter = filter
+	}
+	result, err := RunSearchRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
+	}
+
+	return identifiers, nil
+}
+
+// GetAll retrieves all objects from the store.
+func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]*T, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll, "Notifier")
+
+	var objs []*T
+	err := s.Walk(ctx, func(obj PT) error {
+		objs = append(objs, (*T)(obj))
+		return nil
+	})
+	return objs, err
+}
+
+// Walk iterates over all the objects in the store and applies the closure.
+func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.WalkAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
+	}
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			if err := fn(data); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
@@ -237,120 +384,4 @@ func (s *GenericSingleIDStore[T, PT]) Get(ctx context.Context, id string) (PT, b
 	}
 
 	return data, true, nil
-}
-
-// GetByQuery returns the objects from the store matching the query.
-func (s *GenericSingleIDStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery, s.typ)
-
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
-			return nil, err
-		} else if !ok {
-			return nil, sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, err
-		}
-		sacQueryFilter = filter
-	}
-
-	pagination := query.GetPagination()
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-	q.Pagination = pagination
-
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return rows, nil
-}
-
-// GetIDs returns all the IDs for the store.
-func (s *GenericSingleIDStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll, s.typ+"IDs")
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
-			return nil, err
-		} else if !ok {
-			return nil, sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, err
-		}
-		sacQueryFilter = filter
-	}
-	result, err := RunSearchRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
-}
-
-// GetAll retrieves all objects from the store.
-func (s *GenericSingleIDStore[T, PT]) GetAll(ctx context.Context) ([]*T, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll, "Notifier")
-
-	var objs []*T
-	err := s.Walk(ctx, func(obj PT) error {
-		objs = append(objs, (*T)(obj))
-		return nil
-	})
-	return objs, err
-}
-
-// Walk iterates over all the objects in the store and applies the closure.
-func (s *GenericSingleIDStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WalkAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
