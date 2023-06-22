@@ -177,8 +177,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 	node1 := nodeIDs[0]
 	targetEdgeID := getEdgeID(node1, fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	testCases := getTestCases(nodeIDs)
-	for _, c := range testCases {
+	for i := range testCases {
+		c := testCases[i]
 		s.Run(c.contextKey, func() {
+			s.T().Parallel()
 			ctx := s.testContexts[c.contextKey]
 			found, err := s.datastore.Exists(ctx, targetEdgeID)
 			s.NoError(err)
@@ -196,8 +198,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 	expectedSrcID := node1
 	expectedTgtID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	testCases := getTestCases(nodeIDs)
-	for _, c := range testCases {
+	for i := range testCases {
+		c := testCases[i]
 		s.Run(c.contextKey, func() {
+			s.T().Parallel()
 			ctx := s.testContexts[c.contextKey]
 			obj, found, err := s.datastore.Get(ctx, targetEdgeID)
 			s.NoError(err)
@@ -230,8 +234,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	expectedSrc2ID := node2
 	expectedTgt2ID := getComponentID(fixtures.GetEmbeddedNodeComponent2x4(), nodeScanOperatingSystem)
 	targetIDs := []string{targetEdge1ID, targetEdge2ID}
-	for _, c := range testCases {
+	for i := range testCases {
+		c := testCases[i]
 		s.Run(c.contextKey, func() {
+			s.T().Parallel()
 			ctx := s.testContexts[c.contextKey]
 			edges, err := s.datastore.GetBatch(ctx, targetIDs)
 			s.NoError(err)
@@ -270,100 +276,88 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-
-	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
-	testCases := getTestCases(nodeIDs)
-
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			ctx := s.testContexts[c.contextKey]
-			expectedCount := 0
-			for _, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedCount++
-				}
+	s.run(func(c edgeTestCase) {
+		ctx := s.testContexts[c.contextKey]
+		expectedCount := 0
+		for _, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedCount++
 			}
-			count, err := s.datastore.Count(ctx)
-			s.NoError(err)
-			s.Equal(expectedCount, count)
-		})
-	}
+		}
+		count, err := s.datastore.Count(ctx)
+		s.NoError(err)
+		s.Equal(expectedCount, count)
+	})
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-
-	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
-	testCases := getTestCases(nodeIDs)
-
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			ctx := s.testContexts[c.contextKey]
-			expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
-			for edgeID, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedIDs = append(expectedIDs, edgeID)
-				}
+	s.run(func(c edgeTestCase) {
+		ctx := s.testContexts[c.contextKey]
+		expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		for edgeID, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedIDs = append(expectedIDs, edgeID)
 			}
-			fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
-			res, err := s.datastore.Search(ctx, search.EmptyQuery())
-			s.NoError(err)
-			for _, r := range res {
-				fetchedIDs = append(fetchedIDs, r.ID)
-				s.True(c.expectedEdgeFound[r.ID])
-			}
-			s.ElementsMatch(expectedIDs, fetchedIDs)
-		})
-	}
+		}
+		fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		res, err := s.datastore.Search(ctx, search.EmptyQuery())
+		s.NoError(err)
+		for _, r := range res {
+			fetchedIDs = append(fetchedIDs, r.ID)
+			s.True(c.expectedEdgeFound[r.ID])
+		}
+		s.ElementsMatch(expectedIDs, fetchedIDs)
+	})
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-
-	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
-	testCases := getTestCases(nodeIDs)
-
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			ctx := s.testContexts[c.contextKey]
-			expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
-			for edgeID, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedIDs = append(expectedIDs, edgeID)
-				}
+	s.run(func(c edgeTestCase) {
+		ctx := s.testContexts[c.contextKey]
+		expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		for edgeID, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedIDs = append(expectedIDs, edgeID)
 			}
-			fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
-			res, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
-			s.NoError(err)
-			for _, r := range res {
-				fetchedIDs = append(fetchedIDs, r.GetId())
-				s.True(c.expectedEdgeFound[r.GetId()])
-			}
-			s.ElementsMatch(expectedIDs, fetchedIDs)
-		})
-	}
+		}
+		fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		res, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
+		s.NoError(err)
+		for _, r := range res {
+			fetchedIDs = append(fetchedIDs, r.GetId())
+			s.True(c.expectedEdgeFound[r.GetId()])
+		}
+		s.ElementsMatch(expectedIDs, fetchedIDs)
+	})
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
+	s.run(func(c edgeTestCase) {
+		ctx := s.testContexts[c.contextKey]
+		expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		for edgeID, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedIDs = append(expectedIDs, edgeID)
+			}
+		}
+		fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		res, err := s.datastore.SearchRawEdges(ctx, search.EmptyQuery())
+		s.NoError(err)
+		for _, r := range res {
+			fetchedIDs = append(fetchedIDs, r.GetId())
+			s.True(c.expectedEdgeFound[r.GetId()])
+		}
+		s.ElementsMatch(expectedIDs, fetchedIDs)
+	})
+}
 
+func (s *nodeComponentEdgeDatastoreSACTestSuite) run(f func(c edgeTestCase)) {
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
-
-	for _, c := range testCases {
+	for i := range testCases {
+		c := testCases[i]
 		s.Run(c.contextKey, func() {
-			ctx := s.testContexts[c.contextKey]
-			expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
-			for edgeID, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedIDs = append(expectedIDs, edgeID)
-				}
-			}
-			fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
-			res, err := s.datastore.SearchRawEdges(ctx, search.EmptyQuery())
-			s.NoError(err)
-			for _, r := range res {
-				fetchedIDs = append(fetchedIDs, r.GetId())
-				s.True(c.expectedEdgeFound[r.GetId()])
-			}
-			s.ElementsMatch(expectedIDs, fetchedIDs)
+			s.T().Parallel()
+			f(c)
 		})
 	}
 }
