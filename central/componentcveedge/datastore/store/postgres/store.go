@@ -31,8 +31,7 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
-
+	batchSize       = 10000
 	cursorBatchSize = 50
 )
 
@@ -81,6 +80,54 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 //// Helper functions - END
 
 //// Interface functions
+
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
+func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.ComponentCVEEdge, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ComponentCVEEdge")
+
+	if len(identifiers) == 0 {
+		return nil, nil, nil
+	}
+
+	var sacQueryFilter *v1.Query
+
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
+	)
+
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.ComponentCVEEdge](ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			missingIndices := make([]int, 0, len(identifiers))
+			for i := range identifiers {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	resultsByID := make(map[string]*storage.ComponentCVEEdge, len(rows))
+	for _, msg := range rows {
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input identifiers
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.ComponentCVEEdge, 0, len(resultsByID))
+	for i, identifier := range identifiers {
+		if result, ok := resultsByID[identifier]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
 
 // Count returns the number of objects in the store.
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
@@ -166,54 +213,6 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		return nil, err
 	}
 	return rows, nil
-}
-
-// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
-func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.ComponentCVEEdge, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ComponentCVEEdge")
-
-	if len(identifiers) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, nil, err
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.ComponentCVEEdge](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.ComponentCVEEdge, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input identifiers
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.ComponentCVEEdge, 0, len(resultsByID))
-	for i, identifier := range identifiers {
-		if result, ok := resultsByID[identifier]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
 }
 
 // GetIDs returns all the IDs for the store.
