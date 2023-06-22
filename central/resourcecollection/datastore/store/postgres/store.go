@@ -70,10 +70,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ResourceCollection, *storage.ResourceCollection](
 			db,
-			"ResourceCollection",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -84,6 +83,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ResourceCollection) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ResourceCollection")
 }
 
 func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection) error {

@@ -69,10 +69,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.NetworkPolicyApplicationUndoDeploymentRecord, *storage.NetworkPolicyApplicationUndoDeploymentRecord](
 			db,
-			"NetworkPolicyApplicationUndoDeploymentRecord",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -83,6 +82,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) string {
 	return obj.GetDeploymentId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "NetworkPolicyApplicationUndoDeploymentRecord")
 }
 
 func insertIntoNetworkpoliciesundodeployments(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {

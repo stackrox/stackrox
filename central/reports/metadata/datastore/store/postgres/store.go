@@ -70,10 +70,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ReportMetadata, *storage.ReportMetadata](
 			db,
-			"ReportMetadata",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -84,6 +83,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ReportMetadata) string {
 	return obj.GetReportId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ReportMetadata")
 }
 
 func insertIntoReportMetadata(_ context.Context, batch *pgx.Batch, obj *storage.ReportMetadata) error {

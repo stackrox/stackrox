@@ -72,10 +72,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.K8SRole, *storage.K8SRole](
 			db,
-			"K8SRole",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -86,6 +85,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.K8SRole) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "K8SRole")
 }
 
 func insertIntoK8sRoles(_ context.Context, batch *pgx.Batch, obj *storage.K8SRole) error {

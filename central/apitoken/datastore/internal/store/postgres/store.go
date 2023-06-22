@@ -70,10 +70,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.TokenMetadata, *storage.TokenMetadata](
 			db,
-			"TokenMetadata",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -84,6 +83,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.TokenMetadata) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "TokenMetadata")
 }
 
 func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {

@@ -70,10 +70,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ServiceIdentity, *storage.ServiceIdentity](
 			db,
-			"ServiceIdentity",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -84,6 +83,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ServiceIdentity) string {
 	return obj.GetSerialStr()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ServiceIdentity")
 }
 
 func insertIntoServiceIdentities(_ context.Context, batch *pgx.Batch, obj *storage.ServiceIdentity) error {

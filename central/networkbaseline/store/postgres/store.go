@@ -72,10 +72,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.NetworkBaseline, *storage.NetworkBaseline](
 			db,
-			"NetworkBaseline",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -86,6 +85,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.NetworkBaseline) string {
 	return obj.GetDeploymentId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "NetworkBaseline")
 }
 
 func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {

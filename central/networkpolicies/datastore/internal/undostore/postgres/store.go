@@ -69,10 +69,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.NetworkPolicyApplicationUndoRecord, *storage.NetworkPolicyApplicationUndoRecord](
 			db,
-			"NetworkPolicyApplicationUndoRecord",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -83,6 +82,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.NetworkPolicyApplicationUndoRecord) string {
 	return obj.GetClusterId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "NetworkPolicyApplicationUndoRecord")
 }
 
 func insertIntoNetworkpolicyapplicationundorecords(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoRecord) error {

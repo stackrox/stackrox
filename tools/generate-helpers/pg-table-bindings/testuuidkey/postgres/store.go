@@ -71,10 +71,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.TestSingleUUIDKeyStruct, *storage.TestSingleUUIDKeyStruct](
 			db,
-			"TestSingleUUIDKeyStruct",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -85,6 +84,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.TestSingleUUIDKeyStruct) string {
 	return obj.GetKey()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "TestSingleUUIDKeyStruct")
 }
 
 func insertIntoTestSingleUUIDKeyStructs(_ context.Context, batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {

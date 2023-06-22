@@ -72,10 +72,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.Cluster, *storage.Cluster](
 			db,
-			"Cluster",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -86,6 +85,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.Cluster) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "Cluster")
 }
 
 func insertIntoClusters(_ context.Context, batch *pgx.Batch, obj *storage.Cluster) error {

@@ -68,13 +68,6 @@ const (
         // to deal with failures if we just sent it all.  Something to think about as we
         // proceed and move into more e2e and larger performance testing
         batchSize = 10000
-    {{- if not $isSingleIDGeneric}}
-        cursorBatchSize = 50
-
-    {{- if not .JoinTable }}
-        deleteBatchSize = 5000
-    {{- end }}
-    {{- end }}
 )
 
 var (
@@ -135,19 +128,17 @@ func New(db postgres.DB) Store {
 {{- if $isSingleIDGeneric }}
         GenericSingleIDStore: pgSearch.NewGenericSingleIDStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
             db,
-            "{{.TrimmedType}}",
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
             schema,
-            metrics.SetPostgresOperationDurationTime,
+            metricsSetPostgresOperationDurationTime,
             pkGetter,
         ),
 {{- else }}
         GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
             db,
-            "{{.TrimmedType}}",
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
             schema,
-            metrics.SetPostgresOperationDurationTime,
+            metricsSetPostgresOperationDurationTime,
             pkGetter,
         ),
 {{- end }}
@@ -159,6 +150,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *{{ .Type }}) {{$singlePK.Type}} {
     return {{ $singlePK.Getter "obj" }}
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+    metrics.SetPostgresOperationDurationTime(start, op, "{{.TrimmedType}}")
 }
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
@@ -540,58 +535,6 @@ func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
 }
 {{- end}}
-
-{{- if $singlePK }}
-{{- if not .JoinTable }}
-
-// DeleteMany removes the objects associated to the specified IDs from the store.
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
-    {{- end }}
-
-    // Batch the deletes
-    localBatchSize := deleteBatchSize
-    numRecordsToDelete := len(identifiers)
-    for {
-        if len(identifiers) == 0 {
-            break
-        }
-
-        if len(identifiers) < localBatchSize {
-            localBatchSize = len(identifiers)
-        }
-
-        identifierBatch := identifiers[:localBatchSize]
-        q := search.ConjunctionQuery(
-        sacQueryFilter,
-            search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-        )
-
-        if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-            return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete - len(identifiers), numRecordsToDelete)
-        }
-
-        // Move the slice forward to start the next batch
-        identifiers = identifiers[localBatchSize:]
-    }
-
-    return nil
-}
-{{- end }}
-{{- end }}
 
 // Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
