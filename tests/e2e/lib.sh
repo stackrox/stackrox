@@ -624,7 +624,6 @@ wait_for_api() {
 
     info "Central deployment is ready."
     info "Waiting for Central API endpoint"
-    sleep 30
     API_HOSTNAME=localhost
     API_PORT=8000
     LOAD_BALANCER="${LOAD_BALANCER:-}"
@@ -632,8 +631,6 @@ wait_for_api() {
         API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
         API_PORT=443
     fi
-    info "SHREWS"
-    kubectl -n stackrox get svc/central-loadbalancer -o json
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
     info "METADATA_URL is set to ${METADATA_URL}"

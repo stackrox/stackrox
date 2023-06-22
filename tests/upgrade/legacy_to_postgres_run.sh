@@ -46,7 +46,7 @@ test_upgrade() {
     # postgres->postgres upgrade
     REPO_FOR_POSTGRES_TIME_TRAVEL="/tmp/rox-postgres-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="rhacs-eng"
+    QUAY_REPO="stackrox-io"
     REGISTRY="quay.io/$QUAY_REPO"
 
     export OUTPUT_FORMAT="helm"
@@ -78,8 +78,6 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-#    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
-#    EARLIER_TAG="3.69.x-1-g870568de08"
     EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
     EARLIER_TAG="3.74.0-1-gfe924fce30"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
@@ -115,8 +113,6 @@ test_upgrade_paths() {
     wait_for_api
     wait_for_scanner_to_be_ready
 
-    kubectl get pods -n stackrox -o wide
-    
     # Upgraded to Postgres via helm.  Validate the upgrade.
     validate_upgrade "00_upgrade" "central upgrade to postgres" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
@@ -137,8 +133,7 @@ test_upgrade_paths() {
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
     LAST_ROCKS_TAG="3.74.0-1-gfe924fce30"
-    kubectl -n stackrox set image deploy/central "central=quay.io/stackrox-io/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
-    kubectl get pods -n stackrox -o wide
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -164,10 +159,10 @@ test_upgrade_paths() {
     info "Removing pod-security files"
     rm ./sensor-remote/*pod-security.yaml
     ./sensor-remote/sensor.sh
-    kubectl -n stackrox set image deploy/sensor "*=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image deploy/admission-control "*=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
-    kubectl -n stackrox set image ds/collector "collector=quay.io/stackrox-io/collector:$(make collector-tag)" \
-        "compliance=quay.io/stackrox-io/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
+        "compliance=$REGISTRY/main:$LAST_ROCKS_TAG"
 
     sensor_wait
 
@@ -196,10 +191,8 @@ helm_upgrade_to_latest_postgres() {
     if is_CI; then
         bin/"${TEST_HOST_PLATFORM}"/roxctl version
         bin/"${TEST_HOST_PLATFORM}"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-#        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-#        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
 
@@ -225,9 +218,7 @@ helm_upgrade_to_latest_postgres() {
 
 helm_uninstall_and_cleanup() {
     helm uninstall -n stackrox stackrox-central-services
-
     rm -rf /tmp/stackrox-central-services-chart
-
     rm -rf /tmp/early-stackrox-central-services-chart
 }
 
