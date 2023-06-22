@@ -92,6 +92,31 @@ func TestDeduper(t *testing.T) {
 			},
 		},
 		{
+			testName: "attempted alert",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "abc",
+								Resource: &central.SensorEvent_AlertResults{
+									AlertResults: &central.AlertResults{
+										Stage: storage.LifecycleStage_DEPLOY,
+										Alerts: []*storage.Alert{
+											{
+												State: storage.ViolationState_ATTEMPTED,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
 			testName: "process indicator",
 			testEvents: []testEvents{
 				{

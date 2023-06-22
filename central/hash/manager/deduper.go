@@ -41,6 +41,7 @@ var (
 func NewDeduper(existingHashes map[string]uint64) Deduper {
 	existingEntries := make(map[string]*entry)
 
+	pruneInvalidAlerts(existingHashes)
 	if len(existingHashes) < maxHashes {
 		for k, v := range existingHashes {
 			existingEntries[k] = &entry{
@@ -71,6 +72,19 @@ type deduperImpl struct {
 	hasher *hash.Hasher
 }
 
+func pruneInvalidAlerts(existingHashes map[string]uint64) {
+	// Due to a bug where we are not skipping deduping on ATTEMPTED alerts
+	// we need to prune the invalid entries
+	for k := range existingHashes {
+		if strings.HasPrefix(k, alertResourceKey) {
+			depKey := buildKey(deploymentResourceKey, getIDFromKey(k))
+			if _, ok := existingHashes[depKey]; !ok {
+				delete(existingHashes, k)
+			}
+		}
+	}
+}
+
 // skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
 func skipDedupe(msg *central.MsgFromSensor) bool {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
@@ -90,6 +104,9 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	// This can occur for a very short-lived deployment where alerts are not generated
 	// but the deployment is being removed
 	if alert.IsAlertResultResolved(msg.GetEvent().GetAlertResults()) {
+		return true
+	}
+	if alert.AnyAttemptedAlert(msg.GetEvent().GetAlertResults().GetAlerts()...) {
 		return true
 	}
 	if eventMsg.Event.GetReprocessDeployment() != nil {
