@@ -104,9 +104,11 @@ type apiImpl struct {
 	apiServices        []APIService
 	config             Config
 	requestInfoHandler *requestinfo.Handler
+	listeners          []serverAndListener
 
-	grpcServer          *grpc.Server
-	grpcShutdownStarted concurrency.Signal
+	grpcServer            *grpc.Server
+	grpcShutdownRequested concurrency.Signal
+	grpcShutdownFinished  concurrency.Signal
 }
 
 // A Config configures the server.
@@ -133,9 +135,10 @@ type Config struct {
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
 	return &apiImpl{
-		config:              config,
-		requestInfoHandler:  requestinfo.NewRequestInfoHandler(),
-		grpcShutdownStarted: concurrency.NewSignal(),
+		config:                config,
+		requestInfoHandler:    requestinfo.NewRequestInfoHandler(),
+		grpcShutdownRequested: concurrency.NewSignal(),
+		grpcShutdownFinished:  concurrency.NewSignal(),
 	}
 }
 
@@ -150,9 +153,8 @@ func (a *apiImpl) Register(services ...APIService) {
 }
 
 func (a *apiImpl) Stop() *concurrency.Signal {
-	finishedSig := concurrency.NewSignal()
-	go a.stop(&finishedSig)
-	return &finishedSig
+	go a.stop()
+	return &a.grpcShutdownFinished
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
@@ -230,7 +232,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		}
 
 		// If finishing with no error and shutdown was not requested, crash
-		if !a.grpcShutdownStarted.IsDone() {
+		if !a.grpcShutdownRequested.IsDone() {
 			log.Fatal("The local API server should never terminate unless explicitly requested")
 		}
 	}()
@@ -347,10 +349,15 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
-func (a *apiImpl) stop(finishedSig *concurrency.Signal) {
-	defer finishedSig.Signal()
-	a.grpcShutdownStarted.Signal()
+func (a *apiImpl) stop() {
+	defer a.grpcShutdownFinished.Signal()
+	a.grpcShutdownRequested.Signal()
 	a.grpcServer.GracefulStop()
+	for _, listener := range a.listeners {
+		if listener.stopper != nil {
+			listener.stopper()
+		}
+	}
 }
 
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
@@ -403,13 +410,13 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		}
 	}
 
-	go a.runStopperOnRequest(allSrvAndLiss)
-
 	errC := make(chan error, len(allSrvAndLiss))
 
 	for _, srvAndLis := range allSrvAndLiss {
 		go a.serveBlocking(srvAndLis, errC)
 	}
+
+	a.listeners = allSrvAndLiss
 
 	if startedSig != nil {
 		startedSig.Signal()
@@ -424,7 +431,7 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
 		// If gRPC shutdown was requested, then we should only log that the endpoint is stopping. Otherwise, this is happening
 		// for unknown reasons and an error will be reported.
-		if a.grpcShutdownStarted.IsDone() {
+		if a.grpcShutdownRequested.IsDone() {
 			log.Infof("gRPC Stop requested: Endpoint shutting down: %s %s", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr())
 		} else {
 			if srvAndLis.endpoint.Optional {
@@ -434,14 +441,5 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 			}
 		}
 
-	}
-}
-
-func (a *apiImpl) runStopperOnRequest(listeners []serverAndListener) {
-	a.grpcShutdownStarted.Wait()
-	for _, listener := range listeners {
-		if listener.stopper != nil {
-			listener.stopper()
-		}
 	}
 }
