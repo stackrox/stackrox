@@ -116,7 +116,7 @@ class BaseService {
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
-            if (useClientCert) {
+            if (useClientCert.get()) {
                 sslContextBuilder = sslContextBuilder.keyManager(Keys.keyManagerFactory())
             }
             def sslContext = sslContextBuilder.build()
