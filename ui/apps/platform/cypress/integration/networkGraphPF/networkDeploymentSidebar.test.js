@@ -1,13 +1,13 @@
-import { networkGraphSelectors } from './networkGraph.selectors';
-
 import withAuth from '../../helpers/basicAuth';
+
 import {
     visitNetworkGraph,
     checkNetworkGraphEmptyState,
     selectCluster,
     selectNamespace,
     selectDeployment,
-} from '../../helpers/networkGraphPF';
+} from './networkGraph.helpers';
+import { networkGraphSelectors } from './networkGraph.selectors';
 
 describe('Network Graph deployment sidebar', () => {
     withAuth();
