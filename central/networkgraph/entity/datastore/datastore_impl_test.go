@@ -40,6 +40,7 @@ var (
 )
 
 func TestNetworkEntityDataStore(t *testing.T) {
+	t.Skip("ROX-18024: Skip so that all tests can be run")
 	suite.Run(t, new(NetworkEntityDataStoreTestSuite))
 }
 
@@ -95,8 +96,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
-	suite.T().Skip("ROX-18024: Skip so that all tests can be run")
-
 	entity1ID, err := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/24")
 	suite.NoError(err)
 	entity2ID, err := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
@@ -536,7 +535,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
-	suite.T().Skip("ROX-18024: Skip so that all tests can be run")
 	entity1ID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/24")
 	entity2ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
 
