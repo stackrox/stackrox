@@ -28,7 +28,7 @@
 {{ $singlePK = .Schema.ID }}
 {{- end }}
 
-{{- $isGeneric := and (eq (len $pks) 1) (not .JoinTable) }}
+{{- $isSingleIDGeneric := and (eq (len $pks) 1) (not .JoinTable) }}
 
 package postgres
 
@@ -68,7 +68,7 @@ const (
         // to deal with failures if we just sent it all.  Something to think about as we
         // proceed and move into more e2e and larger performance testing
         batchSize = 10000
-    {{- if not $isGeneric}}
+    {{- if not $isSingleIDGeneric}}
         cursorBatchSize = 50
 
     {{- if not .JoinTable }}
@@ -116,8 +116,10 @@ type Store interface {
 }
 
 type storeImpl struct {
-{{- if $isGeneric }}
+{{- if $isSingleIDGeneric }}
     *pgSearch.GenericSingleIDStore[{{.Type}}, *{{.Type}}]
+{{- else }}
+    *pgSearch.GenericStore[{{.Type}}, *{{.Type}}]
 {{- end }}
     db postgres.DB
     mutex sync.RWMutex
@@ -130,8 +132,16 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
     return &storeImpl{
-{{- if $isGeneric }}
+{{- if $isSingleIDGeneric }}
         GenericSingleIDStore: pgSearch.NewGenericSingleIDStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
+            db,
+            "{{.TrimmedType}}",
+            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
+            schema,
+            metrics.SetPostgresOperationDurationTime,
+        ),
+{{- else }}
+        GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
             db,
             "{{.TrimmedType}}",
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
@@ -523,7 +533,7 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
 }
 {{- end }}
 
-{{- if not $isGeneric }}
+{{- if not $isSingleIDGeneric }}
 
 {{- if not .JoinTable }}
 
@@ -635,26 +645,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
 {{- end }}
 {{- end }}
 
-// Count returns the number of objects in the store.
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
-        return 0, err
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return 0, err
-	}
-    {{- end }}
-
-    return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
 // Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
@@ -711,126 +701,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	return data, true, nil
 }
 
-{{- if $singlePK }}
-{{- if .SearchCategory }}
-
-// GetByQuery returns the objects from the store matching the query.
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-    {{ if .Obj.HasPermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
-        return nil, err
-    } else if !ok {
-        return nil, nil
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-        return nil, err
-	}
-    {{- end }}
-    pagination := query.GetPagination()
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-    q.Pagination = pagination
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-		    return nil, nil
-		}
-		return nil, err
-	}
-	return rows, nil
-}
-{{- end }}
-{{- end }}
-
-{{- if $singlePK }}
-
-// GetIDs returns all the IDs for the store.
-func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
-    var sacQueryFilter *v1.Query
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
-        return nil, err
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
-    {{- end }}
-    result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
-}
-{{- end }}
-
-{{- if .GetAll }}
-
-// GetAll retrieves all objects from the store.
-func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.TrimmedType}}")
-
-    var objs []*{{.Type}}
-    err := s.Walk(ctx, func(obj *{{.Type}}) error {
-        objs = append(objs, obj)
-        return nil
-    })
-    return objs, err
-}
-{{- end}}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error {
-    var sacQueryFilter *v1.Query
-{{- if .PermissionChecker }}
-    if ok, err := {{ .PermissionChecker }}.WalkAllowed(ctx); err != nil || !ok {
-        return err
-    }
-{{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
-{{- end }}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[{{.Type}}](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
-}
-
-{{- end }}{{/* if not $isGeneric */}}
+{{- end }}{{/* if not $isSingleIDGeneric */}}
 
 //// Stubs for satisfying legacy interfaces
 

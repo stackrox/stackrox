@@ -55,6 +55,7 @@ type Store interface {
 }
 
 type storeImpl struct {
+	*pgSearch.GenericStore[storage.ClusterCVEEdge, *storage.ClusterCVEEdge]
 	db    postgres.DB
 	mutex sync.RWMutex
 }
@@ -62,6 +63,13 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
+		GenericStore: pgSearch.NewGenericStore[storage.ClusterCVEEdge, *storage.ClusterCVEEdge](
+			db,
+			"ClusterCVEEdge",
+			targetResource,
+			schema,
+			metrics.SetPostgresOperationDurationTime,
+		),
 		db: db,
 	}
 }
@@ -129,20 +137,6 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 	return elems, missingIndices, nil
 }
 
-// Count returns the number of objects in the store.
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ClusterCVEEdge")
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return 0, err
-	}
-
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
 // Exists returns if the ID exists in the store.
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ClusterCVEEdge")
@@ -186,84 +180,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ClusterCVEEdge
 	}
 
 	return data, true, nil
-}
-
-// GetByQuery returns the objects from the store matching the query.
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ClusterCVEEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "ClusterCVEEdge")
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
-	pagination := query.GetPagination()
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-	q.Pagination = pagination
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.ClusterCVEEdge](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return rows, nil
-}
-
-// GetIDs returns all the IDs for the store.
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ClusterCVEEdgeIDs")
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
-	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVEEdge) error) error {
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return err
-	}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.ClusterCVEEdge](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
 
 //// Stubs for satisfying legacy interfaces
