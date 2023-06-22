@@ -235,7 +235,8 @@ test_upgrade_paths() {
     wait_for_api
 
     # Cleanup the scaled sensor before smoke tests
-    "${REPO_FOR_TIME_TRAVEL}"/deploy/k8s/sensor-deploy/delete-sensor.sh
+#    "${REPO_FOR_TIME_TRAVEL}"/deploy/k8s/sensor-deploy/delete-sensor.sh
+    helm uninstall -n stackrox stackrox-secured-cluster-services
 
     # Remove scaled Sensor from Central
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
