@@ -209,7 +209,7 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 		d.safeRemove(prev)
 		d.cloneMap[prev] = d.cloneMap[CurrentClone]
 	} else {
-		return errors.Errorf("Invalid empty database clone name")
+		return errors.New("Invalid empty database clone name")
 	}
 
 	err := d.moveClones(moveCurrent, cloneName)
