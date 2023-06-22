@@ -2,6 +2,30 @@
 
 package main
 
+import (
+	"context"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/compact"
+	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/rox/migrator/postgreshelper"
+	"github.com/stackrox/rox/migrator/rockshelper"
+	"github.com/stackrox/rox/migrator/runner"
+	"github.com/stackrox/rox/migrator/types"
+	migVer "github.com/stackrox/rox/migrator/version"
+	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/tecbot/gorocksdb"
+	"go.etcd.io/bbolt"
+	"gorm.io/gorm"
+)
+
 func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 	err := compact.Compact(conf)
 	if err != nil {
