@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/migrator/version"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
@@ -81,7 +80,7 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
 	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks
 	// sequence number will take precedence and drive the migrations
-	if env.PostgresDatastoreEnabled.BooleanSetting() && databases.RocksDB == nil && databases.BoltDB == nil {
+	if databases.RocksDB == nil && databases.BoltDB == nil {
 		return getCurrentSeqNumPostgres(databases)
 	}
 
