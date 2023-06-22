@@ -29,6 +29,29 @@ var (
 // It is designed to minimize layer downloads and attempt
 // to only download a layer's contents once.
 //
+// This exists because libindex.RemoteFetchArena does not suit
+// our specific needs. libindex.RemoteFetchArena makes no assumptions
+// about how/where layers of a claircore.Manifest is stored. It simply
+// requires callers to provide the fully qualified URI + headers, so
+// it may blindly reach out to the URI to pull the layer contents.
+// Callers DO NOT provide registry credentials, as it is expected
+// all auth challenges have already been resolved.
+//
+// We make stricter assumptions. We assume we have a Docker/OCI-compliant
+// image stored in an OCI-compliant image registry. We also want to provide an API
+// such that clients may simply provide us the name, architecture,
+// and registry credentials of the image, so clients do not need
+// to resolve any auth challenges for us.
+//
+// The main goal of localFetchArena is to minimize registry accesses,
+// especially layer pulls. Both localFetchArena and
+// libindex.RemoteFetchArena reach out to the registry
+// once per layer; however, localFetchArena does not require the client
+// to also reach out to the registry. libindex.RemoteFetchArena does,
+// as the client must resolve all auth challenges per layer.
+//
+// localFetchArena
+//
 // A localFetchArena must not be copied after first use,
 // and it should be initialized via newLocalFetchArena.
 type localFetchArena struct {

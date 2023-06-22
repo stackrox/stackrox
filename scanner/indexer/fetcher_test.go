@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -10,22 +11,22 @@ import (
 )
 
 func TestFetcherSimple(t *testing.T) {
-	root, err := filepath.Abs("testdata")
-	require.NoError(t, err)
-
-	a := newLocalFetchArena(root)
+	tmp := t.TempDir()
+	a := newLocalFetchArena(tmp)
 
 	image := "quay.io/stackrox-io/main:4.0.0"
 	t.Run(image, func(t *testing.T) {
 		run(t, a, image, 13)
 	})
+
+	entries, err := os.ReadDir(tmp)
+	require.NoError(t, err)
+	assert.Empty(t, entries)
 }
 
 func TestFetcherParallel(t *testing.T) {
-	root, err := filepath.Abs("testdata")
-	require.NoError(t, err)
-
-	a := newLocalFetchArena(root)
+	tmp := t.TempDir()
+	a := newLocalFetchArena(tmp)
 
 	// Repeat each image to test duplicate calls.
 	for _, testcase := range []struct {
@@ -80,6 +81,11 @@ func TestFetcherParallel(t *testing.T) {
 			run(t, a, testcase.image, testcase.layers)
 		})
 	}
+
+	t.Cleanup(func() {entries, err := os.ReadDir(tmp)
+		require.NoError(t, err)
+		assert.Empty(t, entries)
+	})
 }
 
 // run runs the test.
