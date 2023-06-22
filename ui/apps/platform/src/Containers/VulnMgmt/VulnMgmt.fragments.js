@@ -132,19 +132,6 @@ export const CLUSTER_LIST_FRAGMENT_UPDATED = gql`
     }
 `;
 
-export const VULN_CVE_ONLY_FRAGMENT_LEGACY = gql`
-    fragment cveFields on EmbeddedVulnerability {
-        id
-        cve
-        cvss
-        severity
-        scoreVersion
-        summary
-        fixedByVersion
-        isFixable(query: $scopeQuery)
-    }
-`;
-
 export const VULN_CVE_ONLY_FRAGMENT = gql`
     fragment cveFields on ImageVulnerability {
         id
@@ -904,53 +891,6 @@ export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
         imageCount(query: $query)
         deploymentCount(query: $query)
         operatingSystem
-        priority
-    }
-`;
-
-export const VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
-    fragment componentFields on EmbeddedImageScanComponent {
-        id
-        name
-        version
-        location
-        source
-        fixedIn
-        vulnCounter {
-            all {
-                total
-                fixable
-            }
-            low {
-                total
-                fixable
-            }
-            moderate {
-                total
-                fixable
-            }
-            important {
-                total
-                fixable
-            }
-            critical {
-                total
-                fixable
-            }
-        }
-        topVuln {
-            cvss
-            scoreVersion
-        }
-        activeState(query: $scopeQuery) {
-            state
-            activeContexts {
-                containerName
-            }
-        }
-        imageCount(query: $query)
-        deploymentCount(query: $query)
-        nodeCount(query: $query)
         priority
     }
 `;

@@ -11,7 +11,6 @@ import {
     CLUSTER_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     IMAGE_CVE_LIST_FRAGMENT,
-    VULN_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
@@ -45,16 +44,15 @@ const TableWidgetFixableCves = ({
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const displayedEntityType = resourceLabels[entityType];
     const displayedVulnType = resourceLabels[vulnType];
 
     const queryFieldName = queryFieldNames[entityType];
-    let queryVulnCounterFieldName = showVMUpdates ? 'imageVulnerabilityCounter' : 'vulnCounter';
-    let queryVulnsFieldName = showVMUpdates ? 'imageVulnerabilities' : 'vulns';
-    let queryCVEFieldsName = showVMUpdates ? 'imageCVEFields' : 'cveFields';
-    let queryFragment = showVMUpdates ? IMAGE_CVE_LIST_FRAGMENT : VULN_CVE_LIST_FRAGMENT;
+    let queryVulnCounterFieldName = 'imageVulnerabilityCounter';
+    let queryVulnsFieldName = 'imageVulnerabilities';
+    let queryCVEFieldsName = 'imageCVEFields';
+    let queryFragment = IMAGE_CVE_LIST_FRAGMENT;
     let exportType = entityTypes.CVE;
 
     if (vulnType === entityTypes.CLUSTER_CVE) {
