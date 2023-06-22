@@ -368,6 +368,8 @@ deploy_scaled_workload() {
         -f /tmp/cluster-init-bundle.yaml \
         --set system.enablePodSecurityPolicies=false \
         --set clusterName=scale-remote \
+        --set image.main.tag="${INITIAL_POSTGRES_TAG}" \
+        --set image.collector.tag="$(make collector-tag)" \
         --set centralEndpoint="$API_ENDPOINT"
 
     sensor_wait
