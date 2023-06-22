@@ -22,7 +22,7 @@ export const placeholderCreator = (placeholderText) => () =>
     (
         <span className="flex h-full items-center pointer-events-none">
             <input
-                className="font-600 bg-base-100 text-base-600 absolute"
+                className="bg-base-100 text-base-600 absolute"
                 placeholder={placeholderText}
                 readOnly
             />
