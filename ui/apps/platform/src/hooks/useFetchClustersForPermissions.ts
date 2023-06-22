@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { getClustersForPermissions, ScopeObject } from 'services/RolesService';
-import { Cluster } from 'types/cluster.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Result = {
     isLoading: boolean;
-    clusters: Cluster[];
+    clusters: ScopeObject[];
     error: string;
 };
 
@@ -32,14 +31,8 @@ function useFetchClustersForPermissions(permissions: string[]): Result {
 
         getClustersForPermissions(requestedPermissions)
             .then((data) => {
-                const clusters: Cluster[] = data.clusters.map((responseCluster: ScopeObject) => {
-                    return {
-                        id: responseCluster.id,
-                        name: responseCluster.name,
-                    } as Cluster;
-                });
                 setResult({
-                    clusters: clusters || [],
+                    clusters: data.clusters,
                     error: '',
                     isLoading: false,
                 });

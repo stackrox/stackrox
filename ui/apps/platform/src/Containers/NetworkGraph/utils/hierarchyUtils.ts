@@ -1,24 +1,40 @@
 import { SearchFilter } from 'types/search';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
+import { ScopeObject } from 'services/RolesService';
 
-export function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
+export type NetworkScopeHierarchy = {
+    cluster: {
+        id: string;
+        name: string;
+    };
+    namespaces: string[];
+    deployments: string[];
+    remainingQuery: Omit<SearchFilter, 'Cluster' | 'Namespace' | 'Deployment'>;
+};
+
+export function getScopeHierarchyFromSearch(
+    searchFilter: SearchFilter,
+    clusters: ScopeObject[]
+): NetworkScopeHierarchy | null {
+    const urlCluster = searchFilter.Cluster;
+    if (!urlCluster || Array.isArray(urlCluster)) {
+        return null;
+    }
+
+    const cluster = clusters.find((cl) => cl.name === urlCluster);
+    if (!cluster) {
+        return null;
+    }
+
     const workingQuery = { ...searchFilter };
-    const hierarchy: {
-        cluster: string | undefined;
-        namespaces: string[];
-        deployments: string[];
-        remainingQuery;
-    } = {
-        cluster: undefined,
+    delete workingQuery.Cluster;
+
+    const hierarchy: NetworkScopeHierarchy = {
+        cluster,
         namespaces: [],
         deployments: [],
         remainingQuery: workingQuery,
     };
-
-    if (searchFilter.Cluster && !Array.isArray(searchFilter.Cluster)) {
-        hierarchy.cluster = searchFilter.Cluster;
-        delete hierarchy.remainingQuery.Cluster;
-    }
 
     if (searchFilter.Namespace) {
         hierarchy.namespaces = Array.isArray(searchFilter.Namespace)
@@ -31,6 +47,7 @@ export function getScopeHierarchyFromSearch(searchFilter: SearchFilter) {
         hierarchy.deployments = Array.isArray(searchFilter.Deployment)
             ? searchFilter.Deployment
             : [searchFilter.Deployment];
+        delete hierarchy.remainingQuery.Deployment;
     }
 
     return hierarchy;

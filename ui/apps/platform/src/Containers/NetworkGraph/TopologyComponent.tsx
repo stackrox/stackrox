@@ -53,7 +53,6 @@ function getUrlParamsForEntity(type, id): [UrlDetailTypeValue, string] {
 export type TopologyComponentProps = {
     model: CustomModel;
     simulation: Simulation;
-    selectedClusterId: string;
     selectedNode?: CustomNodeModel;
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
@@ -71,7 +70,6 @@ function clearSimulationQuery(search: string): string {
 const TopologyComponent = ({
     model,
     simulation,
-    selectedClusterId,
     selectedNode,
     simulator,
     setNetworkPolicyModification,
@@ -175,7 +173,6 @@ const TopologyComponent = ({
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {simulation.isOn && simulation.type === 'networkPolicy' && (
                         <NetworkPolicySimulatorSidePanel
-                            selectedClusterId={selectedClusterId}
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
                         />
