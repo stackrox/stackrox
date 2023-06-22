@@ -5,6 +5,7 @@ Common test run patterns
 """
 
 import subprocess
+import sys
 from datetime import datetime
 from clusters import NullCluster
 from pre_tests import NullPreTest
