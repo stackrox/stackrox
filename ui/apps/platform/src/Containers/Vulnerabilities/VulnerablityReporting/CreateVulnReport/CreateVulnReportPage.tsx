@@ -7,6 +7,7 @@ import {
     FlexItem,
     Breadcrumb,
     BreadcrumbItem,
+    Wizard,
 } from '@patternfly/react-core';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -38,7 +39,22 @@ function VulnReportsPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }} />
+            <Divider component="div" />
+            <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
+                <Wizard
+                    navAriaLabel="Report creation steps"
+                    mainAriaLabel="Report creation content"
+                    steps={[
+                        { name: 'Configure report parameters', component: <p /> },
+                        { name: 'Configure delivery destinations (Optional)', component: <p /> },
+                        {
+                            name: 'Review and create',
+                            component: <p />,
+                            nextButtonText: 'Finish',
+                        },
+                    ]}
+                />
+            </PageSection>
         </>
     );
 }
