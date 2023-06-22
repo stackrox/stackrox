@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
@@ -31,11 +32,19 @@ func TestAllPackagesAreImported(t *testing.T) {
 		existingMigrations.Add(baseName)
 	}
 
+	var allImports []*ast.ImportSpec
 	f, err := parser.ParseFile(token.NewFileSet(), "all.go", nil, parser.ImportsOnly)
 	require.NoError(t, err, "failed to parse all.go")
 
+	allImports = append(allImports, f.Imports...)
+
+	f, err = parser.ParseFile(token.NewFileSet(), "all_rocksdb.go", nil, parser.ImportsOnly)
+	require.NoError(t, err, "failed to parse all.go")
+
+	allImports = append(allImports, f.Imports...)
+
 	importedMigrations := set.NewStringSet()
-	for _, imp := range f.Imports {
+	for _, imp := range allImports {
 		pkgName := strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, `"`), `"`)
 		pkgBaseName := path.Base(pkgName)
 		if !isMigrationName(pkgBaseName) {
