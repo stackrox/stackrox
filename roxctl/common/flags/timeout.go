@@ -23,13 +23,16 @@ func AddTimeout(c *cobra.Command) {
 
 // Timeout returns the set timeout.
 func Timeout(c *cobra.Command) time.Duration {
-	// Since a command can be the one adding the timeout flag via AddTimeout, make sure we look at the combined
-	// list of persistent flag set and the commands flag set called LocalFlags.
-	duration, err := c.LocalFlags().GetDuration(timeoutFlagName)
-	if err != nil {
-		// This is a programming error. You shouldn't use the timeout flag unless you've added it to your command!
-		// This helps us fail explicitly instead of defaulting to a zero timeout and allowing people to think it worked.
-		panic(fmt.Sprintf("command does not have a timeout flag: %v", err))
+	duration, err := c.Flags().GetDuration(timeoutFlagName)
+	if err == nil {
+		return duration
 	}
-	return duration
+
+	duration, err = c.PersistentFlags().GetDuration(timeoutFlagName)
+	if err == nil {
+		return duration
+	}
+	// This is a programming error. You shouldn't use the timeout flag unless you've added it to your command!
+	// This helps us fail explicitly instead of defaulting to a zero timeout and allowing people to think it worked.
+	panic(fmt.Sprintf("command does not have a timeout flag: %v", err))
 }
