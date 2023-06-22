@@ -46,7 +46,7 @@ for tuple in test_tuples:
     try:
         make_compatibility_test_runner(cluster=gkecluster).run()
     except Exception as e:
-        print(f"Exception \"{e}\" raised in compatibility test for central version {tuple.central_version} and sensor version {tuple.sensor_version}",
+        print(f"Exception \"{str(e)}\" raised in compatibility test for central version {tuple.central_version} and sensor version {tuple.sensor_version}",
             file=sys.stderr)
         failing_tuples.append(tuple)
 
