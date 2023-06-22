@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
+    Alert,
+    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Card,
@@ -13,9 +15,48 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
+import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
+import { DelegatedRegistryConfig } from 'types/dedicatedRegistryConfig.proto';
+import ToggleDelegatedScanning from './Components/ToggleDelegatedScanning';
+
+const initialDelegatedState: DelegatedRegistryConfig = {
+    enabledFor: 'NONE',
+    defaultClusterId: '',
+    registries: [],
+};
 
 function DelegateScanningPage() {
     const displayedPageTitle = 'Delegate Image Scanning';
+    const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
+        useState<DelegatedRegistryConfig>(initialDelegatedState);
+    const [errMessage, setErrMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchDelegatedRegistryConfig()
+            .then((result) => {
+                setDedicatedRegistryConfig(result.response);
+            })
+            .catch((err) => {
+                setErrMessage(err.message);
+                setDedicatedRegistryConfig(initialDelegatedState);
+            });
+    }, []);
+
+    function toggleDelegation() {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        if (delegatedRegistryConfig.enabledFor === 'NONE') {
+            if (delegatedRegistryConfig.registries.length > 0) {
+                newState.enabledFor = 'SPECIFIC';
+            } else {
+                newState.enabledFor = 'ALL';
+            }
+        } else {
+            newState.enabledFor = 'NONE';
+        }
+        setDedicatedRegistryConfig(newState);
+    }
+
     return (
         <>
             <PageTitle title={displayedPageTitle} />
@@ -37,8 +78,23 @@ function DelegateScanningPage() {
                 </Flex>
             </PageSection>
             <PageSection>
+                {!!errMessage && (
+                    <Alert
+                        title="Problem retrieving the delegated scanning configuration from the server"
+                        variant={AlertVariant.danger}
+                        isInline
+                        className="pf-u-mb-lg"
+                    >
+                        <p>{errMessage}</p>
+                        <p>Try reloading the page. If this problem persists, contact support.</p>
+                    </Alert>
+                )}
+                <ToggleDelegatedScanning
+                    enabledFor={delegatedRegistryConfig.enabledFor}
+                    toggleDelegation={toggleDelegation}
+                />
                 <Card>
-                    <CardBody>Enable delegated image scanning toggle goes here</CardBody>
+                    <CardBody>{delegatedRegistryConfig.enabledFor}</CardBody>
                 </Card>
             </PageSection>
         </>
