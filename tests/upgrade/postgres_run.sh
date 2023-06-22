@@ -110,6 +110,8 @@ test_upgrade_paths() {
 
     # Run with some scale to have data populated to migrate
     deploy_scaled_workload
+    info "SHREWS-DUMP"
+    kubectl get pods -n stackrox -o wide
 
     # Add some access scopes and see that they survive the upgrade and rollback process
     createRocksDBScopes
@@ -343,7 +345,7 @@ force_rollback_to_previous_postgres() {
     # an `UNEXPECTED` log instead of crashing central.  However that change is
     # not present in the initial 3.74 version.
     kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
-    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
+#    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
