@@ -78,7 +78,6 @@ function NetworkGraphPage() {
         undefined
     );
 
-    const [pollEpoch, setPollEpoch] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
@@ -126,11 +125,7 @@ function NetworkGraphPage() {
 
     // We will update the poll epoch after 30 seconds to update the node count for a cluster
     useInterval(() => {
-        setPollEpoch(pollEpoch + 1);
-    }, 30000);
-
-    useEffect(() => {
-        if (selectedClusterId && namespacesFromUrl.length > 0 && pollEpoch !== 0) {
+        if (selectedClusterId && namespacesFromUrl.length > 0) {
             fetchNodeUpdates(selectedClusterId)
                 .then((result) => {
                     setCurrentEpochCount(result?.response?.epoch || 0);
@@ -139,9 +134,9 @@ function NetworkGraphPage() {
                     // failure to update the node count is not critical
                 });
         }
-    }, [selectedClusterId, namespacesFromUrl.length, pollEpoch]);
+    }, 30000);
 
-    useDeepCompareEffect(() => {
+    function updateNetworkNodes() {
         // check that user is finished adding a complete filter
         const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
 
@@ -150,75 +145,90 @@ function NetworkGraphPage() {
             clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
 
         if (isQueryFilterComplete && selectedClusterId && isClusterNamespaceSelected) {
-            if (nodeUpdatesCount === 0) {
-                setIsLoading(true);
+            setIsLoading(true);
 
-                const queryToUse = queryService.objectToWhereClause(remainingQuery);
-                const timestampToUse = timeWindowToDate(timeWindow);
+            const queryToUse = queryService.objectToWhereClause(remainingQuery);
+            const timestampToUse = timeWindowToDate(timeWindow);
 
-                Promise.all([
-                    // fetch the network graph data used for the active graph
-                    fetchNetworkFlowGraph(
-                        selectedClusterId,
-                        namespacesFromUrl,
-                        deploymentsFromUrl,
-                        queryToUse,
-                        timestampToUse || undefined,
-                        includePorts,
-                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
-                    ),
-                    // fetch the network graph data, including policies, for the inactive graph
-                    fetchNetworkFlowGraph(
-                        selectedClusterId,
-                        namespacesFromUrl,
-                        deploymentsFromUrl,
-                        queryToUse,
-                        undefined,
-                        includePorts,
-                        ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS,
-                        INCLUDE_POLICIES
-                    ),
-                ])
-                    .then((values) => {
-                        // get policy nodes, and the starting epoch, from policy graph API response
-                        const { nodes: policyNodes, epoch } = values[1].response;
-                        // transform policy data to DataModel
-                        const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
-                        // get active nodes from network flow graph API response
-                        const { nodes: activeNodes } = values[0].response;
-                        // transform active data to DataModel
-                        const { activeDataModel, activeEdgeMap, activeNodeMap } =
-                            transformActiveData(activeNodes, policyNodeMap, namespacesFromUrl);
+            Promise.all([
+                // fetch the network graph data used for the active graph
+                fetchNetworkFlowGraph(
+                    selectedClusterId,
+                    namespacesFromUrl,
+                    deploymentsFromUrl,
+                    queryToUse,
+                    timestampToUse || undefined,
+                    includePorts,
+                    ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
+                ),
+                // fetch the network graph data, including policies, for the inactive graph
+                fetchNetworkFlowGraph(
+                    selectedClusterId,
+                    namespacesFromUrl,
+                    deploymentsFromUrl,
+                    queryToUse,
+                    undefined,
+                    includePorts,
+                    ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS,
+                    INCLUDE_POLICIES
+                ),
+            ])
+                .then((values) => {
+                    // get policy nodes from policy graph API response
+                    const { nodes: policyNodes } = values[1].response;
+                    // transform policy data to DataModel
+                    const { policyDataModel, policyNodeMap } = transformPolicyData(policyNodes);
+                    // get active nodes from network flow graph API response
+                    const { nodes: activeNodes } = values[0].response;
+                    // transform active data to DataModel
+                    const { activeDataModel, activeEdgeMap, activeNodeMap } = transformActiveData(
+                        activeNodes,
+                        policyNodeMap,
+                        namespacesFromUrl
+                    );
 
-                        // create extraneous flows graph
-                        const extraneousFlowsDataModel = createExtraneousFlowsModel(
-                            policyDataModel,
-                            activeNodeMap,
-                            activeEdgeMap,
-                            namespacesFromUrl
-                        );
+                    // create extraneous flows graph
+                    const extraneousFlowsDataModel = createExtraneousFlowsModel(
+                        policyDataModel,
+                        activeNodeMap,
+                        activeEdgeMap,
+                        namespacesFromUrl
+                    );
 
-                        const newUpdatedTimestamp = new Date();
-                        // show only hours and minutes, use options with the default locale - use an empty array
-                        const lastUpdatedDisplayTime = newUpdatedTimestamp.toLocaleTimeString([], {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                        });
-                        setLastUpdatedTime(lastUpdatedDisplayTime);
-                        setPrevEpochCount(epoch);
-                        setCurrentEpochCount(epoch);
+                    const newUpdatedTimestamp = new Date();
+                    // show only hours and minutes, use options with the default locale - use an empty array
+                    const lastUpdatedDisplayTime = newUpdatedTimestamp.toLocaleTimeString([], {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
+                    setLastUpdatedTime(lastUpdatedDisplayTime);
 
-                        setModels({
-                            activeModel: activeDataModel,
-                            extraneousModel: extraneousFlowsDataModel,
-                        });
-                    })
-                    .catch(() => {
-                        // TODO
-                    })
-                    .finally(() => setIsLoading(false));
-            }
+                    // Set the epoch to the most recent value from the server, since the state should now be up to date
+                    // with that value at worst.
+                    setPrevEpochCount(currentEpochCount);
+
+                    setModels({
+                        activeModel: activeDataModel,
+                        extraneousModel: extraneousFlowsDataModel,
+                    });
+                })
+                .catch(() => {
+                    // TODO
+                })
+                .finally(() => setIsLoading(false));
         }
+    }
+
+    // Epoch counts are tracked separately for each cluster, so reset them when the cluster changes.
+    useEffect(() => {
+        setPrevEpochCount(0);
+        setCurrentEpochCount(0);
+    }, [selectedClusterId]);
+
+    // TODO - This ignores some dependencies that would normally be included in the dep array of a regular `useEffect`.
+    // We can probably remove the effect and rely on callbacks when setting the parameters instead.
+    useDeepCompareEffect(() => {
+        updateNetworkNodes();
     }, [
         clusterFromUrl,
         namespacesFromUrl,
@@ -226,21 +236,14 @@ function NetworkGraphPage() {
         remainingQuery,
         timeWindow,
         deploymentCount,
-        nodeUpdatesCount,
     ]);
-
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
     }
 
-    function updateNetworkNodes() {
-        setPrevEpochCount(0);
-        setCurrentEpochCount(0);
-    }
-
     return (
         <>
-            <PageTitle title="Network Graph (2.0 preview)" />
+            <PageTitle title="Network Graph" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar
                     className="network-graph-selector-bar"
