@@ -29,8 +29,7 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize       = 10000
-	cursorBatchSize = 50
+	batchSize = 10000
 )
 
 var (
@@ -63,10 +62,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericStore: pgSearch.NewGenericStore[storage.ClusterCVEEdge, *storage.ClusterCVEEdge](
 			db,
-			"ClusterCVEEdge",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -77,6 +75,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ClusterCVEEdge) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ClusterCVEEdge")
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {

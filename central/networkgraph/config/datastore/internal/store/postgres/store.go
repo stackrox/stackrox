@@ -69,10 +69,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.NetworkGraphConfig, *storage.NetworkGraphConfig](
 			db,
-			"NetworkGraphConfig",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -83,6 +82,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.NetworkGraphConfig) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "NetworkGraphConfig")
 }
 
 func insertIntoNetworkGraphConfigs(_ context.Context, batch *pgx.Batch, obj *storage.NetworkGraphConfig) error {

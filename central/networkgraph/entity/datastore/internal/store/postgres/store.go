@@ -68,10 +68,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStoreWithPermissionChecker[storage.NetworkEntity, *storage.NetworkEntity](
 			db,
-			"NetworkEntity",
 			permissionCheckerSingleton(),
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -82,6 +81,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.NetworkEntity) string {
 	return obj.GetInfo().GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "NetworkEntity")
 }
 
 func insertIntoNetworkEntities(_ context.Context, batch *pgx.Batch, obj *storage.NetworkEntity) error {

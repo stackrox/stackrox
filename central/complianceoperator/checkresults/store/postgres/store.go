@@ -69,10 +69,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ComplianceOperatorCheckResult, *storage.ComplianceOperatorCheckResult](
 			db,
-			"ComplianceOperatorCheckResult",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -83,6 +82,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ComplianceOperatorCheckResult) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ComplianceOperatorCheckResult")
 }
 
 func insertIntoComplianceOperatorCheckResults(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorCheckResult) error {

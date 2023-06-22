@@ -71,10 +71,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.PolicyCategoryEdge, *storage.PolicyCategoryEdge](
 			db,
-			"PolicyCategoryEdge",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -85,6 +84,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.PolicyCategoryEdge) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "PolicyCategoryEdge")
 }
 
 func insertIntoPolicyCategoryEdges(_ context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {

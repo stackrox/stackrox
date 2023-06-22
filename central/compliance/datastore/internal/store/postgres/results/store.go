@@ -72,10 +72,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ComplianceRunResults, *storage.ComplianceRunResults](
 			db,
-			"ComplianceRunResults",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -86,6 +85,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ComplianceRunResults) string {
 	return obj.GetRunMetadata().GetRunId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ComplianceRunResults")
 }
 
 func insertIntoComplianceRunResults(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceRunResults) error {

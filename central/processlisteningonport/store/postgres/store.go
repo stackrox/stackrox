@@ -70,10 +70,9 @@ func New(db postgres.DB) Store {
 	return &storeImpl{
 		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ProcessListeningOnPortStorage, *storage.ProcessListeningOnPortStorage](
 			db,
-			"ProcessListeningOnPortStorage",
 			targetResource,
 			schema,
-			metrics.SetPostgresOperationDurationTime,
+			metricsSetPostgresOperationDurationTime,
 			pkGetter,
 		),
 		db: db,
@@ -84,6 +83,10 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storage.ProcessListeningOnPortStorage) string {
 	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ProcessListeningOnPortStorage")
 }
 
 func insertIntoListeningEndpoints(_ context.Context, batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
