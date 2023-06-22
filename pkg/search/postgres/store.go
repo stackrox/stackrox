@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -21,6 +22,16 @@ const (
 	deleteBatchSize = 5000
 )
 
+// PermissionChecker is a permission checker that could be used by GenericStore
+type PermissionChecker interface {
+	CountAllowed(ctx context.Context) (bool, error)
+	ExistsAllowed(ctx context.Context) (bool, error)
+	GetAllowed(ctx context.Context) (bool, error)
+	WalkAllowed(ctx context.Context) (bool, error)
+	DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
+	DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
+}
+
 // GenericSingleIDStore implements subset of Store interface for resources with single ID.
 type GenericSingleIDStore[T any, PT singleID[T]] struct {
 	db                               postgres.DB
@@ -28,6 +39,7 @@ type GenericSingleIDStore[T any, PT singleID[T]] struct {
 	targetResource                   permissions.ResourceMetadata
 	schema                           *walker.Schema
 	setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)
+	permissionChecker                PermissionChecker
 }
 
 type singleID[T any] interface {
@@ -47,15 +59,39 @@ func NewGenericSingleIDStore[T any, PT singleID[T]](db postgres.DB, typ string, 
 	}
 }
 
+// NewGenericSingleIDStoreWithPermissionChecker returns new subStore implementation for given resource.
+// subStore implements subset of Store operations.
+func NewGenericSingleIDStoreWithPermissionChecker[T any, PT singleID[T]](db postgres.DB, typ string, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime func(start time.Time, op ops.Op, t string)) *GenericSingleIDStore[T, PT] {
+	return &GenericSingleIDStore[T, PT]{
+		db:                               db,
+		typ:                              typ,
+		schema:                           schema,
+		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		permissionChecker:                checker,
+	}
+}
+
+func (s *GenericSingleIDStore[T, PT]) hasPermissionsChecker() bool {
+	return s.permissionChecker != nil
+}
+
 // Count returns the number of objects in the store.
 func (s *GenericSingleIDStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count, s.typ)
 
 	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := GetReadSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return 0, err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.CountAllowed(ctx); err != nil {
+			return 0, err
+		} else if !ok {
+			return 0, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return 0, err
+		}
+		sacQueryFilter = filter
 	}
 
 	return RunCountRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
@@ -66,9 +102,18 @@ func (s *GenericSingleIDStore[T, PT]) DeleteByQuery(ctx context.Context, query *
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove, s.typ)
 
 	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := GetReadWriteSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.DeleteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
 	}
 
 	q := search.ConjunctionQuery(
@@ -90,10 +135,18 @@ func (s *GenericSingleIDStore[T, PT]) DeleteMany(ctx context.Context, identifier
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany, s.typ)
 
 	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := GetReadWriteSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.DeleteManyAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
 	}
 
 	// Batch the deletes
@@ -130,9 +183,18 @@ func (s *GenericSingleIDStore[T, PT]) Exists(ctx context.Context, id string) (bo
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists, s.typ)
 
 	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := GetReadSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return false, err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.ExistsAllowed(ctx); err != nil {
+			return false, err
+		} else if !ok {
+			return false, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return false, err
+		}
+		sacQueryFilter = filter
 	}
 
 	q := search.ConjunctionQuery(
@@ -151,10 +213,18 @@ func (s *GenericSingleIDStore[T, PT]) Get(ctx context.Context, id string) (PT, b
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get, s.typ)
 
 	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := GetReadSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return nil, false, err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
+			return nil, false, err
+		} else if !ok {
+			return nil, false, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, false, err
+		}
+		sacQueryFilter = filter
 	}
 
 	q := search.ConjunctionQuery(
@@ -175,11 +245,20 @@ func (s *GenericSingleIDStore[T, PT]) GetByQuery(ctx context.Context, query *v1.
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery, s.typ)
 
 	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := GetReadSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return nil, err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, err
+		}
+		sacQueryFilter = filter
 	}
+
 	pagination := query.GetPagination()
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
@@ -201,10 +280,18 @@ func (s *GenericSingleIDStore[T, PT]) GetByQuery(ctx context.Context, query *v1.
 func (s *GenericSingleIDStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll, s.typ+"IDs")
 	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := GetReadSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return nil, err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, err
+		}
+		sacQueryFilter = filter
 	}
 	result, err := RunSearchRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
 	if err != nil {
@@ -234,9 +321,18 @@ func (s *GenericSingleIDStore[T, PT]) GetAll(ctx context.Context) ([]*T, error) 
 // Walk iterates over all the objects in the store and applies the closure.
 func (s *GenericSingleIDStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := GetReadSACQuery(ctx, s.targetResource)
-	if err != nil {
-		return err
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.WalkAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
 	}
 	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, sacQueryFilter, s.db)
 	if err != nil {

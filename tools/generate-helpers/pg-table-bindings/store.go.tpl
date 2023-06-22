@@ -28,7 +28,7 @@
 {{ $singlePK = .Schema.ID }}
 {{- end }}
 
-{{- $isGeneric := and (and (eq (len $pks) 1) (not .Obj.HasPermissionChecker)) (not .JoinTable) }}
+{{- $isGeneric := and (eq (len $pks) 1) (not .JoinTable) }}
 
 package postgres
 
@@ -80,7 +80,7 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
         targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
@@ -131,10 +131,10 @@ type storeImpl struct {
 func New(db postgres.DB) Store {
     return &storeImpl{
 {{- if $isGeneric }}
-        GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[{{.Type}}, *{{.Type}}](
+        GenericSingleIDStore: pgSearch.NewGenericSingleIDStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
             db,
             "{{.TrimmedType}}",
-            targetResource,
+            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
             schema,
             metrics.SetPostgresOperationDurationTime,
         ),
