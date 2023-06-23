@@ -11,6 +11,7 @@ export type CheckboxSelectProps = {
     onChange: (selection: string[]) => void;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
+    placeholderText?: string;
 };
 
 function CheckboxSelect({
@@ -18,6 +19,7 @@ function CheckboxSelect({
     onChange,
     ariaLabel,
     children,
+    placeholderText = 'Filter by value',
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -46,7 +48,7 @@ function CheckboxSelect({
             onSelect={onSelect}
             selections={selections}
             isOpen={isOpen}
-            placeholderText="Filter by value"
+            placeholderText={placeholderText}
             aria-label={ariaLabel}
         >
             {children}

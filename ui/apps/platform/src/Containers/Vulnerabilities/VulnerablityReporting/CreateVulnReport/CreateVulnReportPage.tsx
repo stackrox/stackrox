@@ -11,12 +11,14 @@ import {
 } from '@patternfly/react-core';
 
 import { vulnerabilityReportsPath } from 'routePaths';
+import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import ReportParametersForm from '../forms/ReportParametersForm';
+import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm';
 
 function VulnReportsPage() {
+    const { formValues, setFormValues } = useReportFormValues();
     return (
         <>
             <PageTitle title="Create vulnerability report" />
@@ -50,7 +52,12 @@ function VulnReportsPage() {
                     steps={[
                         {
                             name: 'Configure report parameters',
-                            component: <ReportParametersForm />,
+                            component: (
+                                <ReportParametersForm
+                                    formValues={formValues}
+                                    setFormValues={setFormValues}
+                                />
+                            ),
                         },
                         { name: 'Configure delivery destinations (Optional)', component: <p /> },
                         {
