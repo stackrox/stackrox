@@ -14,6 +14,7 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
+import util.ApplicationHealth
 import util.ChaosMonkey
 import util.Timer
 
@@ -130,7 +131,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Config (#desc)"() {
+    def "Verify Admission Controller Config: #desc"() {
         when:
         prepareChaosMonkey()
 
@@ -296,7 +297,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Enforcement on Updates (#desc)"() {
+    def "Verify Admission Controller Enforcement on Updates: #desc"() {
         when:
         prepareChaosMonkey()
 
@@ -348,7 +349,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
+    def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes: match: #clusterMatch/#nsMatch"() {
         when:
         prepareChaosMonkey()
 
@@ -520,6 +521,11 @@ class AdmissionControllerTest extends BaseSpecification {
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
                 originalAdmCtrlReplicas, 30, 1)
         log.info("Admission controller scaled back to ${originalAdmCtrlReplicas}")
+
+        and:
+        "Admission controller is ready for work"
+        ApplicationHealth ah = new ApplicationHealth(orchestrator, 60)
+        ah.waitForAdmissionControllerHealthiness()
 
         when:
         "A deployment with an image violating a policy is created"
