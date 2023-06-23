@@ -60,7 +60,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	*pgSearch.GenericSingleIDStore[storage.ImageCVE, *storage.ImageCVE]
+	*pgSearch.GenericStore[storage.ImageCVE, *storage.ImageCVE]
 	db    postgres.DB
 	mutex sync.RWMutex
 }
@@ -68,7 +68,7 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericSingleIDStore: pgSearch.NewGenericSingleIDStore[storage.ImageCVE, *storage.ImageCVE](
+		GenericStore: pgSearch.NewGenericStore[storage.ImageCVE, *storage.ImageCVE](
 			db,
 			targetResource,
 			schema,

@@ -57,7 +57,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	*pgSearch.GenericSingleIDStore[storage.InitBundleMeta, *storage.InitBundleMeta]
+	*pgSearch.GenericStore[storage.InitBundleMeta, *storage.InitBundleMeta]
 	db    postgres.DB
 	mutex sync.RWMutex
 }
@@ -65,7 +65,7 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericSingleIDStore: pgSearch.NewGenericSingleIDStoreWithPermissionChecker[storage.InitBundleMeta, *storage.InitBundleMeta](
+		GenericStore: pgSearch.NewGenericStoreWithPermissionChecker[storage.InitBundleMeta, *storage.InitBundleMeta](
 			db,
 			permissionCheckerSingleton(),
 			schema,

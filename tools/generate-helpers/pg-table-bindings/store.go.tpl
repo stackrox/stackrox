@@ -28,8 +28,6 @@
 {{ $singlePK = .Schema.ID }}
 {{- end }}
 
-{{- $isSingleIDGeneric := and (eq (len $pks) 1) (not .JoinTable) }}
-
 package postgres
 
 import (
@@ -109,11 +107,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-{{- if $isSingleIDGeneric }}
-    *pgSearch.GenericSingleIDStore[{{.Type}}, *{{.Type}}]
-{{- else }}
     *pgSearch.GenericStore[{{.Type}}, *{{.Type}}]
-{{- end }}
     db postgres.DB
     mutex sync.RWMutex
 }
@@ -125,15 +119,6 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
     return &storeImpl{
-{{- if $isSingleIDGeneric }}
-        GenericSingleIDStore: pgSearch.NewGenericSingleIDStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
-            db,
-            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
-            schema,
-            metricsSetPostgresOperationDurationTime,
-            pkGetter,
-        ),
-{{- else }}
         GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
             db,
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
@@ -141,7 +126,6 @@ func New(db postgres.DB) Store {
             metricsSetPostgresOperationDurationTime,
             pkGetter,
         ),
-{{- end }}
         db: db,
     }
 }

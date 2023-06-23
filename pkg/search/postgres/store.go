@@ -43,11 +43,6 @@ type GenericStore[T any, PT unmarshaler[T]] struct {
 	pkGetter                         primaryKeyGetter[T, PT]
 }
 
-// GenericSingleIDStore implements subset of Store interface for resources with single ID.
-type GenericSingleIDStore[T any, PT unmarshaler[T]] struct {
-	*GenericStore[T, PT]
-}
-
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
 func NewGenericStore[T any, PT unmarshaler[T]](db postgres.DB, targetResource permissions.ResourceMetadata, schema *walker.Schema, setPostgresOperationDurationTime durationTimeSetter, pkGetter primaryKeyGetter[T, PT]) *GenericStore[T, PT] {
@@ -60,29 +55,15 @@ func NewGenericStore[T any, PT unmarshaler[T]](db postgres.DB, targetResource pe
 	}
 }
 
-// NewGenericSingleIDStore returns new subStore implementation for given resource.
+// NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericSingleIDStore[T any, PT unmarshaler[T]](db postgres.DB, targetResource permissions.ResourceMetadata, schema *walker.Schema, setPostgresOperationDurationTime durationTimeSetter, pkGetter primaryKeyGetter[T, PT]) *GenericSingleIDStore[T, PT] {
-	return &GenericSingleIDStore[T, PT]{GenericStore: &GenericStore[T, PT]{
-		db:                               db,
-		targetResource:                   targetResource,
-		schema:                           schema,
-		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
-		pkGetter:                         pkGetter,
-	},
-	}
-}
-
-// NewGenericSingleIDStoreWithPermissionChecker returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGenericSingleIDStoreWithPermissionChecker[T any, PT unmarshaler[T]](db postgres.DB, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime durationTimeSetter, pkGetter primaryKeyGetter[T, PT]) *GenericSingleIDStore[T, PT] {
-	return &GenericSingleIDStore[T, PT]{GenericStore: &GenericStore[T, PT]{
+func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](db postgres.DB, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime durationTimeSetter, pkGetter primaryKeyGetter[T, PT]) *GenericStore[T, PT] {
+	return &GenericStore[T, PT]{
 		db:                               db,
 		schema:                           schema,
 		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
 		permissionChecker:                checker,
 		pkGetter:                         pkGetter,
-	},
 	}
 }
 
