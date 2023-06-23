@@ -106,6 +106,10 @@ deploy_earlier_central() {
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
          --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
 
+    # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
+    # the scripts.  So we will give it a minute for things to get started before we proceed
+    sleep 60
+
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
