@@ -61,7 +61,6 @@ type Store interface {
 
 type storeImpl struct {
 	*pgSearch.GenericStore[storage.TestParent2, *storage.TestParent2]
-	db    postgres.DB
 	mutex sync.RWMutex
 }
 
@@ -73,13 +72,13 @@ func New(db postgres.DB) Store {
 			targetResource,
 			schema,
 			metricsSetPostgresOperationDurationTime,
+			metricsSetAcquireDBConnDuration,
 			pkGetter,
 		),
-		db: db,
 	}
 }
 
-//// Helper functions
+// region Helper functions
 
 func pkGetter(obj *storage.TestParent2) string {
 	return obj.GetId()
@@ -87,6 +86,10 @@ func pkGetter(obj *storage.TestParent2) string {
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 	metrics.SetPostgresOperationDurationTime(start, op, "TestParent2")
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, "TestParent2")
 }
 
 func insertIntoTestParent2(_ context.Context, batch *pgx.Batch, obj *storage.TestParent2) error {
@@ -181,21 +184,12 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx *postgres.Tx, ob
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent2) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestParent2")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -215,11 +209,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent2) 
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent2) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestParent2")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
@@ -242,9 +236,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent2) er
 	return nil
 }
 
-//// Helper functions - END
-
-//// Interface functions
+// endregion Helper functions
+// region Interface functions
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestParent2) error {
@@ -286,11 +279,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestParent2)
 	})
 }
 
-//// Stubs for satisfying legacy interfaces
+// endregion Interface functions
 
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -308,4 +299,4 @@ func dropTableTestParent2(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing

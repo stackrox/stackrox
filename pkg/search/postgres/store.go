@@ -21,6 +21,7 @@ const (
 	deleteBatchSize = 5000
 )
 
+// PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
 	CountAllowed(ctx context.Context) (bool, error)
 	ExistsAllowed(ctx context.Context) (bool, error)
@@ -39,29 +40,46 @@ type GenericStore[T any, PT unmarshaler[T]] struct {
 	targetResource                   permissions.ResourceMetadata
 	schema                           *walker.Schema
 	setPostgresOperationDurationTime durationTimeSetter
+	setAcquireDBConnDuration         durationTimeSetter
 	permissionChecker                PermissionChecker
 	pkGetter                         primaryKeyGetter[T, PT]
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStore[T any, PT unmarshaler[T]](db postgres.DB, targetResource permissions.ResourceMetadata, schema *walker.Schema, setPostgresOperationDurationTime durationTimeSetter, pkGetter primaryKeyGetter[T, PT]) *GenericStore[T, PT] {
+func NewGenericStore[T any, PT unmarshaler[T]](
+	db postgres.DB,
+	targetResource permissions.ResourceMetadata,
+	schema *walker.Schema,
+	setPostgresOperationDurationTime durationTimeSetter,
+	setAcquireDBConnDuration durationTimeSetter,
+	pkGetter primaryKeyGetter[T, PT],
+) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,
 		targetResource:                   targetResource,
 		schema:                           schema,
 		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		setAcquireDBConnDuration:         setAcquireDBConnDuration,
 		pkGetter:                         pkGetter,
 	}
 }
 
 // NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](db postgres.DB, checker PermissionChecker, schema *walker.Schema, setPostgresOperationDurationTime durationTimeSetter, pkGetter primaryKeyGetter[T, PT]) *GenericStore[T, PT] {
+func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
+	db postgres.DB,
+	checker PermissionChecker,
+	schema *walker.Schema,
+	setPostgresOperationDurationTime durationTimeSetter,
+	setAcquireDBConnDuration durationTimeSetter,
+	pkGetter primaryKeyGetter[T, PT],
+) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,
 		schema:                           schema,
 		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		setAcquireDBConnDuration:         setAcquireDBConnDuration,
 		permissionChecker:                checker,
 		pkGetter:                         pkGetter,
 	}
@@ -71,16 +89,24 @@ func (s *GenericStore[T, PT]) hasPermissionsChecker() bool {
 	return s.permissionChecker != nil
 }
 
+// AcquireConn returns Acquires new connection from DB.
+func (s *GenericStore[T, PT]) AcquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
+	defer s.setAcquireDBConnDuration(time.Now(), op)
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
 // Count returns the number of objects in the store.
 func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.CountAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.CountAllowed(ctx); err != nil || !ok {
 			return 0, err
-		} else if !ok {
-			return 0, sac.ErrResourceAccessDenied
 		}
 	} else {
 		filter, err := GetReadSACQuery(ctx, s.targetResource)

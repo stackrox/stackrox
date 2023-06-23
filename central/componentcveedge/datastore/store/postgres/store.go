@@ -51,7 +51,6 @@ type Store interface {
 
 type storeImpl struct {
 	*pgSearch.GenericStore[storage.ComponentCVEEdge, *storage.ComponentCVEEdge]
-	db    postgres.DB
 	mutex sync.RWMutex
 }
 
@@ -63,13 +62,13 @@ func New(db postgres.DB) Store {
 			targetResource,
 			schema,
 			metricsSetPostgresOperationDurationTime,
+			metricsSetAcquireDBConnDuration,
 			pkGetter,
 		),
-		db: db,
 	}
 }
 
-//// Helper functions
+// region Helper functions
 
 func pkGetter(obj *storage.ComponentCVEEdge) string {
 	return obj.GetId()
@@ -79,24 +78,13 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 	metrics.SetPostgresOperationDurationTime(start, op, "ComponentCVEEdge")
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, "ComponentCVEEdge")
 }
 
-//// Helper functions - END
+// endregion Helper functions
 
-//// Interface functions
-
-//// Stubs for satisfying legacy interfaces
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -114,4 +102,4 @@ func dropTableImageComponentCveEdges(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing

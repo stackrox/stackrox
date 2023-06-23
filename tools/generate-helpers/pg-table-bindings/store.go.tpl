@@ -71,7 +71,7 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
         targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
@@ -108,7 +108,6 @@ type Store interface {
 
 type storeImpl struct {
     *pgSearch.GenericStore[{{.Type}}, *{{.Type}}]
-    db postgres.DB
     mutex sync.RWMutex
 }
 
@@ -124,13 +123,13 @@ func New(db postgres.DB) Store {
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
             schema,
             metricsSetPostgresOperationDurationTime,
+            metricsSetAcquireDBConnDuration,
             pkGetter,
         ),
-        db: db,
     }
 }
 
-//// Helper functions
+// region Helper functions
 
 func pkGetter(obj *{{ .Type }}) {{$singlePK.Type}} {
     return {{ $singlePK.Getter "obj" }}
@@ -138,6 +137,10 @@ func pkGetter(obj *{{ .Type }}) {{$singlePK.Type}} {
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
     metrics.SetPostgresOperationDurationTime(start, op, "{{.TrimmedType}}")
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+    metrics.SetAcquireDBConnDuration(start, op, "{{.TrimmedType}}")
 }
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
@@ -297,24 +300,15 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{- end }}
 {{- end }}
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-	    return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
 {{- if not .JoinTable }}
 {{- if not .NoCopyFrom }}
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
-    conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+    conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 	    return err
 	}
-    defer release()
+    defer conn.Release()
 
     tx, err := conn.Begin(ctx)
     if err != nil {
@@ -335,11 +329,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
 {{- end}}
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
-    conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+    conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 	    return err
 	}
-	defer release()
+	defer conn.Release()
 
     for _, obj := range objs {
         batch := &pgx.Batch{}
@@ -363,11 +357,10 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 }
 {{- end }}
 
-//// Helper functions - END
-
-//// Interface functions
+// endregion Helper functions
 
 {{- if not .JoinTable }}
+// region Interface functions
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
@@ -398,9 +391,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 		return s.upsert(ctx, obj)
 	})
 }
-{{- end }}
-
-{{- if not .JoinTable }}
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
@@ -458,26 +448,10 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	})
     {{- end }}
 }
+// endregion Interface functions
 {{- end }}
 
-//// Stubs for satisfying legacy interfaces
-
-{{- if eq .TrimmedType "Policy" }}
-
-// RenamePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) RenamePolicyCategory(_ *v1.RenamePolicyCategoryRequest) error {
-    return errors.New("unimplemented")
-}
-
-// DeletePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) DeletePolicyCategory(_ *v1.DeletePolicyCategoryRequest) error {
-    return errors.New("unimplemented")
-}
-{{- end }}
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -505,4 +479,4 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db post
 
 {{template "dropTable" .Schema}}
 
-//// Used for testing - END
+// endregion Used for testing

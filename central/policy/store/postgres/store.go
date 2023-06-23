@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -63,7 +62,6 @@ type Store interface {
 
 type storeImpl struct {
 	*pgSearch.GenericStore[storage.Policy, *storage.Policy]
-	db    postgres.DB
 	mutex sync.RWMutex
 }
 
@@ -75,13 +73,13 @@ func New(db postgres.DB) Store {
 			targetResource,
 			schema,
 			metricsSetPostgresOperationDurationTime,
+			metricsSetAcquireDBConnDuration,
 			pkGetter,
 		),
-		db: db,
 	}
 }
 
-//// Helper functions
+// region Helper functions
 
 func pkGetter(obj *storage.Policy) string {
 	return obj.GetId()
@@ -89,6 +87,10 @@ func pkGetter(obj *storage.Policy) string {
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 	metrics.SetPostgresOperationDurationTime(start, op, "Policy")
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, "Policy")
 }
 
 func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy) error {
@@ -228,21 +230,12 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs 
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Policy")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -262,11 +255,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Policy")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
@@ -289,9 +282,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
 	return nil
 }
 
-//// Helper functions - END
-
-//// Interface functions
+// endregion Helper functions
+// region Interface functions
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
@@ -333,21 +325,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 	})
 }
 
-//// Stubs for satisfying legacy interfaces
+// endregion Interface functions
 
-// RenamePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) RenamePolicyCategory(_ *v1.RenamePolicyCategoryRequest) error {
-	return errors.New("unimplemented")
-}
-
-// DeletePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) DeletePolicyCategory(_ *v1.DeletePolicyCategoryRequest) error {
-	return errors.New("unimplemented")
-}
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -365,4 +345,4 @@ func dropTablePolicies(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing

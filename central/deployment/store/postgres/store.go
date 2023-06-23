@@ -63,7 +63,6 @@ type Store interface {
 
 type storeImpl struct {
 	*pgSearch.GenericStore[storage.Deployment, *storage.Deployment]
-	db    postgres.DB
 	mutex sync.RWMutex
 }
 
@@ -75,13 +74,13 @@ func New(db postgres.DB) Store {
 			targetResource,
 			schema,
 			metricsSetPostgresOperationDurationTime,
+			metricsSetAcquireDBConnDuration,
 			pkGetter,
 		),
-		db: db,
 	}
 }
 
-//// Helper functions
+// region Helper functions
 
 func pkGetter(obj *storage.Deployment) string {
 	return obj.GetId()
@@ -89,6 +88,10 @@ func pkGetter(obj *storage.Deployment) string {
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 	metrics.SetPostgresOperationDurationTime(start, op, "Deployment")
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, "Deployment")
 }
 
 func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.Deployment) error {
@@ -874,21 +877,12 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Deployment) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Deployment")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -908,11 +902,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Deployment) e
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Deployment")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
@@ -935,9 +929,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) err
 	return nil
 }
 
-//// Helper functions - END
-
-//// Interface functions
+// endregion Helper functions
+// region Interface functions
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
@@ -989,11 +982,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) 
 	})
 }
 
-//// Stubs for satisfying legacy interfaces
+// endregion Interface functions
 
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -1047,4 +1038,4 @@ func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db postgres.DB)
 
 }
 
-//// Used for testing - END
+// endregion Used for testing
