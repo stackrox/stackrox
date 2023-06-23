@@ -199,7 +199,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			endpoint: c,
 			stopper: func() {
 				if err := httpSrv.Shutdown(context.Background()); err != nil {
-					log.Warnf("stopping HTTP listener: %s", err)
+					log.Warnf("Stopping HTTP listener: %s", err)
 				}
 			},
 		})

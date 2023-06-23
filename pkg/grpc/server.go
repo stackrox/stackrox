@@ -153,6 +153,11 @@ func (a *apiImpl) Register(services ...APIService) {
 }
 
 func (a *apiImpl) Stop() *concurrency.Signal {
+	if a.grpcShutdownRequested.IsDone() {
+		log.Warnf("API Stop called but shutdown was already requested")
+		return &a.grpcShutdownFinished
+	}
+
 	go a.stop()
 	return &a.grpcShutdownFinished
 }

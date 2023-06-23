@@ -18,9 +18,21 @@ type APIServerSuite struct {
 	suite.Suite
 }
 
+func (a *APIServerSuite) SetupTest() {
+	// In order to start the gRPC server, we need to have the MTLS environment variables
+	// pointing to some valid certificate/key pair. In this case we are using the ones
+	// created for local-sensor, which are dummy self-signed certificates.
+	a.T().Setenv("ROX_MTLS_CERT_FILE", "../../tools/local-sensor/certs/cert.pem")
+	a.T().Setenv("ROX_MTLS_KEY_FILE", "../../tools/local-sensor/certs/key.pem")
+	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
+	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
+}
+
 func Test_APIServerSuite(t *testing.T) {
 	suite.Run(t, new(APIServerSuite))
 }
+
+var _ suite.SetupTestSuite = &APIServerSuite{}
 
 func (a *APIServerSuite) TestEnvValues() {
 	cases := map[string]int{
@@ -39,10 +51,6 @@ func (a *APIServerSuite) TestEnvValues() {
 
 func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 	// TODO: Use TLS mock instead of overriding this with dummy certs
-	a.T().Setenv("ROX_MTLS_CERT_FILE", "../../tools/local-sensor/certs/cert.pem")
-	a.T().Setenv("ROX_MTLS_KEY_FILE", "../../tools/local-sensor/certs/key.pem")
-	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
-	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
 
 	api1 := NewAPI(defaultConf())
 	api2 := NewAPI(defaultConf())
@@ -57,12 +65,6 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 }
 
 func (a *APIServerSuite) Test_CustomAPI() {
-	// TODO: Use TLS mock instead of overriding this with dummy certs
-	a.T().Setenv("ROX_MTLS_CERT_FILE", "../../tools/local-sensor/certs/cert.pem")
-	a.T().Setenv("ROX_MTLS_KEY_FILE", "../../tools/local-sensor/certs/key.pem")
-	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
-	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
-
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	a.Run("fetch data from /test", func() {
@@ -87,7 +89,22 @@ func (a *APIServerSuite) Test_CustomAPI() {
 		a.Require().Error(err)
 		a.Require().False(endpointReached.IsDone())
 	})
+}
 
+func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
+	api := NewAPI(defaultConf())
+
+	api.Start().Wait()
+
+	// Calling Stop multiple times should not panic
+	stopSig1 := api.Stop()
+	stopSig2 := api.Stop()
+	stopSig3 := api.Stop()
+
+	stopSig1.Wait()
+
+	a.Assert().True(stopSig2.IsDone())
+	a.Assert().True(stopSig3.IsDone())
 }
 
 func (a *APIServerSuite) requestWithoutErr(url string) {
