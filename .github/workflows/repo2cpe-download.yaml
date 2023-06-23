@@ -12,19 +12,26 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
 
     - name: Create Repo2CPE directory
-      run: mkdir Repo2CPE
+      run: mkdir -p Repo2CPE
 
     - name: Download repository-to-cpe.json
       run: |
         cd Repo2CPE
         wget -q https://access.redhat.com/security/data/metrics/repository-to-cpe.json
-      # Alternatively, you can use curl:
-      # run: |
-      #   cd Repo2CPE
-      #   curl -sSL -O https://access.redhat.com/security/data/metrics/repository-to-cpe.json
 
     - name: Check downloaded file
       run: ls -l Repo2CPE/repository-to-cpe.json
+
+    - name: Upload file to Google Cloud Storage
+      run: gsutil cp -r "Repo2CPE" "gs://scanner-v4-test/"
