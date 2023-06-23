@@ -7,13 +7,13 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
-// ConvertTestMultiKeyStructFromProto converts a `*storage.TestMultiKeyStruct` to Gorm model
-func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*TestMultiKeyStructs, error) {
+// ConvertTestOneKeyStructFromProto converts a `*storage.TestOneKeyStruct` to Gorm model
+func ConvertTestOneKeyStructFromProto(obj *storage.TestOneKeyStruct) (*TestOneKeyStructs, error) {
 	serialized, err := obj.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	model := &TestMultiKeyStructs{
+	model := &TestOneKeyStructs{
 		Key1:              obj.GetKey1(),
 		Key2:              obj.GetKey2(),
 		StringSlice:       pq.Array(obj.GetStringSlice()).(*pq.StringArray),
@@ -33,11 +33,11 @@ func ConvertTestMultiKeyStructFromProto(obj *storage.TestMultiKeyStruct) (*TestM
 	return model, nil
 }
 
-// ConvertTestMultiKeyStruct_NestedFromProto converts a `*storage.TestMultiKeyStruct_Nested` to Gorm model
-func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_Nested, idx int, testMultiKeyStructKey1 string, testMultiKeyStructKey2 string) (*TestMultiKeyStructsNesteds, error) {
-	model := &TestMultiKeyStructsNesteds{
-		TestMultiKeyStructsKey1: testMultiKeyStructKey1,
-		TestMultiKeyStructsKey2: testMultiKeyStructKey2,
+// ConvertTestOneKeyStruct_NestedFromProto converts a `*storage.TestOneKeyStruct_Nested` to Gorm model
+func ConvertTestOneKeyStruct_NestedFromProto(obj *storage.TestOneKeyStruct_Nested, idx int, TestOneKeyStructKey1 string, TestOneKeyStructKey2 string) (*TestOneKeyStructsNesteds, error) {
+	model := &TestOneKeyStructsNesteds{
+		TestOneKeyStructsKey1: TestOneKeyStructKey1,
+		TestOneKeyStructsKey2: TestOneKeyStructKey2,
 		Idx:                     idx,
 		Nested:                  obj.GetNested(),
 		IsNested:                obj.GetIsNested(),
@@ -49,9 +49,9 @@ func ConvertTestMultiKeyStruct_NestedFromProto(obj *storage.TestMultiKeyStruct_N
 	return model, nil
 }
 
-// ConvertTestMultiKeyStructToProto converts Gorm model `TestMultiKeyStructs` to its protobuf type object
-func ConvertTestMultiKeyStructToProto(m *TestMultiKeyStructs) (*storage.TestMultiKeyStruct, error) {
-	var msg storage.TestMultiKeyStruct
+// ConvertTestOneKeyStructToProto converts Gorm model `TestOneKeyStructs` to its protobuf type object
+func ConvertTestOneKeyStructToProto(m *TestOneKeyStructs) (*storage.TestOneKeyStruct, error) {
+	var msg storage.TestOneKeyStruct
 	if err := msg.Unmarshal(m.Serialized); err != nil {
 		return nil, err
 	}

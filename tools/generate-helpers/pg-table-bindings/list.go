@@ -87,7 +87,7 @@ func init() {
 		&storage.TokenMetadata{}:                                resources.Integration,
 		&storage.User{}:                                         resources.Access,
 		// Tests
-		&storage.TestMultiKeyStruct{}:      resources.Namespace,
+		&storage.TestOneKeyStruct{}:        resources.Namespace,
 		&storage.TestSingleKeyStruct{}:     resources.Namespace,
 		&storage.TestSingleUUIDKeyStruct{}: resources.Namespace,
 		&storage.TestGrandparent{}:         resources.Namespace,

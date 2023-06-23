@@ -15,34 +15,34 @@ import (
 )
 
 var (
-	// CreateTableTestMultiKeyStructsStmt holds the create statement for table `test_multi_key_structs`.
-	CreateTableTestMultiKeyStructsStmt = &postgres.CreateStmts{
-		GormModel: (*TestMultiKeyStructs)(nil),
+	// CreateTableTestOneKeyStructsStmt holds the create statement for table `test_multi_key_structs`.
+	CreateTableTestOneKeyStructsStmt = &postgres.CreateStmts{
+		GormModel: (*TestOneKeyStructs)(nil),
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
-				GormModel: (*TestMultiKeyStructsNesteds)(nil),
+				GormModel: (*TestOneKeyStructsNesteds)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
 		},
 	}
 
-	// TestMultiKeyStructsSchema is the go schema for table `test_multi_key_structs`.
-	TestMultiKeyStructsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "test_multi_key_structs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testmultikeystruct", (*storage.TestMultiKeyStruct)(nil)))
+	// TestOneKeyStructsSchema is the go schema for table `test_multi_key_structs`.
+	TestOneKeyStructsSchema = func() *walker.Schema {
+		schema := walker.Walk(reflect.TypeOf((*storage.TestOneKeyStruct)(nil)), "test_multi_key_structs")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "TestOneKeyStruct", (*storage.TestOneKeyStruct)(nil)))
 		return schema
 	}()
 )
 
 const (
-	// TestMultiKeyStructsTableName specifies the name of the table in postgres.
-	TestMultiKeyStructsTableName = "test_multi_key_structs"
-	// TestMultiKeyStructsNestedsTableName specifies the name of the table in postgres.
-	TestMultiKeyStructsNestedsTableName = "test_multi_key_structs_nesteds"
+	// TestOneKeyStructsTableName specifies the name of the table in postgres.
+	TestOneKeyStructsTableName = "test_multi_key_structs"
+	// TestOneKeyStructsNestedsTableName specifies the name of the table in postgres.
+	TestOneKeyStructsNestedsTableName = "test_multi_key_structs_nesteds"
 )
 
-// TestMultiKeyStructs holds the Gorm model for Postgres table `test_multi_key_structs`.
-type TestMultiKeyStructs struct {
+// TestOneKeyStructs holds the Gorm model for Postgres table `test_multi_key_structs`.
+type TestOneKeyStructs struct {
 	Key1              string                          `gorm:"column:key1;type:varchar;primaryKey"`
 	Key2              string                          `gorm:"column:key2;type:varchar;primaryKey"`
 	StringSlice       *pq.StringArray                 `gorm:"column:stringslice;type:text[]"`
@@ -52,7 +52,7 @@ type TestMultiKeyStructs struct {
 	Float             float32                         `gorm:"column:float;type:numeric"`
 	Labels            map[string]string               `gorm:"column:labels;type:jsonb"`
 	Timestamp         *time.Time                      `gorm:"column:timestamp;type:timestamp"`
-	Enum              storage.TestMultiKeyStruct_Enum `gorm:"column:enum;type:integer"`
+	Enum              storage.TestOneKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums             *pq.Int32Array                  `gorm:"column:enums;type:int[]"`
 	String            string                          `gorm:"column:string_;type:varchar"`
 	Int32Slice        *pq.Int32Array                  `gorm:"column:int32slice;type:int[]"`
@@ -60,16 +60,16 @@ type TestMultiKeyStructs struct {
 	Serialized        []byte                          `gorm:"column:serialized;type:bytea"`
 }
 
-// TestMultiKeyStructsNesteds holds the Gorm model for Postgres table `test_multi_key_structs_nesteds`.
-type TestMultiKeyStructsNesteds struct {
-	TestMultiKeyStructsKey1 string              `gorm:"column:test_multi_key_structs_key1;type:varchar;primaryKey"`
-	TestMultiKeyStructsKey2 string              `gorm:"column:test_multi_key_structs_key2;type:varchar;primaryKey"`
-	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:testmultikeystructsnesteds_idx,type:btree"`
+// TestOneKeyStructsNesteds holds the Gorm model for Postgres table `test_multi_key_structs_nesteds`.
+type TestOneKeyStructsNesteds struct {
+	TestOneKeyStructsKey1 string              `gorm:"column:test_multi_key_structs_key1;type:varchar;primaryKey"`
+	TestOneKeyStructsKey2 string              `gorm:"column:test_multi_key_structs_key2;type:varchar;primaryKey"`
+	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:TestOneKeyStructsnesteds_idx,type:btree"`
 	Nested                  string              `gorm:"column:nested;type:varchar"`
 	IsNested                bool                `gorm:"column:isnested;type:bool"`
 	Int64                   int64               `gorm:"column:int64;type:bigint"`
 	Nested2Nested2          string              `gorm:"column:nested2_nested2;type:varchar"`
 	Nested2IsNested         bool                `gorm:"column:nested2_isnested;type:bool"`
 	Nested2Int64            int64               `gorm:"column:nested2_int64;type:bigint"`
-	TestMultiKeyStructsRef  TestMultiKeyStructs `gorm:"foreignKey:test_multi_key_structs_key1,test_multi_key_structs_key2;references:key1,key2;belongsTo;constraint:OnDelete:CASCADE"`
+	TestOneKeyStructsRef  TestOneKeyStructs `gorm:"foreignKey:test_multi_key_structs_key1,test_multi_key_structs_key2;references:key1,key2;belongsTo;constraint:OnDelete:CASCADE"`
 }

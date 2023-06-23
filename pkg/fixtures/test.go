@@ -34,9 +34,9 @@ func GetTestSingleKeyStruct() *storage.TestSingleKeyStruct {
 	}
 }
 
-// GetTestMultiKeyStruct returns filled TestMultiKeyStruct
-func GetTestMultiKeyStruct() *storage.TestMultiKeyStruct {
-	return &storage.TestMultiKeyStruct{
+// GetTestOneKeyStruct returns filled TestOneKeyStruct
+func GetTestOneKeyStruct() *storage.TestOneKeyStruct {
+	return &storage.TestOneKeyStruct{
 		Key1: "key1",
 		Key2: "key2",
 		StringSlice: []string{
@@ -54,10 +54,10 @@ func GetTestMultiKeyStruct() *storage.TestMultiKeyStruct {
 			Seconds: 1645640515,
 			Nanos:   0,
 		},
-		Enum: storage.TestMultiKeyStruct_ENUM1,
-		Enums: []storage.TestMultiKeyStruct_Enum{
-			storage.TestMultiKeyStruct_ENUM1,
-			storage.TestMultiKeyStruct_ENUM2,
+		Enum: storage.TestOneKeyStruct_ENUM1,
+		Enums: []storage.TestOneKeyStruct_Enum{
+			storage.TestOneKeyStruct_ENUM1,
+			storage.TestOneKeyStruct_ENUM2,
 		},
 	}
 }
