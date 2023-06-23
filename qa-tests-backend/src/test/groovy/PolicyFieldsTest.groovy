@@ -247,7 +247,7 @@ class PolicyFieldsTest extends BaseSpecification {
             "some_configuration": "a value",
     ]
 
-    // https://stack-rox.atlassian.net/browse/ROX-6891
+    // ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
                 isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
 
@@ -256,7 +256,7 @@ class PolicyFieldsTest extends BaseSpecification {
             .addCategories("Test")
             .setDisabled(false)
             .setSeverityValue(2)
-            // https://stack-rox.atlassian.net/browse/ROX-6891
+            // ROX-6891
             // limiting the scope of the test policies to the test namespaces reduces the workload that
             // causes slow alert triggers.
             .addAllScope(["qa", "qa-policyfieldstest-.*"].collect
