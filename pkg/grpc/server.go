@@ -97,6 +97,9 @@ type API interface {
 
 	// Stop will shutdown all listeners and stop the HTTP/gRPC multiplexed server. This process will run in the background
 	// and returns a signal that can be checked for when the shutdown finished.
+	// This gracefully stops the gRPC server and blocks until all the pending RPCs are finished.
+	// **Caution:** this should not be called in production unless the application is being shutdown (e.g. termination
+	// signal received).
 	Stop() *concurrency.Signal
 }
 
@@ -236,7 +239,8 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 			log.Fatal(err)
 		}
 
-		// If finishing with no error and shutdown was not requested, crash
+		// If server returned an error, the gRPC listener has stopped. If `.Stop()` was not called, we should
+		// crash the application here rather than running without a gRPC listener.
 		if !a.grpcShutdownRequested.IsDone() {
 			log.Fatal("The local API server should never terminate unless explicitly requested")
 		}
