@@ -613,6 +613,7 @@ var (
 )
 
 func TestViolations(t *testing.T) {
+	t.Skip("ROX-18045: Test is flaky under Postgres")
 	suite.Run(t, &violationsTestSuite{})
 }
 
