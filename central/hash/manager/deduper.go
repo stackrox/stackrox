@@ -41,7 +41,6 @@ var (
 func NewDeduper(existingHashes map[string]uint64) Deduper {
 	existingEntries := make(map[string]*entry)
 
-	pruneInvalidAlerts(existingHashes)
 	if len(existingHashes) < maxHashes {
 		for k, v := range existingHashes {
 			existingEntries[k] = &entry{
@@ -70,22 +69,6 @@ type deduperImpl struct {
 	successfullyProcessed map[string]*entry
 
 	hasher *hash.Hasher
-}
-
-func pruneInvalidAlerts(existingHashes map[string]uint64) {
-	// In the hash deduper, we were treating attempted alerts as normal alerts that could be potentially deduped
-	// even though they are more like runtime alerts. This would lead to the "hash" maps growing until we hit the
-	// max number of hashes and resetting. This ensures that we remove them from the "hash" maps because the only
-	// valid alerts are deploy time alerts where the id of the alert result is the same id as a deployment.
-	// This prunes all alert results in the "hash" maps that do not have a corresponding deployment in the hash map.
-	for k := range existingHashes {
-		if strings.HasPrefix(k, alertResourceKey) {
-			depKey := buildKey(deploymentResourceKey, getIDFromKey(k))
-			if _, ok := existingHashes[depKey]; !ok {
-				delete(existingHashes, k)
-			}
-		}
-	}
 }
 
 // skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
