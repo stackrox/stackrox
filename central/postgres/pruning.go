@@ -21,11 +21,29 @@ const (
 		(SELECT 1 FROM clusters parent WHERE
 		child.Id = parent.Id)`
 
-	getAllOrphanedAlerts = `SELECT id from alerts WHERE lifecyclestage = 0 and state = 0 and time < now() at time zone 'utc' - INTERVAL '%d MINUTES' and NOT EXISTS
+	getAllOrphanedAlerts = `SELECT id FROM alerts WHERE lifecyclestage = 0 and state = 0 and time < now() at time zone 'utc' - INTERVAL '%d MINUTES' and NOT EXISTS
 		(SELECT 1 FROM deployments WHERE alerts.deployment_id = deployments.Id)`
 
-	getAllOrphanedPods = `SELECT id from pods WHERE NOT EXISTS
+	getAllOrphanedPods = `SELECT id FROM pods WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE pods.clusterid = clusters.Id)`
+
+	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
+	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
+		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
+		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
+
+	deleteOrphanedPLOPPods = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
+		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 
+		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
+
+	deleteOrphanedProcesses = `WITH orphan_proc AS 
+		(SELECT id FROM process_indicators pi WHERE NOT EXISTS 
+		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) 
+		UNION 
+		SELECT id FROM process_indicators pi WHERE NOT EXISTS 
+		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id)) 
+		delete FROM process_indicators pi USING orphan_proc op WHERE pi.id = op.id AND 	
+		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
 )
 
 var (
@@ -84,4 +102,26 @@ func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) 
 
 		return getOrphanedIDs(ctx, pool, getAllOrphanedPods)
 	})
+}
+
+// PruneOrphanedProcessIndicators prunes orphaned process indicators and process listening on ports
+func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
+	// Delete processes listening on ports orphaned because process indicators are orphaned due to
+	// missing deployments
+	query := fmt.Sprintf(deleteOrphanedPLOPDeployments, int(orphanWindow.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
+	}
+
+	// Delete processes listening on ports orphaned because process indicators are orphaned due to
+	// missing pods
+	query = fmt.Sprintf(deleteOrphanedPLOPPods, int(orphanWindow.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune process listening on ports by pods: %v", err)
+	}
+
+	query = fmt.Sprintf(deleteOrphanedProcesses, int(orphanWindow.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune process indicators: %v", err)
+	}
 }

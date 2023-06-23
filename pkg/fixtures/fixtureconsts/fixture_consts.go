@@ -24,7 +24,7 @@ const (
 	Node3               = "bbaaaaaa-bbbb-4011-0000-333333333333"
 	PodUID1             = "aaaaaaaa-bbbb-4011-0000-111111111111"
 	PodUID2             = "aaaaaaaa-bbbb-4011-0000-222222222222"
-	PodUID3             = "aaaaaaaa-bbbb-4011-0000-3333333333333"
+	PodUID3             = "aaaaaaaa-bbbb-4011-0000-333333333333"
 	PolicyFake          = "faaaaaaa-0000-0000-0000-000000000000"
 	ProcessIndicatorID1 = "eaaaaaaa-bbbb-4011-0000-111111111111"
 	ProcessIndicatorID2 = "eaaaaaaa-bbbb-4011-0000-222222222222"
