@@ -40,7 +40,6 @@ var (
 )
 
 func TestNetworkEntityDataStore(t *testing.T) {
-	t.Skip("ROX-18024: Skip so that all tests can be run")
 	suite.Run(t, new(NetworkEntityDataStoreTestSuite))
 }
 
@@ -73,7 +72,7 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.globalWriteAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
@@ -316,12 +315,12 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			sac.ClusterScopeKeys(cluster1)))
 	cluster1WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster1)))
 	cluster2WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster2)))
 
@@ -591,7 +590,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 		} else {
 			pushSig = suite.expectPushExternalNetworkEntitiesToSensor(cluster)
 		}
-		suite.NoError(suite.ds.DeleteExternalNetworkEntity(suite.globalWriteAccessCtx, entity.GetInfo().GetId()))
+		suite.NoError(suite.ds.DeleteExternalNetworkEntity(suite.elevatedCtx, entity.GetInfo().GetId()))
 		suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 	}
 
