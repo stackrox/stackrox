@@ -6,7 +6,7 @@ import '@testing-library/jest-dom/extend-expect';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
 import { vulnManagementImagesPath, vulnManagementPath } from 'routePaths';
-import ImagesAtMostRisk, { getImagesQuery } from './ImagesAtMostRisk';
+import ImagesAtMostRisk, { imagesAtMostRiskQuery } from './ImagesAtMostRisk';
 
 function makeMockImage(
     id: string,
@@ -48,9 +48,7 @@ const mockImages = [1, 2, 3, 4, 5, 6].map((n) =>
 const mocks = [
     {
         request: {
-            // The component for this uses a feature flag to swap sub-resolvers, so treat it as
-            // disabled here until the feature flag is enabled in the production release.
-            query: getImagesQuery(false),
+            query: imagesAtMostRiskQuery,
             variables: {
                 query: '',
             },
