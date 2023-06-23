@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,17 +50,18 @@ const (
 
 // ProcessIndicators holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {
-	ID                 string `gorm:"column:id;type:uuid;primaryKey"`
-	DeploymentID       string `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash"`
-	ContainerName      string `gorm:"column:containername;type:varchar"`
-	PodID              string `gorm:"column:podid;type:varchar"`
-	PodUID             string `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
-	SignalContainerID  string `gorm:"column:signal_containerid;type:varchar"`
-	SignalName         string `gorm:"column:signal_name;type:varchar"`
-	SignalArgs         string `gorm:"column:signal_args;type:varchar"`
-	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
-	SignalUID          uint32 `gorm:"column:signal_uid;type:bigint"`
-	ClusterID          string `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
-	Namespace          string `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
-	Serialized         []byte `gorm:"column:serialized;type:bytea"`
+	ID                 string     `gorm:"column:id;type:uuid;primaryKey"`
+	DeploymentID       string     `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash"`
+	ContainerName      string     `gorm:"column:containername;type:varchar"`
+	PodID              string     `gorm:"column:podid;type:varchar"`
+	PodUID             string     `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
+	SignalContainerID  string     `gorm:"column:signal_containerid;type:varchar"`
+	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp"`
+	SignalName         string     `gorm:"column:signal_name;type:varchar"`
+	SignalArgs         string     `gorm:"column:signal_args;type:varchar"`
+	SignalExecFilePath string     `gorm:"column:signal_execfilepath;type:varchar"`
+	SignalUID          uint32     `gorm:"column:signal_uid;type:bigint"`
+	ClusterID          string     `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
+	Namespace          string     `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
+	Serialized         []byte     `gorm:"column:serialized;type:bytea"`
 }

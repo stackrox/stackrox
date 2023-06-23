@@ -14,13 +14,19 @@ import (
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
+	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	orphanWindow = 30 * time.Minute
 )
 
 type PostgresPruningSuite struct {
@@ -143,7 +149,6 @@ func (s *PostgresPruningSuite) TestGetOrphanedAlertIDs() {
 	deploymentID := "2c507da1-b882-48cc-8143-b74e14c5cd4f"
 	s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID}))
 
-	orphanWindow := 30 * time.Minute
 	now := types.TimestampNow()
 	old := protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * orphanWindow))
 
@@ -284,5 +289,148 @@ func (s *PostgresPruningSuite) addSomePods(podDS podStore.DataStore, clusterID s
 		}
 		err := podDS.UpsertPod(s.ctx, pod)
 		s.Nil(err)
+	}
+}
+
+func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Id:            id,
+		DeploymentId:  deploymentID,
+		ContainerName: "",
+		PodId:         "",
+		Signal: &storage.ProcessSignal{
+			Time: timestampNowMinus(age),
+		},
+	}
+}
+
+func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID, podUID string) *storage.ProcessIndicator {
+	indicator := newIndicatorWithDeployment(id, age, deploymentID)
+	indicator.PodUid = podUID
+	return indicator
+}
+
+func timestampNowMinus(t time.Duration) *types.Timestamp {
+	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
+	cases := []struct {
+		name              string
+		initialProcesses  []*storage.ProcessIndicator
+		deployments       set.FrozenStringSet
+		pods              set.FrozenStringSet
+		expectedDeletions []string
+	}{
+		{
+			name: "no deployments nor pods - remove all old indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			deployments:       set.NewFrozenStringSet(),
+			pods:              set.NewFrozenStringSet(),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
+		},
+		{
+			name: "no deployments nor pods - remove no new orphaned indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 20*time.Minute, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 20*time.Minute, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			deployments:       set.NewFrozenStringSet(),
+			pods:              set.NewFrozenStringSet(),
+			expectedDeletions: nil,
+		},
+		{
+			name: "all pods separate deployments - remove no indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions: nil,
+		},
+		{
+			name: "all pods same deployment - remove no indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions: nil,
+		},
+		{
+			name: "some pods separate deployments - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+		},
+		{
+			name: "some pods same deployment - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
+				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+		},
+	}
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			// Add deployments if necessary
+			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+			s.Nil(err)
+			for _, deploymentID := range c.deployments.AsSlice() {
+				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+			}
+
+			podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+			s.Nil(err)
+			for _, podID := range c.pods.AsSlice() {
+				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
+				s.Nil(err)
+			}
+
+			processDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+			s.Nil(err)
+			s.NoError(processDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
+			countFromDB, err := processDatastore.Count(s.ctx, nil)
+			s.NoError(err)
+			s.Equal(len(c.initialProcesses), countFromDB)
+
+			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
+			countFromDB, err = processDatastore.Count(s.ctx, nil)
+			s.NoError(err)
+			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+
+			// Cleanup
+			var cleanupIDs []string
+			for _, process := range c.initialProcesses {
+				cleanupIDs = append(cleanupIDs, process.Id)
+			}
+			s.NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
+
+			for _, deploymentID := range c.deployments.AsSlice() {
+				s.NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
+			}
+
+			for _, podID := range c.pods.AsSlice() {
+				s.NoError(podDS.RemovePod(s.ctx, podID))
+			}
+		})
 	}
 }
