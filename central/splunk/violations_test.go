@@ -613,7 +613,6 @@ var (
 )
 
 func TestViolations(t *testing.T) {
-	t.Skip("ROX-18045: Test is flaky under Postgres")
 	suite.Run(t, &violationsTestSuite{})
 }
 
@@ -1331,12 +1330,9 @@ func (s *violationsTestSuite) TestResponseContentType() {
 }
 
 func (s *violationsTestSuite) TestViolationsHandlerError() {
-	w := httptest.NewRecorder()
-
-	// context.Background() did not go through our context validation and will not include any global access scope.
-	// We use this to make datastore generate an error which will make the request fail.
+	// A nil writer will cause a panic
 	s.Panics(func() {
-		s.prepare().setContext(context.Background()).setAlerts(s.deployAlert).runRequest(w)
+		s.prepare().setAlerts(s.deployAlert).runRequest(nil)
 	})
 }
 
