@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -36,5 +36,6 @@ func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *matcherService) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	// Currently we do not set up gRPC gateway for the matcher.
 	return nil
 }
