@@ -641,12 +641,13 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	}
 
 	// Add sso.redhat.com attributes.
-	if userInfo.OrgID != "" {
-		claim.Attributes[orgIDAttribute] = []string{userInfo.OrgID}
-	}
-	if userInfo.IsOrgAdmin {
-		claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
-	}
+	// no need of RHSSO attributes, using claim mappings for is_org_admin and org_id
+	// if userInfo.OrgID != "" {
+	// 	claim.Attributes[orgIDAttribute] = []string{userInfo.OrgID}
+	// }
+	// if userInfo.IsOrgAdmin {
+	// 	claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
+	// }
 	return claim
 }
 
