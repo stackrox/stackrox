@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -530,7 +532,13 @@ class AdmissionControllerTest extends BaseSpecification {
 
         when:
         "A deployment with an image violating a policy is created"
-        def created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+        withRetry(60, 10) {
+            def created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+            if (created) {
+                deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
+            }
+            assert !created
+        }
 
         then:
         "Creation should fail"
