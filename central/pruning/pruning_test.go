@@ -54,7 +54,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -237,7 +237,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	require.NoError(s.T(), err)
 
 	images := imageDatastore.NewWithPostgres(
-		imagePostgres.New(s.pool, true, dackboxConcurrency.NewKeyFence()),
+		imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
 		imagePostgres.NewIndexer(s.pool),
 		mockRiskDatastore,
 		ranking.NewRanker(),
@@ -271,7 +271,7 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	nodeStore := nodePostgres.New(s.pool, false, dackboxConcurrency.NewKeyFence())
+	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
 	nodeIndexer := nodePostgres.NewIndexer(s.pool)
 
 	nodes := testNodeDatastore.NewWithPostgres(
