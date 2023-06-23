@@ -12,6 +12,8 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 
+import org.junit.Rule
+import org.junit.rules.Timeout
 import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
