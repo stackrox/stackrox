@@ -20,6 +20,8 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+import java.util.concurrent.TimeUnit
+
 // Audit Log alerts are only supported on OpenShift 4
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
