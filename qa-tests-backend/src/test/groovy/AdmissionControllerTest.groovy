@@ -516,6 +516,7 @@ class AdmissionControllerTest extends BaseSpecification {
         def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
         orchestrator.scaleDeployment("stackrox", "admission-control", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
+        orchestrator.updateDeploymentEnv("stackrox", "admission-control", "LOGLEVEL", "debug")
         log.info("Admission controller scaled to 0, was ${originalAdmCtrlReplicas}")
         orchestrator.scaleDeployment("stackrox", "admission-control", originalAdmCtrlReplicas)
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
@@ -551,5 +552,9 @@ class AdmissionControllerTest extends BaseSpecification {
         if (created) {
             deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
         }
+
+        and:
+        "Reset logging"
+        orchestrator.updateDeploymentEnv("stackrox", "admission-control", "LOGLEVEL", "info")
     }
 }
