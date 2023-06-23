@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sync"
@@ -41,16 +40,6 @@ func GetParser() *parserWrapper {
 		}
 	})
 	return instance
-}
-
-// Override the internal parser. This should only be used for testing.
-func (p *parserWrapper) Override(parser Parser) {
-	if buildinfo.ReleaseBuild {
-		// This is not allowed in release builds
-		log.Errorf("ParseClusterIDFromServiceCert should not be override in production")
-		return
-	}
-	p.parser = parser
 }
 
 // ParseClusterIDFromServiceCert parses the service cert to extract cluster id.

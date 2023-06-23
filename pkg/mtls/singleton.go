@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,16 +19,6 @@ var (
 // This override mechanism is protected in ReleaseBuilds, and it will only work for DevelopmentBuilds.
 type certificateParserWrapper struct {
 	parser CertificateParser
-}
-
-// Override the internal parser. This should only be used for testing.
-func (c *certificateParserWrapper) Override(parser CertificateParser) {
-	if buildinfo.ReleaseBuild {
-		// This is not allowed in release builds
-		log.Errorf("The CertificateParser should not be override in production")
-		return
-	}
-	c.parser = parser
 }
 
 // CertificateParser defines an interface with the functions to parse certificates.
