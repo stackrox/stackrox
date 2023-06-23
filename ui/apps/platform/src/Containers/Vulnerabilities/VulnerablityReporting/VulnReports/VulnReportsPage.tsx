@@ -18,7 +18,7 @@ import { Report } from 'Containers/Vulnerabilities/VulnerablityReporting/types';
 import usePermissions from 'hooks/usePermissions';
 
 import PageTitle from 'Components/PageTitle';
-import { vulnerabilityReportingCreatePath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
@@ -115,7 +115,7 @@ function VulnReportsPage() {
                     </FlexItem>
                     <FlexItem>
                         {canCreateReports && (
-                            <Link to={vulnerabilityReportingCreatePath}>
+                            <Link to={`${vulnerabilityReportsPath}?action=create`}>
                                 <Button variant="primary" onClick={() => {}}>
                                     Create report
                                 </Button>

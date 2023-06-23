@@ -99,10 +99,8 @@ export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/
 export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
 export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
 
-export const vulnerabilityReportingPath = `${vulnerabilitiesBasePath}/vulnerability-reporting`;
-export const vulnerabilityReportingCreatePath = `${vulnerabilityReportingPath}/create`;
-export const vulnerabilityReportingEditPath = `${vulnerabilityReportingPath}/edit/:reportId`;
-export const vulnerabilityReportingClonePath = `${vulnerabilityReportingPath}/clone/:reportId`;
+export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
+export const vulnerabilityReportPath = `${vulnerabilitiesBasePath}/reports/:reportId`;
 
 /**
  * New Framwork-related route paths
@@ -161,7 +159,7 @@ const vulnManagementPathToLabelMap = {
 const vulnerabilitiesPathToLabelMap = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
-    [vulnerabilityReportingPath]: 'Vulnerability Reporting',
+    [vulnerabilityReportsPath]: 'Vulnerability Reporting',
 };
 
 export const basePathToLabelMap = {

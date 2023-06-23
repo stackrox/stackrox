@@ -28,7 +28,7 @@ import {
     vulnManagementRiskAcceptancePath,
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
-    vulnerabilityReportingPath,
+    vulnerabilityReportsPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -157,7 +157,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     {hasVulnerabilityReportsPermission &&
                         isVulnerabilityReportingEnhancementsEnabled && (
                             <Route
-                                path={vulnerabilityReportingPath}
+                                path={vulnerabilityReportsPath}
                                 component={AsyncVulnerabilityReportingPage}
                             />
                         )}
