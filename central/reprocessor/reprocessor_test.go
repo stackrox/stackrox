@@ -10,7 +10,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	dackboxConcurrency "github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
