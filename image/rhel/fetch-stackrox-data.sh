@@ -7,9 +7,9 @@ set -euo pipefail
 fetch_stackrox_data() {
     mkdir -p /tmp/external-networks
     local latest_prefix
-    latest_prefix="$(wget -q https://definitions.stackrox.io/external-networks/latest_prefix -O -)"
-    wget -O /tmp/external-networks/checksum "https://definitions.stackrox.io/${latest_prefix}/checksum"
-    wget -O /tmp/external-networks/networks "https://definitions.stackrox.io/${latest_prefix}/networks"
+    latest_prefix="$(curl https://definitions.stackrox.io/external-networks/latest_prefix)"
+    curl "https://definitions.stackrox.io/${latest_prefix}/checksum" > /tmp/external-networks/checksum
+    curl "https://definitions.stackrox.io/${latest_prefix}/networks" > /tmp/external-networks/networks
     test -s /tmp/external-networks/checksum
     test -s /tmp/external-networks/networks
     mkdir /stackrox-data/external-networks

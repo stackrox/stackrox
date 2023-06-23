@@ -8,6 +8,15 @@ COPY bundle.tar.gz /
 WORKDIR /bundle
 RUN microdnf install tar gzip && tar -zxf /bundle.tar.gz
 
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
+
+RUN mkdir /stackrox-data
+RUN microdnf upgrade && microdnf install openssl zip
+
+COPY fetch-stackrox-data.sh .
+RUN sh -x fetch-stackrox-data.sh
+COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
+
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG LABEL_VERSION
@@ -37,11 +46,12 @@ COPY --from=extracted_bundle /bundle/assets/ /assets/
 COPY --from=extracted_bundle /bundle/stackrox/ /stackrox/
 COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/ui/ /ui/
-COPY --from=extracted_bundle /bundle/usr/local/bin/ldb /usr/local/bin/
 COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
 COPY --from=extracted_bundle /bundle/postgres-libs.rpm /tmp/
 COPY --from=extracted_bundle /bundle/postgres.rpm /tmp/
 COPY --from=extracted_bundle /bundle/go/ /go/
+
+COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \

@@ -31,13 +31,12 @@ extract_from_image() {
 }
 
 INPUT_ROOT="$1"
-DATA_IMAGE="$2"
-BUILDER_IMAGE="$3"
-OUTPUT_DIR="$4"
+BUILDER_IMAGE="$2"
+OUTPUT_DIR="$3"
 # Install the PG repo natively if true (versus using a container)
 NATIVE_PG_INSTALL="${5:-false}"
 
-[[ -n "$INPUT_ROOT" && -n "$DATA_IMAGE" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
+[[ -n "$INPUT_ROOT" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
     || die "Usage: $0 <input-root-directory> <enc-data-image> <builder-image> <output-directory>"
 [[ -d "$INPUT_ROOT" ]] \
     || die "Input root directory doesn't exist or is not a directory."
@@ -45,11 +44,6 @@ NATIVE_PG_INSTALL="${5:-false}"
     || die "Output directory doesn't exist or is not a directory."
 
 OUTPUT_BUNDLE="${OUTPUT_DIR}/bundle.tar.gz"
-
-# Verify images exist
-if [[ "${DATA_IMAGE}" != "local" ]]; then
-  image_exists "${DATA_IMAGE}"
-fi
 
 # Create tmp directory with stackrox directory structure
 bundle_root="$(mktemp -d)"
@@ -106,16 +100,6 @@ if [[ "$DEBUG_BUILD" == "yes" ]]; then
   else
     GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
   fi
-fi
-
-if [[ "${DATA_IMAGE}" != "local" ]]; then
-  # Extract data from data container image
-  mkdir -p "${bundle_root}/stackrox/static-data/"
-  extract_from_image "${DATA_IMAGE}" "/stackrox-data/." "${bundle_root}/stackrox/static-data/"
-  extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
-else
-  cp -a "/stackrox-data" "${bundle_root}/stackrox/static-data/"
-  cp "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
 fi
 
 # Install all the required compression packages for RocksDB to compile

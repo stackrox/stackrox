@@ -567,11 +567,10 @@ main-image: all-builds
 	make docker-build-main-image
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
-                         $(CURDIR)/image/rhel/bundle.tar.gz
+docker-build-main-image: copy-binaries-to-image-dir central-db-image $(CURDIR)/image/rhel/bundle.tar.gz
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
@@ -585,13 +584,6 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-
-.PHONY: docker-build-data-image
-docker-build-data-image:
-	docker build -t stackrox-data:$(TAG) \
-		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
-		image/ \
-		--file image/stackrox-data.Dockerfile
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
@@ -635,7 +627,7 @@ ifdef CI
 else
 	$(SILENT)[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
 endif
-	$(SILENT)[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
+	$(SILENT)[ -d image/rhel/docs ] || { echo "Generated docs not found in image/rhel/docs. They are required for build."; exit 1; }
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
@@ -696,7 +688,7 @@ clean: clean-image
 clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
-	git clean -xdf image/ui image/docs
+	git clean -xdf image/ui image/rhel/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
