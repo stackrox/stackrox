@@ -552,9 +552,5 @@ class AdmissionControllerTest extends BaseSpecification {
         if (created) {
             deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
         }
-
-        and:
-        "Reset logging"
-        orchestrator.updateDeploymentEnv("stackrox", "admission-control", "LOGLEVEL", "info")
     }
 }
