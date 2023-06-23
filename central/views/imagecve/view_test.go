@@ -82,8 +82,6 @@ func (f *filterImpl) withVulnFilter(fn func(vuln *storage.EmbeddedVulnerability)
 }
 
 func TestImageCVEView(t *testing.T) {
-	t.Skip("ROX-18025: Skip so that all tests can be run")
-
 	suite.Run(t, new(ImageCVEViewTestSuite))
 }
 
@@ -751,6 +749,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				vulnTime, _ := types.TimestampFromProto(vuln.GetFirstSystemOccurrence())
+				vulnTime = vulnTime.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
 					val = &imageCVECoreResponse{
