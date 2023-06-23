@@ -333,7 +333,7 @@ func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) e
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *GenericSingleIDStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
 	var sacQueryFilter *v1.Query
@@ -360,13 +360,13 @@ func (s *GenericSingleIDStore[T, PT]) DeleteByQuery(ctx context.Context, query *
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *GenericSingleIDStore[T, PT]) Delete(ctx context.Context, id string) error {
+func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 	return s.DeleteByQuery(ctx, q)
 }
 
 // Exists returns if the ID exists in the store.
-func (s *GenericSingleIDStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
+func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
 
 	var sacQueryFilter *v1.Query
@@ -396,7 +396,7 @@ func (s *GenericSingleIDStore[T, PT]) Exists(ctx context.Context, id string) (bo
 }
 
 // Get returns the object, if it exists from the store.
-func (s *GenericSingleIDStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
 
 	var sacQueryFilter *v1.Query
