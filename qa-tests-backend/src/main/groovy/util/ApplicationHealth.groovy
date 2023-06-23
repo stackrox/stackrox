@@ -34,7 +34,7 @@ class ApplicationHealth {
     }
 
     void waitForAdmissionControllerHealthiness() {
-        Deployment admissionController = new DaemonSet().setNamespace(Constants.STACKROX_NAMESPACE)
+        Deployment admissionController = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE)
             .setName("admission-control")
         waitForHealthiness(admissionController)
     }
@@ -58,6 +58,9 @@ class ApplicationHealth {
                 }
                 else {
                     throw new RuntimeException("Expect DaemonSet or Deployment")
+                }
+                if (replicaCount == null) {
+                    throw new RuntimeException("Expected to get replica count")
                 }
                 log.debug "${replicaCount} ${deployment.name} pods expected"
                 return replicaCount
