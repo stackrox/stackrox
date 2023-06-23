@@ -260,7 +260,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		// If server returned an error, the gRPC listener has stopped. If `.Stop()` was not called, we should
 		// crash the application here rather than running without a gRPC listener.
 		if !a.shutdownInProgress.IsDone() {
-			log.Fatal("The local API server should never terminate unless explicitly requested")
+			log.Fatal("Unexpected local API server termination.")
 		}
 	}()
 	return dialContext
