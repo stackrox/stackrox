@@ -749,6 +749,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				vulnTime, _ := types.TimestampFromProto(vuln.GetFirstSystemOccurrence())
+				vulnTime = vulnTime.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
 					val = &imageCVECoreResponse{
