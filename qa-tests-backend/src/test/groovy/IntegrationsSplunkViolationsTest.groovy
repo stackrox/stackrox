@@ -36,6 +36,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
     private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
     "2023-06-16-TA-rhacs-2.0.0.spl")
+    // CIM downloaded from https://classic.splunkbase.splunk.com/app/1621/
     private static final String PATH_TO_CIM_TA_TGZ = Paths.get(ASSETS_DIR,
     "splunk-common-information-model-cim_511.tgz")
     private static final String STACKROX_REMOTE_LOCATION = "/tmp/stackrox.spl"
