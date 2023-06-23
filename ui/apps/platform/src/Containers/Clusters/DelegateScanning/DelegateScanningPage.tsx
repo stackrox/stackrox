@@ -9,10 +9,12 @@ import {
     Flex,
     FlexItem,
     PageSection,
+    Radio,
     Title,
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
 import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
@@ -93,9 +95,43 @@ function DelegateScanningPage() {
                     enabledFor={delegatedRegistryConfig.enabledFor}
                     toggleDelegation={toggleDelegation}
                 />
-                <Card>
-                    <CardBody>{delegatedRegistryConfig.enabledFor}</CardBody>
-                </Card>
+                {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
+                {delegatedRegistryConfig.enabledFor !== 'NONE' && (
+                    <Card>
+                        <CardBody>
+                            <FormLabelGroup
+                                label="Delegate scanning for"
+                                isRequired
+                                fieldId="delegatedRegistryConfig.enabledFor"
+                                touched={{}}
+                                errors={{}}
+                            >
+                                <Flex className="pf-u-mt-md pf-u-mb-lg">
+                                    <FlexItem>
+                                        <Radio
+                                            label="All registries"
+                                            isChecked={delegatedRegistryConfig.enabledFor === 'ALL'}
+                                            id="choose-all-registries"
+                                            name="enabledFor"
+                                            onChange={() => {}}
+                                        />
+                                    </FlexItem>
+                                    <FlexItem>
+                                        <Radio
+                                            label="Specified registries"
+                                            isChecked={
+                                                delegatedRegistryConfig.enabledFor === 'SPECIFIC'
+                                            }
+                                            id="chose-specified-registries"
+                                            name="enabledFor"
+                                            onChange={() => {}}
+                                        />
+                                    </FlexItem>
+                                </Flex>
+                            </FormLabelGroup>
+                        </CardBody>
+                    </Card>
+                )}
             </PageSection>
         </>
     );
