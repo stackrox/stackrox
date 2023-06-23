@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	"github.com/stackrox/rox/pkg/sync"
 	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -95,12 +96,12 @@ type API interface {
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
 
-	// Stop will shutdown all listeners and stop the HTTP/gRPC multiplexed server. This process will run in the background
-	// and returns a signal that can be checked for when the shutdown finished.
-	// This gracefully stops the gRPC server and blocks until all the pending RPCs are finished.
+	// Stop will shutdown all listeners and stop the HTTP/gRPC multiplexed server. This gracefully stops the gRPC
+	// server and blocks until all the pending RPCs are finished. Stop returns true if the shutdown process was started.
+	// If the server has already stopped, or if another shutdown is in progress, Stop returns false.
 	// **Caution:** this should not be called in production unless the application is being shutdown (e.g. termination
 	// signal received).
-	Stop() *concurrency.Signal
+	Stop() bool
 }
 
 type apiImpl struct {
@@ -109,9 +110,9 @@ type apiImpl struct {
 	requestInfoHandler *requestinfo.Handler
 	listeners          []serverAndListener
 
-	grpcServer            *grpc.Server
-	grpcShutdownRequested concurrency.Signal
-	grpcShutdownFinished  concurrency.Signal
+	grpcServer         *grpc.Server
+	shutdownInProgress concurrency.Signal
+	stopMutex          *sync.Mutex
 }
 
 // A Config configures the server.
@@ -138,10 +139,10 @@ type Config struct {
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
 	return &apiImpl{
-		config:                config,
-		requestInfoHandler:    requestinfo.NewRequestInfoHandler(),
-		grpcShutdownRequested: concurrency.NewSignal(),
-		grpcShutdownFinished:  concurrency.NewSignal(),
+		config:             config,
+		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
+		shutdownInProgress: concurrency.NewSignal(),
+		stopMutex:          &sync.Mutex{},
 	}
 }
 
@@ -155,14 +156,31 @@ func (a *apiImpl) Register(services ...APIService) {
 	a.apiServices = append(a.apiServices, services...)
 }
 
-func (a *apiImpl) Stop() *concurrency.Signal {
-	if a.grpcShutdownRequested.IsDone() {
-		log.Warnf("API Stop called but shutdown was already requested")
-		return &a.grpcShutdownFinished
+func (a *apiImpl) Stop() bool {
+	if a.shutdownInProgress.IsDone() {
+		return false
 	}
 
-	go a.stop()
-	return &a.grpcShutdownFinished
+	if a.stopMutex.TryLock() {
+		log.Infof("Starting stop procedure")
+		defer func() {
+			log.Infof("Unlocking")
+			a.stopMutex.Unlock()
+		}()
+		a.shutdownInProgress.Signal()
+		a.grpcServer.GracefulStop()
+		log.Infof("gRPC server fully stopped")
+		for _, listener := range a.listeners {
+			if listener.stopper != nil {
+				log.Infof("running http stopper")
+				listener.stopper()
+			}
+		}
+		log.Infof("Stop() finished -> returning true")
+		return true
+	}
+	log.Infof("Could not acquire lock")
+	return false
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
@@ -241,7 +259,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 
 		// If server returned an error, the gRPC listener has stopped. If `.Stop()` was not called, we should
 		// crash the application here rather than running without a gRPC listener.
-		if !a.grpcShutdownRequested.IsDone() {
+		if !a.shutdownInProgress.IsDone() {
 			log.Fatal("The local API server should never terminate unless explicitly requested")
 		}
 	}()
@@ -358,17 +376,6 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
-func (a *apiImpl) stop() {
-	defer a.grpcShutdownFinished.Signal()
-	a.grpcShutdownRequested.Signal()
-	a.grpcServer.GracefulStop()
-	for _, listener := range a.listeners {
-		if listener.stopper != nil {
-			listener.stopper()
-		}
-	}
-}
-
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
@@ -440,7 +447,7 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
 		// If gRPC shutdown was requested, then we should only log that the endpoint is stopping. Otherwise, this is happening
 		// for unknown reasons and an error will be reported.
-		if a.grpcShutdownRequested.IsDone() {
+		if a.shutdownInProgress.IsDone() {
 			log.Infof("gRPC Stop requested: Endpoint shutting down: %s %s", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr())
 		} else {
 			if srvAndLis.endpoint.Optional {

@@ -59,7 +59,7 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
 			api.Start().Wait()
-			api.Stop().Wait()
+			api.Stop()
 		})
 	}
 }
@@ -72,7 +72,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 		api := NewAPI(cfg)
 		api.Start().Wait()
 		defer func() {
-			api.Stop().Wait()
+			api.Stop()
 		}()
 
 		a.requestWithoutErr("https://localhost:8080/test")
@@ -83,7 +83,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 		cfg, endpointReached := configWithCustomRoute()
 		api := NewAPI(cfg)
 		api.Start().Wait()
-		api.Stop().Wait()
+		api.Stop()
 
 		_, err := http.Get("https://localhost:8080/test")
 		a.Require().Error(err)
@@ -96,15 +96,9 @@ func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
 
 	api.Start().Wait()
 
-	// Calling Stop multiple times should not panic
-	stopSig1 := api.Stop()
-	stopSig2 := api.Stop()
-	stopSig3 := api.Stop()
-
-	stopSig1.Wait()
-
-	a.Assert().True(stopSig2.IsDone())
-	a.Assert().True(stopSig3.IsDone())
+	a.Assert().True(api.Stop())
+	// second call should return false as stop already finished
+	a.Assert().False(api.Stop())
 }
 
 func (a *APIServerSuite) requestWithoutErr(url string) {

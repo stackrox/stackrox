@@ -74,6 +74,15 @@ func (m *Mutex) Lock() {
 	m.acquireTime = time.Now()
 }
 
+// TryLock acquires the lock if not yet locked.
+func (m *Mutex) TryLock() bool {
+	if m.Mutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
 // Unlock releases an acquired lock on the mutex.
 func (m *Mutex) Unlock() {
 	panicIfTooMuchTimeElapsed("Mutex.Unlock", m.acquireTime, lockTimeout, 1)
