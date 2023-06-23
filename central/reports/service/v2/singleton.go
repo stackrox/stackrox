@@ -18,9 +18,9 @@ func initialize() {
 
 // Singleton provides the instance of the service to register.
 func Singleton() Service {
-	once.Do(initialize)
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil
 	}
+	once.Do(initialize)
 	return svc
 }

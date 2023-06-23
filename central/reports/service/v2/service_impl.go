@@ -2,10 +2,9 @@ package v2
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -15,13 +14,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-const maxPaginationLimit = 1000
-
 var (
 	log = logging.LoggerForModule()
 )
 
 type serviceImpl struct {
+	apiV2.UnimplementedReportServiceServer
 	metadataDatastore metadataDS.DataStore
 }
 
@@ -38,7 +36,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 	return nil
 }
 
-func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, common.Authorizer.Authorized(ctx, fullMethodName)
 }
 
@@ -51,7 +49,7 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("Report not found for id %s", req.GetId())
+		return nil, errors.Errorf("Report not found for id %s", req.GetId())
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return status, err

@@ -45,7 +45,6 @@ service ReportService {
             get: "/v2/reports/status/{id}"
         };
     }
-
     // ListReportStatus returns report status for a report config id
     rpc GetReportLastStatus (ResourceByID) returns (ReportStatus) {
         option (google.api.http) = {
