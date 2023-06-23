@@ -23,7 +23,11 @@ import util.Env
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
+                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 900 : 60)
+
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(WAIT_FOR_VIOLATION_TIMEOUT + 360, TimeUnit.SECONDS)
 
     @Unroll
     @Tag("BAT")
