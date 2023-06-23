@@ -24,8 +24,10 @@ const routeMatcherMapForClusters = {
     },
     ...routeMatcherMapForClusterDefaults,
 };
+const routeMatcherMapForDelegateScanning = null;
 
 const basePath = '/main/clusters';
+const delegateScanningPath = `${basePath}/delegate-scanning`;
 
 const title = 'Clusters';
 
@@ -148,4 +150,11 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
         cy.wait(['@metadata']);
         assertClusterNameInSidePanel(clusterName);
     });
+}
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitDelegateScanning(staticResponseMap) {
+    visit(delegateScanningPath, routeMatcherMapForDelegateScanning, staticResponseMap);
 }

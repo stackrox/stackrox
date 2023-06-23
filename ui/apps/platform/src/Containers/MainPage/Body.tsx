@@ -9,8 +9,9 @@ import {
     networkPathPF,
     violationsPath,
     compliancePath,
-    clustersPathWithParam,
     clustersListPath,
+    clustersDelegateScanningPath,
+    clustersPathWithParam,
     integrationsPath,
     policiesPath,
     policyManagementBasePath,
@@ -55,6 +56,9 @@ const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/Das
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncNetworkGraphPage = asyncComponent(
     () => import('Containers/NetworkGraph/NetworkGraphPage')
+);
+const AsyncDelegateScanningPage = asyncComponent(
+    () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
 );
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
@@ -173,6 +177,10 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     />
                     <Route path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <Route path={configManagementPath} component={AsyncConfigManagementPage} />
+                    <Route
+                        path={clustersDelegateScanningPath}
+                        component={AsyncDelegateScanningPage}
+                    />
                     <Route path={clustersPathWithParam} component={AsyncClustersPage} />
                     {process.env.NODE_ENV === 'development' && (
                         <Route path={clustersListPath} component={AsyncPFClustersPage} />
