@@ -3,19 +3,17 @@ module github.com/stackrox/stackrox/scanner/v4
 go 1.20
 
 require (
-	github.com/gogo/protobuf v1.3.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/quay/claircore v1.5.7
 	github.com/quay/zlog v1.1.4
-	github.com/rs/zerolog v1.29.0
 	github.com/stackrox/rox v0.0.0
 	google.golang.org/grpc v1.56.0
+	google.golang.org/protobuf v1.30.0
 )
 
 require (
 	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/cfssl v1.6.4 // indirect
@@ -23,16 +21,13 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/mock v1.7.0-rc.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/certificate-transparency-go v1.1.6 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/schema v1.2.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.0 // indirect
@@ -64,9 +59,8 @@ require (
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4 // indirect
+	github.com/rs/zerolog v1.29.0 // indirect
 	github.com/tkuchiki/go-timezone v0.2.2 // indirect
-	github.com/travelaudience/go-promhttp v1.0.1 // indirect
 	github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de // indirect
 	github.com/zmap/zcrypto v0.0.0-20220402174210-599ec18ecbac // indirect
 	github.com/zmap/zlint/v3 v3.4.0 // indirect
@@ -87,8 +81,6 @@ require (
 	google.golang.org/genproto v0.0.0-20230530153820-e85fd2cbaebc // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	k8s.io/apimachinery v0.27.2 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect

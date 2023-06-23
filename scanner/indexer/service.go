@@ -3,12 +3,12 @@ package indexer
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type indexerService struct {
@@ -28,7 +28,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetIndexReport not implemented")
 }
-func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
+func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
 }
 
