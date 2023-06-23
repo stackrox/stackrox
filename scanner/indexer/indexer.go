@@ -17,7 +17,7 @@ type Indexer struct {
 
 func NewIndexer(ctx context.Context) (*Indexer, error) {
 	// TODO: Update the conn string to something configurable.
-	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libindex")
+	pool, err := postgres.Connect(ctx, "postgresql:///jvdm?host=/var/run/postgresql", "libindex")
 	if err != nil {
 		return nil, err
 	}
@@ -60,4 +60,8 @@ func NewIndexer(ctx context.Context) (*Indexer, error) {
 	return &Indexer{
 		indexer: indexer,
 	}, nil
+}
+
+func (i *Indexer) Close(ctx context.Context) error {
+	return i.indexer.Close(ctx)
 }

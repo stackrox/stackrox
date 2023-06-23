@@ -16,7 +16,7 @@ type Matcher struct {
 }
 
 func NewMatcher(ctx context.Context) (*Matcher, error) {
-	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libvuln")
+	pool, err := postgres.Connect(ctx, "postgresql:///jvdm?host=/var/run/postgresql", "libvuln")
 	if err != nil {
 		return nil, err
 	}
@@ -48,4 +48,8 @@ func NewMatcher(ctx context.Context) (*Matcher, error) {
 	return &Matcher{
 		matcher: matcher,
 	}, nil
+}
+
+func (i *Matcher) Close(ctx context.Context) error {
+	return i.matcher.Close(ctx)
 }
