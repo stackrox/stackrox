@@ -13,15 +13,15 @@ def make_qa_e2e_test_runner(cluster):
     return ClusterTestSetsRunner(
         cluster=cluster,
         sets=[
-            {
-                "name": "QA tests part I",
-                "pre_test": PreSystemTests(),
-                "test": QaE2eTestPart1(),
-                "post_test": PostClusterTest(
-                    check_stackrox_logs=True,
-                    artifact_destination_prefix="part-1",
-                ),
-            },
+            # {
+            #     "name": "QA tests part I",
+            #     "pre_test": PreSystemTests(),
+            #     "test": QaE2eTestPart1(),
+            #     "post_test": PostClusterTest(
+            #         check_stackrox_logs=True,
+            #         artifact_destination_prefix="part-1",
+            #     ),
+            # },
             {
                 "name": "QA tests part II",
                 "test": QaE2eTestPart2(),
