@@ -532,12 +532,18 @@ class AdmissionControllerTest extends BaseSpecification {
         when:
         "A deployment with an image violating a policy is created"
         def created
-        withRetry(60, 10) {
+        def consecutiveRejectionsCount = 0
+        withRetry(40, 5) {
             created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
             if (created) {
+                consecutiveRejectionsCount = 0
                 deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
             }
+            else {
+                consecutiveRejectionsCount++
+            }
             assert !created
+            assert consecutiveRejectionsCount == 5
         }
 
         then:
