@@ -28,7 +28,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	tlsConfig, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
+	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
