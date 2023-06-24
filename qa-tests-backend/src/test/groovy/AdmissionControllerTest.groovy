@@ -550,6 +550,10 @@ class AdmissionControllerTest extends BaseSpecification {
         "Creation should fail"
         assert !created
 
+        and:
+        "Creation should fail consistently"
+        assert consecutiveRejectionsCount == 5
+
         cleanup:
         "Stop ChaosMonkey ASAP to not lose logs"
         if (chaosMonkey) {
