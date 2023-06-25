@@ -24,11 +24,12 @@ var log = logging.LoggerForModule()
 type Server struct {
 	metricsServer       *http.Server
 	secureMetricsServer *http.Server
+	tlsConfigurer       TLSConfigurer
 	uptimeMetric        prometheus.Gauge
 }
 
 // NewServer creates and returns a new metrics http(s) server with configured settings.
-func NewServer(subsystem Subsystem) *Server {
+func NewServer(subsystem Subsystem, tlsConfigurer TLSConfigurer) *Server {
 	mux := http.NewServeMux()
 	mux.Handle(metricsURLPath, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
 
@@ -42,9 +43,15 @@ func NewServer(subsystem Subsystem) *Server {
 
 	var secureMetricsServer *http.Server
 	if secureMetricsEnabled() {
+		tlsConfig, err := tlsConfigurer.TLSConfig()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "failed to create TLS config loader"))
+			return nil
+		}
 		secureMetricsServer = &http.Server{
-			Addr:    env.SecureMetricsPort.Setting(),
-			Handler: mux,
+			Addr:      env.SecureMetricsPort.Setting(),
+			Handler:   mux,
+			TLSConfig: tlsConfig,
 		}
 	}
 
@@ -60,6 +67,7 @@ func NewServer(subsystem Subsystem) *Server {
 	return &Server{
 		metricsServer:       metricsServer,
 		secureMetricsServer: secureMetricsServer,
+		tlsConfigurer:       tlsConfigurer,
 		uptimeMetric:        uptimeMetric,
 	}
 }
@@ -77,6 +85,7 @@ func (s *Server) RunForever() {
 
 	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
 	if runSecureMetrics {
+		s.tlsConfigurer.WatchForChanges()
 		go runForeverTLS(s.secureMetricsServer)
 	}
 
@@ -140,6 +149,10 @@ func (s *Server) secureMetricsValid() bool {
 	if err := env.ValidateSecureMetricsSetting(); err != nil {
 		utils.Should(errors.Wrap(err, "invalid secure metrics setting"))
 		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
+		return false
+	}
+	if s.tlsConfigurer == nil {
+		utils.Should(errors.New("invalid TLS configurer"))
 		return false
 	}
 	return true
