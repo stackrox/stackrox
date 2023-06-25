@@ -32,7 +32,7 @@ func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	// Start the prometheus metrics server
-	metrics.NewDefaultHTTPServer(metrics.SensorSubsystem).RunForever()
+	metrics.NewServer(metrics.SensorSubsystem).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 
 	sigs := make(chan os.Signal, 1)
