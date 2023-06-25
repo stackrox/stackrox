@@ -31,7 +31,8 @@ class AuditLogAlertsTest extends BaseSpecification {
 
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(WAIT_FOR_VIOLATION_TIMEOUT + 360, TimeUnit.SECONDS)
+    Timeout globalTimeout = new Timeout(
+                WAIT_FOR_VIOLATION_TIMEOUT + Constants.TEST_FEATURE_TIMEOUT_PAD, TimeUnit.SECONDS)
 
     @Unroll
     @Tag("BAT")
