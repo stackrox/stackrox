@@ -590,7 +590,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 		} else {
 			pushSig = suite.expectPushExternalNetworkEntitiesToSensor(cluster)
 		}
-		suite.NoError(suite.ds.DeleteExternalNetworkEntity(suite.elevatedCtx, entity.GetInfo().GetId()))
+		suite.NoError(suite.ds.DeleteExternalNetworkEntity(suite.globalWriteAccessCtx, entity.GetInfo().GetId()))
 		suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 	}
 
