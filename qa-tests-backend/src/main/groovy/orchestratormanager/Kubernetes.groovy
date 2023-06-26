@@ -574,18 +574,20 @@ class Kubernetes implements OrchestratorMain {
         }
         envVars.get(index).value = value
 
-        client.apps().deployments().inNamespace(ns).withName(name)
-            .edit { d -> new DeploymentBuilder(d)
-                .editSpec()
-                .editTemplate()
-                .editSpec()
-                .editContainer(0)
-                .withEnv(envVars)
-                .endContainer()
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-            .build() }
+        withRetry(2, 3) {
+            client.apps().deployments().inNamespace(ns).withName(name)
+                .edit { d -> new DeploymentBuilder(d)
+                    .editSpec()
+                    .editTemplate()
+                    .editSpec()
+                    .editContainer(0)
+                    .withEnv(envVars)
+                    .endContainer()
+                    .endSpec()
+                    .endTemplate()
+                    .endSpec()
+                .build() }
+        }
     }
 
     def scaleDeployment(String ns, String name, Integer replicas) {
