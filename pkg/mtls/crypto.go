@@ -129,7 +129,7 @@ type IssuedCert struct {
 
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
 func LeafCertificateFromFile() (tls.Certificate, error) {
-	return GetCertificateParser().parser.LeafCertificateFromFile()
+	return GetCertificateParser().LeafCertificateFromFile()
 }
 
 // CACertPEM returns the PEM-encoded CA certificate.
@@ -188,7 +188,7 @@ func readCA() (*x509.Certificate, []byte, []byte, error) {
 
 // CACert reads the cert from the local file system and returns the cert and the DER encoding.
 func CACert() (*x509.Certificate, []byte, error) {
-	return GetCertificateParser().parser.CACert()
+	return GetCertificateParser().CACert()
 }
 
 // CAForSigning reads the cert and key from the local file system and returns

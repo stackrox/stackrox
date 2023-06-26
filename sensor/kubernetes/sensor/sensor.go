@@ -66,8 +66,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if cfg.localSensor && cfg.certsParser != nil {
-		mtls.GetCertificateParser().Override(cfg.certsParser)
-		clusterid.GetParser().Override(cfg.certsParser)
+		mtls.OverrideCertificateParser(cfg.certsParser)
+		clusterid.OverrideClusterIDParser(cfg.certsParser)
 	}
 
 	storeProvider := resources.InitializeStore()

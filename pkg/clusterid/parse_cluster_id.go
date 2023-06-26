@@ -12,8 +12,9 @@ import (
 
 var (
 	once     sync.Once
-	instance *parserWrapper
+	instance Parser
 	log      = logging.LoggerForModule()
+	mu       sync.Mutex
 )
 
 // Parser defines an interface with the function to parse the cluster ID from the service cert.
@@ -21,23 +22,16 @@ type Parser interface {
 	ParseClusterIDFromServiceCert(expectedServiceType storage.ServiceType) (string, error)
 }
 
-// parserWrapper is a singleton that wraps the Parser interface.
-// This allows us to override the implementation of the Parser interface for testing purposes.
-// This override mechanism is protected in ReleaseBuilds, and it will only work for DevelopmentBuilds.
-type parserWrapper struct {
-	parser Parser
-}
-
 // parserImpl is the implementation of the Parser interface.
 type parserImpl struct {
 }
 
-// GetParser returns the parserWrapper singleton.
-func GetParser() *parserWrapper {
+// GetParser returns the Parser singleton.
+func GetParser() Parser {
+	mu.Lock()
+	defer mu.Unlock()
 	once.Do(func() {
-		instance = &parserWrapper{
-			parser: &parserImpl{},
-		}
+		instance = &parserImpl{}
 	})
 	return instance
 }
@@ -74,5 +68,5 @@ func (p *parserImpl) ParseClusterIDFromServiceCert(expectedServiceType storage.S
 // for no expectation.
 // We keep this function to avoid changing the client code.
 func ParseClusterIDFromServiceCert(expectedServiceType storage.ServiceType) (string, error) {
-	return GetParser().parser.ParseClusterIDFromServiceCert(expectedServiceType)
+	return GetParser().ParseClusterIDFromServiceCert(expectedServiceType)
 }

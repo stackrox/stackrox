@@ -10,16 +10,10 @@ import (
 
 var (
 	once     sync.Once
-	instance *certificateParserWrapper
+	instance CertificateParser
 	log      = logging.LoggerForModule()
+	mu       sync.Mutex
 )
-
-// certificateParserWrapper is a singleton that wraps the CertificateParser interface.
-// This allows us to override the implementation of the CertificateParser interface for testing purposes.
-// This override mechanism is protected in ReleaseBuilds, and it will only work for DevelopmentBuilds.
-type certificateParserWrapper struct {
-	parser CertificateParser
-}
 
 // CertificateParser defines an interface with the functions to parse certificates.
 type CertificateParser interface {
@@ -31,12 +25,12 @@ type CertificateParser interface {
 type certificateParserImpl struct {
 }
 
-// GetCertificateParser returns the certificateParserWrapper singleton.
-func GetCertificateParser() *certificateParserWrapper {
+// GetCertificateParser returns the CertificateParser singleton.
+func GetCertificateParser() CertificateParser {
+	mu.Lock()
+	defer mu.Unlock()
 	once.Do(func() {
-		instance = &certificateParserWrapper{
-			parser: &certificateParserImpl{},
-		}
+		instance = &certificateParserImpl{}
 	})
 	return instance
 }

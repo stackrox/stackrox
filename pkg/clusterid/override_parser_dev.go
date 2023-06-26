@@ -2,15 +2,9 @@
 
 package clusterid
 
-import (
-	"github.com/stackrox/rox/pkg/sync"
-)
-
-var mu sync.Mutex
-
-// Override the internal parser. This should only be used for testing.
-func (p *parserWrapper) Override(parser Parser) {
+// OverrideClusterIDParser the clusterID Parser. This should only be used for testing.
+func OverrideClusterIDParser(parser Parser) {
 	mu.Lock()
 	defer mu.Unlock()
-	p.parser = parser
+	instance = parser
 }

@@ -2,7 +2,7 @@
 
 package clusterid
 
-// Override does not do anything in release builds
-func (p *parserWrapper) Override(_ Parser) {
-	log.Warn("Override called in production code")
+// OverrideClusterIDParser does not do anything in release builds
+func OverrideClusterIDParser(_ Parser) {
+	log.Warn("Override clusterID parser must not be called in production code")
 }

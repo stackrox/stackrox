@@ -2,7 +2,7 @@
 
 package mtls
 
-// Override does not do anything in release builds
-func (c *certificateParserWrapper) Override(_ CertificateParser) {
-	log.Warn("Override called in production code")
+// OverrideCertificateParser does not do anything in release builds
+func OverrideCertificateParser(_ CertificateParser) {
+	log.Warn("Override certificate parser must not be called in production code")
 }
