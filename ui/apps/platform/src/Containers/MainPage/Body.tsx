@@ -5,7 +5,6 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
-    networkPath,
     networkPathPF,
     violationsPath,
     compliancePath,
@@ -53,7 +52,6 @@ function NotFoundPage(): ReactElement {
 const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPage'));
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
-const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncNetworkGraphPage = asyncComponent(
     () => import('Containers/NetworkGraph/NetworkGraphPage')
 );
@@ -132,7 +130,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
-                    <Route path={networkPath} component={AsyncNetworkPage} />
                     {isNetworkGraphPatternflyEnabled && (
                         <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
                     )}
