@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -54,6 +55,12 @@ func newNodeStore() *nodeStoreImpl {
 	return &nodeStoreImpl{
 		nodes: make(map[string]*nodeWrap),
 	}
+}
+
+// Cleanup deletes all entries from store
+func (s *nodeStoreImpl) Cleanup(_ context.Context) error {
+	s.nodes = make(map[string]*nodeWrap)
+	return nil
 }
 
 // addOrUpdateNode upserts node into store.
