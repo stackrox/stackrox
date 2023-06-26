@@ -162,7 +162,7 @@ class BaseSpecification extends Specification {
             LOG.error("Error setting up orchestrator", e)
             throw e
         }
-        
+
         // ROX-9950 Limit to GKE due to issues on other providers.
         if (orchestrator.isGKE()) {
             recordResourcesAtRunStart(orchestrator)
@@ -190,7 +190,7 @@ class BaseSpecification extends Specification {
                 LOG.error("Failed to clean up orchestrator", e)
                 throw e
             }
-            
+
             // ROX-9950 Limit to GKE due to issues on other providers.
             if (orchestrator.isGKE()) {
                 compareResourcesAtRunEnd(orchestrator)
