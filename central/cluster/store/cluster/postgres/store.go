@@ -437,8 +437,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) erro
 	return nil
 }
 
-//// Stubs for satisfying legacy interfaces
-
 //// Interface functions - END
 
 //// Used for testing
