@@ -2722,6 +2722,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	assertMessageMatches := func(t *testing.T, depRef string, violations []*storage.Alert_Violation) {
 		depRefToExpectedMsg := map[string]string{
 			"":                   "no capabilities",
+			"ALL":                "all capabilities",
 			"MODULE":             "SYS_MODULE",
 			"NICE":               "SYS_NICE",
 			"PTRACE":             "SYS_PTRACE",
@@ -2758,6 +2759,11 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 			[]string{"SYS_NICE", "SYS_PTRACE"},
 			storage.BooleanOperator_AND,
 			[]string{"", "MODULE", "PTRACE", "NICE", "MODULE,NICE"},
+		},
+		{
+			[]string{"ALL"},
+			storage.BooleanOperator_AND,
+			[]string{"", "MODULE", "NICE", "PTRACE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
 		},
 	} {
 		c := testCase

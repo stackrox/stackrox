@@ -29,12 +29,32 @@ func ForK8sRBAC() QueryBuilder {
 // so we want to find deployments that don't drop these capabilities.
 func ForDropCaps() QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
-		return []*query.FieldQuery{{
+		// Do the group values already contain "ALL" as a value"?
+		containsAll := false
+		for _, v := range group.Values {
+			if v.Value == "ALL" {
+				containsAll = true
+			}
+		}
+		var queries []*query.FieldQuery
+		// If values do not contain ALL already, add it, for the implicit case.
+		// If a deployment drops ALL, it drops capapbilities that are specified in the values and hence
+		// that deployment must not generate a violation
+		if !containsAll {
+			queries = append(queries, &query.FieldQuery{
+				Field:  search.DropCapabilities.String(),
+				Values: []string{"ALL"},
+				Negate: true,
+			})
+		}
+		queries = append(queries, &query.FieldQuery{
 			Field:    search.DropCapabilities.String(),
 			Negate:   true,
 			Values:   mapValues(group, valueToStringExact),
 			Operator: operatorProtoMap[group.GetBooleanOperator()],
-		}}
+		})
+
+		return queries
 	})
 }
 
