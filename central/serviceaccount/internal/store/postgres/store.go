@@ -567,8 +567,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ServiceAccoun
 	return nil
 }
 
-//// Stubs for satisfying legacy interfaces
-
 //// Interface functions - END
 
 //// Used for testing

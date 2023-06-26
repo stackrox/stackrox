@@ -536,8 +536,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestChild1P4)
 	return nil
 }
 
-//// Stubs for satisfying legacy interfaces
-
 //// Interface functions - END
 
 //// Used for testing
