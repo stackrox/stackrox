@@ -82,7 +82,7 @@ deploy_sensor() {
     "./artifacts/${CLUSTER_NAME}/connect"
     unzip -d "sensor-${CLUSTER_NAME}" "sensor-${CLUSTER_NAME}.zip"
 
-    rm "./sensor-${CLUSTER_NAME}/*-pod-security.yaml"
+    rm ./sensor-"${CLUSTER_NAME}"/*-pod-security.yaml
 
     "./sensor-${CLUSTER_NAME}/sensor.sh"
 }
