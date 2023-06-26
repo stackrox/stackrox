@@ -14,7 +14,6 @@ import {
     riskPath,
     violationsPath,
     policiesPath,
-    networkPath,
     userRolePath,
     accessControlPath,
 } from '../routePaths';
@@ -29,7 +28,6 @@ const nonWorkflowUseCasePathEntries = Object.entries({
     RISK: riskPath,
     VIOLATIONS: violationsPath,
     POLICIES: policiesPath,
-    NETWORK: networkPath,
     USER: userRolePath, // however, it matches workflow list path
     ACCESS_CONTROL: accessControlPath,
 });
