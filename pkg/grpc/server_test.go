@@ -58,7 +58,7 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
-			api.Start().Wait()
+			a.Assert().NoError(api.Start().Wait())
 			api.Stop()
 		})
 	}
@@ -70,7 +70,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 	a.Run("fetch data from /test", func() {
 		cfg, endpointReached := configWithCustomRoute()
 		api := NewAPI(cfg)
-		api.Start().Wait()
+		a.Assert().NoError(api.Start().Wait())
 		defer func() {
 			api.Stop()
 		}()
@@ -82,7 +82,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 	a.Run("cannot fetch data from /test after server stopped", func() {
 		cfg, endpointReached := configWithCustomRoute()
 		api := NewAPI(cfg)
-		api.Start().Wait()
+		a.Assert().NoError(api.Start().Wait())
 		api.Stop()
 
 		_, err := http.Get("https://localhost:8080/test")
@@ -94,11 +94,18 @@ func (a *APIServerSuite) Test_CustomAPI() {
 func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
 	api := NewAPI(defaultConf())
 
-	api.Start().Wait()
+	a.Assert().NoError(api.Start().Wait())
 
 	a.Assert().True(api.Stop())
 	// second call should return false as stop already finished
 	a.Assert().False(api.Stop())
+}
+
+func (a *APIServerSuite) Test_CantCallStartMultipleTimes() {
+	api := NewAPI(defaultConf())
+	a.Assert().NoError(api.Start().Wait())
+	a.Assert().True(api.Stop())
+	a.Assert().Error(api.Start().Wait())
 }
 
 func (a *APIServerSuite) requestWithoutErr(url string) {

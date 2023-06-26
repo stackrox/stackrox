@@ -92,7 +92,7 @@ type APIServiceWithCustomRoutes interface {
 // API listens for new connections on port 443, and redirects them to the gRPC-Gateway
 type API interface {
 	// Start runs the API in a goroutine, and returns a signal that can be checked for when the API server is started.
-	Start() *concurrency.Signal
+	Start() *concurrency.ErrorSignal
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
 
@@ -146,9 +146,13 @@ func NewAPI(config Config) API {
 	}
 }
 
-func (a *apiImpl) Start() *concurrency.Signal {
-	startedSig := concurrency.NewSignal()
-	go a.run(&startedSig)
+func (a *apiImpl) Start() *concurrency.ErrorSignal {
+	startedSig := concurrency.NewErrorSignal()
+	if a.shutdownInProgress.Load() {
+		startedSig.SignalWithError(errors.New("cannot start gRPC API after Stop was called"))
+	} else {
+		go a.run(&startedSig)
+	}
 	return &startedSig
 }
 
@@ -366,7 +370,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
-func (a *apiImpl) run(startedSig *concurrency.Signal) {
+func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}
