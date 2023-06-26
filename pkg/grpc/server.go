@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -33,7 +34,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
-	"github.com/stackrox/rox/pkg/sync"
 	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -111,8 +111,7 @@ type apiImpl struct {
 	listeners          []serverAndListener
 
 	grpcServer         *grpc.Server
-	shutdownInProgress concurrency.Signal
-	stopMutex          *sync.Mutex
+	shutdownInProgress *atomic.Bool
 }
 
 // A Config configures the server.
@@ -138,11 +137,12 @@ type Config struct {
 
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
+	var shutdownRequested atomic.Bool
+	shutdownRequested.Store(false)
 	return &apiImpl{
 		config:             config,
 		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
-		shutdownInProgress: concurrency.NewSignal(),
-		stopMutex:          &sync.Mutex{},
+		shutdownInProgress: &shutdownRequested,
 	}
 }
 
@@ -157,30 +157,22 @@ func (a *apiImpl) Register(services ...APIService) {
 }
 
 func (a *apiImpl) Stop() bool {
-	if a.shutdownInProgress.IsDone() {
+	if !a.shutdownInProgress.CompareAndSwap(false, true) {
 		return false
 	}
 
-	if a.stopMutex.TryLock() {
-		log.Infof("Starting stop procedure")
-		defer func() {
-			log.Infof("Unlocking")
-			a.stopMutex.Unlock()
-		}()
-		a.shutdownInProgress.Signal()
-		a.grpcServer.GracefulStop()
-		log.Infof("gRPC server fully stopped")
-		for _, listener := range a.listeners {
-			if listener.stopper != nil {
-				log.Infof("running http stopper")
-				listener.stopper()
-			}
+	log.Infof("Starting stop procedure")
+	// a.shutdownInProgress.Signal()
+	a.grpcServer.GracefulStop()
+	log.Infof("gRPC server fully stopped")
+	for _, listener := range a.listeners {
+		if listener.stopper != nil {
+			log.Infof("running http stopper")
+			listener.stopper()
 		}
-		log.Infof("Stop() finished -> returning true")
-		return true
 	}
-	log.Infof("Could not acquire lock")
-	return false
+	log.Infof("Stop() finished -> returning true")
+	return true
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
@@ -257,7 +249,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 			log.Fatal(err)
 		}
 
-		if !a.shutdownInProgress.IsDone() {
+		if !a.shutdownInProgress.Load() {
 			log.Fatal("Unexpected local API server termination.")
 		}
 	}()
@@ -445,7 +437,7 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
 		// If gRPC shutdown was requested, then we should only log that the endpoint is stopping. Otherwise, this is happening
 		// for unknown reasons and an error will be reported.
-		if a.shutdownInProgress.IsDone() {
+		if a.shutdownInProgress.Load() {
 			log.Infof("gRPC Stop requested: Endpoint shutting down: %s %s", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr())
 		} else {
 			if srvAndLis.endpoint.Optional {
