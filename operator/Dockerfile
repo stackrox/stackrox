@@ -62,8 +62,10 @@ ARG roxpath
 
 ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
+ENV OPERATOR_CONFIG_DIR=/etc/operator
 
 COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
+COPY --from=builder ${roxpath}/operator/config/mapkubeapis ${OPERATOR_CONFIG_DIR}/mapkubeapis
 
 # The following are numeric uid and gid of `nobody` user in UBI.
 # We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
