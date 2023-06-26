@@ -29,9 +29,14 @@ type alertSenderSuite struct {
 	cl      *fakeAdmissionControlManagementServiceClient
 }
 
+type responseRequestPair struct {
+	request  *sensor.AdmissionControlAlerts
+	response *types.Empty
+	err      error
+}
+
 func (s *alertSenderSuite) TestSendAlertsToSensor() {
 	ctx := context.Background()
-	ch := make(chan []*storage.Alert)
 	err := errors.New("error")
 	alerts := createAlertsMessage(2)
 	cases := map[string]struct {
@@ -64,15 +69,15 @@ func (s *alertSenderSuite) TestSendAlertsToSensor() {
 	}
 	for testName, c := range cases {
 		s.Run(testName, func() {
+			ch := make(chan []*storage.Alert)
+			defer close(ch)
 			s.createFakeAlertSender(ch)
 			ctxWithCancel, cancelFunc := context.WithCancel(ctx)
 			wg := &sync.WaitGroup{}
 			s.cl.configureFakeClient(c.responseRequestPairs, wg)
 
-			go func() {
-				ch <- alerts
-			}()
 			s.service.Start(ctxWithCancel)
+			ch <- alerts
 			wg.Wait()
 			cancelFunc()
 			<-ctxWithCancel.Done()
@@ -116,12 +121,6 @@ func (s *alertSenderSuite) createFakeAlertSender(alertC <-chan []*storage.Alert)
 		stopC:        concurrency.NewSignal(),
 		eb:           eb,
 	}
-}
-
-type responseRequestPair struct {
-	request  *sensor.AdmissionControlAlerts
-	response *types.Empty
-	err      error
 }
 
 type fakeAdmissionControlManagementServiceClient struct {
