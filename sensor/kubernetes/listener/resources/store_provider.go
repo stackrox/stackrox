@@ -57,7 +57,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	p.cleanableStores = []CleanableStore{
 		p.deploymentStore,
 		p.podStore,
-		//p.serviceStore,
+		p.serviceStore,
 		//p.nodeStore,
 		//p.entityStore,
 		//p.endpointManager,
