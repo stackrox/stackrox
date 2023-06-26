@@ -1,6 +1,8 @@
 package rbac
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	v1 "k8s.io/api/rbac/v1"
@@ -26,6 +28,8 @@ type Store interface {
 	FindSubjectForRole(namespace, roleName string) []namespacedSubject
 	FindSubjectForBindingID(namespace, name, uuid string) []namespacedSubject
 	FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID
+
+	Cleanup(context.Context) error
 }
 
 // NewStore creates a new instance of Store
