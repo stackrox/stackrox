@@ -511,8 +511,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.LogImbue) err
 	return nil
 }
 
-//// Stubs for satisfying legacy interfaces
-
 //// Interface functions - END
 
 //// Used for testing
