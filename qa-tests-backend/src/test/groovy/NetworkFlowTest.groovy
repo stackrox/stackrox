@@ -544,7 +544,8 @@ class NetworkFlowTest extends BaseSpecification {
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
         // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.
-        // We do not test this in OCP. Manual testing on OCP shows the same behavior but on prow times out most of the time.
+        // We do not test this on OCP.
+        // Manual testing on OCP shows the same behavior but on prow times out most of the time.
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
@@ -570,7 +571,9 @@ class NetworkFlowTest extends BaseSpecification {
         "Check for edge in network graph"
         withRetry(2, 10) {
             log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
-            List<Edge> edgesToExternalSource = NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+            List<Edge> edgesToExternalSource = NetworkGraphUtil.checkForEdge(
+                    Constants.INTERNET_EXTERNAL_SOURCE_ID,
+                    deploymentUid, null, 180)
             assert edgesToExternalSource
         }
 
