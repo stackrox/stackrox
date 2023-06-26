@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -26,6 +28,16 @@ func key(namespace, name string) serviceAccountKey {
 		namespace: namespace,
 		name:      name,
 	}
+}
+
+// Cleanup deletes all entries from store
+func (sas *ServiceAccountStore) Cleanup(_ context.Context) error {
+	sas.lock.Lock()
+	defer sas.lock.Unlock()
+
+	sas.serviceAccountToPullSecrets = make(map[serviceAccountKey][]string)
+
+	return nil
 }
 
 // GetImagePullSecrets get the image pull secrets for a namespace and secret name pair

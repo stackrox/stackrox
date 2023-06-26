@@ -62,7 +62,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.entityStore,
 		p.networkPolicyStore,
 		p.rbacStore,
-		//p.serviceAccountStore,
+		p.serviceAccountStore,
 		//p.orchestratorNamespaces,
 		//p.registryStore
 	}
