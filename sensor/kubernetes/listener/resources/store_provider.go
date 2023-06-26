@@ -29,7 +29,7 @@ type InMemoryStoreProvider struct {
 }
 
 type CleanableStore interface {
-	Clean(context context.Context) error
+	Cleanup(context context.Context) error
 }
 
 // InitializeStore creates the store instances
@@ -55,7 +55,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	}
 
 	p.cleanableStores = []CleanableStore{
-		//p.deploymentStore,
+		p.deploymentStore,
 		//p.podStore,
 		//p.serviceStore,
 		//p.nodeStore,
@@ -74,7 +74,7 @@ func InitializeStore() *InMemoryStoreProvider {
 func (p *InMemoryStoreProvider) CleanupStores(ctx context.Context) error {
 	var err error
 	for _, cleanable := range p.cleanableStores {
-		err = multierror.Append(err, cleanable.Clean(ctx))
+		err = multierror.Append(err, cleanable.Cleanup(ctx))
 	}
 	return multierror.Flatten(err)
 }

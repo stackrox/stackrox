@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -44,6 +46,20 @@ func (ds *DeploymentStore) addOrUpdateDeploymentNoLock(wrap *deploymentWrap) {
 	ids[wrap.GetId()] = struct{}{}
 
 	ds.deployments[wrap.GetId()] = wrap
+}
+
+func (ds *DeploymentStore) Cleanup(_ context.Context) error {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	for namespace := range ds.deploymentIDs {
+		for id := range ds.deploymentIDs[namespace] {
+			delete(ds.deployments, id)
+		}
+		delete(ds.deploymentIDs, namespace)
+	}
+
+	return nil
 }
 
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
