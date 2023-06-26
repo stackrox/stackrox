@@ -25,6 +25,7 @@ func NewMatcherService(matcher *Matcher) (*matcherService, error) {
 func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilities not implemented")
 }
+
 func (s *matcherService) GetMetadata(ctx context.Context, req *types.Empty) (*v4.Metadata, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMetadata not implemented")
 }
