@@ -1,6 +1,9 @@
 package resources
 
 import (
+	"context"
+
+	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -21,6 +24,12 @@ type InMemoryStoreProvider struct {
 	entityStore            *clusterentities.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
+
+	cleanableStores []CleanableStore
+}
+
+type CleanableStore interface {
+	Clean(context context.Context) error
 }
 
 // InitializeStore creates the store instances
@@ -31,7 +40,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	nodeStore := newNodeStore()
 	entityStore := clusterentities.NewStore()
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
-	return &InMemoryStoreProvider{
+	p := &InMemoryStoreProvider{
 		deploymentStore:        deployStore,
 		podStore:               podStore,
 		serviceStore:           svcStore,
@@ -44,6 +53,30 @@ func InitializeStore() *InMemoryStoreProvider {
 		orchestratorNamespaces: orchestratornamespaces.NewOrchestratorNamespaces(),
 		registryStore:          registry.NewRegistryStore(nil),
 	}
+
+	p.cleanableStores = []CleanableStore{
+		//p.deploymentStore,
+		//p.podStore,
+		//p.serviceStore,
+		//p.nodeStore,
+		//p.entityStore,
+		//p.endpointManager,
+		//p.networkPolicyStore,
+		//p.rbacStore,
+		//p.serviceAccountStore,
+		//p.orchestratorNamespaces,
+		//p.registryStore
+	}
+
+	return p
+}
+
+func (p *InMemoryStoreProvider) CleanupStores(ctx context.Context) error {
+	var err error
+	for _, cleanable := range p.cleanableStores {
+		err = multierror.Append(err, cleanable.Clean(ctx))
+	}
+	return multierror.Flatten(err)
 }
 
 // Deployments returns the deployment store public interface
