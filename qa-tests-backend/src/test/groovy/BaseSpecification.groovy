@@ -165,7 +165,7 @@ class BaseSpecification extends Specification {
         
         // ROX-9950 Limit to GKE due to issues on other providers.
         if (orchestrator.isGKE()) {
-            recordResourcesAtSpecStart(orchestrator)
+            recordResourcesAtRunStart(orchestrator)
         }
 
         addShutdownHook {
@@ -193,7 +193,7 @@ class BaseSpecification extends Specification {
             
             // ROX-9950 Limit to GKE due to issues on other providers.
             if (orchestrator.isGKE()) {
-                compareResourcesAtSpecEnd(orchestrator)
+                compareResourcesAtRunEnd(orchestrator)
             }
         }
 
@@ -259,7 +259,7 @@ class BaseSpecification extends Specification {
         }
     }
 
-    private static void recordResourcesAtSpecStart(OrchestratorMain orchestrator) {
+    private static void recordResourcesAtRunStart(OrchestratorMain orchestrator) {
         resourceRecord = [
                 "namespaces": orchestrator.getNamespaces(),
                 "deployments": orchestrator.getDeployments("default") +
@@ -299,7 +299,7 @@ class BaseSpecification extends Specification {
         BaseService.setUseClientCert(false)
     }
 
-    private static void compareResourcesAtSpecEnd(OrchestratorMain orchestrator) {
+    private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
         Javers javers = JaversBuilder.javers()
                 .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                 .build()
