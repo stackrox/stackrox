@@ -104,6 +104,7 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
           USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+          POD_SECURITY_POLICIES: "False"
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
