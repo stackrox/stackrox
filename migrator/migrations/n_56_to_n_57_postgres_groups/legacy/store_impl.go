@@ -32,7 +32,11 @@ type storeImpl struct {
 // GetAll return all groups currently in the store.
 func (s *storeImpl) GetAll(ctx context.Context) (groups []*storage.Group, err error) {
 	err = s.Walk(ctx, func(g *storage.Group) error {
-		groups = append(groups, g)
+		// There have been occurrences of groups without ID being set within stores. This is partially due to the
+		// failed clean up within the 105_106 migration, so explicitly ignore those groups here as well.
+		if g.GetProps().GetId() != "" {
+			groups = append(groups, g)
+		}
 		return nil
 	})
 	return groups, err
@@ -43,6 +47,13 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 	return s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(groupsBucket)
 		return bucket.ForEach(func(k, v []byte) error {
+			// Due to issues within the 105_106 migration, it's currently undefined which format you receive: either
+			// the old format, which uses a composite key of auth provider, key, value as the key or the new format
+			// which uses a UUID as key. Reasoning is that the old values were not cleaned up correctly. Skip values
+			// in case the key can be deserialized to the old format.
+			if _, err := deserializePropsKey(k); err == nil {
+				return nil
+			}
 			var group storage.Group
 			if err := proto.Unmarshal(v, &group); err != nil {
 				return err
@@ -56,6 +67,16 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 func (s *storeImpl) Upsert(_ context.Context, group *storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		return upsertInTransaction(tx, group)
+	})
+}
+
+// UpsertOldFormat upserts a group to the store using the old format, i.e. using a composite key as unique identifier.
+// This is only used for testing purposes.
+func (s *storeImpl) UpsertOldFormat(_ context.Context, group *storage.Group) error {
+	k, v := serialize(group)
+	return s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(groupsBucket)
+		return bucket.Put(k, v)
 	})
 }
 
