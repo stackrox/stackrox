@@ -27,6 +27,7 @@ deploy_central() {
     rm -rf bundle-test1
     ./roxctl-"${PREVIOUS_RELEASE}" central generate k8s pvc \
         --lb-type lb \
+        --enable-pod-security-policies=false \
         --image-defaults development_build \
         --output-dir bundle-test1
 
@@ -80,6 +81,9 @@ deploy_sensor() {
 
     "./artifacts/${CLUSTER_NAME}/connect"
     unzip -d "sensor-${CLUSTER_NAME}" "sensor-${CLUSTER_NAME}.zip"
+
+    rm ./sensor-"${CLUSTER_NAME}"/*-pod-security.yaml
+
     "./sensor-${CLUSTER_NAME}/sensor.sh"
 }
 
