@@ -5,6 +5,7 @@ import { visit } from '../../helpers/visit';
 export const sensorUpgradesConfigAlias = 'sensorupgrades/config';
 export const clustersAlias = 'clusters';
 export const clusterDefaultsAlias = 'cluster-defaults';
+export const delegatedRegistryConfigAlias = 'delegatedregistryconfig';
 
 const routeMatcherMapForClusterDefaults = {
     [clusterDefaultsAlias]: {
@@ -24,7 +25,12 @@ const routeMatcherMapForClusters = {
     },
     ...routeMatcherMapForClusterDefaults,
 };
-const routeMatcherMapForDelegateScanning = null;
+const routeMatcherMapForDelegateScanning = {
+    [delegatedRegistryConfigAlias]: {
+        method: 'GET',
+        url: '/v1/delegatedregistryconfig',
+    },
+};
 
 const basePath = '/main/clusters';
 const delegateScanningPath = `${basePath}/delegate-scanning`;
