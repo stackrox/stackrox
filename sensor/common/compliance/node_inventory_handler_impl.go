@@ -79,7 +79,9 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
-		// TODO(ROX-17044): handle node_inventory in offline mode
+		// As Compliance enters a retry loop on receiving a NACK,
+		// make sure we send NACK as soon as we enter offline mode
+		c.centralReady.Reset()
 	}
 }
 
