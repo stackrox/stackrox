@@ -1,4 +1,4 @@
-name: Download Repo2CPE
+name: Download Repo2CPE and Name2CPE
 on:
   push:
     branches:
@@ -30,8 +30,20 @@ jobs:
         cd Repo2CPE
         wget -q https://access.redhat.com/security/data/metrics/repository-to-cpe.json
 
-    - name: Check downloaded file
-      run: ls -l Repo2CPE/repository-to-cpe.json
+    - name: Create Name2CPE directory
+      run: mkdir -p Name2CPE
 
-    - name: Upload file to Google Cloud Storage
-      run: gsutil cp -r "Repo2CPE" "gs://scanner-v4-test/"
+    - name: Download container-name-repos-map.json
+      run: |
+        cd Name2CPE
+        wget -q https://access.redhat.com/security/data/metrics/container-name-repos-map.json
+
+    - name: Check downloaded files
+      run: |
+        ls -l Repo2CPE/
+        ls -l Name2CPE/
+
+    - name: Upload files to Google Cloud Storage
+      run: |
+        gsutil cp -r "Repo2CPE" "gs://scanner-v4-test/"
+        gsutil cp -r "Name2CPE" "gs://scanner-v4-test/"
