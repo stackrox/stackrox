@@ -162,7 +162,7 @@ func initializeFieldMetadata() FieldMetadata {
 	}
 
 	f.registerFieldMetadata(fieldnames.AddCaps,
-		querybuilders.ForFieldLabelExact(search.AddCapabilities),
+		querybuilders.ForAddCaps(),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return capabilitiesValueRegex
