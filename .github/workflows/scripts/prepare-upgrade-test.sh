@@ -32,7 +32,7 @@ deploy_central() {
 
     rm -rf bundle-test1
     ./roxctl-"${PREVIOUS_RELEASE}" central generate k8s pvc \
-        --lb-type lb \
+        --lb-type=lb \
         --enable-pod-security-policies=false \
         --main-image=quay.io/rhacs-eng/main:"${PREVIOUS_RELEASE}" \
         --scanner-db-image=quay.io/rhacs-eng/scanner-db:"${PREVIOUS_SCANNER_VERSION}" \
