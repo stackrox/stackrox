@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -86,6 +88,12 @@ func newNetworkPoliciesStore() *networkPolicyStoreImpl {
 	return &networkPolicyStoreImpl{
 		data: make(map[string]map[string]*storage.NetworkPolicy),
 	}
+}
+
+// Cleanup deletes all entries from store
+func (n *networkPolicyStoreImpl) Cleanup(_ context.Context) error {
+	n.data = make(map[string]map[string]*storage.NetworkPolicy)
+	return nil
 }
 
 // Size returns number of network policies in the store
