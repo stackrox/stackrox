@@ -22,7 +22,6 @@ import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 // Beware, policy instead of vulnerability severities because of getSeverityByCvss function!
 
@@ -35,13 +34,6 @@ const ENTITY_COUNT = 25;
 const VULN_COUNT = 50;
 
 // Data Queries
-const VULN_FRAGMENT = gql`
-    fragment vulnFields on EmbeddedVulnerability {
-        cve
-        cvss
-        severity
-    }
-`;
 const IMAGE_VULN_FRAGMENT = gql`
     fragment vulnFields on ImageVulnerability {
         id
@@ -57,35 +49,6 @@ const NODE_VULN_FRAGMENT = gql`
         cvss
         severity
     }
-`;
-
-const OLD_DEPLOYMENT_QUERY = gql`
-    query topRiskyDeployments(
-        $query: String
-        $vulnQuery: String
-        $entityPagination: Pagination
-        $vulnPagination: Pagination
-    ) {
-        results: deployments(query: $query, pagination: $entityPagination) {
-            id
-            name
-            clusterName
-            namespaceName: namespace
-            priority
-            plottedVulns(query: $vulnQuery) {
-                basicVulnCounter {
-                    all {
-                        total
-                        fixable
-                    }
-                }
-                vulns(pagination: $vulnPagination) {
-                    ...vulnFields
-                }
-            }
-        }
-    }
-    ${VULN_FRAGMENT}
 `;
 
 const DEPLOYMENT_QUERY = gql`
@@ -117,34 +80,6 @@ const DEPLOYMENT_QUERY = gql`
     ${IMAGE_VULN_FRAGMENT}
 `;
 
-const OLD_NODE_QUERY = gql`
-    query topRiskyNodes(
-        $query: String
-        $vulnQuery: String
-        $entityPagination: Pagination
-        $vulnPagination: Pagination
-    ) {
-        results: nodes(query: $query, pagination: $entityPagination) {
-            id
-            name
-            clusterName
-            priority
-            plottedVulns(query: $vulnQuery) {
-                basicVulnCounter {
-                    all {
-                        total
-                        fixable
-                    }
-                }
-                vulns(pagination: $vulnPagination) {
-                    ...vulnFields
-                }
-            }
-        }
-    }
-    ${VULN_FRAGMENT}
-`;
-
 const NODE_QUERY = gql`
     query topRiskyNodes(
         $query: String
@@ -171,36 +106,6 @@ const NODE_QUERY = gql`
         }
     }
     ${NODE_VULN_FRAGMENT}
-`;
-
-const OLD_NAMESPACE_QUERY = gql`
-    query topRiskyNamespaces(
-        $query: String
-        $vulnQuery: String
-        $entityPagination: Pagination
-        $vulnPagination: Pagination
-    ) {
-        results: namespaces(query: $query, pagination: $entityPagination) {
-            metadata {
-                clusterName
-                name
-                id
-                priority
-            }
-            plottedVulns(query: $vulnQuery) {
-                basicVulnCounter {
-                    all {
-                        total
-                        fixable
-                    }
-                }
-                vulns(pagination: $vulnPagination) {
-                    ...vulnFields
-                }
-            }
-        }
-    }
-    ${VULN_FRAGMENT}
 `;
 
 const NAMESPACE_QUERY = gql`
@@ -231,35 +136,6 @@ const NAMESPACE_QUERY = gql`
         }
     }
     ${IMAGE_VULN_FRAGMENT}
-`;
-
-const OLD_IMAGE_QUERY = gql`
-    query topRiskyImages(
-        $query: String
-        $vulnQuery: String
-        $entityPagination: Pagination
-        $vulnPagination: Pagination
-    ) {
-        results: images(query: $query, pagination: $entityPagination) {
-            id
-            name {
-                fullName
-            }
-            priority
-            plottedVulns(query: $vulnQuery) {
-                basicVulnCounter {
-                    all {
-                        total
-                        fixable
-                    }
-                }
-                vulns(pagination: $vulnPagination) {
-                    ...vulnFields
-                }
-            }
-        }
-    }
-    ${VULN_FRAGMENT}
 `;
 
 const IMAGE_QUERY = gql`
@@ -298,9 +174,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     cveFilter,
     small,
 }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const workflowState = useContext(workflowStateContext);
 
     // Entity Type selection
@@ -333,13 +206,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     );
     const viewAll = <ViewAllButton url={viewAllUrl} />;
 
-    const oldQueryMap = {
-        [entityTypes.DEPLOYMENT]: OLD_DEPLOYMENT_QUERY,
-        [entityTypes.NAMESPACE]: OLD_NAMESPACE_QUERY,
-        [entityTypes.IMAGE]: OLD_IMAGE_QUERY,
-        [entityTypes.NODE]: OLD_NODE_QUERY,
-    };
-
     const queryMap = {
         [entityTypes.DEPLOYMENT]: DEPLOYMENT_QUERY,
         [entityTypes.NAMESPACE]: NAMESPACE_QUERY,
@@ -347,9 +213,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         [entityTypes.NODE]: NODE_QUERY,
     };
 
-    const mapToUse = showVmUpdates ? queryMap : oldQueryMap;
-
-    const query = mapToUse[selectedEntityType];
+    const query = queryMap[selectedEntityType];
 
     function getAverageSeverity(vulns) {
         if (vulns.length === 0) {

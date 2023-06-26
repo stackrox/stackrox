@@ -13,18 +13,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { vulnSeverityIconColors } from 'constants/visuals/colors';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-
-const CVES_QUERY = gql`
-    query getCvesByCVSS($query: String, $scopeQuery: String) {
-        results: vulnerabilities(query: $query, scopeQuery: $scopeQuery) {
-            cve
-            cvss
-            severity
-            summary
-        }
-    }
-`;
 
 const IMAGE_CVES_QUERY = gql`
     query getImageCvesByCVSS($query: String, $scopeQuery: String) {
@@ -67,28 +55,20 @@ const vulnerabilitySeverities = [
 ];
 
 const CvesByCvssScore = ({ entityContext, parentContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
+    let queryToUse = IMAGE_CVES_QUERY;
+    let linkTypeToUse = entityTypes.IMAGE_CVE;
 
-    let queryToUse = CVES_QUERY;
-    let linkTypeToUse = entityTypes.CVE;
-
-    if (showVMUpdates) {
-        if (entityContext[entityTypes.CLUSTER]) {
-            queryToUse = CLUSTER_CVES_QUERY;
-            linkTypeToUse = entityTypes.CLUSTER_CVE;
-        } else if (
-            entityContext[entityTypes.NODE] ||
-            entityContext[entityTypes.NODE_COMPONENT] ||
-            parentContext[entityTypes.NODE] ||
-            parentContext[entityTypes.NODE_COMPONENT]
-        ) {
-            queryToUse = NODE_CVES_QUERY;
-            linkTypeToUse = entityTypes.NODE_CVE;
-        } else {
-            queryToUse = IMAGE_CVES_QUERY;
-            linkTypeToUse = entityTypes.IMAGE_CVE;
-        }
+    if (entityContext[entityTypes.CLUSTER]) {
+        queryToUse = CLUSTER_CVES_QUERY;
+        linkTypeToUse = entityTypes.CLUSTER_CVE;
+    } else if (
+        entityContext[entityTypes.NODE] ||
+        entityContext[entityTypes.NODE_COMPONENT] ||
+        parentContext[entityTypes.NODE] ||
+        parentContext[entityTypes.NODE_COMPONENT]
+    ) {
+        queryToUse = NODE_CVES_QUERY;
+        linkTypeToUse = entityTypes.NODE_CVE;
     }
 
     const { loading, data = {} } = useQuery(queryToUse, {
@@ -118,7 +98,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
                     labelColor: 'var(--base-600)',
                     textColor: 'var(--base-600)',
                     value: cvss,
-                    link: workflowState.pushRelatedEntity(entityTypes.CVE, cve).toUrl(),
+                    link: workflowState.pushRelatedEntity(linkTypeToUse, cve).toUrl(),
                 };
             });
     }

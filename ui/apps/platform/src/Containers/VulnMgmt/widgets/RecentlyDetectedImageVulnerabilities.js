@@ -14,31 +14,8 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
-// TODO: remove once ROX_POSTGRES_DATASTORE is enabled
-export const RECENTLY_DETECTED_VULNERABILITIES = gql`
-    query recentlyDetectedVulnerabilities(
-        $query: String
-        $scopeQuery: String
-        $pagination: Pagination
-    ) {
-        results: vulnerabilities(query: $query, pagination: $pagination) {
-            id
-            cve
-            cvss
-            scoreVersion
-            deploymentCount
-            imageCount
-            isFixable(query: $scopeQuery)
-            envImpact
-            createdAt
-            summary
-        }
-    }
-`;
-
-export const RECENTLY_DETECTED_IMAGE_VULNERABILITIES = gql`
+const RECENTLY_DETECTED_IMAGE_VULNERABILITIES = gql`
     query recentlyDetectedImageVulnerabilities(
         $query: String
         $scopeQuery: String
@@ -69,8 +46,6 @@ const processData = (data, workflowState, cveType) => {
 };
 
 const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
     const queryObject = {
@@ -84,23 +59,20 @@ const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) 
         loading,
         data = {},
         error,
-    } = useQuery(
-        showVmUpdates ? RECENTLY_DETECTED_IMAGE_VULNERABILITIES : RECENTLY_DETECTED_VULNERABILITIES,
-        {
-            variables: {
-                query,
-                scopeQuery: queryService.objectToWhereClause(entityContextObject),
-                pagination: queryService.getPagination(
-                    {
-                        id: cveSortFields.CVE_CREATED_TIME,
-                        desc: true,
-                    },
-                    0,
-                    limit
-                ),
-            },
-        }
-    );
+    } = useQuery(RECENTLY_DETECTED_IMAGE_VULNERABILITIES, {
+        variables: {
+            query,
+            scopeQuery: queryService.objectToWhereClause(entityContextObject),
+            pagination: queryService.getPagination(
+                {
+                    id: cveSortFields.CVE_CREATED_TIME,
+                    desc: true,
+                },
+                0,
+                limit
+            ),
+        },
+    });
 
     let content = <Loader />;
 
@@ -113,11 +85,7 @@ const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) 
 
             content = <NoResultsMessage message={parsedMessage} className="p-3" icon="warn" />;
         } else {
-            const processedData = processData(
-                data,
-                workflowState,
-                showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE
-            );
+            const processedData = processData(data, workflowState, entityTypes.IMAGE_CVE);
 
             if (!processedData || processedData.length === 0) {
                 content = (
@@ -138,14 +106,14 @@ const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) 
     }
 
     const viewAllURL = workflowState
-        .pushList(showVmUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE)
+        .pushList(entityTypes.IMAGE_CVE)
         .setSort([{ id: cveSortFields.CVE_CREATED_TIME, desc: true }])
         .toUrl();
 
     return (
         <Widget
             className="h-full pdf-page"
-            header={`Recently Detected ${showVmUpdates ? 'Image ' : ''}Vulnerabilities`}
+            header="Recently Detected Image Vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
