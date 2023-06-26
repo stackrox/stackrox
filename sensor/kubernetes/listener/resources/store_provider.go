@@ -59,7 +59,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.podStore,
 		p.serviceStore,
 		p.nodeStore,
-		//p.entityStore,
+		p.entityStore,
 		//p.endpointManager,
 		//p.networkPolicyStore,
 		//p.rbacStore,
