@@ -2707,10 +2707,10 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
-	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE"}
+	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE", "ALL"}
 
 	deployments := make(map[string]*storage.Deployment)
-	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
+	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}, {3}} {
 		dep := fixtures.GetDeployment().Clone()
 		dep.Containers[0].SecurityContext.DropCapabilities = make([]string, 0, len(idxs))
 		for _, idx := range idxs {

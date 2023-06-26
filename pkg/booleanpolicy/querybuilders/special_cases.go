@@ -26,7 +26,8 @@ func ForK8sRBAC() QueryBuilder {
 
 // ForDropCaps returns a specific query builder for drop capabilities.
 // Note that here, we always negate -- the user specifies a list of capabilities that _must_ be dropped,
-// so we want to find deployments that don't drop these capabilities.
+// so we want to find deployments that don't drop these capabilities. Deployments that DROP ALL capabilities
+// implicitly drop any capabilities that are specified as values in the policy group.
 func ForDropCaps() QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
 		// Do the group values already contain "ALL" as a value"?
@@ -38,7 +39,7 @@ func ForDropCaps() QueryBuilder {
 		}
 		var queries []*query.FieldQuery
 		// If values do not contain ALL already, add it, for the implicit case.
-		// If a deployment drops ALL, it drops capapbilities that are specified in the values and hence
+		// If a deployment drops ALL, it drops capabilities that are specified in the values and hence
 		// that deployment must not generate a violation
 		if !containsAll {
 			queries = append(queries, &query.FieldQuery{
