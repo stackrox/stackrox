@@ -32,7 +32,8 @@ deploy_central() {
 
     rm -rf bundle-test1
     ./roxctl-"${PREVIOUS_RELEASE}" central generate k8s pvc \
-        --lb-type=lb \
+        --lb-type lb \
+        --enable-pod-security-policies=false \
         --main-image=quay.io/rhacs-eng/main:"${PREVIOUS_RELEASE}" \
         --scanner-db-image=quay.io/rhacs-eng/scanner-db:"${PREVIOUS_SCANNER_VERSION}" \
         --scanner-image=quay.io/rhacs-eng/scanner:"${PREVIOUS_SCANNER_VERSION}" \
@@ -88,6 +89,9 @@ deploy_sensor() {
 
     "./artifacts/${CLUSTER_NAME}/connect"
     unzip -d "sensor-${CLUSTER_NAME}" "sensor-${CLUSTER_NAME}.zip"
+
+    rm ./sensor-"${CLUSTER_NAME}"/*-pod-security.yaml
+
     "./sensor-${CLUSTER_NAME}/sensor.sh"
 }
 
