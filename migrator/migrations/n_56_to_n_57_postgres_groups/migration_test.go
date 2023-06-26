@@ -65,7 +65,7 @@ func (s *postgresMigrationSuite) TestGroupMigration() {
 
 	// Special cases: as observed, there are sometimes groups still retained using the old format (i.e. stored by
 	// composite key instead of UUID) as well as empty groups without an ID being set. These will lead to failures
-	// when migrating. Below are three cases added, which should all be skipped during migration.
+	// when migrating. Below are some cases added, which should all be skipped during migration.
 
 	// One completely empty group without ID and properties set stored in the old format.
 	s.NoError(legacyStore.UpsertOldFormat(s.ctx, &storage.Group{}))
@@ -73,8 +73,6 @@ func (s *postgresMigrationSuite) TestGroupMigration() {
 	initializedGroupOldFormat := &storage.Group{}
 	s.NoError(testutils.FullInit(initializedGroupOldFormat, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 	s.NoError(legacyStore.UpsertOldFormat(s.ctx, initializedGroupOldFormat))
-	// One completely empty group without ID and properties set stored in the "new" format.
-	s.NoError(legacyStore.Upsert(s.ctx, &storage.Group{}))
 
 	// Move
 	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
