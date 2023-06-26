@@ -38,7 +38,7 @@ const TableWidgetFixableCves = ({
     entityType,
     name,
     id,
-    vulnType = entityTypes.CVE,
+    vulnType,
 }) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
@@ -53,7 +53,7 @@ const TableWidgetFixableCves = ({
     let queryVulnsFieldName = 'imageVulnerabilities';
     let queryCVEFieldsName = 'imageCVEFields';
     let queryFragment = IMAGE_CVE_LIST_FRAGMENT;
-    let exportType = entityTypes.CVE;
+    let exportType = entityTypes.IMAGE_CVE;
 
     if (vulnType === entityTypes.CLUSTER_CVE) {
         queryVulnCounterFieldName = 'clusterVulnerabilityCounter';
@@ -67,13 +67,6 @@ const TableWidgetFixableCves = ({
         queryCVEFieldsName = 'nodeCVEFields';
         queryFragment = NODE_CVE_LIST_FRAGMENT;
         exportType = entityTypes.NODE_CVE;
-    } else if (entityType === entityTypes.IMAGE_COMPONENT || vulnType === entityTypes.IMAGE_CVE) {
-        // TODO: after the split of CVE types is released, make this the default
-        queryVulnCounterFieldName = 'imageVulnerabilityCounter';
-        queryVulnsFieldName = 'imageVulnerabilities';
-        queryCVEFieldsName = 'imageCVEFields';
-        queryFragment = IMAGE_CVE_LIST_FRAGMENT;
-        exportType = entityTypes.IMAGE_CVE;
     }
 
     // `id` field is not needed in result,
