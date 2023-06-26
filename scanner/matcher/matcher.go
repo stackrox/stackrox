@@ -16,7 +16,7 @@ type Matcher struct {
 }
 
 func NewMatcher(ctx context.Context) (*Matcher, error) {
-	pool, err := postgres.Connect(ctx, "TODO", "libvuln")
+	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libvuln")
 	if err != nil {
 		return nil, err
 	}
