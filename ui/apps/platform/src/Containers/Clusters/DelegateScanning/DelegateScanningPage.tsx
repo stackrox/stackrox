@@ -19,6 +19,7 @@ import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
 import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
 import { DelegatedRegistryConfig } from 'types/dedicatedRegistryConfig.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ToggleDelegatedScanning from './Components/ToggleDelegatedScanning';
 
 const initialDelegatedState: DelegatedRegistryConfig = {
@@ -31,15 +32,16 @@ function DelegateScanningPage() {
     const displayedPageTitle = 'Delegate Image Scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
-    const [errMessage, setErrMessage] = useState<string | null>(null);
+    const [errMessage, setErrMessage] = useState<string>('');
 
     useEffect(() => {
+        setErrMessage('');
         fetchDelegatedRegistryConfig()
-            .then((result) => {
-                setDedicatedRegistryConfig(result.response);
+            .then((configFetched) => {
+                setDedicatedRegistryConfig(configFetched);
             })
-            .catch((err) => {
-                setErrMessage(err.message);
+            .catch((error) => {
+                setErrMessage(getAxiosErrorMessage(error));
                 setDedicatedRegistryConfig(initialDelegatedState);
             });
     }, []);
