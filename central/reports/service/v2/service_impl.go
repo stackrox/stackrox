@@ -5,10 +5,14 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
+	"github.com/stackrox/rox/central/role/resources"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
@@ -16,6 +20,13 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.Compliance)): {
+			"/v2.ReportService/GetReportStatus",
+			"/v2.ReportService/GetReportStatusConfigID",
+		},
+	})
 )
 
 type serviceImpl struct {
@@ -37,7 +48,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, common.Authorizer.Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
