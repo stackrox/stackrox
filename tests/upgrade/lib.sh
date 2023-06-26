@@ -84,11 +84,8 @@ function roxcurl() {
 deploy_earlier_central() {
     info "Deploying: $EARLIER_TAG..."
 
-    if is_CI; then
-        make cli
-    else
-        make cli
-    fi
+    make cli
+
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
 
