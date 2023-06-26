@@ -39,7 +39,7 @@ test_upgrade() {
     # postgres->postgres upgrade
     REPO_FOR_POSTGRES_TIME_TRAVEL="/tmp/rox-postgres-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="rhacs-eng"
+    QUAY_REPO="stackrox-io"
     REGISTRY="quay.io/$QUAY_REPO"
 
     export OUTPUT_FORMAT="helm"
@@ -54,6 +54,7 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
+    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
     test_upgrade_paths "$log_output_dir"
@@ -70,8 +71,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
-    EARLIER_TAG="3.69.x-1-g870568de08"
+    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
+    EARLIER_TAG="3.74.0-1-gfe924fce30"
     FORCE_ROLLBACK_VERSION="$EARLIER_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
@@ -125,7 +126,7 @@ test_upgrade_paths() {
     # Postgres and not Rocks
     ci_export ROX_POSTGRES_DATASTORE "false"
     LAST_ROCKS_TAG="3.74.0-1-gfe924fce30"
-    kubectl -n stackrox set image deploy/central "central=${REGISTRY}/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
+    kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:${LAST_ROCKS_TAG}"; kubectl -n stackrox set env deploy/central ROX_POSTGRES_DATASTORE=false
     wait_for_api
     wait_for_scanner_to_be_ready
 
@@ -147,6 +148,9 @@ test_upgrade_paths() {
     [[ -d sensor-remote ]]
 
     info "Installing sensor"
+    # This old software version doesn't remove PSP from the bundle so we have to do it.
+    info "Removing pod-security files"
+    rm ./sensor-remote/*pod-security.yaml
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$LAST_ROCKS_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$LAST_ROCKS_TAG"
@@ -178,12 +182,10 @@ helm_upgrade_to_latest_postgres() {
 
     # Get opensource charts and convert to development_build to support release builds
     if is_CI; then
-        roxctl version
-        roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
+        bin/"${TEST_HOST_PLATFORM}"/roxctl version
+        bin/"${TEST_HOST_PLATFORM}"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
     else
         roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
 
@@ -209,8 +211,8 @@ helm_upgrade_to_latest_postgres() {
 
 helm_uninstall_and_cleanup() {
     helm uninstall -n stackrox stackrox-central-services
-
     rm -rf /tmp/stackrox-central-services-chart
+    rm -rf /tmp/early-stackrox-central-services-chart
 }
 
 check_legacy_db_status() {
