@@ -568,11 +568,14 @@ class Kubernetes implements OrchestratorMain {
                 .spec.containers.get(0).env
 
         int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index < 0) {
-            throw new OrchestratorManagerException(
-                    "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
+        if (index > -1) {
+            log.debug "Env var ${key} found on index: ${index}"
+            envVars.get(index).value = value
         }
-        envVars.get(index).value = value
+        else {
+            log.debug "Env var ${key} not found. Adding it now"
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+        }
 
         client.apps().deployments().inNamespace(ns).withName(name)
             .edit { d -> new DeploymentBuilder(d)
