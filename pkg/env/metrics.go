@@ -16,12 +16,14 @@ const (
 	TLSKeyFileName = "tls.key"
 
 	defaultHTTPPort  = ":9090"
-	defaultHTTPSPort = "disabled"
+	defaultHTTPSPort = ":9091"
 )
 
 var (
 	// MetricsPort has the :port or host:port string for listening for metrics/debug server.
 	MetricsPort = RegisterSetting("ROX_METRICS_PORT", WithDefault(defaultHTTPPort))
+	// EnableSecureMetrics enables the secure metrics endpoint.
+	EnableSecureMetrics = RegisterBooleanSetting("ROX_ENABLE_SECURE_METRICS", false)
 	// SecureMetricsPort has the :port or host:port string for listening for metrics/debug server.
 	SecureMetricsPort = RegisterSetting("ROX_SECURE_METRICS_PORT", WithDefault(defaultHTTPSPort))
 	// SecureMetricsCertDir has the server's TLS certificate files.
@@ -87,5 +89,5 @@ func ValidateSecureMetricsSetting() error {
 
 // SecureMetricsEnabled returns true if the metrics/debug https server should be started.
 func SecureMetricsEnabled() bool {
-	return SecureMetricsPort.Setting() != "disabled"
+	return EnableSecureMetrics.BooleanSetting()
 }
