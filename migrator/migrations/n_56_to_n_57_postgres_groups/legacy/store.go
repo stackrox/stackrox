@@ -13,4 +13,5 @@ import (
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.Group, error)
 	Upsert(ctx context.Context, group *storage.Group) error
+	UpsertOldFormat(ctx context.Context, group *storage.Group) error
 }
