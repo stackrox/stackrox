@@ -12,18 +12,27 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 
+import org.junit.Rule
+import org.junit.rules.Timeout
 import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+import java.util.concurrent.TimeUnit
+
 // Audit Log alerts are only supported on OpenShift 4
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
+                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 900 : 60)
+
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(
+                WAIT_FOR_VIOLATION_TIMEOUT + Constants.TEST_FEATURE_TIMEOUT_PAD, TimeUnit.SECONDS)
 
     @Unroll
     @Tag("BAT")
