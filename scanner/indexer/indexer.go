@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
@@ -12,6 +13,7 @@ import (
 )
 
 type Indexer struct {
+	fetcher *localFetchArena
 	indexer *libindex.Libindex
 }
 
@@ -43,11 +45,12 @@ func NewIndexer(ctx context.Context) (*Indexer, error) {
 		}
 		return nil
 	})
+	fetcher := newLocalFetchArena(faRoot)
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
+		FetchArena:           fetcher,
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 	}
@@ -58,6 +61,22 @@ func NewIndexer(ctx context.Context) (*Indexer, error) {
 	}
 
 	return &Indexer{
+		fetcher: fetcher,
 		indexer: indexer,
 	}, nil
+}
+
+// Index indexes the given image and returns the index report.
+func (i *Indexer) Index(ctx context.Context, image string, opts ...Option) (*claircore.IndexReport, error) {
+	m, err := i.fetcher.Get(ctx, image, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	ir, err := i.indexer.Index(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return ir, nil
 }
