@@ -12,7 +12,6 @@ import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities
 import workflowStateContext from 'Containers/workflowStateContext';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -36,9 +35,6 @@ const emptyDeployment = {
 };
 
 const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -92,7 +88,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                     entityType={entityTypes.DEPLOYMENT}
                     name={safeData?.name}
                     id={safeData?.id}
-                    vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
+                    vulnType={entityTypes.IMAGE_CVE}
                 />
             </div>
         );

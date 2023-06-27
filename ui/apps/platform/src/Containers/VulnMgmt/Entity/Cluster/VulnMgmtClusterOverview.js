@@ -10,7 +10,6 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedImageVulnerabilities from '../../widgets/RecentlyDetectedImageVulnerabilities';
@@ -36,8 +35,6 @@ const emptyCluster = {
 
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };
@@ -122,53 +119,38 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
                 <CollapsibleSection title="Cluster Findings">
                     <div className="pdf-page pdf-stretch pdf-new flex relative rounded mb-4 ml-4 mr-4">
-                        {showVmUpdates && (
-                            <BinderTabs>
-                                <Tab title="Fixable Image CVEs">
-                                    <TableWidgetFixableCves
-                                        workflowState={workflowState}
-                                        entityContext={entityContext}
-                                        entityType={entityTypes.CLUSTER}
-                                        vulnType={entityTypes.IMAGE_CVE}
-                                        name={safeData?.name}
-                                        id={safeData?.id}
-                                    />
-                                </Tab>
-                                <Tab title="Fixable Node CVEs">
-                                    <TableWidgetFixableCves
-                                        workflowState={workflowState}
-                                        entityContext={entityContext}
-                                        entityType={entityTypes.CLUSTER}
-                                        vulnType={entityTypes.NODE_CVE}
-                                        name={safeData?.name}
-                                        id={safeData?.id}
-                                    />
-                                </Tab>
-                                <Tab title="Fixable Platform CVEs">
-                                    <TableWidgetFixableCves
-                                        workflowState={workflowState}
-                                        entityContext={entityContext}
-                                        entityType={entityTypes.CLUSTER}
-                                        vulnType={entityTypes.CLUSTER_CVE}
-                                        name={safeData?.name}
-                                        id={safeData?.id}
-                                    />
-                                </Tab>
-                            </BinderTabs>
-                        )}
-                        {!showVmUpdates && (
-                            <BinderTabs>
-                                <Tab title="Fixable CVEs">
-                                    <TableWidgetFixableCves
-                                        workflowState={workflowState}
-                                        entityContext={entityContext}
-                                        entityType={entityTypes.CLUSTER}
-                                        name={safeData?.name}
-                                        id={safeData?.id}
-                                    />
-                                </Tab>
-                            </BinderTabs>
-                        )}
+                        <BinderTabs>
+                            <Tab title="Fixable Image CVEs">
+                                <TableWidgetFixableCves
+                                    workflowState={workflowState}
+                                    entityContext={entityContext}
+                                    entityType={entityTypes.CLUSTER}
+                                    vulnType={entityTypes.IMAGE_CVE}
+                                    name={safeData?.name}
+                                    id={safeData?.id}
+                                />
+                            </Tab>
+                            <Tab title="Fixable Node CVEs">
+                                <TableWidgetFixableCves
+                                    workflowState={workflowState}
+                                    entityContext={entityContext}
+                                    entityType={entityTypes.CLUSTER}
+                                    vulnType={entityTypes.NODE_CVE}
+                                    name={safeData?.name}
+                                    id={safeData?.id}
+                                />
+                            </Tab>
+                            <Tab title="Fixable Platform CVEs">
+                                <TableWidgetFixableCves
+                                    workflowState={workflowState}
+                                    entityContext={entityContext}
+                                    entityType={entityTypes.CLUSTER}
+                                    vulnType={entityTypes.CLUSTER_CVE}
+                                    name={safeData?.name}
+                                    id={safeData?.id}
+                                />
+                            </Tab>
+                        </BinderTabs>
                     </div>
                 </CollapsibleSection>
             </div>
