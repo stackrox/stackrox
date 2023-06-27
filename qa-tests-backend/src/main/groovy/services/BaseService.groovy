@@ -1,5 +1,6 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import io.grpc.CallOptions
 import io.grpc.Channel
@@ -19,10 +20,11 @@ import io.stackrox.proto.api.v1.EmptyOuterClass
 import util.Env
 import util.Keys
 
+@CompileStatic
 class BaseService {
 
-    static final BASIC_AUTH_USERNAME = Env.mustGetUsername()
-    static final BASIC_AUTH_PASSWORD = Env.mustGetPassword()
+    static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
+    static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
     static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 
@@ -42,11 +44,11 @@ class BaseService {
         updateAuthConfig(useClientCert.get(), null)
     }
 
-    static setUseClientCert(boolean use) {
+    static setUseClientCert(Boolean use) {
         updateAuthConfig(use, authInterceptor.get())
     }
 
-    private static updateAuthConfig(boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
+    private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
         if (useClientCert.get() == newUseClientCert && authInterceptor.get() == newAuthInterceptor) {
             return
         }
@@ -108,7 +110,7 @@ class BaseService {
     private static final ThreadLocal<ManagedChannel> transportChannel = ThreadLocal.withInitial(() -> null)
     private static final ThreadLocal<ClientInterceptor> authInterceptor = ThreadLocal.withInitial(() -> null)
     private static final ThreadLocal<Channel> effectiveChannel = ThreadLocal.withInitial(() -> null)
-    private static final ThreadLocal<boolean> useClientCert = ThreadLocal.withInitial(() -> false)
+    private static final ThreadLocal<Boolean> useClientCert = ThreadLocal.withInitial(() -> false)
     // codenarc-enable FieldName
 
     static initializeChannel() {
