@@ -578,9 +578,9 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-        --build-arg LABEL_VERSION=$(TAG) \
-        --build-arg LABEL_RELEASE=$(TAG) \
-        --build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+		--build-arg LABEL_VERSION=$(TAG) \
+		--build-arg LABEL_RELEASE=$(TAG) \
+		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
 		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
