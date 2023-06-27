@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	graph2 "github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/graph/testutils"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stretchr/testify/assert"
 )
 

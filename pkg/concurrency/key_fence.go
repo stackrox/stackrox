@@ -3,8 +3,7 @@ package concurrency
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -240,7 +239,7 @@ func (dks *discreteKeySetImpl) Equals(in KeySet) bool {
 
 func (dks *discreteKeySetImpl) Clone() KeySet {
 	return &discreteKeySetImpl{
-		sorted: utils.CopyKeys(dks.sorted),
+		sorted: sliceutils.ShallowClone2DSlice(dks.sorted),
 	}
 }
 

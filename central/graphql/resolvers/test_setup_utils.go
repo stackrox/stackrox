@@ -56,7 +56,7 @@ import (
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/assert"
 )

@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"

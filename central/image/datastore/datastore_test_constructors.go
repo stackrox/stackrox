@@ -6,7 +6,7 @@ import (
 	postgresStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 

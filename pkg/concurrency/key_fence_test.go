@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +15,7 @@ func BenchmarkKeyFence(b *testing.B) {
 		keyFence := NewKeyFence()
 
 		numThreads := 20 // must be even
-		startSignal := concurrency.NewSignal()
+		startSignal := NewSignal()
 		for j := 0; j < numThreads; j++ {
 			zeroOrOne := byte(j & 0x1)
 
@@ -43,7 +42,7 @@ func TestKeyFence(t *testing.T) {
 		keyFence := NewKeyFence()
 
 		numThreads := 20 // must be even
-		startSignal := concurrency.NewSignal()
+		startSignal := NewSignal()
 		waitGroup := sync.WaitGroup{}
 		waitGroup.Add(numThreads)
 		for j := 0; j < numThreads; j++ {
