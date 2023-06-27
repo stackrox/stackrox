@@ -1,4 +1,4 @@
-package k8scfgmap
+package k8scfgwatch
 
 import (
 	"fmt"
