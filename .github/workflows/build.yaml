@@ -232,6 +232,7 @@ jobs:
       # RHACS_BRANDING
       # prerelease
       # race-condition-debug
+      fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main }}
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
