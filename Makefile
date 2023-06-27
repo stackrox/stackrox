@@ -370,7 +370,11 @@ cli_%: build-prep
 	$(eval    w := $(subst -, ,$*))
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
+ifdef SKIP_CLI_BUILD
+	test -f bin/$(os)_$(arch)/roxctl || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+else
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+endif
 
 .PHONY: cli_host-arch
 cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
