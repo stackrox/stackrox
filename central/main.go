@@ -791,12 +791,6 @@ func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
 	return fn
 }
 
-func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
-	return utils.IfThenElse[http.Handler](
-		env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
-		fn)
-}
-
 func debugRoutes() []routes.CustomRoute {
 	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
