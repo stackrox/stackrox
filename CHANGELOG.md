@@ -19,6 +19,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 
 - ROX-16962: A new parameter `spec.admissionControl.replicas` has been added to the `SecuredCluster` CRD.
+- ROX-18073: The implementation of Add Capabilities policy criteria has been fixed to ensure violations are generated \
+correctly for the specified values.
 
 ## [4.1.0]
 
