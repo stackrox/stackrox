@@ -129,7 +129,7 @@ func TestMetricsServerPanic(t *testing.T) {
 }
 
 func TestMetricsServerHTTPRequest(t *testing.T) {
-	t.Setenv(env.SecureMetricsPort.EnvVar(), "disabled")
+	t.Setenv(env.EnableSecureMetrics.EnvVar(), "false")
 	server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
 	defer server.Stop(context.TODO())
 	server.RunForever()
@@ -185,6 +185,7 @@ func testClient() (*http.Client, error) {
 
 func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	t.Setenv(env.MetricsPort.EnvVar(), "disabled")
+	t.Setenv(env.EnableSecureMetrics.EnvVar(), "true")
 	t.Setenv(env.SecureMetricsPort.EnvVar(), ":9443")
 	t.Setenv(env.SecureMetricsCertDir.EnvVar(), "./testdata")
 	ctrl := gomock.NewController(t)

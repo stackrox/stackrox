@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/k8scfgmap"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
