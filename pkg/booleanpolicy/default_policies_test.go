@@ -2778,6 +2778,64 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) TestAddCaps() {
+	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE"}
+
+	deployments := make(map[string]*storage.Deployment)
+	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Containers[0].SecurityContext.AddCapabilities = make([]string, 0, len(idxs))
+		for _, idx := range idxs {
+			dep.Containers[0].SecurityContext.AddCapabilities = append(dep.Containers[0].SecurityContext.AddCapabilities, testCaps[idx])
+		}
+		deployments[strings.ReplaceAll(strings.Join(dep.Containers[0].SecurityContext.AddCapabilities, ","), "SYS_", "")] = dep
+	}
+
+	for _, testCase := range []struct {
+		values          []string
+		op              storage.BooleanOperator
+		expectedMatches []string
+	}{
+		{
+			// Nothing adds this capability
+			[]string{"SYSLOG"},
+			storage.BooleanOperator_OR,
+			[]string{},
+		},
+		{
+			[]string{"SYS_NICE"},
+			storage.BooleanOperator_OR,
+			[]string{"NICE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
+		},
+		{
+			[]string{"SYS_NICE", "SYS_PTRACE"},
+			storage.BooleanOperator_OR,
+			[]string{"NICE", "PTRACE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
+		},
+		{
+			[]string{"SYS_NICE", "SYS_PTRACE"},
+			storage.BooleanOperator_AND,
+			[]string{"NICE,PTRACE", "MODULE,NICE,PTRACE"},
+		},
+	} {
+		c := testCase
+		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.AddCaps, c.values, false, c.op))
+			require.NoError(t, err)
+			matched := set.NewStringSet()
+			for depRef, dep := range deployments {
+				violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					matched.Add(depRef)
+					require.Len(t, violations.AlertViolations, 1)
+				}
+			}
+			assert.ElementsMatch(t, matched.AsSlice(), c.expectedMatches, "Got %v, expected: %v", matched.AsSlice(), c.expectedMatches)
+		})
+	}
+}
+
 func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	privilegedDep := fixtures.GetDeployment().Clone()
 	privilegedDep.Id = "PRIVILEGED"

@@ -38,6 +38,18 @@ func ForDropCaps() QueryBuilder {
 	})
 }
 
+// ForAddCaps returns a specific query builder for add capabilities.
+// We want to find deployments that add these capabilities.
+func ForAddCaps() QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{{
+			Field:    search.AddCapabilities.String(),
+			Values:   mapValues(group, valueToStringExact),
+			Operator: operatorProtoMap[group.GetBooleanOperator()],
+		}}
+	})
+}
+
 // ForCVE returns a query builder for CVEs.
 func ForCVE() QueryBuilder {
 	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
