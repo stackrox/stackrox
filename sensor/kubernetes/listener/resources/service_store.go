@@ -1,8 +1,6 @@
 package resources
 
 import (
-	"context"
-
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
@@ -45,13 +43,11 @@ func (ss *serviceStore) initMaps() {
 	ss.nodePortServices = make(map[types.UID]*serviceWrap)
 }
 
-func (ss *serviceStore) Cleanup(_ context.Context) error {
+func (ss *serviceStore) Cleanup() {
 	ss.lock.Lock()
 	defer ss.lock.Unlock()
 
 	ss.initMaps()
-
-	return nil
 }
 
 func (ss *serviceStore) upsertRoute(route *routeV1.Route) {

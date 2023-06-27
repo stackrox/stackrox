@@ -1,8 +1,6 @@
 package rbac
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,7 +23,7 @@ type storeImpl struct {
 }
 
 // Cleanup deletes all entries from store
-func (rs *storeImpl) Cleanup(_ context.Context) error {
+func (rs *storeImpl) Cleanup() {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
@@ -33,8 +31,6 @@ func (rs *storeImpl) Cleanup(_ context.Context) error {
 	rs.bucketEvaluator = newBucketEvaluator(nil, nil)
 	rs.roles = make(map[namespacedRoleRef]namespacedRole)
 	rs.bindings = make(map[namespacedBindingID]*namespacedBinding)
-
-	return nil
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {

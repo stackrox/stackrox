@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -38,9 +37,7 @@ func BenchmarkDeleteAllDeployments(b *testing.B) {
 					benchStore.addOrUpdateDeployment(createDeploymentWrap())
 				}
 				b.StartTimer()
-				if err := benchStore.Cleanup(context.Background()); err != nil {
-					b.Fatalf("cleanup failed: %s", err)
-				}
+				benchStore.Cleanup()
 			}
 		})
 	}

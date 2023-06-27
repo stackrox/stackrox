@@ -86,12 +86,11 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 }
 
 // Cleanup deletes all entries from store
-func (rs *Store) Cleanup(context context.Context) error {
+func (rs *Store) Cleanup() {
 	rs.store = make(map[string]registries.Set)
 	rs.globalRegistries = registries.NewSet(rs.factory)
 	rs.centralRegistryIntegrations = registries.NewSet(rs.factory)
 	rs.clusterLocalRegistryHosts = set.NewStringSet()
-	return nil
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {

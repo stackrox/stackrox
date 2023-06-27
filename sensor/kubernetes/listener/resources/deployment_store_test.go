@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -416,7 +415,7 @@ func (s *deploymentStoreSuite) Test_DeleteAllDeployments() {
 				s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(before))
 			}
 
-			s.Require().NoError(s.deploymentStore.Cleanup(context.Background()))
+			s.deploymentStore.Cleanup()
 
 			for _, before := range testCase.before {
 				s.Assert().Nil(s.deploymentStore.Get(string(before.GetUID())))

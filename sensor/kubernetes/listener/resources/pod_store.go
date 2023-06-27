@@ -1,8 +1,6 @@
 package resources
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,13 +12,11 @@ type PodStore struct {
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
-func (ps *PodStore) Cleanup(_ context.Context) error {
+func (ps *PodStore) Cleanup() {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
 	ps.pods = make(map[string]map[string]map[string]*storage.Pod)
-
-	return nil
 }
 
 // newPodStore creates and returns a new pod store.

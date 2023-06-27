@@ -1,8 +1,6 @@
 package clusterentities
 
 import (
-	"context"
-
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/net"
@@ -115,9 +113,8 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 }
 
 // Cleanup deletes all entries from store
-func (e *Store) Cleanup(_ context.Context) error {
+func (e *Store) Cleanup() {
 	e.initMaps()
-	return nil
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment

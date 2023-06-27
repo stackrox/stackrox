@@ -1,9 +1,6 @@
 package resources
 
 import (
-	"context"
-
-	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -29,7 +26,7 @@ type InMemoryStoreProvider struct {
 }
 
 type CleanableStore interface {
-	Cleanup(context context.Context) error
+	Cleanup()
 }
 
 // InitializeStore creates the store instances
@@ -70,12 +67,10 @@ func InitializeStore() *InMemoryStoreProvider {
 	return p
 }
 
-func (p *InMemoryStoreProvider) CleanupStores(ctx context.Context) error {
-	var err error
+func (p *InMemoryStoreProvider) CleanupStores() {
 	for _, cleanable := range p.cleanableStores {
-		err = multierror.Append(err, cleanable.Cleanup(ctx))
+		cleanable.Cleanup()
 	}
-	return multierror.Flatten(err)
 }
 
 // Deployments returns the deployment store public interface

@@ -1,8 +1,6 @@
 package orchestratornamespaces
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,11 +20,10 @@ func NewOrchestratorNamespaces() *OrchestratorNamespaces {
 }
 
 // Cleanup deletes all entries from store
-func (n *OrchestratorNamespaces) Cleanup(_ context.Context) error {
+func (n *OrchestratorNamespaces) Cleanup() {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	n.nsSet.Clear()
-	return nil
 }
 
 // AddNamespace adds a namespace to the set
