@@ -9,9 +9,10 @@ import {
     BreadcrumbItem,
 } from '@patternfly/react-core';
 
+import { vulnerabilityReportsPath } from 'routePaths';
+
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { vulnerabilityReportingPath } from 'routePaths';
 
 function VulnReportsPage() {
     return (
@@ -19,7 +20,7 @@ function VulnReportsPage() {
             <PageTitle title="Create vulnerability report" />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityReportingPath}>
+                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Create report</BreadcrumbItem>
