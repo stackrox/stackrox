@@ -1,6 +1,9 @@
 package k8scfgmap
 
 import (
+	"testing"
+	"time"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"go.uber.org/zap"
@@ -11,7 +14,10 @@ import (
 	k8sTest "k8s.io/client-go/testing"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log          = logging.LoggerForModule()
+	retryBackoff = 30 * time.Second
+)
 
 // ConfigMapWatcher watches a config map in a given namespaces and evokes a callback function
 // when changes are detected.
@@ -36,12 +42,13 @@ func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, nam
 				concurrency.AsContext(ctx),
 				metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}))
 			if err != nil {
-				log.Errorw("Unable to create config map watcher", zap.Error(err))
+				log.Errorf("Unable to start watching config map %s/%s %w", name, namespace, zap.Error(err))
 				continue
 			}
 			w.onChange(ctx, watcher.ResultChan())
 			watcher.Stop()
 		}
+		concurrency.WaitWithTimeout(ctx, retryBackoff)
 	}
 }
 
@@ -51,37 +58,35 @@ func (w *ConfigMapWatcher) onChange(ctx concurrency.Waitable, eventChannel <-cha
 		case <-ctx.Done():
 			return
 		case event, open := <-eventChannel:
-			if open {
-				switch event.Type {
-				case watch.Added:
-					fallthrough
-				case watch.Modified:
-					if cm, ok := event.Object.(*v1.ConfigMap); ok {
-						w.modifiedFunc(cm)
-					}
-				}
-			} else {
-				// If eventChannel is closed the server has closed the connection.
-				// We want to return and create another watcher.
+			// If eventChannel is closed the server has closed the connection.
+			// We want to return and create another watcher.
+			if !open {
 				return
+			}
+
+			if event.Type == watch.Added || event.Type == watch.Modified {
+				if cm, ok := event.Object.(*v1.ConfigMap); ok {
+					w.modifiedFunc(cm)
+				}
 			}
 		}
 	}
 }
 
-// WatchReactor is used to test config map watchers.
-type WatchReactor struct {
-	Action  k8sTest.Action
-	Watcher watch.Interface
-	Err     error
+// Used in unit tests to react on watch events.
+type testWatchReactor struct {
+	watcher watch.Interface
+	err     error
 }
 
-// Handles dummy actions.
-func (w *WatchReactor) Handles(_ k8sTest.Action) bool {
+func (w *testWatchReactor) Handles(_ k8sTest.Action) bool {
 	return true
 }
 
-// React to watch events.
-func (w *WatchReactor) React(_ k8sTest.Action) (bool, watch.Interface, error) {
-	return true, w.Watcher, w.Err
+func (w *testWatchReactor) React(_ k8sTest.Action) (bool, watch.Interface, error) {
+	return true, w.watcher, w.err
+}
+
+func NewTestWatchReactor(_ *testing.T, watcher watch.Interface) k8sTest.WatchReactor {
+	return &testWatchReactor{watcher: watcher}
 }

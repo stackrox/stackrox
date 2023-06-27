@@ -2,6 +2,7 @@ package k8scfgmap
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -44,13 +45,14 @@ func TestConfigMapTrigger(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			k8sClient := fake.NewSimpleClientset()
 			watcher := watch.NewFake()
-			watchReaction := &WatchReactor{
-				Watcher: watcher,
-			}
-			k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReaction}
-			actualValue := ""
+			watchReactor := NewTestWatchReactor(t, watcher)
+			k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReactor}
+			currentCfgData := ""
+			mutex := sync.RWMutex{}
 			cfgWatcher := NewConfigMapWatcher(k8sClient, func(cm *v1.ConfigMap) {
-				actualValue = cm.Data[cfgKey]
+				mutex.Lock()
+				defer mutex.Unlock()
+				currentCfgData = cm.Data[cfgKey]
 			})
 			go cfgWatcher.Watch(context.TODO(), cfgNamespace, cfgName)
 
@@ -59,10 +61,13 @@ func TestConfigMapTrigger(t *testing.T) {
 				Data:       map[string]string{cfgKey: cfgValue},
 			}
 			c.triggerFunc(watcher, cm)
-			// Should be long enough to load the client CA in the background.
-			time.Sleep(500 * time.Millisecond)
 
-			assert.Equal(t, cfgValue, actualValue)
+			// Assert that the config map data has been updated.
+			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+				mutex.RLock()
+				defer mutex.RUnlock()
+				assert.Equal(t, cfgValue, currentCfgData)
+			}, 5*time.Second, 100*time.Millisecond)
 		})
 	}
 }
@@ -91,13 +96,14 @@ func TestConfigMapContextCancelled(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			k8sClient := fake.NewSimpleClientset()
 			watcher := watch.NewFake()
-			watchReaction := &WatchReactor{
-				Watcher: watcher,
-			}
-			k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReaction}
-			actualValue := ""
+			watchReactor := NewTestWatchReactor(t, watcher)
+			k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReactor}
+			currentCfgData := ""
+			mutex := sync.RWMutex{}
 			cfgWatcher := NewConfigMapWatcher(k8sClient, func(cm *v1.ConfigMap) {
-				actualValue = cm.Data[cfgKey]
+				mutex.Lock()
+				defer mutex.Unlock()
+				currentCfgData = cm.Data[cfgKey]
 			})
 			ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Millisecond)
 			defer cancel()
@@ -110,7 +116,12 @@ func TestConfigMapContextCancelled(t *testing.T) {
 			}
 			c.triggerFunc(watcher, cm)
 
-			assert.Empty(t, actualValue)
+			// Assert that the config map data has NOT been updated after context cancellation.
+			assert.Never(t, func() bool {
+				mutex.RLock()
+				defer mutex.RUnlock()
+				return currentCfgData != ""
+			}, 500*time.Millisecond, 50*time.Millisecond)
 		})
 	}
 }
