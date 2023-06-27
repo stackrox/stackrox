@@ -10,7 +10,6 @@ import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRi
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -31,9 +30,6 @@ const emptyNamespace = {
 };
 
 const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -106,7 +102,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.NAMESPACE}
                             name={safeData?.metadata?.name}
                             id={safeData?.metadata?.id}
-                            vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
+                            vulnType={entityTypes.IMAGE_CVE}
                         />
                     </div>
                 </CollapsibleSection>
