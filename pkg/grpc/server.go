@@ -166,16 +166,13 @@ func (a *apiImpl) Stop() bool {
 	}
 
 	log.Infof("Starting stop procedure")
-	// a.shutdownInProgress.Signal()
 	a.grpcServer.GracefulStop()
 	log.Infof("gRPC server fully stopped")
 	for _, listener := range a.listeners {
 		if listener.stopper != nil {
-			log.Infof("running http stopper")
 			listener.stopper()
 		}
 	}
-	log.Infof("Stop() finished -> returning true")
 	return true
 }
 
@@ -247,7 +244,6 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 	lis, dialContext := pipeconn.NewPipeListener()
 
 	log.Info("Launching backend gRPC listener")
-	// Launch the GRPC listener
 	go func() {
 		if err := server.Serve(lis); err != nil {
 			log.Fatal(err)
