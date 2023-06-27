@@ -41,21 +41,21 @@ func (t *NilTLSConfigurer) TLSConfig() (*tls.Config, error) {
 
 var _ TLSConfigurer = (*NilTLSConfigurer)(nil)
 
-// TLSConfigurerImpl holds the current TLS configuration. The configurer
+// tlsConfigurerImpl holds the current TLS configuration. The configurer
 // watches the certificate directory for changes and updates the server
 // certificates in the TLS config. The client CA is updated based on a
 // Kubernetes config map watcher.
-type TLSConfigurerImpl struct {
+type tlsConfigurerImpl struct {
 	certDir           string
 	clientCAConfigMap string
 	clientCANamespace string
 }
 
-var _ TLSConfigurer = (*TLSConfigurerImpl)(nil)
+var _ TLSConfigurer = (*tlsConfigurerImpl)(nil)
 
 // NewTLSConfigurer creates a new TLS configurer.
 func NewTLSConfigurer(certDir string, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
-	cfgr := &TLSConfigurerImpl{
+	cfgr := &tlsConfigurerImpl{
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
@@ -80,11 +80,11 @@ func NewTLSConfigurerFromEnv() TLSConfigurer {
 }
 
 // WatchForChanges watches for changes of the server TLS certificate files and the client CA config map.
-func (t *TLSConfigurerImpl) WatchForChanges() {
+func (t *tlsConfigurerImpl) WatchForChanges() {
 }
 
 // TLSConfig returns the current TLS config.
-func (t *TLSConfigurerImpl) TLSConfig() (*tls.Config, error) {
+func (t *tlsConfigurerImpl) TLSConfig() (*tls.Config, error) {
 	if t == nil {
 		return nil, nil
 	}
