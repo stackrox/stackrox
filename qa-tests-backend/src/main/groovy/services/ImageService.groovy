@@ -9,6 +9,8 @@ import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
 
+import util.Helpers
+
 @Slf4j
 class ImageService extends BaseService {
     static ImageServiceGrpc.ImageServiceBlockingStub getImageClient() {
@@ -37,11 +39,14 @@ class ImageService extends BaseService {
 
     static scanImage(String image, Boolean includeSnoozed = true, Boolean force = false) {
         try {
-            return getImageClient().scanImage(ImageServiceOuterClass.ScanImageRequest.newBuilder()
-                    .setImageName(image)
-                    .setIncludeSnoozed(includeSnoozed)
-                    .setForce(force)
-                    .build())
+            def imageClient = getImageClient().scanImage(ImageServiceOuterClass.ScanImageRequest.newBuilder());
+            return withRetry(3, 5) {
+                return imageClient
+                        .setImageName(image)
+                        .setIncludeSnoozed(includeSnoozed)
+                        .setForce(force)
+                        .build()
+            };
         } catch (Exception e) {
             log.error("Image failed to scan: ${image}", e)
         }
