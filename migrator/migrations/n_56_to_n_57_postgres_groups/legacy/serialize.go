@@ -3,7 +3,7 @@ package legacy
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/migrations/n_56_to_n_57_postgres_groups/legacy/binenc"
+	"github.com/stackrox/rox/pkg/binenc"
 )
 
 // NOTE: This file contains copied code originating from github.com/stackrox/rox/central/group/datastore/serialize.

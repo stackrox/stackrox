@@ -9,11 +9,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	bolt "go.etcd.io/bbolt"
 )
 
-var groupsBucket = []byte("groups2")
+var (
+	groupsBucket = []byte("groups2")
+	log          = loghelper.LogWrapper{}
+)
 
 // New returns a new instance of a Store.
 func New(db *bolt.DB) Store {
@@ -32,11 +36,7 @@ type storeImpl struct {
 // GetAll return all groups currently in the store.
 func (s *storeImpl) GetAll(ctx context.Context) (groups []*storage.Group, err error) {
 	err = s.Walk(ctx, func(g *storage.Group) error {
-		// There have been occurrences of groups without ID being set within stores. This is partially due to the
-		// failed clean up within the 105_106 migration, so explicitly ignore those groups here as well.
-		if g.GetProps().GetId() != "" {
-			groups = append(groups, g)
-		}
+		groups = append(groups, g)
 		return nil
 	})
 	return groups, err
@@ -51,7 +51,8 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 			// the old format, which uses a composite key of auth provider, key, value as the key or the new format
 			// which uses a UUID as key. Reasoning is that the old values were not cleaned up correctly. Skip values
 			// in case the key can be deserialized to the old format.
-			if _, err := deserializePropsKey(k); err == nil {
+			if props, err := deserializePropsKey(k); err == nil {
+				log.WriteToStderrf("Found group with old format (%s), skipping this entry", props.String())
 				return nil
 			}
 			var group storage.Group
