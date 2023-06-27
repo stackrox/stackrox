@@ -32,12 +32,10 @@ import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
 import {
-    VULN_CVE_LIST_FRAGMENT,
     IMAGE_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
@@ -282,8 +280,6 @@ const VulnMgmtCves = ({
 }) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
 
@@ -316,7 +312,8 @@ const VulnMgmtCves = ({
             `;
             break;
         }
-        case entityTypes.IMAGE_CVE: {
+        case entityTypes.IMAGE_CVE:
+        default: {
             cveQuery = gql`
                 query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: imageVulnerabilities(query: $query, pagination: $pagination) {
@@ -325,20 +322,6 @@ const VulnMgmtCves = ({
                     count: imageVulnerabilityCount(query: $query)
                 }
                 ${IMAGE_CVE_LIST_FRAGMENT}
-            `;
-            break;
-        }
-        // TODO: remove the deprecated one-CVE-to-rule-them-all type, and move default case to IMAGE_CVE
-        case entityTypes.CVE:
-        default: {
-            cveQuery = gql`
-                query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
-                    results: vulnerabilities(query: $query, pagination: $pagination) {
-                        ...cveFields
-                    }
-                    count: vulnerabilityCount(query: $query)
-                }
-                ${VULN_CVE_LIST_FRAGMENT}
             `;
             break;
         }
@@ -558,7 +541,7 @@ const VulnMgmtCves = ({
                 totalResults={totalResults}
                 query={cveQuery}
                 queryOptions={queryOptions}
-                idAttribute={showVMUpdates ? 'id' : 'cve'}
+                idAttribute="id"
                 entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}

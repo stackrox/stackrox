@@ -19,7 +19,6 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
 import TableCountLink from 'Components/workflow/TableCountLink';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getFilteredComponentColumns } from './ListImageComponents.utils';
 
 export const defaultComponentSort = [
@@ -29,7 +28,7 @@ export const defaultComponentSort = [
     },
 ];
 
-export function getComponentTableColumns(showVMUpdates) {
+export function getComponentTableColumns() {
     return function getTableColumns(workflowState, isFeatureFlagEnabled) {
         const tableColumns = [
             {
@@ -59,8 +58,8 @@ export function getComponentTableColumns(showVMUpdates) {
                 sortField: componentSortFields.OPERATING_SYSTEM,
             },
             {
-                Header: showVMUpdates ? `Image CVEs` : 'CVEs',
-                entityType: entityTypes.CVE,
+                Header: `Image CVEs`,
+                entityType: entityTypes.IMAGE_CVE,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
@@ -69,9 +68,7 @@ export function getComponentTableColumns(showVMUpdates) {
                         return 'No CVEs';
                     }
 
-                    const newState = workflowState
-                        .pushListItem(id)
-                        .pushList(showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE);
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.IMAGE_CVE);
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -203,9 +200,6 @@ export function getComponentTableColumns(showVMUpdates) {
 }
 
 const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const query = gql`
         query getImageComponents($query: String, $pagination: Pagination) {
             results: imageComponents(query: $query, pagination: $pagination) {
@@ -224,7 +218,7 @@ const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, total
         },
     };
 
-    const getTableColumns = getComponentTableColumns(showVMUpdates);
+    const getTableColumns = getComponentTableColumns();
 
     return (
         <WorkflowListPage

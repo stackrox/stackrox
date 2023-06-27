@@ -13,13 +13,9 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import {
-    DEPLOYMENT_LIST_FRAGMENT,
-    DEPLOYMENT_LIST_FRAGMENT_UPDATED,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { DEPLOYMENT_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { deploymentSortFields } from 'constants/sortFields';
 import { getRatioOfScannedImages } from './deployments.utils';
@@ -32,9 +28,7 @@ export const defaultDeploymentSort = [
     },
 ];
 
-export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
+export function getCurriedDeploymentTableColumns() {
     return function getDeploymentTableColumns(workflowState) {
         // to determine whether to show the counts as links in the table when not in pure DEPLOYMENT state
         const inFindingsSection =
@@ -54,44 +48,6 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
                 id: deploymentSortFields.DEPLOYMENT,
                 accessor: 'name',
                 sortField: deploymentSortFields.DEPLOYMENT,
-            },
-            {
-                Header: `CVEs`,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
-                entityType: entityTypes.CVE,
-                Cell: ({ original, pdf }) => {
-                    const { vulnCounter, id, images } = original;
-                    if (!vulnCounter || (vulnCounter.all && vulnCounter.all.total === 0)) {
-                        const scanRatio = getRatioOfScannedImages(images);
-
-                        if (!scanRatio.scanned && !scanRatio.total) {
-                            return `No images scanned`;
-                        }
-                        if (scanRatio.scanned !== scanRatio.total) {
-                            return `${scanRatio.scanned || 0} / ${
-                                scanRatio.total || 0
-                            } images scanned`;
-                        }
-                        return 'No CVEs';
-                    }
-
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
-                    const url = newState.toUrl();
-                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
-
-                    return (
-                        <CVEStackedPill
-                            vulnCounter={vulnCounter}
-                            url={url}
-                            fixableUrl={fixableUrl}
-                            hideLink={pdf || inFindingsSection}
-                        />
-                    );
-                },
-                id: deploymentSortFields.CVE_COUNT,
-                accessor: 'vulnCounter.all.total',
-                sortField: deploymentSortFields.CVE_COUNT,
             },
             {
                 Header: `Image CVEs`,
@@ -147,28 +103,6 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
                 sortField: deploymentSortFields.LATEST_VIOLATION,
                 sortable: false,
             },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/10 ${defaultColumnClassName}`,
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={inFindingsSection || pdf}
-            //             selectedRowId={original.id}
-            //             entityTypeText="policy"
-            //         />
-            //     ),
-            //     id: deploymentSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: deploymentSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
             {
                 Header: `Cluster`,
                 entityType: entityTypes.CLUSTER,
@@ -239,28 +173,11 @@ export function getCurriedDeploymentTableColumns(isFeatureFlagEnabled) {
             },
         ];
 
-        const flagGatedTableColumns = tableColumns.filter((col) => {
-            if (isFrontendVMUpdatesEnabled) {
-                if (col.Header === 'CVEs') {
-                    return false;
-                }
-            } else if (col.Header === 'Image CVEs') {
-                return false;
-            }
-            return true;
-        });
-        return removeEntityContextColumns(flagGatedTableColumns, workflowState);
+        return removeEntityContextColumns(tableColumns, workflowState);
     };
 }
 
 const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const fragmentToUse = isFrontendVMUpdatesEnabled
-        ? DEPLOYMENT_LIST_FRAGMENT_UPDATED
-        : DEPLOYMENT_LIST_FRAGMENT;
-
     const query = gql`
         query getDeployments($query: String, $policyQuery: String, $pagination: Pagination) {
             results: deployments(query: $query, pagination: $pagination) {
@@ -268,7 +185,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
             }
             count: deploymentCount(query: $query)
         }
-        ${fragmentToUse}
+        ${DEPLOYMENT_LIST_FRAGMENT_UPDATED}
     `;
     const tableSort = sort || defaultDeploymentSort;
     const queryOptions = {
@@ -279,7 +196,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
         },
     };
 
-    const getDeploymentTableColumns = getCurriedDeploymentTableColumns(isFeatureFlagEnabled);
+    const getDeploymentTableColumns = getCurriedDeploymentTableColumns();
 
     return (
         <WorkflowListPage

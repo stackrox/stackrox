@@ -10,25 +10,11 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
-import {
-    NODE_LIST_FRAGMENT,
-    NODE_LIST_FRAGMENT_UPDATED,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { NODE_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getNodeScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { nodeSortFields } from 'constants/sortFields';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-
-const nodeListQuery = gql`
-    query getNodes($query: String, $pagination: Pagination) {
-        results: nodes(query: $query, pagination: $pagination) {
-            ...nodeFields
-        }
-        count: nodeCount(query: $query)
-    }
-    ${NODE_LIST_FRAGMENT}
-`;
 
 const nodeListUpdatedQuery = gql`
     query getNodes($query: String, $pagination: Pagination) {
@@ -50,7 +36,7 @@ export const defaultNodeSort = [
 
 // TODO: need to get node table columns
 // Node | CVE (both total # / #non fixable) | Top CVSS | Scan Time | OS | Runtime | Node Status | Cluster | Risk Priority |
-export function getNodeTableColumns(showVMUpdates) {
+export function getNodeTableColumns() {
     return function getTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -68,16 +54,14 @@ export function getNodeTableColumns(showVMUpdates) {
                 sortField: nodeSortFields.NODE,
             },
             {
-                Header: showVMUpdates ? `Node CVEs` : 'CVEs',
-                entityType: entityTypes.CVE,
+                Header: `Node CVEs`,
+                entityType: entityTypes.NODE_CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id, scan, notes } = original;
 
-                    const newState = workflowState
-                        .pushListItem(id)
-                        .pushList(showVMUpdates ? entityTypes.NODE_CVE : entityTypes.CVE);
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.NODE_CVE);
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -196,11 +180,6 @@ export function getNodeTableColumns(showVMUpdates) {
 
 // TODO: set getNodes query to get real nodes list
 const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const query = showVMUpdates ? nodeListUpdatedQuery : nodeListQuery;
-
     const tableSort = sort || defaultNodeSort;
     const queryOptions = {
         variables: {
@@ -209,13 +188,13 @@ const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }
         },
     };
 
-    const getTableColumns = getNodeTableColumns(showVMUpdates);
+    const getTableColumns = getNodeTableColumns();
 
     return (
         <WorkflowListPage
             data={data}
             totalResults={totalResults}
-            query={query}
+            query={nodeListUpdatedQuery}
             queryOptions={queryOptions}
             entityListType={entityTypes.NODE}
             getTableColumns={getTableColumns}
