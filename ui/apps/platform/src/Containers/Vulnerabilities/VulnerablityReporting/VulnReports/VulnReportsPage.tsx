@@ -48,7 +48,7 @@ const reportConfigurations: ReportConfiguration[] = [
             hour: 10,
             minute: 0,
             daysOfWeek: {
-                days: ['0', '1', '2', '3', '4', '5', '6'],
+                days: [0, 1, 2, 3, 4, 5, 6],
             },
         },
     },

@@ -3,13 +3,13 @@ import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import { Th, ThProps } from '@patternfly/react-table';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
-type TooltipThProps = {
+type HelpIconThProps = {
     children: string | React.ReactNode;
     sort?: ThProps['sort'];
     tooltip: string;
 };
 
-function HelpIconTh({ children, tooltip, sort }: TooltipThProps) {
+function HelpIconTh({ children, tooltip, sort }: HelpIconThProps) {
     return (
         <Th sort={sort || undefined}>
             <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>

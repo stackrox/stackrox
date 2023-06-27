@@ -1,3 +1,5 @@
+// @TODO: Colocate types from API calls with the function that made the API call
+
 import { VulnerabilitySeverity } from './cve.proto';
 
 export type ReportType = 'VULNERABILITY';
@@ -60,21 +62,18 @@ export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
 
 export type Interval = DaysOfWeek | DaysOfMonth;
 
-// TODO - Note that the types of `days` below are not exact, the API returns `number[]`, but the UI converts
-// them to strings. This doesn't seem to be a problem, but it's worth noting.
-
 export type WeeklyInterval = {
-    day: string; // int32
+    day: number; // int32
 };
 
 // Sunday = 0, Monday = 1, .... Saturday =  6
 export type DaysOfWeek = {
-    days: string[]; // int32
+    days: number[]; // int32
 };
 
 // 1 for 1st, 2 for 2nd .... 31 for 31st
 export type DaysOfMonth = {
-    days: string[]; // int32
+    days: number[]; // int32
 };
 
 export type ResourceScope = {

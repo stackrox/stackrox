@@ -3,7 +3,7 @@ import { ReportStatus } from 'types/report.proto';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
-type LastRunStatusStateProps = {
+export type LastRunStatusStateProps = {
     reportStatus: ReportStatus;
 };
 
@@ -18,12 +18,12 @@ function LastRunStatusState({ reportStatus }: LastRunStatusStateProps): ReactEle
     let statusText = '-';
 
     if (reportStatus.runState === 'SUCCESS') {
-        statusIcon = <CheckCircleIcon color={successColor} title="Success icon" />;
+        statusIcon = <CheckCircleIcon color={successColor} title="Report run was successful" />;
     }
     if (reportStatus.runState === 'FAILURE') {
         statusIcon = (
             <Tooltip content={reportStatus.errorMsg || genericMsg}>
-                <ExclamationCircleIcon color={errorColor} title="Error icon" />
+                <ExclamationCircleIcon color={errorColor} title="Report run was unsuccessful" />
             </Tooltip>
         );
     }

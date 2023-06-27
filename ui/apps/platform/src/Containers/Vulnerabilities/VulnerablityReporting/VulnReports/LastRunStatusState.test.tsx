@@ -36,7 +36,7 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.getByTitle('Success icon')).toBeDefined();
+        expect(screen.getByTitle('Report run was successful')).toBeDefined();
         expect(screen.getByText('Download prepared')).toBeDefined();
     });
 
@@ -53,7 +53,7 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.getByTitle('Success icon')).toBeDefined();
+        expect(screen.getByTitle('Report run was successful')).toBeDefined();
         expect(screen.getByText('Success')).toBeDefined();
     });
 
@@ -70,7 +70,7 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.getByTitle('Error icon')).toBeDefined();
+        expect(screen.getByTitle('Report run was unsuccessful')).toBeDefined();
         expect(screen.getByText('Email attempted')).toBeDefined();
     });
 
@@ -87,7 +87,7 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.getByTitle('Error icon')).toBeDefined();
+        expect(screen.getByTitle('Report run was unsuccessful')).toBeDefined();
         expect(screen.getByText('Failed to generate download')).toBeDefined();
     });
 
@@ -104,7 +104,7 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.getByTitle('Error icon')).toBeDefined();
+        expect(screen.getByTitle('Report run was unsuccessful')).toBeDefined();
         expect(screen.getByText('Error')).toBeDefined();
     });
 
@@ -121,8 +121,8 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.queryByTitle('Success icon')).toBeNull();
-        expect(screen.queryByTitle('Error icon')).toBeNull();
+        expect(screen.queryByTitle('Report run was successful')).toBeNull();
+        expect(screen.queryByTitle('Report run was unsuccessful')).toBeNull();
         expect(screen.getByText('-')).toBeDefined();
     });
 
@@ -139,8 +139,8 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.queryByTitle('Success icon')).toBeNull();
-        expect(screen.queryByTitle('Error icon')).toBeNull();
+        expect(screen.queryByTitle('Report run was successful')).toBeNull();
+        expect(screen.queryByTitle('Report run was unsuccessful')).toBeNull();
         expect(screen.getByText('-')).toBeDefined();
     });
 });
