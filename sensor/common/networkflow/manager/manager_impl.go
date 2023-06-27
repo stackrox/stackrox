@@ -224,6 +224,7 @@ type networkFlowManager struct {
 
 	done          concurrency.Signal
 	sensorUpdates chan *message.ExpiringMessage
+	centralReady  concurrency.Signal
 
 	enricherTicker *time.Ticker
 
@@ -251,7 +252,14 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (m *networkFlowManager) Notify(common.SensorComponentEvent) {}
+func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		m.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		m.centralReady.Reset()
+	}
+}
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
@@ -263,6 +271,10 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.done.WaitC():
 			return
 		case <-tickerC:
+			if !m.centralReady.IsDone() {
+				log.Debugf("sensor is in offline mode. Waiting %s to retry enriching and sending connections", tickerTime)
+				continue
+			}
 			m.enrichAndSend()
 
 			if env.ProcessesListeningOnPort.BooleanSetting() {
