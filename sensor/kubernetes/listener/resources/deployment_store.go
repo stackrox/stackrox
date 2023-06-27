@@ -52,12 +52,8 @@ func (ds *DeploymentStore) Cleanup(_ context.Context) error {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	for namespace := range ds.deploymentIDs {
-		for id := range ds.deploymentIDs[namespace] {
-			delete(ds.deployments, id)
-		}
-		delete(ds.deploymentIDs, namespace)
-	}
+	ds.deploymentIDs = make(map[string]map[string]struct{})
+	ds.deployments = make(map[string]*deploymentWrap)
 
 	return nil
 }

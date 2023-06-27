@@ -18,9 +18,7 @@ func (ps *PodStore) Cleanup(_ context.Context) error {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
-	for namespace := range ps.pods {
-		delete(ps.pods, namespace)
-	}
+	ps.pods = make(map[string]map[string]map[string]*storage.Pod)
 
 	return nil
 }
