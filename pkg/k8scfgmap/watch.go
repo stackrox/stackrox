@@ -1,6 +1,7 @@
 package k8scfgmap
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -42,7 +43,7 @@ func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, nam
 				concurrency.AsContext(ctx),
 				metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}))
 			if err != nil {
-				log.Errorf("Unable to start watching config map %s/%s %w", name, namespace, zap.Error(err))
+				log.Errorw(fmt.Sprintf("Unable to start watching config map %s/%s", name, namespace), zap.Error(err))
 				continue
 			}
 			w.onChange(ctx, watcher.ResultChan())
@@ -87,6 +88,7 @@ func (w *testWatchReactor) React(_ k8sTest.Action) (bool, watch.Interface, error
 	return true, w.watcher, w.err
 }
 
+// NewTestWatchReactor creates a new test watch reactor for testing.
 func NewTestWatchReactor(_ *testing.T, watcher watch.Interface) k8sTest.WatchReactor {
 	return &testWatchReactor{watcher: watcher}
 }
