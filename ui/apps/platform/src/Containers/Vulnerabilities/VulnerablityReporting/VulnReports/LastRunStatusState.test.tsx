@@ -19,7 +19,7 @@ describe('LastRunStatusState', () => {
         render(<LastRunStatusState reportStatus={reportStatus} />);
 
         // ASSERT
-        expect(screen.getByTitle('Success icon')).toBeDefined();
+        expect(screen.getByTitle('Report run was successful')).toBeDefined();
         expect(screen.getByText('Emailed')).toBeDefined();
     });
 
