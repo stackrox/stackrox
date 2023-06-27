@@ -4,13 +4,13 @@ import {
     clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
-    entityListCountMatchesTableLinkCount,
     hasCountWidgetsFor,
     hasRelatedEntityFor,
     hasTabsFor,
     navigateToSingleEntityPage,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
+    verifyTableLinkToSidePanelTable,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
@@ -23,8 +23,8 @@ describe('Configuration Management Deployments', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
-    it('should open the side panel to show the same number of secrets when the secrets link is clicked', () => {
-        entityListCountMatchesTableLinkCount(entitiesKey, 'secrets', /\d+ secrets?$/);
+    it('should go from table link to images table in side panel', () => {
+        verifyTableLinkToSidePanelTable(entitiesKey, 'images');
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
@@ -64,33 +64,27 @@ describe('Configuration Management Deployments', () => {
         clickOnCountWidget('images', 'entityList');
     });
 
-    describe('should have same number in images table as in count widget', () => {
+    describe('should go to images table from widget link', () => {
         const entitiesKey2 = 'images';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    describe('should have same number in secrets table as in count widget', () => {
+    describe('should go to secrets table from widget link', () => {
         const entitiesKey2 = 'secrets';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

@@ -35,6 +35,7 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	plopDatastoreMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -53,7 +54,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -236,7 +237,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	require.NoError(s.T(), err)
 
 	images := imageDatastore.NewWithPostgres(
-		imagePostgres.New(s.pool, true, dackboxConcurrency.NewKeyFence()),
+		imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
 		imagePostgres.NewIndexer(s.pool),
 		mockRiskDatastore,
 		ranking.NewRanker(),
@@ -270,7 +271,7 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	nodeStore := nodePostgres.New(s.pool, false, dackboxConcurrency.NewKeyFence())
+	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
 	nodeIndexer := nodePostgres.NewIndexer(s.pool)
 
 	nodes := testNodeDatastore.NewWithPostgres(
@@ -1252,19 +1253,37 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			processes := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
+			db := pgtest.ForT(t)
 			gci := &garbageCollectorImpl{
 				processes: processes,
+				postgres:  db.DB,
 			}
 
-			processes.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
-					for _, a := range c.initialProcesses {
-						assert.NoError(t, fn(a))
-					}
-					return nil
-				})
-			processes.EXPECT().RemoveProcessIndicators(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
-			gci.removeOrphanedProcesses(c.deployments, c.pods)
+			// Populate some actual data so the query returns what needs deleted
+			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
+			s.Nil(err)
+			for _, deploymentID := range c.deployments.AsSlice() {
+				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+			}
+
+			podDS, err := podDatastore.GetTestPostgresDataStore(t, db.DB)
+			s.Nil(err)
+			for _, podID := range c.pods.AsSlice() {
+				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
+				s.Nil(err)
+			}
+
+			actualProcessDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
+			s.Nil(err)
+			s.NoError(actualProcessDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
+
+			gci.removeOrphanedProcesses()
+
+			countFromDB, err := actualProcessDatastore.Count(s.ctx, nil)
+			s.NoError(err)
+			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+
+			db.Teardown(t)
 		})
 	}
 }

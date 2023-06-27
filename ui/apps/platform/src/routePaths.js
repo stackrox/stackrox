@@ -18,6 +18,7 @@ export const networkPathPF = `${networkBasePathPF}/:detailType?/:detailId?`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
+export const clustersDelegateScanningPath = `${clustersBasePath}/delegate-scanning`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
 export const integrationsPath = `${mainPath}/integrations`;
@@ -92,10 +93,13 @@ export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcc
 
 // VM 2.0 "Vulnerabilities" paths
 export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/workload-cves/cves/:cveId`;
 export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
 export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
+
+export const vulnerabilityReportingPath = `${vulnerabilitiesBasePath}/vulnerability-reporting`;
 
 /**
  * New Framwork-related route paths
@@ -154,6 +158,7 @@ const vulnManagementPathToLabelMap = {
 const vulnerabilitiesPathToLabelMap = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
+    [vulnerabilityReportingPath]: 'Vulnerability Reporting',
 };
 
 export const basePathToLabelMap = {

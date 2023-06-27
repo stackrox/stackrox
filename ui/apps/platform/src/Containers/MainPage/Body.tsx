@@ -5,12 +5,12 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
-    networkPath,
     networkPathPF,
     violationsPath,
     compliancePath,
-    clustersPathWithParam,
     clustersListPath,
+    clustersDelegateScanningPath,
+    clustersPathWithParam,
     integrationsPath,
     policiesPath,
     policyManagementBasePath,
@@ -28,6 +28,7 @@ import {
     vulnManagementRiskAcceptancePath,
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityReportingPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -51,9 +52,11 @@ function NotFoundPage(): ReactElement {
 const AsyncSearchPage = asyncComponent(() => import('Containers/Search/SearchPage'));
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
-const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncNetworkGraphPage = asyncComponent(
     () => import('Containers/NetworkGraph/NetworkGraphPage')
+);
+const AsyncDelegateScanningPage = asyncComponent(
+    () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
 );
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
@@ -81,6 +84,9 @@ const AsyncConfigManagementPage = asyncComponent(() => import('Containers/Config
 const AsyncWorkloadCvesPage = asyncComponent(
     () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
 );
+const AsyncVulnerabilityReportingPage = asyncComponent(
+    () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
+);
 const AsyncVulnMgmtReports = asyncComponent(
     () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
 );
@@ -104,10 +110,11 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const { isDarkMode } = useTheme();
 
-    const isPostgresEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
     const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
-    const isVulnMgmtWorkloadCvesEnabled =
-        isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES') && isPostgresEnabled;
+    const isVulnMgmtWorkloadCvesEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES');
+    const isVulnerabilityReportingEnhancementsEnabled = isFeatureFlagEnabled(
+        'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
+    );
 
     const hasVulnerabilityReportsPermission = hasReadAccess('WorkflowAdministration');
     const hasCollectionsPermission = hasReadAccess('WorkflowAdministration');
@@ -123,7 +130,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
-                    <Route path={networkPath} component={AsyncNetworkPage} />
                     {isNetworkGraphPatternflyEnabled && (
                         <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
                     )}
@@ -148,15 +154,30 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                             component={AsyncWorkloadCvesPage}
                         />
                     )}
-                    {hasVulnerabilityReportsPermission && (
-                        <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
-                    )}
+                    {hasVulnerabilityReportsPermission &&
+                        isVulnerabilityReportingEnhancementsEnabled && (
+                            <Route
+                                path={vulnerabilityReportingPath}
+                                component={AsyncVulnerabilityReportingPage}
+                            />
+                        )}
+                    {hasVulnerabilityReportsPermission &&
+                        !isVulnerabilityReportingEnhancementsEnabled && (
+                            <Route
+                                path={vulnManagementReportsPath}
+                                component={AsyncVulnMgmtReports}
+                            />
+                        )}
                     <Route
                         path={vulnManagementRiskAcceptancePath}
                         component={AsyncVulnMgmtRiskAcceptancePage}
                     />
                     <Route path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <Route path={configManagementPath} component={AsyncConfigManagementPage} />
+                    <Route
+                        path={clustersDelegateScanningPath}
+                        component={AsyncDelegateScanningPage}
+                    />
                     <Route path={clustersPathWithParam} component={AsyncClustersPage} />
                     {process.env.NODE_ENV === 'development' && (
                         <Route path={clustersListPath} component={AsyncPFClustersPage} />

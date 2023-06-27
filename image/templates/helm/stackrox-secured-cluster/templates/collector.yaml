@@ -28,7 +28,7 @@ spec:
     spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:
-      - operator: "Exists"
+      {{- toYaml ._rox.collector.tolerations | nindent 6 }}
       {{- end }}
       {{- if ._rox.collector._nodeSelector }}
       nodeSelector:

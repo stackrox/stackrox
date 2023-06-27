@@ -9,6 +9,7 @@ import (
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type Indexer struct {
@@ -18,7 +19,7 @@ type Indexer struct {
 
 func NewIndexer(ctx context.Context) (*Indexer, error) {
 	// TODO: Update the conn string to something configurable.
-	pool, err := postgres.Connect(ctx, "TODO", "libindex")
+	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libindex")
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +34,18 @@ func NewIndexer(ctx context.Context) (*Indexer, error) {
 
 	// TODO: Update the HTTP client.
 	c := http.DefaultClient
-	// TODO: Replace os.TempDir().
-	fetcher := newLocalFetchArena(os.TempDir())
+	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
+	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(func() error {
+		if err != nil {
+			return os.RemoveAll(faRoot)
+		}
+		return nil
+	})
+	fetcher := newLocalFetchArena(faRoot)
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,

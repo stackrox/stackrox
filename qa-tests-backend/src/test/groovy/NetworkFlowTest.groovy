@@ -672,7 +672,7 @@ class NetworkFlowTest extends BaseSpecification {
         "Check timestamp for each edge"
         for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
             assert edge.lastActiveTimestamp <= currentTime + 2000 //allow up to 2 sec leeway
-            assert edge.lastActiveTimestamp >= testStartTimeMillis
+            assert edge.lastActiveTimestamp >= testSpecStartTimeMillis
         }
     }
 

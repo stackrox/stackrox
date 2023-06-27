@@ -10,6 +10,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 ### Removed Features
+- The `--offline-mode` flag for the `roxctl scanner generate` command was removed, as Scanner's default behavior is
+  to fetch vulnerability updates from Central.
 
 ### Deprecated Features
 - RBAC risk was deprecated in release 4.0 due to poor performance.

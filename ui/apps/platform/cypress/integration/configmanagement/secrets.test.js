@@ -8,8 +8,8 @@ import {
     hasRelatedEntityFor,
     hasTabsFor,
     navigateToSingleEntityPage,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementEntities,
     visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
@@ -73,18 +73,15 @@ describe('Configuration Management Secrets', () => {
         clickOnCountWidget('deployments', 'entityList');
     });
 
-    describe('should have same number in deployments table as in count widget', () => {
+    describe('should go to deployments table from widget link', () => {
         const entitiesKey2 = 'deployments';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

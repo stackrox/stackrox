@@ -24,7 +24,7 @@ curl_central() {
   url="$1"
   shift
   [[ -n "${url}" ]] || die "No URL specified"
-  curl -Sskf -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/${url}" "$@"
+  curl --retry 5 -Sskf -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/${url}" "$@"
 }
 
 check_image() {

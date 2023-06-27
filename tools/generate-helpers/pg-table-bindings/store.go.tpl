@@ -813,21 +813,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	return nil
 }
 
-//// Stubs for satisfying legacy interfaces
-
-{{- if eq .TrimmedType "Policy" }}
-
-// RenamePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) RenamePolicyCategory(_ *v1.RenamePolicyCategoryRequest) error {
-    return errors.New("unimplemented")
-}
-
-// DeletePolicyCategory is not implemented in postgres mode.
-func (s *storeImpl) DeletePolicyCategory(_ *v1.DeletePolicyCategoryRequest) error {
-    return errors.New("unimplemented")
-}
-{{- end }}
-
 //// Interface functions - END
 
 //// Used for testing

@@ -92,6 +92,9 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if alert.IsAlertResultResolved(msg.GetEvent().GetAlertResults()) {
 		return true
 	}
+	if alert.AnyAttemptedAlert(msg.GetEvent().GetAlertResults().GetAlerts()...) {
+		return true
+	}
 	if eventMsg.Event.GetReprocessDeployment() != nil {
 		return true
 	}

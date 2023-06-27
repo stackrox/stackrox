@@ -5,6 +5,7 @@ import { visit } from '../../helpers/visit';
 export const sensorUpgradesConfigAlias = 'sensorupgrades/config';
 export const clustersAlias = 'clusters';
 export const clusterDefaultsAlias = 'cluster-defaults';
+export const delegatedRegistryConfigAlias = 'delegatedregistryconfig';
 
 const routeMatcherMapForClusterDefaults = {
     [clusterDefaultsAlias]: {
@@ -24,8 +25,15 @@ const routeMatcherMapForClusters = {
     },
     ...routeMatcherMapForClusterDefaults,
 };
+const routeMatcherMapForDelegateScanning = {
+    [delegatedRegistryConfigAlias]: {
+        method: 'GET',
+        url: '/v1/delegatedregistryconfig',
+    },
+};
 
 const basePath = '/main/clusters';
+const delegateScanningPath = `${basePath}/delegate-scanning`;
 
 const title = 'Clusters';
 
@@ -148,4 +156,11 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
         cy.wait(['@metadata']);
         assertClusterNameInSidePanel(clusterName);
     });
+}
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitDelegateScanning(staticResponseMap) {
+    visit(delegateScanningPath, routeMatcherMapForDelegateScanning, staticResponseMap);
 }

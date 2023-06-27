@@ -331,7 +331,7 @@ try first making sure the EULA is agreed by:
 
 For more info, see <https://github.com/nodejs/node-gyp/issues/569>
 
-</details>  
+</details>
 
 #### Clone StackRox
 <details><summary>Click to expand</summary>
@@ -378,6 +378,9 @@ $ export STORAGE=pvc
 
 # To save time on rebuilds by skipping UI builds, set:
 $ export SKIP_UI_BUILD=1
+
+# To save time on rebuilds by skipping CLI builds, set:
+$ export SKIP_CLI_BUILD=1
 
 # When you deploy locally make sure your kube context points to the desired kubernetes cluster,
 # for example Docker Desktop.
@@ -468,7 +471,7 @@ $ smart-diff                    # check diff relative to parent branch
 If you're using GoLand for development, the following can help improve the experience.
 
 
-Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.  
+Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.
 If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then switch to `Marketplace`, type its name and install the plugin.
 
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly

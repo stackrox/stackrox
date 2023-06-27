@@ -12,16 +12,28 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 
+import org.junit.Rule
+import org.junit.rules.Timeout
 import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+import java.util.concurrent.TimeUnit
+
 // Audit Log alerts are only supported on OpenShift 4
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 900 : 60)
+
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(
+                WAIT_FOR_VIOLATION_TIMEOUT + Constants.TEST_FEATURE_TIMEOUT_PAD, TimeUnit.SECONDS)
+
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
@@ -53,7 +65,8 @@ class AuditLogAlertsTest extends BaseSpecification {
 
         then:
         "Verify that policy was violated"
-        def violations =  getResourceViolationsWithTimeout(resourceType, resName, policy.getName(), 60)
+        def violations =  getResourceViolationsWithTimeout(resourceType, resName,
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         // There should be exactly one violation because we are testing only verb at a time
         assert violations != null && violations.size() == 1
 
@@ -102,7 +115,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         "A violation is generated and resolved"
         createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
         def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         // There should be exactly one violation
         assert violations != null && violations.size() == 1
 
@@ -120,7 +133,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         then:
         "Verify that only the access after restart triggers a violation"
         def allViolations =  getAllResourceViolationsWithTimeout("CONFIGMAPS",
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
 
         // There should only be one violation - the new one
         assert allViolations != null &&
@@ -169,7 +182,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         "A violation is generated and resolved"
         createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
         def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         // There should be exactly one violation
         assert violations != null && violations.size() == 1
 
@@ -190,7 +203,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         then:
         "Verify that only the access after restart triggers a violation"
         def allViolations =  getAllResourceViolationsWithTimeout("CONFIGMAPS",
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
 
         // There should only be one violation - the new one
         assert allViolations != null &&
@@ -230,7 +243,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         then:
         "Verify that no violations were generated"
         def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         assert violations == null || violations.size() == 0
 
         cleanup:

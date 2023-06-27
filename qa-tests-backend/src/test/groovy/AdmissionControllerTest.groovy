@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -14,6 +16,7 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
+import util.ApplicationHealth
 import util.ChaosMonkey
 import util.Timer
 
@@ -130,7 +133,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Config (#desc)"() {
+    def "Verify Admission Controller Config: #desc"() {
         when:
         prepareChaosMonkey()
 
@@ -296,7 +299,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Enforcement on Updates (#desc)"() {
+    def "Verify Admission Controller Enforcement on Updates: #desc"() {
         when:
         prepareChaosMonkey()
 
@@ -348,7 +351,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
+    def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes: match: #clusterMatch/#nsMatch"() {
         when:
         prepareChaosMonkey()
 
@@ -521,13 +524,35 @@ class AdmissionControllerTest extends BaseSpecification {
                 originalAdmCtrlReplicas, 30, 1)
         log.info("Admission controller scaled back to ${originalAdmCtrlReplicas}")
 
+        and:
+        "Admission controller is ready for work"
+        ApplicationHealth ah = new ApplicationHealth(orchestrator, 60)
+        ah.waitForAdmissionControllerHealthiness()
+
         when:
         "A deployment with an image violating a policy is created"
-        def created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+        def created
+        def consecutiveRejectionsCount = 0
+        withRetry(40, 5) {
+            created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+            if (created) {
+                consecutiveRejectionsCount = 0
+                deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
+            }
+            else {
+                consecutiveRejectionsCount++
+            }
+            assert !created
+            assert consecutiveRejectionsCount == 5
+        }
 
         then:
         "Creation should fail"
         assert !created
+
+        and:
+        "Creation should fail consistently"
+        assert consecutiveRejectionsCount == 5
 
         cleanup:
         "Stop ChaosMonkey ASAP to not lose logs"

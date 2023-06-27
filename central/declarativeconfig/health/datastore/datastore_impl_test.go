@@ -67,7 +67,7 @@ func (s *declarativeConfigHealthDatastoreSuite) TearDownTest() {
 func (s *declarativeConfigHealthDatastoreSuite) TestGetDeclarativeConfigs() {
 	configHealth := newConfigHealth()
 
-	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
+	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteDeclarativeCtx, configHealth)
 	s.NoError(err)
 
 	s.testGetConfigHealth(s.datastore.GetDeclarativeConfigs)
@@ -82,21 +82,21 @@ func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {
 
 	// 1. With no access should return  error + should not be added.
 	err := s.datastore.UpsertDeclarativeConfig(s.hasNoAccessCtx, configHealth)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.ErrorIs(err, errox.NotAuthorized)
 	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
 	// 2. With READ access should return error + should not be added.
 	err = s.datastore.UpsertDeclarativeConfig(s.hasReadCtx, configHealth)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.ErrorIs(err, errox.NotAuthorized)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
 	// 3. With WRITE access should return an error + should not be added.
 	err = s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.ErrorIs(err, errox.NotAuthorized)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -113,7 +113,7 @@ func (s *declarativeConfigHealthDatastoreSuite) TestUpdateConfigHealth() {
 
 func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {
 	configHealth := newConfigHealth()
-	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteCtx, configHealth)
+	err := s.datastore.UpsertDeclarativeConfig(s.hasWriteDeclarativeCtx, configHealth)
 	s.NoError(err)
 	_, exists, err := s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
@@ -121,22 +121,21 @@ func (s *declarativeConfigHealthDatastoreSuite) TestRemoveConfigHealth() {
 
 	// 1. With no access should return an error + config health should still exist.
 	err = s.datastore.RemoveDeclarativeConfig(s.hasNoAccessCtx, configHealth.GetId())
-	// Since user has no access, we can't confirm whether the resource even exists.
-	s.ErrorIs(err, errox.NotFound)
+	s.ErrorIs(err, errox.NotAuthorized)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
 	// 2. With READ access should return an error + config health should still exist.
 	err = s.datastore.RemoveDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.ErrorIs(err, errox.NotAuthorized)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
 	// 3. With WRITE access and existing config health remove should return an error.
 	err = s.datastore.RemoveDeclarativeConfig(s.hasWriteCtx, configHealth.GetId())
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.ErrorIs(err, errox.NotAuthorized)
 	_, exists, err = s.datastore.GetDeclarativeConfig(s.hasReadCtx, configHealth.GetId())
 	s.NoError(err)
 	s.True(exists)

@@ -148,6 +148,41 @@
 #      key: infra
 #      value: reserved
 #
+#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#   affinity:
+#     nodeAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#         # Sensor is single-homed, so avoid preemptible nodes.
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#               - key: cloud.google.com/gke-preemptible
+#                 operator: NotIn
+#                 values:
+#                 - "true"
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/infra
+#               operator: Exists
+#         - weight: 25
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/compute
+#               operator: Exists
+#         # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+#         # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/master
+#               operator: DoesNotExist
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: DoesNotExist
+#
 #  # Address of the Sensor endpoint including port number. No trailing slash.
 #  # Rarely needs to be changed.
 #  endpoint: sensor.stackrox.svc:443
@@ -183,6 +218,32 @@
 #    - effect: NoExecute
 #      key: infra
 #      value: reserved
+#
+#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#   affinity:
+#     nodeAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#         # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
+#         # of k8s. We apply both to be compatible with any k8s version.
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/master
+#               operator: Exists
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: Exists
+#     podAntiAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#         - weight: 60
+#           podAffinityTerm:
+#             namespaces: ["stackrox"]
+#             topologyKey: "kubernetes.io/hostname"
+#             labelSelector:
+#               matchLabels:
+#                 app: admission-control
 #
 #  # Dynamic part of the configuration which is retrieved from Central and can be modified through
 #  # the frontend.
@@ -264,6 +325,10 @@
 #    limits:
 #      memory: "1Gi"
 #      cpu: "750m"
+#
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   tolerations:
+#     - operator: "Exists"
 #
 #  complianceImagePullPolicy: IfNotPresent
 #
