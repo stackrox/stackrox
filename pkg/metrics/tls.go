@@ -22,6 +22,11 @@ func keyFilePath() string {
 
 // TLSConfigurer instantiates and updates the TLS configuration of a web server.
 //
+// The TLS configuration contains both server certificates and client CA, which
+// are both watched for changes to dynamically reload the TLS configuration.
+// The server certificates are read from file-mounted secrets. The client CA is
+// read from an external config map via the Kubernetes API.
+//
 //go:generate mockgen-wrapper
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
