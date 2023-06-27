@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"testing"
@@ -95,13 +97,13 @@ func TestMetricsServerPanic(t *testing.T) {
 			releaseBuild:        true,
 		},
 		"secureMetrics error - debug build panics": {
-			metricsPort:         "",
+			metricsPort:         "disabled",
 			enableSecureMetrics: "true",
 			secureMetricsPort:   "error",
 			releaseBuild:        false,
 		},
 		"secureMetrics error - release build does not panic": {
-			metricsPort:         "",
+			metricsPort:         "disabled",
 			enableSecureMetrics: "true",
 			secureMetricsPort:   "error",
 			releaseBuild:        true,
@@ -128,14 +130,31 @@ func TestMetricsServerPanic(t *testing.T) {
 	}
 }
 
+// getFreePort asks the kernel for a free open port that is ready to use.
+func getFreePort() (port int, err error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+	listener, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer listener.Close()
+	return listener.Addr().(*net.TCPAddr).Port, nil
+}
+
 func TestMetricsServerHTTPRequest(t *testing.T) {
-	t.Setenv(env.MetricsPort.EnvVar(), ":9090")
+	freePort, err := getFreePort()
+	require.NoError(t, err)
+	t.Setenv(env.MetricsPort.EnvVar(), fmt.Sprintf(":%d", freePort))
 	t.Setenv(env.EnableSecureMetrics.EnvVar(), "false")
 	server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
 	defer server.Stop(context.TODO())
 	server.RunForever()
 
-	resp, err := http.Get("http://localhost:9090/metrics")
+	url := fmt.Sprintf("http://localhost:%d/metrics", freePort)
+	resp, err := http.Get(url)
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)
 	msg, err := io.ReadAll(resp.Body)
@@ -187,7 +206,9 @@ func testClient() (*http.Client, error) {
 func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	t.Setenv(env.MetricsPort.EnvVar(), "disabled")
 	t.Setenv(env.EnableSecureMetrics.EnvVar(), "true")
-	t.Setenv(env.SecureMetricsPort.EnvVar(), ":9443")
+	freePort, err := getFreePort()
+	require.NoError(t, err)
+	t.Setenv(env.SecureMetricsPort.EnvVar(), fmt.Sprintf(":%d", freePort))
 	t.Setenv(env.SecureMetricsCertDir.EnvVar(), "./testdata")
 	ctrl := gomock.NewController(t)
 	fakeTLSConfigurer := mocks.NewMockTLSConfigurer(ctrl)
@@ -200,7 +221,8 @@ func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 
 	client, err := testClient()
 	require.NoError(t, err)
-	resp, err := client.Get("https://localhost:9443/metrics")
+	url := fmt.Sprintf("https://localhost:%d/metrics", freePort)
+	resp, err := client.Get(url)
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)
 	msg, err := io.ReadAll(resp.Body)
