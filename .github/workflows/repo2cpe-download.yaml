@@ -1,10 +1,10 @@
-name: Download Repo2CPE and Name2CPE
+name: Download repository-to-cpe and name-to-cpe
 on:
   push:
     branches:
-    - "yli3/**"
+    - "master"
   schedule:
-  - cron: "0 */3 * * *"
+  - cron: "0 0 * * *"
 
 jobs:
   download:
@@ -22,28 +22,21 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
 
-    - name: Create Repo2CPE directory
-      run: mkdir -p Repo2CPE
-
     - name: Download repository-to-cpe.json
       run: |
-        cd Repo2CPE
-        wget -q https://access.redhat.com/security/data/metrics/repository-to-cpe.json
-
-    - name: Create Name2CPE directory
-      run: mkdir -p Name2CPE
+        mkdir -p repo-to-cpe
+        cd repo-to-cpe
+        curl --fail --silent --show-error --max-time 60 --retry 3 --output repo-to-cpe.json https://access.redhat.com/security/data/metrics/repository-to-cpe.json
+        jq . repo-to-cpe.json
 
     - name: Download container-name-repos-map.json
       run: |
-        cd Name2CPE
-        wget -q https://access.redhat.com/security/data/metrics/container-name-repos-map.json
-
-    - name: Check downloaded files
-      run: |
-        ls -l Repo2CPE/
-        ls -l Name2CPE/
+        mkdir -p name-to-cpe
+        cd name-to-cpe
+        curl --fail --silent --show-error --max-time 60 --retry 3 --output name-to-cpe.json https://access.redhat.com/security/data/metrics/container-name-repos-map.json
+        jq . name-to-cpe.json
 
     - name: Upload files to Google Cloud Storage
       run: |
-        gsutil cp -r "Repo2CPE" "gs://scanner-v4-test/"
-        gsutil cp -r "Name2CPE" "gs://scanner-v4-test/"
+        gsutil cp -r "repo-to-cpe" "gs://scanner-v4-test/"
+        gsutil cp -r "name-to-cpe" "gs://scanner-v4-test/"
