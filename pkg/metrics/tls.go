@@ -9,7 +9,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/k8scfgmap"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
@@ -65,7 +65,7 @@ type tlsConfigurerImpl struct {
 	certDir           string
 	clientCAConfigMap string
 	clientCANamespace string
-	k8sWatcher        *k8scfgmap.ConfigMapWatcher
+	k8sWatcher        *k8scfgwatch.ConfigMapWatcher
 
 	clientCAs       []*x509.Certificate
 	serverCerts     []tls.Certificate
@@ -88,7 +88,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
-	cfgr.k8sWatcher = k8scfgmap.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
+	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
 	return cfgr
 }
 

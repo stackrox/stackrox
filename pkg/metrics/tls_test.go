@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/k8scfgmap"
+	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -39,10 +40,8 @@ func TestTLSConfigurerServerCertLoading(t *testing.T) {
 func TestTLSConfigurerClientCALoading(t *testing.T) {
 	k8sClient := fake.NewSimpleClientset()
 	watcher := watch.NewFake()
-	watchReaction := &k8scfgmap.WatchReactor{
-		Watcher: watcher,
-	}
-	k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReaction}
+	watchReactor := k8scfgwatch.NewTestWatchReactor(t, watcher)
+	k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReactor}
 	cfgr, err := NewTLSConfigurer("./testdata", k8sClient, clientCANamespace, clientCAName)
 	require.NoError(t, err)
 	caFileRaw, err := os.ReadFile(fakeClientCAFile)
