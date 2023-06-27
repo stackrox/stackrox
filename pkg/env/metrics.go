@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fileutils"
 )
 
@@ -45,17 +46,17 @@ func validateTLS() error {
 	certFile := filepath.Join(SecureMetricsCertDir.Setting(), TLSCertFileName)
 	if ok, err := fileutils.Exists(certFile); !ok {
 		if err != nil {
-			log.Warnf("failed to validate secure metrics certificate file %q", certFile)
+			log.Errorf("failed to validate file %q: %w", certFile, err)
 		}
-		return errors.Errorf("secure metrics certificate file %q not found", certFile)
+		return errors.Wrapf(errox.NotFound, "secure metrics certificate file %q not found", certFile)
 	}
 
 	keyFile := filepath.Join(SecureMetricsCertDir.Setting(), TLSKeyFileName)
 	if ok, err := fileutils.Exists(keyFile); !ok {
 		if err != nil {
-			log.Warnf("failed to validate secure metrics key file %q", keyFile)
+			log.Errorf("failed to validate file %q: %w", keyFile, err)
 		}
-		return errors.Errorf("secure metrics key file %q not found", keyFile)
+		return errors.Wrapf(errox.NotFound, "secure metrics key file %q not found", keyFile)
 	}
 	return nil
 }
