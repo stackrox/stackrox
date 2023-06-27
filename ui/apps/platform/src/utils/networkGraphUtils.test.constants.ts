@@ -1,5 +1,4 @@
 import { filterModes } from 'constants/networkFilterModes';
-import { Edge } from 'Containers/Network/networkTypes';
 
 export const nodes = [
     {
@@ -1259,85 +1258,5 @@ export const namespaceEdgeNodes = [
             category: 'NAMESPACE',
         },
         classes: 'nsEdge',
-    },
-];
-
-export const deploymentEdges: Edge[] = [
-    {
-        data: {
-            destNodeId: '1',
-            destNodeName: 'node-1',
-            destNodeNamespace: 'namespace-a',
-            traffic: 'ingress',
-            type: 'deployment',
-            isActive: true,
-            isAllowed: true,
-            portsAndProtocols: [
-                {
-                    port: 111,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'ingress',
-                },
-            ],
-        },
-    },
-    {
-        data: {
-            destNodeId: '2',
-            destNodeName: 'node-2',
-            destNodeNamespace: 'namespace-a',
-            traffic: 'egress',
-            type: 'deployment',
-            isActive: false,
-            isAllowed: true,
-            portsAndProtocols: [
-                {
-                    port: 222,
-                    protocol: 'L4_PROTOCOL_UDP',
-                    traffic: 'egress',
-                },
-            ],
-        },
-    },
-    {
-        data: {
-            destNodeId: '3',
-            destNodeName: 'node-3',
-            destNodeNamespace: 'namespace-a',
-            traffic: 'egress',
-            type: 'deployment',
-            isActive: false,
-            isAllowed: true,
-            portsAndProtocols: [
-                {
-                    port: 333,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'egress',
-                },
-            ],
-        },
-    },
-    {
-        data: {
-            destNodeId: '4',
-            destNodeName: 'node-4',
-            destNodeNamespace: 'namespace-a',
-            traffic: 'bidirectional',
-            type: 'deployment',
-            isActive: true,
-            isAllowed: true,
-            portsAndProtocols: [
-                {
-                    port: 444,
-                    protocol: 'L4_PROTOCOL_UDP',
-                    traffic: 'ingress',
-                },
-                {
-                    port: 555,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'egress',
-                },
-            ],
-        },
     },
 ];
