@@ -2710,10 +2710,10 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
-	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE"}
+	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE", "ALL"}
 
 	deployments := make(map[string]*storage.Deployment)
-	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
+	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}, {3}} {
 		dep := fixtures.GetDeployment().Clone()
 		dep.Containers[0].SecurityContext.DropCapabilities = make([]string, 0, len(idxs))
 		for _, idx := range idxs {
@@ -2725,6 +2725,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	assertMessageMatches := func(t *testing.T, depRef string, violations []*storage.Alert_Violation) {
 		depRefToExpectedMsg := map[string]string{
 			"":                   "no capabilities",
+			"ALL":                "all capabilities",
 			"MODULE":             "SYS_MODULE",
 			"NICE":               "SYS_NICE",
 			"PTRACE":             "SYS_PTRACE",
@@ -2761,6 +2762,11 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 			[]string{"SYS_NICE", "SYS_PTRACE"},
 			storage.BooleanOperator_AND,
 			[]string{"", "MODULE", "PTRACE", "NICE", "MODULE,NICE"},
+		},
+		{
+			[]string{"ALL"},
+			storage.BooleanOperator_AND,
+			[]string{"", "MODULE", "NICE", "PTRACE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
 		},
 	} {
 		c := testCase
