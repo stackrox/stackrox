@@ -53,6 +53,9 @@ type MetaValues struct {
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
 	ReleaseBuild                     bool
+	TelemetryEnabled                 bool
+	TelemetryKey                     string
+	TelemetryEndpoint                string
 
 	AutoSensePodSecurityPolicies bool
 	EnablePodSecurityPolicies    bool // Only used in the Helm chart if AutoSensePodSecurityPolicies is false.
