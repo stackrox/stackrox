@@ -1,6 +1,7 @@
 import React from 'react';
 import { Route, Switch, Redirect } from 'react-router-dom';
 
+import usePageAction from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { vulnerabilityReportsPath } from 'routePaths';
 
@@ -8,7 +9,6 @@ import VulnReportsPage from './VulnReports/VulnReportsPage';
 import CreateVulnReportPage from './CreateVulnReport/CreateVulnReportPage';
 
 import './VulnReportingPage.css';
-import usePageAction from './hooks/usePageState';
 
 type PageActions = 'create' | 'edit' | 'clone';
 
