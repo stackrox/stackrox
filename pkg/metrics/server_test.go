@@ -129,6 +129,7 @@ func TestMetricsServerPanic(t *testing.T) {
 }
 
 func TestMetricsServerHTTPRequest(t *testing.T) {
+	t.Setenv(env.MetricsPort.EnvVar(), ":9090")
 	t.Setenv(env.EnableSecureMetrics.EnvVar(), "false")
 	server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
 	defer server.Stop(context.TODO())
