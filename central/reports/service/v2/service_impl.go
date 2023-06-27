@@ -8,6 +8,7 @@ import (
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -22,9 +23,9 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
+		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v2.ReportService/GetReportStatus",
-			"/v2.ReportService/GetReportStatusConfigID",
+			"/v2.ReportService/GetLastReportStatusConfigID",
 		},
 	})
 )
@@ -67,16 +68,26 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 
 }
 
-func (s *serviceImpl) GetReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
+func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
 	if req == nil || req.GetId() == "" {
 		return nil, errors.New("Empty request or id")
 	}
-	result, err := s.metadataDatastore.SearchReportMetadatas(ctx, search.MatchFieldQuery(search.ReportConfigID.String(), req.GetId(), false))
+	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
+		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
+		WithPagination(search.NewPagination().
+			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
+			Limit(1)).ProtoQuery()
+	results, err := s.metadataDatastore.SearchReportMetadatas(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-
-	status := convertPrototoV2Reportstatus(result[0].GetReportStatus())
+	if len(results) > 1 {
+		return nil, errors.New("Query unsuccessful")
+	}
+	if len(results) == 0 {
+		return nil, errors.Errorf("No report found for config id %s", req.GetId())
+	}
+	status := convertPrototoV2Reportstatus(results[0].GetReportStatus())
 	return status, err
 
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestCollectionService(t *testing.T) {
+func TestReportService(t *testing.T) {
 	suite.Run(t, new(ReportServiceTestSuite))
 }
 

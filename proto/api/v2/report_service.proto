@@ -39,14 +39,14 @@ message ReportStatus {
 
 service ReportService {
 
-    // ListReportStatus returns report status
+    // GetReportStatus returns report status
     rpc GetReportStatus (ResourceByID) returns (ReportStatus) {
         option (google.api.http) = {
             get: "/v2/reports/status/{id}"
         };
     }
-    // ListReportStatus returns report status for a report config id
-    rpc GetReportStatusConfigID (ResourceByID) returns (ReportStatus) {
+    // GetReportStatusConfigID returns report status for a report config id
+    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatus) {
         option (google.api.http) = {
             get: "/v2/reports/last-status/{id}"
         };
