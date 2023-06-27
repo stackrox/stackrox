@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -114,11 +113,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
-
-	// TODO(ROX-15868): Remove the offline-mode flag after the deprecation notice has passed.
-	c.Flags().BoolVar(&scannerGenerateCmd.apiParams.OfflineMode, "offline-mode", false, "Whether to run the scanner in offline mode (so "+
-		"it doesn't reach out to the internet for updates)")
-	utils.Must(c.Flags().MarkDeprecated("offline-mode", "The offline mode option has been deprecated, scanner will reach out to central for updates"))
 
 	return c
 }
