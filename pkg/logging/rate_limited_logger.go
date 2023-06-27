@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/lru"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/time/rate"
@@ -24,7 +24,7 @@ type RateLimitedLogger struct {
 	ticker    *time.Ticker
 	stopper   concurrency.Stopper
 	// TODO: ROX-17312: Use an LRU Cache with expiration and eviction here
-	rateLimitedLogs *lru.Cache[string, *rateLimitedLog]
+	rateLimitedLogs lru.Cache[string, *rateLimitedLog]
 }
 
 // NewRateLimitLogger returns a rate limited logger
