@@ -59,7 +59,7 @@ export function getComponentTableColumns() {
             },
             {
                 Header: `Node CVEs`,
-                entityType: entityTypes.CVE,
+                entityType: entityTypes.NODE_CVE,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
