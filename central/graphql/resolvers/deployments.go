@@ -82,7 +82,9 @@ func init() {
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployment")
+	log.Infof("Getting deployment with ID %s", args.ID)
 	if err := readDeployments(ctx); err != nil {
+		log.Info("access denied to deployment")
 		return nil, err
 	}
 	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID))
@@ -123,6 +125,7 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
+	log.Infof("Getting Cluster resolver for deployment with ID %s (cluster ID %s)", resolver.Id(), resolver.ClusterId())
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		if err := readClusters(ctx); err != nil {
 			return nil, err

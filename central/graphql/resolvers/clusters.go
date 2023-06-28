@@ -147,7 +147,9 @@ func (resolver *clusterResolver) getClusterConjunctionQuery(q *v1.Query) (*v1.Qu
 // Cluster returns a GraphQL resolver for the given cluster
 func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Cluster")
+	log.Infof("Getting cluster with ID %s", args.ID)
 	if err := readClusters(ctx); err != nil {
+		log.Info("access denied to cluster")
 		return nil, err
 	}
 	cluster, ok, err := resolver.ClusterDataStore.GetCluster(ctx, string(args.ID))
