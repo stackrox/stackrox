@@ -18,6 +18,7 @@ import (
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
@@ -116,7 +117,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
 	s.Require().Error(err)
-	s.EqualError(err, "invalid arguments: base64 decoded challenge token must be 32 bytes long, received challenge \"\" was 0 bytes")
+	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 }
 
@@ -128,7 +129,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
 	s.Require().Error(err)
-	s.EqualError(err, "invalid arguments: challenge token must be a valid base64 string: illegal base64 data at input byte 4")
+	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 }
 
