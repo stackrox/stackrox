@@ -1,13 +1,14 @@
-name: Download repository-to-cpe and name-to-cpe
+name: Download and Upload Repository Mappings
+
 on:
   push:
     branches:
-    - "master"
+    - "yli3/**"
   schedule:
-  - cron: "0 0 * * *"
+  - cron: "0 */3 * * *"
 
 jobs:
-  download:
+  download-and-upload:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,14 +25,14 @@ jobs:
 
     - name: Download repository mappings
       run: |
-        curl \
-            --fail --silent --show-error \
-            --max-time 60 --retry 3 \
-            --create-dirs -o 'redhat-repository-mappings/#1' \
-            'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
-        for f in redhat-repository-mappings; do
-            jq empty $f
+        mkdir redhat-repository-mappings
+        curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs \
+          -o 'redhat-repository-mappings/#1' \
+          'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
+        for f in redhat-repository-mappings/*; do
+          jq empty "$f"
         done
+
     - name: Upload repository mappings to Google Cloud Storage
       run: |
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
