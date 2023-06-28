@@ -110,6 +110,16 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Equal("failed to verify rsa signature: crypto/rsa: verification error", err.Error())
 }
 
+func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
+	service := serviceImpl{}
+	req := &v1.TLSChallengeRequest{}
+
+	resp, err := service.TLSChallenge(context.TODO(), req)
+	s.Require().Error(err)
+	s.EqualError(err, "invalid arguments: base64 decoded challenge token must be 32 bytes long, received challenge \"\" was 0 bytes")
+	s.Nil(resp)
+}
+
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 	service := serviceImpl{}
 	req := &v1.TLSChallengeRequest{
