@@ -59,11 +59,11 @@ func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 	defer opts.Destroy()
 	slice, err := db.Get(opts, versionBucketName)
 	if err != nil || !slice.Exists() {
-		return 0, err
+		return 0, errors.Wrap(err, "getting RocksDB version")
 	}
 	defer slice.Free()
 	if err := proto.Unmarshal(slice.Data(), &version); err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "unmarshaling RocksDB version")
 	}
 	return int(version.GetSeqNum()), nil
 }
@@ -76,6 +76,7 @@ func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
 
 	return ver.SeqNum, nil
 }
+
 func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
 	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks

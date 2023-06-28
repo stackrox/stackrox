@@ -39,7 +39,7 @@ func TestAllPackagesAreImported(t *testing.T) {
 	allImports = append(allImports, f.Imports...)
 
 	f, err = parser.ParseFile(token.NewFileSet(), "all_rocksdb.go", nil, parser.ImportsOnly)
-	require.NoError(t, err, "failed to parse all.go")
+	require.NoError(t, err, "failed to parse all_rocksdb.go")
 
 	allImports = append(allImports, f.Imports...)
 
