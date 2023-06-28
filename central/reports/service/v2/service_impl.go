@@ -36,9 +36,8 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	if features.VulnMgmtReportingEnhancements.Enabled() {
-		apiV2.RegisterReportServiceServer(grpcServer, s)
-	}
+	apiV2.RegisterReportServiceServer(grpcServer, s)
+
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
@@ -82,10 +81,10 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 		return nil, err
 	}
 	if len(results) > 1 {
-		return nil, errors.New("Query unsuccessful")
+		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
 	}
 	if len(results) == 0 {
-		return nil, errors.Errorf("No report found for config id %s", req.GetId())
+		return nil, nil
 	}
 	status := convertPrototoV2Reportstatus(results[0].GetReportStatus())
 	return status, err

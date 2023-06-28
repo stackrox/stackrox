@@ -378,6 +378,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
 		reportService.Singleton(),
+		reportService.Singleton(),
 		roleService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
@@ -401,7 +402,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
-		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton())
+		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
