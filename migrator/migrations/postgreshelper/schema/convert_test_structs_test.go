@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTestMultiKeyStructSerialization(t *testing.T) {
-	obj := &storage.TestMultiKeyStruct{}
+func TestTestStructSerialization(t *testing.T) {
+	obj := &storage.TestStruct{}
 	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	m, err := ConvertTestMultiKeyStructFromProto(obj)
+	m, err := ConvertTestStructFromProto(obj)
 	assert.NoError(t, err)
-	conv, err := ConvertTestMultiKeyStructToProto(m)
+	conv, err := ConvertTestStructToProto(m)
 	assert.NoError(t, err)
 	assert.Equal(t, obj, conv)
 }

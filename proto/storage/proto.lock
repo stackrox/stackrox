@@ -15786,7 +15786,7 @@
             ]
           },
           {
-            "name": "TestMultiKeyStruct.Enum",
+            "name": "TestStruct.Enum",
             "enum_fields": [
               {
                 "name": "ENUM0"
@@ -16278,7 +16278,7 @@
             ]
           },
           {
-            "name": "TestMultiKeyStruct",
+            "name": "TestStruct",
             "fields": [
               {
                 "id": 1,
