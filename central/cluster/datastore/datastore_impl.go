@@ -35,6 +35,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -223,8 +224,26 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 	return clusters, nil
 }
 
+func debugClusterScopeInfo(ctx context.Context) {
+	targetResource := resources.Cluster
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		log.Info("failed to extract scope tree, error ", err)
+		return
+	}
+	log.Info("scope tree ", scopeTree)
+	sacQueryFilter, err := sac.BuildNonVerboseClusterLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		log.Info("failed to extract scope filter, error ", err)
+		return
+	}
+	log.Info("scope filter ", sacQueryFilter)
+}
+
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	log.Infof("Cluster datastore GetCluster %s", id)
+	debugClusterScopeInfo(ctx)
 	cluster, found, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil || !found {
 		log.Infof("Error or Not found (found %t error %q)", found, err)
