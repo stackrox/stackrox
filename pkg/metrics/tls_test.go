@@ -21,8 +21,7 @@ var (
 )
 
 func TestTLSConfigurerServerCertLoading(t *testing.T) {
-	cfgr, err := NewTLSConfigurer("./testdata", fake.NewSimpleClientset(), "", "")
-	require.NoError(t, err)
+	cfgr := NewTLSConfigurer("./testdata", fake.NewSimpleClientset(), "", "")
 	tlsConfig, err := cfgr.TLSConfig()
 	require.NoError(t, err)
 	require.Empty(t, tlsConfig.Certificates)
@@ -41,8 +40,7 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 	watcher := watch.NewFake()
 	watchReactor := k8scfgwatch.NewTestWatchReactor(t, watcher)
 	k8sClient.WatchReactionChain = []k8sTest.WatchReactor{watchReactor}
-	cfgr, err := NewTLSConfigurer("./testdata", k8sClient, clientCANamespace, clientCAName)
-	require.NoError(t, err)
+	cfgr := NewTLSConfigurer("./testdata", k8sClient, clientCANamespace, clientCAName)
 	caFileRaw, err := os.ReadFile(fakeClientCAFile)
 	require.NoError(t, err)
 	tlsConfig, err := cfgr.TLSConfig()

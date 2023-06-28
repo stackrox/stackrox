@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"

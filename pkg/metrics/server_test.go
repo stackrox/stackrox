@@ -149,7 +149,7 @@ func TestMetricsServerHTTPRequest(t *testing.T) {
 	require.NoError(t, err)
 	t.Setenv(env.MetricsPort.EnvVar(), fmt.Sprintf(":%d", freePort))
 	t.Setenv(env.EnableSecureMetrics.EnvVar(), "false")
-	server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
+	server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
 	defer server.Stop(context.TODO())
 	server.RunForever()
 
