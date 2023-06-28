@@ -175,6 +175,13 @@ task testSMOKE(type: Test) {
 task testCOMPATIBILITY(type: Test) {
     useJUnitPlatform {
         includeTags "COMPATIBILITY"
+        excludeTags "SensorBounce"
+    }
+}
+
+task testCOMPATIBILITYSensorBounce(type: Test) {
+    useJUnitPlatform {
+        includeTags "COMPATIBILITY & SensorBounce"
     }
 }
 
