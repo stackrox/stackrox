@@ -128,7 +128,7 @@ require (
 	k8s.io/apiserver v0.26.5
 	k8s.io/cli-runtime v0.26.6
 	k8s.io/client-go v0.26.6
-	k8s.io/kubectl v0.26.5
+	k8s.io/kubectl v0.26.6
 	k8s.io/kubelet v0.26.6
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/controller-runtime v0.14.6
