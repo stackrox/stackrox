@@ -5,7 +5,7 @@ on:
     branches:
     - "yli3/**"
   schedule:
-  - cron: "0 */3 * * *"
+    - cron: "0 0 * * *"
 
 jobs:
   download-and-upload:
@@ -33,6 +33,16 @@ jobs:
           jq empty "$f"
         done
 
+    - name: Send Slack notification on failure
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failed to download Red Hat repository mapping to storage"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+
     - name: Upload repository mappings to Google Cloud Storage
       run: |
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
+
+    - name: Send Slack notification on gsutil failure
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failed to upload Redhat repository mapping to storage"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
