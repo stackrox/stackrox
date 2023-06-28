@@ -13,7 +13,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-// NewIndexer returns new indexer for `storage.TestMultiKeyStruct`.
+// NewIndexer returns new indexer for `storage.TestStruct`.
 func NewIndexer(db postgres.DB) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -25,13 +25,13 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestMultiKeyStruct")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestStruct")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory(101), q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestMultiKeyStruct")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestStruct")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory(101), q, b.db)
 }
