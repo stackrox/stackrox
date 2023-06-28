@@ -12,27 +12,17 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
-import java.util.concurrent.TimeUnit
-
 // Audit Log alerts are only supported on OpenShift 4
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 900 : 60)
-
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(
-                WAIT_FOR_VIOLATION_TIMEOUT + Constants.TEST_FEATURE_TIMEOUT_PAD, TimeUnit.SECONDS)
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 60
 
     @Unroll
     @Tag("BAT")
@@ -54,6 +44,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, verb, resourceType)
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "The resource is created, accessed and deleted"
@@ -110,6 +101,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "A violation is generated and resolved"
@@ -177,6 +169,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "A violation is generated and resolved"
@@ -235,6 +228,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy to propagate to sensor
 
         and:
         "The resource is accessed"
