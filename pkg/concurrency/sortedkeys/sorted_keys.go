@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16. Optimized for a small number of keys stored together.
@@ -75,7 +75,7 @@ func (sk SortedKeys) Remove(key []byte) (SortedKeys, bool) {
 // Union combines two sets of sorted keys.
 func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
 	if len(other) == 0 {
-		return utils.CopyKeys(sk)
+		return sliceutils.ShallowClone2DSlice(sk)
 	}
 	newKeys := make([][]byte, 0, len(sk)+len(other))
 	otherIdx := 0
@@ -115,7 +115,7 @@ func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
 // Difference removes all of the keys in other from the received set of keys.
 func (sk SortedKeys) Difference(other SortedKeys) SortedKeys {
 	if len(other) == 0 {
-		return utils.CopyKeys(sk)
+		return sliceutils.ShallowClone2DSlice(sk)
 	}
 	newKeys := make([][]byte, 0, len(sk))
 	otherIdx := 0

@@ -139,8 +139,8 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 }
 
 func (s *managementService) PolicyAlerts(_ context.Context, alerts *sensor.AdmissionControlAlerts) (*types.Empty, error) {
-	go s.alertHandler.ProcessAlerts(alerts)
-	return &types.Empty{}, nil
+	err := s.alertHandler.ProcessAlerts(alerts)
+	return &types.Empty{}, err
 }
 
 func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.AdmCtrlUpdateResourceRequest]) error {

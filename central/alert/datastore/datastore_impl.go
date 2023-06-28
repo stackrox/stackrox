@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/concurrency"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -36,7 +35,7 @@ type datastoreImpl struct {
 	storage    store.Store
 	searcher   search.Searcher
 	keyedMutex *concurrency.KeyedMutex
-	keyFence   dackboxConcurrency.KeyFence
+	keyFence   concurrency.KeyFence
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
@@ -173,7 +172,7 @@ func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...str
 	}
 
 	var resolvedAlerts []*storage.Alert
-	err := ds.keyFence.DoStatusWithLock(dackboxConcurrency.DiscreteKeySet(idsAsBytes...), func() error {
+	err := ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(idsAsBytes...), func() error {
 		var err error
 		var missing []int
 		// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
