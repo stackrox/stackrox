@@ -33,7 +33,12 @@ describe('Workload CVE Image Single page', () => {
         visitWorkloadCveOverview();
 
         selectEntityTab('Image');
-        cy.get('tbody tr td[data-label="Image"] a').first().click();
+        // Find any image with at least one CVE
+        cy.get(
+            `tbody tr:has(td[data-label="CVEs by severity"] ${selectors.nonZeroCveSeverityCounts}) td[data-label="Image"] a`
+        )
+            .first()
+            .click();
 
         // Check that the CVEs by severity totals in the card match the number in the "results found" text
         const cardSelector = selectors.summaryCard('CVEs by severity');
