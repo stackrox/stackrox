@@ -22,21 +22,16 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
 
-    - name: Download repository-to-cpe.json
+    - name: Download repository mappings
       run: |
-        mkdir -p repo-to-cpe
-        cd repo-to-cpe
-        curl --fail --silent --show-error --max-time 60 --retry 3 --output repo-to-cpe.json https://access.redhat.com/security/data/metrics/repository-to-cpe.json
-        jq . repo-to-cpe.json
-
-    - name: Download container-name-repos-map.json
+        curl \
+            --fail --silent --show-error \
+            --max-time 60 --retry 3 \
+            --create-dirs -o 'redhat-repository-mappings/#1' \
+            'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
+        for f in redhat-repository-mappings; do
+            jq empty $f
+        done
+    - name: Upload repository mappings to Google Cloud Storage
       run: |
-        mkdir -p name-to-cpe
-        cd name-to-cpe
-        curl --fail --silent --show-error --max-time 60 --retry 3 --output name-to-cpe.json https://access.redhat.com/security/data/metrics/container-name-repos-map.json
-        jq . name-to-cpe.json
-
-    - name: Upload files to Google Cloud Storage
-      run: |
-        gsutil cp -r "repo-to-cpe" "gs://scanner-v4-test/"
-        gsutil cp -r "name-to-cpe" "gs://scanner-v4-test/"
+        gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
