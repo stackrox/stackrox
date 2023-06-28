@@ -40,7 +40,7 @@ const (
 	// serviceOperatorCAPath points to the secret of the service account, which within an OpenShift environment
 	// also has the service-ca.crt, which includes the CA to verify certificates issued by the service-ca operator.
 	// This could be i.e. the default ingress controller certificate.
-	serviceOperatorCAPath = "/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 )
 
 // generic notifier plugin
