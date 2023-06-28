@@ -101,6 +101,8 @@
     },
     "/v1/tls-challenge": {
       "get": {
+        "summary": "TLSChallenge",
+        "description": "Returns all trusted CAs, i.e., secret/additional-ca and Central's cert\nchain. This is necessary if Central is running behind a load balancer\nwith self-signed certificates. Does not require authentication.",
         "operationId": "MetadataService_TLSChallenge",
         "responses": {
           "200": {
