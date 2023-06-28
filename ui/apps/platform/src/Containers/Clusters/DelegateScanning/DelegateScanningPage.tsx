@@ -4,23 +4,21 @@ import {
     AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
-    Card,
-    CardBody,
     Flex,
     FlexItem,
     PageSection,
-    Radio,
     Title,
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
 import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
 import { DelegatedRegistryConfig } from 'types/dedicatedRegistryConfig.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ToggleDelegatedScanning from './Components/ToggleDelegatedScanning';
+import DelegatedScanningSettings from './Components/DelegatedScanningSettings';
+import DelegatedRegistriesList from './Components/DelegatedRegistriesList';
 
 const initialDelegatedState: DelegatedRegistryConfig = {
     enabledFor: 'NONE',
@@ -58,6 +56,14 @@ function DelegateScanningPage() {
         } else {
             newState.enabledFor = 'NONE';
         }
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function onChangeEnabledFor(newEnabledState) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        newState.enabledFor = newEnabledState;
+
         setDedicatedRegistryConfig(newState);
     }
 
@@ -99,40 +105,13 @@ function DelegateScanningPage() {
                 />
                 {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
                 {delegatedRegistryConfig.enabledFor !== 'NONE' && (
-                    <Card>
-                        <CardBody>
-                            <FormLabelGroup
-                                label="Delegate scanning for"
-                                isRequired
-                                fieldId="delegatedRegistryConfig.enabledFor"
-                                touched={{}}
-                                errors={{}}
-                            >
-                                <Flex className="pf-u-mt-md pf-u-mb-lg">
-                                    <FlexItem>
-                                        <Radio
-                                            label="All registries"
-                                            isChecked={delegatedRegistryConfig.enabledFor === 'ALL'}
-                                            id="choose-all-registries"
-                                            name="enabledFor"
-                                            onChange={() => {}}
-                                        />
-                                    </FlexItem>
-                                    <FlexItem>
-                                        <Radio
-                                            label="Specified registries"
-                                            isChecked={
-                                                delegatedRegistryConfig.enabledFor === 'SPECIFIC'
-                                            }
-                                            id="chose-specified-registries"
-                                            name="enabledFor"
-                                            onChange={() => {}}
-                                        />
-                                    </FlexItem>
-                                </Flex>
-                            </FormLabelGroup>
-                        </CardBody>
-                    </Card>
+                    <>
+                        <DelegatedScanningSettings
+                            enabledFor={delegatedRegistryConfig.enabledFor}
+                            onChangeEnabledFor={onChangeEnabledFor}
+                        />
+                        <DelegatedRegistriesList registries={delegatedRegistryConfig.registries} />
+                    </>
                 )}
             </PageSection>
         </>
