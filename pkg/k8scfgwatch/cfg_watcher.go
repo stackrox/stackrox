@@ -65,10 +65,11 @@ func (w *ConfigMapWatcher) onChange(ctx concurrency.Waitable, eventChannel <-cha
 				return
 			}
 
-			if event.Type == watch.Added || event.Type == watch.Modified {
-				if cm, ok := event.Object.(*v1.ConfigMap); ok {
-					w.modifiedFunc(cm)
-				}
+			if event.Type != watch.Added && event.Type != watch.Modified {
+				continue
+			}
+			if cm, ok := event.Object.(*v1.ConfigMap); ok {
+				w.modifiedFunc(cm)
 			}
 		}
 	}
