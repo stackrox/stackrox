@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	rocksdbInstance "github.com/stackrox/rox/pkg/rocksdb/instance"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -50,10 +49,6 @@ func GetMigrationKeyFence() concurrency.KeyFence {
 
 func initialize() {
 	initialized.Do(func() {
-		rocksdbInstance.RegisterBucket(GraphBucket, "Graph Keys")
-		rocksdbInstance.RegisterBucket(DirtyBucket, "Dirty Keys")
-		rocksdbInstance.RegisterBucket(ReindexIfMissingBucket, "Bucket for reindexed state")
-
 		toIndex = queue.NewWaitableQueue()
 		registry = indexer.NewWrapperRegistry()
 		globalKeyLock = concurrency.NewKeyFence()
