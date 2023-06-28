@@ -40,7 +40,7 @@ class ImageService extends BaseService {
     static scanImage(String image, Boolean includeSnoozed = true, Boolean force = false) {
         try {
             def imageClient = getImageClient().scanImage(ImageServiceOuterClass.ScanImageRequest.newBuilder());
-            return withRetry(3, 5) {
+            return withRetry(1, 15) {
                 return imageClient
                         .setImageName(image)
                         .setIncludeSnoozed(includeSnoozed)
