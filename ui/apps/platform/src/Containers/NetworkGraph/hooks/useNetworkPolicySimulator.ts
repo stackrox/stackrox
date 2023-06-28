@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
-import { NetworkPolicy } from 'types/networkPolicy.proto';
+import { NetworkPolicy, NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { Simulation } from '../utils/getSimulation';
 
 export type NetworkPolicySimulator =

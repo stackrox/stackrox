@@ -1,5 +1,4 @@
 import { filterModes } from 'constants/networkFilterModes';
-import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import {
     getSideMap,
     getNamespaceEdges,
@@ -8,8 +7,9 @@ import {
     getNodeData,
     getNamespaceEdgeNodes,
     getActiveNamespaceList,
-    getIngressPortsAndProtocols,
-    getEgressPortsAndProtocols,
+    // TODO verify obsolete, and then delete the functions themselves:
+    // getIngressPortsAndProtocols,
+    // getEgressPortsAndProtocols,
     createPortsAndProtocolsSelector,
     getNodeName,
     getNodeNamespace,
@@ -25,7 +25,6 @@ import {
     namespaceList,
     deploymentList,
     namespaceEdgeNodes,
-    deploymentEdges,
 } from './networkGraphUtils.test.constants';
 
 const nodeTypes = {
@@ -91,49 +90,6 @@ describe('networkGraphUtils', () => {
         it('should return edge nodes for namespace boxes', () => {
             const testNSEdgeNodes = getNamespaceEdgeNodes(namespaceList);
             expect(testNSEdgeNodes).toEqual(namespaceEdgeNodes);
-        });
-    });
-
-    describe('getIngressPortsAndProtocols', () => {
-        it('should return the edges going to a target node', () => {
-            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.all);
-            const ingressPortsAndProtocols = getIngressPortsAndProtocols(networkFlows);
-            expect(ingressPortsAndProtocols).toEqual([
-                {
-                    port: 111,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'ingress',
-                },
-                {
-                    port: 444,
-                    protocol: 'L4_PROTOCOL_UDP',
-                    traffic: 'ingress',
-                },
-            ]);
-        });
-    });
-
-    describe('getEgressPortsAndProtocols', () => {
-        it('should return the edges going out of a source node', () => {
-            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.all);
-            const egressPortsAndProtocols = getEgressPortsAndProtocols(networkFlows);
-            expect(egressPortsAndProtocols).toEqual([
-                {
-                    port: 222,
-                    protocol: 'L4_PROTOCOL_UDP',
-                    traffic: 'egress',
-                },
-                {
-                    port: 333,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'egress',
-                },
-                {
-                    port: 555,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'egress',
-                },
-            ]);
         });
     });
 

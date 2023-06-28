@@ -21,7 +21,7 @@ import { HelpIcon } from '@patternfly/react-icons';
 
 import download from 'utils/download';
 import { Deployment } from 'types/deployment.proto';
-import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { filterNetworkFlows, getAllUniquePorts, getNumFlows } from '../utils/flowUtils';
 

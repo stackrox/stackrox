@@ -1,5 +1,10 @@
 import { combineReducers } from 'redux';
-import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
+
+const dialogueStages = {
+    closed: 'CLOSED',
+    application: 'APPLICATION',
+    notification: 'NOTIFICATION',
+};
 
 // Action types
 //-------------
