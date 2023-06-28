@@ -27,6 +27,9 @@ const (
 	getAllOrphanedPods = `SELECT id FROM pods WHERE NOT EXISTS
 		(SELECT 1 FROM clusters WHERE pods.clusterid = clusters.Id)`
 
+	getAllOrphanedNodes = `SELECT id FROM nodes WHERE NOT EXISTS
+		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
+
 	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
 	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
@@ -101,6 +104,16 @@ func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) 
 		defer cancel()
 
 		return getOrphanedIDs(ctx, pool, getAllOrphanedPods)
+	})
+}
+
+// GetOrphanedNodeIDs returns the node ids that have a cluster that has been removed
+func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error) {
+	return pgutils.Retry2(func() ([]string, error) {
+		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
+		defer cancel()
+
+		return getOrphanedIDs(ctx, pool, getAllOrphanedNodes)
 	})
 }
 

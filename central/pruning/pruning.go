@@ -227,6 +227,28 @@ func (g *garbageCollectorImpl) removeOrphanedPods() {
 	}
 }
 
+// Remove nodes where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedNodes() {
+	nodesToRemove, err := postgres.GetOrphanedNodeIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned nodes: %v", err)
+		return
+	}
+
+	if len(nodesToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned nodes...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned nodes (from formerly deleted clusters). Deleting...",
+		len(nodesToRemove))
+
+	for _, id := range nodesToRemove {
+		if err := g.nodes.DeleteNodes(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove node with id %s: %v", id, err)
+		}
+	}
+}
+
 func removeOrphanedObjectsBySearch(searchQuery *v1.Query, name string, searchFn func(ctx context.Context, query *v1.Query) ([]search.Result, error), removeFn func(ctx context.Context, id string) error) {
 	searchRes, err := searchFn(pruningCtx, searchQuery)
 	if err != nil {
@@ -285,6 +307,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedNetworkFlows(clusterIDSet)
 
 	g.removeOrphanedPods()
+	g.removeOrphanedNodes()
 
 	// The deletion of pods can trigger the deletion of indicators.  So in theory there could
 	// be fewer indicators to delete if we process orphaned pods first.

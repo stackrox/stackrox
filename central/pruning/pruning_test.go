@@ -366,7 +366,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 
-	nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	clusterDataStore, err := clusterDatastore.New(
 		clusterPostgres.New(s.pool),
 		clusterHealthPostgres.New(s.pool),
@@ -2020,7 +2019,47 @@ func (s *PruningTestSuite) TestRemoveOrphanedPods() {
 	updatedCount, err = pods.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(updatedCount, podCount-cluster2PodCount)
+}
 
+func (s *PruningTestSuite) TestRemoveOrphanedNodes() {
+	_, _, clusterDS := s.generateClusterDataStructures()
+
+	clusterID1, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanNodeCluster1", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	clusterID2, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanNodeCluster2", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	nodeDS := s.generateNodeDataStructures()
+
+	// Add some nodes to Cluster 1
+	cluster1NodeCount := 20
+	cluster2NodeCount := 15
+
+	s.addNodes(nodeDS, clusterID1, cluster1NodeCount)
+	s.addNodes(nodeDS, clusterID2, cluster2NodeCount)
+
+	gci := &garbageCollectorImpl{
+		nodes:    nodeDS,
+		postgres: s.pool,
+	}
+
+	nodeCount, err := nodeDS.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	// Shouldn't remove any
+	gci.removeOrphanedNodes()
+	updatedCount, err := nodeDS.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	s.Equal(updatedCount, nodeCount)
+
+	// Now delete cluster 2
+	err = clusterDS.RemoveCluster(s.ctx, clusterID2, nil)
+	s.Nil(err)
+
+	gci.removeOrphanedNodes()
+	updatedCount, err = nodeDS.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	s.Equal(updatedCount, nodeCount-cluster2NodeCount)
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
@@ -2030,6 +2069,17 @@ func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID s
 			ClusterId: clusterID,
 		}
 		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
+	}
+}
+
+func (s *PruningTestSuite) addNodes(nodeDS testNodeDatastore.DataStore, clusterID string, numberOfNodes int) {
+	for i := 0; i < numberOfNodes; i++ {
+		pod := &storage.Node{
+			Id:        uuid.NewV4().String(),
+			ClusterId: clusterID,
+		}
+		err := nodeDS.UpsertNode(s.ctx, pod)
 		s.Nil(err)
 	}
 }
