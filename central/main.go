@@ -108,6 +108,7 @@ import (
 	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
+	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -377,9 +378,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processBaselineService.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
-		reportService.Singleton(),
-		reportService.Singleton(),
 		roleService.Singleton(),
+		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
@@ -402,7 +402,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
-		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportService.Singleton())
+		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
