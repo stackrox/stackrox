@@ -3,6 +3,7 @@ package initbundles
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
@@ -55,8 +57,8 @@ func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse
 	}
 }
 
-func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string) error {
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
+func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
 	conn, err := cliEnvironment.GRPCConnection()
@@ -81,7 +83,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return revokeInitBundles(cliEnvironment, args)
+			return revokeInitBundles(cliEnvironment, args, flags.Timeout(cmd))
 		},
 	}
 

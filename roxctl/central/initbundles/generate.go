@@ -3,6 +3,7 @@ package initbundles
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 type output struct {
@@ -19,8 +21,8 @@ type output struct {
 	filename string
 }
 
-func generateInitBundle(cliEnvironment environment.Environment, name string, outputs []output) error {
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
+func generateInitBundle(cliEnvironment environment.Environment, name string, outputs []output, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
 	conn, err := cliEnvironment.GRPCConnection()
@@ -127,7 +129,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if len(outputs) == 0 {
 				return common.ErrInvalidCommandOption.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
 			}
-			return generateInitBundle(cliEnvironment, name, outputs)
+			return generateInitBundle(cliEnvironment, name, outputs, flags.Timeout(cmd))
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the newly generated init bundle in Helm configuration form (- for stdout)")
