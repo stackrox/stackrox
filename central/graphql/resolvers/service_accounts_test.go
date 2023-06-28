@@ -176,7 +176,7 @@ func (s *ServiceAccountResolverTestSuite) TestGetSaNamespace() {
 
 func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissions.ResourceMetadata) context.Context {
 	id := mockIdentity.NewMockIdentity(s.mockCtrl)
-	id.EXPECT().UID().Return(fakeUserID).AnyTimes()
+	id.EXPECT().UID().Return("fakeUserID").AnyTimes()
 	id.EXPECT().FullName().Return("First Last").AnyTimes()
 	id.EXPECT().FriendlyName().Return("DefinitelyNotBob").AnyTimes()
 
