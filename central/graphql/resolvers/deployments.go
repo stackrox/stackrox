@@ -82,7 +82,7 @@ func init() {
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployment")
-	log.Infof("Getting deployment with ID %s", args.ID)
+	log.Infof("Getting deployment with ID %s", *args.ID)
 	if err := readDeployments(ctx); err != nil {
 		log.Info("access denied to deployment")
 		return nil, err
