@@ -40,7 +40,7 @@ func buildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree, verbo
 		if clusterAccessScope == nil {
 			continue
 		}
-		if clusterAccessScope.State == effectiveaccessscope.Included {
+		if clusterAccessScope.State != effectiveaccessscope.Excluded {
 			clusterFilters = append(clusterFilters, getClusterMatchQuery(clusterID, verbose))
 		}
 	}
