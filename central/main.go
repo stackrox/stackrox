@@ -428,7 +428,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 	return servicesToRegister
 }
 
-func watchdog(signal *concurrency.Signal, timeout time.Duration) {
+func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 	if !concurrency.WaitWithTimeout(signal, timeout) {
 		log.Errorf("API server failed to start within %v!", timeout)
 		log.Error("This usually means something is *very* wrong. Terminating ...")
