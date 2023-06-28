@@ -3,8 +3,7 @@
 package runner
 
 import (
-	// Import these packages to trigger the registration.
-	// Add Postgres -> Postgres migrations at the bottom of the import list.
+	// These imports are only for migrations that require BoltDB and RocksDB and should not be modified anymore
 	_ "github.com/stackrox/rox/migrator/migrations/m_100_to_m_101_cluster_id_netpol_undo_store"
 	_ "github.com/stackrox/rox/migrator/migrations/m_101_to_m_102_drop_license_buckets"
 	_ "github.com/stackrox/rox/migrator/migrations/m_102_to_m_103_migrate_serial"
