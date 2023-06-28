@@ -53,4 +53,7 @@ var (
 
 	// SyslogNamespaceLabels enables sending namespace labels as part of the syslog alert notification.
 	SyslogNamespaceLabels = registerFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", true)
+
+	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
+	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 )
