@@ -15,21 +15,6 @@ image_exists() {
   fi
 }
 
-extract_from_image() {
-  local image=$1
-  local src=$2
-  local dst=$3
-
-  [[ -n "$image" && -n "$src" && -n "$dst" ]] \
-      || die "extract_from_image: <image> <src> <dst>"
-
-  docker create --name copier "${image}"
-  docker cp "copier:${src}" "${dst}"
-  docker rm copier
-
-  [[ -s $dst ]] || die "file extracted from image is empty: $dst"
-}
-
 INPUT_ROOT="$1"
 BUILDER_IMAGE="$2"
 OUTPUT_DIR="$3"
