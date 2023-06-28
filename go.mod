@@ -66,12 +66,12 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/moby/sys/mountinfo v0.6.2
-	github.com/np-guard/cluster-topology-analyzer v1.7.0
+	github.com/np-guard/cluster-topology-analyzer v1.8.0
 	github.com/np-guard/netpol-analyzer v0.2.2
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/openshift/api v0.0.0-20230502160752-c71432710382
+	github.com/openshift/api v0.0.0-20230503133300-8bbcb7ca7183
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
 	github.com/owenrumney/go-sarif/v2 v2.2.0
@@ -123,7 +123,7 @@ require (
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.1
 	helm.sh/helm/v3 v3.11.3
-	k8s.io/api v0.26.6
+	k8s.io/api v0.27.1
 	k8s.io/apimachinery v0.27.2
 	k8s.io/apiserver v0.26.5
 	k8s.io/cli-runtime v0.26.6
