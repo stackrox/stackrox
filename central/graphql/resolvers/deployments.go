@@ -125,7 +125,7 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
-	log.Infof("Getting Cluster resolver for deployment with ID %s (cluster ID %s)", resolver.Id(), resolver.ClusterId())
+	log.Infof("Getting Cluster resolver for deployment with ID %s (cluster ID %s)", resolver.Id(ctx), resolver.ClusterId(ctx))
 	if !env.PostgresDatastoreEnabled.BooleanSetting() {
 		if err := readClusters(ctx); err != nil {
 			return nil, err
