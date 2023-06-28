@@ -43,6 +43,9 @@ var (
 		StartingSeqNum: startingSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 164
 		Run: func(databases *types.Databases) error {
+			if databases.PkgRocksDB == nil {
+				return nil
+			}
 			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
 		},
 	}

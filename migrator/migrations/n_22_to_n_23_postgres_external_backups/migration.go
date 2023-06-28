@@ -26,6 +26,7 @@ var (
 		StartingSeqNum: startingSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 134
 		Run: func(databases *types.Databases) error {
+			if databases.BoltDB == nil { return nil }
 			legacyStore := legacy.New(databases.BoltDB)
 			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,

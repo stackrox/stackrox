@@ -1,0 +1,6 @@
+package migrations
+
+/*
+// In order to initiate a migration, change the last part of the line below to a description of the migration goal, and add the // comment header in front of next line.
+go:generate bootstrap_new_migration demo-the@generator
+*/
