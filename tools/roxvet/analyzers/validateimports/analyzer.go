@@ -225,6 +225,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"pkg/auth",
 			"pkg/batcher",
+			"pkg/binenc",
 			"pkg/bolthelper",
 			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
