@@ -13,14 +13,10 @@ import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import CVEStackedPill from 'Components/CVEStackedPill';
 
-import {
-    CLUSTER_LIST_FRAGMENT,
-    CLUSTER_LIST_FRAGMENT_UPDATED,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { CLUSTER_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
@@ -32,13 +28,6 @@ export const defaultClusterSort = [
 ];
 
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const fragmentToUse = isFrontendVMUpdatesEnabled
-        ? CLUSTER_LIST_FRAGMENT_UPDATED
-        : CLUSTER_LIST_FRAGMENT;
-
     const query = gql`
         query getClusters(
             $query: String
@@ -53,7 +42,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
             }
             count: clusterCount(query: $query)
         }
-        ${fragmentToUse}
+        ${CLUSTER_LIST_FRAGMENT_UPDATED}
     `;
 
     const tableSort = sort || defaultClusterSort;
@@ -80,34 +69,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
                 id: clusterSortFields.CLUSTER,
                 accessor: 'name',
                 sortField: clusterSortFields.CLUSTER,
-            },
-            {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { vulnCounter, id } = original;
-                    if (!vulnCounter || vulnCounter.all.total === 0) {
-                        return 'No CVEs';
-                    }
-
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
-                    const url = newState.toUrl();
-                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
-
-                    return (
-                        <CVEStackedPill
-                            vulnCounter={vulnCounter}
-                            url={url}
-                            fixableUrl={fixableUrl}
-                            hideLink={pdf}
-                        />
-                    );
-                },
-                id: clusterSortFields.CVE_COUNT,
-                accessor: 'vulnCounter.all.total',
-                sortField: clusterSortFields.CVE_COUNT,
             },
             {
                 Header: `Image CVEs`,
@@ -226,28 +187,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
                 accessor: 'entities',
                 sortable: false,
             },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/10 ${defaultColumnClassName}`,
-            //     // eslint-disable-next-line
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={pdf}
-            //             selectedRowId={original.id}
-            //         />
-            //     ),
-            //     id: clusterSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: clusterSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
             {
                 Header: `Latest Violation`,
                 headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
@@ -272,21 +211,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
             },
         ];
 
-        const flagGatedTableColumns = tableColumns.filter((col) => {
-            if (isFrontendVMUpdatesEnabled) {
-                if (col.Header === 'CVEs') {
-                    return false;
-                }
-            } else if (
-                col.Header === 'Image CVEs' ||
-                col.Header === 'Node CVEs' ||
-                col.Header === 'Platform CVEs'
-            ) {
-                return false;
-            }
-            return true;
-        });
-        return removeEntityContextColumns(flagGatedTableColumns, workflowState);
+        return removeEntityContextColumns(tableColumns, workflowState);
     }
 
     return (
