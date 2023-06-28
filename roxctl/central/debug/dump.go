@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	dumpTimeout = 2 * time.Minute
+	dumpTimeout = 5 * time.Minute
 )
 
 // dumpCommand allows pulling logs, profiles, and metrics
