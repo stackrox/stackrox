@@ -44,7 +44,7 @@ func TestMetricsServerAddressEnvs(t *testing.T) {
 			t.Setenv(env.EnableSecureMetrics.EnvVar(), c.enableSecureMetrics)
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
 
-			server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
+			server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
 
 			require.NotNil(t, server)
 			assert.Equal(t, env.MetricsPort.Setting(), server.metricsServer.Addr)
@@ -99,7 +99,7 @@ func TestMetricsServerPanic(t *testing.T) {
 			t.Setenv(env.MetricsPort.EnvVar(), c.metricsPort)
 			t.Setenv(env.EnableSecureMetrics.EnvVar(), c.enableSecureMetrics)
 			t.Setenv(env.SecureMetricsPort.EnvVar(), c.secureMetricsPort)
-			server := NewServer(CentralSubsystem, &NilTLSConfigurer{})
+			server := NewServer(CentralSubsystem, &nilTLSConfigurer{})
 			defer server.Stop(context.TODO())
 
 			if c.releaseBuild {

@@ -45,13 +45,14 @@ func NewServer(subsystem Subsystem, tlsConfigurer TLSConfigurer) *Server {
 	if secureMetricsEnabled() {
 		tlsConfig, err := tlsConfigurer.TLSConfig()
 		if err != nil {
-			utils.Should(errors.Wrap(err, "failed to create TLS config loader"))
-			return nil
-		}
-		secureMetricsServer = &http.Server{
-			Addr:      env.SecureMetricsPort.Setting(),
-			Handler:   mux,
-			TLSConfig: tlsConfig,
+			utils.Should(errors.Wrap(err, "failed to create TLS config"))
+			log.Warn("Secure metrics server is disabled")
+		} else {
+			secureMetricsServer = &http.Server{
+				Addr:      env.SecureMetricsPort.Setting(),
+				Handler:   mux,
+				TLSConfig: tlsConfig,
+			}
 		}
 	}
 
@@ -151,10 +152,6 @@ func (s *Server) secureMetricsValid() bool {
 		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
 		return false
 	}
-	if s.tlsConfigurer == nil {
-		utils.Should(errors.New("invalid TLS configurer"))
-		return false
-	}
 	return true
 }
 
@@ -166,6 +163,9 @@ func gatherUptimeMetricForever(startTime time.Time, uptimeMetric prometheus.Gaug
 }
 
 func runForever(server *http.Server) {
+	if server == nil {
+		return
+	}
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		// The HTTP server should never terminate.
 		log.Panicf("Unexpected termination of metrics server %q: %v", server.Addr, err)
@@ -173,6 +173,9 @@ func runForever(server *http.Server) {
 }
 
 func runForeverTLS(server *http.Server) {
+	if server == nil {
+		return
+	}
 	if err := server.ListenAndServeTLS(certFilePath(), keyFilePath()); !errors.Is(err, http.ErrServerClosed) {
 		// The HTTPS server should never terminate.
 		log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)

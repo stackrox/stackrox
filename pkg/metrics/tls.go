@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 )
 
@@ -33,18 +32,18 @@ type TLSConfigurer interface {
 	WatchForChanges()
 }
 
-// NilTLSConfigurer is a no-op configurer.
-type NilTLSConfigurer struct{}
+// nilTLSConfigurer is a no-op configurer.
+type nilTLSConfigurer struct{}
 
 // WatchForChanges does nothing.
-func (t *NilTLSConfigurer) WatchForChanges() {}
+func (t *nilTLSConfigurer) WatchForChanges() {}
 
 // TLSConfig returns nil.
-func (t *NilTLSConfigurer) TLSConfig() (*tls.Config, error) {
+func (t *nilTLSConfigurer) TLSConfig() (*tls.Config, error) {
 	return nil, nil
 }
 
-var _ TLSConfigurer = (*NilTLSConfigurer)(nil)
+var _ TLSConfigurer = (*nilTLSConfigurer)(nil)
 
 // tlsConfigurerImpl holds the current TLS configuration. The configurer
 // watches the certificate directory for changes and updates the server
@@ -59,28 +58,25 @@ type tlsConfigurerImpl struct {
 var _ TLSConfigurer = (*tlsConfigurerImpl)(nil)
 
 // NewTLSConfigurer creates a new TLS configurer.
-func NewTLSConfigurer(certDir string, clientCANamespace, clientCAConfigMap string) (TLSConfigurer, error) {
+func NewTLSConfigurer(certDir string, clientCANamespace, clientCAConfigMap string) TLSConfigurer {
 	cfgr := &tlsConfigurerImpl{
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
 	}
-	return cfgr, nil
+	return cfgr
 }
 
 // NewTLSConfigurerFromEnv creates a new TLS configurer based on environment variables.
 func NewTLSConfigurerFromEnv() TLSConfigurer {
 	if !secureMetricsEnabled() {
-		return nil
+		return &nilTLSConfigurer{}
 	}
 
 	certDir := env.SecureMetricsCertDir.Setting()
 	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
 	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
-	cfgr, err := NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap)
-	if err != nil {
-		log.Error(errors.Wrap(err, "failed to create TLS config loader"))
-	}
+	cfgr := NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap)
 	return cfgr
 }
 
