@@ -219,7 +219,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         cleanup:
         if (!deploymentDeleted) {
-            orchestrator.deleteDeployment(DEPLOYMENT)
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT)
         }
     }
 }
