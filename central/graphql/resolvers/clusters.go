@@ -152,6 +152,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 		log.Info("access denied to cluster")
 		return nil, err
 	}
+	log.Info("graphql checks successful")
 	cluster, ok, err := resolver.ClusterDataStore.GetCluster(ctx, string(args.ID))
 	return resolver.wrapClusterWithContext(ctx, cluster, ok, err)
 }
