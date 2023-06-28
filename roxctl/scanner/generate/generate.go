@@ -114,5 +114,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
+	flags.AddTimeout(c)
+
 	return c
 }
