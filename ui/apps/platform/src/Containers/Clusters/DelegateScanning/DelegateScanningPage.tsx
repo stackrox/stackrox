@@ -13,6 +13,7 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
 import { DelegatedRegistryConfig } from 'types/dedicatedRegistryConfig.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -31,6 +32,8 @@ function DelegateScanningPage() {
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
     const [errMessage, setErrMessage] = useState<string>('');
+
+    const { clusters } = useFetchClustersForPermissions(['Deployment']);
 
     useEffect(() => {
         setErrMessage('');
@@ -63,6 +66,14 @@ function DelegateScanningPage() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
         newState.enabledFor = newEnabledState;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function onChangeCluster(newClusterId) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        newState.defaultClusterId = newClusterId;
 
         setDedicatedRegistryConfig(newState);
     }
@@ -109,6 +120,9 @@ function DelegateScanningPage() {
                         <DelegatedScanningSettings
                             enabledFor={delegatedRegistryConfig.enabledFor}
                             onChangeEnabledFor={onChangeEnabledFor}
+                            clusters={clusters}
+                            selectedClusterId={delegatedRegistryConfig.defaultClusterId}
+                            setSelectedClusterId={onChangeCluster}
                         />
                         <DelegatedRegistriesList registries={delegatedRegistryConfig.registries} />
                     </>
