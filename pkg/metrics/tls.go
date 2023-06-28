@@ -57,8 +57,8 @@ type tlsConfigurerImpl struct {
 
 var _ TLSConfigurer = (*tlsConfigurerImpl)(nil)
 
-// NewTLSConfigurer creates a new TLS configurer.
-func NewTLSConfigurer(certDir string, clientCANamespace, clientCAConfigMap string) TLSConfigurer {
+// newTLSConfigurer creates a new TLS configurer.
+func newTLSConfigurer(certDir string, clientCANamespace, clientCAConfigMap string) TLSConfigurer {
 	cfgr := &tlsConfigurerImpl{
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
@@ -76,7 +76,7 @@ func NewTLSConfigurerFromEnv() TLSConfigurer {
 	certDir := env.SecureMetricsCertDir.Setting()
 	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
 	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
-	cfgr := NewTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap)
+	cfgr := newTLSConfigurer(certDir, clientCANamespace, clientCAConfigMap)
 	return cfgr
 }
 
