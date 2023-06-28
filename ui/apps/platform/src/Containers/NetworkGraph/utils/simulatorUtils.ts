@@ -1,4 +1,4 @@
-import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 
 export function getDisplayYAMLFromNetworkPolicyModification(
     modification: NetworkPolicyModification | null
