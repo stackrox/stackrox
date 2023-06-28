@@ -1,6 +1,7 @@
 package admissioncontroller
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -8,15 +9,22 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 )
 
+var (
+	errCentralNoReachable = errors.New("central is not reachable")
+)
+
 // AlertHandler forwards the alerts sent by admission control webhook to Central.
+//
+//go:generate mockgen-wrapper
 type AlertHandler interface {
-	ProcessAlerts(alerts *sensor.AdmissionControlAlerts)
+	ProcessAlerts(alerts *sensor.AdmissionControlAlerts) error
 	common.SensorComponent
 }
 
 type alertHandlerImpl struct {
-	output  chan *central.MsgFromSensor
-	stopSig concurrency.Signal
+	output       chan *central.MsgFromSensor
+	stopSig      concurrency.Signal
+	centralReady concurrency.Signal
 }
 
 func (h *alertHandlerImpl) Start() error {
@@ -28,7 +36,14 @@ func (h *alertHandlerImpl) Stop(_ error) {
 	h.stopSig.Signal()
 }
 
-func (h *alertHandlerImpl) Notify(common.SensorComponentEvent) {}
+func (h *alertHandlerImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		h.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		h.centralReady.Reset()
+	}
+}
 
 func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -46,8 +61,12 @@ func (h *alertHandlerImpl) run() {
 	<-h.stopSig.Done()
 }
 
-func (h *alertHandlerImpl) ProcessAlerts(alerts *sensor.AdmissionControlAlerts) {
+func (h *alertHandlerImpl) ProcessAlerts(alerts *sensor.AdmissionControlAlerts) error {
+	if !h.centralReady.IsDone() {
+		return errCentralNoReachable
+	}
 	go h.processAlerts(alerts)
+	return nil
 }
 
 func (h *alertHandlerImpl) processAlerts(alertMsg *sensor.AdmissionControlAlerts) {
