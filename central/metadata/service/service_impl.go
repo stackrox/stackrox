@@ -75,10 +75,10 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	sensorChallenge := req.GetChallengeToken()
 	sensorChallengeBytes, err := base64.URLEncoding.DecodeString(sensorChallenge)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "challenge token must be a valid base64 string, received %q", err)
+		return nil, errox.InvalidArgs.CausedByf("challenge token must be a valid base64 string: %v", err)
 	}
 	if len(sensorChallengeBytes) != centralsensor.ChallengeTokenLength {
-		return nil, errors.Wrapf(errox.InvalidArgs, "base64 decoded challenge token must be %d bytes long, received challenge %q was %d bytes", centralsensor.ChallengeTokenLength, sensorChallenge, len(sensorChallengeBytes))
+		return nil, errox.InvalidArgs.CausedByf("base64 decoded challenge token must be %d bytes long, received challenge %q was %d bytes", centralsensor.ChallengeTokenLength, sensorChallenge, len(sensorChallengeBytes))
 	}
 
 	// Create central challenge token
