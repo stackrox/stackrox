@@ -197,6 +197,6 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 }
 
 // GetCentralCapabilities returns central services capabilities.
-func (s *serviceImpl) GetCentralCapabilities(ctx context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
+func (s *serviceImpl) GetCentralCapabilities(_ context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
 	return centralcapabilities.GetCentralCapabilities(), nil
 }
