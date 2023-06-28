@@ -11,25 +11,13 @@ type ImageTableCountLinksProps = {
         id: string;
     };
     textOnly: boolean;
-    isFrontendVMUpdatesEnabled: boolean;
 };
 
-function ImageTableCountLinks({
-    row,
-    textOnly,
-    isFrontendVMUpdatesEnabled = false,
-}: ImageTableCountLinksProps): ReactElement {
-    // const { isFeatureFlagEnabled } = useFeatureFlags();
-    // const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
+function ImageTableCountLinks({ row, textOnly }: ImageTableCountLinksProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
 
     const { deploymentCount, componentCount, id } = row;
-
-    const componentTypeToUse = isFrontendVMUpdatesEnabled
-        ? resourceTypes.IMAGE_COMPONENT
-        : resourceTypes.COMPONENT;
 
     // Only show entity counts on relevant pages.
     return (
@@ -40,15 +28,14 @@ function ImageTableCountLinks({
                 textOnly={textOnly}
                 selectedRowId={id}
             />
-            {!entityContext[resourceTypes.COMPONENT] &&
-                !entityContext[resourceTypes.IMAGE_COMPONENT] && (
-                    <TableCountLink
-                        entityType={componentTypeToUse}
-                        count={componentCount}
-                        textOnly={textOnly}
-                        selectedRowId={id}
-                    />
-                )}
+            {!entityContext[resourceTypes.IMAGE_COMPONENT] && (
+                <TableCountLink
+                    entityType={resourceTypes.IMAGE_COMPONENT}
+                    count={componentCount}
+                    textOnly={textOnly}
+                    selectedRowId={id}
+                />
+            )}
         </div>
     );
 }
