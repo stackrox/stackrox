@@ -33,5 +33,10 @@ describe('Delegate Image Scanning', () => {
 
         getInputByLabel('All registries').should('be.checked');
         getInputByLabel('Specified registries').should('not.be.checked');
+
+        // change the type of enabled for
+        getInputByLabel('Specified registries').click();
+        getInputByLabel('All registries').should('not.be.checked');
+        getInputByLabel('Specified registries').should('be.checked');
     });
 });
