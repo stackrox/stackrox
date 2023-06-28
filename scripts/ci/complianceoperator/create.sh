@@ -3,12 +3,18 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 echo "Deploying Compliance Operator"
-git clone git@github.com:openshift/compliance-operator.git
+git clone git@github.com:ComplianceAsCode/compliance-operator.git
 cd compliance-operator
 
-oc create -f deploy/ns.yaml
-for f in $(ls -1 deploy/crds/*crd.yaml); do oc apply -f $f -n openshift-compliance; done
-oc apply -n openshift-compliance -f deploy/
+# Install the Compliance Operator through its own tooling. This helps simplify
+# the installation process, so that what we're using here doesn't diverge from
+# what the Compliance Operator does. Specifically, this builds the container
+# images based on the latest source and uploads them to the image registry
+# available in the cluster before installing the operator. This requires that
+# you've authenticated to the cluster using `oc login` and is
+# OpenShift-specific.
+make deploy-local
+
 
 # Due to reconciliation bug in compliance operator, ensure that the profile exists prior to creating the
 # tailored profile
