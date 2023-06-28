@@ -12,6 +12,7 @@ type PodStore struct {
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
+// Cleanup deletes all entries from store
 func (ps *PodStore) Cleanup() {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()

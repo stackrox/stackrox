@@ -25,6 +25,7 @@ type InMemoryStoreProvider struct {
 	cleanableStores []CleanableStore
 }
 
+// CleanableStore defines a store implementation that has a function for deleting all entries
 type CleanableStore interface {
 	Cleanup()
 }
@@ -67,6 +68,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	return p
 }
 
+// CleanupStores deletes all entries from all stores
 func (p *InMemoryStoreProvider) CleanupStores() {
 	for _, cleanable := range p.cleanableStores {
 		cleanable.Cleanup()
