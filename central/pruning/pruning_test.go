@@ -366,7 +366,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 
-	nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	clusterDataStore, err := clusterDatastore.New(
 		clusterPostgres.New(s.pool),
 		clusterHealthPostgres.New(s.pool),
