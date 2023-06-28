@@ -9,8 +9,6 @@ import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
 
-import util.Helpers
-
 @Slf4j
 class ImageService extends BaseService {
     static ImageServiceGrpc.ImageServiceBlockingStub getImageClient() {
