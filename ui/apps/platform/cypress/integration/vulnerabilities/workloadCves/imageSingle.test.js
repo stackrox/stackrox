@@ -1,22 +1,22 @@
-import capitalize from 'lodash/capitalize';
+import upperFirst from 'lodash/upperFirst';
 
 import withAuth from '../../../helpers/basicAuth';
 import {
     applyLocalSeverityFilters,
     selectResourceFilterType,
     typeAndEnterResourceFilterValue,
+    selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
-describe('Image Single page', () => {
+describe('Workload CVE Image Single page', () => {
     withAuth();
 
     it('should correctly handle Image single page specific behavior', () => {
         visitWorkloadCveOverview();
 
-        // View the 'Image' tab on the overview page and click any image link
-        cy.get(selectors.entityTypeToggleItem('Image')).click();
+        selectEntityTab('Image');
         cy.get('tbody tr td[data-label="Image"] a').first().click();
 
         // Check that only applicable resource menu items are present in the toolbar
@@ -27,6 +27,13 @@ describe('Image Single page', () => {
         cy.get(selectors.resourceMenuItem('Cluster')).should('not.exist');
         cy.get(selectors.resourceMenuItem('Namespace')).should('not.exist');
         cy.get(selectors.resourceDropdown).click();
+    });
+
+    it('should display consistent data between the cards and the table test', () => {
+        visitWorkloadCveOverview();
+
+        selectEntityTab('Image');
+        cy.get('tbody tr td[data-label="Image"] a').first().click();
 
         // Check that the CVEs by severity totals in the card match the number in the "results found" text
         const cardSelector = selectors.summaryCard('CVEs by severity');
@@ -66,8 +73,7 @@ describe('Image Single page', () => {
     it('should correctly apply severity filters', () => {
         visitWorkloadCveOverview();
 
-        // Go to the image tab
-        cy.get(selectors.entityTypeToggleItem('Image')).click();
+        selectEntityTab('Image');
 
         // Find any image with at least one CVE
         cy.get(
@@ -82,7 +88,7 @@ describe('Image Single page', () => {
                         const ariaLabel = $nonZeroSeverityLabel.getAttribute('aria-label');
                         const [, countRaw, severityRaw] = ariaLabel.match(/(\d+) (\w+)/);
                         const count = parseInt(countRaw, 10);
-                        const severity = capitalize(severityRaw);
+                        const severity = upperFirst(severityRaw);
 
                         const bySeverityCard = selectors.summaryCard('CVEs by severity');
                         const byStatusCard = selectors.summaryCard('CVEs by status');
@@ -143,33 +149,31 @@ describe('Image Single page', () => {
         // Visit the workload CVE overview page
         visitWorkloadCveOverview();
 
-        // Select the image tab
-        cy.get(selectors.entityTypeToggleItem('Image')).click();
+        selectEntityTab('Image');
 
         // Select any image that has CVEs in the table
+        // and click the link in the row to visit the image page
         cy.get(
             `tbody tr:has(td[data-label="CVEs by severity"] ${selectors.nonZeroCveSeverityCounts})`
         )
             .first()
-            .then(([$rowWithCves]) => {
-                // Click the link in the table to visit the image page
-                cy.wrap($rowWithCves).find('td[data-label="Image"] a').click();
+            .find('td[data-label="Image"] a')
+            .click();
 
-                // Get any table row and extract the CVE name from the column with the CVE data label
-                cy.get('tbody tr td[data-label="CVE"]')
-                    .first()
-                    .then(([$cveNameCell]) => {
-                        const cveName = $cveNameCell.innerText;
-                        // Select CVE from the entity dropdown
-                        selectResourceFilterType('CVE');
-                        // Enter the CVE name into the CVE filter
-                        typeAndEnterResourceFilterValue('CVE', cveName);
-                        // Check that the header above the table shows only one result
-                        cy.get(`*:contains("1 result found")`);
-                        // Check that the only row in the table has the correct CVE name
-                        cy.get(`tbody tr td[data-label="CVE"]`).should('have.length', 1);
-                        cy.get(`tbody tr td[data-label="CVE"]:contains("${cveName}")`);
-                    });
+        // Get any table row and extract the CVE name from the column with the CVE data label
+        cy.get('tbody tr td[data-label="CVE"]')
+            .first()
+            .then(([$cveNameCell]) => {
+                const cveName = $cveNameCell.innerText;
+                // Select CVE from the entity dropdown
+                selectResourceFilterType('CVE');
+                // Enter the CVE name into the CVE filter
+                typeAndEnterResourceFilterValue('CVE', cveName);
+                // Check that the header above the table shows only one result
+                cy.get(`*:contains("1 result found")`);
+                // Check that the only row in the table has the correct CVE name
+                cy.get(`tbody tr td[data-label="CVE"]`).should('have.length', 1);
+                cy.get(`tbody tr td[data-label="CVE"]:contains("${cveName}")`);
             });
     });
 });
