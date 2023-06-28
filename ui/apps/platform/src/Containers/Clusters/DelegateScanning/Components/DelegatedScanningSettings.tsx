@@ -6,7 +6,7 @@ import { EnabledSelections } from 'types/dedicatedRegistryConfig.proto';
 
 type DelegatedScanningSettingsProps = {
     enabledFor: EnabledSelections;
-    onChangeEnabledFor: (EnabledSelections) => void;
+    onChangeEnabledFor: (newEnabledState: EnabledSelections) => void;
 };
 
 function DelegatedScanningSettings({

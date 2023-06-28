@@ -30,7 +30,7 @@ function DelegatedRegistriesList({ registries }: DelegatedRegistriesListProps) {
                         </Title>
                         <EmptyStateBody>
                             <p>All scans will be delegated to the default cluster.</p>
-                            <p>You can override thise for specific registries.</p>
+                            <p>You can override this for specific registries.</p>
                         </EmptyStateBody>
                         <Button variant="primary">Add registry</Button>
                     </EmptyState>
