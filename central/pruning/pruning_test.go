@@ -2033,11 +2033,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedNodes() {
 
 	nodeDS := s.generateNodeDataStructures()
 
-	// Add some pods to Cluster 1
-	cluster1PodCount := 20
+	// Add some nodes to Cluster 1
+	cluster1NodeCount := 20
 	cluster2NodeCount := 15
 
-	s.addNodes(nodeDS, clusterID1, cluster1PodCount)
+	s.addNodes(nodeDS, clusterID1, cluster1NodeCount)
 	s.addNodes(nodeDS, clusterID2, cluster2NodeCount)
 
 	gci := &garbageCollectorImpl{
