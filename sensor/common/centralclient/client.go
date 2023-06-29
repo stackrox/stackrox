@@ -240,7 +240,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating tls-challenge request")
+		return nil, nil, errors.Wrapf(err, "creating request for %s", route)
 	}
 
 	req.Header.Set("User-Agent", clientconn.GetUserAgent())
@@ -261,7 +261,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 		if err != nil {
 			return nil, peerCertificates, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
 		}
-		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, tlsChallengeRoute, resp.Status, body)
+		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, route, resp.Status, body)
 	}
 	return resp, peerCertificates, nil
 }
