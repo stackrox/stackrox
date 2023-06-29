@@ -84,7 +84,6 @@ const entityNounRegExp = {
     clusters: /^clusters?$/,
     'image-components': /^image components?$/,
     'node-components': /^node components?$/,
-    // For table links, verifyConditionalCVEs uses allCVEsRegExp and fixableCVEsRegExp.
     'image-cves': /^image CVEs?$/,
     'node-cves': /^node CVEs?$/,
     'cluster-cves': /^platform CVEs?$/,
