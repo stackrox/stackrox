@@ -58,7 +58,10 @@ func getConfig() (*gormConfig, error) {
 
 // Connect connects to the Postgres database and returns a Gorm DB instance with error if applicable.
 func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
-	source := fmt.Sprintf("%s database=%s", gc.source, dbName)
+	source := gc.source
+	if !pgconfig.IsExternalDatabase() && dbName != "" {
+		source = fmt.Sprintf("%s database=%s", gc.source, dbName)
+	}
 	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, gc.password, "<REDACTED>", -1))
 
 	db, err := gorm.Open(postgres.Open(source), &gorm.Config{

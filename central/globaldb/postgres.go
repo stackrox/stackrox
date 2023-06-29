@@ -104,11 +104,13 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
 
-		// Get the active database name for the connection
-		activeDB := pgconfig.GetActiveDB()
+		if !pgconfig.IsExternalDatabase() {
+			// Get the active database name for the connection
+			activeDB := pgconfig.GetActiveDB()
 
-		// Set the connection to be the active database.
-		dbConfig.ConnConfig.Database = activeDB
+			// Set the connection to be the active database.
+			dbConfig.ConnConfig.Database = activeDB
+		}
 
 		if err := retry.WithRetry(func() error {
 			postgresDB, err = postgres.New(ctx, dbConfig)
@@ -123,7 +125,7 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 
 		_, err = postgresDB.Exec(ctx, "create extension if not exists pg_stat_statements")
 		if err != nil {
-			log.Errorf("Could not create pg_stat_statements extension: %v", err)
+			log.Warnf("Could not create pg_stat_statements extension.  Statement planning and execution stats may not be tracked: %v", err)
 		}
 		go startMonitoringPostgres(ctx, postgresDB, dbConfig)
 
@@ -255,7 +257,7 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 	metrics.PostgresTotalSize.Set(float64(totalSize))
 
 	// Check Postgres remaining capacity
-	if !env.ManagedCentral.BooleanSetting() {
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
 		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
 		if err != nil {
 			if !loggedCapacityCalculationError {

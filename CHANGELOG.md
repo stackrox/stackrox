@@ -21,6 +21,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-16962: A new parameter `spec.admissionControl.replicas` has been added to the `SecuredCluster` CRD.
 - ROX-18073: The implementation of Add Capabilities policy criteria has been fixed to ensure violations are generated \
 correctly for the specified values.
+- Rollback to a 3.y release or the 4.0 release will no longer be supported starting from 4.3.
+- Rollbacks from future releases to the 4.2 or later release will no longer require `ForceRollbackVersion` to be set.
 
 ## [4.1.0]
 
