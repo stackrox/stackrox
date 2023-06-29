@@ -72,7 +72,7 @@ type tlsConfigurerImpl struct {
 	serverCerts     []tls.Certificate
 	tlsConfigHolder *certwatch.TLSConfigHolder
 
-	mutex sync.RWMutex
+	mutex sync.Mutex
 }
 
 var _ TLSConfigurer = (*tlsConfigurerImpl)(nil)
@@ -187,8 +187,8 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 			return
 		}
 		t.mutex.Lock()
+		defer t.mutex.Unlock()
 		t.clientCAs = []*x509.Certificate{cert}
 		t.tlsConfigHolder.UpdateTLSConfig()
-		t.mutex.Unlock()
 	}
 }
