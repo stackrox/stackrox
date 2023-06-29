@@ -109,7 +109,7 @@ func (t *ClientTestSuite) TestGetPingOK() {
 		t.Equal(pingRoute, r.URL.Path)
 
 		_ = json.NewEncoder(w).Encode(
-			v1.PongMessage{ Status: "ok"},
+			v1.PongMessage{Status: "ok"},
 		)
 	}))
 	defer ts.Close()
