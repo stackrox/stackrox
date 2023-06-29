@@ -86,7 +86,7 @@ function DelegatedScanningSettings({
                         <FormLabelGroup
                             label="Select default cluster to delegate to"
                             isRequired
-                            fieldId="enabledFor"
+                            fieldId="selectedClusterId"
                             touched={{}}
                             errors={{}}
                         >
