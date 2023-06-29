@@ -50,7 +50,7 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 	cfgr.WatchForChanges()
 	watcher.Modify(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
-		Data:       map[string]string{"client-ca-file": string(caFileRaw)},
+		Data:       map[string]string{clientCAKey: string(caFileRaw)},
 	})
 	// Should be long enough to load the client CA in the background.
 	time.Sleep(500 * time.Millisecond)

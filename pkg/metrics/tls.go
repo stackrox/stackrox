@@ -20,6 +20,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const clientCAKey = "client-ca-file"
+
 func certFilePath() string {
 	certDir := env.SecureMetricsCertDir.Setting()
 	certFile := filepath.Join(certDir, env.TLSCertFileName)
@@ -178,7 +180,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	if cm == nil {
 		return
 	}
-	if caFile, ok := cm.Data["client-ca-file"]; ok {
+	if caFile, ok := cm.Data[clientCAKey]; ok {
 		certPEM := []byte(caFile)
 		certBlock, _ := pem.Decode([]byte(certPEM))
 		cert, err := x509.ParseCertificate(certBlock.Bytes)
