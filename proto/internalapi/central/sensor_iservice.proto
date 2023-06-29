@@ -4,6 +4,7 @@ option go_package = "central";
 
 import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
+import "internalapi/central/compliance_operator.proto";
 import "internalapi/central/delegated_registry_config.proto";
 import "internalapi/central/image.proto";
 import "internalapi/central/network_flow.proto";
@@ -22,6 +23,7 @@ import "storage/image.proto";
 
 package central;
 
+// next available tag: 17
 message MsgFromSensor {
     string hash_key                                                     = 7;
     string dedupe_key                                                   = 8;
@@ -39,6 +41,7 @@ message MsgFromSensor {
         IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
         ClusterMetrics                cluster_metrics                   = 13;
         ProcessListeningOnPortsUpdate process_listening_on_port_update  = 14;
+        ComplianceOperatorInfo        compliance_operator_info          = 16;
     }
 }
 

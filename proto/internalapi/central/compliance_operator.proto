@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+package central;
+
+// ComplianceOperatorInfo has basic info and status about the compliance operator.
+message ComplianceOperatorInfo {
+    string          version             = 1;
+    string          namespace           = 2;
+
+    // The following fields are made optional/nullable because there can be errors when trying to obtain them.
+    oneof total_desired_pods_opt {
+        int32       total_desired_pods  = 3;
+    }
+    oneof total_ready_pods_opt {
+        int32       total_ready_pods    = 4;
+    }
+
+    // Collection of errors that occurred while trying to obtain collector health info.
+    repeated string status_errors       = 5;
+}
