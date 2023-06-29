@@ -54,6 +54,7 @@ function SeverityCountLabels({
         <Flex spaceItems={{ default: 'spaceItemsSm' }} flexWrap={{ default: 'nowrap' }}>
             <Tooltip content={getTooltipContent('critical', critical, entity)}>
                 <Label
+                    aria-label={getTooltipContent('critical', critical, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
                     icon={<CriticalIcon color={critical ? undefined : fadedTextColor} />}
@@ -75,6 +76,7 @@ function SeverityCountLabels({
             </Tooltip>
             <Tooltip content={getTooltipContent('important', important, entity)}>
                 <Label
+                    aria-label={getTooltipContent('important', important, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
                     icon={<ImportantIcon color={important ? undefined : fadedTextColor} />}
@@ -96,6 +98,7 @@ function SeverityCountLabels({
             </Tooltip>
             <Tooltip content={getTooltipContent('moderate', moderate, entity)}>
                 <Label
+                    aria-label={getTooltipContent('moderate', moderate, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
                     icon={<ModerateIcon color={moderate ? undefined : fadedTextColor} />}
@@ -117,6 +120,7 @@ function SeverityCountLabels({
             </Tooltip>
             <Tooltip content={getTooltipContent('low', low, entity)}>
                 <Label
+                    aria-label={getTooltipContent('low', low, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
                     icon={<LowIcon color={low ? undefined : fadedTextColor} />}

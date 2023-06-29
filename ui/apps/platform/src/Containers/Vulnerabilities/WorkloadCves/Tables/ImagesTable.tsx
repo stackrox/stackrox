@@ -124,14 +124,14 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                             }}
                         >
                             <Tr>
-                                <Td>
+                                <Td dataLabel="Image">
                                     {name ? (
                                         <ImageNameTd name={name} id={id} />
                                     ) : (
                                         'Image name not available'
                                     )}
                                 </Td>
-                                <Td>
+                                <Td dataLabel="CVEs by severity">
                                     <SeverityCountLabels
                                         criticalCount={criticalCount}
                                         importantCount={importantCount}

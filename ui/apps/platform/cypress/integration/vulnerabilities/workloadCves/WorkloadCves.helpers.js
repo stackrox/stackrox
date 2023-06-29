@@ -59,3 +59,12 @@ export function typeAndEnterResourceFilterValue(entityType, value) {
     cy.get(selectors.resourceValueMenuItem(entityType, value)).click();
     cy.get(selectors.resourceValueTypeahead(entityType)).click();
 }
+
+/**
+ * View a specific entity tab for a Workload CVE table
+ *
+ * @param {('CVE' | 'Image' | 'Deployment')} entityType
+ */
+export function selectEntityTab(entityType) {
+    cy.get(selectors.entityTypeToggleItem(entityType)).click();
+}
