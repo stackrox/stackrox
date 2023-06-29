@@ -15,7 +15,9 @@ import uniqBy from 'lodash/uniqBy';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { Collection, listCollections } from 'services/CollectionsService';
-import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
+import CollectionsFormModal, {
+    CollectionFormModalAction,
+} from 'Containers/Collections/CollectionFormModal';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
@@ -37,12 +39,11 @@ function CollectionSelection({
     allowCreate,
 }: CollectionSelectionProps): ReactElement {
     const { isOpen, onToggle } = useSelectToggle();
-    const { configError, setConfigError, onSubmit } = useCollectionFormSubmission({
-        type: 'create',
-    });
-    const [search, setSearch] = useState('');
-
+    const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
     const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
+
+    const { configError, setConfigError, onSubmit } = useCollectionFormSubmission(modalAction);
+    const [search, setSearch] = useState('');
 
     const requestFn = useCallback(
         (page: number) => {
@@ -104,7 +105,13 @@ function CollectionSelection({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data]);
 
-    function onToggleCollectionModal() {
+    function onOpenViewCollectionModal() {
+        setModalAction({ type: 'view', collectionId: selectedScopeId });
+        setIsCollectionModalOpen((current) => !current);
+    }
+
+    function onOpenCreateCollectionModal() {
+        setModalAction({ type: 'create' });
         setIsCollectionModalOpen((current) => !current);
     }
 
@@ -126,20 +133,23 @@ function CollectionSelection({
 
     return (
         <>
-            <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
-                <FlexItem>
-                    <FormLabelGroup
-                        className="pf-u-mb-md"
-                        isRequired
-                        label="Configure report scope"
-                        fieldId="scopeId"
-                        touched={isLegacyReportScopeSelected ? { scopeId: true } : {}}
-                        errors={
-                            isLegacyReportScopeSelected
-                                ? { scopeId: 'Choose a new collection to use as the report scope' }
-                                : {}
-                        }
-                    >
+            <FormLabelGroup
+                isRequired
+                label="Configure report scope"
+                fieldId="scopeId"
+                touched={isLegacyReportScopeSelected ? { scopeId: true } : {}}
+                errors={
+                    isLegacyReportScopeSelected
+                        ? { scopeId: 'Choose a new collection to use as the report scope' }
+                        : {}
+                }
+            >
+                <Flex
+                    direction={{ default: 'row' }}
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    alignItems={{ default: 'alignItemsFlexEnd' }}
+                >
+                    <FlexItem>
                         <Select
                             id="scopeId"
                             onSelect={onScopeChange}
@@ -167,24 +177,32 @@ function CollectionSelection({
                                 </SelectOption>
                             ))}
                         </Select>
-                    </FormLabelGroup>
-                </FlexItem>
-                {allowCreate && (
-                    <FlexItem>
+                    </FlexItem>
+                    <FlexItem spacer={{ default: 'spacerMd' }}>
                         <Button
-                            className="pf-u-mb-md"
-                            variant={ButtonVariant.secondary}
-                            onClick={onToggleCollectionModal}
+                            variant={ButtonVariant.tertiary}
+                            onClick={onOpenViewCollectionModal}
+                            isDisabled={selectedScopeId === ''}
                         >
-                            Create collection
+                            View
                         </Button>
                     </FlexItem>
-                )}
-            </Flex>
+                    {allowCreate && (
+                        <FlexItem>
+                            <Button
+                                variant={ButtonVariant.secondary}
+                                onClick={onOpenCreateCollectionModal}
+                            >
+                                Create collection
+                            </Button>
+                        </FlexItem>
+                    )}
+                </Flex>
+            </FormLabelGroup>
             {isCollectionModalOpen && (
                 <CollectionsFormModal
                     hasWriteAccessForCollections={allowCreate}
-                    modalAction={{ type: 'create' }}
+                    modalAction={modalAction}
                     onClose={() => setIsCollectionModalOpen(false)}
                     configError={configError}
                     setConfigError={setConfigError}
