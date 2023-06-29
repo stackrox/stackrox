@@ -181,8 +181,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 		return
 	}
 	if caFile, ok := cm.Data[clientCAKey]; ok {
-		certPEM := []byte(caFile)
-		certBlock, _ := pem.Decode([]byte(certPEM))
+		certBlock, _ := pem.Decode([]byte(caFile))
 		cert, err := x509.ParseCertificate(certBlock.Bytes)
 		if err != nil {
 			log.Errorw("Unable to parse client CA", zap.Error(err))
