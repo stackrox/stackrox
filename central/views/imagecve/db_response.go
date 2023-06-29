@@ -7,19 +7,19 @@ import (
 )
 
 type imageCVECoreResponse struct {
-	CVE                                string    `db:"cve"`
-	CVEIDs                             []string  `db:"cve_id"`
-	ImagesWithCriticalSeverity         int       `db:"critical_severity_count"`
-	FixableImagesWithCriticalSeverity  int       `db:"fixable_critical_severity_count"`
-	ImagesWithImportantSeverity        int       `db:"important_severity_count"`
-	FixableImagesWithImportantSeverity int       `db:"fixable_important_severity_count"`
-	ImagesWithModerateSeverity         int       `db:"moderate_severity_count"`
-	FixableImagesWithModerateSeverity  int       `db:"fixable_moderate_severity_count"`
-	ImagesWithLowSeverity              int       `db:"low_severity_count"`
-	FixableImagesWithLowSeverity       int       `db:"fixable_low_severity_count"`
-	TopCVSS                            float32   `db:"cvss_max"`
-	AffectedImageCount                 int       `db:"image_sha_count"`
-	FirstDiscoveredInSystem            time.Time `db:"cve_created_time_min"`
+	CVE                                string     `db:"cve"`
+	CVEIDs                             []string   `db:"cve_id"`
+	ImagesWithCriticalSeverity         int        `db:"critical_severity_count"`
+	FixableImagesWithCriticalSeverity  int        `db:"fixable_critical_severity_count"`
+	ImagesWithImportantSeverity        int        `db:"important_severity_count"`
+	FixableImagesWithImportantSeverity int        `db:"fixable_important_severity_count"`
+	ImagesWithModerateSeverity         int        `db:"moderate_severity_count"`
+	FixableImagesWithModerateSeverity  int        `db:"fixable_moderate_severity_count"`
+	ImagesWithLowSeverity              int        `db:"low_severity_count"`
+	FixableImagesWithLowSeverity       int        `db:"fixable_low_severity_count"`
+	TopCVSS                            float32    `db:"cvss_max"`
+	AffectedImageCount                 int        `db:"image_sha_count"`
+	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
 }
 
 func (c *imageCVECoreResponse) GetCVE() string {
@@ -52,7 +52,7 @@ func (c *imageCVECoreResponse) GetAffectedImageCount() int {
 }
 
 func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() time.Time {
-	return c.FirstDiscoveredInSystem
+	return *c.FirstDiscoveredInSystem
 }
 
 type imageCVECoreCount struct {
@@ -115,9 +115,9 @@ type imageResponse struct {
 	ImageID string `db:"image_sha"`
 
 	// Following are supported sort options.
-	ImageFullName   string    `db:"image"`
-	OperatingSystem string    `db:"image_os"`
-	ScanTime        time.Time `db:"image_scan_time"`
+	ImageFullName   string     `db:"image"`
+	OperatingSystem string     `db:"image_os"`
+	ScanTime        *time.Time `db:"image_scan_time"`
 }
 
 type deploymentResponse struct {

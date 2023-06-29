@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -624,10 +623,10 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
 				return func(i, j int) bool {
-					if records[i].FirstDiscoveredInSystem.Equal(records[j].FirstDiscoveredInSystem) {
+					if records[i].FirstDiscoveredInSystem.Equal(*records[j].FirstDiscoveredInSystem) {
 						return records[i].CVE < records[j].CVE
 					}
-					return records[i].FirstDiscoveredInSystem.Before(records[j].FirstDiscoveredInSystem)
+					return records[i].FirstDiscoveredInSystem.Before(*records[j].FirstDiscoveredInSystem)
 				}
 			},
 		},
@@ -755,7 +754,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val = &imageCVECoreResponse{
 						CVE:                     vuln.GetCve(),
 						TopCVSS:                 vuln.GetCvss(),
-						FirstDiscoveredInSystem: vulnTime,
+						FirstDiscoveredInSystem: &vulnTime,
 					}
 					cveMap[val.CVE] = val
 				}
@@ -775,7 +774,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
-					val.FirstDiscoveredInSystem = vulnTime
+					val.FirstDiscoveredInSystem = &vulnTime
 				}
 
 				if !seenForImage.Add(val.CVE) {
@@ -843,7 +842,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 	}
 	if options.SkipGetFirstDiscoveredInSystem {
 		for _, entry := range cveMap {
-			entry.FirstDiscoveredInSystem = time.Time{}
+			entry.FirstDiscoveredInSystem = nil
 		}
 	}
 	if less != nil {
