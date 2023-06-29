@@ -151,9 +151,10 @@ CLUSTER_NAME="my-secured-cluster"
 ```
 Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
 ```sh
-helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-  -f stackrox-init-bundle.yaml \
-  --set clusterName="$CLUSTER_NAME"
+helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f simon-test-cluster-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME" \
+  --set centralEndpoint="central.stackrox.svc:443"
 ```
 When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
@@ -164,6 +165,7 @@ When deploying StackRox Secured Cluster Services on a small node, you can instal
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
+  --set centralEndpoint="central.stackrox.svc:443" \
   --set sensor.resources.requests.memory=500Mi \
   --set sensor.resources.requests.cpu=500m \
   --set sensor.resources.limits.memory=500Mi \
