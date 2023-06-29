@@ -1,15 +1,20 @@
 package resolver
 
 import (
+	"sync/atomic"
+
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 // New instantiates a Resolver component
 func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int) component.Resolver {
-	return &resolverImpl{
+	resolver := &resolverImpl{
 		outputQueue:   outputQueue,
 		innerQueue:    make(chan *component.ResourceEvent, queueSize),
 		storeProvider: provider,
+		stopped:       &atomic.Bool{},
 	}
+	resolver.stopped.Store(false)
+	return resolver
 }

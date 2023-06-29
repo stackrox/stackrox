@@ -1,6 +1,8 @@
 package resolver
 
 import (
+	"sync/atomic"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,6 +20,7 @@ type resolverImpl struct {
 	innerQueue  chan *component.ResourceEvent
 
 	storeProvider store.Provider
+	stopped       *atomic.Bool
 }
 
 // Start the resolverImpl component
@@ -29,12 +32,15 @@ func (r *resolverImpl) Start() error {
 // Stop the resolverImpl component
 func (r *resolverImpl) Stop(_ error) {
 	defer close(r.innerQueue)
+	r.stopped.Store(true)
 }
 
 // Send a ResourceEvent message to the inner queue
 func (r *resolverImpl) Send(event *component.ResourceEvent) {
-	r.innerQueue <- event
-	metrics.IncResolverChannelSize()
+	if !r.stopped.Load() {
+		r.innerQueue <- event
+		metrics.IncResolverChannelSize()
+	}
 }
 
 // runResolver reads messages from the inner queue and process the message
