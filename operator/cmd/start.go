@@ -183,7 +183,7 @@ var startCmd = cobra.Command{
 func init() {
 	rootCmd.AddCommand(&startCmd)
 	startCmd.Flags().DurationVar(&syncPeriod, "sync-period", time.Hour*10, "Determines the minimum frequency at which watched resources are reconciled. A lower period will correct entropy more quickly, but reduce responsiveness to change if there are many watched resources.")
-	startCmd.Flags().StringVar(&metricsBindAddr, "metrics-bind-addr", ":8080", "The address the metric endpoint binds to.")
+	startCmd.Flags().StringVar(&metricsBindAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	startCmd.Flags().StringVar(&healthProbeBindAddrress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	startCmd.Flags().StringVar(&readinessProbeEndpointName, "readiness-probe-endpoint-name", "readyz", "Endpoint for the readiness probe")
 	startCmd.Flags().StringVar(&livenessProbeEndpointName, "liveness-probe-endpoint-name", "healthz", "Endpoint for the liveness probe")

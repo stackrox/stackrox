@@ -48,20 +48,20 @@ func TestStart(t *testing.T) {
 			},
 		}, {
 			name:    "metricsBindAddr env var",
-			envVars: map[string]string{"METRICS_BIND_ADDR": "custom"},
+			envVars: map[string]string{"METRICS_BIND_ADDRESS": "custom"},
 			assert: func(t *testing.T) {
 				assert.Equal(t, "custom", metricsBindAddr)
 			},
 		}, {
 			name: "metricsBindAddr flag",
-			args: []string{"--metrics-bind-addr", "custom"},
+			args: []string{"--metrics-bind-address", "custom"},
 			assert: func(t *testing.T) {
 				assert.Equal(t, "custom", metricsBindAddr)
 			},
 		}, {
 			name:    "metricsBindAddr flag overrides env var",
-			args:    []string{"--metrics-bind-addr", "custom"},
-			envVars: map[string]string{"METRICS_BIND_ADDR": "env"},
+			args:    []string{"--metrics-bind-address", "custom"},
+			envVars: map[string]string{"METRICS_BIND_ADDRESS": "env"},
 			assert: func(t *testing.T) {
 				assert.Equal(t, "custom", metricsBindAddr)
 			},

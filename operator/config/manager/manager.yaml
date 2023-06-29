@@ -32,6 +32,7 @@ spec:
         runAsNonRoot: true
       containers:
       - args:
+        - start
         - --leader-elect
         env:
         - name: RELATED_IMAGE_MAIN
