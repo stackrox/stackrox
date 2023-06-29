@@ -150,7 +150,9 @@ class BaseSpecification extends Specification {
             tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }
 
+        assert tokenResp
         allAccessToken = tokenResp.token
+        assert allAccessToken
 
         setupCoreImageIntegration()
 
@@ -267,20 +269,26 @@ class BaseSpecification extends Specification {
         ]
     }
 
-    def resetAuth() {
+    // useDesiredServiceAuth() - configure the central gRPC connection auth as
+    // desired for test.
+    def useDesiredServiceAuth() {
         BaseService.setUseClientCert(false)
-        if (allAccessToken) {
-            BaseService.useApiToken(allAccessToken)
-        } else {
-            BaseService.useBasicAuth()
-        }
+        useTokenServiceAuth()
+    }
+
+    // useTokenServiceAuth() - configure the central gRPC connection auth to
+    // use an all access token.
+    def useTokenServiceAuth() {
+        assert allAccessToken
+        BaseService.useApiToken(allAccessToken)
     }
 
     def setup() {
         log.info("Starting testcase")
 
-        //Always make sure to revert back to the allAccessToken before each test
-        resetAuth()
+        // Make sure to use or revert back to the desired central gRPC auth
+        // before each test.
+        useDesiredServiceAuth()
 
         if (ClusterService.isEKS() && System.currentTimeSeconds() > orchestratorCreateTime + 600) {
             // Avoid EKS k8s client time out which occurs at approx. 15 minutes.

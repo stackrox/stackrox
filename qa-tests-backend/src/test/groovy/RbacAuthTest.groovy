@@ -97,7 +97,7 @@ spec:
                 throw ex
             }
         } finally {
-            resetAuth()
+            useDesiredServiceAuth()
         }
         return true
     }
@@ -109,7 +109,7 @@ spec:
         try {
             return RoleService.myPermissions()
         } finally {
-            resetAuth()
+            useDesiredServiceAuth()
         }
     }
 
@@ -142,7 +142,7 @@ spec:
         }
 
         cleanup:
-        resetAuth()
+        useDesiredServiceAuth()
 
         "remove role and token"
         if (resourceAccess.containsKey("NetworkPolicy") &&
