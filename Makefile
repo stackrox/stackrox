@@ -489,7 +489,7 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
-.PHONE: sensor-integration-test
+.PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
 	set -eo pipefail ; \
 	rm -rf  $(GO_TEST_OUTPUT_PATH); \
