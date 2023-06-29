@@ -16,6 +16,7 @@ import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReportin
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm';
+import ReportReviewForm from '../forms/ReportReviewForm';
 
 function VulnReportsPage() {
     const { formValues, setFormValues } = useReportFormValues();
@@ -63,8 +64,8 @@ function VulnReportsPage() {
                         { name: 'Configure delivery destinations (Optional)', component: <p /> },
                         {
                             name: 'Review and create',
-                            component: <p />,
-                            nextButtonText: 'Finish',
+                            component: <ReportReviewForm formValues={formValues} />,
+                            nextButtonText: 'Create',
                         },
                     ]}
                     hasNoBodyPadding
