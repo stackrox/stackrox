@@ -34,18 +34,6 @@ func keyFilePath() string {
 	return keyFile
 }
 
-// TLSConfigurer instantiates and updates the TLS configuration of a web server.
-//
-// The TLS configuration contains both server certificates and client CA, which
-// are both watched for changes to dynamically reload the TLS configuration.
-// The server certificates are read from file-mounted secrets. The client CA is
-// read from an external config map via the Kubernetes API.
-//
-//go:generate mockgen-wrapper
-type TLSConfigurer interface {
-	TLSConfig() (*tls.Config, error)
-}
-
 // nilTLSConfigurer is a no-op configurer.
 type nilTLSConfigurer struct{}
 
@@ -54,12 +42,14 @@ func (t *nilTLSConfigurer) TLSConfig() (*tls.Config, error) {
 	return nil, nil
 }
 
-var _ TLSConfigurer = (*nilTLSConfigurer)(nil)
+var _ verifier.TLSConfigurer = (*nilTLSConfigurer)(nil)
 
-// tlsConfigurerImpl holds the current TLS configuration. The configurer
-// watches the certificate directory for changes and updates the server
-// certificates in the TLS config. The client CA is updated based on a
-// Kubernetes config map watcher.
+// tlsConfigurerImpl holds the current TLS configuration.
+//
+// The TLS configuration contains both server certificates and client CA, which
+// are both watched for changes to dynamically reload the TLS configuration.
+// The server certificates are read from file-mounted secrets. The client CA is
+// read from an external config map via the Kubernetes API.
 type tlsConfigurerImpl struct {
 	certDir           string
 	clientCAConfigMap string
@@ -73,10 +63,10 @@ type tlsConfigurerImpl struct {
 	mutex sync.Mutex
 }
 
-var _ TLSConfigurer = (*tlsConfigurerImpl)(nil)
+var _ verifier.TLSConfigurer = (*tlsConfigurerImpl)(nil)
 
 // newTLSConfigurer creates a new TLS configurer.
-func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) TLSConfigurer {
+func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) verifier.TLSConfigurer {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
 	cfgr := &tlsConfigurerImpl{
@@ -93,7 +83,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 }
 
 // NewTLSConfigurerFromEnv creates a new TLS configurer based on environment variables.
-func NewTLSConfigurerFromEnv() TLSConfigurer {
+func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 	if !secureMetricsEnabled() {
 		return &nilTLSConfigurer{}
 	}

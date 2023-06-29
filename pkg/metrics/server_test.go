@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/metrics/mocks"
+	"github.com/stackrox/rox/pkg/mtls/verifier/mocks"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
