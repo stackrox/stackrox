@@ -105,7 +105,7 @@ func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
 //
 // Example:
 //
-//	return errox.InvalidArgument.CausedBy(err)
+//	return errox.InvalidArgs.CausedBy(err)
 //
 // or
 //
@@ -120,7 +120,7 @@ func (e *RoxError) CausedBy(cause interface{}) error {
 //
 // Example:
 //
-//	return errox.InvalidArgument.CausedByf("unknown parameter %v", p)
+//	return errox.InvalidArgs.CausedByf("unknown parameter %v", p)
 func (e *RoxError) CausedByf(format string, args ...interface{}) error {
 	return e.CausedBy(fmt.Sprintf(format, args...))
 }
