@@ -34,7 +34,7 @@ var (
 const (
 	requestTimeout          = 10 * time.Second
 	tlsChallengeRoute       = "/v1/tls-challenge"
-	metadataRoute           = "/v1/metadata"
+	pingRoute               = "/v1/ping"
 	challengeTokenParamName = "challengeToken"
 )
 
@@ -99,21 +99,21 @@ func NewClient(endpoint string) (*Client, error) {
 	}, nil
 }
 
-// GetMetadata returns Central's metadata
-func (c *Client) GetMetadata(ctx context.Context) (*v1.Metadata, error) {
-	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, metadataRoute, nil, nil)
+// GetPing pings Central.
+func (c *Client) GetPing(ctx context.Context) (*v1.PongMessage, error) {
+	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, pingRoute, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "receiving Central metadata")
+		return nil, errors.Wrap(err, "pinging Central")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	var metadata v1.Metadata
-	err = jsonutil.JSONReaderToProto(resp.Body, &metadata)
+	var pong v1.PongMessage
+	err = jsonutil.JSONReaderToProto(resp.Body, &pong)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", metadataRoute, resp.StatusCode)
+		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", pingRoute, resp.StatusCode)
 	}
 
-	return &metadata, nil
+	return &pong, nil
 }
 
 // GetTLSTrustedCerts returns all certificates which are trusted by Central and its leaf certificates.
