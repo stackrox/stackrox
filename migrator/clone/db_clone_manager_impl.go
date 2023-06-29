@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
 
 // dbCloneManagerImpl - scans and manage database clones within central.
@@ -15,6 +16,7 @@ type dbCloneManagerImpl struct {
 	basePath             string
 	dbmRocks             rocksdb.DBCloneManager
 	dbmPostgres          pgClone.DBCloneManager
+	external             bool
 }
 
 // NewPostgres - returns a new ready-to-use manager.
@@ -26,6 +28,7 @@ func NewPostgres(basePath string, forceVersion string, adminConfig *postgres.Con
 		basePath:             basePath,
 		dbmRocks:             rocksdb.New(basePath, forceVersion),
 		dbmPostgres:          pgClone.New(forceVersion, adminConfig, sourceMap),
+		external:             pgconfig.IsExternalDatabase(),
 	}
 }
 
@@ -47,12 +50,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		log.Warn(err)
 	}
 
-	err = d.dbmPostgres.Scan()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return d.dbmPostgres.Scan()
 }
 
 // GetCloneToMigrate - finds a clone to migrate.
@@ -108,6 +106,11 @@ func (d *dbCloneManagerImpl) Persist(cloneName string, pgClone string, persistBo
 		if err := d.dbmRocks.Persist(cloneName); err != nil {
 			log.Warnf("Unable to create a previous version of Rocks to rollback to: %v", err)
 		}
+	}
+
+	// External DB does not use clone copies so simply return once migration is complete
+	if d.external {
+		return nil
 	}
 
 	return d.dbmPostgres.Persist(pgClone)

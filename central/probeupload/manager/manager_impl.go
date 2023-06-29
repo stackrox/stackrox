@@ -161,9 +161,8 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 		return errors.Errorf("invalid file name %q", file)
 	}
 
-	// When using managed services, Postgres space is not a concern.
-	// TODO(ROX-16407): Use flag to guard space calculating
-	if !env.ManagedCentral.BooleanSetting() {
+	// When using external databases, Postgres space cannot be calculated.
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
 		requiredBytes := uint64(size) + uint64(metadataSizeOverhead) + uint64(m.freeStorageThreshold)
 		if freeBytes, err := availableBytes(); err == nil && uint64(freeBytes) < requiredBytes {
 			return errors.Errorf("only %d bytes left on database, not storing probes to avoid impacting database health", freeBytes)
