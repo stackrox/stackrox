@@ -7,7 +7,7 @@ import {
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
-describe('Image CVE Single page', () => {
+describe('Workload CVE Image CVE Single page', () => {
     withAuth();
 
     it('should correctly handle ImageCVE single page specific behavior', () => {
