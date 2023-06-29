@@ -770,6 +770,11 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type MetadataServiceClient interface {
 	GetMetadata(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Metadata, error)
+	// TLSChallenge
+	//
+	// Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
+	// chain. This is necessary if Central is running behind a load balancer
+	// with self-signed certificates. Does not require authentication.
 	TLSChallenge(ctx context.Context, in *TLSChallengeRequest, opts ...grpc.CallOption) (*TLSChallengeResponse, error)
 	GetDatabaseStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseStatus, error)
 	GetDatabaseBackupStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseBackupStatus, error)
@@ -832,6 +837,11 @@ func (c *metadataServiceClient) GetCentralCapabilities(ctx context.Context, in *
 // MetadataServiceServer is the server API for MetadataService service.
 type MetadataServiceServer interface {
 	GetMetadata(context.Context, *Empty) (*Metadata, error)
+	// TLSChallenge
+	//
+	// Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
+	// chain. This is necessary if Central is running behind a load balancer
+	// with self-signed certificates. Does not require authentication.
 	TLSChallenge(context.Context, *TLSChallengeRequest) (*TLSChallengeResponse, error)
 	GetDatabaseStatus(context.Context, *Empty) (*DatabaseStatus, error)
 	GetDatabaseBackupStatus(context.Context, *Empty) (*DatabaseBackupStatus, error)

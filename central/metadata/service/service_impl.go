@@ -18,11 +18,28 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(): {
+			"/v1.MetadataService/GetDatabaseBackupStatus",
+			"/v1.MetadataService/GetCentralCapabilities",
+		},
+		allow.Anonymous(): {
+			"/v1.MetadataService/GetMetadata",
+			"/v1.MetadataService/TLSChallenge",
+			"/v1.MetadataService/GetDatabaseStatus",
+		},
+	})
 )
 
 // Service is the struct that manages the Metadata API
@@ -45,7 +62,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetMetadata returns the metadata for Rox.
@@ -180,10 +197,6 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 }
 
 // GetCentralCapabilities returns central services capabilities.
-func (s *serviceImpl) GetCentralCapabilities(ctx context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
-	if authn.IdentityFromContextOrNil(ctx) == nil {
-		return nil, errox.NotAuthorized
-	}
-
+func (s *serviceImpl) GetCentralCapabilities(_ context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
 	return centralcapabilities.GetCentralCapabilities(), nil
 }
