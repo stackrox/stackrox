@@ -9,7 +9,8 @@ var (
 	TelemetryEndpoint = RegisterSetting("ROX_TELEMETRY_ENDPOINT", AllowEmpty())
 
 	// TelemetryConfigURL to retrieve the telemetry configuration from.
-	TelemetryConfigURL = RegisterSetting("ROX_TELEMETRY_CONFIG_URL", WithDefault("https://telemetry.stackrox.io/config.json"))
+	// TODO(ROX-17726): Set default URL for self-managed installations use.
+	TelemetryConfigURL = RegisterSetting("ROX_TELEMETRY_CONFIG_URL", WithDefault(""))
 
 	// TelemetryFrequency is the frequency at which we will report telemetry.
 	TelemetryFrequency = registerDurationSetting("ROX_TELEMETRY_FREQUENCY", 10*time.Minute)
