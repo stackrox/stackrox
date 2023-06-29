@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
-	NginxPod        = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml"}
+	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml", Name: "nginx-deployment"}
+	NginxPod        = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml", Name: "nginx-rogue"}
 )
 
 type PodHierarchySuite struct {
