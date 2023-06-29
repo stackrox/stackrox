@@ -86,7 +86,6 @@ func (s *Server) RunForever() {
 
 	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
 	if runSecureMetrics {
-		s.tlsConfigurer.WatchForChanges()
 		go runForeverTLS(s.secureMetricsServer)
 	}
 

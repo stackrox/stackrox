@@ -48,15 +48,3 @@ func (mr *MockTLSConfigurerMockRecorder) TLSConfig() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TLSConfig", reflect.TypeOf((*MockTLSConfigurer)(nil).TLSConfig))
 }
-
-// WatchForChanges mocks base method.
-func (m *MockTLSConfigurer) WatchForChanges() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "WatchForChanges")
-}
-
-// WatchForChanges indicates an expected call of WatchForChanges.
-func (mr *MockTLSConfigurerMockRecorder) WatchForChanges() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WatchForChanges", reflect.TypeOf((*MockTLSConfigurer)(nil).WatchForChanges))
-}

@@ -44,14 +44,10 @@ func keyFilePath() string {
 //go:generate mockgen-wrapper
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
-	WatchForChanges()
 }
 
 // nilTLSConfigurer is a no-op configurer.
 type nilTLSConfigurer struct{}
-
-// WatchForChanges does nothing.
-func (t *nilTLSConfigurer) WatchForChanges() {}
 
 // TLSConfig returns nil.
 func (t *nilTLSConfigurer) TLSConfig() (*tls.Config, error) {
@@ -92,6 +88,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
 	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
+	cfgr.watchForChanges()
 	return cfgr
 }
 
@@ -116,8 +113,8 @@ func NewTLSConfigurerFromEnv() TLSConfigurer {
 	return cfgr
 }
 
-// WatchForChanges watches for changes of the server TLS certificate files and the client CA config map.
-func (t *tlsConfigurerImpl) WatchForChanges() {
+// watchForChanges watches for changes of the server TLS certificate files and the client CA config map.
+func (t *tlsConfigurerImpl) watchForChanges() {
 	// Watch for changes of server TLS certificate.
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
 

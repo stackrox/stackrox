@@ -213,7 +213,6 @@ func TestSecureMetricsServerHTTPRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	fakeTLSConfigurer := mocks.NewMockTLSConfigurer(ctrl)
 	fakeTLSConfigurer.EXPECT().TLSConfig().Return(fakeTLSConfig())
-	fakeTLSConfigurer.EXPECT().WatchForChanges()
 
 	server := NewServer(CentralSubsystem, fakeTLSConfigurer)
 	defer server.Stop(context.TODO())

@@ -27,8 +27,6 @@ func TestTLSConfigurerServerCertLoading(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, tlsConfig.Certificates)
 
-	cfgr.WatchForChanges()
-
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		tlsConfig, err = tlsConfig.GetConfigForClient(nil)
 		require.NoError(t, err)
@@ -49,7 +47,6 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, tlsConfig.ClientCAs)
 
-	cfgr.WatchForChanges()
 	watcher.Modify(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
 		Data:       map[string]string{clientCAKey: string(caFileRaw)},
