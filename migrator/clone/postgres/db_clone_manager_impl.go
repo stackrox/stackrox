@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,9 +39,46 @@ func New(forceVersion string, adminConfig *postgres.Config, sourceMap map[string
 	}
 }
 
+func (d *dbCloneManagerImpl) getVersion() (*migrations.MigrationVersion, error) {
+	ctx := sac.WithAllAccess(context.Background())
+
+	gc := migGorm.GetConfig()
+	db, err := gc.ConnectWithRetries(d.adminConfig.ConnConfig.Database)
+	if err != nil {
+		return nil, err
+	}
+	defer migGorm.Close(db)
+
+	return migVer.ReadVersionGormDB(ctx, db)
+}
+
+func (d *dbCloneManagerImpl) ensureVersionCompatible() error {
+	ver, err := d.getVersion()
+	if err != nil {
+		return err
+	}
+	log.Infof("db is of version %v", ver)
+
+	if d.versionExists(ver) {
+		// current sequence number == database sequence number -- All good
+		// current sequence number != database sequence number BUT database min >= current min -- ALL Good
+		// version min < current database min -- DO NOT ROLLBACK
+		if ver.MinimumSeqNum > migrations.MinimumSupportedDBVersionSeqNum() {
+			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.MinimumSupportedDBVersionSeqNum(), ver.MinimumSeqNum)
+		}
+	}
+
+	return nil
+}
+
 // Scan - checks the persistent data of central and gather the clone information
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
+
+	if pgconfig.IsExternalDatabase() {
+		return d.ensureVersionCompatible()
+	}
+
 	clones, err := pgadmin.GetDatabaseClones(d.adminConfig)
 	if err != nil {
 		return err
@@ -71,15 +109,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 	if !currExists || currClone.GetMigVersion() == nil {
 		log.Info("Cannot find the current database or it has no version, so we need to let it create and ignore other clones.")
 	} else {
-		// If the database version is newer than the software version make the user explicitly state they want to rollback.
-		// TODO:  Do we still want to do this `forceRollbackVersion` check?
-		if version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 {
-			// Force rollback is not requested.
-			if d.forceRollbackVersion != version.GetMainVersion() {
-				return errors.New(metadata.ErrForceUpgradeDisabled)
-			}
-		}
-
 		// current sequence number == database sequence number -- All good
 		// current sequence number != database sequence number BUT database min >= current min -- ALL Good
 		// version min < current database min -- DO NOT ROLLBACK
@@ -136,10 +165,33 @@ func (d *dbCloneManagerImpl) databaseExists(clone string) (bool, error) {
 	return pgadmin.CheckIfDBExists(d.adminConfig, clone)
 }
 
+func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.MigrationVersion) (string, bool, error) {
+	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
+	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
+	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
+	// of Rocks -> Postgres fails so we can start fresh.
+	if d.versionExists(rocksVersion) {
+		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
+		ver, err := d.getVersion()
+		if err != nil {
+			return "", false, err
+		}
+		log.Infof("db is of version %v", ver)
+
+		if !d.versionExists(ver) {
+			return d.adminConfig.ConnConfig.Database, true, nil
+		}
+	}
+	return d.adminConfig.ConnConfig.Database, false, nil
+}
+
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the database clone name, flag informing if Rocks should be used as well and error if fails.
 func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
 	log.Info("GetCloneToMigrate")
+	if pgconfig.IsExternalDatabase() {
+		return d.checkForRocksToExternal(rocksVersion)
+	}
 
 	// If a restore clone exists, our focus is to try to restore that database.
 	if _, ok := d.cloneMap[RestoreClone]; ok || restoreFromRocks {

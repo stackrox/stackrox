@@ -703,7 +703,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/db/backup",
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(
+			ServerHandler: notImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
 			),
 			Compression: true,
@@ -711,7 +711,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/api/extensions/backup",
 			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(
+			ServerHandler: notImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
 			),
 			Compression: true,
@@ -775,9 +775,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	return utils.IfThenElse[http.Handler](
-		env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
-		fn)
+	if env.ManagedCentral.BooleanSetting() {
+		return httputil.NotImplementedHandler("api is not supported in a managed central environment.")
+	}
+
+	return fn
+}
+
+func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
+	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
+		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
+	}
+
+	return fn
 }
 
 func debugRoutes() []routes.CustomRoute {

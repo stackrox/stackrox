@@ -308,7 +308,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         false,
 			forceRollback:        "",
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.minSeqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
 			// Any rollbacks to 4.1 or later will only use central_active
@@ -330,7 +330,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         true,
 			forceRollback:        "",
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.minSeqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
 			description:          "with force rollback code does not support min sequence in DB",

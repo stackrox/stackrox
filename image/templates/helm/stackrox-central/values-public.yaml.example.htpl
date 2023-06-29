@@ -261,6 +261,10 @@
 #         key: infra
 #         value: reserved
 #
+#     # External signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
+#     # does not need to be deployed
+#     external: false
+#
 #     # Customized Central DB source configurations to connect to Postgres database.
 #     # Default configurations are applied if the configurations are omitted.
 #     source:

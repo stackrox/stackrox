@@ -235,8 +235,10 @@ func GetAdminPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
-	// Need to connect on a static DB so we can rename the used DBs.
-	tempConfig.ConnConfig.Database = AdminDB
+	if !pgconfig.IsExternalDatabase() {
+		// Need to connect on a static DB so we can rename the used DBs.
+		tempConfig.ConnConfig.Database = AdminDB
+	}
 
 	postgresDB, err := getPool(tempConfig)
 	if err != nil {
@@ -255,8 +257,10 @@ func GetClonePool(postgresConfig *postgres.Config, clone string) (postgres.DB, e
 	// Clone config to connect to template DB
 	tempConfig := postgresConfig.Copy()
 
-	// Need to connect on a static DB so we can rename the used DBs.
-	tempConfig.ConnConfig.Database = clone
+	if !pgconfig.IsExternalDatabase() {
+		// Need to connect on a static DB so we can rename the used DBs.
+		tempConfig.ConnConfig.Database = clone
+	}
 
 	postgresDB, err := getPool(tempConfig)
 	if err != nil {
@@ -286,7 +290,7 @@ func getPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 // getAvailablePostgresCapacity - retrieves the capacity for Postgres
 func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error) {
 	// When using managed services, Postgres space is not a concern at this time.
-	if env.ManagedCentral.BooleanSetting() {
+	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
 		utils.Should(errors.New("unexpected call, cannot yet determine managed capacity.  Calculation is an estimate based on suggested size."))
 
 		// Cannot get managed services capacity via Postgres.  Assume size for now.
@@ -390,7 +394,7 @@ func getAvailablePostgresCapacity(postgresConfig *postgres.Config) (int64, error
 // GetRemainingCapacity - retrieves the amount of space left in Postgres
 func GetRemainingCapacity(postgresConfig *postgres.Config) (int64, error) {
 	// When using managed services, Postgres space is not a concern at this time.
-	if env.ManagedCentral.BooleanSetting() {
+	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
 		utils.Should(errors.New("unexpected call, cannot yet determine managed capacity.  Calculation is an estimate based on suggested size."))
 
 		// Cannot get managed services capacity via Postgres.  Assume size for now.
