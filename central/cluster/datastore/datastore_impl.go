@@ -257,6 +257,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 	log.Info("checks successful")
 	ds.populateHealthInfos(ctx, cluster)
 	ds.updateClusterPriority(cluster)
+	log.Info(cluster)
 	return cluster, true, nil
 }
 
