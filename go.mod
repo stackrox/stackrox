@@ -3,7 +3,6 @@ module github.com/stackrox/rox
 go 1.18
 
 require (
-	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/containeranalysis v0.10.0
 	cloud.google.com/go/storage v1.30.1
@@ -25,6 +24,7 @@ require (
 	github.com/dave/jennifer v1.6.1
 	github.com/dexidp/dex v0.0.0-20230320125501-2bb4896d120e
 	github.com/docker/distribution v2.8.2+incompatible
+	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
 	github.com/docker/docker v23.0.6+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0

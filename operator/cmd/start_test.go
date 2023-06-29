@@ -135,6 +135,12 @@ func TestStart(t *testing.T) {
 				assert.Equal(t, true, enableLeaderElection)
 			},
 		}, {
+			name: "enableLeaderElection flag present",
+			args: []string{"--leader-elect"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, enableLeaderElection)
+			},
+		}, {
 			name:    "enableLeaderElection flag overrides env var",
 			args:    []string{"--leader-elect=true"},
 			envVars: map[string]string{"ENABLE_LEADER_ELECTION": "false"},
@@ -306,6 +312,12 @@ func TestStart(t *testing.T) {
 				assert.Equal(t, true, enableWebhooks)
 			},
 		}, {
+			name: "enableWebhooks flag present",
+			args: []string{"--enable-webhooks"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, enableWebhooks)
+			},
+		}, {
 			name:    "enableWebhooks flag overrides env var",
 			args:    []string{"--enable-webhooks=true"},
 			envVars: map[string]string{"ENABLE_WEBHOOKS": "false"},
@@ -321,6 +333,12 @@ func TestStart(t *testing.T) {
 		}, {
 			name: "enableProfiling flag",
 			args: []string{"--enable-profiling=true"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, enableProfiling)
+			},
+		}, {
+			name: "enableProfiling flag present",
+			args: []string{"--enable-profiling"},
 			assert: func(t *testing.T) {
 				assert.Equal(t, true, enableProfiling)
 			},
@@ -420,6 +438,12 @@ func TestStart(t *testing.T) {
 				assert.Equal(t, true, dryRunClient)
 			},
 		}, {
+			name: "dryRunClient flag present",
+			args: []string{"--dry-run-client"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, dryRunClient)
+			},
+		}, {
 			name:    "dryRunClient flag overrides env var",
 			args:    []string{"--dry-run-client=true"},
 			envVars: map[string]string{"DRY_RUN_CLIENT": "false"},
@@ -458,6 +482,12 @@ func TestStart(t *testing.T) {
 				assert.Equal(t, false, enableCentralReconciler)
 			},
 		}, {
+			name: "enableCentralReconciler flag present",
+			args: []string{"--enable-central-reconciler"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, enableCentralReconciler)
+			},
+		}, {
 			name:    "enableCentralReconciler flag overrides env var",
 			args:    []string{"--enable-central-reconciler=false"},
 			envVars: map[string]string{"ENABLE_CENTRAL_RECONCILER": "true"},
@@ -477,6 +507,12 @@ func TestStart(t *testing.T) {
 				assert.Equal(t, false, enableSecuredClusterReconciler)
 			},
 		}, {
+			name: "enableSecuredClusterReconciler flag present",
+			args: []string{"--enable-secured-cluster-reconciler"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, enableSecuredClusterReconciler)
+			},
+		}, {
 			name:    "enableSecuredClusterReconciler flag overrides env var",
 			args:    []string{"--enable-secured-cluster-reconciler=false"},
 			envVars: map[string]string{"ENABLE_SECURED_CLUSTER_RECONCILER": "true"},
@@ -486,6 +522,12 @@ func TestStart(t *testing.T) {
 		}, {
 			name: "zap flag",
 			args: []string{"--zap-devel=true"},
+			assert: func(t *testing.T) {
+				assert.Equal(t, true, zapOptions.Development)
+			},
+		}, {
+			name: "zap flag present",
+			args: []string{"--zap-devel"},
 			assert: func(t *testing.T) {
 				assert.Equal(t, true, zapOptions.Development)
 			},
