@@ -53,6 +53,14 @@ class ReconciliationTest extends BaseSpecification {
     private static final Map<String, Integer> MAX_ALLOWED_DELETIONS_BY_KEY = [
         // We create and delete an entire namespace, so we may see a lot of secrets being deleted, esp in OpenShift.
         "*central.SensorEvent_Secret": 5,
+        // When run as part of version-compatibility-tests there are two pods
+        // that can get deleted in addition to this tests pod and sensor itself. e.g.
+        // 22:08:01 | INFO  | ReconciliationTest        | Pods that were likely deleted while sensor was down:
+        // 22:08:01 | INFO  | ReconciliationTest        | qa:runtimeviolationlifecycle-74f56fbf76-4mqnh
+        // 22:08:01 | INFO  | ReconciliationTest        | qa:runtimeviolationlifecycle-74f56fbf76-87sf8
+        // 22:08:01 | INFO  | ReconciliationTest        | reconciliation:testing123-f579ccf49-tsss5
+        // 22:08:01 | INFO  | ReconciliationTest        | stackrox:sensor-84949c644-w2xq6
+        "*central.SensorEvent_Pod": 4,
     ]
 
     private Set<String> getPodsInCluster() {
