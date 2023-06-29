@@ -67,7 +67,7 @@ smoke-test: compile
 .PHONY: compatibility-test
 compatibility-test: compile
 	@echo "+ $@"
-	$(GRADLE) testCOMPATIBILITY $(GRADLE_TEST_ARGS)
+	$(GRADLE) testCOMPATIBILITY testCOMPATIBILITYSensorBounce $(GRADLE_TEST_ARGS)
 
 .PHONY: runtime-test
 runtime-test: compile
