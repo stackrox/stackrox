@@ -21,21 +21,23 @@ var (
 )
 
 func TestTLSConfigurerServerCertLoading(t *testing.T) {
+	t.Parallel()
 	cfgr := newTLSConfigurer("./testdata", fake.NewSimpleClientset(), "", "")
 	tlsConfig, err := cfgr.TLSConfig()
 	require.NoError(t, err)
 	require.Empty(t, tlsConfig.Certificates)
 
 	cfgr.WatchForChanges()
-	// Should be long enough to load the server certificate in the background.
-	time.Sleep(500 * time.Millisecond)
 
-	tlsConfig, err = tlsConfig.GetConfigForClient(nil)
-	require.NoError(t, err)
-	assert.NotEmpty(t, tlsConfig.Certificates)
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		tlsConfig, err = tlsConfig.GetConfigForClient(nil)
+		require.NoError(t, err)
+		assert.NotEmpty(t, tlsConfig.Certificates)
+	}, 5*time.Second, 100*time.Millisecond)
 }
 
 func TestTLSConfigurerClientCALoading(t *testing.T) {
+	t.Parallel()
 	k8sClient := fake.NewSimpleClientset()
 	watcher := watch.NewFake()
 	watchReactor := k8scfgwatch.NewTestWatchReactor(t, watcher)
@@ -52,10 +54,10 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
 		Data:       map[string]string{clientCAKey: string(caFileRaw)},
 	})
-	// Should be long enough to load the client CA in the background.
-	time.Sleep(500 * time.Millisecond)
 
-	tlsConfig, err = tlsConfig.GetConfigForClient(nil)
-	require.NoError(t, err)
-	assert.NotEmpty(t, tlsConfig.ClientCAs)
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		tlsConfig, err = tlsConfig.GetConfigForClient(nil)
+		require.NoError(t, err)
+		assert.NotEmpty(t, tlsConfig.ClientCAs)
+	}, 5*time.Second, 100*time.Millisecond)
 }
