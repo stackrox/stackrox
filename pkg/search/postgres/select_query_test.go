@@ -5,6 +5,7 @@ package postgres_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,6 +52,11 @@ type Struct2GrpBy2 struct {
 	TestBool         bool     `db:"test_bool"`
 }
 
+type Struct2GrpBy3 struct {
+	TestTimestamp []*time.Time `db:"test_timestamp"`
+	TestString    string       `db:"test_string"`
+}
+
 type Struct3 struct {
 	TestString       string `db:"test_string"`
 	TestNestedString string `db:"test_nested_string"`
@@ -59,6 +65,11 @@ type Struct3 struct {
 type Struct4 struct {
 	TestString       string   `db:"test_string"`
 	TestNestedString []string `db:"test_nested_string"`
+}
+
+type Struct5 struct {
+	TestString    string     `db:"test_string"`
+	TestTimestamp *time.Time `db:"test_timestamp"`
 }
 
 func TestSelectQuery(t *testing.T) {
@@ -84,6 +95,21 @@ func TestSelectQuery(t *testing.T) {
 			resultStruct:   Struct1{},
 			expectedError:  "select portion of the query cannot be empty",
 			expectedResult: nil,
+		},
+		{
+			desc: "base schema; select null timestamp",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestString), search.NewQuerySelect(search.TestTimestamp),
+				).ProtoQuery(),
+			resultStruct:  Struct5{},
+			expectedQuery: "select test_structs.String_, test_structs.timestamp as test_timestamp from test_structs",
+			expectedResult: []*Struct5{
+				{"acs", nil},
+				{"acs", nil},
+				{"bcs", nil},
+				{"bcs", nil},
+			},
 		},
 		{
 			desc: "base schema; select",
@@ -177,6 +203,28 @@ func TestSelectQuery(t *testing.T) {
 					TestNestedString: []string{"nested_bcs_1", "nested_bcs_1", "nested_bcs_2"},
 					TestNestedBool:   []bool{false, false, false},
 					TestString:       "bcs",
+				},
+			},
+		},
+		{
+			desc: "select null timestamp & group by",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestTimestamp),
+				).
+				AddGroupBy(search.TestString).ProtoQuery(),
+			resultStruct: Struct2GrpBy3{},
+			expectedQuery: "select jsonb_agg(test_structs.timestamp) as test_timestamp " +
+				"from test_structs " +
+				"group by test_structs.String_",
+			expectedResult: []*Struct2GrpBy3{
+				{
+					TestTimestamp: []*time.Time{nil, nil},
+					TestString:    "acs",
+				},
+				{
+					TestTimestamp: []*time.Time{nil, nil},
+					TestString:    "bcs",
 				},
 			},
 		},
@@ -849,10 +897,14 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy1](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case Struct2GrpBy2:
 		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy2](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+	case Struct2GrpBy3:
+		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case Struct3:
 		results, err = pgSearch.RunSelectRequestForSchema[Struct3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case Struct4:
 		results, err = pgSearch.RunSelectRequestForSchema[Struct4](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+	case Struct5:
+		results, err = pgSearch.RunSelectRequestForSchema[Struct5](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case DerivedStruct1:
 		results, err = pgSearch.RunSelectRequestForSchema[DerivedStruct1](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case DerivedStruct2:
