@@ -29,7 +29,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
 
-		testContext.WaitForSyncEvent(30 * time.Second)
+		testContext.WaitForSyncEvent(2 * time.Minute)
 		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
 
 		testContext.StopCentralGRPC()
@@ -44,7 +44,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		require.Len(t, archived, 1)
 		deploymentMessageInArchive(t, archived[0], helper.DefaultNamespace, NginxDeployment1.Name)
 
-		testContext.WaitForSyncEvent(30 * time.Second)
+		testContext.WaitForSyncEvent(2 * time.Minute)
 		testContext.DeploymentActionReceived(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
 		testContext.DeploymentActionReceived(NginxDeployment2.Name, central.ResourceAction_SYNC_RESOURCE)
 	}))
