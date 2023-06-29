@@ -10,18 +10,6 @@ import {
 import workflowStateContext from '../../workflowStateContext';
 import { entityNounSentenceCasePlural } from '../entitiesForVulnerabilityManagement';
 
-/*
-
-EntityTabs.propTypes = {
-    entityType: PropTypes.string.isRequired,
-    activeTab: PropTypes.string,
-};
-
-EntityTabs.defaultProps = {
-    activeTab: null,
-};
-*/
-
 export type EntityTabsProps = {
     entityType: VulnerabilityManagementEntityType;
     activeTab?: VulnerabilityManagementEntityType;
