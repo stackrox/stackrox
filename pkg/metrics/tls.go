@@ -135,20 +135,20 @@ func (t *tlsConfigurerImpl) getCertificateFromDirectory(dir string) (*tls.Certif
 	certFile := filepath.Join(dir, env.TLSCertFileName)
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
-			log.Warnw("Error checking if monitoring TLS certificate file exists", zap.Error(err))
+			log.Errorw("Error checking if monitoring TLS certificate file exists", zap.Error(err))
 			return nil, err
 		}
-		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping", certFile)
+		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping TLS watcher cycle.", certFile)
 		return nil, nil
 	}
 
 	keyFile := filepath.Join(dir, env.TLSKeyFileName)
 	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
 		if err != nil {
-			log.Warnw("Error checking if monitoring TLS key file exists", zap.Error(err))
+			log.Errorw("Error checking if monitoring TLS key file exists", zap.Error(err))
 			return nil, err
 		}
-		log.Infof("Monitoring TLS key file %q does not exist. Skipping", keyFile)
+		log.Infof("Monitoring TLS key file %q does not exist. Skipping TLS watcher cycle.", keyFile)
 		return nil, nil
 	}
 
