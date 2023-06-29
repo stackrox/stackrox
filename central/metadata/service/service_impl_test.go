@@ -18,6 +18,7 @@ import (
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
@@ -110,6 +111,16 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Equal("failed to verify rsa signature: crypto/rsa: verification error", err.Error())
 }
 
+func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
+	service := serviceImpl{}
+	req := &v1.TLSChallengeRequest{}
+
+	resp, err := service.TLSChallenge(context.TODO(), req)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(resp)
+}
+
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 	service := serviceImpl{}
 	req := &v1.TLSChallengeRequest{
@@ -118,7 +129,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
 	s.Require().Error(err)
-	s.EqualError(err, "challenge token must be a valid base64 string: illegal base64 data at input byte 4: invalid arguments")
+	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 }
 
