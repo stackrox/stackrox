@@ -154,15 +154,30 @@ task testBegin(type: Test) {
     }
 }
 
+task testParallel(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel"
+  }
+}
+
 task testRest(type: Test) {
     useJUnitPlatform {
-        excludeTags "Begin", "Upgrade", "SensorBounce", "SensorBounceNext"
+        excludeTags "Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext"
     }
+}
+
+task testParallelBAT(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel & BAT"
+  }
 }
 
 task testBAT(type: Test) {
     useJUnitPlatform {
         includeTags "BAT"
+        excludeTags "Parallel"
     }
 }
 
