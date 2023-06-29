@@ -9,12 +9,13 @@ import DateTimeField from 'Components/DateTimeField';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { NODE_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getNodeScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { nodeSortFields } from 'constants/sortFields';
+
+import WorkflowListPage from '../WorkflowListPage';
 
 const nodeListUpdatedQuery = gql`
     query getNodes($query: String, $pagination: Pagination) {

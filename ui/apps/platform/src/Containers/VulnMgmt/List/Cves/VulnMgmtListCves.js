@@ -19,7 +19,6 @@ import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -40,8 +39,9 @@ import {
 import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
+import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
+import WorkflowListPage from '../WorkflowListPage';
 import { getFilteredCVEColumns } from './ListCVEs.utils';
-import { resourceLabels } from '../../../../messages/common';
 
 export const defaultCveSort = [
     {
@@ -359,7 +359,6 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const entityTypeDisplayName = resourceLabels[currentEntityType];
         const cvesToToggle = cve ? [cve] : selectedCveIds;
         suppressVulns(cveType, cvesToToggle, duration)
             .then(() => {
@@ -368,12 +367,11 @@ const VulnMgmtCves = ({
                 // changing this param value on the query vars, to force the query to refetch
                 setRefreshTrigger(Math.random());
 
-                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs =
-                    cvesToToggle.length === 1 ? entityTypeDisplayName : `${entityTypeDisplayName}s`;
-
                 addToast(
-                    `Successfully deferred and approved ${cvesToToggle.length} ${pluralizedCVEs} globally`
+                    `Successfully deferred and approved ${entityCountNounOrdinaryCase(
+                        cvesToToggle.length,
+                        currentEntityType
+                    )} globally`
                 );
                 setTimeout(removeToast, 2000);
             })
@@ -387,7 +385,6 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const entityTypeDisplayName = resourceLabels[currentEntityType];
         const cveIdsToToggle = cve ? [cve] : selectedCveIds;
         unsuppressVulns(cveType, cveIdsToToggle)
             .then(() => {
@@ -396,14 +393,11 @@ const VulnMgmtCves = ({
                 // changing this param value on the query vars, to force the query to refetch
                 setRefreshTrigger(Math.random());
 
-                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs =
-                    cveIdsToToggle.length === 1
-                        ? entityTypeDisplayName
-                        : `${entityTypeDisplayName}s`;
-
                 addToast(
-                    `Successfully reobserved ${cveIdsToToggle.length} ${pluralizedCVEs} globally`
+                    `Successfully reobserved ${entityCountNounOrdinaryCase(
+                        cveIdsToToggle.length,
+                        currentEntityType
+                    )} globally`
                 );
                 setTimeout(removeToast, 2000);
             })

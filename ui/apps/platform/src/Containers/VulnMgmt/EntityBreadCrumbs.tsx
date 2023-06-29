@@ -1,13 +1,13 @@
-import React, { useContext } from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ArrowLeft } from 'react-feather';
 
 import entityTypes from 'constants/entityTypes';
-import EntityBreadCrumb from 'Containers/BreadCrumbs/EntityBreadCrumb';
 import EntityIcon from 'Components/EntityIcon';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { useTheme } from 'Containers/ThemeProvider';
+
+import EntityBreadCrumb, { WorkflowEntity } from './EntityBreadCrumb';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
@@ -45,8 +45,8 @@ const getUrl = (workflowState, steps) => {
     for (let x = 1; x < steps; x += 1) {
         newState = newState.pop().clearSort().clearSearch();
     }
-    const newURL = newState.toUrl();
-    const currentURL = workflowState.toUrl();
+    const newURL = newState.toUrl() as string;
+    const currentURL = workflowState.toUrl() as string;
     return newURL === currentURL ? null : newURL;
 };
 
@@ -78,7 +78,11 @@ const getMaxWidthClass = (length) => {
     }
 };
 
-const BreadCrumbLinks = ({ workflowEntities }) => {
+export type EntityBreadCrumbsProps = {
+    workflowEntities: WorkflowEntity[];
+};
+
+function EntityBreadCrumbs({ workflowEntities }: EntityBreadCrumbsProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
 
     const maxWidthClass = getMaxWidthClass(workflowEntities.length);
@@ -107,10 +111,6 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
             {breadCrumbLinks}
         </span>
     );
-};
+}
 
-BreadCrumbLinks.propTypes = {
-    workflowEntities: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-};
-
-export default BreadCrumbLinks;
+export default EntityBreadCrumbs;

@@ -1,49 +1,43 @@
-import React, { useState } from 'react';
-import pluralize from 'pluralize';
-import upperFirst from 'lodash/upperFirst';
+import React, { useEffect, useState } from 'react';
+import { withRouter } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
-import PageHeader from 'Components/PageHeader';
-import { useTheme } from 'Containers/ThemeProvider';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
+import PageHeader from 'Components/PageHeader';
+import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import EntitiesMenu from 'Components/workflow/EntitiesMenu';
-import entityLabels from 'messages/entity';
-import useCaseLabels from 'messages/useCase';
-import getSidePanelEntity from 'utils/getSidePanelEntity';
-import parseURL from 'utils/URLParser';
+import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
+import parseURL from 'utils/URLParser';
+import getSidePanelEntity from 'utils/getSidePanelEntity';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'utils/WorkflowState';
 import { getVulnerabilityManagementEntityTypes } from 'utils/entityRelationships';
+import useCaseLabels from 'messages/useCase';
+import useEntityName from 'hooks/useEntityName';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-import WorkflowSidePanel from './WorkflowSidePanel';
-import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
-const WorkflowListPageLayout = ({ location }) => {
+import { entityNounSentenceCaseSingular } from '../entitiesForVulnerabilityManagement';
+import WorkflowSidePanel from '../WorkflowSidePanel';
+import EntityComponent from './VulnMgmtEntity';
+import EntityTabs from './EntityTabs';
+
+const WorkflowEntityPageLayout = ({ location }) => {
     const [isExporting, setIsExporting] = useState(false);
-
     const { isDarkMode } = useTheme();
+
     const workflowState = parseURL(location);
-    const { useCase, search, sort, paging } = workflowState;
-    const pageState = new WorkflowState(
-        useCase,
-        workflowState.getPageStack(),
-        search,
-        sort,
-        paging
-    );
+    const { stateStack, useCase, search } = workflowState;
+    const pageState = new WorkflowState(useCase, workflowState.getPageStack(), search);
 
     // set up cache-busting system that either the list or sidepanel can use to trigger list refresh
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    // Get the list / entity components
-    const ListComponent = ListComponentMap[useCase];
-    const EntityComponent = EntityComponentMap[useCase];
-
     // Page props
-    const pageListType = workflowState.getBaseEntity().entityType;
+    const pageEntity = workflowState.getBaseEntity();
+    const { entityId: pageEntityId, entityType: pageEntityType } = pageEntity;
+    const pageListType = stateStack[1] && !stateStack[1].entityId && stateStack[1].entityType;
     const pageSearch = workflowState.search[searchParams.page];
     const pageSort = workflowState.sort[sortParams.page];
     const pagePaging = workflowState.paging[pagingParams.page];
@@ -54,27 +48,48 @@ const WorkflowListPageLayout = ({ location }) => {
     const sidePanelSearch = workflowState.search[searchParams.sidePanel];
     const sidePanelSort = workflowState.sort[sortParams.sidePanel];
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
-    const selectedRow = workflowState.getSelectedTableRow();
-
-    const header = upperFirst(pluralize(entityLabels[pageListType]));
-    const exportFilename = `${useCaseLabels[useCase]} ${startCase(header)} Report`;
-    const entityContext = {};
 
     function customCsvExportHandler(fileName) {
         return exportCvesAsCsv(fileName, workflowState, pageListType);
     }
 
-    if (selectedRow) {
-        const { entityType, entityId } = selectedRow;
-        entityContext[entityType] = entityId;
+    const [fadeIn, setFadeIn] = useState(false);
+    useEffect(() => setFadeIn(false), []);
+
+    // manually adding the styles to fade back in
+    if (!fadeIn) {
+        setTimeout(() => setFadeIn(true), 50);
     }
+    const style = fadeIn
+        ? {
+              opacity: 1,
+              transition: '.15s opacity ease-in',
+              transitionDelay: '.25s',
+          }
+        : {
+              opacity: 0,
+          };
+
+    const subheaderText = entityNounSentenceCaseSingular[pageEntityType];
+    const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
+    const entityContext = {};
+
+    const exportFilename = `${useCaseLabels[useCase]} ${startCase(
+        subheaderText
+    )}: ${entityName} Report`;
+
+    if (pageEntity) {
+        entityContext[pageEntity.entityType] = pageEntity.entityId;
+    }
+
+    const pdfId = pageListType ? 'capture-list' : 'capture-widgets';
 
     return (
         <workflowStateContext.Provider value={pageState}>
-            <div className="flex flex-col relative h-full">
+            <div className="flex flex-1 flex-col" style={style}>
                 <PageHeader
-                    header={header}
-                    subHeader="Entity list"
+                    header={entityName}
+                    subHeader={subheaderText}
                     classes="pr-0 ignore-react-onclickoutside"
                 >
                     <div className="flex flex-1 justify-end h-full">
@@ -84,13 +99,13 @@ const WorkflowListPageLayout = ({ location }) => {
                                 type={pageListType}
                                 page={useCase}
                                 disabled={!!sidePanelEntityId}
-                                pdfId="capture-list"
+                                pdfId={pdfId}
                                 customCsvExportHandler={customCsvExportHandler}
                                 isExporting={isExporting}
                                 setIsExporting={setIsExporting}
                             />
                         </div>
-                        <div className="flex items-center pl-2">
+                        <div className="flex items-center">
                             <EntitiesMenu
                                 text="All Entities"
                                 options={getVulnerabilityManagementEntityTypes()}
@@ -98,21 +113,22 @@ const WorkflowListPageLayout = ({ location }) => {
                         </div>
                     </div>
                 </PageHeader>
-                <div
-                    className={`h-full relative z-0 min-h-0 ${
-                        !isDarkMode ? 'bg-base-100' : 'bg-base-0'
-                    }`}
-                    id="capture-list"
-                >
-                    <ListComponent
-                        entityListType={pageListType}
-                        selectedRowId={selectedRow && selectedRow.entityId}
-                        search={pageSearch}
-                        sort={pageSort}
-                        page={pagePaging}
-                        refreshTrigger={refreshTrigger}
-                        setRefreshTrigger={setRefreshTrigger}
-                    />
+                <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
+                <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
+                    <div className="h-full w-full overflow-auto" id={pdfId}>
+                        <EntityComponent
+                            entityType={pageEntityType}
+                            entityId={pageEntityId}
+                            entityListType={pageListType}
+                            search={pageSearch}
+                            sort={pageSort}
+                            page={pagePaging}
+                            entityContext={entityContext}
+                            refreshTrigger={refreshTrigger}
+                            setRefreshTrigger={setRefreshTrigger}
+                        />
+                    </div>
+
                     <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!sidePanelEntityId}>
                         <WorkflowSidePanel>
                             <EntityComponent
@@ -135,4 +151,4 @@ const WorkflowListPageLayout = ({ location }) => {
     );
 };
 
-export default WorkflowListPageLayout;
+export default withRouter(WorkflowEntityPageLayout);

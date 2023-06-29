@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
 import { Message } from '@stackrox/ui-components';
 
@@ -14,10 +13,13 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
-import { resourceLabels } from 'messages/common';
 import queryService from 'utils/queryService';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
+import {
+    entityNounOrdinaryCase,
+    entityNounOrdinaryCaseSingular,
+} from '../entitiesForVulnerabilityManagement';
 import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from './TableWidget';
 import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
@@ -45,8 +47,7 @@ const TableWidgetFixableCves = ({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const displayedEntityType = resourceLabels[entityType];
-    const displayedVulnType = resourceLabels[vulnType];
+    const displayedEntityType = entityNounOrdinaryCaseSingular[entityType];
 
     const queryFieldName = queryFieldNames[entityType];
     let queryVulnCounterFieldName = 'imageVulnerabilityCounter';
@@ -119,6 +120,7 @@ const TableWidgetFixableCves = ({
         setPage: setFixableCvesPage,
         totalCount: fixableCount,
     };
+    const displayedVulnType = entityNounOrdinaryCase(fixableCount, vulnType);
 
     const cveActions = (
         <FixableCveExportButton
@@ -149,10 +151,7 @@ const TableWidgetFixableCves = ({
             )}
             {!cvesLoading && !cvesError && (
                 <TableWidget
-                    header={`${fixableCount} fixable ${pluralize(
-                        displayedVulnType,
-                        fixableCount
-                    )} found across this ${displayedEntityType}`}
+                    header={`${fixableCount} fixable ${displayedVulnType} found across this ${displayedEntityType}`}
                     headerActions={cveActions}
                     rows={fixableCves}
                     entityType={vulnType}

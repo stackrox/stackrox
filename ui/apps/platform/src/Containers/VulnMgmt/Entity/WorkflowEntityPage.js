@@ -11,7 +11,7 @@ import queryService from 'utils/queryService';
 
 import { LIST_PAGE_SIZE, defaultCountKeyMap } from 'constants/workflowPages.constants';
 import useCases from 'constants/useCaseTypes';
-import vulnMgmtDefaultSorts from '../VulnMgmt/VulnMgmt.defaultSorts';
+import vulnMgmtDefaultSorts from '../VulnMgmt.defaultSorts';
 
 export const entityGridContainerBaseClassName =
     'mx-4 grid-dense grid-auto-fit grid grid-gap-4 xl:grid-gap-6 mb-4 xxxl:grid-gap-8';
