@@ -47,7 +47,7 @@ type remoteConfig struct {
 }
 
 func downloadConfig(u string) (*remoteConfig, error) {
-	if u == "" {
+	if u == "hardcoded" {
 		// TODO(ROX-17726): Use the hardcoded key for now.
 		return &remoteConfig{Key: selfManagedKey}, nil
 	}
