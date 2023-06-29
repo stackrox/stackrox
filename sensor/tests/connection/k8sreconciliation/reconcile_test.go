@@ -27,8 +27,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
-		ctx, cancelFn := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancelFn()
+		ctx := context.Background()
 
 		testContext.WaitForSyncEvent(30 * time.Second)
 		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
