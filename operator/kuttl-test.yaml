@@ -14,5 +14,5 @@ commands:
 # on the services at runtime, but we can test if it gets piped
 # through correctly.
 - script: |
-    [ -n "$SKIP_MANAGER_START" ] || env NO_PROXY=127.1.2.3/8 ./bin/manager
+    [ -n "$SKIP_MANAGER_START" ] || env NO_PROXY=127.1.2.3/8 ./bin/manager start
   background: true
