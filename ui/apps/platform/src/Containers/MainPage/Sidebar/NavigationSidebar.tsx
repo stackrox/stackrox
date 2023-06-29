@@ -24,7 +24,7 @@ import {
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
     networkBasePathPF,
-    vulnerabilityReportingPath,
+    vulnerabilityReportsPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -75,7 +75,7 @@ function NavigationSidebar({
         );
     }
 
-    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportingPath];
+    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportsPath];
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -125,12 +125,10 @@ function NavigationSidebar({
                         {isReportingEnhancementsEnabled &&
                             hasReadAccess('WorkflowAdministration') && (
                                 <LeftNavItem
-                                    key={vulnerabilityReportingPath}
-                                    isActive={location.pathname.includes(
-                                        vulnerabilityReportingPath
-                                    )}
-                                    path={vulnerabilityReportingPath}
-                                    title={basePathToLabelMap[vulnerabilityReportingPath]}
+                                    key={vulnerabilityReportsPath}
+                                    isActive={location.pathname.includes(vulnerabilityReportsPath)}
+                                    path={vulnerabilityReportsPath}
+                                    title={basePathToLabelMap[vulnerabilityReportsPath]}
                                 />
                             )}
                     </NavExpandable>
