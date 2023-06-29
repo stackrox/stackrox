@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,6 +36,10 @@ const (
 
 func TestServiceImpl(t *testing.T) {
 	suite.Run(t, new(serviceImplTestSuite))
+}
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }
 
 type serviceImplTestSuite struct {
@@ -194,13 +199,6 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
-	s.Run("when not authenticated", func() {
-		caps, err := (&serviceImpl{}).GetCentralCapabilities(context.Background(), nil)
-
-		s.Nil(caps)
-		s.ErrorContains(err, "not authorized")
-	})
-
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(sac.WithNoAccess(context.Background()), mockID, s.T())
 
