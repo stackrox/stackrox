@@ -64,7 +64,7 @@ const TileLink = ({
     }
     classes += ` ${positionClassName} ${colorClasses} ${short ? 'h-full' : 'min-h-14'}`;
     return (
-        <Link to={url} className="no-underline mr-2 flex w-full">
+        <Link to={url} className="no-underline mr-2 flex w-full" data-testid="tile-link">
             <div className={classes}>{content}</div>
         </Link>
     );
