@@ -88,6 +88,8 @@ var (
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
 	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	defaultTLSPaths = []string{filepath.Join(defaultCertDir, "tls.crt"), filepath.Join(defaultCertDir, "tls.key")}
+	legacyCertDir   = filepath.Join("/apiserver.local.config", "certificates")
+	legacyTLSPaths  = []string{filepath.Join(legacyCertDir, "apiserver.crt"), filepath.Join(legacyCertDir, "apiserver.key")}
 )
 
 var startCmd = cobra.Command{
@@ -224,8 +226,10 @@ func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
 		return
 	}
 	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
-	server := mgr.GetWebhookServer()
-	server.CertDir = "/apiserver.local.config/certificates"
-	server.CertName = "apiserver.crt"
-	server.KeyName = "apiserver.key"
+	if ok, _ := fileutils.AllExist(legacyTLSPaths...); ok {
+		server := mgr.GetWebhookServer()
+		server.CertDir = "/apiserver.local.config/certificates"
+		server.CertName = "apiserver.crt"
+		server.KeyName = "apiserver.key"
+	}
 }
