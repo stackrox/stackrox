@@ -132,11 +132,7 @@ func TestMetricsServerPanic(t *testing.T) {
 
 // getFreePort asks the kernel for a free open port that is ready to use.
 func getFreePort() (port int, err error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-	listener, err := net.ListenTCP("tcp", addr)
+	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		return 0, err
 	}
