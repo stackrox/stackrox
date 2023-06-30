@@ -48,7 +48,7 @@ func validateTLS() error {
 	certFile := filepath.Join(SecureMetricsCertDir.Setting(), TLSCertFileName)
 	if ok, err := fileutils.Exists(certFile); !ok {
 		if err != nil {
-			log.Errorf("failed to validate file %q: %w", certFile, err)
+			log.Errorf("failed to validate file %q: %s", certFile, err.Error())
 		}
 		return errors.Wrapf(errox.NotFound, "secure metrics certificate file %q not found", certFile)
 	}
@@ -56,7 +56,7 @@ func validateTLS() error {
 	keyFile := filepath.Join(SecureMetricsCertDir.Setting(), TLSKeyFileName)
 	if ok, err := fileutils.Exists(keyFile); !ok {
 		if err != nil {
-			log.Errorf("failed to validate file %q: %w", keyFile, err)
+			log.Errorf("failed to validate file %q: %s", keyFile, err.Error())
 		}
 		return errors.Wrapf(errox.NotFound, "secure metrics key file %q not found", keyFile)
 	}
