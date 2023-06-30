@@ -27,6 +27,13 @@ type RateLimitedLogger struct {
 	rateLimitedLogs lru.Cache[string, *rateLimitedLog]
 }
 
+const (
+	cacheSize          = 500
+	limiterLogLines    = 1
+	rateLimitFrequency = 5 * time.Minute
+	logBurstSize       = 5
+)
+
 // NewRateLimitLogger returns a rate limited logger
 //
 // This function adds a timer goroutine on the stack and will break tests if used to initialize globals.
@@ -38,11 +45,21 @@ type RateLimitedLogger struct {
 //	 )
 //		func getRateLimitedLogger() *logging.RateLimitedLogger {
 //		    once.Do(func () {
-//		        logger = newRateLimitLogger(...)
+//		        logger = NewRateLimitLogger()
 //		    })
 //		    return logger
 //		}
-func NewRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
+func NewRateLimitLogger() *RateLimitedLogger {
+	return newRateLimitLogger(
+		createBasicLogger(),
+		cacheSize,
+		limiterLogLines,
+		rateLimitFrequency,
+		logBurstSize,
+	)
+}
+
+func newRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
 	logCache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, evictedLog *rateLimitedLog) {
 		if evictedLog.count.Load() > 0 {
 			evictedLog.log()

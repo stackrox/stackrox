@@ -3,7 +3,6 @@ package authn
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -12,13 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/square/go-jose.v2/jwt"
-)
-
-const (
-	// TODO: ROX-17312: Review and adjust logger parameters
-	cacheSize          = 500
-	rateLimitFrequency = 5 * time.Minute
-	logBurstSize       = 5
 )
 
 var (
@@ -32,14 +24,7 @@ type contextUpdater struct {
 
 func getRateLimitedLogger() *logging.RateLimitedLogger {
 	once.Do(func() {
-		// TODO: ROX-17312: Review and adjust logger parameters
-		log = logging.NewRateLimitLogger(
-			logging.LoggerForModule(),
-			cacheSize,
-			1,
-			rateLimitFrequency,
-			logBurstSize,
-		)
+		log = logging.NewRateLimitLogger()
 	})
 	return log
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -18,13 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
-	// TODO: ROX-17312: Review and adjust logger parameters
-	cacheSize          = 500
-	rateLimitFrequency = 5 * time.Minute
-	logBurstSize       = 5
-)
-
 var (
 	once sync.Once
 	log  *logging.RateLimitedLogger
@@ -32,14 +24,7 @@ var (
 
 func getRateLimitedLogger() *logging.RateLimitedLogger {
 	once.Do(func() {
-		// TODO: ROX-17312: Review and adjust logger parameters
-		log = logging.NewRateLimitLogger(
-			logging.LoggerForModule(),
-			cacheSize,
-			1,
-			rateLimitFrequency,
-			logBurstSize,
-		)
+		log = logging.NewRateLimitLogger()
 	})
 	return log
 }
