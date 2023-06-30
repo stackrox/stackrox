@@ -183,9 +183,11 @@ class NetworkBaselineTest extends BaseSpecification {
         def baselinedClientDeploymentID = BASELINED_CLIENT_DEP.deploymentUid
         assert baselinedClientDeploymentID != null
 
-        Timestamp epoch = Timestamp.newBuilder().setSeconds(0).build()
+        Timestamp epoch = Times=tamp.newBuilder().setSeconds(0).build()
 
         assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, epoch, 180)
+        def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
+        assert baselinedClientDeploymentID
 
         // Now create the anomalous deployment
         batchCreate([ANOMALOUS_CLIENT_DEP])
@@ -211,8 +213,6 @@ class NetworkBaselineTest extends BaseSpecification {
         def anomalousClientBaseline = NetworkBaselineService.getNetworkBaseline(anomalousClientDeploymentID)
         assert anomalousClientBaseline
         log.info "Anomalous Baseline: ${anomalousClientBaseline}"
-        def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
-        assert baselinedClientDeploymentID
 
         // Deployment IDs that must be explicitly check that are missing from server baseline
         def mustNotBeInBaseline = [anomalousClientDeploymentID]
