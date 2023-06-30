@@ -90,11 +90,13 @@ func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil
+		log.Errorw("Failed to get in-cluster config", zap.Error(err))
+		return &nilTLSConfigurer{}
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil
+		log.Errorw("Failed to create Kubernetes client", zap.Error(err))
+		return &nilTLSConfigurer{}
 	}
 	certDir := env.SecureMetricsCertDir.Setting()
 	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()

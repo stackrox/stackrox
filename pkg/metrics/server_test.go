@@ -140,7 +140,7 @@ func getFreePort() (port int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	defer listener.Close()
+	defer utils.IgnoreError(listener.Close)
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
 
