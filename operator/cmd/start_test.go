@@ -10,6 +10,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDefaultCommand(t *testing.T) {
+	t.Run("Should default to start command if no command is given", func(t *testing.T) {
+		want := []string{"start", "--metrics-bind-address", ":8080"}
+		got := useDefaultCommand([]string{"--metrics-bind-address", ":8080"})
+		assert.Equal(t, want, got)
+	})
+	t.Run("Should not default to start command if a command is given", func(t *testing.T) {
+		want := []string{"version"}
+		got := useDefaultCommand([]string{"version"})
+		assert.Equal(t, want, got)
+	})
+	t.Run("Should accept the start command", func(t *testing.T) {
+		want := []string{"start", "--metrics-bind-address", ":8080"}
+		got := useDefaultCommand([]string{"start", "--metrics-bind-address", ":8080"})
+		assert.Equal(t, want, got)
+	})
+}
+
 func TestStart(t *testing.T) {
 
 	tc := []struct {
