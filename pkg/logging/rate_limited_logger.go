@@ -37,7 +37,7 @@ var (
 func GetRateLimitedLogger() *RateLimitedLogger {
 	once.Do(func() {
 		commonLogger = newRateLimitLogger(
-			createBasicLogger(),
+			rootLogger,
 			cacheSize,
 			rateLimitPeriod,
 		)
