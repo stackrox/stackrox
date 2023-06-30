@@ -58,6 +58,8 @@ func newNodeStore() *nodeStoreImpl {
 
 // Cleanup deletes all entries from store
 func (s *nodeStoreImpl) Cleanup() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	s.nodes = make(map[string]*nodeWrap)
 }
 

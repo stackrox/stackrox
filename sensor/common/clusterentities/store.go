@@ -114,6 +114,8 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 
 // Cleanup deletes all entries from store
 func (e *Store) Cleanup() {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 	e.initMaps()
 }
 

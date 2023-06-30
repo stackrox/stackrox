@@ -90,6 +90,8 @@ func newNetworkPoliciesStore() *networkPolicyStoreImpl {
 
 // Cleanup deletes all entries from store
 func (n *networkPolicyStoreImpl) Cleanup() {
+	n.lock.Lock()
+	defer n.lock.Unlock()
 	n.data = make(map[string]map[string]*storage.NetworkPolicy)
 }
 
