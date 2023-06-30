@@ -22,13 +22,14 @@ export type ReportParametersFormValues = {
     imageType: ImageType[];
     cvesDiscoveredSince: CVESDiscoveredSince;
     cvesDiscoveredStartDate: string | undefined;
+    reportScope: string;
 };
 
 export type CVEStatus = 'FIXABLE' | 'NOT_FIXABLE';
 
 export type CVESDiscoveredSince = 'ALL_VULN' | 'SINCE_LAST_REPORT' | 'START_DATE';
 
-const defaultFormValues: ReportFormValues = {
+export const defaultReportFormValues: ReportFormValues = {
     reportParameters: {
         reportName: '',
         description: '',
@@ -37,11 +38,12 @@ const defaultFormValues: ReportFormValues = {
         imageType: [],
         cvesDiscoveredSince: 'ALL_VULN',
         cvesDiscoveredStartDate: undefined,
+        reportScope: '',
     },
 };
 
 function useReportFormValues(): ReportFormValuesResult {
-    const [formValues, setFormValues] = useState<ReportFormValues>(defaultFormValues);
+    const [formValues, setFormValues] = useState<ReportFormValues>(defaultReportFormValues);
 
     return {
         formValues,

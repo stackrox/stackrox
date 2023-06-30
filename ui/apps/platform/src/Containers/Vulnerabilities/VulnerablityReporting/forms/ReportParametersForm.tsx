@@ -15,10 +15,12 @@ import {
     ReportFormValues,
     SetReportFormValues,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import usePermissions from 'hooks/usePermissions';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
+import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
     formValues: ReportFormValues;
@@ -34,6 +36,9 @@ function ReportParametersForm({
     formValues,
     setFormValues,
 }: ReportParametersFormParams): ReactElement {
+    const { hasReadWriteAccess } = usePermissions();
+    const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
+
     const handleTextChange = (fieldName: string) => (value: string) => {
         setFormValues((prevValues) => {
             const newValues = { ...prevValues };
@@ -62,6 +67,14 @@ function ReportParametersForm({
         setFormValues((prevValues) => {
             const newValues = { ...prevValues };
             set(newValues, fieldName, str);
+            return newValues;
+        });
+    };
+
+    const handleCollectionSelection = (fieldName: string) => (selection) => {
+        setFormValues((prevValues) => {
+            const newValues = { ...prevValues };
+            set(newValues, fieldName, selection);
             return newValues;
         });
     };
@@ -209,6 +222,14 @@ function ReportParametersForm({
                     />
                 </FormGroup>
             )}
+            <FormGroup isRequired fieldId="reportParameters.reportScope">
+                <CollectionSelection
+                    selectedScopeId={formValues.reportParameters.reportScope}
+                    initialReportScope={null}
+                    onChange={handleCollectionSelection('reportParameters.reportScope')}
+                    allowCreate={canWriteCollections}
+                />
+            </FormGroup>
         </Form>
     );
 }

@@ -19,6 +19,7 @@ import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporti
 
 function VulnReportsPage() {
     const { formValues, setFormValues } = useReportFormValues();
+
     return (
         <>
             <PageTitle title="Create vulnerability report" />
