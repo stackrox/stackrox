@@ -464,10 +464,9 @@ type TelemetryStorage struct {
 // ScannerComponentSpec defines settings for the central "scanner" component.
 type ScannerComponentSpec struct {
 	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
+	// (not recommended). By default, the scanner is enabled.
 	// If you do so, all the settings in this section will have no effect.
 	//+kubebuilder:validation:Default=Enabled
-	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
 
