@@ -1,7 +1,7 @@
 import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
 import Raven from 'raven-js';
 
-import { integrationsPath, networkPath } from 'routePaths';
+import { integrationsPath } from 'routePaths';
 import * as service from 'services/IntegrationsService';
 import * as AuthService from 'services/AuthService';
 import * as BackupIntegrationsService from 'services/BackupIntegrationsService';
@@ -50,10 +50,11 @@ function* getSignatureIntegrations() {
 }
 
 function* watchLocation() {
-    const effects = [getImageIntegrations, getSignatureIntegrations, getNotifiers, getBackups].map(
-        (fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
+    yield all(
+        [getImageIntegrations, getSignatureIntegrations, getNotifiers, getBackups].map(
+            (fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
+        )
     );
-    yield all([...effects, takeEveryNewlyMatchedLocation(networkPath, getNotifiers)]);
 }
 
 function* watchFetchRequest() {

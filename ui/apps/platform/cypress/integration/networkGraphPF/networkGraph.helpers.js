@@ -63,17 +63,14 @@ export function selectDeployment(deployment) {
 
 export const notifiersAlias = 'notifiers';
 export const clustersAlias = 'clusters';
-export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
+// Removed the following because request has 30 second delay from polling interval:
+// export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
 export const searchMetadataOptionsAlias = 'search/metadata/options';
 
 const routeMatcherMapToVisitNetworkGraph = {
     [clustersAlias]: {
         method: 'GET',
         url: '/v1/sac/clusters?permissions=NetworkGraph&permissions=Deployment',
-    },
-    [networkPoliciesGraphEpochAlias]: {
-        method: 'GET',
-        url: '/v1/networkpolicies/graph/epoch?clusterId=*', // either id or null if no cluster selected
     },
 };
 
