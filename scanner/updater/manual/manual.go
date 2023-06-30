@@ -16,13 +16,9 @@ import (
 type Factory struct {
 }
 
-func UpdaterSet(ctx context.Context, vulns []*claircore.Vulnerability) (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context, vulns []*claircore.Vulnerability) (driver.UpdaterSet, error) {
 	res := driver.NewUpdaterSet()
-	if vulns != nil && len(vulns) > 0 {
-		res.Add(&updater{data: vulns})
-	} else {
-		res.Add(&updater{})
-	}
+	res.Add(&updater{data: vulns})
 	return res, nil
 }
 

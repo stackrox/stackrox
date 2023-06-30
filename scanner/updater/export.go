@@ -1,12 +1,11 @@
 package updater
 
 import (
-	"compress/gzip"
 	"context"
 	"net/http"
 	"os"
-	"time"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
@@ -24,7 +23,7 @@ import (
 )
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
-// and then outputting the result as a gzip file
+// and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context) error {
 	updaterStore, err := jsonblob.New()
 	if err != nil {
@@ -102,65 +101,52 @@ func Export(ctx context.Context) error {
 	}
 
 	os.Mkdir("tmp", 0700)
-	outputFile, err := os.Create("tmp/output.json.gz")
+	outputFile, err := os.Create("tmp/output.json")
 	if err != nil {
 		return err
 	}
 	defer outputFile.Close()
-	gzipWriter := gzip.NewWriter(outputFile)
-	defer gzipWriter.Close()
 
 	httpClient := http.DefaultClient
 
-	err = retryWithBackoff(3, 3*time.Second, func() error {
-		updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
-			updates.WithOutOfTree(updaters),
-		)
-		if err != nil {
-			return err
-		}
-		if err := updaterSetMgr.Run(ctx); err != nil {
-			return err
-		}
-		err = updaterStore.Store(gzipWriter)
+	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
+		updates.WithOutOfTree(updaters),
+	)
+	if err != nil {
 		return err
-	})
+	}
+	if err := updaterSetMgr.Run(ctx); err != nil {
+		return err
+	}
+
+	zstdWriter := zstd.NewWriter(outputFile)
+	defer zstdWriter.Close()
+
+	err = updaterStore.Store(zstdWriter)
 	if err != nil {
 		return err
 	}
 
 	configStore, err := jsonblob.New()
 
-	err = retryWithBackoff(3, 3*time.Second, func() error {
-		configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
-			updates.WithConfigs(cfgs),
-			updates.WithFactories(facs),
-		)
-		if err := configMgr.Run(ctx); err != nil {
-			return err
-		}
-
-		err = configStore.Store(gzipWriter)
-		if err != nil {
-			return err
-		}
+	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
+		updates.WithConfigs(cfgs),
+		updates.WithFactories(facs),
+	)
+	if err := configMgr.Run(ctx); err != nil {
 		return err
-	})
+	}
+
+	err = configStore.Store(zstdWriter)
+	if err != nil {
+		return err
+	}
+
+	// Rename the output file to have the .ztd extension
+	err = os.Rename("tmp/output.json", "tmp/output.json.ztd")
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func retryWithBackoff(maxAttempts int, backoff time.Duration, fn func() error) error {
-	var err error
-	for attempt := 0; attempt < maxAttempts; attempt++ {
-		err = fn()
-		if err == nil {
-			return nil
-		}
-		time.Sleep(backoff)
-	}
-	return err
 }
