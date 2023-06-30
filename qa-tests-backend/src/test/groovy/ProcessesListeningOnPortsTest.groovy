@@ -1,8 +1,6 @@
 import static util.Helpers.evaluateWithRetry
 
 import objects.Deployment
-import objects.K8sServiceAccount
-import objects.Service
 import util.Env
 
 import spock.lang.IgnoreIf
@@ -13,6 +11,8 @@ import spock.lang.Stepwise
 import services.ProcessesListeningOnPortsService
 
 @Stepwise
+@Tag("BAT")
+@Tag("Parallel")
 @IgnoreIf({ Env.get("ROX_PROCESSES_LISTENING_ON_PORT", "true") != "true" })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 
@@ -22,18 +22,16 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
     static final private String TCPCONNECTIONTARGET3 = "tcp-connection-target-3"
 
     // Other namespace
-    static final private String OTHER_NAMESPACE = "qa2"
+    static final private String TEST_NAMESPACE = "qa-plop"
 
     static final private String SOCAT_DEBUG = "-d -d -v"
 
     // Target deployments
     @Shared
-    private List<Deployment> targetDeployments
-
-    def buildTargetDeployments() {
-        return [
+    final private List<Deployment> targetDeployments = [
             new Deployment()
                     .setName(TCPCONNECTIONTARGET1)
+                    .setNamespace(TEST_NAMESPACE)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(80)
                     .addPort(8080)
@@ -44,6 +42,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                                       "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET2)
+                    .setNamespace(TEST_NAMESPACE)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8081, "TCP")
                     .addLabel("app", TCPCONNECTIONTARGET2)
@@ -52,6 +51,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                     .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:8081,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET3)
+                    .setNamespace(TEST_NAMESPACE)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8082, "TCP")
                     .addLabel("app", TCPCONNECTIONTARGET3)
@@ -61,60 +61,44 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                             "sleep 90 && pkill socat && sleep 3600)" as String,]),
                     // The 8082 port is opened. 90 seconds later the process is killed. After that we sleep forever
         ]
+
+    def setupSpec() {
+        // cleanup after a prior incomplete run
+        destroyDeployments()
+        destroyNamespace()
+    }
+
+    def cleanupSpec() {
+        destroyDeployments()
+        destroyNamespace()
     }
 
     def createDeployments() {
-        targetDeployments = buildTargetDeployments()
+        // batchCreateDeployments() provisions the namespace as needed (see
+        // ensureNamespaceExsists())
         orchestrator.batchCreateDeployments(targetDeployments)
         for (Deployment d : targetDeployments) {
             assert Services.waitForDeployment(d)
         }
     }
 
-    def setupSpec() {
-        orchestrator.createNamespace(OTHER_NAMESPACE)
-        orchestrator.createImagePullSecret(
-                "quay",
-                Env.mustGet("REGISTRY_USERNAME"),
-                Env.mustGet("REGISTRY_PASSWORD"),
-                OTHER_NAMESPACE,
-                "https://quay.io"
-        )
-        orchestrator.createServiceAccount(
-                new K8sServiceAccount(
-                        name: "default",
-                        namespace: OTHER_NAMESPACE,
-                        imagePullSecrets: ["quay"]
-                )
-        )
-
-        destroyDeployments()
-        createDeployments()
-    }
-
     def destroyDeployments() {
         for (Deployment deployment : targetDeployments) {
-            orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
-        }
-        for (Deployment deployment : targetDeployments) {
-            if (deployment.exposeAsService) {
-                orchestrator.waitForServiceDeletion(new Service(deployment.name, deployment.namespace))
+            if (orchestrator.getDeploymentId(deployment) != null) {
+                orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
             }
         }
-        orchestrator.deleteNamespace(OTHER_NAMESPACE)
-        orchestrator.waitForNamespaceDeletion(OTHER_NAMESPACE)
     }
 
-    def cleanupSpec() {
-        destroyDeployments()
+    def destroyNamespace() {
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
+        orchestrator.waitForNamespaceDeletion(TEST_NAMESPACE)
     }
 
-    @Tag("BAT")
     def "Verify networking endpoints with processes appear in API at the deployment level"() {
         given:
-        "Two deployments that listen on ports are started up"
-
-        setupSpec()
+        // implicitly creates the namespace as needed
+        createDeployments()
 
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
@@ -162,10 +146,16 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+    }
+
+    def "Networking endpoints are no longer in the API when deployments are deleted"() {
+        given:
+        String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
+        String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
 
         destroyDeployments()
 
-        processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId1, 240)
+        def processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId1, 240)
 
         assert processesListeningOnPorts
 
@@ -178,16 +168,11 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def list3 = processesListeningOnPorts.listeningEndpointsList
         assert list3.size() == 0
-
-        destroyDeployments()
     }
 
-    @Tag("BAT")
     def "Verify networking endpoints disappear when process is terminated"() {
         given:
-        "When a deployment listening on a port is created and then the process is terminated"
-
-        setupSpec()
+        createDeployments()
 
         String deploymentId3 = targetDeployments.find { it.name == TCPCONNECTIONTARGET3 }?.deploymentUid
 
@@ -209,20 +194,17 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8082,fork STDOUT"
 
+        // Allow enough time for the process and port to close and check that it is not in the API response
         processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId3, 180)
 
-        // Allow enough time for the process and port to close and check that it is not in the API response
         assert processesListeningOnPorts
 
         destroyDeployments()
     }
 
-    @Tag("BAT")
     def "Verify networking endpoint doesn't disappear when port stays open"() {
         given:
-        "A deployment listening on a port is brought up and it is checked twice that the port is found"
-
-        setupSpec()
+        createDeployments()
 
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
 
