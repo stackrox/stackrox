@@ -48,6 +48,7 @@ export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
+export const listeningEndpointsBasePath = `${mainPath}/audit/listening-endpoints`;
 
 // Configuration Management
 
