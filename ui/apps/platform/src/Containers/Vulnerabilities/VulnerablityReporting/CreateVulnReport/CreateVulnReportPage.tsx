@@ -14,6 +14,7 @@ import { vulnerabilityReportsPath } from 'routePaths';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import ReportParametersForm from '../forms/ReportParametersForm';
 
 function VulnReportsPage() {
     return (
@@ -47,7 +48,10 @@ function VulnReportsPage() {
                     // @TODO: Make the mainAriaLabel dynamic based on whether you're creating, editing, or cloning
                     mainAriaLabel="Report creation content"
                     steps={[
-                        { name: 'Configure report parameters', component: <p /> },
+                        {
+                            name: 'Configure report parameters',
+                            component: <ReportParametersForm />,
+                        },
                         { name: 'Configure delivery destinations (Optional)', component: <p /> },
                         {
                             name: 'Review and create',
@@ -55,6 +59,7 @@ function VulnReportsPage() {
                             nextButtonText: 'Finish',
                         },
                     ]}
+                    hasNoBodyPadding
                 />
             </PageSection>
         </>
