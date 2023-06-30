@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -136,6 +137,62 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(h.Stopped().Wait())
 }
 
+func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
+	ch, producer := s.generateTestInputNoClose(10)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	s.NoError(h.Start())
+	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
+	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
+	// expect complianceConsumer to get 10 NACK messages
+	complianceConsumer := consumeAndCount(h.ComplianceC(), 5)
+	s.NoError(complianceConsumer.Stopped().Wait())
+	h.Notify(common.SensorComponentEventCentralReachable)
+	complianceConsumer2 := consumeAndCount(h.ComplianceC(), 5)
+	s.NoError(complianceConsumer2.Stopped().Wait())
+
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(centralConsumer.Stopped().Wait())
+
+	h.Stop(nil)
+	s.T().Logf("waiting for handler to stop")
+	s.NoError(h.Stopped().Wait())
+}
+
+// When entering offline mode, we expect the handler to NACK Node Inventories.
+// As soon as we leave offline mode, we want to ACK any Node Inventories received.
+func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineMode() {
+	ch, producer := s.generateTestInputNoClose(3)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
+	h.Notify(common.SensorComponentEventCentralReachable)
+	s.NoError(h.Start())
+	complianceC := h.ComplianceC()
+
+	// Start in online mode, we expect ACKs
+	complianceConsumer := consumeAndCount(complianceC, 3) // Need to connect centralC and "process" inventory from impl:150
+	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
+	//s.Equal(5, stats.ACKCount)
+
+	// In offline mode, we expect NACKs to arrive
+	///h.Notify(common.SensorComponentEventOfflineMode)
+	//consumer = consumeAndCount(complianceC, 2)
+	//s.Equal(2, stats.NACKCount)
+
+	// Back in online mode, we expect ACKs again
+	//h.Notify(common.SensorComponentEventCentralReachable)
+	//consumer = consumeAndCount(complianceC, 5)
+	//s.Equal(5, stats.NACKCount)
+
+	s.NoError(producer.Stopped().Wait())
+	s.NoError(complianceConsumer.Stopped().Wait())
+	s.NoError(centralConsumer.Stopped().Wait())
+
+	h.Stop(nil)
+	s.NoError(h.Stopped().Wait())
+}
+
 // generateTestInputNoClose generates numToProduce messages of type NodeInventory.
 // It returns a channel that must be closed by the caller.
 func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, concurrency.StopperClient) {
@@ -175,6 +232,41 @@ func consumeAndCount[T any](ch <-chan T, numToConsume int) concurrency.StopperCl
 		}
 	}()
 	return st.Client()
+}
+
+type messageStats struct {
+	NACKCount int
+	ACKCount  int
+	sc        concurrency.StopperClient
+}
+
+func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, numToConsume int) messageStats {
+	ms := messageStats{0, 0, nil}
+	st := concurrency.NewStopper()
+	go func() {
+		defer st.Flow().ReportStopped()
+		for i := 0; i < numToConsume; i++ {
+			select {
+			case <-st.Flow().StopRequested():
+				st.LowLevel().ResetStopRequest()
+				st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
+				return
+			case msg, ok := <-ch:
+				if !ok {
+					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
+					return
+				}
+				switch msg.Msg.GetAck().GetAction() {
+				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
+					ms.ACKCount = ms.ACKCount + 1
+				case sensor.MsgToCompliance_NodeInventoryACK_NACK:
+					ms.NACKCount = ms.NACKCount + 1
+				}
+			}
+		}
+	}()
+	ms.sc = st.Client()
+	return ms
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
