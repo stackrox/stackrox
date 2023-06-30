@@ -139,50 +139,32 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(h.Stopped().Wait())
 }
 
+// This test simulates a running Sensor loosing connection to Central, followed by a reconnect.
+// As soon as Sensor enters offline mode, it should send NACKs to Compliance.
+// In online mode, inventories are forwarded to Central, which responds with an ACK, that is passed to Compliance.
 func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	ch, producer := s.generateTestInputNoClose(1)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
-	select {
-	case <-h.ResponsesC():
-		h.ProcessMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId: "4",
-				NodeName:  "4",
-				Action:    central.NodeInventoryACK_ACK,
-			}},
-		})
-		break
-	case <-time.After(5 * time.Second): // Starts counting when select is triggered
-		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
-	}
-	complianceConsumer := consumeAndCount(h.ComplianceC(), 1)
-	s.NoError(complianceConsumer.Stopped().Wait())
+	mockCentralAck(h, s)
+	stats1 := consumeAndCountCompliance(h.ComplianceC(), 1)
+	s.NoError(stats1.sc.Stopped().Wait())
+	s.Equal(1, stats1.ACKCount)
 
 	h.Notify(common.SensorComponentEventOfflineMode)
 	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
-	complianceConsumer2 := consumeAndCount(h.ComplianceC(), 1)
-	s.NoError(complianceConsumer2.Stopped().Wait())
+	stats2 := consumeAndCountCompliance(h.ComplianceC(), 1)
+	s.NoError(stats2.sc.Stopped().Wait())
+	s.Equal(1, stats2.NACKCount)
 
 	h.Notify(common.SensorComponentEventCentralReachable)
 	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
-	select {
-	case <-h.ResponsesC():
-		h.ProcessMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId: "4",
-				NodeName:  "4",
-				Action:    central.NodeInventoryACK_ACK,
-			}},
-		})
-		break
-	case <-time.After(5 * time.Second): // Starts counting when select is triggered
-		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
-	}
-	complianceConsumer3 := consumeAndCount(h.ComplianceC(), 1)
-	s.NoError(complianceConsumer3.Stopped().Wait())
+	mockCentralAck(h, s)
+	stats3 := consumeAndCountCompliance(h.ComplianceC(), 1)
+	s.NoError(stats3.sc.Stopped().Wait())
+	s.Equal(1, stats3.ACKCount)
 
 	s.NoError(producer.Stopped().Wait())
 
@@ -191,38 +173,20 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	s.NoError(h.Stopped().Wait())
 }
 
-// When entering offline mode, we expect the handler to NACK Node Inventories.
-// As soon as we leave offline mode, we want to ACK any Node Inventories received.
-func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineMode() {
-	ch, producer := s.generateTestInputNoClose(3)
-	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
-	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachable)
-	s.NoError(h.Start())
-	complianceC := h.ComplianceC()
-
-	// Start in online mode, we expect ACKs
-	complianceConsumer := consumeAndCount(complianceC, 3) // Need to connect centralC and "process" inventory from impl:150
-	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
-	//s.Equal(5, stats.ACKCount)
-
-	// In offline mode, we expect NACKs to arrive
-	///h.Notify(common.SensorComponentEventOfflineMode)
-	//consumer = consumeAndCount(complianceC, 2)
-	//s.Equal(2, stats.NACKCount)
-
-	// Back in online mode, we expect ACKs again
-	//h.Notify(common.SensorComponentEventCentralReachable)
-	//consumer = consumeAndCount(complianceC, 5)
-	//s.Equal(5, stats.NACKCount)
-
-	s.NoError(producer.Stopped().Wait())
-	s.NoError(complianceConsumer.Stopped().Wait())
-	s.NoError(centralConsumer.Stopped().Wait())
-
-	h.Stop(nil)
-	s.NoError(h.Stopped().Wait())
+func mockCentralAck(h *nodeInventoryHandlerImpl, s *NodeInventoryHandlerTestSuite) {
+	select {
+	case <-h.ResponsesC():
+		h.ProcessMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId: "4",
+				NodeName:  "4",
+				Action:    central.NodeInventoryACK_ACK,
+			}},
+		})
+		break
+	case <-time.After(5 * time.Second): // Starts counting when select is triggered
+		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
+	}
 }
 
 // generateTestInputNoClose generates numToProduce messages of type NodeInventory.
@@ -272,8 +236,8 @@ type messageStats struct {
 	sc        concurrency.StopperClient
 }
 
-func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, numToConsume int) messageStats {
-	ms := messageStats{0, 0, nil}
+func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, numToConsume int) *messageStats {
+	ms := &messageStats{0, 0, nil}
 	st := concurrency.NewStopper()
 	go func() {
 		defer st.Flow().ReportStopped()
