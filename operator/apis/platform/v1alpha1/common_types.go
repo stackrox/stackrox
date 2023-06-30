@@ -138,25 +138,21 @@ func (s *ScannerAnalyzerComponent) GetScaling() *ScannerAnalyzerScaling {
 type ScannerAnalyzerScaling struct {
 	// When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits
 	// specified below.
-	//+kubebuilder:validation:Default=Enabled
 	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling",order=1
 	AutoScaling *AutoScalingPolicy `json:"autoScaling,omitempty"`
 
 	// When autoscaling is disabled, the number of replicas will always be configured to match this value.
-	//+kubebuilder:validation:Default=3
 	//+kubebuilder:default=3
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Default Replicas",order=2
 	Replicas *int32 `json:"replicas,omitempty"`
 
-	//+kubebuilder:validation:Default=2
 	//+kubebuilder:default=2
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Minimum Replicas",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
-	//+kubebuilder:validation:Default=5
 	//+kubebuilder:default=5
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Maximum Replicas",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
