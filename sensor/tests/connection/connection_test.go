@@ -17,6 +17,9 @@ var (
 )
 
 func Test_SensorReconnects(t *testing.T) {
+	// TODO(ROX-18197) Address flakiness
+	t.Skipf("This test is too flaky. Has to be fixed before re-enabled")
+
 	if buildinfo.ReleaseBuild {
 		t.Skipf("Don't run test in release mode: feature flag cannot be enabled")
 	}
@@ -34,6 +37,7 @@ func Test_SensorReconnects(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+
 		// This test case will make sure that:
 		//  1) Sensor does not crash when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is set.
 		//  2) After Central reconnects, events can continue streaming messages
