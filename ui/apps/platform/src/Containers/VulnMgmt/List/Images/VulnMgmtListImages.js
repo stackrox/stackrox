@@ -16,7 +16,6 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -26,6 +25,7 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import WatchedImagesDialog from './WatchedImagesDialog';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultImageSort = [
     {

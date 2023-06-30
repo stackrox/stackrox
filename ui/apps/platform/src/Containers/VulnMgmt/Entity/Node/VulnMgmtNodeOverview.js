@@ -11,8 +11,8 @@ import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
 import getNodeScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessage';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 

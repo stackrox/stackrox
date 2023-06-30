@@ -10,7 +10,7 @@ import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/Re
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';

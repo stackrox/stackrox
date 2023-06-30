@@ -7,7 +7,7 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { entityGridContainerBaseClassName } from '../WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';

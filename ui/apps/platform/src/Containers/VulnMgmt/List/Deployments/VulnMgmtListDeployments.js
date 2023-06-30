@@ -14,11 +14,11 @@ import {
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { DEPLOYMENT_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { deploymentSortFields } from 'constants/sortFields';
 import { getRatioOfScannedImages } from './deployments.utils';
+import WorkflowListPage from '../WorkflowListPage';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
 export const defaultDeploymentSort = [

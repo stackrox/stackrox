@@ -6,11 +6,12 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
-import EntityList from 'Components/EntityList';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
+
+import EntityList from './EntityList';
 
 export function getDefaultExpandedRows(results) {
     return results

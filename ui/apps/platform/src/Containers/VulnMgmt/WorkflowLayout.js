@@ -4,9 +4,9 @@ import { workflowPaths } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 import PageNotFound from 'Components/PageNotFound';
 
-import DashboardPage from './WorkflowDashboardLayout';
-import ListPage from './WorkflowListPageLayout';
-import EntityPage from './WorkflowEntityPageLayout';
+import DashboardPage from './Dashboard/WorkflowDashboardLayout';
+import ListPage from './List/WorkflowListPageLayout';
+import EntityPage from './Entity/WorkflowEntityPageLayout';
 
 const Page = () => (
     <Switch>

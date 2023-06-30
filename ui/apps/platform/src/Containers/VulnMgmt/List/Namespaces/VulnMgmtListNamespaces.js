@@ -13,12 +13,12 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { NAMESPACE_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { namespaceSortFields } from 'constants/sortFields';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultNamespaceSort = [
     {

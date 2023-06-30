@@ -4,9 +4,10 @@ import { ExternalLink } from 'react-feather';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import EntityBreadCrumbs from 'Containers/BreadCrumbs/EntityBreadCrumbs';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
+
+import EntityBreadCrumbs from './EntityBreadCrumbs';
 
 const WorkflowSidePanel = ({ history, location, children }) => {
     const workflowState = parseURL(location);

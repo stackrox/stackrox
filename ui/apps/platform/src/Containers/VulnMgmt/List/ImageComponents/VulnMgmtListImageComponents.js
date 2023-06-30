@@ -7,7 +7,6 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -20,6 +19,7 @@ import { componentSortFields } from 'constants/sortFields';
 
 import TableCountLink from 'Components/workflow/TableCountLink';
 import { getFilteredComponentColumns } from './ListImageComponents.utils';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultComponentSort = [
     {
