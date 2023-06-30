@@ -390,6 +390,24 @@ func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *LoggerImp
 	return result
 }
 
+func createBasicLogger() *LoggerImpl {
+	lc := config
+	lc.Level = zap.NewAtomicLevelAt(GetGlobalLogLevel())
+	logger, err := lc.Build()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to instantiate logger"))
+	}
+
+	result := &LoggerImpl{
+		InnerLogger: logger.Sugar(),
+		module:      nil,
+	}
+
+	runtime.SetFinalizer(result, (*LoggerImpl).finalize)
+
+	return result
+}
+
 func parseDefaultModuleLevels(str string) (map[string]zapcore.Level, []error) {
 	var errs []error
 	entries := strings.Split(str, ",")
