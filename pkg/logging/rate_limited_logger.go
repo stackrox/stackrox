@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/lru"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
@@ -21,8 +20,6 @@ type RateLimitedLogger struct {
 	logger    Logger
 	frequency float64
 	burst     int
-	ticker    *time.Ticker
-	stopper   concurrency.Stopper
 	// TODO: ROX-17312: Use an LRU Cache with expiration and eviction here
 	rateLimitedLogs lru.Cache[string, *rateLimitedLog]
 }
@@ -58,26 +55,26 @@ func GetRateLimitedLogger() *RateLimitedLogger {
 	return commonLogger
 }
 
-func newRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
-	logCache, err := lru.NewWithEvict[string, *rateLimitedLog](size, func(key string, evictedLog *rateLimitedLog) {
+var (
+	onEvict = func(key string, evictedLog *rateLimitedLog) {
 		if evictedLog.count.Load() > 0 {
 			evictedLog.log()
 		}
-	})
-	if err != nil {
-		l.Errorf("unable to create rate limiter cache for logger in module %q: %v", CurrentModule().name, err)
-		return nil
 	}
+)
+
+func newRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
+	if size < 0 {
+		size = 0
+	}
+	logCache := lru.NewExpirableLRU[string, *rateLimitedLog](size, onEvict, interval)
 	logger := &RateLimitedLogger{
 		l,
 		float64(logLines) / interval.Seconds(),
 		burst,
-		time.NewTicker(time.Second),
-		concurrency.NewStopper(),
 		logCache,
 	}
 	runtime.SetFinalizer(logger, stopLogger)
-	go logger.logFlushLoop()
 	return logger
 }
 
@@ -213,20 +210,6 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	}
 }
 
-func (rl *RateLimitedLogger) logFlushLoop() {
-	defer rl.stopper.Flow().ReportStopped()
-	defer rl.ticker.Stop()
-	for {
-		select {
-		case <-rl.ticker.C:
-			rl.flush(false)
-		case <-rl.stopper.Flow().StopRequested():
-			rl.flush(true)
-			return
-		}
-	}
-}
-
 func (rl *RateLimitedLogger) flush(force bool) {
 	keys := rl.rateLimitedLogs.Keys()
 	for _, k := range keys {
@@ -244,8 +227,10 @@ func (rl *RateLimitedLogger) flush(force bool) {
 }
 
 func (rl *RateLimitedLogger) stop() {
-	rl.stopper.Client().Stop()
-	_ = rl.stopper.Client().Stopped().Wait()
+	// Flush logs
+	rl.rateLimitedLogs.Purge()
+	// Stop background thread
+	rl.rateLimitedLogs.Close()
 }
 
 func stopLogger(logger *RateLimitedLogger) {
@@ -279,8 +264,6 @@ func newRateLimitedLog(
 	file string,
 	line int,
 ) *rateLimitedLog {
-	// TODO: ROX-17312: Use a single rate-limited logger for all logs.
-	// Check how the logger module can be integrated in the logs.
 	return &rateLimitedLog{
 		logger:      logger,
 		rateLimiter: rateLimiter,
