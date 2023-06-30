@@ -183,7 +183,7 @@ class NetworkBaselineTest extends BaseSpecification {
         def baselinedClientDeploymentID = BASELINED_CLIENT_DEP.deploymentUid
         assert baselinedClientDeploymentID != null
 
-        Timestamp epoch = Times=tamp.newBuilder().setSeconds(0).build()
+        Timestamp epoch = Timestamp.newBuilder().setSeconds(0).build()
 
         assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, epoch, 180)
         def baselinedClientBaseline = NetworkBaselineService.getNetworkBaseline(baselinedClientDeploymentID)
