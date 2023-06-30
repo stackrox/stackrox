@@ -571,35 +571,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
 {{- end }}
 {{- end }}
 
-// Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
-        return nil, false, err
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-        return nil, false, err
-	}
-    {{- end }}
-
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        {{template "matchQuery" (arr $pks $singlePK)}}
-    )
-
-	data, err := pgSearch.RunGetQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
-	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	return data, true, nil
-}
-
 {{- if $singlePK }}
 {{- if .SearchCategory }}
 
