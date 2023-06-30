@@ -18,12 +18,14 @@ import (
 
 const (
 	cursorBatchSize = 50
+	deleteBatchSize = 5000
 )
 
 // PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
 	CountAllowed(ctx context.Context) (bool, error)
 	DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
+	DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
 	ExistsAllowed(ctx context.Context) (bool, error)
 	GetAllowed(ctx context.Context) (bool, error)
 	WalkAllowed(ctx context.Context) (bool, error)
@@ -372,4 +374,52 @@ func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 	return s.DeleteByQuery(ctx, q)
+}
+
+// DeleteMany removes the objects associated to the specified IDs from the store.
+func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.DeleteManyAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
+	}
+
+	// Batch the deletes
+	localBatchSize := deleteBatchSize
+	numRecordsToDelete := len(identifiers)
+	for {
+		if len(identifiers) == 0 {
+			break
+		}
+
+		if len(identifiers) < localBatchSize {
+			localBatchSize = len(identifiers)
+		}
+
+		identifierBatch := identifiers[:localBatchSize]
+		q := search.ConjunctionQuery(
+			sacQueryFilter,
+			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
+		)
+
+		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
+			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
+		}
+
+		// Move the slice forward to start the next batch
+		identifiers = identifiers[localBatchSize:]
+	}
+
+	return nil
 }
