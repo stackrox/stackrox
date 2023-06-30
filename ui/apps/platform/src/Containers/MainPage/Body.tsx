@@ -29,6 +29,7 @@ import {
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
+    listeningEndpointsBasePath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -95,6 +96,10 @@ const AsyncVulnMgmtRiskAcceptancePage = asyncComponent(
 );
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
+
+const AsyncListeningEndpointsPage = asyncComponent(
+    () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')
+);
 
 type BodyProps = {
     hasReadAccess: HasReadAccess;
@@ -183,6 +188,14 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route path={clustersListPath} component={AsyncPFClustersPage} />
                     )}
                     <Route path={systemHealthPath} component={AsyncSystemHealthPage} />
+                    {/* 
+                    TODO - Add any necessary permissions to the following route. The user will need read access to
+                          'Cluster' and 'Deployment' at the very least.
+                     */}
+                    <Route
+                        path={listeningEndpointsBasePath}
+                        component={AsyncListeningEndpointsPage}
+                    />
                     <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>
