@@ -166,13 +166,9 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                                 component={AsyncVulnerabilityReportingPage}
                             />
                         )}
-                    {hasVulnerabilityReportsPermission &&
-                        !isVulnerabilityReportingEnhancementsEnabled && (
-                            <Route
-                                path={vulnManagementReportsPath}
-                                component={AsyncVulnMgmtReports}
-                            />
-                        )}
+                    {hasVulnerabilityReportsPermission && (
+                        <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
+                    )}
                     <Route
                         path={vulnManagementRiskAcceptancePath}
                         component={AsyncVulnMgmtRiskAcceptancePage}
