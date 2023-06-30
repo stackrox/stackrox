@@ -85,6 +85,17 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	return store
 }
 
+// Cleanup deletes all entries from store
+func (rs *Store) Cleanup() {
+	rs.mutex.Lock()
+	defer rs.mutex.Unlock()
+
+	rs.store = make(map[string]registries.Set)
+	rs.globalRegistries = registries.NewSet(rs.factory)
+	rs.centralRegistryIntegrations = registries.NewSet(rs.factory)
+	rs.clusterLocalRegistryHosts = set.NewStringSet()
+}
+
 func (rs *Store) getRegistries(namespace string) registries.Set {
 	rs.mutex.Lock()
 	defer rs.mutex.Unlock()

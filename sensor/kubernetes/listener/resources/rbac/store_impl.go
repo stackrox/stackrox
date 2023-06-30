@@ -22,6 +22,17 @@ type storeImpl struct {
 	dirty           bool
 }
 
+// Cleanup deletes all entries from store
+func (rs *storeImpl) Cleanup() {
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+
+	rs.dirty = false
+	rs.bucketEvaluator = newBucketEvaluator(nil, nil)
+	rs.roles = make(map[namespacedRoleRef]namespacedRole)
+	rs.bindings = make(map[namespacedBindingID]*namespacedBinding)
+}
+
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {
 	subject := &storage.Subject{
 		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,

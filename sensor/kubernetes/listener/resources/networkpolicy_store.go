@@ -88,6 +88,13 @@ func newNetworkPoliciesStore() *networkPolicyStoreImpl {
 	}
 }
 
+// Cleanup deletes all entries from store
+func (n *networkPolicyStoreImpl) Cleanup() {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+	n.data = make(map[string]map[string]*storage.NetworkPolicy)
+}
+
 // Size returns number of network policies in the store
 func (n *networkPolicyStoreImpl) Size() int {
 	n.lock.RLock()
