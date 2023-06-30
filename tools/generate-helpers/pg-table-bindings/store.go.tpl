@@ -629,36 +629,6 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}
 }
 {{- end }}
 
-{{- if $singlePK }}
-
-// GetIDs returns all the IDs for the store.
-func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
-    var sacQueryFilter *v1.Query
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
-        return nil, err
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
-    {{- end }}
-    result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
-}
-{{- end }}
-
 //// Interface functions - END
 
 //// Used for testing
