@@ -65,7 +65,7 @@ func (f *centralConnectionFactoryImpl) Reset() {
 	f.okSignal.Reset()
 }
 
-func (f *centralConnectionFactoryImpl) pollPing() error {
+func (f *centralConnectionFactoryImpl) pingCentral() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// Ping result doesn't matter, as long as Central is reachable.
@@ -81,7 +81,7 @@ func (f *centralConnectionFactoryImpl) waitUntilCentralIsReady() error {
 	exponential.MaxElapsedTime = 5 * time.Minute
 	exponential.MaxInterval = 32 * time.Second
 	err := backoff.RetryNotify(func() error {
-		return f.pollPing()
+		return f.pingCentral()
 	}, exponential, func(err error, d time.Duration) {
 		log.Infof("Check Central status failed: %s. Retrying after %s...", err, d.Round(time.Millisecond))
 	})
