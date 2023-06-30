@@ -83,3 +83,34 @@ spec:
   resources:
     requests:
       storage: 100Gi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: central-prometheus-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-central-auth-reader
+  namespace: kube-system
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring-tls
+spec:
+  ingress:
+  - ports:
+    - port: 9091
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress
