@@ -24,8 +24,8 @@ func TestStart(t *testing.T) {
 			assert: func(t *testing.T) {
 				assert.Equal(t, ":8080", metricsBindAddr)
 				assert.Equal(t, ":8081", healthProbeBindAddrress)
-				assert.Equal(t, "readyz", readinessProbeEndpointName)
-				assert.Equal(t, "healthz", livenessProbeEndpointName)
+				assert.Equal(t, "/readyz", readinessProbeEndpointName)
+				assert.Equal(t, "/healthz", livenessProbeEndpointName)
 				assert.Equal(t, false, enableLeaderElection)
 				assert.Equal(t, 15*time.Second, leaderElectLeaseDuration)
 				assert.Equal(t, 10*time.Second, leaderElectRenewDeadline)
