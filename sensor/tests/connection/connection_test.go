@@ -14,7 +14,6 @@ import (
 
 var (
 	NginxDeployment1 = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml", Name: "nginx-deployment"}
-	NginxDeployment2 = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx2.yaml", Name: "nginx-deployment-2"}
 )
 
 func Test_SensorReconnects(t *testing.T) {
@@ -51,23 +50,17 @@ func Test_SensorReconnects(t *testing.T) {
 		//
 		// Note that this behavior is *not* acceptable in production. There are follow-up tasks (ROX-17327 and ROX-17157)
 		// that will tackle this, and only then the sleep timer could be removed.
-		// If this test becomes too flaky before the tasks above are implemented, the following mitigations could be
-		// implemented:
-		//  1) Increase sleep time.
-		//  2) Add a signal in sensor (that can be read by the test harness) that triggers when connection is established.
 
-		// This is used as initial signal that Sensor is fully operational, and has communicated that NginxDeployment1
-		// is up to Central.
-		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment1, nil)
-		require.NoError(t, err)
+		testContext.WaitForSyncEvent(2 * time.Minute)
 
 		// Stop fake central gRPC server and create a new one immediately after.
 		testContext.RestartFakeCentralConnection()
-		time.Sleep(2 * time.Second)
+		testContext.WaitForSyncEvent(2 * time.Minute)
+
 		assert.False(t, testContext.SensorStopped())
 
 		// We applied the resource _after_ Sensor restarted. Now we should check that this deployment will be sent to Central.
-		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment2, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment1, nil)
 		require.NoError(t, err)
 	}))
 }
