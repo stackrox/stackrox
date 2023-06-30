@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -138,21 +140,51 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
-	ch, producer := s.generateTestInputNoClose(10)
+	ch, producer := s.generateTestInputNoClose(1)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
-	s.NoError(h.Start())
-	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
-	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
-	// expect complianceConsumer to get 10 NACK messages
-	complianceConsumer := consumeAndCount(h.ComplianceC(), 5)
-	s.NoError(complianceConsumer.Stopped().Wait())
 	h.Notify(common.SensorComponentEventCentralReachable)
-	complianceConsumer2 := consumeAndCount(h.ComplianceC(), 5)
+	s.NoError(h.Start())
+	select {
+	case <-h.ResponsesC():
+		h.ProcessMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId: "4",
+				NodeName:  "4",
+				Action:    central.NodeInventoryACK_ACK,
+			}},
+		})
+		break
+	case <-time.After(5 * time.Second): // Starts counting when select is triggered
+		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
+	}
+	complianceConsumer := consumeAndCount(h.ComplianceC(), 1)
+	s.NoError(complianceConsumer.Stopped().Wait())
+
+	h.Notify(common.SensorComponentEventOfflineMode)
+	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
+	complianceConsumer2 := consumeAndCount(h.ComplianceC(), 1)
 	s.NoError(complianceConsumer2.Stopped().Wait())
 
+	h.Notify(common.SensorComponentEventCentralReachable)
+	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
+	select {
+	case <-h.ResponsesC():
+		h.ProcessMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId: "4",
+				NodeName:  "4",
+				Action:    central.NodeInventoryACK_ACK,
+			}},
+		})
+		break
+	case <-time.After(5 * time.Second): // Starts counting when select is triggered
+		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
+	}
+	complianceConsumer3 := consumeAndCount(h.ComplianceC(), 1)
+	s.NoError(complianceConsumer3.Stopped().Wait())
+
 	s.NoError(producer.Stopped().Wait())
-	s.NoError(centralConsumer.Stopped().Wait())
 
 	h.Stop(nil)
 	s.T().Logf("waiting for handler to stop")
