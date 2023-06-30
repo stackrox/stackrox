@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -219,4 +221,38 @@ func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 	}
 
 	return data, true, nil
+}
+
+// GetByQuery returns the objects from the store matching the query.
+func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+			return nil, err
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, err
+		}
+		sacQueryFilter = filter
+	}
+
+	pagination := query.GetPagination()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+	q.Pagination = pagination
+
+	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return rows, nil
 }

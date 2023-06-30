@@ -359,33 +359,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// GetByQuery returns the objects from the store matching the query.
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "NetworkEntity")
-
-	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
-	}
-	pagination := query.GetPagination()
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-	q.Pagination = pagination
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.NetworkEntity](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return rows, nil
-}
-
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkEntity, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkEntity")
