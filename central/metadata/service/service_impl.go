@@ -31,13 +31,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(): {
+			"/v1.MetadataService/GetDatabaseStatus",
 			"/v1.MetadataService/GetDatabaseBackupStatus",
 			"/v1.MetadataService/GetCentralCapabilities",
 		},
 		allow.Anonymous(): {
 			"/v1.MetadataService/GetMetadata",
 			"/v1.MetadataService/TLSChallenge",
-			"/v1.MetadataService/GetDatabaseStatus",
 		},
 	})
 )
