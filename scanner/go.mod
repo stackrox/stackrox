@@ -3,9 +3,11 @@ module github.com/stackrox/stackrox/scanner/v4
 go 1.20
 
 require (
+	github.com/klauspost/compress v1.16.5
 	github.com/prometheus/client_golang v1.16.0
 	github.com/quay/claircore v1.5.7
 	github.com/quay/zlog v1.1.4
+	golang.org/x/time v0.3.0
 )
 
 require (
@@ -29,7 +31,6 @@ require (
 	github.com/jackc/pgx/v4 v4.18.1 // indirect
 	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f // indirect
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d // indirect
 	github.com/knqyf263/go-rpm-version v0.0.0-20220614171824-631e686d1075 // indirect
@@ -49,13 +50,13 @@ require (
 	github.com/rs/zerolog v1.29.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/ulikunitz/xz v0.5.11 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect

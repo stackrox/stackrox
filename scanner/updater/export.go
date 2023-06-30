@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore/alpine"
@@ -20,11 +21,12 @@ import (
 	"github.com/quay/claircore/updater/osv"
 	"github.com/quay/zlog"
 	"github.com/stackrox/stackrox/scanner/v4/updater/manual"
+	"golang.org/x/time/rate"
 )
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
-func Export(ctx context.Context) error {
+func Export(ctx context.Context, outputDir string) error {
 	updaterStore, err := jsonblob.New()
 	if err != nil {
 		return err
@@ -100,14 +102,29 @@ func Export(ctx context.Context) error {
 		"osv":    osvFac,
 	}
 
-	os.Mkdir("tmp", 0700)
-	outputFile, err := os.Create("tmp/output.json")
+	// create temp folder
+	err = os.Mkdir(outputDir, 0700)
+	if err != nil {
+		return err
+	}
+
+	// create output path
+	outputFilePath := outputDir + "/output.json"
+
+	outputFile, err := os.Create(outputFilePath)
 	if err != nil {
 		return err
 	}
 	defer outputFile.Close()
 
-	httpClient := http.DefaultClient
+	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
+
+	httpClient := &http.Client{
+		Transport: &rateLimitTransport{
+			limiter:   limiter,
+			transport: http.DefaultTransport,
+		},
+	}
 
 	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
 		updates.WithOutOfTree(updaters),
@@ -119,7 +136,10 @@ func Export(ctx context.Context) error {
 		return err
 	}
 
-	zstdWriter := zstd.NewWriter(outputFile)
+	zstdWriter, err := zstd.NewWriter(outputFile)
+	if err != nil {
+		return err
+	}
 	defer zstdWriter.Close()
 
 	err = updaterStore.Store(zstdWriter)
@@ -142,11 +162,23 @@ func Export(ctx context.Context) error {
 		return err
 	}
 
-	// Rename the output file to have the .ztd extension
-	err = os.Rename("tmp/output.json", "tmp/output.json.ztd")
+	// use .ztd
+	err = os.Rename(outputFilePath, outputDir+"/output.json.ztd")
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+type rateLimitTransport struct {
+	limiter   *rate.Limiter
+	transport http.RoundTripper
+}
+
+func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if err := t.limiter.Wait(req.Context()); err != nil {
+		return nil, err
+	}
+	return t.transport.RoundTrip(req)
 }
