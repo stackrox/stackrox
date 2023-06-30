@@ -124,7 +124,7 @@ require (
 	gorm.io/gorm v1.25.1
 	helm.sh/helm/v3 v3.11.3
 	k8s.io/api v0.26.6
-	k8s.io/apimachinery v0.27.2
+	k8s.io/apimachinery v0.27.3
 	k8s.io/apiserver v0.26.5
 	k8s.io/cli-runtime v0.26.6
 	k8s.io/client-go v0.26.6
