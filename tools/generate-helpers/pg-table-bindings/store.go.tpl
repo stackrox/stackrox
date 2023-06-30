@@ -573,26 +573,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
 {{- end }}
 {{- end }}
 
-// Count returns the number of objects in the store.
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
-        return 0, err
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return 0, err
-	}
-    {{- end }}
-
-    return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
