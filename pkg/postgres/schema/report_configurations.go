@@ -28,6 +28,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfiguration", (*storage.ReportConfiguration)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_REPORT_METADATA,
+		}...)
 		RegisterTable(schema, CreateTableReportConfigurationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_CONFIGURATIONS, schema)
 		return schema
