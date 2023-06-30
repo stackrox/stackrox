@@ -6,6 +6,7 @@ import {
     BreadcrumbItem,
     Flex,
     FlexItem,
+    Form,
     PageSection,
     Title,
 } from '@patternfly/react-core';
@@ -13,6 +14,7 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
 import { DelegatedRegistryConfig } from 'types/dedicatedRegistryConfig.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -31,6 +33,8 @@ function DelegateScanningPage() {
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
     const [errMessage, setErrMessage] = useState<string>('');
+
+    const { clusters } = useFetchClustersForPermissions(['Cluster']);
 
     useEffect(() => {
         setErrMessage('');
@@ -67,6 +71,14 @@ function DelegateScanningPage() {
         setDedicatedRegistryConfig(newState);
     }
 
+    function onChangeCluster(newClusterId) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        newState.defaultClusterId = newClusterId;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
     return (
         <>
             <PageTitle title={displayedPageTitle} />
@@ -99,20 +111,27 @@ function DelegateScanningPage() {
                         <p>Try reloading the page. If this problem persists, contact support.</p>
                     </Alert>
                 )}
-                <ToggleDelegatedScanning
-                    enabledFor={delegatedRegistryConfig.enabledFor}
-                    toggleDelegation={toggleDelegation}
-                />
-                {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
-                {delegatedRegistryConfig.enabledFor !== 'NONE' && (
-                    <>
-                        <DelegatedScanningSettings
-                            enabledFor={delegatedRegistryConfig.enabledFor}
-                            onChangeEnabledFor={onChangeEnabledFor}
-                        />
-                        <DelegatedRegistriesList registries={delegatedRegistryConfig.registries} />
-                    </>
-                )}
+                <Form>
+                    <ToggleDelegatedScanning
+                        enabledFor={delegatedRegistryConfig.enabledFor}
+                        toggleDelegation={toggleDelegation}
+                    />
+                    {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
+                    {delegatedRegistryConfig.enabledFor !== 'NONE' && (
+                        <>
+                            <DelegatedScanningSettings
+                                enabledFor={delegatedRegistryConfig.enabledFor}
+                                onChangeEnabledFor={onChangeEnabledFor}
+                                clusters={clusters}
+                                selectedClusterId={delegatedRegistryConfig.defaultClusterId}
+                                setSelectedClusterId={onChangeCluster}
+                            />
+                            <DelegatedRegistriesList
+                                registries={delegatedRegistryConfig.registries}
+                            />
+                        </>
+                    )}
+                </Form>
             </PageSection>
         </>
     );
