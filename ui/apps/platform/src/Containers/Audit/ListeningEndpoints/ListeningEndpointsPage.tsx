@@ -1,5 +1,13 @@
 import React from 'react';
-import { Bullseye, Divider, PageSection, Spinner, Title } from '@patternfly/react-core';
+import {
+    Bullseye,
+    Button,
+    Divider,
+    PageSection,
+    Spinner,
+    Stack,
+    Title,
+} from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
@@ -8,7 +16,7 @@ import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningE
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 
 function ListeningEndpointsPage() {
-    const { data, lastFetchError, isFetchingNextPage, isEndOfResults } =
+    const { data, lastFetchError, isFetchingNextPage, isEndOfResults, fetchNextPage } =
         useDeploymentListeningEndpoints();
     const isInitialLoad =
         data.length === 0 && !lastFetchError && isFetchingNextPage && !isEndOfResults;
@@ -38,7 +46,7 @@ function ListeningEndpointsPage() {
                 )}
                 {isInitialLoad && (
                     <Bullseye>
-                        <Spinner />
+                        <Spinner aria-label="Loading listening endpoints for deployments" />
                     </Bullseye>
                 )}
                 {!lastFetchError && !isInitialLoad && (
@@ -48,7 +56,18 @@ function ListeningEndpointsPage() {
                                 No deployments with listening endpoints found
                             </Title>
                         ) : (
-                            <ListeningEndpointsTable deployments={deployments} />
+                            <Stack>
+                                <ListeningEndpointsTable deployments={deployments} />
+                                {!isEndOfResults && (
+                                    <Button
+                                        onClick={() => fetchNextPage(true)}
+                                        isLoading={isFetchingNextPage}
+                                        isDisabled={isFetchingNextPage}
+                                    >
+                                        View more
+                                    </Button>
+                                )}
+                            </Stack>
                         )}
                     </>
                 )}
