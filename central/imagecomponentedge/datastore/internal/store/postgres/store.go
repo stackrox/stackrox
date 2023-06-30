@@ -56,6 +56,7 @@ type Store interface {
 }
 
 type storeImpl struct {
+	*pgSearch.GenericStore[storage.ImageComponentEdge, *storage.ImageComponentEdge]
 	db    postgres.DB
 	mutex sync.RWMutex
 }
@@ -64,21 +65,32 @@ type storeImpl struct {
 func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
+		GenericStore: pgSearch.NewGenericStore[storage.ImageComponentEdge, *storage.ImageComponentEdge](
+			db,
+			targetResource,
+			schema,
+			metricsSetPostgresOperationDurationTime,
+			metricsSetAcquireDBConnDuration,
+			pkGetter,
+		),
 	}
 }
 
-//// Helper functions
+// region Helper functions
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func pkGetter(obj *storage.ImageComponentEdge) string {
+	return obj.GetId()
 }
 
-//// Helper functions - END
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "ImageComponentEdge")
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, "ImageComponentEdge")
+}
+
+// endregion
 
 //// Interface functions
 
@@ -94,27 +106,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	}
 
 	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
-// Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
-
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
-	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
-	// returns more than 1, despite the fact that the identifier is unique in the table.
-	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store.

@@ -65,6 +65,7 @@ type Store interface {
 }
 
 type storeImpl struct {
+	*pgSearch.GenericStore[storage.TestParent1, *storage.TestParent1]
 	db    postgres.DB
 	mutex sync.RWMutex
 }
@@ -73,10 +74,30 @@ type storeImpl struct {
 func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
+		GenericStore: pgSearch.NewGenericStore[storage.TestParent1, *storage.TestParent1](
+			db,
+			targetResource,
+			schema,
+			metricsSetPostgresOperationDurationTime,
+			metricsSetAcquireDBConnDuration,
+			pkGetter,
+		),
 	}
 }
 
-//// Helper functions
+// region Helper functions
+
+func pkGetter(obj *storage.TestParent1) string {
+	return obj.GetId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, "TestParent1")
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, "TestParent1")
+}
 
 func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent1) error {
 
@@ -252,21 +273,12 @@ func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgr
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent1) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestParent1")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -286,11 +298,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent1) 
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent1) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TestParent1")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
@@ -313,7 +325,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent1) er
 	return nil
 }
 
-//// Helper functions - END
+// endregion
 
 //// Interface functions
 
@@ -445,27 +457,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	}
 
 	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
-// Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestParent1")
-
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
-	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
-	// returns more than 1, despite the fact that the identifier is unique in the table.
-	return count > 0, err
 }
 
 // Get returns the object, if it exists from the store.
