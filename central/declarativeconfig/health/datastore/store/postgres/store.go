@@ -61,14 +61,12 @@ type Store interface {
 
 type storeImpl struct {
 	*pgSearch.GenericStore[storage.DeclarativeConfigHealth, *storage.DeclarativeConfigHealth]
-	db    postgres.DB
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
 		GenericStore: pgSearch.NewGenericStore[storage.DeclarativeConfigHealth, *storage.DeclarativeConfigHealth](
 			db,
 			schema,
