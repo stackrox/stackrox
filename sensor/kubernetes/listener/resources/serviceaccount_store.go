@@ -28,6 +28,14 @@ func key(namespace, name string) serviceAccountKey {
 	}
 }
 
+// Cleanup deletes all entries from store
+func (sas *ServiceAccountStore) Cleanup() {
+	sas.lock.Lock()
+	defer sas.lock.Unlock()
+
+	sas.serviceAccountToPullSecrets = make(map[serviceAccountKey][]string)
+}
+
 // GetImagePullSecrets get the image pull secrets for a namespace and secret name pair
 func (sas *ServiceAccountStore) GetImagePullSecrets(namespace, name string) []string {
 	sas.lock.RLock()
