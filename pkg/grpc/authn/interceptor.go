@@ -9,24 +9,15 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 var (
-	once sync.Once
-	log  *logging.RateLimitedLogger
+	log = logging.LoggerForModule()
 )
 
 type contextUpdater struct {
 	extractor IdentityExtractor
-}
-
-func getRateLimitedLogger() *logging.RateLimitedLogger {
-	once.Do(func() {
-		log = logging.NewRateLimitLogger()
-	})
-	return log
 }
 
 func (u contextUpdater) updateContext(ctx context.Context) (context.Context, error) {
@@ -34,9 +25,9 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 	id, err := u.extractor.IdentityForRequest(ctx, ri)
 	if err != nil {
 		if errors.Is(err, jwt.ErrExpired) {
-			getRateLimitedLogger().Debugf("Cannot extract identity: token expired")
+			log.Debugf("Cannot extract identity: token expired")
 		} else {
-			getRateLimitedLogger().WarnL(ri.Hostname, "Cannot extract identity: %v", err)
+			logging.GetRateLimitedLogger().WarnL(ri.Hostname, "Cannot extract identity: %v", err)
 		}
 		// Ignore id value if error is not nil.
 		return context.WithValue(ctx, identityErrorContextKey{}, errox.NoCredentials.CausedBy(err)), nil

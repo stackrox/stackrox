@@ -14,20 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
 )
-
-var (
-	once sync.Once
-	log  *logging.RateLimitedLogger
-)
-
-func getRateLimitedLogger() *logging.RateLimitedLogger {
-	once.Do(func() {
-		log = logging.NewRateLimitLogger()
-	})
-	return log
-}
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -49,7 +36,12 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		getRateLimitedLogger().WarnL(ri.Hostname, "Token validation failed for hostname %v: %v", ri.Hostname, err)
+		logging.GetRateLimitedLogger().WarnL(
+			ri.Hostname,
+			"Token validation failed for hostname %v: %v",
+			ri.Hostname,
+			err,
+		)
 		return nil, errors.New("token validation failed")
 	}
 

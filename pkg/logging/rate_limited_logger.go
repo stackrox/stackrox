@@ -34,29 +34,28 @@ const (
 	logBurstSize       = 5
 )
 
-// NewRateLimitLogger returns a rate limited logger
+var (
+	commonLogger *RateLimitedLogger
+	once         sync.Once
+)
+
+// GetRateLimitedLogger returns a reference to a unique rate limited logger
 //
-// This function adds a timer goroutine on the stack and will break tests if used to initialize globals.
-// A cleaner usage pattern would be to encapsulate the initialization and use of the global in a singleton-like function:
+// This function can add a timer goroutine on the stack and will break tests if used to initialize globals.
+// A cleaner usage pattern would be to call the function directly when rate-limited logging functions should be used.
 //
-//	 var (
-//		    once sync.Once
-//		    logger *logging.RateLimitedLogger
-//	 )
-//		func getRateLimitedLogger() *logging.RateLimitedLogger {
-//		    once.Do(func () {
-//		        logger = NewRateLimitLogger()
-//		    })
-//		    return logger
-//		}
-func NewRateLimitLogger() *RateLimitedLogger {
-	return newRateLimitLogger(
-		createBasicLogger(),
-		cacheSize,
-		limiterLogLines,
-		rateLimitFrequency,
-		logBurstSize,
-	)
+//	logging.GetRatedLimitedLogger().ErrorL("logLimiter", "This is a rate-limited error log")
+func GetRateLimitedLogger() *RateLimitedLogger {
+	once.Do(func() {
+		commonLogger = newRateLimitLogger(
+			createBasicLogger(),
+			cacheSize,
+			limiterLogLines,
+			rateLimitFrequency,
+			logBurstSize,
+		)
+	})
+	return commonLogger
 }
 
 func newRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
@@ -254,7 +253,7 @@ func stopLogger(logger *RateLimitedLogger) {
 }
 
 const (
-	limitedLogSuffixFormat = " - %d log occurrences in the last %0.1f seconds for limiter %q"
+	limitedLogSuffixFormat = " - %d log suppressed for limiter %q"
 )
 
 type rateLimitedLog struct {
@@ -263,7 +262,6 @@ type rateLimitedLog struct {
 	// There is no use-case for log bursts
 	rateLimiter *rate.Limiter
 	level       zapcore.Level
-	last        time.Time
 	limiter     string
 	payload     string
 	file        string
@@ -287,11 +285,10 @@ func newRateLimitedLog(
 		logger:      logger,
 		rateLimiter: rateLimiter,
 		level:       level,
-		// last sticks to default so the first log can be issued unaltered.
-		limiter: limiter,
-		payload: payload,
-		file:    file,
-		line:    line,
+		limiter:     limiter,
+		payload:     payload,
+		file:        file,
+		line:        line,
 	}
 }
 
@@ -301,15 +298,12 @@ func (l *rateLimitedLog) log() {
 	}
 	l.logMutex.Lock()
 	defer l.logMutex.Unlock()
-	now := time.Now()
 	count := l.count.Swap(0)
 	var suffix string
-	if !l.last.IsZero() && count > 1 {
-		delta := now.Sub(l.last)
+	if count > 1 {
 		suffix = fmt.Sprintf(
 			limitedLogSuffixFormat,
 			count,
-			delta.Seconds(),
 			l.limiter,
 		)
 	}
@@ -318,5 +312,4 @@ func (l *rateLimitedLog) log() {
 		prefix = fmt.Sprintf("%s:%d - ", l.file, l.line)
 	}
 	l.logger.Logf(l.level, "%s%s%s", prefix, l.payload, suffix)
-	l.last = now
 }
