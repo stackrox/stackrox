@@ -161,12 +161,20 @@ func getLogKey(limiter string, level zapcore.Level, file string, line int, paylo
 }
 
 const (
-	filePathPrefix = "github.com/stackrox/stackrox/"
+	localFilePathPrefix = "github.com/stackrox/stackrox/"
+	filePathPrefix      = "github.com/stackrox/rox/"
 )
 
 func getTrimmedFilePath(path string) string {
-	prefixToCut := strings.Index(path, filePathPrefix)
-	cutpath := path[prefixToCut:]
+	cutpath := path
+	prefixToCut := strings.Index(cutpath, filePathPrefix)
+	if prefixToCut >= 0 {
+		cutpath = cutpath[prefixToCut:]
+	}
+	prefixToCut = strings.Index(cutpath, localFilePathPrefix)
+	if prefixToCut >= 0 {
+		cutpath = cutpath[prefixToCut:]
+	}
 	return strings.TrimPrefix(cutpath, filePathPrefix)
 }
 
@@ -178,7 +186,7 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	}
 	file = getTrimmedFilePath(file)
 	key := getLogKey(limiter, level, file, line, payload)
-	if throttledLog, found := rl.rateLimitedLogs.Get(key); found {
+	if throttledLog, found := rl.rateLimitedLogs.Get(key); found && throttledLog != nil {
 		throttledLog.count.Add(1)
 	} else {
 		log := newRateLimitedLog(
@@ -189,6 +197,7 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 			file,
 			line,
 		)
+		rl.rateLimitedLogs.Remove(key)
 		rl.rateLimitedLogs.Add(key, log)
 		log.log()
 	}

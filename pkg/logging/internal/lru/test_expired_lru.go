@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// TestCache is the interface to a fixed-size LRU cache that allows management of potential item expiration
+// within the cache.
 type TestCache[K comparable, V any] interface {
 	Cache[K, V]
 
