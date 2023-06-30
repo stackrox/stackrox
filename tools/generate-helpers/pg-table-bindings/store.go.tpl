@@ -362,9 +362,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 
 // endregion Helper functions
 
-//// Interface functions
-
 {{- if not .JoinTable }}
+// region Interface functions
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
@@ -395,9 +394,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 		return s.upsert(ctx, obj)
 	})
 }
-{{- end }}
-
-{{- if not .JoinTable }}
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
@@ -455,11 +451,11 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	})
     {{- end }}
 }
+
+// endregion Interface functions
 {{- end }}
 
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -487,4 +483,4 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db post
 
 {{template "dropTable" .Schema}}
 
-//// Used for testing - END
+// endregion Used for testing
