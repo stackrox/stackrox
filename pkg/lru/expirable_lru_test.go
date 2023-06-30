@@ -186,16 +186,11 @@ func TestExpirableMultipleClose(t *testing.T) {
 	lc.Close()
 }
 
-func tick(ch chan<- time.Time) {
-	ch <- time.Now()
-}
-
 func TestExpirableLRUWithPurge(t *testing.T) {
 	var evicted []string
-	tickerChannel := make(chan time.Time)
 	onExpire := func(key string, val string) { evicted = append(evicted, key, val) }
 	ttl := 150 * time.Millisecond
-	lc := newExpirableLRU[string, string](10, onExpire, ttl, tickerChannel)
+	lc := NewTestExpirableLRU[string, string](t, 10, onExpire, ttl)
 	defer lc.Close()
 
 	k, v, ok := lc.GetOldest()
@@ -213,9 +208,7 @@ func TestExpirableLRUWithPurge(t *testing.T) {
 
 	// Ensure the expiration cleanup loop goes over all timeout buckets,
 	// but does not touch the data as it has not expired yet
-	for i := 1; i < 2*numBuckets; i++ {
-		tick(tickerChannel)
-	}
+	lc.TriggerExpiration(t)
 
 	if lc.Len() != 1 {
 		t.Fatalf("length differs from expected")
@@ -232,10 +225,8 @@ func TestExpirableLRUWithPurge(t *testing.T) {
 	// Change the cached item expiry date and ensure the cleanup loop goes over all timeout buckets,
 	// as the expiration should now be in the past, the item should be subjected to the expiration
 	// callback
-	lc.items["key1"].expiresAt = time.Now().Add(-150 * time.Millisecond)
-	for i := 1; i < 2*numBuckets; i++ {
-		tick(tickerChannel)
-	}
+	lc.ExpireItem(t, "key1")
+	lc.TriggerExpiration(t)
 
 	v, ok = lc.Get("key1")
 	if ok {
@@ -270,7 +261,7 @@ func TestExpirableLRUWithPurge(t *testing.T) {
 	}
 
 	// DeleteExpired, nothing deleted
-	lc.deleteExpired()
+	lc.underlying.deleteExpired()
 	if lc.Len() != 1 {
 		t.Fatalf("length differs from expected")
 	}
@@ -360,9 +351,8 @@ func TestExpirableLRUInvalidateAndEvict(t *testing.T) {
 }
 
 func TestLoadingExpired(t *testing.T) {
-	tickerChannel := make(chan time.Time)
 	ttl := 5 * time.Millisecond
-	lc := newExpirableLRU[string, string](0, nil, ttl, tickerChannel)
+	lc := NewTestExpirableLRU[string, string](t, 0, nil, ttl)
 	defer lc.Close()
 
 	lc.Add("key1", "val1")
@@ -386,10 +376,8 @@ func TestLoadingExpired(t *testing.T) {
 		t.Fatalf("should be true")
 	}
 
-	lc.items["key1"].expiresAt = time.Now().Add(-ttl)
-	for i := 0; i < 2*numBuckets; i++ {
-		tick(tickerChannel)
-	}
+	lc.ExpireItem(t, "key1")
+	lc.TriggerExpiration(t)
 	if lc.Len() != 0 {
 		t.Fatalf("length differs from expected")
 	}

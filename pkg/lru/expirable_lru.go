@@ -52,17 +52,13 @@ const (
 	defaultEvictedBufferSize = 16
 )
 
-type ticker interface {
-	Stop()
-	Reset(d time.Duration)
-}
-
-func newExpirableLRU[K comparable, V any](
+func initExpirableLRU[K comparable, V any](
+	obj *expirableLRU[K, V],
 	size int,
 	onEvict EvictCallback[K, V],
 	ttl time.Duration,
 	tickerChannel <-chan time.Time,
-) *expirableLRU[K, V] {
+) {
 
 	if size < 0 {
 		size = 0
@@ -71,37 +67,32 @@ func newExpirableLRU[K comparable, V any](
 		ttl = noEvictionTTL
 	}
 
-	res := expirableLRU[K, V]{
-		ttl:       ttl,
-		size:      size,
-		evictList: newList[K, V](),
-		items:     make(map[K]*entry[K, V]),
-		onEvict:   onEvict,
-		done:      make(chan struct{}, 1),
-	}
+	obj.ttl = ttl
+	obj.size = size
+	obj.evictList = newList[K, V]()
+	obj.items = make(map[K]*entry[K, V])
+	obj.onEvict = onEvict
+	obj.done = make(chan struct{}, 1)
 
 	// initialize the buckets
-	res.buckets = make([]bucket[K, V], numBuckets)
+	obj.buckets = make([]bucket[K, V], numBuckets)
 	for i := 0; i < numBuckets; i++ {
-		res.buckets[i] = bucket[K, V]{entries: make(map[K]*entry[K, V])}
+		obj.buckets[i] = bucket[K, V]{entries: make(map[K]*entry[K, V])}
 	}
 
 	// enable deleteExpired() running in separate goroutine for cache with non-zero TTL
-	if res.ttl != noEvictionTTL {
+	if obj.ttl != noEvictionTTL {
 		go func(done <-chan struct{}) {
-
 			for {
 				select {
 				case <-done:
 					return
 				case <-tickerChannel:
-					res.deleteExpired()
+					obj.deleteExpired()
 				}
 			}
-		}(res.done)
+		}(obj.done)
 	}
-
-	return &res
 }
 
 // NewExpirableLRU returns a new thread-safe cache with expirable entries.
@@ -120,7 +111,9 @@ func NewExpirableLRU[K comparable, V any](
 		ttl = noEvictionTTL
 	}
 	ticker := time.NewTicker(ttl / numBuckets)
-	return newExpirableLRU[K, V](size, onEvict, ttl, ticker.C)
+	res := &expirableLRU[K, V]{}
+	initExpirableLRU(res, size, onEvict, ttl, ticker.C)
+	return res
 }
 
 // Purge clears the cache completely.
