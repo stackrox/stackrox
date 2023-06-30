@@ -145,15 +145,38 @@ func (rl *RateLimitedLogger) Debugw(msg string, keysAndValues ...interface{}) {
 	rl.logger.Debugw(msg, keysAndValues...)
 }
 
-func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
-	payload := fmt.Sprintf(template, args...)
+func getLogKey(limiter string, level zapcore.Level, file string, line int, payload string) string {
 	var keyWriter strings.Builder
 	keyWriter.WriteString(limiter)
 	keyWriter.WriteString("-")
 	keyWriter.WriteString(level.CapitalString())
 	keyWriter.WriteString("-")
+	keyWriter.WriteString(file)
+	keyWriter.WriteString(":")
+	keyWriter.WriteString(fmt.Sprintf("%d", line))
+	keyWriter.WriteString("-")
 	keyWriter.WriteString(payload)
-	key := keyWriter.String()
+	return keyWriter.String()
+}
+
+const (
+	filePathPrefix = "github.com/stackrox/stackrox/"
+)
+
+func getTrimmedFilePath(path string) string {
+	prefixToCut := strings.Index(path, filePathPrefix)
+	cutpath := path[prefixToCut:]
+	return strings.TrimPrefix(cutpath, filePathPrefix)
+}
+
+func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
+	payload := fmt.Sprintf(template, args...)
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		file, line = "", 0
+	}
+	file = getTrimmedFilePath(file)
+	key := getLogKey(limiter, level, file, line, payload)
 	_, _ = rl.rateLimitedLogs.ContainsOrAdd(
 		key,
 		newRateLimitedLog(
@@ -162,6 +185,8 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 			rate.NewLimiter(rate.Limit(rl.frequency), rl.burst),
 			limiter,
 			payload,
+			file,
+			line,
 		),
 	)
 	if log, ok := rl.rateLimitedLogs.Get(key); ok {
@@ -224,6 +249,8 @@ type rateLimitedLog struct {
 	last        time.Time
 	limiter     string
 	payload     string
+	file        string
+	line        int
 	count       atomic.Int32
 	logMutex    sync.Mutex
 }
@@ -234,6 +261,8 @@ func newRateLimitedLog(
 	rateLimiter *rate.Limiter,
 	limiter string,
 	payload string,
+	file string,
+	line int,
 ) *rateLimitedLog {
 	// TODO: ROX-17312: Use a single rate-limited logger for all logs.
 	// Check how the logger module can be integrated in the logs.
@@ -244,6 +273,8 @@ func newRateLimitedLog(
 		// last sticks to default so the first log can be issued unaltered.
 		limiter: limiter,
 		payload: payload,
+		file:    file,
+		line:    line,
 	}
 }
 
@@ -265,6 +296,10 @@ func (l *rateLimitedLog) log() {
 			l.limiter,
 		)
 	}
-	l.logger.Logf(l.level, "%s%s", l.payload, suffix)
+	var prefix string
+	if len(l.file) > 0 && l.line > 0 {
+		prefix = fmt.Sprintf("%s:%d - ", l.file, l.line)
+	}
+	l.logger.Logf(l.level, "%s%s%s", prefix, l.payload, suffix)
 	l.last = now
 }
