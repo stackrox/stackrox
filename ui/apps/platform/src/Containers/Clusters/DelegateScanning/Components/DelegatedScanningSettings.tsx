@@ -81,18 +81,18 @@ function DelegatedScanningSettings({
                         </FlexItem>
                     </Flex>
                 </FormLabelGroup>
-                <Flex className="pf-u-mt-md pf-u-mb-lg">
-                    <FlexItem>
-                        <FormLabelGroup
-                            label="Select default cluster to delegate to"
-                            isRequired
-                            fieldId="selectedClusterId"
-                            touched={{}}
-                            errors={{}}
-                        >
+                <FormLabelGroup
+                    label="Select default cluster to delegate to"
+                    helperText="Select a cluster to process CLI and API-originated scanning requests"
+                    isRequired
+                    fieldId="selectedClusterId"
+                    touched={{}}
+                    errors={{}}
+                >
+                    <Flex>
+                        <FlexItem>
                             <Select
                                 className="cluster-select"
-                                isPlain
                                 placeholderText={
                                     <span>
                                         <span style={{ position: 'relative', top: '1px' }}>
@@ -108,9 +108,9 @@ function DelegatedScanningSettings({
                             >
                                 {clusterSelectOptions}
                             </Select>
-                        </FormLabelGroup>
-                    </FlexItem>
-                </Flex>
+                        </FlexItem>
+                    </Flex>
+                </FormLabelGroup>
             </CardBody>
         </Card>
     );
