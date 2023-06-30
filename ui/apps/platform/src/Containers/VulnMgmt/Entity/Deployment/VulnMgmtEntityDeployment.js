@@ -8,7 +8,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import { VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {

@@ -6,7 +6,7 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import WorkflowEntityPage from '../WorkflowEntityPage';
 import {
     vulMgmtPolicyQuery,
     getScopeQuery,

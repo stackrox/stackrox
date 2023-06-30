@@ -9,7 +9,7 @@ import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedImageVulnerabilities from '../../widgets/RecentlyDetectedImageVulnerabilities';

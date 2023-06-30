@@ -94,7 +94,7 @@ const AsyncVulnMgmtReports = asyncComponent(
 const AsyncVulnMgmtRiskAcceptancePage = asyncComponent(
     () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
 );
-const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
+const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
 
 const AsyncListeningEndpointsPage = asyncComponent(

@@ -1,17 +1,29 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import upperFirst from 'lodash/upperFirst';
-import pluralize from 'pluralize';
 
-import entityLabels from 'messages/entity';
 import useEntityName from 'hooks/useEntityName';
+import { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 
-const EntityBreadCrumb = ({ workflowEntity, url }) => {
+import {
+    entityNounSentenceCasePlural,
+    entityNounSentenceCaseSingular,
+} from './entitiesForVulnerabilityManagement';
+
+export type WorkflowEntity = {
+    entityId: string;
+    entityType: VulnerabilityManagementEntityType;
+};
+
+export type EntityBreadCrumbProps = {
+    workflowEntity: WorkflowEntity;
+    url: string | null;
+};
+
+function EntityBreadCrumb({ workflowEntity, url }: EntityBreadCrumbProps): ReactElement {
     const { entityId, entityType } = workflowEntity;
-    const typeLabel = entityLabels[entityType];
-    const subTitle = entityId ? upperFirst(typeLabel) : 'Entity list';
+    const subTitle = entityId ? entityNounSentenceCaseSingular[entityType] : 'Entity list';
     const { entityName } = useEntityName(entityType, entityId, !entityId);
-    const title = entityName || pluralize(typeLabel);
+    const title = entityName || entityNounSentenceCasePlural[entityType];
 
     return (
         <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
@@ -27,6 +39,6 @@ const EntityBreadCrumb = ({ workflowEntity, url }) => {
             <span>{subTitle}</span>
         </span>
     );
-};
+}
 
 export default EntityBreadCrumb;

@@ -6,11 +6,11 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import WorkflowEntityPage from '../WorkflowEntityPage';
 import {
     VULN_CVE_ONLY_FRAGMENT,
     VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+} from '../../VulnMgmt.fragments';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {

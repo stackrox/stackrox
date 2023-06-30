@@ -18,8 +18,11 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entitySortFieldsMap } from 'constants/sortFields';
-import { resourceLabels } from 'messages/common';
-import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
+import { entityPriorityField } from '../VulnMgmt.constants';
+import {
+    entityNounOrdinaryCasePlural,
+    entityNounSentenceCaseSingular,
+} from '../entitiesForVulnerabilityManagement';
 
 const TOP_RISKIEST_IMAGE_VULNS = gql`
     query topRiskiestImageVulns($query: String, $pagination: Pagination) {
@@ -274,7 +277,7 @@ const processData = (data, entityType, workflowState) => {
                 <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
                         <span className="font-700 mr-2 capitalize">
-                            {resourceLabels[entityType]}:
+                            {entityNounSentenceCaseSingular[entityType]}:
                         </span>
                         <span>{text}</span>
                     </div>
@@ -367,7 +370,7 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
 
     if (!loading) {
         if (error) {
-            const defaultMessage = `An error occurred in retrieving ${resourceLabels[selectedEntity]}s. Please refresh the page. If this problem continues, please contact support.`;
+            const defaultMessage = `An error occurred in retrieving ${entityNounOrdinaryCasePlural[selectedEntity]}. Please refresh the page. If this problem continues, please contact support.`;
 
             const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
 

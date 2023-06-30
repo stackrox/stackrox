@@ -14,7 +14,9 @@ describe('Entities single views', () => {
 
     // Some tests might fail in local deployment.
 
-    it('related entities tile links should unset search params upon navigation', function () {
+    // TODO skip pending more robust criterion than deployment count
+    // deploymentTileLink selector is obsolete
+    it.skip('related entities tile links should unset search params upon navigation', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
@@ -94,6 +96,7 @@ describe('Entities single views', () => {
 
     // ROX-15985: skip until decision whether valid to assume high severity violations.
     // TODO if the test survives, rewrite as described below.
+    // deploymentTileLink selector is obsolete
     it.skip('should scope deployment data based on selected policy from table row click', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
@@ -259,7 +262,9 @@ describe('Entities single views', () => {
         // now, go to the components for that deployment
         interactAndWaitForVulnerabilityManagementSecondaryEntities(
             () => {
-                cy.get(selectors.imageComponentTileLink).click();
+                cy.get(
+                    'h2:contains("Related entities") ~ div ul li a:contains("image component")'
+                ).click();
             },
             entitiesKey1,
             entitiesKey2

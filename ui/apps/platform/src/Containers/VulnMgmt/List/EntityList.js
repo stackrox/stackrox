@@ -1,7 +1,6 @@
 import React, { useContext, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
@@ -10,15 +9,18 @@ import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
 import { withRouter } from 'react-router-dom';
 import { searchCategories } from 'constants/entityTypes';
-import entityLabels from 'messages/entity';
 import createPDFTable from 'utils/pdfUtils';
 import CheckboxTable from 'Components/CheckboxTable';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
+import {
+    entityCountNounOrdinaryCase,
+    entityNounOrdinaryCasePlural,
+} from '../entitiesForVulnerabilityManagement';
+
 const EntityList = ({
     autoFocusSearchInput,
     entityType,
-    headerText,
     history,
     idAttribute,
     rowData,
@@ -71,16 +73,11 @@ const EntityList = ({
     }
 
     // render section
-    const entityLabel = entityLabels[entityType] || 'results';
-    const noDataText = `No ${pluralize(entityLabel)} found. Please refine your search.`;
+    const noDataText = `No ${entityNounOrdinaryCasePlural[entityType]} found. Please refine your search.`;
 
-    const header = `${totalResults} ${pluralize(
-        headerText || entityLabels[entityType],
-        rowData.length
-    )}`;
+    const header = entityCountNounOrdinaryCase(totalResults, entityType);
 
-    // Occurrences in Vulnerability Management do not require alternatives 'results' and headerText above.
-    const placeholder = `Filter ${pluralize(entityLabels[entityType])}`;
+    const placeholder = `Filter ${entityNounOrdinaryCasePlural[entityType]}`;
 
     // need `useLayoutEffect` here to solve an edge case,
     //   where the use have navigated to a single-page sublist,
@@ -175,7 +172,6 @@ const EntityList = ({
 EntityList.propTypes = {
     autoFocusSearchInput: PropTypes.bool,
     entityType: PropTypes.string.isRequired,
-    headerText: PropTypes.string,
     idAttribute: PropTypes.string.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     rowData: PropTypes.arrayOf(PropTypes.shape({})),
@@ -200,7 +196,6 @@ EntityList.propTypes = {
 
 EntityList.defaultProps = {
     autoFocusSearchInput: true,
-    headerText: '',
     rowData: null,
     searchOptions: [],
     sort: null,

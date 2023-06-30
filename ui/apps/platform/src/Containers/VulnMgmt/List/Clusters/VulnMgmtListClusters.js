@@ -10,7 +10,6 @@ import {
 import DateTimeField from 'Components/DateTimeField';
 import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import CVEStackedPill from 'Components/CVEStackedPill';
 
 import { CLUSTER_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -19,6 +18,7 @@ import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultClusterSort = [
     {
