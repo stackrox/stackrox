@@ -461,35 +461,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 }
 {{- end }}
 
-{{- if not .JoinTable }}
-
-// Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-    {{- if .PermissionChecker }}
-    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
-    {{- end }}
-
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        {{template "matchQuery" (arr $pks $singlePK)}}
-    )
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-{{- end}}
-
 {{- if $singlePK }}
 {{- if not .JoinTable }}
 
