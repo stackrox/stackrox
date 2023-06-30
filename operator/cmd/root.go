@@ -14,17 +14,21 @@ import (
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	rootCmd.SetArgs(useDefaultCommand(os.Args[1:]))
-	if err := rootCmd.Execute(); err != nil {
+	if err := execute(os.Args[1:]); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
+func execute(args []string) error {
+	rootCmd.SetArgs(useDefaultCommand(args))
+	return rootCmd.Execute()
+}
+
 func useDefaultCommand(args []string) []string {
-	cmd, _, err := rootCmd.Find(args)
-	// default to start cmd if no cmd is given
-	if err == nil && cmd.Use == rootCmd.Use && cmd.Flags().Parse(args) != pflag.ErrHelp {
+	targetCmd, _, err := rootCmd.Find(args)
+	// default to start cmd if no targetCmd is given
+	if err == nil && targetCmd.Use == rootCmd.Use && targetCmd.Flags().Parse(args) != pflag.ErrHelp {
 		fmt.Println("Warning: No command specified, defaulting to 'start'. This behavior will be deprecated in the future.")
 		return append([]string{startCmd.Use}, args...)
 	}
