@@ -10,25 +10,17 @@ import (
 	"github.com/stackrox/rox/pkg/lru"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/time/rate"
 )
 
 // RateLimitedLogger wraps a zap.SugaredLogger that supports rate limiting.
 type RateLimitedLogger struct {
-	// TODO: ROX-17312: Make sure the internals allow injection of a clock
-	// and mechanisms to allow unit testing of the log consolidation and flush.
-	logger    Logger
-	frequency float64
-	burst     int
-	// TODO: ROX-17312: Use an LRU Cache with expiration and eviction here
+	logger          Logger
 	rateLimitedLogs lru.Cache[string, *rateLimitedLog]
 }
 
 const (
-	cacheSize          = 500
-	limiterLogLines    = 1
-	rateLimitFrequency = 5 * time.Minute
-	logBurstSize       = 5
+	cacheSize       = 500
+	rateLimitPeriod = 10 * time.Second
 )
 
 var (
@@ -47,9 +39,7 @@ func GetRateLimitedLogger() *RateLimitedLogger {
 		commonLogger = newRateLimitLogger(
 			createBasicLogger(),
 			cacheSize,
-			limiterLogLines,
-			rateLimitFrequency,
-			logBurstSize,
+			rateLimitPeriod,
 		)
 	})
 	return commonLogger
@@ -63,15 +53,13 @@ var (
 	}
 )
 
-func newRateLimitLogger(l Logger, size int, logLines int, interval time.Duration, burst int) *RateLimitedLogger {
+func newRateLimitLogger(l Logger, size int, ttl time.Duration) *RateLimitedLogger {
 	if size < 0 {
 		size = 0
 	}
-	logCache := lru.NewExpirableLRU[string, *rateLimitedLog](size, onEvict, interval)
+	logCache := lru.NewExpirableLRU[string, *rateLimitedLog](size, onEvict, ttl)
 	logger := &RateLimitedLogger{
 		l,
-		float64(logLines) / interval.Seconds(),
-		burst,
 		logCache,
 	}
 	runtime.SetFinalizer(logger, stopLogger)
@@ -190,39 +178,19 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	}
 	file = getTrimmedFilePath(file)
 	key := getLogKey(limiter, level, file, line, payload)
-	_, _ = rl.rateLimitedLogs.ContainsOrAdd(
-		key,
-		newRateLimitedLog(
+	if throttledLog, found := rl.rateLimitedLogs.Get(key); found {
+		throttledLog.count.Add(1)
+	} else {
+		log := newRateLimitedLog(
 			rl.logger,
 			level,
-			rate.NewLimiter(rate.Limit(rl.frequency), rl.burst),
 			limiter,
 			payload,
 			file,
 			line,
-		),
-	)
-	if log, ok := rl.rateLimitedLogs.Get(key); ok {
-		log.count.Add(1)
-		if log.rateLimiter.Allow() {
-			log.log()
-		}
-	}
-}
-
-func (rl *RateLimitedLogger) flush(force bool) {
-	keys := rl.rateLimitedLogs.Keys()
-	for _, k := range keys {
-		trace, found := rl.rateLimitedLogs.Peek(k)
-		if !found {
-			continue
-		}
-		if trace.count.Load() > 0 {
-			if force || trace.rateLimiter.Tokens() > 0.5 {
-				// One log could be issued
-				trace.log()
-			}
-		}
+		)
+		rl.rateLimitedLogs.Add(key, log)
+		log.log()
 	}
 }
 
@@ -242,43 +210,35 @@ const (
 )
 
 type rateLimitedLog struct {
-	logger Logger
-	// TODO: ROX-17312: Use log deadline and counter rather than rate limiter
-	// There is no use-case for log bursts
-	rateLimiter *rate.Limiter
-	level       zapcore.Level
-	limiter     string
-	payload     string
-	file        string
-	line        int
-	count       atomic.Int32
-	logMutex    sync.Mutex
+	logger   Logger
+	level    zapcore.Level
+	limiter  string
+	payload  string
+	file     string
+	line     int
+	count    atomic.Int32
+	logMutex sync.Mutex
 }
 
 func newRateLimitedLog(
 	logger Logger,
 	level zapcore.Level,
-	rateLimiter *rate.Limiter,
 	limiter string,
 	payload string,
 	file string,
 	line int,
 ) *rateLimitedLog {
 	return &rateLimitedLog{
-		logger:      logger,
-		rateLimiter: rateLimiter,
-		level:       level,
-		limiter:     limiter,
-		payload:     payload,
-		file:        file,
-		line:        line,
+		logger:  logger,
+		level:   level,
+		limiter: limiter,
+		payload: payload,
+		file:    file,
+		line:    line,
 	}
 }
 
 func (l *rateLimitedLog) log() {
-	if l.count.Load() <= 0 {
-		return
-	}
 	l.logMutex.Lock()
 	defer l.logMutex.Unlock()
 	count := l.count.Swap(0)
