@@ -18,6 +18,5 @@ func New(detector detector.Detector, queueSize int) component.OutputQueue {
 		forwardQueue: forwardQueue,
 		stopped:      &atomic.Bool{},
 	}
-	outputQueue.stopped.Store(false)
 	return outputQueue
 }

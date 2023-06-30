@@ -9,12 +9,10 @@ import (
 
 // New instantiates a Resolver component
 func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int) component.Resolver {
-	resolver := &resolverImpl{
+	return &resolverImpl{
 		outputQueue:   outputQueue,
 		innerQueue:    make(chan *component.ResourceEvent, queueSize),
 		storeProvider: provider,
 		stopped:       &atomic.Bool{},
 	}
-	resolver.stopped.Store(false)
-	return resolver
 }
