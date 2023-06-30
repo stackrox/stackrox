@@ -446,18 +446,6 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return identifiers, nil
 }
 
-// GetAll retrieves all objects from the store.
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.LogImbue, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "LogImbue")
-
-	var objs []*storage.LogImbue
-	err := s.Walk(ctx, func(obj *storage.LogImbue) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
-}
-
 //// Interface functions - END
 
 //// Used for testing

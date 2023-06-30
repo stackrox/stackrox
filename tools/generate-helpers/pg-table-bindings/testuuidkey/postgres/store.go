@@ -524,18 +524,6 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return identifiers, nil
 }
 
-// GetAll retrieves all objects from the store.
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.TestSingleUUIDKeyStruct, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "TestSingleUUIDKeyStruct")
-
-	var objs []*storage.TestSingleUUIDKeyStruct
-	err := s.Walk(ctx, func(obj *storage.TestSingleUUIDKeyStruct) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
-}
-
 //// Interface functions - END
 
 //// Used for testing

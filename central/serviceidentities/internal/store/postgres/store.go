@@ -446,18 +446,6 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return identifiers, nil
 }
 
-// GetAll retrieves all objects from the store.
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ServiceIdentity, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ServiceIdentity")
-
-	var objs []*storage.ServiceIdentity
-	err := s.Walk(ctx, func(obj *storage.ServiceIdentity) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
-}
-
 //// Interface functions - END
 
 //// Used for testing
