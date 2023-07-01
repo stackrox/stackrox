@@ -5,7 +5,7 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
-    networkPathPF,
+    networkPath,
     violationsPath,
     compliancePath,
     clustersListPath,
@@ -136,7 +136,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     {isNetworkGraphPatternflyEnabled && (
-                        <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
+                        <Route path={networkPath} component={AsyncNetworkGraphPage} />
                     )}
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />

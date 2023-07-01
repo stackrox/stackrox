@@ -14,7 +14,7 @@ import {
     VisualizationSurface,
 } from '@patternfly/react-topology';
 
-import { networkBasePathPF } from 'routePaths';
+import { networkBasePath } from 'routePaths';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
@@ -84,7 +84,7 @@ const TopologyComponent = ({
 
     const closeSidebar = useCallback(() => {
         const queryString = clearSimulationQuery(history.location.search);
-        history.push(`${networkBasePathPF}${queryString}`);
+        history.push(`${networkBasePath}${queryString}`);
     }, [history]);
 
     function onNodeClick(ids: string[]) {
@@ -101,13 +101,13 @@ const TopologyComponent = ({
             const queryString = clearSimulationQuery(history.location.search);
             // if found, and it's not the logical grouping of all external sources, then trigger URL update
             if (newDetailId !== 'EXTERNAL') {
-                const newURL = `${networkBasePathPF}/${newDetailType}/${encodeURIComponent(
+                const newURL = `${networkBasePath}/${newDetailType}/${encodeURIComponent(
                     newDetailId
                 )}${queryString}`;
                 history.push(newURL);
             } else {
                 // otherwise, return to the graph-only state
-                history.push(`${networkBasePathPF}${queryString}`);
+                history.push(`${networkBasePath}${queryString}`);
             }
         }
     }
@@ -161,7 +161,7 @@ const TopologyComponent = ({
         controller.fromModel(model);
         if (selectedNode) {
             panNodeIntoView(selectedNode);
-        } else if (history.location.pathname !== networkBasePathPF && !selectedNode) {
+        } else if (history.location.pathname !== networkBasePath && !selectedNode) {
             // if the path does not reflect the selected node state, sync URL to state
             closeSidebar();
         }
