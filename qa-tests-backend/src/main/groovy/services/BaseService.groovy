@@ -2,6 +2,7 @@ package services
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.util.logging.Slf4j
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
@@ -21,6 +22,7 @@ import util.Env
 import util.Keys
 
 @CompileStatic
+@Slf4j
 class BaseService {
 
     static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
@@ -57,6 +59,7 @@ class BaseService {
                 transportChannel.shutdownNow()
                 transportChannel = null
                 effectiveChannel = null
+                log.debug("The gRPC channel to central was closed")
             }
         }
         if (authInterceptor != newAuthInterceptor) {
@@ -128,6 +131,8 @@ class BaseService {
                     .sslContext(sslContext)
                     .build()
             effectiveChannel = null
+
+            log.debug("The gRPC channel to central was opened (useClientCert: ${useClientCert})")
         }
 
         if (authInterceptor == null) {
