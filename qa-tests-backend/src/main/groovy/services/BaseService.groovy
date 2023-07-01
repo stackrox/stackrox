@@ -51,23 +51,25 @@ class BaseService {
     }
 
     private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
-            return
-        }
-        if (useClientCert != newUseClientCert) {
-            if (transportChannel != null) {
-                transportChannel.shutdownNow()
-                transportChannel = null
-                effectiveChannel = null
-                log.debug("The gRPC channel to central was closed")
+        synchronized(BaseService.class) {
+            if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
+                return
             }
-        }
-        if (authInterceptor != newAuthInterceptor) {
-            effectiveChannel = null
-        }
+            if (useClientCert != newUseClientCert) {
+                if (transportChannel != null) {
+                    transportChannel.shutdownNow()
+                    transportChannel = null
+                    effectiveChannel = null
+                    log.debug("The gRPC channel to central was closed")
+                }
+            }
+            if (authInterceptor != newAuthInterceptor) {
+                effectiveChannel = null
+            }
 
-        useClientCert = newUseClientCert
-        authInterceptor = newAuthInterceptor
+            useClientCert = newUseClientCert
+            authInterceptor = newAuthInterceptor
+        }
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -144,7 +146,9 @@ class BaseService {
 
     static Channel getChannel() {
         if (effectiveChannel == null) {
-            initializeChannel()
+            synchronized(BaseService.class) {
+                initializeChannel()
+            }
         }
         return effectiveChannel
     }
