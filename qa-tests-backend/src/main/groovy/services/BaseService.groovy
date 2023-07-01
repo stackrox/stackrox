@@ -51,7 +51,7 @@ class BaseService {
     }
 
     private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        synchronized(BaseService.class) {
+        synchronized(BaseService) {
             if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
                 return
             }
@@ -146,7 +146,7 @@ class BaseService {
 
     static Channel getChannel() {
         if (effectiveChannel == null) {
-            synchronized(BaseService.class) {
+            synchronized(BaseService) {
                 initializeChannel()
             }
         }
