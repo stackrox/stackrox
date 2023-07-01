@@ -2,7 +2,7 @@
     <withJansi>true</withJansi>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%replace(%replace(%thread){"^(Time-limited test|Test worker)", ""}){"^(.*worker|Thread)-(\d+)", "thread-$2 | "}%d{HH:mm:ss} | %-5level | %-25logger{0} | %m%n%rEx{full,
+            <pattern>%mdc{specification} >%n    %d{HH:mm:ss} | %-5level | %-25logger{0} | %m%n%rEx{full,
                 com.sun,
                 com.jayway.restassured.internal,
                 groovy.lang,

@@ -13,6 +13,7 @@ import org.javers.core.diff.Diff
 import org.javers.core.diff.ListCompareAlgorithm
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
@@ -226,6 +227,7 @@ class BaseSpecification extends Specification {
     private long testSpecStartTimeMillis
 
     def setupSpec() {
+        MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testsuite")
 
         testSpecStartTimeMillis = System.currentTimeMillis()
@@ -284,6 +286,7 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
+        MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testcase")
 
         // Make sure to use or revert back to the desired central gRPC auth
@@ -311,6 +314,8 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+
+        MDC.remove("specification")
     }
 
     private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
