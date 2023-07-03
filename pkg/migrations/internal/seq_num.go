@@ -4,7 +4,7 @@ var (
 	// CurrentDBVersionSeqNum is the current DB version number.
 	// This must be incremented every time we write a migration.
 	// It is a shared constant between central and the migrator binary.
-	CurrentDBVersionSeqNum = 186
+	CurrentDBVersionSeqNum = 187
 
 	// MinimumSupportedDBVersionSeqNum is the minimum DB version number
 	// that is supported by this database.  This is used in case of rollbacks in
