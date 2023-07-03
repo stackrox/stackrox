@@ -146,7 +146,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 	dirtyVersion := "1.2.3-dirty"
 	releaseVersion := "1.2.3"
 	var disabledInDebug any
-	if !buildinfo.ReleaseBuild {
+	if !buildinfo.ReleaseBuild || buildinfo.TestBuild {
 		disabledInDebug = "DISABLED"
 	}
 
