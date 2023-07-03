@@ -1,10 +1,10 @@
-package centralclient
+package phonehome
 
 import (
 	"testing"
 )
 
-func Test_toDownload(t *testing.T) {
+func Test_ToDownload(t *testing.T) {
 	tests := map[string]struct {
 		release bool
 		key     string
@@ -24,14 +24,14 @@ func Test_toDownload(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := toDownload(tt.release, tt.key, tt.cfgURL); got != tt.download {
+			if got := ToDownload(tt.release, tt.key, tt.cfgURL); got != tt.download {
 				t.Errorf("toDownload() = %v, want %v", got, tt.download)
 			}
 		})
 	}
 }
 
-func Test_useRemoteKey(t *testing.T) {
+func Test_UseRemoteKey(t *testing.T) {
 	tests := map[string]struct {
 		release  bool
 		cfg      *remoteConfig
@@ -53,7 +53,7 @@ func Test_useRemoteKey(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := useRemoteKey(tt.release, tt.cfg, tt.localKey); got != tt.useRemote {
+			if got := UseRemoteKey(tt.release, tt.cfg, tt.localKey); got != tt.useRemote {
 				t.Errorf("useRemoteKey() = %v, want %v", got, tt.useRemote)
 			}
 		})
