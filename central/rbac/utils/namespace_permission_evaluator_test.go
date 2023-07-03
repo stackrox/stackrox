@@ -4,12 +4,18 @@ import (
 	"context"
 	"testing"
 
+	roleDS "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	roleBindingDS "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -130,4 +136,39 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 		})
 	}
 
+}
+
+func BenchmarkGetBindingsAndRoles(b *testing.B) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.K8sRole, resources.K8sRoleBinding, resources.K8sSubject)))
+
+	pool := pgtest.ForT(b)
+
+	roleStore := roleDS.GetTestPostgresDataStore(b, pool)
+	bindingStore, err := roleBindingDS.GetTestPostgresDataStore(b, pool)
+	require.NoError(b, err)
+
+	bindings := fixtures.GetMultipleK8sRoleBindings(10000, 10)
+	roles := fixtures.GetMultipleK8SRoles(10000)
+
+	for _, role := range roles {
+		require.NoError(b, roleStore.UpsertRole(ctx, role))
+	}
+
+	for _, binding := range bindings {
+		require.NoError(b, bindingStore.UpsertRoleBinding(ctx, binding))
+	}
+
+	evaluator := NewNamespacePermissionEvaluator(bindings[500].GetClusterId(), bindings[500].GetNamespace(),
+		roleStore, bindingStore).(*namespacePermissionEvaluator)
+
+	subject := bindings[500].GetSubjects()[4]
+
+	b.Run("run get bindings and roles", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			evaluator.getBindingsAndRoles(ctx, subject)
+		}
+	})
 }

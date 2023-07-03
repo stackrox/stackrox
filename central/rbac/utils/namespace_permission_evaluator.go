@@ -49,8 +49,9 @@ func (c *namespacePermissionEvaluator) getBindingsAndRoles(ctx context.Context, 
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
 		AddExactMatches(search.Namespace, c.namespace).
-		AddExactMatches(search.SubjectName, subject.GetName()).
-		AddExactMatches(search.SubjectKind, subject.GetKind().String()).
+		AddLinkedFields(
+			[]search.FieldLabel{search.SubjectName, search.SubjectKind},
+			[]string{search.ExactMatchString(subject.GetName()), search.ExactMatchString(subject.GetKind().String())}).
 		ProtoQuery()
 	roleBindings, err := c.bindingsStore.SearchRawRoleBindings(ctx, q)
 

@@ -51,7 +51,7 @@ func GetK8sRoleBindingWithSubjects(id, name, clusterID, clusterName, namespace s
 }
 
 // GetMultipleK8sRoleBindings returns given number of roleBindings, each with given number of subjects
-// ClusterRole will toggle between true and false
+// The cluster role property will toggle from false to true.
 func GetMultipleK8sRoleBindings(numBindings, numSubjectsPerBinding int) []*storage.K8SRoleBinding {
 	clusterRole := true
 	bindings := make([]*storage.K8SRoleBinding, 0, numBindings)
