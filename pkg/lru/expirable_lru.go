@@ -57,7 +57,6 @@ func initExpirableLRU[K comparable, V any](
 	size int,
 	onEvict EvictCallback[K, V],
 	ttl time.Duration,
-	tickerChannel <-chan time.Time,
 ) {
 
 	if size < 0 {
@@ -79,20 +78,6 @@ func initExpirableLRU[K comparable, V any](
 	for i := 0; i < numBuckets; i++ {
 		obj.buckets[i] = bucket[K, V]{entries: make(map[K]*entry[K, V])}
 	}
-
-	// enable deleteExpired() running in separate goroutine for cache with non-zero TTL
-	if obj.ttl != noEvictionTTL {
-		go func(done <-chan struct{}) {
-			for {
-				select {
-				case <-done:
-					return
-				case <-tickerChannel:
-					obj.deleteExpired()
-				}
-			}
-		}(obj.done)
-	}
 }
 
 // NewExpirableLRU returns a new thread-safe cache with expirable entries.
@@ -112,7 +97,21 @@ func NewExpirableLRU[K comparable, V any](
 	}
 	ticker := time.NewTicker(ttl / numBuckets)
 	res := &expirableLRU[K, V]{}
-	initExpirableLRU(res, size, onEvict, ttl, ticker.C)
+	initExpirableLRU(res, size, onEvict, ttl)
+
+	// enable deleteExpired() running in separate goroutine for cache with non-zero TTL
+	if res.ttl != noEvictionTTL {
+		go func(done <-chan struct{}) {
+			for {
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+					res.deleteExpired()
+				}
+			}
+		}(res.done)
+	}
 	return res
 }
 

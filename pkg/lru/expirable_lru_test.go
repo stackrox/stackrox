@@ -192,6 +192,10 @@ func TestExpirableLRUWithPurge(t *testing.T) {
 	ttl := 150 * time.Millisecond
 	lc := NewTestExpirableLRU[string, string](t, 10, onExpire, ttl)
 	defer lc.Close()
+	lcImpl := lc.(*testExpirableLRU[string, string])
+	if lcImpl == nil {
+		t.Fatalf("generated lru cache does not have the expected type")
+	}
 
 	k, v, ok := lc.GetOldest()
 	if k != "" {
@@ -261,7 +265,7 @@ func TestExpirableLRUWithPurge(t *testing.T) {
 	}
 
 	// DeleteExpired, nothing deleted
-	lc.underlying.deleteExpired()
+	lcImpl.underlying.deleteExpired()
 	if lc.Len() != 1 {
 		t.Fatalf("length differs from expected")
 	}

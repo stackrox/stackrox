@@ -19,8 +19,6 @@ type TestCache[K comparable, V any] interface {
 
 type testExpirableLRU[K comparable, V any] struct {
 	underlying *expirableLRU[K, V]
-
-	timerChannel chan time.Time
 }
 
 // NewTestExpirableLRU returns a new thread-safe cache with expirable entries.
@@ -30,16 +28,14 @@ func NewTestExpirableLRU[K comparable, V any](
 	size int,
 	onEvict EvictCallback[K, V],
 	ttl time.Duration,
-) *testExpirableLRU[K, V] {
+) TestCache[K, V] {
 	if ttl <= 0 {
 		ttl = noEvictionTTL
 	}
-	tickerChannel := make(chan time.Time)
 	testCache := &testExpirableLRU[K, V]{
-		timerChannel: tickerChannel,
-		underlying:   &expirableLRU[K, V]{},
+		underlying: &expirableLRU[K, V]{},
 	}
-	initExpirableLRU(testCache.underlying, size, onEvict, ttl, tickerChannel)
+	initExpirableLRU(testCache.underlying, size, onEvict, ttl)
 	return testCache
 }
 
@@ -133,6 +129,6 @@ func (c *testExpirableLRU[K, V]) ExpireItem(_ *testing.T, key K) {
 // TriggerExpiration makes sure the expired item cleanup loop is triggered on all items present in the cache.
 func (c *testExpirableLRU[K, V]) TriggerExpiration(_ *testing.T) {
 	for i := 0; i < 2*numBuckets; i++ {
-		c.timerChannel <- time.Now()
+		c.underlying.deleteExpired()
 	}
 }
