@@ -1,5 +1,6 @@
 package lru
 
+// TODO(ROX-18240): Remove this once https://github.com/hashicorp/golang-lru/pull/116 is merged
 /*
 source: https://github.com/hashicorp/golang-lru/pull/116/files#diff-be4b9429f63e821595d57501426a7f91505ab8f2df186c5f5e3b0af74e1a5dfc
 This file is a temporary copy of the above referenced source with some adjustments. It is meant to disappear once the pending pull request
