@@ -20,7 +20,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const clientCAKey = "client-ca-file"
+const (
+	clientCAKey = "client-ca-file"
+	signerName  = "kubelet-signer"
+)
 
 func certFilePath() string {
 	certDir := env.SecureMetricsCertDir.Setting()
@@ -170,15 +173,24 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 		return
 	}
 	if caFile, ok := cm.Data[clientCAKey]; ok {
-		certBlock, _ := pem.Decode([]byte(caFile))
-		cert, err := x509.ParseCertificate(certBlock.Bytes)
-		if err != nil {
-			log.Errorw("Unable to parse client CA", zap.Error(err))
-			return
+		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
+		var clientCAs []*x509.Certificate
+		for block, rest := pem.Decode([]byte(caFile)); block != nil; block, rest = pem.Decode(rest) {
+			if block.Type != "CERTIFICATE" {
+				continue
+			}
+			cert, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				log.Errorw("Unable to parse client CA", zap.Error(err))
+				return
+			}
+			if cert.Issuer.CommonName == signerName {
+				clientCAs = append(clientCAs, cert)
+			}
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()
-		t.clientCAs = []*x509.Certificate{cert}
+		t.clientCAs = clientCAs
 		t.tlsConfigHolder.UpdateTLSConfig()
 	}
 }
