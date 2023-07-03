@@ -1240,7 +1240,7 @@ post_process_test_results() {
 
     set +u
     {
-        if is_in_PR_context; then
+        if is_in_PR_context || [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
             info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
             extra_args=(--dry-run)
         else
@@ -1279,9 +1279,8 @@ send_slack_notice_for_failures_on_merge() {
         return 0
     fi
 
-    local tag
-    tag="$(make --quiet tag)"
-    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+    if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
+        info "Skipping slack message for release branches"
         return 0
     fi
 
