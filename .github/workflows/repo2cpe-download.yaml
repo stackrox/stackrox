@@ -22,7 +22,6 @@ jobs:
 
     - name: Download repository mappings
       run: |
-        mkdir redhat-repository-mappings
         curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs \
           -o 'redhat-repository-mappings/#1' \
           'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
@@ -30,16 +29,11 @@ jobs:
           jq empty "$f"
         done
 
-    - name: Send Slack notification on failure
-      if: failure()
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failed to download Red Hat repository mapping to storage"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-
     - name: Upload repository mappings to Google Cloud Storage
       run: |
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
 
-    - name: Send Slack notification on gsutil failure
+    - name: Send Slack notification on workflow failure
       if: failure()
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failed to upload Redhat repository mapping to storage"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner V4 Updater Workflow: Download and Upload Repository Mappings"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
