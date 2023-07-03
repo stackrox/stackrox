@@ -91,7 +91,7 @@ export const entityGroups: Record<EntityGroup, string> = {
     OVERVIEW: 'Overview',
     VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
     APPLICATION_RESOURCES: 'Application & Infrastructure',
-    RBAC_CONFIG: 'RBAC Visibility & Configurations',
+    RBAC_CONFIG: 'Role-Based Access Control',
     SECURITY: 'Security Findings',
 };
 
