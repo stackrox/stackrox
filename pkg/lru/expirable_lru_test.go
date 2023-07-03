@@ -128,7 +128,7 @@ func BenchmarkExpirableLRU_Freq_WithExpire(b *testing.B) {
 	b.Logf("hit: %d miss: %d ratio: %f", hit, miss, float64(hit)/float64(hit+miss))
 }
 
-func TestExpirableLRUInterface(t *testing.T) {
+func TestExpirableLRUInterface(_ *testing.T) {
 	var _ Cache[int, int] = &expirableLRU[int, int]{}
 }
 
@@ -179,7 +179,7 @@ func TestExpirableLRUNoPurge(t *testing.T) {
 	}
 }
 
-func TestExpirableMultipleClose(t *testing.T) {
+func TestExpirableMultipleClose(_ *testing.T) {
 	lc := NewExpirableLRU[string, string](10, nil, 0)
 	lc.Close()
 	// should not panic
