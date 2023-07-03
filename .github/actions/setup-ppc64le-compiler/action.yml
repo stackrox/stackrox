@@ -1,0 +1,38 @@
+name: Setup ppc64le cross-compiler
+description: Cross-compile rocksdb on Power using IBM Power cross-compiler
+runs:
+  using: composite
+  steps:
+    - name: Add GPG Key
+      shell: bash
+      run: |
+        wget -qO- https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/jammy/615d762f.gpg.key | sudo tee -a /etc/apt/trusted.gpg.d/615d762f.asc
+        wget -qO- https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu/dists/focal/6976a827.gpg.key | sudo tee -a /etc/apt/trusted.gpg.d/6976a827.asc
+
+    - name: Update sources.list
+      shell: bash
+      run: |
+        sudo su -c "echo 'deb [signed-by=/etc/apt/trusted.gpg.d/6976a827.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu focal at15.0
+                   deb [signed-by=/etc/apt/trusted.gpg.d/6976a827.asc] https://public.dhe.ibm.com/software/server/POWER/Linux/toolchain/at/ubuntu bionic at13.0
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy universe
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates universe
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy multiverse
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates multiverse
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security universe
+                   deb [arch=ppc64el] http://ports.ubuntu.com/ubuntu-ports/ jammy-security multiverse' >> /etc/apt/sources.list"
+
+
+        sudo apt-get update -y;
+        
+    - name: Add ppc64le package support
+      shell: bash
+      run: sudo dpkg --add-architecture ppc64el
+
+    - name: Intall IBM Advanced Toolchain Cross Compiler
+      shell: bash
+      run: |
+        sudo apt install advance-toolchain-at15.0-cross-ppc64le

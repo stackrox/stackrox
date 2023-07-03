@@ -220,8 +220,8 @@ jobs:
           # Prevent fatal error "detected dubious ownership in repository" from recent git.
           git config --global --add safe.directory "$(pwd)"
 
-      - name: Setup prereqs for building on Power
-        uses: ./.github/actions/build-rocksdb-power  
+      - name: Setup cross-compiler for building on Power
+        uses: ./.github/actions/setup-ppc64le-compiler
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -247,8 +247,7 @@ jobs:
 
       - name: Build Go Binaries
         run: |
-          make main-build-nodeps GOOS=linux GOARCH=ppc64le CGO_ENABLED=1 CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc" \
-          CGO_CFLAGS="-I/usr/local/include -I/usr/lib/powerpc64le-linux-gnu" CGO_LDFLAGS="-L/usr/local/lib -L/usr/lib/powerpc64le-linux-gnu/"
+          make main-build-nodeps GOOS=linux GOARCH=ppc64le CGO_ENABLED=1 CC="/opt/at15.0/bin/powerpc64le-linux-gnu-gcc"
 
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_ppc64le
