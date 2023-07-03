@@ -891,7 +891,7 @@ func TestTranslate(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if !buildinfo.ReleaseBuild {
+			if !buildinfo.ReleaseBuild || buildinfo.TestBuild {
 				wantCentral := tt.want["central"].(map[string]any)
 				if _, ok := wantCentral["telemetry"]; !ok {
 					wantCentral["telemetry"] = telemetryDisabledKey
