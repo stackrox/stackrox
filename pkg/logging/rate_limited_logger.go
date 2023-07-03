@@ -175,7 +175,9 @@ func getTrimmedFilePath(path string) string {
 	if prefixToCut >= 0 {
 		cutpath = cutpath[prefixToCut:]
 	}
-	return strings.TrimPrefix(cutpath, filePathPrefix)
+	trimmedPath := strings.TrimPrefix(cutpath, filePathPrefix)
+	trimmedPath = strings.TrimPrefix(trimmedPath, localFilePathPrefix)
+	return trimmedPath
 }
 
 func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {

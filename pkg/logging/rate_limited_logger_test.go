@@ -3,7 +3,6 @@ package logging
 import (
 	"fmt"
 	"runtime"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -158,17 +157,7 @@ func getLogCallerPrefix(line int) string {
 }
 
 func getTestLogKey(limiter string, level zapcore.Level, line int, payload string) string {
-	var keyWriter strings.Builder
-	keyWriter.WriteString(limiter)
-	keyWriter.WriteString("-")
-	keyWriter.WriteString(level.CapitalString())
-	keyWriter.WriteString("-")
-	keyWriter.WriteString(testCallerFile)
-	keyWriter.WriteString(":")
-	keyWriter.WriteString(fmt.Sprintf("%d", line))
-	keyWriter.WriteString("-")
-	keyWriter.WriteString(payload)
-	return keyWriter.String()
+	return getLogKey(limiter, level, testCallerFile, line, payload)
 }
 
 func (s *rateLimitedLoggerTestSuite) validateRateLimitedLogCount(expectedLogCount int) {
