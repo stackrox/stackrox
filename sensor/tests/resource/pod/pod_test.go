@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
-	NginxPod        = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml"}
+	NginxDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml", Name: "nginx-deployment"}
+	NginxPod        = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml", Name: "nginx-rogue"}
 )
 
 type PodHierarchySuite struct {
@@ -84,7 +84,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 		}),
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, objects map[string]k8s.Object) {
 			// wait until pods are created
-			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.YamlFile], func(object k8s.Object) bool {
+			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.Name], func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
 				return d.Status.AvailableReplicas == 3 && d.Status.ReadyReplicas == 3
 			}), wait.WithTimeout(time.Second*10))
@@ -110,7 +110,7 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 		}),
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, objects map[string]k8s.Object) {
 			// wait until pods are created
-			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.YamlFile], func(object k8s.Object) bool {
+			err := wait.For(conditions.New(testC.Resources()).ResourceMatch(objects[NginxDeployment.Name], func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
 				return d.Status.AvailableReplicas == 3 && d.Status.ReadyReplicas == 3
 			}), wait.WithTimeout(time.Second*10))
@@ -140,7 +140,7 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sDeployment := &appsv1.Deployment{}
-			deleteDep, err := testC.ApplyResource(context.Background(), helper.DefaultNamespace, &NginxDeployment, k8sDeployment, nil)
+			deleteDep, err := testC.ApplyResourceAndWait(context.Background(), helper.DefaultNamespace, &NginxDeployment, k8sDeployment, nil)
 			require.NoError(t, err)
 			id = string(k8sDeployment.GetUID())
 			// Check the deployment is processed
@@ -173,7 +173,7 @@ func (s *PodHierarchySuite) Test_DeletePod() {
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			var id string
 			k8sPod := &v1.Pod{}
-			deletePod, err := testC.ApplyResource(context.Background(), helper.DefaultNamespace, &NginxPod, k8sPod, nil)
+			deletePod, err := testC.ApplyResourceAndWait(context.Background(), helper.DefaultNamespace, &NginxPod, k8sPod, nil)
 			require.NoError(t, err)
 			id = string(k8sPod.GetUID())
 			// Check the pod is processed

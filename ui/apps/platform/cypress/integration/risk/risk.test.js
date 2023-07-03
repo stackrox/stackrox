@@ -145,7 +145,7 @@ describe('Risk page', () => {
     });
 
     describe('with actual API', () => {
-        // This test is disabled for now as the links from Risk to Network Graph have been changed to navigate to the new version
+        // TODO fix uncaught exception in Network Graph 2.0
         it.skip('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');

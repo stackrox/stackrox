@@ -26,6 +26,8 @@ type Store interface {
 	FindSubjectForRole(namespace, roleName string) []namespacedSubject
 	FindSubjectForBindingID(namespace, name, uuid string) []namespacedSubject
 	FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID
+
+	Cleanup()
 }
 
 // NewStore creates a new instance of Store

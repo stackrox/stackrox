@@ -11,7 +11,6 @@ import services.PolicyService
 import util.Env
 
 import spock.lang.IgnoreIf
-import spock.lang.Retry
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -130,7 +129,6 @@ class K8sEventDetectionTest extends BaseSpecification {
         return true
     }
 
-    @Retry(count = 0)
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")

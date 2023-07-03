@@ -173,7 +173,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         cleanup:
         if (deploymentCreated) {
-            orchestrator.deleteDeployment(DEPLOYMENT)
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT)
         }
 
         // Restore the original policy.
@@ -219,7 +219,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         cleanup:
         if (!deploymentDeleted) {
-            orchestrator.deleteDeployment(DEPLOYMENT)
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT)
         }
     }
 }

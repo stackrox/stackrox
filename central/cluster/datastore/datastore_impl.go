@@ -20,7 +20,6 @@ import (
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
-	"github.com/stackrox/rox/central/node/index/mappings"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -43,10 +42,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -736,48 +733,6 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 		ds.notifier.ProcessAlert(ctx, resolvedAlert)
 	}
 	return nil
-}
-
-func (ds *datastoreImpl) cleanUpNodeStore() {
-	if err := ds.doCleanUpNodeStore(); err != nil {
-		log.Errorf("Error cleaning up cluster node stores: %v", err)
-	}
-}
-
-func (ds *datastoreImpl) doCleanUpNodeStore() error {
-	ctx := sac.WithAllAccess(context.Background())
-
-	clusterIDLabelField, ok := mappings.OptionsMap.Get(pkgSearch.ClusterID.String())
-	if !ok {
-		utils.Should(errors.Errorf("could not find label %q in options map", pkgSearch.ClusterID.String()))
-		return nil
-	}
-	clusterIDFieldPath := clusterIDLabelField.GetFieldPath()
-
-	query := pkgSearch.NewQueryBuilder().AddStringsHighlighted(pkgSearch.ClusterID, pkgSearch.WildcardString).ProtoQuery()
-	nodeSearchResults, err := ds.nodeDataStore.Search(ctx, query)
-	if err != nil {
-		return errors.Wrap(err, "retrieving per-cluster node stores")
-	}
-
-	if len(nodeSearchResults) == 0 {
-		return nil
-	}
-	clusterResults, err := ds.Search(ctx, pkgSearch.EmptyQuery())
-	if err != nil {
-		return errors.Wrap(err, "retrieving clusters")
-	}
-	existingClusters := pkgSearch.ResultsToIDSet(clusterResults)
-
-	orphanedNodes := set.NewStringSet()
-	for _, nodeSearchResult := range nodeSearchResults {
-		for _, clusterIDMatch := range nodeSearchResult.Matches[clusterIDFieldPath] {
-			if !existingClusters.Contains(clusterIDMatch) {
-				orphanedNodes.Add(nodeSearchResult.ID)
-			}
-		}
-	}
-	return ds.nodeDataStore.DeleteNodes(ctx, orphanedNodes.AsSlice()...)
 }
 
 func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {

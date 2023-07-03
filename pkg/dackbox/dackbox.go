@@ -2,8 +2,8 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	rocksdbTxns "github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"

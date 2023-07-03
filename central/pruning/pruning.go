@@ -227,6 +227,28 @@ func (g *garbageCollectorImpl) removeOrphanedPods() {
 	}
 }
 
+// Remove nodes where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedNodes() {
+	nodesToRemove, err := postgres.GetOrphanedNodeIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned nodes: %v", err)
+		return
+	}
+
+	if len(nodesToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned nodes...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned nodes (from formerly deleted clusters). Deleting...",
+		len(nodesToRemove))
+
+	for _, id := range nodesToRemove {
+		if err := g.nodes.DeleteNodes(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove node with id %s: %v", id, err)
+		}
+	}
+}
+
 func removeOrphanedObjectsBySearch(searchQuery *v1.Query, name string, searchFn func(ctx context.Context, query *v1.Query) ([]search.Result, error), removeFn func(ctx context.Context, id string) error) {
 	searchRes, err := searchFn(pruningCtx, searchQuery)
 	if err != nil {
@@ -280,20 +302,18 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 		return
 	}
 	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
-	podIDs, err := g.pods.GetPodIDs(pruningCtx)
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to fetch pod IDs in pruning"))
-		return
-	}
-	g.removeOrphanedProcesses(deploymentSet, set.NewFrozenStringSet(podIDs...))
-	g.removeOrphanedProcessBaselines(deploymentSet)
-
-	g.removeOrphanedPLOP()
 
 	g.markOrphanedAlertsAsResolved()
 	g.removeOrphanedNetworkFlows(clusterIDSet)
 
 	g.removeOrphanedPods()
+	g.removeOrphanedNodes()
+
+	// The deletion of pods can trigger the deletion of indicators.  So in theory there could
+	// be fewer indicators to delete if we process orphaned pods first.
+	g.removeOrphanedProcesses()
+	g.removeOrphanedProcessBaselines(deploymentSet)
+	g.removeOrphanedPLOP()
 
 	q := clusterIDsToNegationQuery(clusterIDSet)
 	g.removeOrphanedServiceAccounts(q)
@@ -329,33 +349,9 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 	return search.NewBooleanQuery(must, mustNot)
 }
 
-func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
-	var processesToPrune []string
-	now := types.TimestampNow()
-	walkFn := func() error {
-		processesToPrune = processesToPrune[:0]
-		return g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {
-			if pi.GetPodUid() != "" && podIDs.Contains(pi.GetPodUid()) {
-				return nil
-			}
-			if pi.GetPodUid() == "" && deploymentIDs.Contains(pi.GetDeploymentId()) {
-				return nil
-			}
-			if protoutils.Sub(now, pi.GetSignal().GetTime()) < orphanWindow {
-				return nil
-			}
-			processesToPrune = append(processesToPrune, pi.GetId())
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
-		return
-	}
-	log.Infof("[Process pruning] Found %d orphaned processes", len(processesToPrune))
-	if err := g.processes.RemoveProcessIndicators(pruningCtx, processesToPrune); err != nil {
-		log.Error(errors.Wrap(err, "error removing process indicators"))
-	}
+func (g *garbageCollectorImpl) removeOrphanedProcesses() {
+	postgres.PruneOrphanedProcessIndicators(pruningCtx, g.postgres, orphanWindow)
+	log.Infof("[Process pruning] Pruning of orphaned processes complete")
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {

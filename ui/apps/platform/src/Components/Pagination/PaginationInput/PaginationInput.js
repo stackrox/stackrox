@@ -32,7 +32,7 @@ const PaginationInput = ({ totalSize, onChange, currentPage, pageSize }) => {
     }
 
     return (
-        <div className="font-600 select-none">
+        <div className="select-none">
             Page
             <input
                 type="number"

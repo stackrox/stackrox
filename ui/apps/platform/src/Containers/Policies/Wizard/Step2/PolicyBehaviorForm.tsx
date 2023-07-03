@@ -398,7 +398,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                     </CardHeader>
                                     <CardBody>
                                         If enabled, executions within a pod that violate this policy
-                                        will result in the pod being killed. Actions taken through
+                                        will result in the pod being deleted. Actions taken through
                                         the API server that violate this policy will be blocked.
                                     </CardBody>
                                 </Card>

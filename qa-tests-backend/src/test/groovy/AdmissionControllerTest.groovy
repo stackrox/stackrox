@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -14,11 +16,10 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
+import util.ApplicationHealth
 import util.ChaosMonkey
-import util.Helpers
 import util.Timer
 
-import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Timeout
@@ -132,7 +133,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Config (#desc)"() {
+    def "Verify Admission Controller Config: #desc"() {
         when:
         prepareChaosMonkey()
 
@@ -145,7 +146,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000)
+        sleep(5000)
 
         then:
         "Run deployment request"
@@ -224,7 +225,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         log.info("Policy created to scale-to-zero deployments with CVE-2019-3462")
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        sleep(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Sensor and admission-controller _should_ have the policy update")
 
         def deployment = new Deployment()
@@ -235,7 +236,7 @@ class AdmissionControllerTest extends BaseSpecification {
         assert !created
 
         // CVE needs to be saved into the DB
-        Helpers.sleepWithRetryBackoff(1000)
+        sleep(1000)
 
         when:
         "Suppress CVE and check that the deployment can now launch"
@@ -245,7 +246,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         log.info("Suppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        sleep(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Expect that the suppression has propagated")
 
         created = orchestrator.createDeploymentNoWait(deployment)
@@ -259,7 +260,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         log.info("Unsuppressed "+cve)
         // Allow propagation of CVE suppression and invalidation of cache
-        Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
+        sleep(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Expect that the unsuppression has propagated")
 
         and:
@@ -298,7 +299,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Enforcement on Updates (#desc)"() {
+    def "Verify Admission Controller Enforcement on Updates: #desc"() {
         when:
         prepareChaosMonkey()
 
@@ -312,7 +313,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000)
+        sleep(5000)
 
         and:
         "Create the deployment with a harmless image"
@@ -350,7 +351,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
+    def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes: match: #clusterMatch/#nsMatch"() {
         when:
         prepareChaosMonkey()
 
@@ -376,7 +377,7 @@ class AdmissionControllerTest extends BaseSpecification {
         Services.updatePolicy(scopedLatestTagPolicy)
 
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000)
+        sleep(5000)
 
         then:
         "Create a deployment with a latest tag"
@@ -413,7 +414,6 @@ class AdmissionControllerTest extends BaseSpecification {
         true         | true
     }
 
-    @Retry(count = 0)
     @Timeout(300)
     def "Verify admission controller does not impair cluster operations when unstable"() {
         when:
@@ -435,7 +435,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000)
+        sleep(5000)
 
         and:
         "Start a chaos monkey thread that kills _all_ ready admission control replicas with a short grace period"
@@ -452,7 +452,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Verify deployment can be modified reliably"
         for (int i = 0; i < 45; i++) {
-            Helpers.sleepWithRetryBackoff(1000)
+            sleep(1000)
             deployment.addAnnotation("qa.stackrox.io/iteration", "${i}")
             assert orchestrator.updateDeploymentNoWait(deployment, 10)
         }
@@ -504,7 +504,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        Helpers.sleepWithRetryBackoff(5000)
+        sleep(5000)
 
         and:
         "Sensor is unavailable"
@@ -524,13 +524,35 @@ class AdmissionControllerTest extends BaseSpecification {
                 originalAdmCtrlReplicas, 30, 1)
         log.info("Admission controller scaled back to ${originalAdmCtrlReplicas}")
 
+        and:
+        "Admission controller is ready for work"
+        ApplicationHealth ah = new ApplicationHealth(orchestrator, 60)
+        ah.waitForAdmissionControllerHealthiness()
+
         when:
         "A deployment with an image violating a policy is created"
-        def created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+        def created
+        def consecutiveRejectionsCount = 0
+        withRetry(40, 5) {
+            created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+            if (created) {
+                consecutiveRejectionsCount = 0
+                deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
+            }
+            else {
+                consecutiveRejectionsCount++
+            }
+            assert !created
+            assert consecutiveRejectionsCount == 5
+        }
 
         then:
         "Creation should fail"
         assert !created
+
+        and:
+        "Creation should fail consistently"
+        assert consecutiveRejectionsCount == 5
 
         cleanup:
         "Stop ChaosMonkey ASAP to not lose logs"

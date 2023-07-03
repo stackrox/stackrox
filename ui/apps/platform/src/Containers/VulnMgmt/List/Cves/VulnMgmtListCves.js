@@ -19,7 +19,6 @@ import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -32,18 +31,17 @@ import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
 import {
-    VULN_CVE_LIST_FRAGMENT,
     IMAGE_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     CLUSTER_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import CveType from 'Components/CveType';
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
+import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
+import WorkflowListPage from '../WorkflowListPage';
 import { getFilteredCVEColumns } from './ListCVEs.utils';
-import { resourceLabels } from '../../../../messages/common';
 
 export const defaultCveSort = [
     {
@@ -282,8 +280,6 @@ const VulnMgmtCves = ({
 }) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
     const workflowState = useContext(workflowStateContext);
 
@@ -316,7 +312,8 @@ const VulnMgmtCves = ({
             `;
             break;
         }
-        case entityTypes.IMAGE_CVE: {
+        case entityTypes.IMAGE_CVE:
+        default: {
             cveQuery = gql`
                 query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
                     results: imageVulnerabilities(query: $query, pagination: $pagination) {
@@ -325,20 +322,6 @@ const VulnMgmtCves = ({
                     count: imageVulnerabilityCount(query: $query)
                 }
                 ${IMAGE_CVE_LIST_FRAGMENT}
-            `;
-            break;
-        }
-        // TODO: remove the deprecated one-CVE-to-rule-them-all type, and move default case to IMAGE_CVE
-        case entityTypes.CVE:
-        default: {
-            cveQuery = gql`
-                query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
-                    results: vulnerabilities(query: $query, pagination: $pagination) {
-                        ...cveFields
-                    }
-                    count: vulnerabilityCount(query: $query)
-                }
-                ${VULN_CVE_LIST_FRAGMENT}
             `;
             break;
         }
@@ -376,7 +359,6 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const entityTypeDisplayName = resourceLabels[currentEntityType];
         const cvesToToggle = cve ? [cve] : selectedCveIds;
         suppressVulns(cveType, cvesToToggle, duration)
             .then(() => {
@@ -385,12 +367,11 @@ const VulnMgmtCves = ({
                 // changing this param value on the query vars, to force the query to refetch
                 setRefreshTrigger(Math.random());
 
-                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs =
-                    cvesToToggle.length === 1 ? entityTypeDisplayName : `${entityTypeDisplayName}s`;
-
                 addToast(
-                    `Successfully deferred and approved ${cvesToToggle.length} ${pluralizedCVEs} globally`
+                    `Successfully deferred and approved ${entityCountNounOrdinaryCase(
+                        cvesToToggle.length,
+                        currentEntityType
+                    )} globally`
                 );
                 setTimeout(removeToast, 2000);
             })
@@ -404,7 +385,6 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const entityTypeDisplayName = resourceLabels[currentEntityType];
         const cveIdsToToggle = cve ? [cve] : selectedCveIds;
         unsuppressVulns(cveType, cveIdsToToggle)
             .then(() => {
@@ -413,14 +393,11 @@ const VulnMgmtCves = ({
                 // changing this param value on the query vars, to force the query to refetch
                 setRefreshTrigger(Math.random());
 
-                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs =
-                    cveIdsToToggle.length === 1
-                        ? entityTypeDisplayName
-                        : `${entityTypeDisplayName}s`;
-
                 addToast(
-                    `Successfully reobserved ${cveIdsToToggle.length} ${pluralizedCVEs} globally`
+                    `Successfully reobserved ${entityCountNounOrdinaryCase(
+                        cveIdsToToggle.length,
+                        currentEntityType
+                    )} globally`
                 );
                 setTimeout(removeToast, 2000);
             })
@@ -558,7 +535,7 @@ const VulnMgmtCves = ({
                 totalResults={totalResults}
                 query={cveQuery}
                 queryOptions={queryOptions}
-                idAttribute={showVMUpdates ? 'id' : 'cve'}
+                idAttribute="id"
                 entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}

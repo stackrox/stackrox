@@ -31,12 +31,23 @@ type serviceStore struct {
 
 // newServiceStore creates and returns a new service store.
 func newServiceStore() *serviceStore {
-	return &serviceStore{
-		services:                make(map[string]map[string]*serviceWrap),
-		routesByServiceMetadata: make(map[string]map[string][]*routeV1.Route),
-		routesByRouteRef:        make(map[routeRef]*routeV1.Route),
-		nodePortServices:        make(map[types.UID]*serviceWrap),
-	}
+	ss := &serviceStore{}
+	ss.initMaps()
+	return ss
+}
+
+func (ss *serviceStore) initMaps() {
+	ss.services = make(map[string]map[string]*serviceWrap)
+	ss.routesByServiceMetadata = make(map[string]map[string][]*routeV1.Route)
+	ss.routesByRouteRef = make(map[routeRef]*routeV1.Route)
+	ss.nodePortServices = make(map[types.UID]*serviceWrap)
+}
+
+func (ss *serviceStore) Cleanup() {
+	ss.lock.Lock()
+	defer ss.lock.Unlock()
+
+	ss.initMaps()
 }
 
 func (ss *serviceStore) upsertRoute(route *routeV1.Route) {

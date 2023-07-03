@@ -1,25 +1,20 @@
-import navigationSelectors from '../../selectors/navigation';
-import { networkGraphSelectors } from './networkGraph.selectors';
-
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
 import {
     visitNetworkGraph,
     visitNetworkGraphFromLeftNav,
     checkNetworkGraphEmptyState,
     selectCluster,
     selectNamespace,
-} from '../../helpers/networkGraphPF';
-import { getRegExpForTitleWithBranding } from '../../helpers/title';
+} from './networkGraph.helpers';
+import { networkGraphSelectors } from './networkGraph.selectors';
 
 describe('Network Graph smoke tests', () => {
     withAuth();
 
     it('should visit using the left nav', () => {
         visitNetworkGraphFromLeftNav();
-
-        cy.get(`${navigationSelectors.navLinks}:contains('Network Graph')`)
-            .first()
-            .should('have.class', 'pf-m-current');
 
         checkNetworkGraphEmptyState();
     });

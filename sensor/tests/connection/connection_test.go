@@ -58,7 +58,7 @@ func Test_SensorReconnects(t *testing.T) {
 
 		// This is used as initial signal that Sensor is fully operational, and has communicated that NginxDeployment1
 		// is up to Central.
-		_, err = c.ApplyResourceNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment1, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment1, nil)
 		require.NoError(t, err)
 
 		// Stop fake central gRPC server and create a new one immediately after.
@@ -67,7 +67,7 @@ func Test_SensorReconnects(t *testing.T) {
 		assert.False(t, testContext.SensorStopped())
 
 		// We applied the resource _after_ Sensor restarted. Now we should check that this deployment will be sent to Central.
-		_, err = c.ApplyResourceNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment2, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment2, nil)
 		require.NoError(t, err)
 	}))
 }

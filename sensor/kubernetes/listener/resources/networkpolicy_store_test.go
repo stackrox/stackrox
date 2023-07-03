@@ -68,6 +68,26 @@ func TestNetworkPoliciesStoreFind(t *testing.T) {
 	}
 }
 
+func TestNetworkPoliciesStoreCleanup(t *testing.T) {
+	policies := make([]*storage.NetworkPolicy, 0)
+	policies = append(policies, newNPDummy("p1", defaultNS, map[string]string{"app": "sensor"}))
+	policies = append(policies, newNPDummy("p2", defaultNS, map[string]string{"app": "sensor", "role": "backend"}))
+	policies = append(policies, newNPDummy("p3", defaultNS, map[string]string{"app": "central"}))
+	policies = append(policies, newNPDummy("p4", defaultNS, map[string]string{"app": "central", "role": "frontend"}))
+
+	store := newNetworkPoliciesStore()
+	for _, p := range policies {
+		store.Upsert(p)
+	}
+
+	store.Cleanup()
+
+	for _, p := range policies {
+		assert.Nil(t, store.Get(p.GetId()))
+		assert.Len(t, store.Find(defaultNS, p.GetLabels()), 0)
+	}
+}
+
 func TestNetworkPoliciesStoreDelete(t *testing.T) {
 	policies := make([]*storage.NetworkPolicy, 0)
 	policies = append(policies, newNPDummy("p1", defaultNS, map[string]string{"app": "sensor"}))

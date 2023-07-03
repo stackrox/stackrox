@@ -3,12 +3,12 @@ import withAuth from '../../helpers/basicAuth';
 import {
     clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
-    entityListCountMatchesTableLinkCount,
     hasCountWidgetsFor,
     hasTabsFor,
     navigateToSingleEntityPage,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
+    verifyTableLinkToSidePanelTable,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
@@ -21,8 +21,8 @@ describe('Configuration Management Images', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
-    it('should open the side panel to show the same number of deployments when the deployments link is clicked', () => {
-        entityListCountMatchesTableLinkCount(entitiesKey, 'deployments', /^\d+ deployments?$/);
+    it('should go from table link to deployments table in side panel', () => {
+        verifyTableLinkToSidePanelTable(entitiesKey, 'deployments');
     });
 
     it('should take you to a images single when the "navigate away" button is clicked', () => {
@@ -50,18 +50,15 @@ describe('Configuration Management Images', () => {
         hasTabsFor(['deployments']);
     });
 
-    describe('should have same number in deployments table as in count widget', () => {
+    describe('should go to deployments table from widget link', () => {
         const entitiesKey2 = 'deployments';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 

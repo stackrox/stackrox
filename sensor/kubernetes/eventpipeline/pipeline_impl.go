@@ -1,6 +1,9 @@
 package eventpipeline
 
 import (
+	"sync/atomic"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -24,6 +27,8 @@ type eventPipeline struct {
 	listener    component.PipelineComponent
 	detector    detector.Detector
 	reprocessor reprocessor.Handler
+
+	offlineMode *atomic.Bool
 
 	eventsC chan *central.MsgFromSensor
 	stopSig concurrency.Signal
@@ -72,10 +77,6 @@ func (p *eventPipeline) Start() error {
 		}
 	}
 
-	if err := p.listener.Start(); err != nil {
-		return err
-	}
-
 	go p.forwardMessages()
 	return nil
 }
@@ -93,7 +94,24 @@ func (p *eventPipeline) Stop(_ error) {
 	p.stopSig.Signal()
 }
 
-func (p *eventPipeline) Notify(common.SensorComponentEvent) {}
+func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
+	log.Infof("Received notify: %s", event)
+	switch event {
+	case common.SensorComponentEventCentralReachable:
+		// Start listening to events if not yet listening
+		if p.offlineMode.CompareAndSwap(true, false) {
+			log.Infof("Connection established: Starting Kubernetes listener")
+			if err := p.listener.Start(); err != nil {
+				log.Fatalf("Failed to start listener component. Sensor cannot run without listening to Kubernetes events: %s", err)
+			}
+		}
+	case common.SensorComponentEventOfflineMode:
+		// Stop listening to events
+		if p.offlineMode.CompareAndSwap(false, true) {
+			p.listener.Stop(errors.New("gRPC connection stopped"))
+		}
+	}
+}
 
 // forwardMessages from listener component to responses channel
 func (p *eventPipeline) forwardMessages() {

@@ -30,21 +30,20 @@ import services.RoleService
 
 import org.junit.Rule
 import org.junit.rules.Timeout
-import spock.lang.Retry
 import spock.lang.Tag
 
-@Retry(count = 0)
+@Tag("Parallel")
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
     static final private String CONFIGMAP_NAME = "declarative-configurations"
 
     // The keys are used within the config map to indicate the specific resources.
-    static final private String PERMISSION_SET_KEY = "permission-set"
-    static final private String ACCESS_SCOPE_KEY = "access-scope"
-    static final private String ROLE_KEY = "role"
-    static final private String AUTH_PROVIDER_KEY = "auth-provider"
-    static final private String NOTIFIER_KEY = "notifier"
+    static final private String PERMISSION_SET_KEY = "declarative-config-test--permission-set"
+    static final private String ACCESS_SCOPE_KEY = "declarative-config-test--access-scope"
+    static final private String ROLE_KEY = "declarative-config-test--role"
+    static final private String AUTH_PROVIDER_KEY = "declarative-config-test--auth-provider"
+    static final private String NOTIFIER_KEY = "declarative-config-test--notifier"
 
     static final private int CREATED_RESOURCES = 7
 

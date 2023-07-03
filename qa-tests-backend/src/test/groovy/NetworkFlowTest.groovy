@@ -243,24 +243,12 @@ class NetworkFlowTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    def rebuildForRetries() {
-        if (Helpers.getAttemptCount() > 1) {
-            log.info ">>>> Recreating test deployments prior to retest <<<<<"
-            destroyDeployments()
-            sleep(5000)
-            createDeployments()
-            sleep(5000)
-            log.info ">>>> Done <<<<<"
-        }
-    }
-
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z, skipping for 1st release
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
@@ -340,7 +328,6 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == sourceDeployment }?.deploymentUid
@@ -395,7 +382,6 @@ class NetworkFlowTest extends BaseSpecification {
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
-        rebuildForRetries()
         "Two deployments, A and B, where B communicates to A in short consistent intervals"
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
@@ -462,7 +448,6 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify network flows with graph filtering"() {
         given:
         "Two deployments, A and B, where B communicates to A"
-        rebuildForRetries()
         String sourceUid = deployments.find { it.name == TCPCONNECTIONSOURCE }?.deploymentUid
         assert sourceUid != null
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
@@ -554,10 +539,14 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    // TODO(ROX-7046): Re-enable this test
     @Tag("NetworkFlowVisualization")
-    @Ignore("ROX-7046 - this test does not pass")
     def "Verify intra-cluster connection via external IP"() {
+        // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
+        // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
+        // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.
+        // We do not test this on OCP.
+        // Manual testing on OCP shows the same behavior but on prow times out most of the time.
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
@@ -580,9 +569,13 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
-        List<Edge> edges = NetworkGraphUtil.checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
-        assert edges
+        withRetry(2, 10) {
+            log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
+            List<Edge> edgesToExternalSource = NetworkGraphUtil.checkForEdge(
+                    Constants.INTERNET_EXTERNAL_SOURCE_ID,
+                    deploymentUid, null, 180)
+            assert edgesToExternalSource
+        }
 
         cleanup:
         "remove the new deployment"
@@ -610,7 +603,6 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
@@ -688,7 +680,7 @@ class NetworkFlowTest extends BaseSpecification {
         "Check timestamp for each edge"
         for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
             assert edge.lastActiveTimestamp <= currentTime + 2000 //allow up to 2 sec leeway
-            assert edge.lastActiveTimestamp >= testStartTimeMillis
+            assert edge.lastActiveTimestamp >= testSpecStartTimeMillis
         }
     }
 

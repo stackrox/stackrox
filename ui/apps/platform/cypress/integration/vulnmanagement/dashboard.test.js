@@ -3,31 +3,10 @@ import withAuth from '../../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     interactAndWaitForVulnerabilityManagementEntities,
+    verifyVulnerabilityManagementDashboardCVEs,
     visitVulnerabilityManagementDashboard,
     visitVulnerabilityManagementDashboardFromLeftNav,
 } from '../../helpers/vulnmanagement/entities';
-
-function verifyVulnerabilityManagementDashboardCVEs(entitiesKey, menuListItemRegExp) {
-    visitVulnerabilityManagementDashboard();
-
-    // Selector contains singular noun to match 1 CVE.
-    const menuButtonSelector = `button[data-testid="menu-button"]:contains("CVE")`;
-    const menuListItemSelector = `${menuButtonSelector} + div[data-testid="menu-list"]`;
-
-    cy.get(menuButtonSelector).click(); // open menu list
-    cy.get(menuListItemSelector)
-        .contains('a', menuListItemRegExp)
-        .then(($a) => {
-            const linkText = $a.text();
-            const panelHeaderText = linkText.replace(/s$/, 'S'); // TODO fix UI inconsistency
-
-            interactAndWaitForVulnerabilityManagementEntities(() => {
-                cy.wrap($a).click(); // visit entities list
-            }, entitiesKey);
-
-            cy.get(`[data-testid="panel-header"]:contains(${panelHeaderText})`);
-        });
-}
 
 function verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
     entitiesKey,
@@ -69,32 +48,29 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should show same number of Image CVEs in menu item and entities list', () => {
+    it('should navigate from menu item for Image CVEs to entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('image-cves', /^\d+ Image CVEs?$/);
     });
 
-    it('should show same number of Node CVEs in menu item and entities list', () => {
+    it('should navigate from menu item for Node CVEs to entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('node-cves', /^\d+ Node CVEs?$/);
     });
 
-    it('should show same number of Cluster (Platform) CVEs in menu item and entities list', () => {
+    it('should navigate from menu item Cluster (Platform) CVEs to entities list', () => {
         verifyVulnerabilityManagementDashboardCVEs('cluster-cves', /^\d+ Platform CVEs?$/);
     });
 
-    it('should show same number of images between the tile and the images list', () => {
+    it('should navigate from images link to images list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const tileToCheck = 1;
-        cy.get(`${selectors.tileLinks}:eq(${tileToCheck}) ${selectors.tileLinkValue}`)
-            .invoke('text')
-            .then((value) => {
-                interactAndWaitForVulnerabilityManagementEntities(() => {
-                    cy.get(`${selectors.tileLinks}:eq(${tileToCheck})`).click();
-                }, entitiesKey);
+        interactAndWaitForVulnerabilityManagementEntities(() => {
+            cy.get('[data-testid="page-header"] a')
+                .contains('[data-testid="tile-link-value"]', /^\d+ images?/)
+                .click();
+        }, entitiesKey);
 
-                cy.get(`[data-testid="panel"] [data-testid="panel-header"]:contains("${value}")`);
-            });
+        cy.get('[data-testid="panel"]').contains('[data-testid="panel-header"]', /^\d+ images?/);
     });
 
     it('should properly navigate to the clusters list', () => {

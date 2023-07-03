@@ -32,6 +32,12 @@ type listenerImpl struct {
 }
 
 func (k *listenerImpl) Start() error {
+	// This happens if the listener is restarting. Then the signal will already have been triggered
+	// when starting a new run of the listener.
+	if k.stopSig.IsDone() {
+		k.stopSig.Reset()
+	}
+
 	// Patch namespaces to include labels
 	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
 	// Start credentials manager.

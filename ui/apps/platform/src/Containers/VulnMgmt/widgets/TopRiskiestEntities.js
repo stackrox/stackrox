@@ -18,47 +18,11 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entitySortFieldsMap } from 'constants/sortFields';
-import { resourceLabels } from 'messages/common';
-import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-
-// TODO: remove once ROX_POSTGRES_DATASTORE is enabled
-const TOP_RISKIEST_IMAGES = gql`
-    query topRiskiestImagesOld($query: String, $pagination: Pagination) {
-        results: images(query: $query, pagination: $pagination) {
-            id
-            name {
-                fullName
-            }
-            vulnCounter {
-                all {
-                    total
-                    fixable
-                }
-                low {
-                    total
-                    fixable
-                }
-                moderate {
-                    total
-                    fixable
-                }
-                important {
-                    total
-                    fixable
-                }
-                critical {
-                    total
-                    fixable
-                }
-            }
-            priority
-            scan {
-                scanTime
-            }
-        }
-    }
-`;
+import { entityPriorityField } from '../VulnMgmt.constants';
+import {
+    entityNounOrdinaryCasePlural,
+    entityNounSentenceCaseSingular,
+} from '../entitiesForVulnerabilityManagement';
 
 const TOP_RISKIEST_IMAGE_VULNS = gql`
     query topRiskiestImageVulns($query: String, $pagination: Pagination) {
@@ -93,41 +57,6 @@ const TOP_RISKIEST_IMAGE_VULNS = gql`
             scan {
                 scanTime
             }
-        }
-    }
-`;
-
-// TODO: remove once ROX_POSTGRES_DATASTORE is enabled
-const TOP_RISKIEST_COMPONENTS = gql`
-    query topRiskiestComponents($query: String, $pagination: Pagination) {
-        results: components(query: $query, pagination: $pagination) {
-            id
-            name
-            version
-            lastScanned
-            vulnCounter {
-                all {
-                    total
-                    fixable
-                }
-                low {
-                    total
-                    fixable
-                }
-                moderate {
-                    total
-                    fixable
-                }
-                important {
-                    total
-                    fixable
-                }
-                critical {
-                    total
-                    fixable
-                }
-            }
-            priority
         }
     }
 `;
@@ -200,42 +129,6 @@ const TOP_RISKIEST_NODE_COMPONENTS = gql`
     }
 `;
 
-// TODO: remove once ROX_POSTGRES_DATASTORE is enabled
-const TOP_RISKIEST_NODES = gql`
-    query topRiskiestNodes($query: String, $pagination: Pagination) {
-        results: nodes(query: $query, pagination: $pagination) {
-            id
-            name
-            vulnCounter {
-                all {
-                    total
-                    fixable
-                }
-                low {
-                    total
-                    fixable
-                }
-                moderate {
-                    total
-                    fixable
-                }
-                important {
-                    total
-                    fixable
-                }
-                critical {
-                    total
-                    fixable
-                }
-            }
-            priority
-            scan {
-                scanTime
-            }
-        }
-    }
-`;
-
 const TOP_RISKIEST_NODE_VULNS = gql`
     query topRiskiestNodeVulns($query: String, $pagination: Pagination) {
         results: nodes(query: $query, pagination: $pagination) {
@@ -287,18 +180,6 @@ const getTextByEntityType = (entityType, data) => {
     }
 };
 
-const getQueryBySelectedEntity = (entityType) => {
-    switch (entityType) {
-        case entityTypes.COMPONENT:
-            return TOP_RISKIEST_COMPONENTS;
-        case entityTypes.NODE:
-            return TOP_RISKIEST_NODES;
-        case entityTypes.IMAGE:
-        default:
-            return TOP_RISKIEST_IMAGES;
-    }
-};
-
 function getQueryBySelectedEntityVulns(entityType) {
     switch (entityType) {
         case entityTypes.IMAGE_COMPONENT:
@@ -313,37 +194,21 @@ function getQueryBySelectedEntityVulns(entityType) {
     }
 }
 
-const getEntitiesByContext = (entityContext, showVmUpdates) => {
+const getEntitiesByContext = (entityContext) => {
     const entities = [];
-    if (!showVmUpdates) {
-        if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
-            entities.push({
-                label: 'Top Riskiest Components',
-                value: entityTypes.COMPONENT,
-            });
-        }
-    } else {
-        if (
-            entityContext === {} ||
-            (!entityContext[entityTypes.NODE_COMPONENT] && !entityContext[entityTypes.IMAGE])
-        ) {
-            entities.push({
-                label: 'Top Riskiest Node Components',
-                value: entityTypes.NODE_COMPONENT,
-            });
-        }
-        if (
-            entityContext === {} ||
-            (!entityContext[entityTypes.IMAGE_COMPONENT] && !entityContext[entityTypes.NODE])
-        ) {
-            entities.push({
-                label: 'Top Riskiest Image Components',
-                value: entityTypes.IMAGE_COMPONENT,
-            });
-        }
+    if (!entityContext[entityTypes.NODE_COMPONENT] && !entityContext[entityTypes.IMAGE]) {
+        entities.push({
+            label: 'Top Riskiest Node Components',
+            value: entityTypes.NODE_COMPONENT,
+        });
+    }
+    if (!entityContext[entityTypes.IMAGE_COMPONENT] && !entityContext[entityTypes.NODE]) {
+        entities.push({
+            label: 'Top Riskiest Image Components',
+            value: entityTypes.IMAGE_COMPONENT,
+        });
     }
     if (
-        entityContext === {} ||
         (!entityContext[entityTypes.IMAGE] && !entityContext[entityTypes.NODE]) ||
         entities.length === 0
     ) {
@@ -353,10 +218,7 @@ const getEntitiesByContext = (entityContext, showVmUpdates) => {
             value: entityTypes.IMAGE,
         });
     }
-    if (
-        entityContext === {} ||
-        (!entityContext[entityTypes.NODE] && !entityContext[entityTypes.IMAGE])
-    ) {
+    if (!entityContext[entityTypes.NODE] && !entityContext[entityTypes.IMAGE]) {
         entities.push({
             label: 'Top Riskiest Nodes',
             value: entityTypes.NODE,
@@ -365,23 +227,19 @@ const getEntitiesByContext = (entityContext, showVmUpdates) => {
     return entities;
 };
 
-function getCVEListType(entityType, showVmUpdates) {
-    if (!showVmUpdates) {
-        return entityTypes.CVE;
-    }
+function getCVEListType(entityType) {
     switch (entityType) {
         case entityTypes.NODE:
         case entityTypes.NODE_COMPONENT:
             return entityTypes.NODE_CVE;
         case entityTypes.IMAGE:
         case entityTypes.IMAGE_COMPONENT:
-            return entityTypes.IMAGE_CVE;
         default:
-            return entityTypes.CVE;
+            return entityTypes.IMAGE_CVE;
     }
 }
 
-const processData = (data, entityType, workflowState, showVmUpdates) => {
+const processData = (data, entityType, workflowState) => {
     const results = data.results
         .slice()
         .sort((a, b) => {
@@ -402,7 +260,7 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
             const newState = workflowState.pushRelatedEntity(entityType, id);
 
             const url = newState.toUrl();
-            const cveListType = getCVEListType(entityType, showVmUpdates);
+            const cveListType = getCVEListType(entityType);
             const cveListState = newState.pushList(cveListType);
             const cvesUrl = cveListState.toUrl();
             const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
@@ -419,7 +277,7 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
                 <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
                         <span className="font-700 mr-2 capitalize">
-                            {resourceLabels[entityType]}:
+                            {entityNounSentenceCaseSingular[entityType]}:
                         </span>
                         <span>{text}</span>
                     </div>
@@ -466,9 +324,7 @@ const processData = (data, entityType, workflowState, showVmUpdates) => {
 };
 
 const TopRiskiestEntities = ({ entityContext, search, limit }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    const entities = getEntitiesByContext(entityContext, showVmUpdates);
+    const entities = getEntitiesByContext(entityContext);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
     function onEntityChange(value) {
@@ -487,24 +343,19 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
         loading,
         data = {},
         error,
-    } = useQuery(
-        showVmUpdates
-            ? getQueryBySelectedEntityVulns(selectedEntity)
-            : getQueryBySelectedEntity(selectedEntity),
-        {
-            variables: {
-                query,
-                pagination: queryService.getPagination(
-                    {
-                        id: entityPriorityField[selectedEntity],
-                        desc: false,
-                    },
-                    WIDGET_PAGINATION_START_OFFSET,
-                    limit
-                ),
-            },
-        }
-    );
+    } = useQuery(getQueryBySelectedEntityVulns(selectedEntity), {
+        variables: {
+            query,
+            pagination: queryService.getPagination(
+                {
+                    id: entityPriorityField[selectedEntity],
+                    desc: false,
+                },
+                WIDGET_PAGINATION_START_OFFSET,
+                limit
+            ),
+        },
+    });
 
     const workflowState = useContext(workflowStateContext);
 
@@ -519,7 +370,7 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
 
     if (!loading) {
         if (error) {
-            const defaultMessage = `An error occurred in retrieving ${resourceLabels[selectedEntity]}s. Please refresh the page. If this problem continues, please contact support.`;
+            const defaultMessage = `An error occurred in retrieving ${entityNounOrdinaryCasePlural[selectedEntity]}. Please refresh the page. If this problem continues, please contact support.`;
 
             const parsedMessage = checkForPermissionErrorMessage(error, defaultMessage);
 
@@ -529,7 +380,7 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
             );
         } else {
-            const processedData = processData(data, selectedEntity, workflowState, showVmUpdates);
+            const processedData = processData(data, selectedEntity, workflowState);
 
             if (processedData.length) {
                 content = (

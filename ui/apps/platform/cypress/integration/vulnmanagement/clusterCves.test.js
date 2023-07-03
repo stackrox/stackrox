@@ -97,6 +97,6 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
             this.skip();
         }
 
-        verifySecondaryEntities(entitiesKey, 'clusters', 9, /^\d+ clusters?$/);
+        verifySecondaryEntities(entitiesKey, 'clusters', 9);
     });
 });

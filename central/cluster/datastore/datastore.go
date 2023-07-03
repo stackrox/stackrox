@@ -126,7 +126,5 @@ func New(
 	if err := ds.registerClusterForNetworkGraphExtSrcs(); err != nil {
 		return ds, err
 	}
-
-	go ds.cleanUpNodeStore()
 	return ds, nil
 }

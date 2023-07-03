@@ -151,9 +151,10 @@ CLUSTER_NAME="my-secured-cluster"
 ```
 Then install stackrox-secured-cluster-services (with the init bundle you generated earlier) using this command:
 ```sh
-helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
-  -f stackrox-init-bundle.yaml \
-  --set clusterName="$CLUSTER_NAME"
+helm upgrade --install --create-namespace -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f simon-test-cluster-init-bundle.yaml \
+  --set clusterName="$CLUSTER_NAME" \
+  --set centralEndpoint="central.stackrox.svc:443"
 ```
 When deploying stackrox-secured-cluster-services on a different cluster than the one where stackrox-central-services is deployed, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
@@ -164,6 +165,7 @@ When deploying StackRox Secured Cluster Services on a small node, you can instal
 helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
   -f stackrox-init-bundle.yaml \
   --set clusterName="$CLUSTER_NAME" \
+  --set centralEndpoint="central.stackrox.svc:443" \
   --set sensor.resources.requests.memory=500Mi \
   --set sensor.resources.requests.cpu=500m \
   --set sensor.resources.limits.memory=500Mi \
@@ -331,7 +333,7 @@ try first making sure the EULA is agreed by:
 
 For more info, see <https://github.com/nodejs/node-gyp/issues/569>
 
-</details>  
+</details>
 
 #### Clone StackRox
 <details><summary>Click to expand</summary>
@@ -378,6 +380,9 @@ $ export STORAGE=pvc
 
 # To save time on rebuilds by skipping UI builds, set:
 $ export SKIP_UI_BUILD=1
+
+# To save time on rebuilds by skipping CLI builds, set:
+$ export SKIP_CLI_BUILD=1
 
 # When you deploy locally make sure your kube context points to the desired kubernetes cluster,
 # for example Docker Desktop.
@@ -468,7 +473,7 @@ $ smart-diff                    # check diff relative to parent branch
 If you're using GoLand for development, the following can help improve the experience.
 
 
-Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.  
+Make sure the `Protocol Buffers` plugin is installed. The plugin comes installed by default in GoLand.
 If it isn't, use `Help | Find Action...`, type `Plugins` and hit enter, then switch to `Marketplace`, type its name and install the plugin.
 
 This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly

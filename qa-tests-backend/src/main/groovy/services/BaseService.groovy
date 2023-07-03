@@ -1,5 +1,6 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import io.grpc.CallOptions
 import io.grpc.Channel
@@ -19,10 +20,11 @@ import io.stackrox.proto.api.v1.EmptyOuterClass
 import util.Env
 import util.Keys
 
+@CompileStatic
 class BaseService {
 
-    static final BASIC_AUTH_USERNAME = Env.mustGetUsername()
-    static final BASIC_AUTH_PASSWORD = Env.mustGetPassword()
+    static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
+    static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
     static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 
@@ -31,38 +33,38 @@ class BaseService {
     }
 
     static useApiToken(String apiToken) {
-        updateAuthConfig(useClientCert, new AuthInterceptor(apiToken))
+        updateAuthConfig(useClientCert.get(), new AuthInterceptor(apiToken))
     }
 
     static useBasicAuth() {
-        updateAuthConfig(useClientCert, new AuthInterceptor(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD))
+        updateAuthConfig(useClientCert.get(), new AuthInterceptor(BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD))
     }
 
     static useNoAuthorizationHeader() {
-        updateAuthConfig(useClientCert, null)
+        updateAuthConfig(useClientCert.get(), null)
     }
 
-    static setUseClientCert(boolean use) {
-        updateAuthConfig(use, authInterceptor)
+    static setUseClientCert(Boolean use) {
+        updateAuthConfig(use, authInterceptor.get())
     }
 
-    private static updateAuthConfig(boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
+    private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
+        if (useClientCert.get() == newUseClientCert && authInterceptor.get() == newAuthInterceptor) {
             return
         }
-        if (useClientCert != newUseClientCert) {
-            if (transportChannel != null) {
-                transportChannel.shutdownNow()
-                transportChannel = null
-                effectiveChannel = null
+        if (useClientCert.get() != newUseClientCert) {
+            if (transportChannel.get() != null) {
+                transportChannel.get().shutdownNow()
+                transportChannel.set(null)
+                effectiveChannel.set(null)
             }
         }
-        if (authInterceptor != newAuthInterceptor) {
-            effectiveChannel = null
+        if (authInterceptor.get() != newAuthInterceptor) {
+            effectiveChannel.set(null)
         }
 
-        useClientCert = newUseClientCert
-        authInterceptor = newAuthInterceptor
+        useClientCert.set(newUseClientCert)
+        authInterceptor.set(newAuthInterceptor)
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -104,41 +106,43 @@ class BaseService {
         }
     }
 
-    static ManagedChannel transportChannel = null
-    static ClientInterceptor authInterceptor = null
-    static Channel effectiveChannel = null
-    private static boolean useClientCert = false
+    // codenarc-disable FieldName
+    private static final ThreadLocal<ManagedChannel> transportChannel = ThreadLocal.withInitial(() -> null)
+    private static final ThreadLocal<ClientInterceptor> authInterceptor = ThreadLocal.withInitial(() -> null)
+    private static final ThreadLocal<Channel> effectiveChannel = ThreadLocal.withInitial(() -> null)
+    private static final ThreadLocal<Boolean> useClientCert = ThreadLocal.withInitial(() -> false)
+    // codenarc-enable FieldName
 
     static initializeChannel() {
-        if (transportChannel == null) {
+        if (transportChannel.get() == null) {
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
-            if (useClientCert) {
+            if (useClientCert.get()) {
                 sslContextBuilder = sslContextBuilder.keyManager(Keys.keyManagerFactory())
             }
             def sslContext = sslContextBuilder.build()
 
-            transportChannel = NettyChannelBuilder
+            transportChannel.set(NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
                     .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
-                    .build()
-            effectiveChannel = null
+                    .build())
+            effectiveChannel.set(null)
         }
 
-        if (authInterceptor == null) {
-            effectiveChannel = transportChannel
+        if (authInterceptor.get() == null) {
+            effectiveChannel.set(transportChannel.get())
         } else {
-            effectiveChannel = ClientInterceptors.intercept(transportChannel, authInterceptor)
+            effectiveChannel.set(ClientInterceptors.intercept(transportChannel.get(), authInterceptor.get()))
         }
     }
 
     static Channel getChannel() {
-        if (effectiveChannel == null) {
+        if (effectiveChannel.get() == null) {
             initializeChannel()
         }
-        return effectiveChannel
+        return effectiveChannel.get()
     }
 }

@@ -9,11 +9,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	bolt "go.etcd.io/bbolt"
 )
 
-var groupsBucket = []byte("groups2")
+var (
+	groupsBucket = []byte("groups2")
+	log          = loghelper.LogWrapper{}
+)
 
 // New returns a new instance of a Store.
 func New(db *bolt.DB) Store {
@@ -43,6 +47,14 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 	return s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(groupsBucket)
 		return bucket.ForEach(func(k, v []byte) error {
+			// Due to issues within the 105_106 migration, it's currently undefined which format you receive: either
+			// the old format, which uses a composite key of auth provider, key, value as the key or the new format
+			// which uses a UUID as key. Reasoning is that the old values were not cleaned up correctly. Skip values
+			// in case the key can be deserialized to the old format.
+			if props, err := deserializePropsKey(k); err == nil {
+				log.WriteToStderrf("Found group with old format (%s), skipping this entry", props.String())
+				return nil
+			}
 			var group storage.Group
 			if err := proto.Unmarshal(v, &group); err != nil {
 				return err
@@ -56,6 +68,16 @@ func (s *storeImpl) Walk(_ context.Context, fn func(obj *storage.Group) error) e
 func (s *storeImpl) Upsert(_ context.Context, group *storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		return upsertInTransaction(tx, group)
+	})
+}
+
+// UpsertOldFormat upserts a group to the store using the old format, i.e. using a composite key as unique identifier.
+// This is only used for testing purposes.
+func (s *storeImpl) UpsertOldFormat(_ context.Context, group *storage.Group) error {
+	k, v := serialize(group)
+	return s.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(groupsBucket)
+		return bucket.Put(k, v)
 	})
 }
 

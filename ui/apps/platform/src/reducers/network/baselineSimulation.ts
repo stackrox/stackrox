@@ -1,9 +1,55 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 
+import { L4Protocol as Protocol } from 'types/networkFlow.proto';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
-import { BaselineComparisonsResponse } from 'Containers/Network/networkTypes';
 
+export type Properties = {
+    port: string;
+    protocol: Protocol;
+    ingress: boolean;
+};
+
+export type DeploymentEntity = {
+    id: string;
+    type: 'DEPLOYMENT';
+    deployment: {
+        name: string;
+        namespace: string;
+    };
+};
+
+export type ExternalSourceEntity = {
+    id: string;
+    type: 'EXTERNAL_SOURCE';
+    externalSource: {
+        name: string;
+        cidr: string;
+    };
+};
+
+export type InternetEntity = {
+    id: string;
+    type: 'INTERNET';
+};
+
+export type AddedRemovedBaselineResponse = {
+    entity: DeploymentEntity | ExternalSourceEntity | InternetEntity;
+    properties: [Properties];
+};
+
+export type ReconciledBaselineResponse = {
+    entity: DeploymentEntity | ExternalSourceEntity | InternetEntity;
+    added: [Properties];
+    removed: [Properties];
+    unchanged: [Properties];
+};
+
+export type BaselineComparisonsResponse = {
+    added: AddedRemovedBaselineResponse[];
+    removed: AddedRemovedBaselineResponse[];
+    reconciled: ReconciledBaselineResponse[];
+};
 export type BaselineSimulationOptions = {
     excludePortsAndProtocols: boolean;
 };

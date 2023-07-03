@@ -119,10 +119,10 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.22")
     }
 
-    implementation 'org.javers:javers-core:7.0.0'
+    implementation 'org.javers:javers-core:7.0.1'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
-    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'commons-codec:commons-codec:1.16.0'
 }
 
 // Apply some base attributes to all the test tasks.
@@ -154,15 +154,30 @@ task testBegin(type: Test) {
     }
 }
 
+task testParallel(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel"
+  }
+}
+
 task testRest(type: Test) {
     useJUnitPlatform {
-        excludeTags "Begin", "Upgrade", "SensorBounce", "SensorBounceNext"
+        excludeTags "Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext"
     }
+}
+
+task testParallelBAT(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel & BAT"
+  }
 }
 
 task testBAT(type: Test) {
     useJUnitPlatform {
         includeTags "BAT"
+        excludeTags "Parallel"
     }
 }
 
@@ -175,6 +190,13 @@ task testSMOKE(type: Test) {
 task testCOMPATIBILITY(type: Test) {
     useJUnitPlatform {
         includeTags "COMPATIBILITY"
+        excludeTags "SensorBounce"
+    }
+}
+
+task testCOMPATIBILITYSensorBounce(type: Test) {
+    useJUnitPlatform {
+        includeTags "COMPATIBILITY & SensorBounce"
     }
 }
 

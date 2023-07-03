@@ -32,7 +32,6 @@ func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	cmd := Command(env)
-	flags.AddTimeout(cmd)
 	flags.AddConnectionFlags(cmd)
 	flags.AddPassword(cmd)
 

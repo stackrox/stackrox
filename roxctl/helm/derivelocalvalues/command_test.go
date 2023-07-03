@@ -3,6 +3,7 @@ package derivelocalvalues
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
@@ -78,9 +79,9 @@ func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
 	chartName := "test_chartName"
 
 	helmCmd := suite.helmDeriveLocalValuesCommand
-	helmCmd.Construct(chartName)
+	helmCmd.Construct(Command(helmCmd.env), chartName)
 	suite.Assert().Equal(chartName, helmCmd.chartName)
-
+	suite.Assert().Equal(time.Minute, helmCmd.timeout)
 }
 
 func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {

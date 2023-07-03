@@ -62,7 +62,6 @@ type CentralSpec struct {
 type Egress struct {
 	// Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
 	// In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
-	//+kubebuilder:validation:Default=Online
 	//+kubebuilder:default=Online
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Connectivity Policy,order=1
 	ConnectivityPolicy *ConnectivityPolicy `json:"connectivityPolicy,omitempty"`
@@ -180,7 +179,6 @@ type CentralDBSpec struct {
 	// Deprecated field. It is no longer necessary to specify it.
 	// This field will be removed in a future release.
 	// Central is configured to use PostgreSQL by default.
-	//+kubebuilder:validation:Default=Default
 	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
@@ -302,7 +300,6 @@ type PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created. Defaults to "stackrox-db" if not set.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:validation:Default=stackrox-db
 	//+kubebuilder:default=stackrox-db
 	ClaimName *string `json:"claimName,omitempty"`
 
@@ -357,7 +354,6 @@ type DBPersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created. Defaults to "central-db" if not set.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:validation:Default=central-db
 	//+kubebuilder:default=central-db
 	ClaimName *string `json:"claimName,omitempty"`
 
@@ -391,7 +387,6 @@ type Exposure struct {
 
 // ExposureLoadBalancer defines settings for exposing central via a LoadBalancer.
 type ExposureLoadBalancer struct {
-	//+kubebuilder:validation:Default=false
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -399,7 +394,6 @@ type ExposureLoadBalancer struct {
 	// Defaults to 443 if not set.
 	//+kubebuilder:validation:Minimum=1
 	//+kubebuilder:validation:Maximum=65535
-	//+kubebuilder:validation:Default=443
 	//+kubebuilder:default=443
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true"}
 	Port *int32 `json:"port,omitempty"`
@@ -411,7 +405,6 @@ type ExposureLoadBalancer struct {
 
 // ExposureNodePort defines settings for exposing central via a NodePort.
 type ExposureNodePort struct {
-	//+kubebuilder:validation:Default=false
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -425,7 +418,6 @@ type ExposureNodePort struct {
 
 // ExposureRoute defines settings for exposing central via a Route.
 type ExposureRoute struct {
-	//+kubebuilder:validation:Default=false
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -464,10 +456,8 @@ type TelemetryStorage struct {
 // ScannerComponentSpec defines settings for the central "scanner" component.
 type ScannerComponentSpec struct {
 	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
-	// (not recommended).
+	// (not recommended). By default, the scanner is enabled.
 	// If you do so, all the settings in this section will have no effect.
-	//+kubebuilder:validation:Default=Enabled
-	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
 

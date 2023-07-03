@@ -35,6 +35,7 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	plopDatastoreMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -53,7 +54,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -236,7 +237,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	require.NoError(s.T(), err)
 
 	images := imageDatastore.NewWithPostgres(
-		imagePostgres.New(s.pool, true, dackboxConcurrency.NewKeyFence()),
+		imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
 		imagePostgres.NewIndexer(s.pool),
 		mockRiskDatastore,
 		ranking.NewRanker(),
@@ -270,7 +271,7 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	nodeStore := nodePostgres.New(s.pool, false, dackboxConcurrency.NewKeyFence())
+	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
 	nodeIndexer := nodePostgres.NewIndexer(s.pool)
 
 	nodes := testNodeDatastore.NewWithPostgres(
@@ -365,7 +366,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(s.T(), err)
 
-	nodeDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	clusterDataStore, err := clusterDatastore.New(
 		clusterPostgres.New(s.pool),
 		clusterHealthPostgres.New(s.pool),
@@ -1252,19 +1252,37 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 		s.T().Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			processes := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
+			db := pgtest.ForT(t)
 			gci := &garbageCollectorImpl{
 				processes: processes,
+				postgres:  db.DB,
 			}
 
-			processes.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
-					for _, a := range c.initialProcesses {
-						assert.NoError(t, fn(a))
-					}
-					return nil
-				})
-			processes.EXPECT().RemoveProcessIndicators(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
-			gci.removeOrphanedProcesses(c.deployments, c.pods)
+			// Populate some actual data so the query returns what needs deleted
+			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
+			s.Nil(err)
+			for _, deploymentID := range c.deployments.AsSlice() {
+				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+			}
+
+			podDS, err := podDatastore.GetTestPostgresDataStore(t, db.DB)
+			s.Nil(err)
+			for _, podID := range c.pods.AsSlice() {
+				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
+				s.Nil(err)
+			}
+
+			actualProcessDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
+			s.Nil(err)
+			s.NoError(actualProcessDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
+
+			gci.removeOrphanedProcesses()
+
+			countFromDB, err := actualProcessDatastore.Count(s.ctx, nil)
+			s.NoError(err)
+			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+
+			db.Teardown(t)
 		})
 	}
 }
@@ -2001,7 +2019,47 @@ func (s *PruningTestSuite) TestRemoveOrphanedPods() {
 	updatedCount, err = pods.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(updatedCount, podCount-cluster2PodCount)
+}
 
+func (s *PruningTestSuite) TestRemoveOrphanedNodes() {
+	_, _, clusterDS := s.generateClusterDataStructures()
+
+	clusterID1, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanNodeCluster1", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	clusterID2, err := clusterDS.AddCluster(s.ctx, &storage.Cluster{Name: "testOrphanNodeCluster2", MainImage: "docker.io/stackrox/rox:latest"})
+	s.Nil(err)
+
+	nodeDS := s.generateNodeDataStructures()
+
+	// Add some nodes to Cluster 1
+	cluster1NodeCount := 20
+	cluster2NodeCount := 15
+
+	s.addNodes(nodeDS, clusterID1, cluster1NodeCount)
+	s.addNodes(nodeDS, clusterID2, cluster2NodeCount)
+
+	gci := &garbageCollectorImpl{
+		nodes:    nodeDS,
+		postgres: s.pool,
+	}
+
+	nodeCount, err := nodeDS.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	// Shouldn't remove any
+	gci.removeOrphanedNodes()
+	updatedCount, err := nodeDS.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	s.Equal(updatedCount, nodeCount)
+
+	// Now delete cluster 2
+	err = clusterDS.RemoveCluster(s.ctx, clusterID2, nil)
+	s.Nil(err)
+
+	gci.removeOrphanedNodes()
+	updatedCount, err = nodeDS.Count(s.ctx, search.EmptyQuery())
+	s.Nil(err)
+	s.Equal(updatedCount, nodeCount-cluster2NodeCount)
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
@@ -2011,6 +2069,17 @@ func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID s
 			ClusterId: clusterID,
 		}
 		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
+	}
+}
+
+func (s *PruningTestSuite) addNodes(nodeDS testNodeDatastore.DataStore, clusterID string, numberOfNodes int) {
+	for i := 0; i < numberOfNodes; i++ {
+		pod := &storage.Node{
+			Id:        uuid.NewV4().String(),
+			ClusterId: clusterID,
+		}
+		err := nodeDS.UpsertNode(s.ctx, pod)
 		s.Nil(err)
 	}
 }

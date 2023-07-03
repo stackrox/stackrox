@@ -7,7 +7,6 @@ import {
     nonSortableHeaderClassName,
 } from 'Components/Table';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -19,8 +18,8 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import removeEntityContextColumns from 'utils/tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getFilteredComponentColumns } from './ListNodeComponents.utils';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultComponentSort = [
     {
@@ -29,7 +28,7 @@ export const defaultComponentSort = [
     },
 ];
 
-export function getComponentTableColumns(showVMUpdates) {
+export function getComponentTableColumns() {
     return function getTableColumns(workflowState, isFeatureFlagEnabled) {
         const tableColumns = [
             {
@@ -59,8 +58,8 @@ export function getComponentTableColumns(showVMUpdates) {
                 sortField: componentSortFields.OPERATING_SYSTEM,
             },
             {
-                Header: showVMUpdates ? `Node CVEs` : 'CVEs',
-                entityType: entityTypes.CVE,
+                Header: `Node CVEs`,
+                entityType: entityTypes.NODE_CVE,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
@@ -69,9 +68,7 @@ export function getComponentTableColumns(showVMUpdates) {
                         return 'No CVEs';
                     }
 
-                    const newState = workflowState
-                        .pushListItem(id)
-                        .pushList(showVMUpdates ? entityTypes.NODE_CVE : entityTypes.CVE);
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.NODE_CVE);
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -172,9 +169,6 @@ export function getComponentTableColumns(showVMUpdates) {
 }
 
 const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const query = gql`
         query getNodeComponents($query: String, $pagination: Pagination) {
             results: nodeComponents(query: $query, pagination: $pagination) {
@@ -193,7 +187,7 @@ const VulnMgmtNodeComponents = ({ selectedRowId, search, sort, page, data, total
         },
     };
 
-    const getTableColumns = getComponentTableColumns(showVMUpdates);
+    const getTableColumns = getComponentTableColumns();
 
     return (
         <WorkflowListPage

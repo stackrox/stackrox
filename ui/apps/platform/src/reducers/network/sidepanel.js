@@ -1,5 +1,13 @@
 import { combineReducers } from 'redux';
-import sidepanelStages from 'Containers/Network/SidePanel/sidepanelStages';
+
+const sidepanelStages = {
+    details: 'DETAILS',
+    simulator: 'SIMULATOR',
+    creator: 'CREATOR',
+    namespaceDetails: 'NAMESPACE_DETAILS',
+    externalDetails: 'EXTERNAL_DETAILS',
+    cidrForm: 'CIDR_FORM',
+};
 
 // Action types
 //-------------

@@ -46,6 +46,15 @@ func (ds *DeploymentStore) addOrUpdateDeploymentNoLock(wrap *deploymentWrap) {
 	ds.deployments[wrap.GetId()] = wrap
 }
 
+// Cleanup deletes all entries from store
+func (ds *DeploymentStore) Cleanup() {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	ds.deploymentIDs = make(map[string]map[string]struct{})
+	ds.deployments = make(map[string]*deploymentWrap)
+}
+
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()

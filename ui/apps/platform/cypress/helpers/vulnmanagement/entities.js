@@ -25,10 +25,8 @@ const routeMatcherMapForVulnerabilityManagementDashboard =
 
 const opnameForEntity = {
     clusters: 'getCluster',
-    components: 'getComponent',
     'image-components': 'getImageComponent',
     'node-components': 'getNodeComponent',
-    cves: 'getCve',
     'image-cves': 'getImageCve',
     'node-cves': 'getNodeCve',
     'cluster-cves': 'getClusterCve',
@@ -36,15 +34,12 @@ const opnameForEntity = {
     images: 'getImage',
     namespaces: 'getNamespace',
     nodes: 'getNode',
-    policies: 'getPolicy',
 };
 
 const opnameForEntities = {
     clusters: 'getClusters',
-    components: 'getComponents',
     'image-components': 'getImageComponents',
     'node-components': 'getNodeComponents',
-    cves: 'getCves',
     'image-cves': 'getImageCves',
     'node-cves': 'getNodeCves',
     'cluster-cves': 'getClusterCves',
@@ -52,42 +47,50 @@ const opnameForEntities = {
     images: 'getImages',
     namespaces: 'getNamespaces',
     nodes: 'getNodes',
-    policies: 'getPolicies',
 };
 
 // Headings on entities pages has sentence case for entity type.
 const headingPlural = {
     clusters: 'Clusters',
-    components: 'Components',
     'image-components': 'Image components',
     'node-components': 'Node components',
-    cves: 'CVES',
-    'image-cves': 'Image CVES', // TODO uppercase S from pluralize
-    'node-cves': 'Node CVES', // TODO uppercase S from pluralize
-    'cluster-cves': 'Platform CVES', // TODO uppercase S from pluralize
+    'image-cves': 'Image CVEs',
+    'node-cves': 'Node CVEs',
+    'cluster-cves': 'Platform CVEs',
     deployments: 'Deployments',
     images: 'Images',
     namespaces: 'Namespaces',
     nodes: 'Nodes',
-    policies: 'Policies',
 };
 
 // For table links and table headings.
 const countNounRegExp = {
     clusters: /^\d+ clusters?$/,
-    components: /^\d+ components?$/, // TODO delete later for ROX-17764
     'image-components': /^\d+ image components?$/,
     'node-components': /^\d+ node components?$/,
     // For table links, verifyConditionalCVEs uses allCVEsRegExp and fixableCVEsRegExp.
-    cves: /^\d+ CVES?$/, // TODO delete later for ROX-17764
-    'image-cves': /^\d+ Image CVES?$/, // TODO investigate inconsistent case
-    'node-cves': /^\d+ Node CVES?$/, // TODO investigate inconsistent case
-    'cluster-cves': /^\d+ Platform CVES?$/, // TODO investigate inconsistent case
+    'image-cves': /^\d+ image CVEs?$/,
+    'node-cves': /^\d+ node CVEs?$/,
+    'cluster-cves': /^\d+ platform CVEs?$/,
     deployments: /^\d+ deployments?$/,
     images: /^\d+ images?$/,
     namespaces: /^\d+ namespaces?$/,
     nodes: /^\d+ nodes?$/,
-    // policies TODO delete from sibling objects because obsolete after #6235
+};
+
+// Too bad, so sad: preceding RegExp does not match separated count and value
+// in related entities links.
+const entityNounRegExp = {
+    clusters: /^clusters?$/,
+    'image-components': /^image components?$/,
+    'node-components': /^node components?$/,
+    'image-cves': /^image CVEs?$/,
+    'node-cves': /^node CVEs?$/,
+    'cluster-cves': /^platform CVEs?$/,
+    deployments: /^deployments?$/,
+    images: /^images?$/,
+    namespaces: /^namespaces?$/,
+    nodes: /^nodes?$/,
 };
 
 const typeOfEntity = {
@@ -266,6 +269,22 @@ export function getCountAndNounFromNodeCVEsLinkResults([, count]) {
     };
 }
 
+// TODO menuListItemRegExp needs only because sentence case instead of ordinary case.
+export function verifyVulnerabilityManagementDashboardCVEs(entitiesKey, menuListItemRegExp) {
+    visitVulnerabilityManagementDashboard();
+
+    // Selector contains singular noun to match 1 CVE.
+    const menuButtonSelector = `button[data-testid="menu-button"]:contains("CVE")`;
+    const menuListItemSelector = `${menuButtonSelector} + div[data-testid="menu-list"]`;
+
+    cy.get(menuButtonSelector).click(); // open menu list
+    interactAndWaitForVulnerabilityManagementEntities(() => {
+        cy.get(menuListItemSelector).contains('a', menuListItemRegExp).click(); // visit entities list
+    }, entitiesKey);
+
+    cy.get('[data-testid="panel-header"]').contains('div', countNounRegExp[entitiesKey]);
+}
+
 /*
  * Keys for primary and secondary entities are plural page address segments.
  * For example, primary 'namespaces' and secondary 'deployments'
@@ -326,14 +345,23 @@ function verifyTableLink(
             // Tilde because link might be under either Contains or Matches.
             // Match data-testid attribute of link to distinguish 1 IMAGE from 114 IMAGE COMPONENTS.
             // Omit has for visible text of count or name of entity because it might have changed (especially for deployments).
-            const relatedEntitiesSelector = `h2:contains("Related entities") ~ div ul li a[data-testid="${typeOfEntity[entitiesKey2]}-tile-link"]`;
-            cy.get(relatedEntitiesSelector);
+            const relatedEntitiesSelector =
+                'h2:contains("Related entities") ~ div ul li a [data-testid="tile-content"]';
+            const containsSelector = '[data-testid="tile-link-value"]';
+            cy.get(relatedEntitiesSelector).contains(
+                containsSelector,
+                entityNounRegExp[entitiesKey2]
+            );
 
             // 4. Visit single page for primary entity.
             cy.get(selectors.sidePanelExternalLinkButton).click(); // does not make requests
 
-            // 5. Visit list page for secondary entities.
-            cy.get(relatedEntitiesSelector).click(); // might make some requests
+            // 5. Visit single page list for secondary entities.
+            interactAndWaitForResponses(() => {
+                cy.get(relatedEntitiesSelector)
+                    .contains(containsSelector, entityNounRegExp[entitiesKey2])
+                    .click();
+            }, getRouteMatcherMapForGraphQL([opnameForEntities[entitiesKey2]]));
 
             cy.get(
                 `li[data-testid="grouped-tab"] a[data-testid="tab"].active:contains("${headingPlural[entitiesKey2]}")`

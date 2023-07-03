@@ -111,7 +111,6 @@ import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
 import util.Env
-import util.Helpers
 import util.Timer
 
 @CompileStatic
@@ -569,24 +568,29 @@ class Kubernetes implements OrchestratorMain {
                 .spec.containers.get(0).env
 
         int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index < 0) {
-            throw new OrchestratorManagerException(
-                    "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
+        if (index > -1) {
+            log.debug "Env var ${key} found on index: ${index}"
+            envVars.get(index).value = value
         }
-        envVars.get(index).value = value
+        else {
+            log.debug "Env var ${key} not found. Adding it now"
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+        }
 
-        client.apps().deployments().inNamespace(ns).withName(name)
-            .edit { d -> new DeploymentBuilder(d)
-                .editSpec()
-                .editTemplate()
-                .editSpec()
-                .editContainer(0)
-                .withEnv(envVars)
-                .endContainer()
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-            .build() }
+        withRetry(2, 3) {
+            client.apps().deployments().inNamespace(ns).withName(name)
+                .edit { d -> new DeploymentBuilder(d)
+                    .editSpec()
+                    .editTemplate()
+                    .editSpec()
+                    .editContainer(0)
+                    .withEnv(envVars)
+                    .endContainer()
+                    .endSpec()
+                    .endTemplate()
+                    .endSpec()
+                .build() }
+        }
     }
 
     def scaleDeployment(String ns, String name, Integer replicas) {
@@ -2029,9 +2033,7 @@ class Kubernetes implements OrchestratorMain {
         try {
             withK8sClientRetry(maxNumRetries, 1) {
                 client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-                int att = Helpers.getAttemptCount()
-                log.debug "Told the orchestrator to createOrReplace " + deployment.name + ". " +
-                          "Attempt " + att + " of " + maxNumRetries
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name
             }
             if (deployment.exposeAsService && deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)

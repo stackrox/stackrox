@@ -12,17 +12,17 @@ import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
 import useTabs from 'hooks/patternfly/useTabs';
 import useModal from 'hooks/useModal';
 
-import AffectedComponentsModal from 'Containers/VulnMgmt/RiskAcceptance/AffectedComponents/AffectedComponentsModal';
-import DeferredCVEs from 'Containers/VulnMgmt/RiskAcceptance/DeferredCVEs';
-import ObservedCVEs from 'Containers/VulnMgmt/RiskAcceptance/ObservedCVEs';
-import FalsePositiveCVEs from 'Containers/VulnMgmt/RiskAcceptance/FalsePositiveCVEs';
+import AffectedComponentsModal from '../../RiskAcceptance/AffectedComponents/AffectedComponentsModal';
+import DeferredCVEs from '../../RiskAcceptance/DeferredCVEs';
+import ObservedCVEs from '../../RiskAcceptance/ObservedCVEs';
+import FalsePositiveCVEs from '../../RiskAcceptance/FalsePositiveCVEs';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
