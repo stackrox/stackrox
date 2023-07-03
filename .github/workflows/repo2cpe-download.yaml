@@ -1,9 +1,6 @@
 name: Download and Upload Repository Mappings
 
 on:
-  push:
-    branches:
-    - "yli3/**"
   schedule:
     - cron: "0 0 * * *"
 
