@@ -14,7 +14,7 @@ func TestParseCurrentVersion(t *testing.T) {
 }
 
 func TestIsReleaseVersion(t *testing.T) {
-	if buildinfo.ReleaseBuild {
+	if buildinfo.ReleaseBuild && !buildinfo.TestBuild {
 		internal.MainVersion = "1.2.3"
 		assert.True(t, IsReleaseVersion())
 		internal.MainVersion = "1.2.3-dirty"

@@ -187,7 +187,7 @@ func deriveChartVersion(mainVersion string) (string, error) {
 
 // IsReleaseVersion tells whether the binary is built for a release.
 func IsReleaseVersion() bool {
-	return buildinfo.ReleaseBuild &&
+	return buildinfo.ReleaseBuild && !buildinfo.TestBuild &&
 		GetMainVersion() != "" &&
 		!strings.Contains(GetMainVersion(), "-")
 }
