@@ -1,16 +1,7 @@
 import { SearchFilter } from 'types/search';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { ScopeObject } from 'services/RolesService';
-
-export type NetworkScopeHierarchy = {
-    cluster: {
-        id: string;
-        name: string;
-    };
-    namespaces: string[];
-    deployments: string[];
-    remainingQuery: Omit<SearchFilter, 'Cluster' | 'Namespace' | 'Deployment'>;
-};
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export function getScopeHierarchyFromSearch(
     searchFilter: SearchFilter,

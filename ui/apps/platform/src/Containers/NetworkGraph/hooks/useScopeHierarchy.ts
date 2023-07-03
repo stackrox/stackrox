@@ -1,6 +1,7 @@
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useURLSearch from 'hooks/useURLSearch';
-import { NetworkScopeHierarchy, getScopeHierarchyFromSearch } from '../utils/hierarchyUtils';
+import { getScopeHierarchyFromSearch } from '../utils/hierarchyUtils';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 /**
  * Returns the current scope hierarchy from the URL search params.

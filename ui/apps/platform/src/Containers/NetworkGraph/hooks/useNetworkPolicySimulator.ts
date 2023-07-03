@@ -6,7 +6,7 @@ import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicy, NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { Simulation } from '../utils/getSimulation';
-import { NetworkScopeHierarchy } from '../utils/hierarchyUtils';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { useScopeHierarchy } from './useScopeHierarchy';
 
 export type NetworkPolicySimulator =
