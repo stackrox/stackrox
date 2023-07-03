@@ -27,11 +27,6 @@ import (
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context, outputDir string) error {
-	updaterStore, err := jsonblob.New()
-	if err != nil {
-		return err
-	}
-
 	var updaters []driver.Updater
 
 	// Append updater sets directly to the updaters
@@ -108,14 +103,13 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 
-	// create output path
-	outputFilePath := outputDir + "/output.json"
-
-	outputFile, err := os.Create(outputFilePath)
+	// create temp file
+	outputFile, err := os.CreateTemp(outputDir, "output*.json")
 	if err != nil {
 		return err
 	}
-	defer outputFile.Close()
+
+	defer os.Remove(outputFile.Name())
 
 	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
 
@@ -126,6 +120,13 @@ func Export(ctx context.Context, outputDir string) error {
 		},
 	}
 
+	zstdWriter, err := zstd.NewWriter(outputFile)
+	if err != nil {
+		return err
+	}
+	defer zstdWriter.Close()
+
+	updaterStore, err := jsonblob.New()
 	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
 		updates.WithOutOfTree(updaters),
 	)
@@ -136,19 +137,12 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 
-	zstdWriter, err := zstd.NewWriter(outputFile)
-	if err != nil {
-		return err
-	}
-	defer zstdWriter.Close()
-
 	err = updaterStore.Store(zstdWriter)
 	if err != nil {
 		return err
 	}
 
 	configStore, err := jsonblob.New()
-
 	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
 		updates.WithConfigs(cfgs),
 		updates.WithFactories(facs),
@@ -163,7 +157,11 @@ func Export(ctx context.Context, outputDir string) error {
 	}
 
 	// use .ztd
-	err = os.Rename(outputFilePath, outputDir+"/output.json.ztd")
+	// Generate the final output file path with the changed extension
+	finalOutputPath := outputFile.Name() + ".ztd"
+
+	// Rename the temporary file
+	err = os.Rename(outputFile.Name(), finalOutputPath)
 	if err != nil {
 		return err
 	}

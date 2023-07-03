@@ -12,7 +12,7 @@ import (
 
 // Factory is the UpdaterSetFactory exposed by this package.
 //
-// All configuration is done on the returned updaters. See the [Config] type.
+// All configuration is done on the returned updaters.
 type Factory struct {
 }
 
