@@ -4,9 +4,9 @@ import (
 	"context"
 	"runtime/debug"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/lru"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -26,7 +26,7 @@ type grpcMetricsImpl struct {
 type perPathGRPCMetrics struct {
 	normalInvocationStats map[codes.Code]int64
 
-	panics *lru.Cache[string, int64]
+	panics lru.Cache[string, int64]
 }
 
 func (g *grpcMetricsImpl) getOrCreateAllMetrics(path string) *perPathGRPCMetrics {
