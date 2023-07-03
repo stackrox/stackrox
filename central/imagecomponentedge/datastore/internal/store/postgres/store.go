@@ -67,11 +67,11 @@ func New(db postgres.DB) Store {
 		db: db,
 		GenericStore: pgSearch.NewGenericStore[storage.ImageComponentEdge, *storage.ImageComponentEdge](
 			db,
-			targetResource,
 			schema,
-			metricsSetPostgresOperationDurationTime,
-			metricsSetAcquireDBConnDuration,
 			pkGetter,
+			metricsSetAcquireDBConnDuration,
+			metricsSetPostgresOperationDurationTime,
+			targetResource,
 		),
 	}
 }
@@ -90,7 +90,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, "ImageComponentEdge")
 }
 
-// endregion
+// endregion Helper functions
 
 //// Interface functions
 

@@ -9,7 +9,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -24,31 +23,31 @@ type durationTimeSetter func(start time.Time, op ops.Op)
 // GenericStore implements subset of Store interface for resources with single ID.
 type GenericStore[T any, PT unmarshaler[T]] struct {
 	db                               postgres.DB
-	targetResource                   permissions.ResourceMetadata
 	schema                           *walker.Schema
-	setPostgresOperationDurationTime durationTimeSetter
-	setAcquireDBConnDuration         durationTimeSetter
-	permissionChecker                PermissionChecker
 	pkGetter                         primaryKeyGetter[T, PT]
+	setAcquireDBConnDuration         durationTimeSetter
+	setPostgresOperationDurationTime durationTimeSetter
+	permissionChecker                PermissionChecker
+	targetResource                   permissions.ResourceMetadata
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
 func NewGenericStore[T any, PT unmarshaler[T]](
 	db postgres.DB,
-	targetResource permissions.ResourceMetadata,
 	schema *walker.Schema,
+	pkGetter primaryKeyGetter[T, PT],
 	setPostgresOperationDurationTime durationTimeSetter,
 	setAcquireDBConnDuration durationTimeSetter,
-	pkGetter primaryKeyGetter[T, PT],
+	targetResource permissions.ResourceMetadata,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,
-		targetResource:                   targetResource,
 		schema:                           schema,
-		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
-		setAcquireDBConnDuration:         setAcquireDBConnDuration,
 		pkGetter:                         pkGetter,
+		setAcquireDBConnDuration:         setAcquireDBConnDuration,
+		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		targetResource:                   targetResource,
 	}
 }
 
@@ -56,19 +55,19 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 // subStore implements subset of Store operations.
 func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	db postgres.DB,
-	checker PermissionChecker,
 	schema *walker.Schema,
-	setPostgresOperationDurationTime durationTimeSetter,
-	setAcquireDBConnDuration durationTimeSetter,
 	pkGetter primaryKeyGetter[T, PT],
+	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
+	checker PermissionChecker,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,
 		schema:                           schema,
-		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
-		setAcquireDBConnDuration:         setAcquireDBConnDuration,
-		permissionChecker:                checker,
 		pkGetter:                         pkGetter,
+		setAcquireDBConnDuration:         setAcquireDBConnDuration,
+		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		permissionChecker:                checker,
 	}
 }
 
@@ -95,7 +94,7 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 		if ok, err := s.permissionChecker.ExistsAllowed(ctx); err != nil {
 			return false, err
 		} else if !ok {
-			return false, sac.ErrResourceAccessDenied
+			return false, nil
 		}
 	} else {
 		filter, err := GetReadSACQuery(ctx, s.targetResource)

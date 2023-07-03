@@ -128,11 +128,11 @@ func New(db postgres.DB) Store {
         db: db,
         GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
             db,
-            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
             schema,
-            metricsSetPostgresOperationDurationTime,
-            metricsSetAcquireDBConnDuration,
             pkGetter,
+            metricsSetAcquireDBConnDuration,
+            metricsSetPostgresOperationDurationTime,
+            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
         ),
     }
 }
@@ -365,7 +365,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 }
 {{- end }}
 
-// endregion
+// endregion Helper functions
 
 //// Interface functions
 

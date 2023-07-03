@@ -74,11 +74,11 @@ func New(db postgres.DB) Store {
 		db: db,
 		GenericStore: pgSearch.NewGenericStoreWithPermissionChecker[storage.NetworkEntity, *storage.NetworkEntity](
 			db,
-			permissionCheckerSingleton(),
 			schema,
-			metricsSetPostgresOperationDurationTime,
-			metricsSetAcquireDBConnDuration,
 			pkGetter,
+			metricsSetAcquireDBConnDuration,
+			metricsSetPostgresOperationDurationTime,
+			permissionCheckerSingleton(),
 		),
 	}
 }
@@ -236,7 +236,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) 
 	return nil
 }
 
-// endregion
+// endregion Helper functions
 
 //// Interface functions
 

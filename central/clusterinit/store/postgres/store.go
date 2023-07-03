@@ -73,11 +73,11 @@ func New(db postgres.DB) Store {
 		db: db,
 		GenericStore: pgSearch.NewGenericStoreWithPermissionChecker[storage.InitBundleMeta, *storage.InitBundleMeta](
 			db,
-			permissionCheckerSingleton(),
 			schema,
-			metricsSetPostgresOperationDurationTime,
-			metricsSetAcquireDBConnDuration,
 			pkGetter,
+			metricsSetAcquireDBConnDuration,
+			metricsSetPostgresOperationDurationTime,
+			permissionCheckerSingleton(),
 		),
 	}
 }
@@ -230,7 +230,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.InitBundleMeta)
 	return nil
 }
 
-// endregion
+// endregion Helper functions
 
 //// Interface functions
 

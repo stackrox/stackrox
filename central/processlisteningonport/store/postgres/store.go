@@ -76,11 +76,11 @@ func New(db postgres.DB) Store {
 		db: db,
 		GenericStore: pgSearch.NewGenericStore[storage.ProcessListeningOnPortStorage, *storage.ProcessListeningOnPortStorage](
 			db,
-			targetResource,
 			schema,
-			metricsSetPostgresOperationDurationTime,
-			metricsSetAcquireDBConnDuration,
 			pkGetter,
+			metricsSetAcquireDBConnDuration,
+			metricsSetPostgresOperationDurationTime,
+			targetResource,
 		),
 	}
 }
@@ -258,7 +258,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessListenin
 	return nil
 }
 
-// endregion
+// endregion Helper functions
 
 //// Interface functions
 

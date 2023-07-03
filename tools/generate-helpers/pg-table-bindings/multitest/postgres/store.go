@@ -76,11 +76,11 @@ func New(db postgres.DB) Store {
 		db: db,
 		GenericStore: pgSearch.NewGenericStore[storage.TestStruct, *storage.TestStruct](
 			db,
-			targetResource,
 			schema,
-			metricsSetPostgresOperationDurationTime,
-			metricsSetAcquireDBConnDuration,
 			pkGetter,
+			metricsSetAcquireDBConnDuration,
+			metricsSetPostgresOperationDurationTime,
+			targetResource,
 		),
 	}
 }
@@ -405,7 +405,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestStruct) err
 	return nil
 }
 
-// endregion
+// endregion Helper functions
 
 //// Interface functions
 
