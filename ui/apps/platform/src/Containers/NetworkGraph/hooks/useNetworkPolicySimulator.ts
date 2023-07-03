@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import useDeepCompareEffect from 'use-deep-compare-effect';
+import { useEffect, useState } from 'react';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
@@ -30,7 +29,7 @@ type SetNetworkPolicyModificationAction =
     | {
           state: 'ACTIVE';
           options: {
-              scopeHierarchy: NetworkScopeHierarchy;
+              clusterId: string;
           };
       }
     | {
@@ -73,12 +72,12 @@ function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorPara
     const scopeHierarchy = useScopeHierarchy();
     const [simulator, setSimulator] = useState<NetworkPolicySimulator>(defaultResultState);
 
-    useDeepCompareEffect(() => {
+    useEffect(() => {
         setNetworkPolicyModification({
             state: 'ACTIVE',
-            options: { scopeHierarchy },
+            options: { clusterId: scopeHierarchy.cluster.id },
         });
-    }, [scopeHierarchy, simulation.isOn]);
+    }, [scopeHierarchy.cluster.id, simulation.isOn]);
 
     function setNetworkPolicyModification(action: SetNetworkPolicyModificationAction): void {
         const { state, options } = action;
@@ -101,7 +100,7 @@ function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorPara
             case 'ACTIVE':
                 // @TODO: Add the network search query as a second argument
                 networkService
-                    .fetchNetworkPoliciesByClusterId(options.scopeHierarchy.cluster.id)
+                    .fetchNetworkPoliciesByClusterId(options.clusterId)
                     .then((data: NetworkPolicy[]) => {
                         setSimulator({
                             state,
