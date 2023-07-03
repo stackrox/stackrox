@@ -1,6 +1,7 @@
 package centralservices
 
 import (
+	_ "embed"
 	"io"
 	"path"
 	"strings"
@@ -30,86 +31,10 @@ var (
 
 	// A values YAML that sets all generatable values explicitly, and causes all
 	// objects to be generated.
-	allValuesExplicit = `
-licenseKey: "my license key"
-env:
-  platform: gke
-  openshift: 4
-  istio: true
-  proxyConfig: "proxy config"
-imagePullSecrets:
-  username: myuser
-  password: mypass
-ca:
-  cert: "ca cert pem"
-  key: "ca key pem"
-additionalCAs:
-  ca.crt: |
-    Extra CA certificate
-central:
-  adminPassword:
-    htpasswd: "htpasswd file"
-  jwtSigner:
-    key: "jwt signing key"
-  serviceTLS:
-    cert: "central tls cert pem"
-    key: "central tls key pem"
-  defaultTLS:
-    cert: "central default tls cert pem"
-    key: "central default tls key pem"
-  exposure:
-    loadBalancer:
-      enabled: true
-  persistence:
-    none: true
-  db:
-    enabled: true
-    password:
-      value: "password"
-    serviceTLS:
-      cert: "central db tls cert pem"
-      key: "central db tls key pem"
-scanner:
-  dbPassword:
-    value: "db password"
-  serviceTLS:
-    cert: "scanner tls cert pem"
-    key: "scanner tls key pem"
-  dbServiceTLS:
-    cert: "scanner-db tls cert pem"
-    key: "scanner-db tls key pem"
-enableOpenShiftMonitoring: true
-system:
-    enablePodSecurityPolicies: true
-`
-	autogenerateAll = `
-licenseKey: "my license key"
-additionalCAs:
-  ca.crt: |
-    Extra CA certificate
-env:
-  platform: gke
-  openshift: 4
-  istio: true
-  proxyConfig: "proxy config"
-imagePullSecrets:
-  username: myuser
-  password: mypass
-central:
-  defaultTLS:
-    cert: "central default tls cert pem"
-    key: "central default tls key pem"
-  exposure:
-    loadBalancer:
-      enabled: true
-  db:
-    enabled: true
-  persistence:
-    none: true
-enableOpenShiftMonitoring: true
-system:
-    enablePodSecurityPolicies: true
-`
+	//go:embed "testdata/all-values-explicit.yaml"
+	allValuesExplicit string
+	//go:embed "testdata/autogenerate-all.yaml"
+	autogenerateAll string
 )
 
 type baseSuite struct {
