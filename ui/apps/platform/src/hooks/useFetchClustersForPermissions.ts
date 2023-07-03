@@ -32,7 +32,7 @@ function useFetchClustersForPermissions(permissions: string[]): Result {
         getClustersForPermissions(requestedPermissions)
             .then((data) => {
                 setResult({
-                    clusters: data.clusters,
+                    clusters: data?.clusters || [],
                     error: '',
                     isLoading: false,
                 });
