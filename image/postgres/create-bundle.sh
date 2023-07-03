@@ -32,9 +32,11 @@ chmod -R 755 "${bundle_root}"
 # =============================================================================
 # Get latest postgres minor version
 arch="x86_64"
+PLATFORM="linux/amd64"
 
 if [[ $TARGET_ARCH == "ppc64le" ]]; then
     arch="ppc64le"
+    PLATFORM="linux/ppc64le"
 fi
 
 dnf_list_args=()
