@@ -24,7 +24,8 @@ import {
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
     networkBasePathPF,
-    vulnerabilityReportsPath, eventsPath,
+    vulnerabilityReportsPath,
+    eventsPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';

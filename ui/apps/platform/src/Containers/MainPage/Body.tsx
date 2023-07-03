@@ -29,7 +29,8 @@ import {
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
-    listeningEndpointsBasePath, eventsPath,
+    listeningEndpointsBasePath,
+    eventsPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
