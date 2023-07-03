@@ -163,20 +163,22 @@ func getLogKey(limiter string, level zapcore.Level, file string, line int, paylo
 const (
 	localFilePathPrefix = "github.com/stackrox/stackrox/"
 	filePathPrefix      = "github.com/stackrox/rox/"
+	githubPathPrefix    = "/__w/stackrox/stackrox/"
 )
 
 func getTrimmedFilePath(path string) string {
-	cutpath := path
-	prefixToCut := strings.Index(cutpath, filePathPrefix)
-	if prefixToCut >= 0 {
-		cutpath = cutpath[prefixToCut:]
+	prefixes := []string{filePathPrefix, localFilePathPrefix, githubPathPrefix}
+	cutPath := path
+	for _, prefix := range prefixes {
+		prefixToCut := strings.Index(cutPath, prefix)
+		if prefixToCut >= 0 {
+			cutPath = cutPath[prefixToCut:]
+		}
 	}
-	prefixToCut = strings.Index(cutpath, localFilePathPrefix)
-	if prefixToCut >= 0 {
-		cutpath = cutpath[prefixToCut:]
+	trimmedPath := cutPath
+	for _, prefix := range prefixes {
+		trimmedPath = strings.TrimPrefix(trimmedPath, prefix)
 	}
-	trimmedPath := strings.TrimPrefix(cutpath, filePathPrefix)
-	trimmedPath = strings.TrimPrefix(trimmedPath, localFilePathPrefix)
 	return trimmedPath
 }
 

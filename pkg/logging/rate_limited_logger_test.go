@@ -33,25 +33,13 @@ type rateLimitedLoggerTestSuite struct {
 	testLRU lru.TestCache[string, *rateLimitedLog]
 }
 
-func newTestRateLimitLogger(
-	_ *testing.T,
-	l Logger,
-	c lru.TestCache[string, *rateLimitedLog],
-	size int,
-) *RateLimitedLogger {
-	if size < 0 {
-		size = 0
-	}
-	logger := &RateLimitedLogger{
-		l,
+func newTestRateLimitedLogger(_ *testing.T, logger Logger, c lru.TestCache[string, *rateLimitedLog]) *RateLimitedLogger {
+	testLogger := &RateLimitedLogger{
+		logger,
 		c,
 	}
-	runtime.SetFinalizer(logger, stopLogger)
-	return logger
-}
-
-func newTestRateLimitedLogger(t *testing.T, logger Logger, c lru.TestCache[string, *rateLimitedLog]) *RateLimitedLogger {
-	return newTestRateLimitLogger(t, logger, c, testCacheSize)
+	runtime.SetFinalizer(testLogger, stopLogger)
+	return testLogger
 }
 
 func (s *rateLimitedLoggerTestSuite) SetupTest() {
