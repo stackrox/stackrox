@@ -37,7 +37,7 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
 	} else if env.RHCOSNodeScanning.BooleanSetting() {
 		// Start the prometheus metrics server
-		metrics.NewDefaultHTTPServer(metrics.ComplianceSubsystem).RunForever()
+		metrics.NewServer(metrics.ComplianceSubsystem).RunForever()
 		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 
 		// Set up Compliance <-> NodeInventory connection
