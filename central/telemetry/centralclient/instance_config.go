@@ -34,25 +34,13 @@ var (
 )
 
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
-	key := env.TelemetryStorageKey.Setting()
-	if key == phonehome.DisabledKey || env.OfflineModeEnv.BooleanSetting() {
+	if env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil, nil
 	}
-
-	if cfgURL := env.TelemetryConfigURL.Setting(); phonehome.ToDownload(version.IsReleaseVersion(), key, cfgURL) {
-		remoteCfg, err := phonehome.DownloadConfig(cfgURL)
-		if err != nil {
-			return nil, nil, err
-		}
-		if phonehome.UseRemoteKey(version.IsReleaseVersion(), remoteCfg, key) {
-			key = remoteCfg.Key
-			log.Info("Telemetry configuration has been downloaded from ", cfgURL)
-		}
-	}
-
-	// The downloaded key can be empty or 'DISABLED', so check again here.
-	if key == "" || key == phonehome.DisabledKey {
-		return nil, nil, nil
+	key, err := phonehome.GetKey(env.TelemetryStorageKey.Setting(),
+		env.TelemetryConfigURL.Setting())
+	if key == "" || err != nil {
+		return nil, nil, err
 	}
 
 	// k8s apiserver is not accessible in cloud service environment.
