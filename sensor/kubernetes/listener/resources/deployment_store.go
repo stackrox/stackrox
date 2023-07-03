@@ -217,7 +217,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	wrap := ds.getWrap(id)
+	wrap := ds.getWrapNoLock(id)
 	return wrap.GetDeployment().Clone()
 }
 
