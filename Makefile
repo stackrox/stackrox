@@ -687,7 +687,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 		integration-tests/mock-grpc-server/image
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres $TARGET_ARCH
 
 .PHONY: central-db-image
 central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz

@@ -10,6 +10,7 @@ die() {
 
 INPUT_ROOT="$1"
 OUTPUT_DIR="$2"
+TARGET_ARCH="$3"
 
 # Install the PG repo natively if true (versus using a container)
 NATIVE_PG_INSTALL="${3:-false}"
