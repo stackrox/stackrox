@@ -1,11 +1,11 @@
 import { SearchFilter } from 'types/search';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
-import { ScopeObject } from 'services/RolesService';
+import { ClusterScopeObject } from 'services/RolesService';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export function getScopeHierarchyFromSearch(
     searchFilter: SearchFilter,
-    clusters: ScopeObject[]
+    clusters: ClusterScopeObject[]
 ): NetworkScopeHierarchy | null {
     const urlCluster = searchFilter.Cluster;
     if (!urlCluster || Array.isArray(urlCluster)) {

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { getClustersForPermissions, ScopeObject } from 'services/RolesService';
+import { getClustersForPermissions, ClusterScopeObject } from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Result = {
     isLoading: boolean;
-    clusters: ScopeObject[];
+    clusters: ClusterScopeObject[];
     error: string;
 };
 
