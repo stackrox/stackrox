@@ -165,7 +165,6 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 		t:                t,
 		r:                r,
 		env:              envConfig,
-		centralReceived:  make(chan *central.MsgFromSensor, 100),
 		centralStopped:   atomic.Bool{},
 		config:           config,
 		archivedMessages: [][]*central.MsgFromSensor{},
@@ -296,9 +295,6 @@ func (c *TestContext) StartFakeGRPC() {
 		c.grpcFactory.OverwriteCentralConnection(conn)
 	}
 
-	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		c.centralReceived <- msg
-	})
 	fakeCentral.OnShutdown(shutdown)
 	c.fakeCentral = fakeCentral
 }
@@ -438,10 +434,11 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 // WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
 func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
 	ticker := time.NewTicker(defaultTicker)
+	timeoutTimer := time.NewTicker(timeout)
 	for {
 		select {
-		case <-time.After(timeout):
-			c.t.Errorf("timeout reached waiting for sync event")
+		case <-timeoutTimer.C:
+			c.t.Errorf("timeout (%s) reached waiting for sync event", timeout)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -785,16 +782,16 @@ func deploymentName(s string) condition {
 
 func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error {
 	afterTimeout := time.After(timeout)
+	ticker := time.NewTicker(defaultTicker)
 	for {
 		select {
 		case <-afterTimeout:
 			return errors.New("timeout reached waiting for event")
-		case d, more := <-c.centralReceived:
-			if !more {
-				return errors.New("channel closed")
-			}
-			if fn(d.GetEvent()) {
-				return nil
+		case <-ticker.C:
+			for _, msg := range c.GetFakeCentral().GetAllMessages() {
+				if fn(msg.GetEvent()) {
+					return nil
+				}
 			}
 		}
 	}
