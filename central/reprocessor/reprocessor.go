@@ -8,6 +8,7 @@ import (
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/events"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -34,7 +35,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.WriteToEventStream())
 
 	riskDedupeNamespace = uuid.NewV4()
 

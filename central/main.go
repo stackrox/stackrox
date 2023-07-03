@@ -57,6 +57,8 @@ import (
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
+	eventHandler "github.com/stackrox/rox/central/events/handler"
+	eventService "github.com/stackrox/rox/central/events/service"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -355,6 +357,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		delegatedRegistryConfigService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
+		eventService.Singleton(),
 		featureFlagService.Singleton(),
 		groupService.Singleton(),
 		helmcharts.NewService(),
@@ -830,6 +833,7 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+		{eventHandler.Singleton(), "event handler"},
 	}
 
 	var wg sync.WaitGroup

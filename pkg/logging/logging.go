@@ -36,6 +36,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/events"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -163,6 +164,21 @@ var (
 	thisModuleLogger Logger
 )
 
+// OutputOption determines whether the configured logger will log entries to stdout and event stream.
+type OutputOption int
+
+// Holds all possible output options, either stdout or stdout and event stream.
+const (
+	Stdout OutputOption = iota
+	StdoutAndEventStream
+)
+
+// Options allows to instruct the created logger w.r.t. the output options and the event handler to use.
+type Options struct {
+	Output       OutputOption
+	EventHandler events.Handler
+}
+
 func init() {
 	initLevelStr, initLevelValid := os.Getenv("LOGLEVEL"), false
 	logLevel := defaultLevel
@@ -267,8 +283,8 @@ func GetGlobalLogLevel() zapcore.Level {
 }
 
 // LoggerForModule returns a logger for the current module.
-func LoggerForModule() Logger {
-	return currentModule(3).Logger()
+func LoggerForModule(opts ...Options) Logger {
+	return currentModule(3).Logger(opts...)
 }
 
 // convenience methods log apply to root logger

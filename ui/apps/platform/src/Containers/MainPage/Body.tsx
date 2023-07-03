@@ -29,7 +29,7 @@ import {
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
-    listeningEndpointsBasePath,
+    listeningEndpointsBasePath, eventsPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -100,6 +100,8 @@ const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHeal
 const AsyncListeningEndpointsPage = asyncComponent(
     () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')
 );
+
+const AsyncEventsPage = asyncComponent(() => import('Containers/Events/EventsPage'));
 
 type BodyProps = {
     hasReadAccess: HasReadAccess;
@@ -192,6 +194,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         path={listeningEndpointsBasePath}
                         component={AsyncListeningEndpointsPage}
                     />
+                    <Route path={eventsPath} component={AsyncEventsPage} />
                     <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>

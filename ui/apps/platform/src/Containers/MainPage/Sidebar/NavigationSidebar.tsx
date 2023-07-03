@@ -24,7 +24,7 @@ import {
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
     networkBasePathPF,
-    vulnerabilityReportsPath,
+    vulnerabilityReportsPath, eventsPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -169,6 +169,11 @@ function NavigationSidebar({
                     isActive={location.pathname.includes(riskBasePath)}
                     path={riskBasePath}
                     title={basePathToLabelMap[riskBasePath]}
+                />
+                <LeftNavItem
+                    isActive={location.pathname.includes(eventsPath)}
+                    path={eventsPath}
+                    title={basePathToLabelMap[eventsPath]}
                 />
                 <NavExpandable
                     id="PlatformConfiguration"

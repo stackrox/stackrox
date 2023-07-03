@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message Event {
+    string id   = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string msg  = 3;
+}

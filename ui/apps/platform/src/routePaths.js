@@ -49,6 +49,7 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const listeningEndpointsBasePath = `${mainPath}/audit/listening-endpoints`;
+export const eventsPath = `${mainPath}/events`;
 
 // Configuration Management
 
@@ -186,6 +187,7 @@ export const basePathToLabelMap = {
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',
     [userBasePath]: 'User Profile',
+    [eventsPath]: 'System Events',
 };
 
 const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;

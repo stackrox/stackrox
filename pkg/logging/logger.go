@@ -1,6 +1,10 @@
 package logging
 
 import (
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/events"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -41,6 +45,9 @@ type Logger interface {
 type LoggerImpl struct {
 	InnerLogger *zap.SugaredLogger
 	module      *Module
+
+	outputOption OutputOption
+	eventHandler events.Handler
 }
 
 // Log logs at level.
@@ -99,11 +106,13 @@ func (l *LoggerImpl) SugaredLogger() *zap.SugaredLogger {
 // Panic uses fmt.Sprintf to construct and log a message, then panics.
 func (l *LoggerImpl) Panic(args ...interface{}) {
 	l.InnerLogger.Panic(args...)
+	l.writeToEventStream("", args...)
 }
 
 // Panicf uses fmt.Sprintf to log a templated message, then panics.
 func (l *LoggerImpl) Panicf(template string, args ...interface{}) {
 	l.InnerLogger.Panicf(template, args...)
+	l.writeToEventStream(template, args...)
 }
 
 // Panicw logs a message with some additional context, then panics.
@@ -115,11 +124,13 @@ func (l *LoggerImpl) Panicw(msg string, keysAndValues ...interface{}) {
 // Fatal uses fmt.Sprintf to construct and log a message, then calls os.Exit.
 func (l *LoggerImpl) Fatal(args ...interface{}) {
 	l.InnerLogger.Fatal(args...)
+	l.writeToEventStream("", args...)
 }
 
 // Fatalf uses fmt.Sprintf to log a templated message, then calls os.Exit.
 func (l *LoggerImpl) Fatalf(template string, args ...interface{}) {
 	l.InnerLogger.Fatalf(template, args...)
+	l.writeToEventStream(template, args...)
 }
 
 // Fatalw logs a message with some additional context, then calls os.Exit.
@@ -131,11 +142,13 @@ func (l *LoggerImpl) Fatalw(msg string, keysAndValues ...interface{}) {
 // Error uses fmt.Sprintf to construct and log a message.
 func (l *LoggerImpl) Error(args ...interface{}) {
 	l.InnerLogger.Error(args...)
+	l.writeToEventStream("", args...)
 }
 
 // Errorf uses fmt.Sprintf to log a templated message.
 func (l *LoggerImpl) Errorf(template string, args ...interface{}) {
 	l.InnerLogger.Errorf(template, args...)
+	l.writeToEventStream(template, args...)
 }
 
 // Errorw logs a message with some additional context.
@@ -190,4 +203,23 @@ func (l *LoggerImpl) Debugf(template string, args ...interface{}) {
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Debugw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Debugw(msg, keysAndValues...)
+}
+
+func (l *LoggerImpl) writeToEventStream(template string, args ...interface{}) {
+	if l.outputOption == Stdout {
+		return
+	}
+
+	msg := template
+
+	if msg == "" {
+		msg = fmt.Sprint(args...)
+	} else if msg != "" && len(args) > 0 {
+		msg = fmt.Sprintf(msg, args...)
+	}
+
+	event := &storage.Event{
+		Msg: msg,
+	}
+	l.eventHandler.AddEventAsync(event)
 }
