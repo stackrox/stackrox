@@ -162,7 +162,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 		{testName: "test3", version: dirtyVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
 		{testName: "test4", version: dirtyVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: "DISABLED"}},
 
-		{testName: "test5", version: releaseVersion, telemetry: true, key: "", expected: result{enabled: buildinfo.ReleaseBuild, key: disabledInDebug}},
+		{testName: "test5", version: releaseVersion, telemetry: true, key: "", expected: result{enabled: buildinfo.ReleaseBuild && !buildinfo.TestBuild, key: disabledInDebug}},
 		{testName: "test6", version: releaseVersion, telemetry: false, key: "", expected: result{enabled: false, key: "DISABLED"}},
 		{testName: "test7", version: releaseVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
 		{testName: "test8", version: releaseVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: "DISABLED"}},
