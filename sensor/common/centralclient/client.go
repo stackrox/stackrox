@@ -34,7 +34,7 @@ var (
 const (
 	requestTimeout          = 10 * time.Second
 	tlsChallengeRoute       = "/v1/tls-challenge"
-	pingRoute               = "/v1/ping"
+	metadataRoute           = "/v1/metadata"
 	challengeTokenParamName = "challengeToken"
 )
 
@@ -99,21 +99,21 @@ func NewClient(endpoint string) (*Client, error) {
 	}, nil
 }
 
-// GetPing pings Central.
-func (c *Client) GetPing(ctx context.Context) (*v1.PongMessage, error) {
-	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, pingRoute, nil, nil)
+// GetMetadata returns Central's metadata
+func (c *Client) GetMetadata(ctx context.Context) (*v1.Metadata, error) {
+	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, metadataRoute, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "pinging Central")
+		return nil, errors.Wrap(err, "receiving Central metadata")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	var pong v1.PongMessage
-	err = jsonutil.JSONReaderToProto(resp.Body, &pong)
+	var metadata v1.Metadata
+	err = jsonutil.JSONReaderToProto(resp.Body, &metadata)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", pingRoute, resp.StatusCode)
+		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", metadataRoute, resp.StatusCode)
 	}
 
-	return &pong, nil
+	return &metadata, nil
 }
 
 // GetTLSTrustedCerts returns all certificates which are trusted by Central and its leaf certificates.
@@ -240,7 +240,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "creating request for %s", route)
+		return nil, nil, errors.Wrap(err, "creating tls-challenge request")
 	}
 
 	req.Header.Set("User-Agent", clientconn.GetUserAgent())
@@ -261,7 +261,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 		if err != nil {
 			return nil, peerCertificates, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
 		}
-		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, route, resp.Status, body)
+		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, tlsChallengeRoute, resp.Status, body)
 	}
 	return resp, peerCertificates, nil
 }
