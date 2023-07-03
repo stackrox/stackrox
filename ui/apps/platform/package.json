@@ -26,10 +26,6 @@
         "computed-style-to-inline-style": "^3.0.0",
         "connected-react-router": "^6.9.2",
         "core-js": "^3.1.4",
-        "cytoscape": "^3.21.1",
-        "cytoscape-cose-bilkent": "^4.0.0",
-        "cytoscape-node-html-label": "^1.2.2",
-        "cytoscape-popper": "^2.0.0",
         "d3-axis": "^1.0.12",
         "d3-brush": "^3.0.0",
         "d3-polygon": "^3.0.1",
@@ -65,11 +61,9 @@
         "react-collapsible": "^2.8.1",
         "react-color": "^2.19.3",
         "react-copy-to-clipboard": "^5.0.3",
-        "react-cytoscapejs": "^1.2.1",
         "react-dnd": "^14.0.3",
         "react-dnd-html5-backend": "^14.0.1",
         "react-dom": "^17.0.2",
-        "react-dropzone": "^11.3.1",
         "react-feather": "^2.0.9",
         "react-helmet": "^6.1.0",
         "react-modal": "^3.12.1",
@@ -84,7 +78,6 @@
         "react-router-prop-types": "^1.0.5",
         "react-select": "^2.0.0",
         "react-spinners": "^0.10.4",
-        "react-table": "^7.6.2",
         "react-table-6": "^6.11.0",
         "react-toastify": "^7.0.3",
         "react-transition-group": "^4.4.1",
@@ -103,9 +96,6 @@
         "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.8.1",
         "yup": "^1.2.0"
-    },
-    "resolutions": {
-        "react-cytoscapejs/cytoscape": "^3.17.0"
     },
     "scripts": {
         "clean": "rm -rf ./cypress/test-results",
