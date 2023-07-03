@@ -1226,7 +1226,7 @@ store_test_results() {
 }
 
 post_process_test_results() {
-    if ! is_OPENSHIFT_CI || is_in_PR_context; then
+    if ! is_OPENSHIFT_CI; then
         return 0
     fi
 
@@ -1236,23 +1236,32 @@ post_process_test_results() {
     fi
 
     local csv_output
+    local extra_args=()
 
     set +u
     {
-        info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
+        if is_in_PR_context || [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
+            info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
+            extra_args=(--dry-run)
+        else
+            info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
+        fi
+
         csv_output="$(mktemp --suffix=.csv)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.8/junit2jira -o junit2jira && \
+
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.9/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
-            -build-id "$BUILD_ID" \
+            -build-id "${BUILD_ID}" \
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
-            -build-tag "$STACKROX_BUILD_TAG" \
-            -job-name "$JOB_NAME" \
+            -build-tag "${STACKROX_BUILD_TAG}" \
+            -csv-output "${csv_output}" \
+            -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
-            -csv-output "${csv_output}"
+            "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
         bq load \
@@ -1270,9 +1279,8 @@ send_slack_notice_for_failures_on_merge() {
         return 0
     fi
 
-    local tag
-    tag="$(make --quiet tag)"
-    if [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]]; then
+    if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
+        info "Skipping slack message for release branches"
         return 0
     fi
 
