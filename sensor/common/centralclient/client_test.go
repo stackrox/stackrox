@@ -104,28 +104,37 @@ func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certi
 	return &cert
 }
 
-func (t *ClientTestSuite) TestGetMetadata() {
+func (t *ClientTestSuite) TestGetPingOK() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Equal(metadataRoute, r.URL.Path)
+		t.Equal(pingRoute, r.URL.Path)
 
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"version":       "3.0.51.x-47-g15440b8be2",
-			"buildFlavor":   "development",
-			"releaseBuild":  false,
-			"licenseStatus": "VALID",
-		})
+		_ = json.NewEncoder(w).Encode(
+			v1.PongMessage{Status: "ok"},
+		)
 	}))
 	defer ts.Close()
 
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	metadata, err := c.GetMetadata(context.Background())
+	pong, err := c.GetPing(context.Background())
+	t.Require().NoError(err)
+	t.Equal("ok", pong.GetStatus())
+}
+
+func (t *ClientTestSuite) TestGetPingFailure() {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Equal(pingRoute, r.URL.Path)
+
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	t.Equal("3.0.51.x-47-g15440b8be2", metadata.GetVersion())
-	t.Equal(v1.Metadata_LicenseStatus(4), metadata.GetLicenseStatus())
-	t.False(metadata.GetReleaseBuild())
+	_, err = c.GetPing(context.Background())
+	t.Require().Error(err)
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {
