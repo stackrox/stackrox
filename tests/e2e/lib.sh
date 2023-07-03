@@ -51,6 +51,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     ci_export SENSOR_CHART_VERSION_OVERRIDE "$2"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
+    unset COLLECTOR_IMAGE_REPO
 
     helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
     helm repo update
