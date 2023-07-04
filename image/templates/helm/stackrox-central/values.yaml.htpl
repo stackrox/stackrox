@@ -103,14 +103,24 @@
 ## If specified, this should be a map mapping file names to PEM-encoded contents.
 #additionalCAs: null
 #
+[<- if and .TelemetryEnabled (and (eq .TelemetryKey "") (eq .TelemetryEndpoint ""))>]
 #central:
 #
-#  # Settings for telemetry data collection. Telemetry is disabled by default.
+#  # Settings for telemetry data collection. Telemetry is enabled by default.
 #  telemetry:
-#    enabled: false
+#    enabled: true
 #    storage:
 #      endpoint: null
 #      key: null
+[<- else >]
+central:
+# # Settings for telemetry data collection.
+  telemetry:
+    enabled: [< .TelemetryEnabled >]
+    storage:
+      endpoint: "[< .TelemetryEndpoint >]"
+      key: "[< .TelemetryKey >]"
+[<- end >]
 #
 #
 #  config: "@config/central/config.yaml|config/central/config.yaml.default"

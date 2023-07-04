@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
@@ -48,7 +47,7 @@ type remoteConfig struct {
 }
 
 func downloadConfig(u string) (*remoteConfig, error) {
-	if u == "" {
+	if u == "hardcoded" {
 		// TODO(ROX-17726): Use the hardcoded key for now.
 		return &remoteConfig{Key: selfManagedKey}, nil
 	}
@@ -63,12 +62,6 @@ func downloadConfig(u string) (*remoteConfig, error) {
 	var cfg *remoteConfig
 	err = json.NewDecoder(resp.Body).Decode(&cfg)
 	return cfg, errors.Wrap(err, "cannot decode telemetry configuration")
-}
-
-func isReleaseBuild() bool {
-	return buildinfo.ReleaseBuild &&
-		version.GetMainVersion() != "" &&
-		!strings.Contains(version.GetMainVersion(), "-")
 }
 
 // toDownload decides if a configuration with the key need to be downloaded.
@@ -112,12 +105,12 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 		return nil, nil, nil
 	}
 
-	if cfgURL := env.TelemetryConfigURL.Setting(); toDownload(isReleaseBuild(), key, cfgURL) {
+	if cfgURL := env.TelemetryConfigURL.Setting(); toDownload(version.IsReleaseVersion(), key, cfgURL) {
 		remoteCfg, err := downloadConfig(cfgURL)
 		if err != nil {
 			return nil, nil, err
 		}
-		if useRemoteKey(isReleaseBuild(), remoteCfg, key) {
+		if useRemoteKey(version.IsReleaseVersion(), remoteCfg, key) {
 			key = remoteCfg.Key
 			log.Info("Telemetry configuration has been downloaded from ", cfgURL)
 		}
