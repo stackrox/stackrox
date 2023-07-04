@@ -457,6 +457,7 @@ spec:
                       storage backend.
                     properties:
                       enabled:
+                        default: true
                         description: Specifies if Telemetry is enabled.
                         type: boolean
                       storage:

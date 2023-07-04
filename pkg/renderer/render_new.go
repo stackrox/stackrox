@@ -101,6 +101,9 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 	if metaVals.KubectlOutput {
 		metaVals.AutoSensePodSecurityPolicies = false
 	}
+	metaVals.TelemetryEnabled = c.K8sConfig.Telemetry.Enabled
+	metaVals.TelemetryKey = c.K8sConfig.Telemetry.StorageKey
+	metaVals.TelemetryEndpoint = c.K8sConfig.Telemetry.StorageEndpoint
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to instantiate central services chart template")
