@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"path/filepath"
 
+	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -20,7 +20,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const clientCAKey = "client-ca-file"
+const (
+	clientCAKey = "client-ca-file"
+	signerName  = "kubelet-signer"
+)
 
 func certFilePath() string {
 	certDir := env.SecureMetricsCertDir.Setting()
@@ -170,15 +173,21 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 		return
 	}
 	if caFile, ok := cm.Data[clientCAKey]; ok {
-		certBlock, _ := pem.Decode([]byte(caFile))
-		cert, err := x509.ParseCertificate(certBlock.Bytes)
+		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
+		certs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {
-			log.Errorw("Unable to parse client CA", zap.Error(err))
+			log.Errorw("Unable to parse client CAs", zap.Error(err))
 			return
+		}
+		var signerCAs []*x509.Certificate
+		for _, c := range certs {
+			if c.Issuer.CommonName == signerName {
+				signerCAs = append(signerCAs, c)
+			}
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()
-		t.clientCAs = []*x509.Certificate{cert}
+		t.clientCAs = signerCAs
 		t.tlsConfigHolder.UpdateTLSConfig()
 	}
 }

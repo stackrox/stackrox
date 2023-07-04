@@ -55,6 +55,8 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		tlsConfig, err = tlsConfig.GetConfigForClient(nil)
 		require.NoError(t, err)
-		assert.NotEmpty(t, tlsConfig.ClientCAs)
+		require.NotNil(t, tlsConfig.ClientCAs)
+		// Two certs in `./testdata/ca.pem`, but only one has `Issuer.CN=kubelet-signer`.
+		assert.Len(t, tlsConfig.ClientCAs.Subjects(), 1)
 	}, 5*time.Second, 100*time.Millisecond)
 }
