@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -25,6 +26,8 @@ import (
 var (
 	//go:embed base-values.yaml
 	baseValuesYAML []byte
+
+	disabledTelemetryKey = "DISABLED"
 )
 
 const (
@@ -80,6 +83,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	if centralSpec == nil {
 		centralSpec = &platform.CentralComponentSpec{}
 	}
+
 	obsoletePVC := common.ObsoletePVC(c.GetAnnotations())
 	checker := &pvcStateChecker{
 		ctx:       ctx,
@@ -285,20 +289,36 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 	return &cv
 }
 
+func isTelemetryEnabled(t *platform.Telemetry) bool {
+	if version.IsReleaseVersion() {
+		// Enabled by default. Allow for empty key, as central may download it.
+		return t == nil || t.Enabled == nil || *t.Enabled
+	}
+	// Disabled by default for development versions. But when enabled, allow
+	// developers to configure telemetry for debugging purposes.
+	// A key has to be provided though.
+	return t != nil && t.Enabled != nil && *t.Enabled &&
+		(t.Storage != nil && t.Storage.Key != nil && *t.Storage.Key != "")
+}
+
 func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
-	tv := translation.NewValuesBuilder()
-	if t == nil {
+	if !isTelemetryEnabled(t) {
+		tv := translation.NewValuesBuilder()
+		tv.SetBoolValue("enabled", false)
+		storage := translation.NewValuesBuilder()
+		storage.SetString("key", &disabledTelemetryKey)
+		tv.AddChild("storage", &storage)
+		return &tv
+	} else if t != nil && t.Storage != nil {
+		tv := translation.NewValuesBuilder()
+		tv.SetBoolValue("enabled", true)
+		storage := translation.NewValuesBuilder()
+		storage.SetString("key", t.Storage.Key)
+		storage.SetString("endpoint", t.Storage.Endpoint)
+		tv.AddChild("storage", &storage)
 		return &tv
 	}
-
-	tv.SetBool("enabled", t.Enabled)
-	storage := translation.NewValuesBuilder()
-	if t.Storage != nil {
-		storage.SetString("endpoint", t.Storage.Endpoint)
-		storage.SetString("key", t.Storage.Key)
-		tv.AddChild("storage", &storage)
-	}
-	return &tv
+	return nil
 }
 
 func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *translation.ValuesBuilder {
