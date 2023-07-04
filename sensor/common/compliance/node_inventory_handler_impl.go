@@ -79,7 +79,7 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
-		// As Compliance enters a retry loop on receiving a NACK,
+		// As Compliance enters a retry loop when it is not receiving an ACK,
 		// make sure we send NACK as soon as we enter offline mode
 		c.centralReady.Reset()
 	}
