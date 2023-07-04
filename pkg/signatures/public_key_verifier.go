@@ -132,11 +132,8 @@ func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imag
 		// as well as the claims.
 		_, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
 
-		// Short circuit on the first public key that successfully verified the signature, since they are bundled
-		// within a single signature integration.
 		if err == nil {
 			verifiedImageReferences, err = getVerifiedImageReference(signature, image)
-			return verifiedImageReferences, err
 		}
 		verificationErrors = multierror.Append(verificationErrors, err)
 	}
