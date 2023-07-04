@@ -90,7 +90,6 @@ handle_tag_requirements() {
     fi
 
     export ROXCTL_FOR_TEST="$ROOT/bin/linux/roxctl-$tag"
-    mkdir -p "$ROOT/bin/linux"
 
     if [[ ! -f "$ROXCTL_FOR_TEST" ]]; then
         local roxctl_image="quay.io/stackrox-io/roxctl:$tag"
@@ -135,6 +134,7 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -w "$ROOT" \
       -e "KUBECONFIG=${kubeconfig}" \
       -v "${kubeconfig}:${kubeconfig}:z" \
+      -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
       -e "BUILD_TAG=${BUILD_TAG:-}" \
