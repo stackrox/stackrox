@@ -148,7 +148,10 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
-	mockCentralAck(h, s)
+	err := mockCentralAck(h)
+	if err != nil {
+		s.Fail(err.Error())
+	}
 	stats1 := consumeAndCountCompliance(h.ComplianceC(), 1)
 	s.NoError(stats1.sc.Stopped().Wait())
 	s.Equal(1, stats1.ACKCount)
@@ -161,7 +164,10 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 
 	h.Notify(common.SensorComponentEventCentralReachable)
 	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
-	mockCentralAck(h, s)
+	err = mockCentralAck(h)
+	if err != nil {
+		s.Fail(err.Error())
+	}
 	stats3 := consumeAndCountCompliance(h.ComplianceC(), 1)
 	s.NoError(stats3.sc.Stopped().Wait())
 	s.Equal(1, stats3.ACKCount)
@@ -183,12 +189,9 @@ func mockCentralAck(h *nodeInventoryHandlerImpl) error {
 				Action:    central.NodeInventoryACK_ACK,
 			}},
 		})
-		if err != nil {
-			s.Fail("ProcessMessage failed processing the ACK")
-		}
-		break
-	case <-time.After(5 * time.Second): // Starts counting when select is triggered
-		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
+		return err
+	case <-time.After(5 * time.Second):
+		return errors.New("ResponsesC msg didn't arrive after 5 seconds")
 	}
 }
 
