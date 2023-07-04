@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"path/filepath"
 
+	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -174,23 +174,20 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	}
 	if caFile, ok := cm.Data[clientCAKey]; ok {
 		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
-		var clientCAs []*x509.Certificate
-		for block, rest := pem.Decode([]byte(caFile)); block != nil; block, rest = pem.Decode(rest) {
-			if block.Type != "CERTIFICATE" {
-				continue
-			}
-			cert, err := x509.ParseCertificate(block.Bytes)
-			if err != nil {
-				log.Errorw("Unable to parse client CA", zap.Error(err))
-				return
-			}
-			if cert.Issuer.CommonName == signerName {
-				clientCAs = append(clientCAs, cert)
+		certs, err := helpers.ParseCertificatesPEM([]byte(caFile))
+		if err != nil {
+			log.Errorw("Unable to parse client CAs", zap.Error(err))
+			return
+		}
+		var signerCAs []*x509.Certificate
+		for _, c := range certs {
+			if c.Issuer.CommonName == signerName {
+				signerCAs = append(signerCAs, c)
 			}
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()
-		t.clientCAs = clientCAs
+		t.clientCAs = signerCAs
 		t.tlsConfigHolder.UpdateTLSConfig()
 	}
 }
