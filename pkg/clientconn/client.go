@@ -149,7 +149,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	}
 
 	if customVerifier != nil {
-		conf.VerifyPeerCertificate = verifyPeerCertFunc(conf, customVerifier)
+		conf.VerifyPeerCertificate = VerifyPeerCertFunc(conf, customVerifier)
 		conf.InsecureSkipVerify = true
 	}
 

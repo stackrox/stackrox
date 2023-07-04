@@ -7,11 +7,10 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientconn"
 )
 
-var (
-	errNoTLSConfig = errors.New("no TLS config is available")
-)
+var errNoTLSConfig = errors.New("no TLS config is available")
 
 // TLSConfigHolder holds a pointer to the tls.Config instance and provides an ability to update it in runtime.
 type TLSConfigHolder struct {
@@ -21,6 +20,9 @@ type TLSConfigHolder struct {
 
 	serverCertSources []*[]tls.Certificate
 	clientCASources   []*[]*x509.Certificate
+
+	tlsCertVerifier clientconn.TLSCertVerifier
+	customVerify    bool
 
 	liveTLSConfig unsafe.Pointer
 }
@@ -56,6 +58,11 @@ func (c *TLSConfigHolder) UpdateTLSConfig() {
 		newTLSConfig.ClientAuth = c.fallbackClientAuth
 	}
 
+	if c.customVerify {
+		newTLSConfig.InsecureSkipVerify = true
+		newTLSConfig.VerifyPeerCertificate = clientconn.VerifyPeerCertFunc(newTLSConfig, c.tlsCertVerifier)
+	}
+
 	atomic.StorePointer(&c.liveTLSConfig, (unsafe.Pointer)(newTLSConfig))
 }
 
@@ -82,4 +89,10 @@ func (c *TLSConfigHolder) AddServerCertSource(serverCertSource *[]tls.Certificat
 // AddClientCertSource adds client cert source.
 func (c *TLSConfigHolder) AddClientCertSource(clientCertSource *[]*x509.Certificate) {
 	c.clientCASources = append(c.clientCASources, clientCertSource)
+}
+
+// SetCustomCertVerifier adds a custom TLS certificate verifier.
+func (c *TLSConfigHolder) SetCustomCertVerifier(customVerifier clientconn.TLSCertVerifier) {
+	c.customVerify = true
+	c.tlsCertVerifier = customVerifier
 }

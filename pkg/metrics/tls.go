@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	clientCAKey = "client-ca-file"
+	clientCAKey      = "client-ca-file"
+	prometheusCertCN = "system:serviceaccount:openshift-monitoring:prometheus-k8s"
 )
 
 func certFilePath() string {
@@ -71,14 +72,19 @@ var _ verifier.TLSConfigurer = (*tlsConfigurerImpl)(nil)
 func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) verifier.TLSConfigurer {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	tlsConfigHolder := certwatch.NewTLSConfigHolder(tlsRootConfig, tls.RequireAndVerifyClientCert)
 	cfgr := &tlsConfigurerImpl{
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
-		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig, tls.RequireAndVerifyClientCert),
+		tlsConfigHolder:   tlsConfigHolder,
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
+	tlsVerifier := &clientCertVerifier{
+		subjectCN: prometheusCertCN,
+	}
+	cfgr.tlsConfigHolder.SetCustomCertVerifier(tlsVerifier)
 	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
 	cfgr.watchForChanges()
 	return cfgr
