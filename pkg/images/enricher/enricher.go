@@ -35,6 +35,7 @@ const (
 	ForceRefetchScansOnly
 	ForceRefetchSignaturesOnly
 	ForceRefetchCachedValuesOnly
+	UseImageNamesRefetchCachedValues
 )
 
 // forceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.

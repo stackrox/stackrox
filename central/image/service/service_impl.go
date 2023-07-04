@@ -301,7 +301,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		Delegable: true,
 	}
 	if request.GetForce() {
-		enrichmentCtx.FetchOpt = enricher.ForceRefetch
+		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 	}
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
