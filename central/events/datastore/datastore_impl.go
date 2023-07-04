@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/events/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -21,11 +22,14 @@ func (d *datastoreImpl) AddEvent(ctx context.Context, event *storage.Event) erro
 
 func (d *datastoreImpl) GetEvents(ctx context.Context) ([]*storage.Event, error) {
 	var events []*storage.Event
-	err := d.store.Walk(ctx, func(obj *storage.Event) error {
-		events = append(events, obj)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		events = events[:0]
+		return d.store.Walk(ctx, func(obj *storage.Event) error {
+			events = append(events, obj)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return events, nil
