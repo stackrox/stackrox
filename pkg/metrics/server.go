@@ -24,11 +24,12 @@ var log = logging.LoggerForModule()
 type Server struct {
 	metricsServer       *http.Server
 	secureMetricsServer *http.Server
+	tlsConfigurer       TLSConfigurer
 	uptimeMetric        prometheus.Gauge
 }
 
 // NewServer creates and returns a new metrics http(s) server with configured settings.
-func NewServer(subsystem Subsystem) *Server {
+func NewServer(subsystem Subsystem, tlsConfigurer TLSConfigurer) *Server {
 	mux := http.NewServeMux()
 	mux.Handle(metricsURLPath, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
 
@@ -42,9 +43,16 @@ func NewServer(subsystem Subsystem) *Server {
 
 	var secureMetricsServer *http.Server
 	if secureMetricsEnabled() {
-		secureMetricsServer = &http.Server{
-			Addr:    env.SecureMetricsPort.Setting(),
-			Handler: mux,
+		tlsConfig, err := tlsConfigurer.TLSConfig()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "failed to create TLS config"))
+			log.Warn("Secure metrics server is disabled")
+		} else {
+			secureMetricsServer = &http.Server{
+				Addr:      env.SecureMetricsPort.Setting(),
+				Handler:   mux,
+				TLSConfig: tlsConfig,
+			}
 		}
 	}
 
@@ -60,6 +68,7 @@ func NewServer(subsystem Subsystem) *Server {
 	return &Server{
 		metricsServer:       metricsServer,
 		secureMetricsServer: secureMetricsServer,
+		tlsConfigurer:       tlsConfigurer,
 		uptimeMetric:        uptimeMetric,
 	}
 }
@@ -77,6 +86,7 @@ func (s *Server) RunForever() {
 
 	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
 	if runSecureMetrics {
+		s.tlsConfigurer.WatchForChanges()
 		go runForeverTLS(s.secureMetricsServer)
 	}
 
@@ -153,6 +163,9 @@ func gatherUptimeMetricForever(startTime time.Time, uptimeMetric prometheus.Gaug
 }
 
 func runForever(server *http.Server) {
+	if server == nil {
+		return
+	}
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		// The HTTP server should never terminate.
 		log.Panicf("Unexpected termination of metrics server %q: %v", server.Addr, err)
@@ -160,6 +173,9 @@ func runForever(server *http.Server) {
 }
 
 func runForeverTLS(server *http.Server) {
+	if server == nil {
+		return
+	}
 	if err := server.ListenAndServeTLS(certFilePath(), keyFilePath()); !errors.Is(err, http.ErrServerClosed) {
 		// The HTTPS server should never terminate.
 		log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)
