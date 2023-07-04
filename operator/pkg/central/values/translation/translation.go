@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -26,8 +27,6 @@ import (
 var (
 	//go:embed base-values.yaml
 	baseValuesYAML []byte
-
-	disabledTelemetryKey = "DISABLED"
 )
 
 const (
@@ -306,7 +305,7 @@ func getTelemetryValues(t *platform.Telemetry) *translation.ValuesBuilder {
 		tv := translation.NewValuesBuilder()
 		tv.SetBoolValue("enabled", false)
 		storage := translation.NewValuesBuilder()
-		storage.SetString("key", &disabledTelemetryKey)
+		storage.SetString("key", pointer.String(phonehome.DisabledKey))
 		tv.AddChild("storage", &storage)
 		return &tv
 	} else if t != nil && t.Storage != nil {

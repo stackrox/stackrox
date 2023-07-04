@@ -1,4 +1,4 @@
-package centralclient
+package phonehome
 
 import (
 	"testing"

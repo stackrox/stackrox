@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
@@ -207,7 +208,7 @@ func updateConfig(config *renderer.Config) error {
 			config.K8sConfig.Telemetry.StorageKey = env.TelemetryStorageKey.Setting()
 			config.K8sConfig.Telemetry.StorageEndpoint = env.TelemetryEndpoint.Setting()
 		} else {
-			config.K8sConfig.Telemetry.StorageKey = "DISABLED"
+			config.K8sConfig.Telemetry.StorageKey = phonehome.DisabledKey
 			config.K8sConfig.Telemetry.Enabled = false
 		}
 	}

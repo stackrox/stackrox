@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,7 +48,7 @@ func TestTranslate(t *testing.T) {
 	telemetryKey := "key"
 	telemetryDisabledKey := map[string]interface{}{
 		"enabled": false,
-		"storage": map[string]interface{}{"key": disabledTelemetryKey}}
+		"storage": map[string]interface{}{"key": phonehome.DisabledKey}}
 	dirtyVersion := "1.2.3-dirty"
 	releaseVersion := "1.2.3"
 
