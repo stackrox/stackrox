@@ -19,6 +19,7 @@
             - [Common Makefile Targets](#common-makefile-targets)
             - [Productivity](#productivity)
             - [GoLand Configuration](#goland-configuration)
+            - [Running sql_integration tests](#running-sql_integration-tests)
             - [Debugging](#debugging)
     - [Generating Portable Installers](#generating-portable-installers)
     - [Dependencies and Recommendations for Running StackRox](#dependencies-and-recommendations-for-running-stackrox)
@@ -400,8 +401,11 @@ $ logmein
 See [Installation via Scripts](#installation-via-scripts) for further reading. To read more about the environment variables, consult
 [deploy/README.md](https://github.com/stackrox/stackrox/blob/master/deploy/README.md#env-variables).
 
+</details>
+
 #### Common Makefile Targets
 
+<details><summary>Click to expand</summary>
 
 ```bash
 # Build image, this will create `stackrox/main` with a tag defined by `make tag`.
@@ -486,6 +490,21 @@ configure paths for this plugin. See <https://github.com/jvolkman/intellij-proto
   and `$HOME/go/pkg/mod/github.com/gogo/protobuf@v1.3.1/`.
 * To verify: use menu `Navigate | File...` type any `.proto` file name, e.g. `alert_service.proto`, and check that all
   import strings are shown green, not red.
+
+</details>
+
+#### Running `sql_integration` tests
+
+<details><summary>Click to expand</summary>
+
+Go tests annotated with `//go:build sql_integration` require a PostgreSQL server listening on port 5432.
+Due to how authentication is set up in code, it is the easiest to start Postgres in a container like this:
+
+```bash
+$ docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:13
+```
+
+With that running in the background, `sql_integration` tests can be triggered from IDE or command-line.
 
 </details>
 
