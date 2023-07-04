@@ -41,10 +41,12 @@ var (
 	targetResource = resources.Administration
 )
 
+type storeType = storage.LogImbue
+
 // Store is the interface to interact with the storage for storage.LogImbue
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.LogImbue) error
-	UpsertMany(ctx context.Context, objs []*storage.LogImbue) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -52,23 +54,23 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.LogImbue, bool, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.LogImbue, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetAll(ctx context.Context) ([]*storage.LogImbue, error)
+	GetAll(ctx context.Context) ([]*storeType, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.LogImbue, *storage.LogImbue]
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storage.LogImbue, *storage.LogImbue](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -81,7 +83,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.LogImbue) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -175,7 +177,7 @@ func (s *storeImpl) copyFromLogImbues(ctx context.Context, tx *postgres.Tx, objs
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.LogImbue) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -199,7 +201,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.LogImbue) err
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.LogImbue) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -231,8 +233,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.LogImbue) error
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.LogImbue) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "LogImbue")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -245,8 +247,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.LogImbue) error {
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.LogImbue) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "LogImbue")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

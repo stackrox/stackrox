@@ -41,10 +41,12 @@ var (
 	targetResource = resources.Access
 )
 
+type storeType = storage.SimpleAccessScope
+
 // Store is the interface to interact with the storage for storage.SimpleAccessScope
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error
-	UpsertMany(ctx context.Context, objs []*storage.SimpleAccessScope) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -52,22 +54,22 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.SimpleAccessScope, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.SimpleAccessScope) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.SimpleAccessScope, *storage.SimpleAccessScope]
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storage.SimpleAccessScope, *storage.SimpleAccessScope](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -80,7 +82,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.SimpleAccessScope) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -179,7 +181,7 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx *postgres
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SimpleAccessScope) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -203,7 +205,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SimpleAccessS
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.SimpleAccessScope) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -235,8 +237,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.SimpleAccessSco
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SimpleAccessScope) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "SimpleAccessScope")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -249,8 +251,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SimpleAccessScope) 
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.SimpleAccessScope) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "SimpleAccessScope")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

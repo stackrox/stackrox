@@ -41,10 +41,12 @@ var (
 	targetResource = resources.Hash
 )
 
+type storeType = storage.Hash
+
 // Store is the interface to interact with the storage for storage.Hash
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.Hash) error
-	UpsertMany(ctx context.Context, objs []*storage.Hash) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, clusterID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -52,22 +54,22 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, clusterID string) (bool, error)
 
-	Get(ctx context.Context, clusterID string) (*storage.Hash, bool, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.Hash, []int, error)
+	Get(ctx context.Context, clusterID string) (*storeType, bool, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.Hash) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.Hash, *storage.Hash]
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storage.Hash, *storage.Hash](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -80,7 +82,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.Hash) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetClusterId()
 }
 
@@ -174,7 +176,7 @@ func (s *storeImpl) copyFromHashes(ctx context.Context, tx *postgres.Tx, objs ..
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Hash) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -198,7 +200,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Hash) error {
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Hash) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -230,8 +232,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Hash) error {
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Hash) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Hash")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -244,8 +246,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Hash) error {
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Hash) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Hash")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

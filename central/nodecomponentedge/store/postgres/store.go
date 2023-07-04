@@ -37,28 +37,30 @@ var (
 	targetResource = resources.Node
 )
 
+type storeType = storage.NodeComponentEdge
+
 // Store is the interface to interact with the storage for storage.NodeComponentEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentEdge, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.NodeComponentEdge, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.NodeComponentEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.NodeComponentEdge, *storage.NodeComponentEdge]
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storage.NodeComponentEdge, *storage.NodeComponentEdge](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -71,7 +73,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.NodeComponentEdge) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 

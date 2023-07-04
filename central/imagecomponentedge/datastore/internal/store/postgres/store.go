@@ -37,28 +37,30 @@ var (
 	targetResource = resources.Image
 )
 
+type storeType = storage.ImageComponentEdge
+
 // Store is the interface to interact with the storage for storage.ImageComponentEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageComponentEdge, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.ImageComponentEdge, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.ImageComponentEdge, *storage.ImageComponentEdge]
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storage.ImageComponentEdge, *storage.ImageComponentEdge](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -71,7 +73,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.ImageComponentEdge) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 

@@ -77,11 +77,13 @@ var (
     {{- end }}
 )
 
-// Store is the interface to interact with the storage for {{.Type}}
+type storeType = {{ .Type }}
+
+// Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
 {{- if not .JoinTable }}
-    Upsert(ctx context.Context, obj *{{.Type}}) error
-    UpsertMany(ctx context.Context, objs []*{{.Type}}) error
+    Upsert(ctx context.Context, obj *storeType) error
+    UpsertMany(ctx context.Context, objs []*storeType) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) error
 {{- if $singlePK }}
@@ -92,23 +94,23 @@ type Store interface {
     Count(ctx context.Context) (int, error)
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
 
-    Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+    Get(ctx context.Context, {{template "paramList" $pks}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
-    GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error)
+    GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 {{- end }}
 {{- if $singlePK }}
-    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
 {{- end }}
 {{- if .GetAll }}
-    GetAll(ctx context.Context) ([]*{{.Type}}, error)
+    GetAll(ctx context.Context) ([]*storeType, error)
 {{- end }}
 
-    Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error
+    Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-    *pgSearch.GenericStore[{{.Type}}, *{{.Type}}]
+    *pgSearch.GenericStore[storeType, *storeType]
     mutex sync.RWMutex
 }
 
@@ -119,7 +121,7 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
     return &storeImpl{
-        GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[{{.Type}}, *{{.Type}}](
+        GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[storeType, *storeType](
             db,
             schema,
             pkGetter,
@@ -132,7 +134,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *{{ .Type }}) {{$singlePK.Type}} {
+func pkGetter(obj *storeType) {{$singlePK.Type}} {
     return {{ $singlePK.Getter "obj" }}
 }
 
@@ -304,7 +306,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{- if not .JoinTable }}
 {{- if not .NoCopyFrom }}
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
     conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 	    return err
@@ -329,7 +331,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
 }
 {{- end}}
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
     conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 	    return err
@@ -364,8 +366,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
-    defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+    defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.UpsertAllowed(ctx); err != nil {
@@ -394,8 +396,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
-    defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+    defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.UpsertManyAllowed(ctx); err != nil {
