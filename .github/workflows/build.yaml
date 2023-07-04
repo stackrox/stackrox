@@ -254,7 +254,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: go-binaries-build-${{ matrix.name }}
+          name: go-binaries-build-${{ matrix.name }}-ppc64le
           path: go-binaries-build.tgz
 
   pre-build-docs:
@@ -353,6 +353,13 @@ jobs:
             echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}"
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
+
+          if [ ${{ matrix.name }} == "ppc64le" ]; then
+          {
+            echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}-ppc64le"
+            echo "ROX_PRODUCT_BRANDING=${brand}"
+          } >> "$GITHUB_ENV"
+          fi
 
       - name: Checkout
         uses: actions/checkout@v3
