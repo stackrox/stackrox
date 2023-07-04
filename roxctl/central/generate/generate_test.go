@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	io2 "github.com/stackrox/rox/roxctl/common/io"
@@ -147,7 +148,7 @@ func TestTelemetryConfiguration(t *testing.T) {
 	releaseVersion := "1.2.3"
 	var disabledInDebug any
 	if !buildinfo.ReleaseBuild || buildinfo.TestBuild {
-		disabledInDebug = "DISABLED"
+		disabledInDebug = phonehome.DisabledKey
 	}
 
 	testCases := []struct {
@@ -157,15 +158,15 @@ func TestTelemetryConfiguration(t *testing.T) {
 		key       string
 		expected  result
 	}{
-		{testName: "test1", version: dirtyVersion, telemetry: true, key: "", expected: result{enabled: false, key: "DISABLED"}},
-		{testName: "test2", version: dirtyVersion, telemetry: false, key: "", expected: result{enabled: false, key: "DISABLED"}},
+		{testName: "test1", version: dirtyVersion, telemetry: true, key: "", expected: result{enabled: false, key: phonehome.DisabledKey}},
+		{testName: "test2", version: dirtyVersion, telemetry: false, key: "", expected: result{enabled: false, key: phonehome.DisabledKey}},
 		{testName: "test3", version: dirtyVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
-		{testName: "test4", version: dirtyVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: "DISABLED"}},
+		{testName: "test4", version: dirtyVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: phonehome.DisabledKey}},
 
 		{testName: "test5", version: releaseVersion, telemetry: true, key: "", expected: result{enabled: buildinfo.ReleaseBuild && !buildinfo.TestBuild, key: disabledInDebug}},
-		{testName: "test6", version: releaseVersion, telemetry: false, key: "", expected: result{enabled: false, key: "DISABLED"}},
+		{testName: "test6", version: releaseVersion, telemetry: false, key: "", expected: result{enabled: false, key: phonehome.DisabledKey}},
 		{testName: "test7", version: releaseVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
-		{testName: "test8", version: releaseVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: "DISABLED"}},
+		{testName: "test8", version: releaseVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: phonehome.DisabledKey}},
 	}
 
 	logio, _, _, _ := io2.TestIO()
