@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "test_single_key_structs"
+	storeName = "TestSingleKeyStruct"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.TestSingleKeyStruct) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "TestSingleKeyStruct")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "TestSingleKeyStruct")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoTestSingleKeyStructs(_ context.Context, batch *pgx.Batch, obj *storage.TestSingleKeyStruct) error {

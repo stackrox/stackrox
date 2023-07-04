@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "process_baseline_results"
+	storeName = "ProcessBaselineResults"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.ProcessBaselineResults) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ProcessBaselineResults")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ProcessBaselineResults")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoProcessBaselineResults(_ context.Context, batch *pgx.Batch, obj *storage.ProcessBaselineResults) error {

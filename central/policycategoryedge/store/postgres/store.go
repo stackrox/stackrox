@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "policy_category_edges"
+	storeName = "PolicyCategoryEdge"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.PolicyCategoryEdge) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "PolicyCategoryEdge")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "PolicyCategoryEdge")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoPolicyCategoryEdges(_ context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {

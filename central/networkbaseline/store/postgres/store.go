@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "network_baselines"
+	storeName = "NetworkBaseline"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.NetworkBaseline) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NetworkBaseline")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NetworkBaseline")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {

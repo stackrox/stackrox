@@ -26,6 +26,7 @@ import (
 
 const (
 	baseTable = "network_entities"
+	storeName = "NetworkEntity"
 
 	batchAfter = 100
 
@@ -90,11 +91,11 @@ func pkGetter(obj *storage.NetworkEntity) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NetworkEntity")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NetworkEntity")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNetworkEntities(_ context.Context, batch *pgx.Batch, obj *storage.NetworkEntity) error {

@@ -37,8 +37,8 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
-	setPostgresOperationDurationTime durationTimeSetter,
 	setAcquireDBConnDuration durationTimeSetter,
+	setPostgresOperationDurationTime durationTimeSetter,
 	targetResource permissions.ResourceMetadata,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
@@ -85,7 +85,7 @@ func (s *GenericStore[T, PT]) AcquireConn(ctx context.Context, op ops.Op) (*post
 	return conn, nil
 }
 
-// Exists returns if the ID exists in the store.
+// Exists tells whether the ID exists in the store.
 func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
 

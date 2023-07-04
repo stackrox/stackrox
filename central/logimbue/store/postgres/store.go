@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "log_imbues"
+	storeName = "LogImbue"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.LogImbue) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "LogImbue")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "LogImbue")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoLogImbues(_ context.Context, batch *pgx.Batch, obj *storage.LogImbue) error {

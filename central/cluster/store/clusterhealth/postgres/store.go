@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "cluster_health_statuses"
+	storeName = "ClusterHealthStatus"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ClusterHealthStatus) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ClusterHealthStatus")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ClusterHealthStatus")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoClusterHealthStatuses(_ context.Context, batch *pgx.Batch, obj *storage.ClusterHealthStatus) error {

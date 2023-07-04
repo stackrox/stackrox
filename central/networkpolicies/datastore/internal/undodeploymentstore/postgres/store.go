@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "networkpoliciesundodeployments"
+	storeName = "NetworkPolicyApplicationUndoDeploymentRecord"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) string 
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NetworkPolicyApplicationUndoDeploymentRecord")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NetworkPolicyApplicationUndoDeploymentRecord")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNetworkpoliciesundodeployments(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {

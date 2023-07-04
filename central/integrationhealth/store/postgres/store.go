@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "integration_healths"
+	storeName = "IntegrationHealth"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.IntegrationHealth) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "IntegrationHealth")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "IntegrationHealth")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoIntegrationHealths(_ context.Context, batch *pgx.Batch, obj *storage.IntegrationHealth) error {

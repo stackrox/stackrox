@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "api_tokens"
+	storeName = "TokenMetadata"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.TokenMetadata) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "TokenMetadata")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "TokenMetadata")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {

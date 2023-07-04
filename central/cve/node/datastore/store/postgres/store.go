@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "node_cves"
+	storeName = "NodeCVE"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.NodeCVE) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NodeCVE")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NodeCVE")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNodeCves(_ context.Context, batch *pgx.Batch, obj *storage.NodeCVE) error {

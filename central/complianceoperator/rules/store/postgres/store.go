@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "compliance_operator_rules"
+	storeName = "ComplianceOperatorRule"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.ComplianceOperatorRule) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ComplianceOperatorRule")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ComplianceOperatorRule")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoComplianceOperatorRules(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorRule) error {

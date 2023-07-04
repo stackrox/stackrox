@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "cluster_cves"
+	storeName = "ClusterCVE"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ClusterCVE) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ClusterCVE")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ClusterCVE")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoClusterCves(_ context.Context, batch *pgx.Batch, obj *storage.ClusterCVE) error {

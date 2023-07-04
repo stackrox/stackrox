@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "signature_integrations"
+	storeName = "SignatureIntegration"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.SignatureIntegration) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "SignatureIntegration")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "SignatureIntegration")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoSignatureIntegrations(_ context.Context, batch *pgx.Batch, obj *storage.SignatureIntegration) error {

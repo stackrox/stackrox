@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "collections"
+	storeName = "ResourceCollection"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ResourceCollection) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ResourceCollection")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ResourceCollection")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection) error {

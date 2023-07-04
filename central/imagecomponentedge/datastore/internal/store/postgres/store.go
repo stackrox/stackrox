@@ -25,6 +25,7 @@ import (
 
 const (
 	baseTable = "image_component_edges"
+	storeName = "ImageComponentEdge"
 
 	batchAfter = 100
 
@@ -83,11 +84,11 @@ func pkGetter(obj *storage.ImageComponentEdge) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ImageComponentEdge")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ImageComponentEdge")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 // endregion Helper functions

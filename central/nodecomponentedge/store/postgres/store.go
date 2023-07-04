@@ -25,6 +25,7 @@ import (
 
 const (
 	baseTable = "node_component_edges"
+	storeName = "NodeComponentEdge"
 
 	batchAfter = 100
 
@@ -83,11 +84,11 @@ func pkGetter(obj *storage.NodeComponentEdge) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NodeComponentEdge")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NodeComponentEdge")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 // endregion Helper functions

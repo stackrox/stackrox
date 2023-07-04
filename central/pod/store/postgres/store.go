@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "pods"
+	storeName = "Pod"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.Pod) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Pod")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Pod")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) error {

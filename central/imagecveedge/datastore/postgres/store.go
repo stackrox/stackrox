@@ -25,6 +25,7 @@ import (
 
 const (
 	baseTable = "image_cve_edges"
+	storeName = "ImageCVEEdge"
 
 	batchAfter = 100
 
@@ -83,11 +84,11 @@ func pkGetter(obj *storage.ImageCVEEdge) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ImageCVEEdge")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ImageCVEEdge")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 // endregion Helper functions

@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "listening_endpoints"
+	storeName = "ProcessListeningOnPortStorage"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ProcessListeningOnPortStorage) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ProcessListeningOnPortStorage")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ProcessListeningOnPortStorage")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoListeningEndpoints(_ context.Context, batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {

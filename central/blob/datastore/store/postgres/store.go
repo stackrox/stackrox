@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "blobs"
+	storeName = "Blob"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.Blob) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Blob")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Blob")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoBlobs(_ context.Context, batch *pgx.Batch, obj *storage.Blob) error {

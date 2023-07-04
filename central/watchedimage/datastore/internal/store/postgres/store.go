@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "watched_images"
+	storeName = "WatchedImage"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.WatchedImage) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "WatchedImage")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "WatchedImage")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoWatchedImages(_ context.Context, batch *pgx.Batch, obj *storage.WatchedImage) error {

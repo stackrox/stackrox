@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "alerts"
+	storeName = "Alert"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.Alert) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Alert")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Alert")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoAlerts(_ context.Context, batch *pgx.Batch, obj *storage.Alert) error {

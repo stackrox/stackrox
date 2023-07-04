@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "image_integrations"
+	storeName = "ImageIntegration"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.ImageIntegration) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ImageIntegration")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ImageIntegration")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoImageIntegrations(_ context.Context, batch *pgx.Batch, obj *storage.ImageIntegration) error {

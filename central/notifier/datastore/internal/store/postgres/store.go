@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "notifiers"
+	storeName = "Notifier"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.Notifier) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Notifier")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Notifier")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNotifiers(_ context.Context, batch *pgx.Batch, obj *storage.Notifier) error {

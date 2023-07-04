@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "compliance_operator_scan_setting_bindings"
+	storeName = "ComplianceOperatorScanSettingBinding"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.ComplianceOperatorScanSettingBinding) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ComplianceOperatorScanSettingBinding")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ComplianceOperatorScanSettingBinding")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoComplianceOperatorScanSettingBindings(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBinding) error {

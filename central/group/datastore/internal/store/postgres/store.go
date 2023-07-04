@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "groups"
+	storeName = "Group"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.Group) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Group")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Group")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoGroups(_ context.Context, batch *pgx.Batch, obj *storage.Group) error {

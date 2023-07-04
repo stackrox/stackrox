@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "clusters"
+	storeName = "Cluster"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.Cluster) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Cluster")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Cluster")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoClusters(_ context.Context, batch *pgx.Batch, obj *storage.Cluster) error {

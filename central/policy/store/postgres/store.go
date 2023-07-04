@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "policies"
+	storeName = "Policy"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.Policy) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Policy")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Policy")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoPolicies(_ context.Context, batch *pgx.Batch, obj *storage.Policy) error {

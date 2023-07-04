@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "secrets"
+	storeName = "Secret"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.Secret) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Secret")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Secret")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secret) error {

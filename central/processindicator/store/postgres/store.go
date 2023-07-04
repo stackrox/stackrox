@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "process_indicators"
+	storeName = "ProcessIndicator"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.ProcessIndicator) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ProcessIndicator")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ProcessIndicator")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoProcessIndicators(_ context.Context, batch *pgx.Batch, obj *storage.ProcessIndicator) error {

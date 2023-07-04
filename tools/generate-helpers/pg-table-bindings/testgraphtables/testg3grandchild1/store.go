@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "test_g3_grand_child1"
+	storeName = "TestG3GrandChild1"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.TestG3GrandChild1) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "TestG3GrandChild1")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "TestG3GrandChild1")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoTestG3GrandChild1(_ context.Context, batch *pgx.Batch, obj *storage.TestG3GrandChild1) error {

@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "service_identities"
+	storeName = "ServiceIdentity"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ServiceIdentity) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ServiceIdentity")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ServiceIdentity")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoServiceIdentities(_ context.Context, batch *pgx.Batch, obj *storage.ServiceIdentity) error {

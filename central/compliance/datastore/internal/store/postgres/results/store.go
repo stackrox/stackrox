@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "compliance_run_results"
+	storeName = "ComplianceRunResults"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.ComplianceRunResults) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ComplianceRunResults")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ComplianceRunResults")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoComplianceRunResults(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceRunResults) error {

@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "simple_access_scopes"
+	storeName = "SimpleAccessScope"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.SimpleAccessScope) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "SimpleAccessScope")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "SimpleAccessScope")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoSimpleAccessScopes(_ context.Context, batch *pgx.Batch, obj *storage.SimpleAccessScope) error {

@@ -58,7 +58,8 @@ import (
 )
 
 const (
-        baseTable = "{{.Table}}"
+        baseTable = {{ .Table | quote }}
+        storeName = {{ .TrimmedType | quote }}
 
         batchAfter = 100
 
@@ -144,11 +145,11 @@ func pkGetter(obj *{{ .Type }}) {{$singlePK.Type}} {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-    metrics.SetPostgresOperationDurationTime(start, op, "{{.TrimmedType}}")
+    metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-    metrics.SetAcquireDBConnDuration(start, op, "{{.TrimmedType}}")
+    metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}

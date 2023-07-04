@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "image_cves"
+	storeName = "ImageCVE"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ImageCVE) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ImageCVE")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ImageCVE")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoImageCves(_ context.Context, batch *pgx.Batch, obj *storage.ImageCVE) error {

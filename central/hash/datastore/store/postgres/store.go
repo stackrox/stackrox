@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "hashes"
+	storeName = "Hash"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.Hash) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Hash")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Hash")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoHashes(_ context.Context, batch *pgx.Batch, obj *storage.Hash) error {

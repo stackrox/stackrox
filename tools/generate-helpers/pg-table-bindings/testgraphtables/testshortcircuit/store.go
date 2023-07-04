@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "test_short_circuits"
+	storeName = "TestShortCircuit"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.TestShortCircuit) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "TestShortCircuit")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "TestShortCircuit")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoTestShortCircuits(_ context.Context, batch *pgx.Batch, obj *storage.TestShortCircuit) error {

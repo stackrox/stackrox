@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "declarative_config_healths"
+	storeName = "DeclarativeConfigHealth"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.DeclarativeConfigHealth) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "DeclarativeConfigHealth")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "DeclarativeConfigHealth")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoDeclarativeConfigHealths(_ context.Context, batch *pgx.Batch, obj *storage.DeclarativeConfigHealth) error {

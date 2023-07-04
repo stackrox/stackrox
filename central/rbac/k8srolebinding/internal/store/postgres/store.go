@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "role_bindings"
+	storeName = "K8SRoleBinding"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.K8SRoleBinding) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "K8SRoleBinding")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "K8SRoleBinding")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRoleBinding) error {

@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "namespaces"
+	storeName = "NamespaceMetadata"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.NamespaceMetadata) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NamespaceMetadata")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NamespaceMetadata")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNamespaces(_ context.Context, batch *pgx.Batch, obj *storage.NamespaceMetadata) error {

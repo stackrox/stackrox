@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "report_snapshots"
+	storeName = "ReportSnapshot"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ReportSnapshot) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ReportSnapshot")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ReportSnapshot")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoReportSnapshots(_ context.Context, batch *pgx.Batch, obj *storage.ReportSnapshot) error {

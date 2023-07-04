@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "permission_sets"
+	storeName = "PermissionSet"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.PermissionSet) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "PermissionSet")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "PermissionSet")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoPermissionSets(_ context.Context, batch *pgx.Batch, obj *storage.PermissionSet) error {

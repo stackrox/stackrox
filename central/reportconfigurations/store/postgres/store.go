@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "report_configurations"
+	storeName = "ReportConfiguration"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.ReportConfiguration) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "ReportConfiguration")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "ReportConfiguration")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoReportConfigurations(_ context.Context, batch *pgx.Batch, obj *storage.ReportConfiguration) error {

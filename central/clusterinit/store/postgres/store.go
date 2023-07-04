@@ -26,6 +26,7 @@ import (
 
 const (
 	baseTable = "cluster_init_bundles"
+	storeName = "InitBundleMeta"
 
 	batchAfter = 100
 
@@ -89,11 +90,11 @@ func pkGetter(obj *storage.InitBundleMeta) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "InitBundleMeta")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "InitBundleMeta")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoClusterInitBundles(_ context.Context, batch *pgx.Batch, obj *storage.InitBundleMeta) error {

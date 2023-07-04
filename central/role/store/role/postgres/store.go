@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "roles"
+	storeName = "Role"
 
 	batchAfter = 100
 
@@ -91,11 +92,11 @@ func pkGetter(obj *storage.Role) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Role")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Role")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoRoles(_ context.Context, batch *pgx.Batch, obj *storage.Role) error {

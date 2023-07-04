@@ -28,6 +28,7 @@ import (
 
 const (
 	baseTable = "risks"
+	storeName = "Risk"
 
 	batchAfter = 100
 
@@ -93,11 +94,11 @@ func pkGetter(obj *storage.Risk) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "Risk")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "Risk")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoRisks(_ context.Context, batch *pgx.Batch, obj *storage.Risk) error {

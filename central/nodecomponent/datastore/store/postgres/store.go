@@ -27,6 +27,7 @@ import (
 
 const (
 	baseTable = "node_components"
+	storeName = "NodeComponent"
 
 	batchAfter = 100
 
@@ -92,11 +93,11 @@ func pkGetter(obj *storage.NodeComponent) string {
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, "NodeComponent")
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
 }
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, "NodeComponent")
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoNodeComponents(_ context.Context, batch *pgx.Batch, obj *storage.NodeComponent) error {
