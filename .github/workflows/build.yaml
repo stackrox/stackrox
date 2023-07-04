@@ -354,7 +354,7 @@ jobs:
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
 
-          if [ ${{ matrix.name }} == "ppc64le" ]; then
+          if [ ${{ matrix.arch }} == "ppc64le" ]; then
           {
             echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}-ppc64le"
             echo "ROX_PRODUCT_BRANDING=${brand}"
