@@ -12,6 +12,7 @@
     "dependencies": {
         "@apollo/client": "^3.5.5",
         "@lifeomic/axios-fetch": "^3.0.0",
+        "@microsoft/fetch-event-source": "^2.0.1",
         "@patternfly/react-charts": "6.94.18",
         "@patternfly/react-code-editor": "^4.82.113",
         "@patternfly/react-core": "4.276.6",

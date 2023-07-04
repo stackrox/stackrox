@@ -176,11 +176,13 @@ func (l *LoggerImpl) Warnw(msg string, keysAndValues ...interface{}) {
 // Info uses fmt.Sprintf to construct and log a message.
 func (l *LoggerImpl) Info(args ...interface{}) {
 	l.InnerLogger.Info(args...)
+	l.writeToEventStream("", args...)
 }
 
 // Infof uses fmt.Sprintf to log a templated message.
 func (l *LoggerImpl) Infof(template string, args ...interface{}) {
 	l.InnerLogger.Infof(template, args...)
+	l.writeToEventStream("", args...)
 }
 
 // Infow logs a message with some additional context.

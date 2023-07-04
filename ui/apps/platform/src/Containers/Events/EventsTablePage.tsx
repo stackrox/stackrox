@@ -1,6 +1,7 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { EventProto } from '../../types/event.proto';
 import { fetchEvents } from '../../services/EventService';
 
@@ -15,6 +16,43 @@ function EventsTablePage(): ReactElement {
                 setItems([]);
             });
     });
+
+    useEffect(() => {
+        const fetchData = async () => {
+            await fetchEventSource(`/api/event/stream`, {
+                method: 'POST',
+                headers: {
+                    Accept: 'text/event-stream',
+                },
+                async onopen(res) {
+                    if (res.ok && res.status === 200) {
+                        // eslint-disable-next-line no-console
+                        console.log('Connection made ', res);
+                    } else {
+                        // eslint-disable-next-line no-console
+                        console.log('Some error ', res);
+                    }
+                },
+                onmessage(event) {
+                    // eslint-disable-next-line no-console
+                    console.log(event.data);
+                    const parsedItem = JSON.parse(event.data);
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                    setItems((events) => [...events, parsedItem]);
+                },
+                onclose() {
+                    // eslint-disable-next-line no-console
+                    console.log('Connection closed');
+                },
+                onerror(err) {
+                    // eslint-disable-next-line no-console
+                    console.log('Some error ', err);
+                },
+            });
+        };
+        // eslint-disable-next-line no-void
+        void fetchData();
+    }, []);
 
     return (
         <>

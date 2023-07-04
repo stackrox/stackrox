@@ -744,6 +744,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
 			Compression:   true,
 		},
+		{
+			Route:         "/api/event/stream",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: eventHandler.Singleton().SSEHandler(),
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
