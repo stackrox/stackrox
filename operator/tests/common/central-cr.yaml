@@ -22,6 +22,8 @@ spec:
         limits:
           memory: 4Gi
           cpu: 1
+    telemetry:
+      enabled: false
   scanner:
     analyzer:
       scaling:
