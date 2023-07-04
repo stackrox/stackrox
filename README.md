@@ -19,6 +19,7 @@
             - [Common Makefile Targets](#common-makefile-targets)
             - [Productivity](#productivity)
             - [GoLand Configuration](#goland-configuration)
+            - [Running sql_integration tests](#running-sql_integration-tests)
             - [Debugging](#debugging)
     - [Generating Portable Installers](#generating-portable-installers)
     - [Dependencies and Recommendations for Running StackRox](#dependencies-and-recommendations-for-running-stackrox)
