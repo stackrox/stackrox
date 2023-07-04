@@ -328,6 +328,12 @@ function launch_central {
         )
       fi
 
+      if [[ -n "$ROX_OPENSHIFT_MONITORING" ]]; then
+        helm_args+=(
+          --set-string monitoring.openshift.enabled="${ROX_OPENSHIFT_MONITORING}"
+        )
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "$unzip_dir/chart"
         helm lint "$unzip_dir/chart" -n stackrox
@@ -566,6 +572,12 @@ function launch_sensor {
         echo "Setting re-sync disabled to $ROX_RESYNC_DISABLED"
         helm_args+=(
           --set customize.envVars.ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED}"
+        )
+      fi
+
+      if [[ -n "$ROX_OPENSHIFT_MONITORING" ]]; then
+        helm_args+=(
+          --set-string monitoring.openshift.enabled="${ROX_OPENSHIFT_MONITORING}"
         )
       fi
 

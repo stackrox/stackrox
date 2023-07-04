@@ -9,6 +9,9 @@ metadata:
     {{- include "srox.labels" (list . "service" "central") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "service" "central") | nindent 4 }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    service.beta.openshift.io/serving-cert-secret-name: central-monitoring-tls
+    {{- end }}
 spec:
   ports:
     {{- toYaml ._rox.central._servicePorts | nindent 4 }}
