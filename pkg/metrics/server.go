@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -24,12 +25,12 @@ var log = logging.LoggerForModule()
 type Server struct {
 	metricsServer       *http.Server
 	secureMetricsServer *http.Server
-	tlsConfigurer       TLSConfigurer
+	tlsConfigurer       verifier.TLSConfigurer
 	uptimeMetric        prometheus.Gauge
 }
 
 // NewServer creates and returns a new metrics http(s) server with configured settings.
-func NewServer(subsystem Subsystem, tlsConfigurer TLSConfigurer) *Server {
+func NewServer(subsystem Subsystem, tlsConfigurer verifier.TLSConfigurer) *Server {
 	mux := http.NewServeMux()
 	mux.Handle(metricsURLPath, promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
 
@@ -86,7 +87,6 @@ func (s *Server) RunForever() {
 
 	runSecureMetrics := secureMetricsEnabled() && s.secureMetricsValid()
 	if runSecureMetrics {
-		s.tlsConfigurer.WatchForChanges()
 		go runForeverTLS(s.secureMetricsServer)
 	}
 
