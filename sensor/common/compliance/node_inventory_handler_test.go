@@ -173,7 +173,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func mockCentralAck(h *nodeInventoryHandlerImpl, s *NodeInventoryHandlerTestSuite) {
+func mockCentralAck(h *nodeInventoryHandlerImpl) error {
 	select {
 	case <-h.ResponsesC():
 		err := h.ProcessMessage(&central.MsgToSensor{
@@ -257,9 +257,9 @@ func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, 
 				}
 				switch msg.Msg.GetAck().GetAction() {
 				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-					ms.ACKCount = ms.ACKCount + 1
+					ms.ACKCount++
 				case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-					ms.NACKCount = ms.NACKCount + 1
+					ms.NACKCount++
 				}
 			}
 		}
