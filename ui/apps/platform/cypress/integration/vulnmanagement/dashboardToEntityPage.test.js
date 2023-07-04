@@ -1,9 +1,9 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderTextFromItemText) {
     cy.get(itemTextSelector)
@@ -15,7 +15,7 @@ function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderText
                 cy.get(itemTextSelector).click();
             }, entitiesKey);
 
-            cy.get(`${selectors.entityPageHeader}:contains("${headerText}")`);
+            cy.get(`[data-testid="header-text"]:contains("${headerText}")`);
         });
 }
 

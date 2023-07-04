@@ -6,13 +6,12 @@ import {
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
 import {
-    getCountAndNounFromImageCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'image-components';
 
@@ -121,13 +120,7 @@ describe('Vulnerability Management Image Components', () => {
             this.skip(); // TODO verify and remove
         }
 
-        verifyConditionalCVEs(
-            entitiesKey,
-            'image-cves',
-            4,
-            'vulnCounter',
-            getCountAndNounFromImageCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'image-cves', 4, 'vulnCounter');
     });
 
     it('should display links for images', () => {
