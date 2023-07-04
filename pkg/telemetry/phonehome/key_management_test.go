@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_ToDownload(t *testing.T) {
+func Test_toDownload(t *testing.T) {
 	tests := map[string]struct {
 		release bool
 		key     string
@@ -31,7 +31,7 @@ func Test_ToDownload(t *testing.T) {
 	}
 }
 
-func Test_UseRemoteKey(t *testing.T) {
+func Test_useRemoteKey(t *testing.T) {
 	tests := map[string]struct {
 		release  bool
 		cfg      *remoteConfig
