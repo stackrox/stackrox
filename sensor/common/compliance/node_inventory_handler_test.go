@@ -176,13 +176,16 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 func mockCentralAck(h *nodeInventoryHandlerImpl, s *NodeInventoryHandlerTestSuite) {
 	select {
 	case <-h.ResponsesC():
-		h.ProcessMessage(&central.MsgToSensor{
+		err := h.ProcessMessage(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",
 				Action:    central.NodeInventoryACK_ACK,
 			}},
 		})
+		if err != nil {
+			s.Fail("ProcessMessage failed processing the ACK")
+		}
 		break
 	case <-time.After(5 * time.Second): // Starts counting when select is triggered
 		s.Fail("ResponsesC msg didn't arrive after 5 seconds")
