@@ -23,7 +23,7 @@ import {
     systemHealthPath,
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
-    networkBasePathPF,
+    networkBasePath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 
@@ -86,8 +86,8 @@ function NavigationSidebar({
                     title={basePathToLabelMap[dashboardPath]}
                 />
                 <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePathPF)}
-                    path={networkBasePathPF}
+                    isActive={location.pathname.includes(networkBasePath)}
+                    path={networkBasePath}
                     title="Network Graph"
                 />
                 <LeftNavItem
