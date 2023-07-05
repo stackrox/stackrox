@@ -49,6 +49,9 @@ jobs:
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
 
+    - name: Go Operator Integration Unit Tests
+      run: ${{ matrix.gotags }} make -C operator/ test-integration
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
