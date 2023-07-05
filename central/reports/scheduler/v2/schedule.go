@@ -88,6 +88,7 @@ type scheduler struct {
 // New instantiates a new cron scheduler and supports adding and removing report requests
 func New(reportConfigDatastore reportConfigDS.DataStore, reportMetadataStore reportMetadataDS.DataStore,
 	collectionDatastore collectionDS.DataStore, reportGenerator reportGen.ReportGenerator) Scheduler {
+
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
