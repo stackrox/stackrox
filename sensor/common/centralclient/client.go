@@ -74,6 +74,10 @@ func NewClient(endpoint string) (*Client, error) {
 	// authentication, it is possible that a user has required client certificate authentication for the
 	// endpoint Sensor is connecting to. Since a client certificate can be used without harm even if the
 	// remote is not trusted, make it available here to be on the safe side.
+	//
+	// Moreover, authentication requirements can be tightened in future and thus having an older version
+	// of Sensor authenticating itself will enable backward compatibility with newer Centrals. This has
+	// indeed happened in the past when `/v1/metadata` became authenticated.
 	clientCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining client certificate")
