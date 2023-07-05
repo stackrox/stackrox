@@ -120,7 +120,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {networkPolicyErrors.map((networkPolicyError) => (
                     <Alert
                         isInline
-                        variant={AlertVariant.danger}
+                        variant={AlertVariant.warning}
                         title="There was an error loading network policy data"
                     >
                         {getAxiosErrorMessage(networkPolicyError)}
