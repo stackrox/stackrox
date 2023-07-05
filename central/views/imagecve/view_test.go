@@ -624,10 +624,14 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
 				return func(i, j int) bool {
-					if records[i].FirstDiscoveredInSystem.Equal(*records[j].FirstDiscoveredInSystem) {
+					recordI, recordJ := records[i], records[j]
+					if recordJ == nil {
+						recordJ = &imageCVECoreResponse{}
+					}
+					if recordI.FirstDiscoveredInSystem.Equal(*recordJ.FirstDiscoveredInSystem) {
 						return records[i].CVE < records[j].CVE
 					}
-					return records[i].FirstDiscoveredInSystem.Before(*records[j].FirstDiscoveredInSystem)
+					return recordI.FirstDiscoveredInSystem.Before(*recordJ.FirstDiscoveredInSystem)
 				}
 			},
 		},

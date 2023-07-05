@@ -51,8 +51,8 @@ func (c *imageCVECoreResponse) GetAffectedImageCount() int {
 	return c.AffectedImageCount
 }
 
-func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() time.Time {
-	return *c.FirstDiscoveredInSystem
+func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
+	return c.FirstDiscoveredInSystem
 }
 
 type imageCVECoreCount struct {
