@@ -94,6 +94,10 @@ arch="x86_64"
 goarch="amd64"
 PLATFORM="linux/amd64"
 
+if [[ -z "${ARCH}" ]]; then
+    echo "Using default values"
+fi
+
 if [[ $ARCH == "ppc64le" ]]; then
     arch="ppc64le"
     goarch="ppc64le"

@@ -33,6 +33,10 @@ chmod -R 755 "${bundle_root}"
 arch="x86_64"
 PLATFORM="linux/amd64"
 
+if [[ -z "${ARCH}" ]]; then
+    echo "Using default values"
+fi
+
 if [[ $ARCH == "ppc64le" ]]; then
     arch="ppc64le"
     PLATFORM="linux/ppc64le"
