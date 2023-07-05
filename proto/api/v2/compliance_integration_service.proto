@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+import weak "google/api/annotations.proto";
+import "api/v2/common.proto";
+
+package v2;
+
+// Next Tag: 6
+message ComplianceIntegration {
+    string id                     = 1;
+    string version                = 2;
+    string cluster_id             = 3;
+    string namespace              = 4;
+    // Collection of errors that occurred while trying to obtain collector health info.
+    repeated string status_errors = 5;
+}
+
+message ComplianceIntegrationStatusRequest {
+    string cluster_id = 1;
+}
+
+message ListComplianceIntegrationsResponse {
+    repeated ComplianceIntegration integrations = 1;
+}
+
+service SignatureIntegrationService {
+    // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
+    rpc ListComplianceIntegrations (Empty) returns (ListComplianceIntegrationsResponse) {
+        option (google.api.http) = {
+            get: "/v2/complianceintegrations"
+        };
+    }
+
+    // GetComplianceIntegration retrieves the compliance operator metadata for the specified cluster
+    rpc GetComplianceIntegration (ComplianceIntegrationStatusRequest) returns (ComplianceIntegration) {
+        option (google.api.http) = {
+            get: "/v2/complianceintegrations/{cluster_id}"
+        };
+    }
+}
