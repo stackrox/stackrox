@@ -139,40 +139,50 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(h.Stopped().Wait())
 }
 
+type testState struct {
+	event             common.SensorComponentEvent
+	expectedACKCount  int
+	expectedNACKCount int
+}
+
 // This test simulates a running Sensor loosing connection to Central, followed by a reconnect.
 // As soon as Sensor enters offline mode, it should send NACKs to Compliance.
 // In online mode, inventories are forwarded to Central, which responds with an ACK, that is passed to Compliance.
 func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
-	ch, producer := s.generateTestInputNoClose(1)
+	ch := make(chan *storage.NodeInventory)
 	defer close(ch)
 	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
-	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
-	err := mockCentralAck(h)
-	if err != nil {
-		s.Fail(err.Error())
+
+	states := []testState{
+		{
+			event:             common.SensorComponentEventCentralReachable,
+			expectedACKCount:  1,
+			expectedNACKCount: 0,
+		},
+		{
+			event:             common.SensorComponentEventOfflineMode,
+			expectedACKCount:  0,
+			expectedNACKCount: 1,
+		},
+		{
+			event:             common.SensorComponentEventCentralReachable,
+			expectedACKCount:  1,
+			expectedNACKCount: 0,
+		},
 	}
-	stats1 := consumeAndCountCompliance(h.ComplianceC(), 1)
-	s.NoError(stats1.sc.Stopped().Wait())
-	s.Equal(1, stats1.ACKCount)
 
-	h.Notify(common.SensorComponentEventOfflineMode)
-	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
-	stats2 := consumeAndCountCompliance(h.ComplianceC(), 1)
-	s.NoError(stats2.sc.Stopped().Wait())
-	s.Equal(1, stats2.NACKCount)
-
-	h.Notify(common.SensorComponentEventCentralReachable)
-	ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", 4))
-	err = mockCentralAck(h)
-	if err != nil {
-		s.Fail(err.Error())
+	for i, state := range states {
+		h.Notify(state.event)
+		ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", i))
+		if state.event == common.SensorComponentEventCentralReachable {
+			s.NoError(mockCentralAck(h))
+		}
+		result := consumeAndCountCompliance(h.ComplianceC(), 1)
+		s.NoError(result.sc.Stopped().Wait())
+		s.Equal(state.expectedACKCount, result.ACKCount)
+		s.Equal(state.expectedNACKCount, result.NACKCount)
 	}
-	stats3 := consumeAndCountCompliance(h.ComplianceC(), 1)
-	s.NoError(stats3.sc.Stopped().Wait())
-	s.Equal(1, stats3.ACKCount)
-
-	s.NoError(producer.Stopped().Wait())
 
 	h.Stop(nil)
 	s.T().Logf("waiting for handler to stop")
