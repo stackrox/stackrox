@@ -63,7 +63,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 
     if  [[ $helm_charts =~ $central_regex ]]; then
         ci_export CENTRAL_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-central-services"
-        tag = "${BASH_REMATCH[1]}"
+        tag="${BASH_REMATCH[1]}"
         echo "New central image tag is ${tag}"
         ci_export MAIN_IMAGE_TAG "$tag"
     else
