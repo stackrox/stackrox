@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"strings"
 	"testing"
 
 	jiraLib "github.com/andygrunwald/go-jira"
@@ -37,7 +37,7 @@ type fakeJira struct {
 func (j *fakeJira) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/rest/api/2/priority", j.handlePriority)
-	mux.HandleFunc("/rest/api/2/issue/createmeta", j.handleCreateMeta)
+	mux.HandleFunc("/rest/api/2/issue/createmeta/", j.handleCreateMeta)
 	mux.HandleFunc("/rest/api/2/issue", j.handleCreateIssue)
 
 	if j.username == "" && j.password == "" {
@@ -60,20 +60,27 @@ func (j *fakeJira) handlePriority(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (j *fakeJira) handleCreateMeta(w http.ResponseWriter, req *http.Request) {
-	queryVals := req.URL.Query()
-	expectedQueryVals := url.Values{
-		"expand":      []string{"projects.issuetypes.fields"},
-		"projectKeys": []string{j.project.Key},
+
+	pathSuffix, found := strings.CutPrefix(req.URL.Path, "/rest/api/2/issue/createmeta/")
+
+	if !found {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
-	if !assert.Equal(j.t, expectedQueryVals, queryVals) {
+
+	projectKey := strings.Split(pathSuffix, "/")
+
+	if projectKey[0] != j.project.Key || projectKey[1] != "issuetypes" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
-	cmi := jiraLib.CreateMetaInfo{
-		Projects: []*jiraLib.MetaProject{&j.project},
+	issueTypes := &issueTypeResult{
+		Total:      len(j.project.IssueTypes),
+		IssueTypes: j.project.IssueTypes,
 	}
-	require.NoError(j.t, json.NewEncoder(w).Encode(&cmi))
+	require.NoError(j.t, json.NewEncoder(w).Encode(&issueTypes))
 }
 
 func (j *fakeJira) handleCreateIssue(w http.ResponseWriter, req *http.Request) {
