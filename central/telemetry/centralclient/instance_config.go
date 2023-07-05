@@ -34,9 +34,13 @@ var (
 )
 
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
-	key := env.TelemetryStorageKey.Setting()
-	if key == "" || env.OfflineModeEnv.BooleanSetting() {
+	if env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil, nil
+	}
+	key, err := phonehome.GetKey(env.TelemetryStorageKey.Setting(),
+		env.TelemetryConfigURL.Setting())
+	if key == "" || err != nil {
+		return nil, nil, err
 	}
 
 	// k8s apiserver is not accessible in cloud service environment.

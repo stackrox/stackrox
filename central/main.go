@@ -276,7 +276,7 @@ func main() {
 	}
 
 	// Start the prometheus metrics server
-	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
+	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	if env.PrivateDiagnosticsEnabled.BooleanSetting() {

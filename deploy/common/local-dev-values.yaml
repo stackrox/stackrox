@@ -20,6 +20,9 @@ central:
         cpu: 1
         memory: 4Gi
 
+  telemetry:
+    enabled: false
+
 scanner:
   replicas: 1
   autoscaling:

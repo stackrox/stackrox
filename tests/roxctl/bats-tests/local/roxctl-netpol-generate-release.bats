@@ -46,18 +46,30 @@ teardown() {
   assert_file_exist "$ofile"
   yaml_valid "$ofile"
 
-  # There must be at least 2 yaml documents in the output
+  # There must be at least 3 yaml documents in the output
   # yq version 4.16.2 has problems with handling 'document_index', thus we use 'di'
   run yq e 'di' "${ofile}"
   assert_line '0'
   assert_line '1'
+  assert_line '2'
 
-  # Ensure that both yaml docs are of kind 'NetworkPolicy'
+  # Ensure that all yaml docs are of kind 'NetworkPolicy'
   run yq e '.kind | ({"match": ., "doc": di})' "${ofile}"
   assert_line --index 0 'match: NetworkPolicy'
   assert_line --index 1 'doc: 0'
   assert_line --index 2 'match: NetworkPolicy'
   assert_line --index 3 'doc: 1'
+  assert_line --index 4 'match: NetworkPolicy'
+  assert_line --index 5 'doc: 2'
+
+  # Ensure that all NetworkPolicies have the generated-by-stackrox label
+  run yq e '.metadata.labels | ({"match": ."network-policy-buildtime-generator.stackrox.io/generated", "doc": di})' "${ofile}"
+  assert_line --index 0 'match: "true"'
+  assert_line --index 1 'doc: 0'
+  assert_line --index 2 'match: "true"'
+  assert_line --index 3 'doc: 1'
+  assert_line --index 4 'match: "true"'
+  assert_line --index 5 'doc: 2'
 }
 
 @test "roxctl-release generate netpol produces no output when all yamls are templated" {
