@@ -1,0 +1,39 @@
+name: Download and Upload Repository Mappings
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  download-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Download repository mappings
+      run: |
+        curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs \
+          -o 'redhat-repository-mappings/#1' \
+          'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
+        for f in redhat-repository-mappings/*; do
+          jq empty "$f"
+        done
+
+    - name: Upload repository mappings to Google Cloud Storage
+      run: |
+        gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
+
+    - name: Send Slack notification on workflow failure
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner V4 Updater Workflow: Download and Upload Repository Mappings"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
