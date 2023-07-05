@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -59,16 +57,31 @@ func (s *ReportConfigurationDatastoreV2Tests) TearDownSuite() {
 func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTime() {
 	reportConfig1 := fixtures.GetValidReportConfigWithMultipleNotifiers()
 	reportConfig1.Id = ""
+	reportConfig1.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: "collection-1",
+		},
+	}
 	configID1, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig1)
 	s.NoError(err)
 
 	reportConfig2 := fixtures.GetValidReportConfigWithMultipleNotifiers()
 	reportConfig2.Id = ""
+	reportConfig2.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: "collection-2",
+		},
+	}
 	configID2, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig2)
 	s.NoError(err)
 
 	reportConfig3 := fixtures.GetValidReportConfigWithMultipleNotifiers()
 	reportConfig3.Id = ""
+	reportConfig3.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: "collection-2",
+		},
+	}
 	configID3, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig3)
 	s.NoError(err)
 
@@ -94,23 +107,42 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 		generateReportMetadata(configID3, time5),
 		generateReportMetadata(configID1, time6),
 	}
-	expectedSortedConfigIDs := []string{configID3, configID2, configID1}
 
 	for _, metadata := range reportMetadatas {
 		_, err = s.reportMetadataStore.AddReportMetadata(s.ctx, metadata)
 		s.NoError(err)
 	}
 
-	query := search.NewQueryBuilder().
+	// Test query with report metadata fields
+	query1 := search.NewQueryBuilder().
 		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true))).ProtoQuery()
 
-	configs, err := s.datastore.GetReportConfigurations(s.ctx, query)
+	expectedSortedConfigIDs := []string{configID3, configID2, configID1}
+	configs, err := s.datastore.GetReportConfigurations(s.ctx, query1)
 	s.NoError(err)
-	s.Equal(3, len(configs))
+	s.Equal(len(expectedSortedConfigIDs), len(configs))
 
 	configIDs := make([]string, 0, len(configs))
+	for _, conf := range configs {
+		configIDs = append(configIDs, conf.Id)
+	}
+	s.Equal(expectedSortedConfigIDs, configIDs)
+
+	// Test a query with combination of report config and report metadata fields
+	query2 := search.NewQueryBuilder().
+		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
+		AddExactMatches(search.CollectionID, "collection-2").
+		WithPagination(search.NewPagination().
+			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true))).ProtoQuery()
+
+	expectedSortedConfigIDs = []string{configID3, configID2}
+	configs, err = s.datastore.GetReportConfigurations(s.ctx, query2)
+	s.NoError(err)
+	s.Equal(len(expectedSortedConfigIDs), len(configs))
+
+	configIDs = make([]string, 0, len(configs))
 	for _, conf := range configs {
 		configIDs = append(configIDs, conf.Id)
 	}
