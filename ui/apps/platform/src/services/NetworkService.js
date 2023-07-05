@@ -291,9 +291,21 @@ export function fetchNetworkPolicies(policyIds) {
     const networkPoliciesPromises = policyIds.map((policyId) =>
         axios.get(`${networkPoliciesBaseUrl}/${policyId}`)
     );
-    return Promise.all(networkPoliciesPromises).then((response) => ({
-        response: response.map((networkPolicy) => networkPolicy.data),
-    }));
+    return Promise.allSettled(networkPoliciesPromises).then((responses) => {
+        const responseData = {
+            policies: [],
+            errors: [],
+        };
+
+        responses.forEach((response) => {
+            if (response.status === 'fulfilled') {
+                responseData.policies.push(response.value.data);
+            } else {
+                responseData.errors.push(response.reason);
+            }
+        });
+        return responseData;
+    });
 }
 
 /**
