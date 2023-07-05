@@ -107,6 +107,7 @@ import (
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
 	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
+	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -827,11 +828,16 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
-		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+	}
+
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	} else {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

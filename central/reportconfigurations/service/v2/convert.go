@@ -78,14 +78,14 @@ func convertV2VulnReportFiltersToProto(filters *apiV2.VulnerabilityReportFilters
 			AllVuln: filters.GetAllVuln(),
 		}
 
-	case *apiV2.VulnerabilityReportFilters_LastSuccessfulReport:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_LastSuccessfulReport{
-			LastSuccessfulReport: filters.GetLastSuccessfulReport(),
+	case *apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport:
+		ret.CvesSince = &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+			SinceLastSentScheduledReport: filters.GetSinceLastSentScheduledReport(),
 		}
 
-	case *apiV2.VulnerabilityReportFilters_StartDate:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_StartDate{
-			StartDate: filters.GetStartDate(),
+	case *apiV2.VulnerabilityReportFilters_SinceStartDate:
+		ret.CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{
+			SinceStartDate: filters.GetSinceStartDate(),
 		}
 	}
 
@@ -218,14 +218,14 @@ func ConvertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilte
 			AllVuln: filters.GetAllVuln(),
 		}
 
-	case *storage.VulnerabilityReportFilters_LastSuccessfulReport:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_LastSuccessfulReport{
-			LastSuccessfulReport: filters.GetLastSuccessfulReport(),
+	case *storage.VulnerabilityReportFilters_SinceLastSentScheduledReport:
+		ret.CvesSince = &apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+			SinceLastSentScheduledReport: filters.GetSinceLastSentScheduledReport(),
 		}
 
-	case *storage.VulnerabilityReportFilters_StartDate:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_StartDate{
-			StartDate: filters.GetStartDate(),
+	case *storage.VulnerabilityReportFilters_SinceStartDate:
+		ret.CvesSince = &apiV2.VulnerabilityReportFilters_SinceStartDate{
+			SinceStartDate: filters.GetSinceStartDate(),
 		}
 	}
 

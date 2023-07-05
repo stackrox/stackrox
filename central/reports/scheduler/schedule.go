@@ -337,7 +337,7 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 	if !found {
 		return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
 	}
-	rQuery, err := s.buildReportQuery(ctx, rc, collection, nil, nil)
+	rQuery, err := s.buildReportQuery(ctx, rc, collection)
 	if err != nil {
 		return nil, err
 	}
@@ -354,9 +354,9 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 }
 
 func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
-	collection *storage.ResourceCollection, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata) (*common.ReportQuery, error) {
-	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, collection, rc.GetVulnReportFilters(),
-		s.collectionQueryResolver, timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
+	collection *storage.ResourceCollection) (*common.ReportQuery, error) {
+	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
+		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
 	rQuery, err := qb.BuildQuery(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error building report query")

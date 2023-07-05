@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
+	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -37,6 +38,7 @@ type serviceImpl struct {
 	apiV2.UnimplementedReportServiceServer
 	metadataDatastore metadataDS.DataStore
 	snapshotDatastore snapshotDS.DataStore
+	scheduler         schedulerV2.Scheduler
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
