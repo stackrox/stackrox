@@ -23,9 +23,7 @@ function MastheadToolbar(): ReactElement {
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
     const showOrchestratorComponentsToggle =
-        useCase === useCases.RISK ||
-        useCase === useCases.NETWORK ||
-        location.pathname === searchPath;
+        useCase === useCases.RISK || location.pathname === searchPath;
 
     return (
         <PageHeaderTools>
@@ -33,7 +31,7 @@ function MastheadToolbar(): ReactElement {
             <PageHeaderToolsGroup visibility={{ default: 'hidden', md: 'visible' }}>
                 {showOrchestratorComponentsToggle && (
                     <PageHeaderToolsItem>
-                        <OrchestratorComponentsToggle useCase={useCase} />
+                        <OrchestratorComponentsToggle />
                     </PageHeaderToolsItem>
                 )}
                 <PageHeaderToolsItem>

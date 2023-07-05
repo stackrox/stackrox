@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@patternfly/react-core';
 import { useHistory } from 'react-router-dom';
 
-import { networkBasePathPF } from 'routePaths';
+import { networkBasePath } from 'routePaths';
 import useURLParameter from 'hooks/useURLParameter';
 import { Simulation } from '../utils/getSimulation';
 
@@ -17,7 +17,7 @@ function SimulateNetworkPolicyButton({ simulation, isDisabled }: SimulateNetwork
     const [, setSimulationQueryValue] = useURLParameter('simulation', undefined);
 
     function enableNetworkPolicySimulation() {
-        history.push(`${networkBasePathPF}${history.location.search as string}`);
+        history.push(`${networkBasePath}${history.location.search as string}`);
         setSimulationQueryValue('networkPolicy');
     }
 
