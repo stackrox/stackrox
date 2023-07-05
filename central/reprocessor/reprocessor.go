@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule(events.WriteToEventStream())
+	log logging.Logger
 
 	riskDedupeNamespace = uuid.NewV4()
 
@@ -62,6 +62,11 @@ func Singleton() Loop {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
 			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
 			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton())
+		// TODO(dhaus): This needs to change architecturally, the event stream should be defined within pkg (i.e. only
+		// be a channel) and the central service that listens on these (i.e. the event handler) will be created in the
+		// main routine. Right now if defined in the var block this leads to an uninitialized DB and nil pointer panics
+		// which isn't really what's supposed to happen.
+		log = logging.LoggerForModule(events.WriteToEventStream())
 	})
 	return loop
 }

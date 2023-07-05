@@ -4,6 +4,7 @@ import { Divider, PageSection, Title } from '@patternfly/react-core';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { EventProto } from '../../types/event.proto';
 import { fetchEvents } from '../../services/EventService';
+import { getAccessToken } from '../../services/AuthService';
 
 function EventsTablePage(): ReactElement {
     const [items, setItems] = useState<EventProto[]>([]);
@@ -23,6 +24,7 @@ function EventsTablePage(): ReactElement {
                 method: 'POST',
                 headers: {
                     Accept: 'text/event-stream',
+                    Authorization: getAccessToken() as string,
                 },
                 async onopen(res) {
                     if (res.ok && res.status === 200) {

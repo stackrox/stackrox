@@ -213,11 +213,10 @@ func (l *LoggerImpl) writeToEventStream(template string, args ...interface{}) {
 	}
 
 	msg := template
-
-	if msg == "" {
+	if msg == "" && len(args) > 0 {
 		msg = fmt.Sprint(args...)
 	} else if msg != "" && len(args) > 0 {
-		msg = fmt.Sprintf(msg, args...)
+		msg = fmt.Sprintf(template, args...)
 	}
 
 	event := &storage.Event{
