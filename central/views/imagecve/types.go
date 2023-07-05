@@ -18,7 +18,7 @@ type CveCore interface {
 	GetImagesBySeverity() common.ResourceCountByCVESeverity
 	GetTopCVSS() float32
 	GetAffectedImageCount() int
-	GetFirstDiscoveredInSystem() time.Time
+	GetFirstDiscoveredInSystem() *time.Time
 }
 
 // CveView interface is like a SQL view that provides functionality to fetch the image CVE data
