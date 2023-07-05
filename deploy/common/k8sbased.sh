@@ -543,8 +543,8 @@ function launch_sensor {
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
-        --set "image.main.repository=${MAIN_IMAGE_REPO}"
-        --set "image.main.tag=${MAIN_IMAGE_TAG}"
+        --set "image.main.repository=${SENSOR_MAIN_IMAGE_REPO_OVERRIDE:-MAIN_IMAGE_REPO}"
+        --set "image.main.tag=${SENSOR_MAIN_IMAGE_TAG_OVERRIDE:-MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
         --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
       )
