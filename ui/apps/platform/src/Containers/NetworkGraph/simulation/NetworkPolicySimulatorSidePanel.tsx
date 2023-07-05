@@ -28,7 +28,11 @@ import {
     SetNetworkPolicyModification,
 } from '../hooks/useNetworkPolicySimulator';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
-import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
+import {
+    getDisplayYAMLFromNetworkPolicyModification,
+    getSimulationPanelHeaderText,
+    getSimulationPanelResultsText,
+} from '../utils/simulatorUtils';
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
@@ -155,7 +159,7 @@ function NetworkPolicySimulatorSidePanel({
                             title={
                                 simulator.error
                                     ? simulator.error
-                                    : `Policies generated from the baseline for cluster “${scopeHierarchy.cluster.name}”`
+                                    : getSimulationPanelResultsText(scopeHierarchy)
                             }
                         />
                     </StackItem>
@@ -296,7 +300,7 @@ function NetworkPolicySimulatorSidePanel({
                                 component={TextVariants.h2}
                                 className="pf-u-font-size-xl pf-u-mr-xl"
                             >
-                                Simulate network policy for cluster “{scopeHierarchy.cluster.name}”
+                                {getSimulationPanelHeaderText(scopeHierarchy)}
                             </Text>
                         </TextContent>
                     </FlexItem>
@@ -374,9 +378,8 @@ function NetworkPolicySimulatorSidePanel({
                                         <TextContent>
                                             <Text component={TextVariants.p}>
                                                 Generate a set of recommended network policies based
-                                                on your cluster baseline. Cluster baseline is the
-                                                aggregatation of the baselines of the deployments
-                                                that belong to the cluster.
+                                                on the baseline of deployments in your selected
+                                                scope.
                                             </Text>
                                         </TextContent>
                                     </StackItem>
