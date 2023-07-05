@@ -57,6 +57,16 @@ type Struct2GrpBy3 struct {
 	TestString    string       `db:"test_string"`
 }
 
+type Struct2GrpBy4 struct {
+	TestTimestamp *time.Time `db:"test_timestamp_max"`
+	TestString    string     `db:"test_string"`
+}
+
+type Struct2GrpBy5 struct {
+	TestTimestamp time.Time `db:"test_timestamp_max"`
+	TestString    string    `db:"test_string"`
+}
+
 type Struct3 struct {
 	TestString       string `db:"test_string"`
 	TestNestedString string `db:"test_nested_string"`
@@ -207,7 +217,7 @@ func TestSelectQuery(t *testing.T) {
 			},
 		},
 		{
-			desc: "select null timestamp & group by",
+			desc: "select null timestamp & group by; scan into pointer",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
 					search.NewQuerySelect(search.TestTimestamp),
@@ -227,6 +237,41 @@ func TestSelectQuery(t *testing.T) {
 					TestString:    "bcs",
 				},
 			},
+		},
+		{
+			desc: "select max null timestamp & group by",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestTimestamp).AggrFunc(aggregatefunc.Max),
+				).
+				AddGroupBy(search.TestString).ProtoQuery(),
+			resultStruct: Struct2GrpBy4{},
+			expectedQuery: "select max(test_structs.timestamp) as test_timestamp_max " +
+				"from test_structs " +
+				"group by test_structs.String_",
+			expectedResult: []*Struct2GrpBy4{
+				{
+					TestTimestamp: nil,
+					TestString:    "acs",
+				},
+				{
+					TestTimestamp: nil,
+					TestString:    "bcs",
+				},
+			},
+		},
+		{
+			desc: "select max null timestamp & group by",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestTimestamp).AggrFunc(aggregatefunc.Max),
+				).
+				AddGroupBy(search.TestString).ProtoQuery(),
+			resultStruct: Struct2GrpBy5{},
+			expectedQuery: "select max(test_structs.timestamp) as test_timestamp_max " +
+				"from test_structs " +
+				"group by test_structs.String_",
+			expectedError: "cannot assign NULL to *time.Time",
 		},
 		{
 			desc: "child schema; multiple select w/ where & multiple group by",
@@ -899,6 +944,10 @@ func runTest(ctx context.Context, t *testing.T, testDB *pgtest.TestPostgres, tc 
 		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy2](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case Struct2GrpBy3:
 		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+	case Struct2GrpBy4:
+		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy4](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
+	case Struct2GrpBy5:
+		results, err = pgSearch.RunSelectRequestForSchema[Struct2GrpBy5](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case Struct3:
 		results, err = pgSearch.RunSelectRequestForSchema[Struct3](ctx, testDB.DB, schema.TestStructsSchema, tc.q)
 	case Struct4:
