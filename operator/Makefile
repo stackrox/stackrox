@@ -215,8 +215,11 @@ vet: ## Run go vet against code.
 ENVTEST_K8S_VERSION = 1.25
 
 .PHONY: test
-test: manifests generate fmt vet envtest mapkubeapis ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+test: manifests generate fmt vet  ## Run go unit tests
+	go test $(shell go list ./... | grep -v '^github.com/stackrox/rox/operator/tests') -coverprofile cover.out
+
+test-integration: manifests generate envtest mapkubeapis ## Run go integration tests
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./tests/...
 
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
