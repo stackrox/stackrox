@@ -58,20 +58,20 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     helm repo update
 
     helm_charts=$(helm search repo stackrox-oss -l)
-    central_regex="stackrox-oss/stackrox-central-services[ \t]+.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]+.([0-9]+\.[0-9]+\.[0-9]+)"
-    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]+.${CENTRAL_CHART_VERSION_OVERRIDE}"
+    central_regex="stackrox-oss/stackrox-central-services[ \t]+.${CENTRAL_CHART_VERSION_OVERRIDE}"
+    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]+.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]+.([0-9]+\.[0-9]+\.[0-9]+)"
 
     if  [[ $helm_charts =~ $central_regex ]]; then
         ci_export CENTRAL_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-central-services"
-        tag="${BASH_REMATCH[1]}"
-        echo "New central image tag is ${tag}"
-        ci_export MAIN_IMAGE_TAG "$tag"
     else
         echo "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
     fi
 
     if [[ $helm_charts =~ $sensor_regex ]]; then
         ci_export SENSOR_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-secured-cluster-services"
+        ci_export SENSOR_MAIN_IMAGE_TAG_OVERRIDE "${BASH_REMATCH[1]}"
+        ci_export SENSOR_MAIN_IMAGE_REPO_OVERRIDE "quay.io/stackrox-io/main""
+        echo "Overriding secured-cluster-services main image tag with ${SENSOR_MAIN_IMAGE_TAG_OVERRIDE}"
     else
         echo "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
     fi
