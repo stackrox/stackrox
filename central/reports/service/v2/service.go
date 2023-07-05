@@ -3,7 +3,9 @@ package v2
 import (
 	"context"
 
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
+	snapshotDataStore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -18,11 +20,13 @@ type Service interface {
 }
 
 // New returns a new instance of the service.
-func New(metadataDatastore metadataDS.DataStore) Service {
+func New(metadataDatastore metadataDS.DataStore, snapshotDS snapshotDataStore.DataStore, notifierDataStore notifierDataStore.DataStore) Service {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil
 	}
 	return &serviceImpl{
 		metadataDatastore: metadataDatastore,
+		snapshotDS:        snapshotDS,
+		notifierDatastore: notifierDataStore,
 	}
 }

@@ -27,6 +27,31 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+type ImageType int32
+
+const (
+	ImageType_DEPLOYED ImageType = 0
+	ImageType_WATCHED  ImageType = 1
+)
+
+var ImageType_name = map[int32]string{
+	0: "DEPLOYED",
+	1: "WATCHED",
+}
+
+var ImageType_value = map[string]int32{
+	"DEPLOYED": 0,
+	"WATCHED":  1,
+}
+
+func (x ImageType) String() string {
+	return proto.EnumName(ImageType_name, int32(x))
+}
+
+func (ImageType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{0}
+}
+
 type ReportStatus_RunState int32
 
 const (
@@ -55,7 +80,7 @@ func (x ReportStatus_RunState) String() string {
 }
 
 func (ReportStatus_RunState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{0, 0}
+	return fileDescriptor_c1e2917f181293be, []int{5, 0}
 }
 
 type ReportStatus_ReportMethod int32
@@ -80,7 +105,7 @@ func (x ReportStatus_ReportMethod) String() string {
 }
 
 func (ReportStatus_ReportMethod) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{0, 1}
+	return fileDescriptor_c1e2917f181293be, []int{5, 1}
 }
 
 type ReportStatus_NotificationMethod int32
@@ -108,7 +133,454 @@ func (x ReportStatus_NotificationMethod) String() string {
 }
 
 func (ReportStatus_NotificationMethod) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{0, 2}
+	return fileDescriptor_c1e2917f181293be, []int{5, 2}
+}
+
+type GetReportHistoryRequest struct {
+	ReportConfigId       string    `protobuf:"bytes,1,opt,name=report_config_id,json=reportConfigId,proto3" json:"report_config_id,omitempty"`
+	Query                *RawQuery `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *GetReportHistoryRequest) Reset()         { *m = GetReportHistoryRequest{} }
+func (m *GetReportHistoryRequest) String() string { return proto.CompactTextString(m) }
+func (*GetReportHistoryRequest) ProtoMessage()    {}
+func (*GetReportHistoryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{0}
+}
+func (m *GetReportHistoryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetReportHistoryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetReportHistoryRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetReportHistoryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetReportHistoryRequest.Merge(m, src)
+}
+func (m *GetReportHistoryRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetReportHistoryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetReportHistoryRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetReportHistoryRequest proto.InternalMessageInfo
+
+func (m *GetReportHistoryRequest) GetReportConfigId() string {
+	if m != nil {
+		return m.ReportConfigId
+	}
+	return ""
+}
+
+func (m *GetReportHistoryRequest) GetQuery() *RawQuery {
+	if m != nil {
+		return m.Query
+	}
+	return nil
+}
+
+func (m *GetReportHistoryRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetReportHistoryRequest) Clone() *GetReportHistoryRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetReportHistoryRequest)
+	*cloned = *m
+
+	cloned.Query = m.Query.Clone()
+	return cloned
+}
+
+type SlimUser struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SlimUser) Reset()         { *m = SlimUser{} }
+func (m *SlimUser) String() string { return proto.CompactTextString(m) }
+func (*SlimUser) ProtoMessage()    {}
+func (*SlimUser) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{1}
+}
+func (m *SlimUser) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *SlimUser) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_SlimUser.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *SlimUser) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SlimUser.Merge(m, src)
+}
+func (m *SlimUser) XXX_Size() int {
+	return m.Size()
+}
+func (m *SlimUser) XXX_DiscardUnknown() {
+	xxx_messageInfo_SlimUser.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SlimUser proto.InternalMessageInfo
+
+func (m *SlimUser) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *SlimUser) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *SlimUser) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *SlimUser) Clone() *SlimUser {
+	if m == nil {
+		return nil
+	}
+	cloned := new(SlimUser)
+	*cloned = *m
+
+	return cloned
+}
+
+type CollectionSnapshot struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CollectionSnapshot) Reset()         { *m = CollectionSnapshot{} }
+func (m *CollectionSnapshot) String() string { return proto.CompactTextString(m) }
+func (*CollectionSnapshot) ProtoMessage()    {}
+func (*CollectionSnapshot) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{2}
+}
+func (m *CollectionSnapshot) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CollectionSnapshot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CollectionSnapshot.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CollectionSnapshot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionSnapshot.Merge(m, src)
+}
+func (m *CollectionSnapshot) XXX_Size() int {
+	return m.Size()
+}
+func (m *CollectionSnapshot) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionSnapshot.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CollectionSnapshot proto.InternalMessageInfo
+
+func (m *CollectionSnapshot) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *CollectionSnapshot) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *CollectionSnapshot) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CollectionSnapshot) Clone() *CollectionSnapshot {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CollectionSnapshot)
+	*cloned = *m
+
+	return cloned
+}
+
+type ReportSnapshot struct {
+	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// Types that are valid to be assigned to Filter:
+	//	*ReportSnapshot_VulnReportFilters
+	Filter               isReportSnapshot_Filter  `protobuf_oneof:"filter"`
+	CollectionSnapshot   *CollectionSnapshot      `protobuf:"bytes,6,opt,name=collection_snapshot,json=collectionSnapshot,proto3" json:"collection_snapshot,omitempty"`
+	Schedule             *ReportSchedule          `protobuf:"bytes,7,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	ReportStatus         *ReportStatus            `protobuf:"bytes,8,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
+	Notifiers            []*NotifierConfiguration `protobuf:"bytes,9,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	User                 *SlimUser                `protobuf:"bytes,10,opt,name=user,proto3" json:"user,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
+}
+
+func (m *ReportSnapshot) Reset()         { *m = ReportSnapshot{} }
+func (m *ReportSnapshot) String() string { return proto.CompactTextString(m) }
+func (*ReportSnapshot) ProtoMessage()    {}
+func (*ReportSnapshot) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{3}
+}
+func (m *ReportSnapshot) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportSnapshot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportSnapshot.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportSnapshot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSnapshot.Merge(m, src)
+}
+func (m *ReportSnapshot) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportSnapshot) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSnapshot.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportSnapshot proto.InternalMessageInfo
+
+type isReportSnapshot_Filter interface {
+	isReportSnapshot_Filter()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isReportSnapshot_Filter
+}
+
+type ReportSnapshot_VulnReportFilters struct {
+	VulnReportFilters *VulnerabilityReportFilters `protobuf:"bytes,5,opt,name=vuln_report_filters,json=vulnReportFilters,proto3,oneof" json:"vuln_report_filters,omitempty"`
+}
+
+func (*ReportSnapshot_VulnReportFilters) isReportSnapshot_Filter() {}
+func (m *ReportSnapshot_VulnReportFilters) Clone() isReportSnapshot_Filter {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSnapshot_VulnReportFilters)
+	*cloned = *m
+
+	cloned.VulnReportFilters = m.VulnReportFilters.Clone()
+	return cloned
+}
+
+func (m *ReportSnapshot) GetFilter() isReportSnapshot_Filter {
+	if m != nil {
+		return m.Filter
+	}
+	return nil
+}
+
+func (m *ReportSnapshot) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ReportSnapshot) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ReportSnapshot) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *ReportSnapshot) GetVulnReportFilters() *VulnerabilityReportFilters {
+	if x, ok := m.GetFilter().(*ReportSnapshot_VulnReportFilters); ok {
+		return x.VulnReportFilters
+	}
+	return nil
+}
+
+func (m *ReportSnapshot) GetCollectionSnapshot() *CollectionSnapshot {
+	if m != nil {
+		return m.CollectionSnapshot
+	}
+	return nil
+}
+
+func (m *ReportSnapshot) GetSchedule() *ReportSchedule {
+	if m != nil {
+		return m.Schedule
+	}
+	return nil
+}
+
+func (m *ReportSnapshot) GetReportStatus() *ReportStatus {
+	if m != nil {
+		return m.ReportStatus
+	}
+	return nil
+}
+
+func (m *ReportSnapshot) GetNotifiers() []*NotifierConfiguration {
+	if m != nil {
+		return m.Notifiers
+	}
+	return nil
+}
+
+func (m *ReportSnapshot) GetUser() *SlimUser {
+	if m != nil {
+		return m.User
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ReportSnapshot) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ReportSnapshot_VulnReportFilters)(nil),
+	}
+}
+
+func (m *ReportSnapshot) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportSnapshot) Clone() *ReportSnapshot {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSnapshot)
+	*cloned = *m
+
+	if m.Filter != nil {
+		cloned.Filter = m.Filter.Clone()
+	}
+	cloned.CollectionSnapshot = m.CollectionSnapshot.Clone()
+	cloned.Schedule = m.Schedule.Clone()
+	cloned.ReportStatus = m.ReportStatus.Clone()
+	if m.Notifiers != nil {
+		cloned.Notifiers = make([]*NotifierConfiguration, len(m.Notifiers))
+		for idx, v := range m.Notifiers {
+			cloned.Notifiers[idx] = v.Clone()
+		}
+	}
+	cloned.User = m.User.Clone()
+	return cloned
+}
+
+type ReportHistoryResponse struct {
+	ReportSnapshots      []*ReportSnapshot `protobuf:"bytes,1,rep,name=report_snapshots,json=reportSnapshots,proto3" json:"report_snapshots,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *ReportHistoryResponse) Reset()         { *m = ReportHistoryResponse{} }
+func (m *ReportHistoryResponse) String() string { return proto.CompactTextString(m) }
+func (*ReportHistoryResponse) ProtoMessage()    {}
+func (*ReportHistoryResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{4}
+}
+func (m *ReportHistoryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportHistoryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportHistoryResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportHistoryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportHistoryResponse.Merge(m, src)
+}
+func (m *ReportHistoryResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportHistoryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportHistoryResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportHistoryResponse proto.InternalMessageInfo
+
+func (m *ReportHistoryResponse) GetReportSnapshots() []*ReportSnapshot {
+	if m != nil {
+		return m.ReportSnapshots
+	}
+	return nil
+}
+
+func (m *ReportHistoryResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportHistoryResponse) Clone() *ReportHistoryResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportHistoryResponse)
+	*cloned = *m
+
+	if m.ReportSnapshots != nil {
+		cloned.ReportSnapshots = make([]*ReportSnapshot, len(m.ReportSnapshots))
+		for idx, v := range m.ReportSnapshots {
+			cloned.ReportSnapshots[idx] = v.Clone()
+		}
+	}
+	return cloned
 }
 
 type ReportStatus struct {
@@ -126,7 +598,7 @@ func (m *ReportStatus) Reset()         { *m = ReportStatus{} }
 func (m *ReportStatus) String() string { return proto.CompactTextString(m) }
 func (*ReportStatus) ProtoMessage()    {}
 func (*ReportStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{0}
+	return fileDescriptor_c1e2917f181293be, []int{5}
 }
 func (m *ReportStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -205,52 +677,81 @@ func (m *ReportStatus) Clone() *ReportStatus {
 }
 
 func init() {
+	proto.RegisterEnum("v2.ImageType", ImageType_name, ImageType_value)
 	proto.RegisterEnum("v2.ReportStatus_RunState", ReportStatus_RunState_name, ReportStatus_RunState_value)
 	proto.RegisterEnum("v2.ReportStatus_ReportMethod", ReportStatus_ReportMethod_name, ReportStatus_ReportMethod_value)
 	proto.RegisterEnum("v2.ReportStatus_NotificationMethod", ReportStatus_NotificationMethod_name, ReportStatus_NotificationMethod_value)
+	proto.RegisterType((*GetReportHistoryRequest)(nil), "v2.GetReportHistoryRequest")
+	proto.RegisterType((*SlimUser)(nil), "v2.SlimUser")
+	proto.RegisterType((*CollectionSnapshot)(nil), "v2.CollectionSnapshot")
+	proto.RegisterType((*ReportSnapshot)(nil), "v2.ReportSnapshot")
+	proto.RegisterType((*ReportHistoryResponse)(nil), "v2.ReportHistoryResponse")
 	proto.RegisterType((*ReportStatus)(nil), "v2.ReportStatus")
 }
 
 func init() { proto.RegisterFile("api/v2/report_service.proto", fileDescriptor_c1e2917f181293be) }
 
 var fileDescriptor_c1e2917f181293be = []byte{
-	// 569 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0xc7, 0x6b, 0x87, 0x42, 0xb2, 0x6d, 0xc1, 0x6c, 0x0f, 0xb8, 0x69, 0x49, 0xa3, 0xc0, 0x21,
-	0x07, 0xb0, 0x25, 0x23, 0x21, 0x2e, 0x48, 0xb8, 0xb1, 0x09, 0x96, 0x12, 0xa7, 0xb2, 0x13, 0x8a,
-	0xb8, 0x58, 0x5b, 0x67, 0xe3, 0x5a, 0xc4, 0x5e, 0x77, 0x77, 0x6d, 0x11, 0x21, 0x2e, 0xbc, 0x02,
-	0x17, 0x1e, 0x89, 0x63, 0x25, 0x5e, 0x00, 0x05, 0x9e, 0x03, 0x21, 0x7f, 0x04, 0x52, 0x72, 0xe1,
-	0xb6, 0xf3, 0xf5, 0x9b, 0x99, 0xff, 0x0e, 0x38, 0x44, 0x49, 0xa8, 0x66, 0x9a, 0x4a, 0x71, 0x42,
-	0x28, 0xf7, 0x18, 0xa6, 0x59, 0xe8, 0x63, 0x25, 0xa1, 0x84, 0x13, 0x28, 0x66, 0x5a, 0xf3, 0x38,
-	0x20, 0x24, 0x98, 0x63, 0xb5, 0xf0, 0x9c, 0xa7, 0x33, 0x95, 0x87, 0x11, 0x66, 0x1c, 0x45, 0x49,
-	0x99, 0xd4, 0xdc, 0xaf, 0x08, 0x3e, 0x89, 0x22, 0x12, 0x57, 0xce, 0x83, 0xca, 0xc9, 0x30, 0xa2,
-	0xfe, 0x85, 0x77, 0x99, 0x62, 0xba, 0xa8, 0x42, 0x47, 0x15, 0x30, 0xcf, 0x40, 0x71, 0x4c, 0x38,
-	0xe2, 0x21, 0x89, 0x59, 0x19, 0xed, 0xfc, 0xaa, 0x81, 0x5d, 0xa7, 0x98, 0xc5, 0xe5, 0x88, 0xa7,
-	0x0c, 0x3e, 0x05, 0x0d, 0x9a, 0xc6, 0x1e, 0xe3, 0x88, 0x63, 0x59, 0x68, 0x0b, 0xdd, 0xdb, 0xda,
-	0x81, 0x92, 0x69, 0xca, 0x7a, 0x92, 0xe2, 0xa4, 0x71, 0xfe, 0xc2, 0x4e, 0x9d, 0x56, 0x2f, 0xf8,
-	0x1c, 0xec, 0xfa, 0x24, 0x4a, 0xe6, 0x98, 0xe3, 0xa9, 0x87, 0xb8, 0x2c, 0xb6, 0x85, 0xee, 0x8e,
-	0xd6, 0x54, 0xca, 0xee, 0xca, 0x6a, 0x1d, 0x65, 0xbc, 0x5a, 0xc7, 0xd9, 0xf9, 0x93, 0xaf, 0x73,
-	0x78, 0x08, 0x1a, 0x98, 0x52, 0x42, 0xbd, 0x88, 0x05, 0x72, 0xad, 0x2d, 0x74, 0x1b, 0x4e, 0xbd,
-	0x70, 0x0c, 0x59, 0x00, 0x87, 0x60, 0xbf, 0xd2, 0x8b, 0xe2, 0xcb, 0x14, 0x33, 0xee, 0xf1, 0x45,
-	0x82, 0xe5, 0x1b, 0xc5, 0x74, 0xf7, 0x37, 0xa7, 0x2b, 0x8c, 0x21, 0xe6, 0x17, 0x64, 0xea, 0xdc,
-	0x2d, 0x2b, 0x9d, 0xb2, 0x70, 0xbc, 0x48, 0x30, 0x44, 0xa0, 0x59, 0xe1, 0x62, 0xc2, 0xc3, 0x59,
-	0xe8, 0x17, 0x8a, 0x78, 0x51, 0x51, 0x20, 0x6f, 0x17, 0xd4, 0x07, 0x1b, 0x54, 0x7b, 0x2d, 0xb7,
-	0x62, 0xcb, 0x25, 0x66, 0x33, 0xd2, 0x79, 0x01, 0xea, 0x2b, 0x8d, 0xe0, 0x0e, 0xb8, 0x75, 0xa6,
-	0x5b, 0x63, 0xcb, 0xee, 0x4b, 0x5b, 0x70, 0x0f, 0x34, 0x4e, 0x1d, 0xf3, 0x54, 0x77, 0x72, 0x53,
-	0xc8, 0x63, 0xee, 0xa4, 0xd7, 0x33, 0x5d, 0x57, 0x12, 0x73, 0xe3, 0xa5, 0x6e, 0x0d, 0x26, 0x8e,
-	0x29, 0xd5, 0x3a, 0x8f, 0x56, 0xff, 0x52, 0x12, 0xf3, 0xc2, 0x91, 0xed, 0x19, 0xe6, 0x50, 0xb7,
-	0x8d, 0x92, 0xe3, 0xf6, 0x5e, 0x99, 0xc6, 0x64, 0x60, 0x1a, 0x92, 0xd0, 0x79, 0x06, 0xe0, 0xe6,
-	0x14, 0xb0, 0x01, 0xb6, 0x27, 0xb6, 0x6b, 0x8e, 0xa5, 0xad, 0xfc, 0x69, 0x0e, 0x75, 0x6b, 0x20,
-	0x09, 0x70, 0x17, 0xd4, 0x8d, 0xd1, 0x99, 0x3d, 0x18, 0xe9, 0x86, 0x24, 0x6a, 0x57, 0x02, 0xd8,
-	0xab, 0xf6, 0x2c, 0x6f, 0x11, 0xbe, 0x06, 0x77, 0xfa, 0x98, 0x5f, 0x3b, 0x0a, 0xa9, 0x54, 0x83,
-	0x91, 0x94, 0xfa, 0xf8, 0x64, 0x61, 0x19, 0x4d, 0xe9, 0x5f, 0x7d, 0x3a, 0xc7, 0x9f, 0xbe, 0xfd,
-	0xfc, 0x2c, 0x1e, 0xc0, 0x7b, 0x7f, 0xcf, 0x9b, 0xa9, 0xac, 0x88, 0xa9, 0x1f, 0xc2, 0xe9, 0x47,
-	0x18, 0x80, 0xc3, 0x3e, 0xe6, 0x03, 0xc4, 0xae, 0xb1, 0x7b, 0x24, 0x9e, 0x85, 0x81, 0x65, 0xfc,
-	0x57, 0x8f, 0x87, 0x45, 0x8f, 0x16, 0x3c, 0x5a, 0xef, 0x31, 0x47, 0x8c, 0x3f, 0x5e, 0x6b, 0x74,
-	0xa2, 0x7c, 0x5d, 0xb6, 0x84, 0xab, 0x65, 0x4b, 0xf8, 0xbe, 0x6c, 0x09, 0x5f, 0x7e, 0xb4, 0xb6,
-	0x80, 0x1c, 0x12, 0x85, 0x71, 0xe4, 0xbf, 0xa3, 0xe4, 0x7d, 0x79, 0x8a, 0x0a, 0x4a, 0x42, 0x25,
-	0xd3, 0xde, 0x8a, 0x99, 0xf6, 0xa6, 0x76, 0x7e, 0xb3, 0xf0, 0x3d, 0xf9, 0x1d, 0x00, 0x00, 0xff,
-	0xff, 0xeb, 0x1c, 0x55, 0xd3, 0x9e, 0x03, 0x00, 0x00,
+	// 930 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xcd, 0x6e, 0x23, 0x45,
+	0x10, 0xce, 0xd8, 0x49, 0xd6, 0xee, 0x24, 0xde, 0xd9, 0xb6, 0x96, 0x9d, 0xd8, 0x8b, 0xd7, 0x1a,
+	0x10, 0x0a, 0x08, 0xc6, 0x92, 0x11, 0x3f, 0x97, 0x95, 0x70, 0xec, 0xd9, 0xc4, 0x92, 0xed, 0x84,
+	0xb6, 0x9d, 0x05, 0x2e, 0xd6, 0x64, 0xdc, 0xb1, 0x47, 0xcc, 0x4c, 0xcf, 0x76, 0xf7, 0x18, 0x2c,
+	0xc4, 0x85, 0x57, 0xe0, 0xc2, 0xab, 0x70, 0xe0, 0xce, 0x11, 0x89, 0x17, 0x40, 0x81, 0xe7, 0x40,
+	0xa8, 0x7f, 0xec, 0x8c, 0x63, 0x21, 0xed, 0xde, 0xba, 0xbe, 0xaa, 0xfa, 0xea, 0xa7, 0xab, 0x0a,
+	0x54, 0xbd, 0x24, 0x68, 0x2c, 0x9a, 0x0d, 0x8a, 0x13, 0x42, 0xf9, 0x84, 0x61, 0xba, 0x08, 0x7c,
+	0xec, 0x24, 0x94, 0x70, 0x02, 0x73, 0x8b, 0x66, 0xe5, 0xd9, 0x8c, 0x90, 0x59, 0x88, 0x1b, 0x12,
+	0xb9, 0x4e, 0x6f, 0x1a, 0x3c, 0x88, 0x30, 0xe3, 0x5e, 0x94, 0x28, 0xa3, 0x4a, 0x59, 0x33, 0xf8,
+	0x24, 0x8a, 0x48, 0xac, 0xc1, 0x63, 0x0d, 0x32, 0xec, 0x51, 0x7f, 0x3e, 0x79, 0x95, 0x62, 0xba,
+	0xd4, 0xaa, 0xa7, 0x9a, 0x50, 0x58, 0x78, 0x71, 0x4c, 0xb8, 0xc7, 0x03, 0x12, 0x33, 0xad, 0x7d,
+	0x7f, 0x33, 0x1f, 0x9f, 0xc4, 0x37, 0xc1, 0x2c, 0xa5, 0xd2, 0x66, 0x33, 0x3b, 0x7b, 0x06, 0x9e,
+	0x9c, 0x61, 0x8e, 0xa4, 0xe1, 0x79, 0xc0, 0x38, 0xa1, 0x4b, 0x84, 0x5f, 0xa5, 0x98, 0x71, 0x78,
+	0x02, 0xcc, 0x0d, 0x82, 0x49, 0x30, 0xb5, 0x8c, 0xba, 0x71, 0x52, 0x44, 0x25, 0x85, 0xb7, 0x25,
+	0xdc, 0x9d, 0x42, 0x1b, 0xec, 0xc9, 0xe4, 0xac, 0x5c, 0xdd, 0x38, 0x39, 0x68, 0x1e, 0x3a, 0x8b,
+	0xa6, 0x83, 0xbc, 0xef, 0xbe, 0x14, 0x18, 0x52, 0x2a, 0xdb, 0x01, 0x85, 0x61, 0x18, 0x44, 0x63,
+	0x86, 0x29, 0x2c, 0x81, 0xdc, 0x9a, 0x2b, 0x17, 0x4c, 0x21, 0x04, 0xbb, 0xb1, 0x17, 0x61, 0xe9,
+	0x5e, 0x44, 0xf2, 0x6d, 0x7f, 0x0e, 0x60, 0x9b, 0x84, 0x21, 0xf6, 0x45, 0xd2, 0xc3, 0xd8, 0x4b,
+	0xd8, 0x9c, 0xf0, 0xd7, 0xf2, 0xfc, 0x2d, 0x0f, 0x4a, 0xaa, 0xa0, 0x37, 0x71, 0x83, 0x75, 0x70,
+	0x30, 0xc5, 0xcc, 0xa7, 0x41, 0x22, 0x22, 0x5a, 0x79, 0xa9, 0xca, 0x42, 0xf0, 0x12, 0x94, 0x17,
+	0x69, 0x18, 0x4f, 0x74, 0x57, 0x6e, 0x82, 0x90, 0x63, 0xca, 0xac, 0x3d, 0x59, 0x74, 0x4d, 0x14,
+	0x7d, 0x95, 0x86, 0x31, 0xa6, 0xde, 0x75, 0x10, 0x06, 0x7c, 0xa9, 0x72, 0x78, 0xa1, 0xac, 0xce,
+	0x77, 0xd0, 0x23, 0xe1, 0xbc, 0x01, 0xc2, 0x33, 0x50, 0xf6, 0xd7, 0x45, 0x4e, 0x98, 0x4e, 0xd7,
+	0xda, 0x97, 0x8c, 0x6f, 0x09, 0xc6, 0xed, 0x1e, 0x20, 0xe8, 0x6f, 0xf7, 0xc5, 0x01, 0x05, 0xe6,
+	0xcf, 0xf1, 0x34, 0x0d, 0xb1, 0xf5, 0x40, 0x7a, 0x43, 0xf9, 0x09, 0xaa, 0x0d, 0x5a, 0x83, 0xd6,
+	0x36, 0xf0, 0x13, 0x70, 0xb4, 0x1a, 0x56, 0xee, 0xf1, 0x94, 0x59, 0x05, 0xe9, 0x64, 0x66, 0x9c,
+	0x24, 0x8e, 0x0e, 0x69, 0x46, 0x82, 0x9f, 0x81, 0x62, 0x4c, 0x78, 0x70, 0x13, 0x88, 0xba, 0x8b,
+	0xf5, 0xfc, 0xc9, 0x41, 0xf3, 0x58, 0xb8, 0x0c, 0x34, 0xd8, 0xce, 0x4e, 0x1a, 0xba, 0xb3, 0x85,
+	0x75, 0xb0, 0x9b, 0x32, 0x4c, 0x2d, 0x70, 0x37, 0x20, 0xab, 0x69, 0x40, 0x52, 0x73, 0x5a, 0x00,
+	0xfb, 0xaa, 0xa1, 0xf6, 0x15, 0x78, 0x7c, 0x6f, 0x1e, 0x59, 0x42, 0x62, 0x86, 0xe1, 0xf3, 0xf5,
+	0x40, 0xae, 0x3a, 0xc5, 0x2c, 0x43, 0x26, 0x91, 0x2d, 0x76, 0xd5, 0xa6, 0x87, 0x74, 0x43, 0x66,
+	0xf6, 0xbf, 0x79, 0x70, 0x98, 0xad, 0x0d, 0x7e, 0x0a, 0x8a, 0x34, 0x8d, 0x65, 0x07, 0xb0, 0x1c,
+	0x8e, 0x92, 0xaa, 0x26, 0x6b, 0xe4, 0xa0, 0x34, 0x16, 0x2f, 0x8c, 0x0a, 0x54, 0xbf, 0xe0, 0x73,
+	0x70, 0xe8, 0x93, 0x28, 0x09, 0x31, 0xc7, 0xd3, 0x89, 0xc7, 0xf5, 0xd4, 0x57, 0x1c, 0xb5, 0x93,
+	0xce, 0x6a, 0xc9, 0x9d, 0xd1, 0x6a, 0xc9, 0xd1, 0xc1, 0xda, 0xbe, 0xc5, 0x61, 0x15, 0x14, 0x31,
+	0xa5, 0x84, 0x4e, 0x22, 0x36, 0xd3, 0x63, 0x56, 0x90, 0x40, 0x9f, 0xcd, 0x60, 0x1f, 0x94, 0x75,
+	0x8d, 0x54, 0xad, 0xe1, 0x84, 0x2f, 0x13, 0x6c, 0xed, 0xca, 0xec, 0xde, 0xde, 0xce, 0x4e, 0x0a,
+	0x7d, 0xcc, 0xe7, 0x64, 0x8a, 0x1e, 0x29, 0x4f, 0xbd, 0xbf, 0xa3, 0x65, 0x82, 0xa1, 0x07, 0x2a,
+	0x9a, 0x4e, 0xfd, 0x85, 0xaf, 0x6e, 0x40, 0x24, 0x1d, 0xe4, 0xe4, 0x96, 0x9a, 0xef, 0x6c, 0xb1,
+	0x0e, 0x32, 0xb6, 0x9a, 0xdb, 0x52, 0x34, 0xdb, 0x1a, 0xfb, 0x0b, 0x50, 0x58, 0xf5, 0x08, 0x1e,
+	0x80, 0x07, 0x2f, 0x5b, 0xdd, 0x51, 0x77, 0x70, 0x66, 0xee, 0xc0, 0x23, 0x50, 0xbc, 0x44, 0xee,
+	0x65, 0x0b, 0x09, 0xd1, 0x10, 0xba, 0xe1, 0xb8, 0xdd, 0x76, 0x87, 0x43, 0x33, 0x27, 0x84, 0x17,
+	0xad, 0x6e, 0x6f, 0x8c, 0x5c, 0x33, 0x6f, 0x7f, 0xb8, 0xfa, 0x17, 0xc5, 0x28, 0x1c, 0x2f, 0x06,
+	0x93, 0x8e, 0xdb, 0x6f, 0x0d, 0x3a, 0x8a, 0x67, 0xd8, 0x3e, 0x77, 0x3b, 0xe3, 0x9e, 0xdb, 0x31,
+	0x0d, 0x71, 0x18, 0xb6, 0xb3, 0x80, 0x45, 0xb0, 0x37, 0x1e, 0x0c, 0xdd, 0x91, 0xb9, 0x23, 0x9e,
+	0x6e, 0xbf, 0xd5, 0xed, 0x99, 0x06, 0x3c, 0x04, 0x85, 0xce, 0xc5, 0xcb, 0x41, 0xef, 0xa2, 0xd5,
+	0x31, 0x73, 0x1f, 0xbc, 0x07, 0x8a, 0xdd, 0xc8, 0x9b, 0x61, 0xd9, 0x19, 0xa1, 0x72, 0x2f, 0x7b,
+	0x17, 0x5f, 0xbb, 0x22, 0x86, 0x4c, 0x7c, 0x24, 0xa2, 0x98, 0x46, 0xf3, 0xd7, 0x1c, 0x38, 0xd2,
+	0xfd, 0x50, 0xb7, 0x12, 0x5e, 0x81, 0x87, 0xeb, 0x2b, 0xa9, 0x87, 0x47, 0xaf, 0x0a, 0x23, 0x29,
+	0xf5, 0xf1, 0xe9, 0xb2, 0xdb, 0xa9, 0x6c, 0x2d, 0x8f, 0xfd, 0xec, 0xa7, 0x3f, 0xff, 0xf9, 0x39,
+	0x77, 0x0c, 0x9f, 0xdc, 0x1d, 0x63, 0xd6, 0x50, 0x0b, 0xd7, 0xf8, 0x21, 0x98, 0xfe, 0x08, 0x67,
+	0xa0, 0x7a, 0x86, 0x79, 0xcf, 0x63, 0x1b, 0xdc, 0xfa, 0xae, 0x76, 0x5e, 0x2b, 0xc6, 0xbb, 0x32,
+	0x46, 0x0d, 0x3e, 0xcd, 0xc6, 0x08, 0x3d, 0xc6, 0x3f, 0xda, 0x0c, 0x64, 0xde, 0x3f, 0xf3, 0xb0,
+	0x2a, 0xb8, 0xfe, 0xe7, 0xf8, 0x57, 0x32, 0x8b, 0x70, 0x6f, 0x0d, 0xed, 0xaa, 0x8c, 0xf8, 0x18,
+	0x96, 0xb3, 0x11, 0xe7, 0xca, 0xe8, 0xd4, 0xf9, 0xfd, 0xb6, 0x66, 0xfc, 0x71, 0x5b, 0x33, 0xfe,
+	0xba, 0xad, 0x19, 0xbf, 0xfc, 0x5d, 0xdb, 0x01, 0x56, 0x40, 0x1c, 0xc6, 0x3d, 0xff, 0x5b, 0x4a,
+	0xbe, 0x57, 0xbb, 0xe1, 0x78, 0x49, 0xe0, 0x2c, 0x9a, 0xdf, 0xe4, 0x16, 0xcd, 0xaf, 0xf2, 0xd7,
+	0xfb, 0x12, 0xfb, 0xf8, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xa2, 0x07, 0x0e, 0x70, 0x45, 0x07,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -269,6 +770,8 @@ type ReportServiceClient interface {
 	GetReportStatus(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportStatus, error)
 	// GetReportStatusConfigID returns report status for a report config id
 	GetLastReportStatusConfigID(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportStatus, error)
+	// GetReportHistory returns the full history for a report configurated with the specified ID.
+	GetReportHistory(ctx context.Context, in *GetReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
 }
 
 type reportServiceClient struct {
@@ -297,12 +800,23 @@ func (c *reportServiceClient) GetLastReportStatusConfigID(ctx context.Context, i
 	return out, nil
 }
 
+func (c *reportServiceClient) GetReportHistory(ctx context.Context, in *GetReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error) {
+	out := new(ReportHistoryResponse)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/GetReportHistory", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReportServiceServer is the server API for ReportService service.
 type ReportServiceServer interface {
 	// GetReportStatus returns report status
 	GetReportStatus(context.Context, *ResourceByID) (*ReportStatus, error)
 	// GetReportStatusConfigID returns report status for a report config id
 	GetLastReportStatusConfigID(context.Context, *ResourceByID) (*ReportStatus, error)
+	// GetReportHistory returns the full history for a report configurated with the specified ID.
+	GetReportHistory(context.Context, *GetReportHistoryRequest) (*ReportHistoryResponse, error)
 }
 
 // UnimplementedReportServiceServer can be embedded to have forward compatible implementations.
@@ -314,6 +828,9 @@ func (*UnimplementedReportServiceServer) GetReportStatus(ctx context.Context, re
 }
 func (*UnimplementedReportServiceServer) GetLastReportStatusConfigID(ctx context.Context, req *ResourceByID) (*ReportStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLastReportStatusConfigID not implemented")
+}
+func (*UnimplementedReportServiceServer) GetReportHistory(ctx context.Context, req *GetReportHistoryRequest) (*ReportHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReportHistory not implemented")
 }
 
 func RegisterReportServiceServer(s *grpc.Server, srv ReportServiceServer) {
@@ -356,6 +873,24 @@ func _ReportService_GetLastReportStatusConfigID_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReportService_GetReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReportHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).GetReportHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/GetReportHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).GetReportHistory(ctx, req.(*GetReportHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ReportService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v2.ReportService",
 	HandlerType: (*ReportServiceServer)(nil),
@@ -368,9 +903,322 @@ var _ReportService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "GetLastReportStatusConfigID",
 			Handler:    _ReportService_GetLastReportStatusConfigID_Handler,
 		},
+		{
+			MethodName: "GetReportHistory",
+			Handler:    _ReportService_GetReportHistory_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v2/report_service.proto",
+}
+
+func (m *GetReportHistoryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetReportHistoryRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetReportHistoryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Query != nil {
+		{
+			size, err := m.Query.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ReportConfigId) > 0 {
+		i -= len(m.ReportConfigId)
+		copy(dAtA[i:], m.ReportConfigId)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.ReportConfigId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SlimUser) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SlimUser) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *SlimUser) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CollectionSnapshot) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CollectionSnapshot) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CollectionSnapshot) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ReportSnapshot) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportSnapshot) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSnapshot) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.User != nil {
+		{
+			size, err := m.User.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x52
+	}
+	if len(m.Notifiers) > 0 {
+		for iNdEx := len(m.Notifiers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Notifiers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintReportService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x4a
+		}
+	}
+	if m.ReportStatus != nil {
+		{
+			size, err := m.ReportStatus.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.Schedule != nil {
+		{
+			size, err := m.Schedule.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.CollectionSnapshot != nil {
+		{
+			size, err := m.CollectionSnapshot.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.Filter != nil {
+		{
+			size := m.Filter.Size()
+			i -= size
+			if _, err := m.Filter.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ReportSnapshot_VulnReportFilters) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSnapshot_VulnReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.VulnReportFilters != nil {
+		{
+			size, err := m.VulnReportFilters.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ReportHistoryResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportHistoryResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportHistoryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ReportSnapshots) > 0 {
+		for iNdEx := len(m.ReportSnapshots) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ReportSnapshots[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintReportService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *ReportStatus) Marshal() (dAtA []byte, err error) {
@@ -445,6 +1293,145 @@ func encodeVarintReportService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *GetReportHistoryRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ReportConfigId)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.Query != nil {
+		l = m.Query.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *SlimUser) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CollectionSnapshot) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ReportSnapshot) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.Filter != nil {
+		n += m.Filter.Size()
+	}
+	if m.CollectionSnapshot != nil {
+		l = m.CollectionSnapshot.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.Schedule != nil {
+		l = m.Schedule.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.ReportStatus != nil {
+		l = m.ReportStatus.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if len(m.Notifiers) > 0 {
+		for _, e := range m.Notifiers {
+			l = e.Size()
+			n += 1 + l + sovReportService(uint64(l))
+		}
+	}
+	if m.User != nil {
+		l = m.User.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ReportSnapshot_VulnReportFilters) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.VulnReportFilters != nil {
+		l = m.VulnReportFilters.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *ReportHistoryResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ReportSnapshots) > 0 {
+		for _, e := range m.ReportSnapshots {
+			l = e.Size()
+			n += 1 + l + sovReportService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ReportStatus) Size() (n int) {
 	if m == nil {
 		return 0
@@ -479,6 +1466,800 @@ func sovReportService(x uint64) (n int) {
 }
 func sozReportService(x uint64) (n int) {
 	return sovReportService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *GetReportHistoryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetReportHistoryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetReportHistoryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportConfigId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ReportConfigId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Query == nil {
+				m.Query = &RawQuery{}
+			}
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SlimUser) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SlimUser: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SlimUser: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CollectionSnapshot) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CollectionSnapshot: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CollectionSnapshot: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ReportSnapshot) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ReportSnapshot: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ReportSnapshot: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &VulnerabilityReportFilters{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Filter = &ReportSnapshot_VulnReportFilters{v}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectionSnapshot", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CollectionSnapshot == nil {
+				m.CollectionSnapshot = &CollectionSnapshot{}
+			}
+			if err := m.CollectionSnapshot.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Schedule == nil {
+				m.Schedule = &ReportSchedule{}
+			}
+			if err := m.Schedule.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportStatus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ReportStatus == nil {
+				m.ReportStatus = &ReportStatus{}
+			}
+			if err := m.ReportStatus.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notifiers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Notifiers = append(m.Notifiers, &NotifierConfiguration{})
+			if err := m.Notifiers[len(m.Notifiers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field User", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.User == nil {
+				m.User = &SlimUser{}
+			}
+			if err := m.User.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ReportHistoryResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ReportHistoryResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ReportHistoryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportSnapshots", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ReportSnapshots = append(m.ReportSnapshots, &ReportSnapshot{})
+			if err := m.ReportSnapshots[len(m.ReportSnapshots)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *ReportStatus) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
