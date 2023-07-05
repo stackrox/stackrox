@@ -4,7 +4,7 @@ import useDeepCompareEffect from 'use-deep-compare-effect';
 import { fetchNetworkPolicies } from 'services/NetworkService';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 
-type Result = { isLoading: boolean; networkPolicies: NetworkPolicy[]; error: string | null };
+type Result = { isLoading: boolean; networkPolicies: NetworkPolicy[]; error: Error | null };
 
 const defaultResultState = { networkPolicies: [], error: null, isLoading: true };
 
