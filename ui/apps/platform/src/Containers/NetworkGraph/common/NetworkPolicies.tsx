@@ -20,6 +20,7 @@ import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type NetworkPoliciesProps = {
     entityName: string;
@@ -100,7 +101,12 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
 
     if (error) {
         return (
-            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
+            <Alert
+                isInline
+                variant={AlertVariant.danger}
+                title={getAxiosErrorMessage(error)}
+                className="pf-u-mb-lg"
+            />
         );
     }
 
