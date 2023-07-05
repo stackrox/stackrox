@@ -810,3 +810,7 @@ mitre:
 	@echo "+ $@"
 	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/mitre
 	go install ./tools/mitre
+
+.PHONY: bootstrap_migration
+bootstrap_migration:
+	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi

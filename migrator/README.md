@@ -44,56 +44,22 @@ A migration can read from any of the databases, make changes to the data or to t
 Script should correspond to single change. Script should be part of the same release as this change.
 Here are the steps to write migration script:
 
-1. Lookup the current database version (`CurrentDBVersionSeqNum`) in `pkg/migrations/internal/seq_num.go` file. 
+1. Run `DESCRIPTION="xxx" make bootstrap_migration` with a proper description of what the migration will do
+   in the `DESCRIPTION` environment variable.
 
-    The selected variable will be referred to as `currentDBVersion` in the next steps.
- 
-2. Under `migrations` folder create new folder with name
-`m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}`
+2. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` 
+   to the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. 
+   For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2
+   onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported
+   and we want to remove `column_v1`.  To do so, we will upgrade the schema to remove the column
+   and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2
+   as 4.1 will no longer be supported.  The migration process will inform the user of an error when trying to migrate
+   to a software version that can no longer be supported by the database.
 
-    1. Ensure that the `summary_of_migration` follows the naming convention of previous migrations,
-        i.e., postfix `_policy` if it modifies policies
+3. Write the migration code and associated tests in the generated `migration_impl.go` and `migration_test.go` files.
+   The files contain a number of TODOs to help with the tasks to complete when writing the migration code itself.
 
-3. Create at least two files: `migration.go` and `migration_test.go`. These files should belong to package
-`m{currentDBVersion}tom{currentDBVersion+1}`
-
-4. The `migration.go` file should contain at least the following elements:
-    ```go
-   import (
-       "github.com/stackrox/rox/migrator/migrations"
-       "github.com/stackrox/rox/migrator/types"
-       // If needed for the sequence number management.
-       pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-   )
-   
-   var (
-       startSeqNum = {curentDBVersion}
-       migration = types.Migration{
-           StartingSeqNum: startSeqNum,
-           VersionAfter: startSeqNum+1,
-           Run: func(database *types.Databases) error {
-               // Migration code ..
-           },
-       }
-   )
-   
-   func init() {
-       migrations.MustRegisterMigration(migration)
-   }
-   
-   // Additional code to support the migration code
-    ```
-5. Add to `migrator/runner/all.go` line
-
-    ```go
-    _ "github.com/stackrox/rox/migrator/migrations/m_{currentDBVersion}_to_m_{currentDBVersion+1}_{summary_of_migration}"
-    ```
-
-6. Increment the `CurrentDBVersionSeqNum` sequence number variable used from `pkg/migrations/internal/seq_num.go` by one.
-
-7. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` to the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change.  For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2 onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported and we want to remove `column_v1`.  To do so, we will upgrade the schema to remove the column and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2 as 4.1 will no longer be supported.  The migration process will inform the user of an error when trying to migrate to a software version that can no longer be supported by the database.
-
-8. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
+4. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
 in `migrations` directory, or at the examples listed below.
 
     - [#1](https://github.com/stackrox/rox/pull/8609)
