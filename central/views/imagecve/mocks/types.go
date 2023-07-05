@@ -85,7 +85,7 @@ func (mr *MockCveCoreMockRecorder) GetCVEIDs() *gomock.Call {
 func (m *MockCveCore) GetFirstDiscoveredInSystem() *time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFirstDiscoveredInSystem")
-	ret0, _ := ret[0].(time.Time)
+	ret0, _ := ret[0].(*time.Time)
 	return ret0
 }
 
