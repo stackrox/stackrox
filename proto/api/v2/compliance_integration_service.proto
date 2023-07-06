@@ -26,7 +26,7 @@ message ListComplianceIntegrationsResponse {
     repeated ComplianceIntegration integrations = 1;
 }
 
-service SignatureIntegrationService {
+service ComplianceIntegrationService {
     // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
     rpc ListComplianceIntegrations (Empty) returns (ListComplianceIntegrationsResponse) {
         option (google.api.http) = {

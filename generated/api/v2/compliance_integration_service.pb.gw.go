@@ -33,7 +33,7 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-func request_SignatureIntegrationService_ListComplianceIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, client SignatureIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_ComplianceIntegrationService_ListComplianceIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq Empty
 	var metadata runtime.ServerMetadata
 
@@ -42,7 +42,7 @@ func request_SignatureIntegrationService_ListComplianceIntegrations_0(ctx contex
 
 }
 
-func local_request_SignatureIntegrationService_ListComplianceIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, server SignatureIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_ComplianceIntegrationService_ListComplianceIntegrations_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq Empty
 	var metadata runtime.ServerMetadata
 
@@ -51,7 +51,7 @@ func local_request_SignatureIntegrationService_ListComplianceIntegrations_0(ctx 
 
 }
 
-func request_SignatureIntegrationService_GetComplianceIntegration_0(ctx context.Context, marshaler runtime.Marshaler, client SignatureIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_ComplianceIntegrationService_GetComplianceIntegration_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceIntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ComplianceIntegrationStatusRequest
 	var metadata runtime.ServerMetadata
 
@@ -78,7 +78,7 @@ func request_SignatureIntegrationService_GetComplianceIntegration_0(ctx context.
 
 }
 
-func local_request_SignatureIntegrationService_GetComplianceIntegration_0(ctx context.Context, marshaler runtime.Marshaler, server SignatureIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_ComplianceIntegrationService_GetComplianceIntegration_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceIntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ComplianceIntegrationStatusRequest
 	var metadata runtime.ServerMetadata
 
@@ -105,13 +105,13 @@ func local_request_SignatureIntegrationService_GetComplianceIntegration_0(ctx co
 
 }
 
-// RegisterSignatureIntegrationServiceHandlerServer registers the http handlers for service SignatureIntegrationService to "mux".
-// UnaryRPC     :call SignatureIntegrationServiceServer directly.
+// RegisterComplianceIntegrationServiceHandlerServer registers the http handlers for service ComplianceIntegrationService to "mux".
+// UnaryRPC     :call ComplianceIntegrationServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSignatureIntegrationServiceHandlerFromEndpoint instead.
-func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SignatureIntegrationServiceServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterComplianceIntegrationServiceHandlerFromEndpoint instead.
+func RegisterComplianceIntegrationServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ComplianceIntegrationServiceServer) error {
 
-	mux.Handle("GET", pattern_SignatureIntegrationService_ListComplianceIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ComplianceIntegrationService_ListComplianceIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -122,7 +122,7 @@ func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_SignatureIntegrationService_ListComplianceIntegrations_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceIntegrationService_ListComplianceIntegrations_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -130,11 +130,11 @@ func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *
 			return
 		}
 
-		forward_SignatureIntegrationService_ListComplianceIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceIntegrationService_ListComplianceIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_SignatureIntegrationService_GetComplianceIntegration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ComplianceIntegrationService_GetComplianceIntegration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -145,7 +145,7 @@ func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_SignatureIntegrationService_GetComplianceIntegration_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_ComplianceIntegrationService_GetComplianceIntegration_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -153,16 +153,16 @@ func RegisterSignatureIntegrationServiceHandlerServer(ctx context.Context, mux *
 			return
 		}
 
-		forward_SignatureIntegrationService_GetComplianceIntegration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceIntegrationService_GetComplianceIntegration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterSignatureIntegrationServiceHandlerFromEndpoint is same as RegisterSignatureIntegrationServiceHandler but
+// RegisterComplianceIntegrationServiceHandlerFromEndpoint is same as RegisterComplianceIntegrationServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterSignatureIntegrationServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterComplianceIntegrationServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -182,23 +182,23 @@ func RegisterSignatureIntegrationServiceHandlerFromEndpoint(ctx context.Context,
 		}()
 	}()
 
-	return RegisterSignatureIntegrationServiceHandler(ctx, mux, conn)
+	return RegisterComplianceIntegrationServiceHandler(ctx, mux, conn)
 }
 
-// RegisterSignatureIntegrationServiceHandler registers the http handlers for service SignatureIntegrationService to "mux".
+// RegisterComplianceIntegrationServiceHandler registers the http handlers for service ComplianceIntegrationService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterSignatureIntegrationServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterSignatureIntegrationServiceHandlerClient(ctx, mux, NewSignatureIntegrationServiceClient(conn))
+func RegisterComplianceIntegrationServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterComplianceIntegrationServiceHandlerClient(ctx, mux, NewComplianceIntegrationServiceClient(conn))
 }
 
-// RegisterSignatureIntegrationServiceHandlerClient registers the http handlers for service SignatureIntegrationService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "SignatureIntegrationServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "SignatureIntegrationServiceClient"
+// RegisterComplianceIntegrationServiceHandlerClient registers the http handlers for service ComplianceIntegrationService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ComplianceIntegrationServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ComplianceIntegrationServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "SignatureIntegrationServiceClient" to call the correct interceptors.
-func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SignatureIntegrationServiceClient) error {
+// "ComplianceIntegrationServiceClient" to call the correct interceptors.
+func RegisterComplianceIntegrationServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ComplianceIntegrationServiceClient) error {
 
-	mux.Handle("GET", pattern_SignatureIntegrationService_ListComplianceIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ComplianceIntegrationService_ListComplianceIntegrations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -207,18 +207,18 @@ func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_SignatureIntegrationService_ListComplianceIntegrations_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceIntegrationService_ListComplianceIntegrations_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_SignatureIntegrationService_ListComplianceIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceIntegrationService_ListComplianceIntegrations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_SignatureIntegrationService_GetComplianceIntegration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_ComplianceIntegrationService_GetComplianceIntegration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -227,14 +227,14 @@ func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_SignatureIntegrationService_GetComplianceIntegration_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_ComplianceIntegrationService_GetComplianceIntegration_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_SignatureIntegrationService_GetComplianceIntegration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_ComplianceIntegrationService_GetComplianceIntegration_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -242,13 +242,13 @@ func RegisterSignatureIntegrationServiceHandlerClient(ctx context.Context, mux *
 }
 
 var (
-	pattern_SignatureIntegrationService_ListComplianceIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v2", "complianceintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceIntegrationService_ListComplianceIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v2", "complianceintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_SignatureIntegrationService_GetComplianceIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v2", "complianceintegrations", "cluster_id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceIntegrationService_GetComplianceIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v2", "complianceintegrations", "cluster_id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
-	forward_SignatureIntegrationService_ListComplianceIntegrations_0 = runtime.ForwardResponseMessage
+	forward_ComplianceIntegrationService_ListComplianceIntegrations_0 = runtime.ForwardResponseMessage
 
-	forward_SignatureIntegrationService_GetComplianceIntegration_0 = runtime.ForwardResponseMessage
+	forward_ComplianceIntegrationService_GetComplianceIntegration_0 = runtime.ForwardResponseMessage
 )
