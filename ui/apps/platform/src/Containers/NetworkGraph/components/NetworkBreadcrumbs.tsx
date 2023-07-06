@@ -1,26 +1,25 @@
 import React from 'react';
 import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 
-import { Cluster } from 'types/cluster.proto';
 import useURLSearch from 'hooks/useURLSearch';
 import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNamespacesForPermissions';
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
-import ClusterSelector from './ClusterSelector';
+import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
 import DeploymentSelector from './DeploymentSelector';
 
-type NetworkBreadcrumbsProps = {
-    clusters: Cluster[];
-    selectedCluster?: { name?: string; id?: string };
+export type NetworkBreadcrumbsProps = {
+    clusters: ClusterSelectorProps['clusters'];
+    selectedCluster: { name: string; id: string };
     selectedNamespaces: string[];
     selectedDeployments: string[];
 };
 
 function NetworkBreadcrumbs({
-    clusters = [],
-    selectedCluster = {},
-    selectedNamespaces = [],
-    selectedDeployments = [],
+    clusters,
+    selectedCluster,
+    selectedNamespaces,
+    selectedDeployments,
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 

@@ -378,7 +378,7 @@ export function getUndoNetworkModification(clusterId) {
  * Generates a modification to policies based on a graph.
  *
  * @param {!String} clusterId
- * @param {!Object} query
+ * @param {!String} query
  * @param {!String} networkDataSince
  * @param {Boolean} excludePortsProtocols
  * @returns {Promise<Object, Error>}
