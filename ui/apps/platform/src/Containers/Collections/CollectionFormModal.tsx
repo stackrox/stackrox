@@ -22,12 +22,14 @@ import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFor
 import CollectionLoadError from './CollectionLoadError';
 import { CollectionPageAction } from './collections.utils';
 
+export type CollectionFormModalAction = Extract<
+    { type: 'create' } | { type: 'view'; collectionId: string },
+    CollectionPageAction
+>;
+
 export type CollectionsFormModalProps = {
     hasWriteAccessForCollections: boolean;
-    modalAction: Extract<
-        { type: 'create' } | { type: 'view'; collectionId: string },
-        CollectionPageAction
-    >;
+    modalAction: CollectionFormModalAction;
     onClose: () => void;
     onSubmit?: CollectionFormDrawerProps['onSubmit'];
     configError?: CollectionFormDrawerProps['configError'];
