@@ -520,15 +520,18 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	complianceC := manager.auditEventMsgs
 
 	complianceC <- s.getMsgFromCompliance("MockNode", s.getAsProtoTime(time.Now().Add(1*time.Minute)))
-	//r1 := consumeAndCount(centralC, 5)
-	//s.NoError(r1.Stopped().Wait())
+	// r1 := consumeAndCount(centralC, 5)
+	// s.NoError(r1.Stopped().Wait())
 
 	select {
-	case msg, _ := <-centralC:
+	// case msg, ok := <-centralC:
+	case msg := <-centralC:
 		s.T().Logf("Received msg: %+v", msg.Msg)
+	case <-time.After(5 * time.Second):
+		s.Fail("fileStateUpdates msg didn't arrive after 5 seconds")
 	}
 
 	manager.Stop(nil)
 	s.T().Logf("waiting for manager to stop")
-	//s.NoError(manager.Stopped().Wait()) # FIXME: Implement the stopper?
+	// s.NoError(manager.Stopped().Wait()) # FIXME: Implement the stopper?
 }
