@@ -38,6 +38,14 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
 		pkgReconciler.WithPauseReconcileAnnotation("stackrox.io/pause-reconcile"),
 	}
+
+	opts, err := addSelectorOptionIfNeeded(selector, opts)
+	if err != nil {
+		return err
+	}
+
+	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
+
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
