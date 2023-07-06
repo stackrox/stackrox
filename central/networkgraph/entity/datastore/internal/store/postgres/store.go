@@ -361,19 +361,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// Count returns the number of objects in the store.
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkEntity")
-
-	var sacQueryFilter *v1.Query
-
-	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
-		return 0, err
-	}
-
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")

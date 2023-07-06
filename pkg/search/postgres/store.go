@@ -14,6 +14,7 @@ import (
 
 // PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
+	CountAllowed(ctx context.Context) (bool, error)
 	ExistsAllowed(ctx context.Context) (bool, error)
 }
 
@@ -113,4 +114,24 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
 	// returns more than 1, despite the fact that the identifier is unique in the table.
 	return count > 0, err
+}
+
+// Count returns the number of objects in the store.
+func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.CountAllowed(ctx); err != nil || !ok {
+			return 0, err
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return 0, err
+		}
+		sacQueryFilter = filter
+	}
+
+	return RunCountRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
 }
