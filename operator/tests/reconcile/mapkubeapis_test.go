@@ -116,7 +116,7 @@ var _ = Describe("MapKubeAPIsExtension", func() {
 				acfg, err := actionConfigGetter.ActionConfigFor(obj)
 				Expect(err).NotTo(HaveOccurred())
 				store = acfg.Releases
-				actionClientGetter, err := helmClient.NewActionClientGetter(actionConfigGetter)
+				actionClientGetter := helmClient.NewActionClientGetter(actionConfigGetter)
 				Expect(err).NotTo(HaveOccurred())
 				ac, err = actionClientGetter.ActionClientFor(obj)
 				Expect(err).NotTo(HaveOccurred())
