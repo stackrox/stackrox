@@ -130,6 +130,7 @@ function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorPara
                         getRequestQueryStringForSearchFilter({
                             Namespace: options.scopeHierarchy.namespaces,
                             Deployment: options.scopeHierarchy.deployments,
+                            ...options.scopeHierarchy.remainingQuery,
                         }),
                         options.networkDataSince,
                         options.excludePortsAndProtocols
