@@ -87,7 +87,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			Endpoint:     env.TelemetryEndpoint.Setting(),
 			PushInterval: env.TelemetryFrequency.DurationSetting(),
 		}, map[string]any{
-			"Flavor":             defaults.GetImageFlavorNameFromEnv(),
+			"Image Flavor":       defaults.GetImageFlavorNameFromEnv(),
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
