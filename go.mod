@@ -33,6 +33,7 @@ require (
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/zapr v1.2.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -52,6 +53,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.1
 	github.com/heimdalr/dag v1.2.1
+	github.com/helm/helm-mapkubeapis v0.3.2
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgtype v1.13.0
@@ -66,6 +68,8 @@ require (
 	github.com/np-guard/cluster-topology-analyzer v1.4.1
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/onsi/ginkgo/v2 v2.6.1
+	github.com/onsi/gomega v1.24.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
@@ -117,6 +121,7 @@ require (
 	gorm.io/gorm v1.24.3
 	helm.sh/helm/v3 v3.9.4
 	k8s.io/api v0.24.10
+	k8s.io/apiextensions-apiserver v0.24.9
 	k8s.io/apimachinery v0.24.10
 	k8s.io/apiserver v0.24.9
 	k8s.io/client-go v0.24.10
@@ -135,8 +140,10 @@ require (
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/jackc/pgx/v5 v5.2.0 // indirect
+	github.com/maorfr/helm-plugin-utils v0.6.0 // indirect
 	github.com/pjbgf/sha1cd v0.2.3 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
+	k8s.io/helm v2.17.0+incompatible // indirect
 )
 
 require (
@@ -203,7 +210,6 @@ require (
 	github.com/go-git/go-billy/v5 v5.4.0 // indirect
 	github.com/go-git/go-git/v5 v5.5.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
-	github.com/go-logr/zapr v1.2.0 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -358,7 +364,6 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apiextensions-apiserver v0.24.9 // indirect
 	k8s.io/cli-runtime v0.24.9 // indirect
 	k8s.io/component-base v0.24.9 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect

@@ -10,7 +10,7 @@ SILENT ?= @
 # UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests"
 
 ifeq ($(TAG),)
 ifeq (,$(wildcard CI_TAG))
