@@ -34,13 +34,13 @@ import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButto
 import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
 import TimeWindowSelector from './components/TimeWindowSelector';
+import { useScopeHierarchy } from './hooks/useScopeHierarchy';
 import {
     transformPolicyData,
     transformActiveData,
     createExtraneousFlowsModel,
     graphModel,
 } from './utils/modelUtils';
-import { getScopeHierarchyFromSearch } from './utils/hierarchyUtils';
 import getSimulation from './utils/getSimulation';
 
 import './NetworkGraphPage.css';
@@ -87,26 +87,28 @@ function NetworkGraphPage() {
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
+    const scopeHierarchy = useScopeHierarchy();
     const {
         cluster: clusterFromUrl,
         namespaces: namespacesFromUrl,
         deployments: deploymentsFromUrl,
         remainingQuery,
-    } = getScopeHierarchyFromSearch(searchFilter);
-    if (clusterFromUrl !== previouslySelectedCluster) {
+    } = scopeHierarchy;
+
+    if (clusterFromUrl.name !== previouslySelectedCluster) {
         setModels({
             activeModel: emptyModel,
             extraneousModel: emptyModel,
         });
-        setPreviouslySelectedCluster(clusterFromUrl);
+        setPreviouslySelectedCluster(clusterFromUrl.name);
     }
 
-    const hasClusterNamespaceSelected = Boolean(clusterFromUrl && namespacesFromUrl.length);
+    const hasClusterNamespaceSelected = clusterFromUrl.name !== '' && namespacesFromUrl.length > 0;
 
     const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
 
     // if no cluster is selected, and there is only one cluster available, automatically select it
-    if (clusters.length === 1 && !clusterFromUrl) {
+    if (clusters.length === 1 && clusterFromUrl.name === '') {
         const modifiedSearchObject = { ...searchFilter };
         modifiedSearchObject.Cluster = clusters[0].name;
         delete modifiedSearchObject.Namespace;
@@ -114,9 +116,8 @@ function NetworkGraphPage() {
         setSearchFilter(modifiedSearchObject);
     }
 
-    const selectedClusterId = clusters.find((cl) => cl.name === clusterFromUrl)?.id;
-    const selectedCluster = { name: clusterFromUrl, id: selectedClusterId };
-    const { deploymentCount } = useFetchDeploymentCount(selectedClusterId || '');
+    const selectedClusterId = clusterFromUrl.id;
+    const { deploymentCount } = useFetchDeploymentCount(selectedClusterId);
 
     const [prevEpochCount, setPrevEpochCount] = useState(0);
     const [currentEpochCount, setCurrentEpochCount] = useState(0);
@@ -142,7 +143,7 @@ function NetworkGraphPage() {
 
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
         const isClusterNamespaceSelected =
-            clusterFromUrl && namespacesFromUrl.length > 0 && deploymentCount;
+            clusterFromUrl.name && namespacesFromUrl.length > 0 && deploymentCount;
 
         if (isQueryFilterComplete && selectedClusterId && isClusterNamespaceSelected) {
             setIsLoading(true);
@@ -256,7 +257,7 @@ function NetworkGraphPage() {
                             </Title>
                             <NetworkBreadcrumbs
                                 clusters={clusters}
-                                selectedCluster={selectedCluster}
+                                selectedCluster={clusterFromUrl}
                                 selectedNamespaces={namespacesFromUrl}
                                 selectedDeployments={deploymentsFromUrl}
                             />
@@ -307,7 +308,7 @@ function NetworkGraphPage() {
                                 <ToolbarGroup className="pf-u-flex-grow-1">
                                     <ToolbarItem className="pf-u-flex-grow-1">
                                         <NetworkSearch
-                                            selectedCluster={clusterFromUrl}
+                                            selectedCluster={clusterFromUrl.name}
                                             selectedNamespaces={namespacesFromUrl}
                                             selectedDeployments={deploymentsFromUrl}
                                             isDisabled={!hasClusterNamespaceSelected}
@@ -355,7 +356,6 @@ function NetworkGraphPage() {
                             edgeState={edgeState}
                             displayOptions={displayOptions}
                             simulation={simulation}
-                            selectedClusterId={selectedClusterId || ''}
                             clusterDeploymentCount={deploymentCount || 0}
                         />
                     )}

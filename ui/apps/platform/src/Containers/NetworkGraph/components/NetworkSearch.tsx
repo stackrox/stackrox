@@ -17,19 +17,19 @@ const searchOptionExclusions = [
     'Orchestrator Component',
 ];
 
-type NetworkSearchsProps = {
-    selectedCluster?: string;
-    selectedNamespaces?: string[];
-    selectedDeployments?: string[];
+type NetworkSearchProps = {
+    selectedCluster: string;
+    selectedNamespaces: string[];
+    selectedDeployments: string[];
     isDisabled: boolean;
 };
 
 function NetworkSearch({
-    selectedCluster = '',
-    selectedNamespaces = [],
-    selectedDeployments = [],
+    selectedCluster,
+    selectedNamespaces,
+    selectedDeployments,
     isDisabled,
-}: NetworkSearchsProps) {
+}: NetworkSearchProps) {
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
 

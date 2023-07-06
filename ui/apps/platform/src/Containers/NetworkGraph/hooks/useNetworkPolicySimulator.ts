@@ -4,7 +4,10 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicy, NetworkPolicyModification } from 'types/networkPolicy.proto';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { Simulation } from '../utils/getSimulation';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import { useScopeHierarchy } from './useScopeHierarchy';
 
 export type NetworkPolicySimulator =
     | {
@@ -27,14 +30,12 @@ type SetNetworkPolicyModificationAction =
           state: 'ACTIVE';
           options: {
               clusterId: string;
-              searchQuery: string;
           };
       }
     | {
           state: 'GENERATED';
           options: {
-              clusterId: string;
-              searchQuery: string;
+              scopeHierarchy: NetworkScopeHierarchy;
               networkDataSince: string;
               excludePortsAndProtocols: boolean;
           };
@@ -55,7 +56,6 @@ type SetNetworkPolicyModificationAction =
 
 type UseNetworkPolicySimulatorParams = {
     simulation: Simulation;
-    clusterId: string;
 };
 
 const defaultResultState = {
@@ -65,21 +65,19 @@ const defaultResultState = {
     isLoading: true,
 } as NetworkPolicySimulator;
 
-function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySimulatorParams): {
+function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
 } {
+    const scopeHierarchy = useScopeHierarchy();
     const [simulator, setSimulator] = useState<NetworkPolicySimulator>(defaultResultState);
 
     useEffect(() => {
         setNetworkPolicyModification({
             state: 'ACTIVE',
-            options: {
-                clusterId,
-                searchQuery: '',
-            },
+            options: { clusterId: scopeHierarchy.cluster.id },
         });
-    }, [clusterId, simulation.isOn]);
+    }, [scopeHierarchy.cluster.id, simulation.isOn]);
 
     function setNetworkPolicyModification(action: SetNetworkPolicyModificationAction): void {
         const { state, options } = action;
@@ -128,8 +126,11 @@ function useNetworkPolicySimulator({ simulation, clusterId }: UseNetworkPolicySi
             case 'GENERATED':
                 networkService
                     .generateNetworkModification(
-                        options.clusterId,
-                        options.searchQuery,
+                        options.scopeHierarchy.cluster.id,
+                        getRequestQueryStringForSearchFilter({
+                            Namespace: options.scopeHierarchy.namespaces,
+                            Deployment: options.scopeHierarchy.deployments,
+                        }),
                         options.networkDataSince,
                         options.excludePortsAndProtocols
                     )

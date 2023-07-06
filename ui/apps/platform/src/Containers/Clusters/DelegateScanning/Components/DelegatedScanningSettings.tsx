@@ -12,21 +12,21 @@ import {
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { EnabledSelections } from 'types/dedicatedRegistryConfig.proto';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Cluster } from 'types/cluster.proto';
+import { ClusterScopeObject } from 'services/RolesService';
 
 type DelegatedScanningSettingsProps = {
     enabledFor: EnabledSelections;
     onChangeEnabledFor: (newEnabledState: EnabledSelections) => void;
-    clusters?: Cluster[];
-    selectedClusterId?: string;
+    clusters: ClusterScopeObject[];
+    selectedClusterId: string;
     setSelectedClusterId: (newClusterId: string) => void;
 };
 
 function DelegatedScanningSettings({
     enabledFor,
     onChangeEnabledFor,
-    clusters = [],
-    selectedClusterId = '',
+    clusters,
+    selectedClusterId,
     setSelectedClusterId,
 }: DelegatedScanningSettingsProps) {
     const {
