@@ -3,7 +3,6 @@ package listener
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
@@ -11,6 +10,7 @@ import (
 	mocks2 "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"k8s.io/apimachinery/pkg/types"
 )
 

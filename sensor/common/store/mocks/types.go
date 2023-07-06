@@ -7,7 +7,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
@@ -15,6 +14,7 @@ import (
 	selector "github.com/stackrox/rox/sensor/common/selector"
 	service "github.com/stackrox/rox/sensor/common/service"
 	store "github.com/stackrox/rox/sensor/common/store"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDeploymentStore is a mock of DeploymentStore interface.

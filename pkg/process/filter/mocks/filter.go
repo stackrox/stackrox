@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFilter is a mock of Filter interface.

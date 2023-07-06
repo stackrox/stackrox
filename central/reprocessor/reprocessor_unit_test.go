@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	protobuf "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_loopImpl_reprocessNode(t *testing.T) {

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	graphConfigMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (

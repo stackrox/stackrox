@@ -8,11 +8,11 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	permissions "github.com/stackrox/rox/pkg/auth/permissions"
 	sac "github.com/stackrox/rox/pkg/sac"
 	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockScopeChecker is a mock of ScopeChecker interface.

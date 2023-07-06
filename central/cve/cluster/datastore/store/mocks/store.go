@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	converter "github.com/stackrox/rox/central/cve/converter/v2"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.

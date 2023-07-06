@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	store "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockClusterStore is a mock of ClusterStore interface.

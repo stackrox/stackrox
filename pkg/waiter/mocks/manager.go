@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	waiter "github.com/stackrox/rox/pkg/waiter"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.

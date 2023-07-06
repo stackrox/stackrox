@@ -15,7 +15,6 @@ import (
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (

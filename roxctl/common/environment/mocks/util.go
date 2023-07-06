@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 

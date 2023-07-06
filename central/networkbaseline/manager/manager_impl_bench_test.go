@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nbDS "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func generateBaselines(b *testing.B) []*storage.NetworkBaseline {

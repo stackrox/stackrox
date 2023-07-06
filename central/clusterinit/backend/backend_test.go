@@ -13,7 +13,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
 	"github.com/stackrox/rox/central/clusterinit/store"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )

@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	pgconn "github.com/jackc/pgconn"
 	pgproto3 "github.com/jackc/pgproto3/v2"
 	pgx "github.com/jackc/pgx/v4"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockTx is a mock of Tx interface.

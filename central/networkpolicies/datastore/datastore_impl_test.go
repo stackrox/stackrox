@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNetPolDataStore(t *testing.T) {

@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPipeline(t *testing.T) {

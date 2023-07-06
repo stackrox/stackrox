@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 

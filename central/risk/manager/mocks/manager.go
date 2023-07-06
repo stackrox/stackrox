@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.

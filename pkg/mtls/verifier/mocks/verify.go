@@ -8,7 +8,7 @@ import (
 	tls "crypto/tls"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockTLSConfigurer is a mock of TLSConfigurer interface.

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	roleDatastoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -19,6 +18,7 @@ import (
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestGroupsWithPostgres(t *testing.T) {

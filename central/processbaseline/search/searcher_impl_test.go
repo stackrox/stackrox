@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	mockIndex "github.com/stackrox/rox/central/processbaseline/index/mocks"
 	mockStore "github.com/stackrox/rox/central/processbaseline/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessBaselineSearch(t *testing.T) {

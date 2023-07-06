@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 // This file contains tests for the /compliance endpoint

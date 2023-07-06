@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -17,6 +16,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 
