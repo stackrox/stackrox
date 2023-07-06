@@ -5,7 +5,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -29,6 +28,7 @@ var (
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v2.ReportService/GetReportStatus",
 			"/v2.ReportService/GetLastReportStatusConfigID",
+			"/v2.ReportService/GetReportHistory",
 		},
 	})
 )
@@ -37,7 +37,6 @@ type serviceImpl struct {
 	apiV2.UnimplementedReportServiceServer
 	metadataDatastore metadataDS.DataStore
 	snapshotDS        snapshotDS.DataStore
-	notifierDatastore notifierDS.DataStore
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -105,7 +104,7 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if err != nil {
 		return nil, err
 	}
-	snapshots := convertPrototoV2ReportSnapshot(results, s.notifierDatastore)
+	snapshots := convertPrototoV2ReportSnapshot(results)
 	res := apiV2.ReportHistoryResponse{
 		ReportSnapshots: snapshots,
 	}

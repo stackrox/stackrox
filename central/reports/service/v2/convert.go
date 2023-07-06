@@ -1,7 +1,6 @@
 package v2
 
 import (
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfig "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,6 +20,7 @@ func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportSta
 
 }
 
+// ConvertProtoNotifierSnapshotToV2 converts storage.NotifierSnapshot to apiV2.NotifierConfiguration
 func ConvertProtoNotifierSnapshotToV2(notifierConfig *storage.NotifierSnapshot) (*apiV2.NotifierConfiguration, error) {
 	if notifierConfig == nil {
 		return nil, nil
@@ -53,7 +53,8 @@ func convertprotoV2ReportCollection(collection *storage.CollectionSnapshot) *api
 	}
 }
 
-func convertPrototoV2ReportSnapshot(snapshots []*storage.ReportSnapshot, notifierDatastore notifierDS.DataStore) []*apiV2.ReportSnapshot {
+// convertPrototoV2ReportSnapshot converts storage.ReportSnapshot to apiV2.ReportSnapshot
+func convertPrototoV2ReportSnapshot(snapshots []*storage.ReportSnapshot) []*apiV2.ReportSnapshot {
 	if snapshots == nil {
 		return nil
 	}

@@ -1,7 +1,6 @@
 package v2
 
 import (
-	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	metadataDataStore "github.com/stackrox/rox/central/reports/metadata/datastore"
 	snapshotDataStore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/pkg/features"
@@ -16,8 +15,7 @@ var (
 func initialize() {
 	metadataDS := metadataDataStore.Singleton()
 	snapshotDS := snapshotDataStore.Singleton()
-	notifierDS := notifierDataStore.Singleton()
-	svc = New(metadataDS, snapshotDS, notifierDS)
+	svc = New(metadataDS, snapshotDS)
 }
 
 // Singleton provides the instance of the service to register.

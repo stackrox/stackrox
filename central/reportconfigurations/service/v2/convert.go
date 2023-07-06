@@ -194,6 +194,7 @@ func convertProtoReportConfigurationToV2(config *storage.ReportConfiguration,
 	return ret, nil
 }
 
+// ConvertProtoVulnReportFiltersToV2 converts storaage.VulnerabilityReportFilters to apiV2.VulnerabilityReportFilters
 func ConvertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilters) *apiV2.VulnerabilityReportFilters {
 	if filters == nil {
 		return nil
@@ -259,6 +260,7 @@ func convertProtoResourceScopeToV2(scope *storage.ResourceScope,
 	return ret, nil
 }
 
+// ConvertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration
 func ConvertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration,
 	notifierDatastore notifierDS.DataStore) (*apiV2.NotifierConfiguration, error) {
 	if notifierConfig == nil {
