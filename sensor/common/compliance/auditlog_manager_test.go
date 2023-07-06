@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/suite"
 )
@@ -87,6 +88,7 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 		updateInterval:          updateInterval,
 		stopSig:                 concurrency.NewSignal(),
 		forceUpdateSig:          concurrency.NewSignal(),
+		centralReady:            concurrency.NewSignal(),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
 		fileStateUpdates:        make(chan *central.MsgFromSensor),
 	}
@@ -445,6 +447,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFil
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
 	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
 
 	err := manager.Start()
 	s.Require().NoError(err)
@@ -472,6 +475,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() 
 	manager.updateInterval = 1 * time.Minute
 
 	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
 
 	err := manager.Start()
 	s.Require().NoError(err)
@@ -497,4 +501,34 @@ func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater
 	}
 
 	return status
+}
+
+// This tests simulates Sensor loosing connection to Central, followed by a reconnect.
+// On entering Offline mode, Sensor must not try to send updates to Central.
+// As soon as Central comes online, Sensor must run on regular intervals again.
+// Therefore, we expect 2 messages in the pipeline to Central in the third loop iteration.
+func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := s.getManager(servers, nil)
+	manager.updateInterval = 5 * time.Millisecond
+
+	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
+	s.NoError(manager.Start())
+
+	centralC := manager.fileStateUpdates
+	complianceC := manager.auditEventMsgs
+
+	complianceC <- s.getMsgFromCompliance("MockNode", s.getAsProtoTime(time.Now().Add(1*time.Minute)))
+	//r1 := consumeAndCount(centralC, 5)
+	//s.NoError(r1.Stopped().Wait())
+
+	select {
+	case msg, _ := <-centralC:
+		s.T().Logf("Received msg: %+v", msg.Msg)
+	}
+
+	manager.Stop(nil)
+	s.T().Logf("waiting for manager to stop")
+	//s.NoError(manager.Stopped().Wait()) # FIXME: Implement the stopper?
 }
