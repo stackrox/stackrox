@@ -132,10 +132,14 @@ func verifyImageSignatures(ctx context.Context, signatures []oci.Signature, imag
 		// as well as the claims.
 		_, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
 
-		if err == nil {
-			verifiedImageReferences, err = getVerifiedImageReference(signature, image)
+		if err != nil {
+			verificationErrors = multierror.Append(verificationErrors, err)
+			continue
 		}
-		verificationErrors = multierror.Append(verificationErrors, err)
+
+		if verifiedImageReferences, err = getVerifiedImageReference(signature, image); err != nil {
+			verificationErrors = multierror.Append(verificationErrors, err)
+		}
 	}
 	return verifiedImageReferences, verificationErrors
 }
