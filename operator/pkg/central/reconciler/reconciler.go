@@ -39,11 +39,6 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithPauseReconcileAnnotation("stackrox.io/pause-reconcile"),
 	}
 
-	opts, err := addSelectorOptionIfNeeded(selector, opts)
-	if err != nil {
-		return err
-	}
-
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
 	return reconciler.SetupReconcilerWithManager(
