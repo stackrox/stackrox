@@ -13,6 +13,7 @@ import (
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/version"
@@ -68,6 +70,39 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	traceF := func() {
+		if fullMethodName == "/v1.MetadataService/GetMetadata" {
+			id, err := authn.IdentityFromContext(ctx)
+			if err != nil {
+				log.Infof(" >>> /metadata is hit but identity can't be extracted: %v", err)
+				return
+			}
+
+			svc := id.Service()
+			if svc == nil {
+				log.Info(" >>> /metadata is hit but service identity is nil")
+				return
+			}
+
+			if svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
+				log.Infof(" >>> /metadata is hit but requester service is %v", svc.GetType())
+			}
+
+			log.Infof(" >>> /metadata is hit by Sensor, id: %v, serialStr: %v", svc.GetId(), svc.GetSerialStr())
+
+			ri := requestinfo.FromContext(ctx)
+			if len(ri.VerifiedChains) != 0 {
+				log.Infof(" >>> top level chain size %d", len(ri.VerifiedChains))
+				if len(ri.VerifiedChains[0]) != 0 {
+					log.Infof(" >>> second level chain size %d", len(ri.VerifiedChains[0]))
+					log.Infof(" >>> leaf cert is '%v'", ri.VerifiedChains[0][0])
+				}
+			}
+		}
+	}
+
+	traceF()
+
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
