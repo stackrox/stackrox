@@ -190,7 +190,7 @@ func newReconciler(chrt chart.Chart, actionClientGetter helmClient.ActionClientG
 		reconciler.WithChart(chrt),
 		reconciler.WithGroupVersionKind(gvk),
 		reconciler.WithActionClientGetter(actionClientGetter),
-		reconciler.WithPreExtension(commonExtensions.MapKubeAPIsExtensionWithConfig(commonExtensions.MapKubeAPIsExtensionConfig{
+		reconciler.WithPreExtension(commonExtensions.MapKubeAPIsExtension(commonExtensions.MapKubeAPIsExtensionConfig{
 			KubeConfig: getKubeConfig(),
 			MapFile:    mapFile,
 		})),

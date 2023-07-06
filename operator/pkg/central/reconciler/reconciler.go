@@ -42,7 +42,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
-		pkgReconciler.WithPreExtension(commonExtensions.MapKubeAPIsExtension()),
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
@@ -51,6 +50,8 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	if err != nil {
 		return err
 	}
+
+	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,

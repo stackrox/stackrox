@@ -9,11 +9,30 @@ import (
 	mapkubeapisCommon "github.com/helm/helm-mapkubeapis/pkg/common"
 	mapkubeapisV3 "github.com/helm/helm-mapkubeapis/pkg/v3"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
+	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+// AddMapKubeAPIsExtensionIfMapFileExists conditionally adds the extension to opts if the map file exists
+func AddMapKubeAPIsExtensionIfMapFileExists(opts []pkgReconciler.Option) []pkgReconciler.Option {
+	mapFile := os.Getenv("MAPKUBEAPIS_MAPFILE")
+	if mapFile == "" {
+		mapFile = filepath.Join("config", "mapkubeapis", "Map.yaml")
+	}
+	if _, err := os.Stat(mapFile); err != nil {
+		ctrl.Log.Info("mapkubeapis map file does not exist, the extension will NOT be added", "path", mapFile)
+		return opts
+	}
+	config := MapKubeAPIsExtensionConfig{
+		MapFile: mapFile,
+	}
+	extension := MapKubeAPIsExtension(config)
+	return append(opts, pkgReconciler.WithPreExtension(extension))
+}
 
 // MapKubeAPIsExtensionConfig extension configuration
 type MapKubeAPIsExtensionConfig struct {
@@ -22,21 +41,8 @@ type MapKubeAPIsExtensionConfig struct {
 }
 
 // MapKubeAPIsExtension checks the latest release version for any deprecated or removed APIs and performs
-// // the cleanup using helm mapkubeapis extension
-func MapKubeAPIsExtension() extensions.ReconcileExtension {
-	configDir := os.Getenv("OPERATOR_CONFIG_DIR")
-	if configDir == "" {
-		configDir = "config"
-	}
-	config := MapKubeAPIsExtensionConfig{
-		MapFile: filepath.Join(configDir, "mapkubeapis", "Map.yaml"),
-	}
-	return MapKubeAPIsExtensionWithConfig(config)
-}
-
-// MapKubeAPIsExtensionWithConfig checks the latest release version for any deprecated or removed APIs and performs
 // the cleanup using helm mapkubeapis extension
-func MapKubeAPIsExtensionWithConfig(config MapKubeAPIsExtensionConfig) extensions.ReconcileExtension {
+func MapKubeAPIsExtension(config MapKubeAPIsExtensionConfig) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
 		run := &mapKubeAPIsExtensionRun{
 			ctx:           ctx,

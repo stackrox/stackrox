@@ -47,7 +47,7 @@ var _ = AfterSuite(func() {
 	Expect(testEnv.Stop()).To(Succeed())
 })
 
-// BuildTestCRD remove me. Use real stackrox CRDS instead
+// BuildTestCRD builds test CRD
 func BuildTestCRD(gvk schema.GroupVersionKind) apiextv1.CustomResourceDefinition {
 	trueVal := true
 	singular := strings.ToLower(gvk.Kind)
@@ -85,7 +85,7 @@ func BuildTestCRD(gvk schema.GroupVersionKind) apiextv1.CustomResourceDefinition
 	}
 }
 
-// BuildTestCR remove me. Use real stackrox CRDS instead
+// BuildTestCR builds test CR
 func BuildTestCR(gvk schema.GroupVersionKind) *unstructured.Unstructured {
 	obj := &unstructured.Unstructured{Object: map[string]interface{}{
 		"spec": map[string]interface{}{"replicas": 2},
