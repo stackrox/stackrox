@@ -367,3 +367,9 @@ func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 
 	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
+
+// Delete removes the object associated to the specified ID from the store.
+func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+	return s.DeleteByQuery(ctx, q)
+}

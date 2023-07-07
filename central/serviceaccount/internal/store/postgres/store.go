@@ -317,24 +317,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ServiceAccou
 	})
 }
 
-// Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
-
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-	if err != nil {
-		return err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ServiceAccount")

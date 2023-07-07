@@ -275,25 +275,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMe
 	})
 }
 
-// Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "InitBundleMeta")
-
-	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "InitBundleMeta")
