@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
@@ -34,6 +35,8 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/version"
+	rawZap "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -92,7 +95,13 @@ func run() error {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	zapLogger := zap.NewRaw(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+	restore, err := rawZap.RedirectStdLogAt(zapLogger, zapcore.DebugLevel)
+	if err != nil {
+		return errors.Wrap(err, "unable to redirect std log")
+	}
+	defer restore()
 
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
