@@ -77,6 +77,11 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     fi
 
     deploy_stackrox
+
+    unset CENTRAL_CHART_DIR_OVERRIDE
+    unset SENSOR_CHART_DIR_OVERRIDE
+    unset SENSOR_MAIN_IMAGE_TAG_OVERRIDE
+    unset SENSOR_MAIN_IMAGE_REPO_OVERRIDE
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
