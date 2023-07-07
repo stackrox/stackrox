@@ -351,30 +351,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error 
 	return nil
 }
 
-// Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkPolicyApplicationUndoDeploymentRecord")
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(deploymentID).ProtoQuery(),
-	)
-
-	data, err := pgSearch.RunGetQueryForSchema[storage.NetworkPolicyApplicationUndoDeploymentRecord](ctx, schema, q, s.db)
-	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	return data, true, nil
-}
-
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkPolicyApplicationUndoDeploymentRecord, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicyApplicationUndoDeploymentRecord")
