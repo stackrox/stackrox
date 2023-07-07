@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	proto "github.com/gogo/protobuf/proto"
-	gomock "github.com/golang/mock/gomock"
 	declarativeconfig "github.com/stackrox/rox/pkg/declarativeconfig"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockTransformer is a mock of Transformer interface.

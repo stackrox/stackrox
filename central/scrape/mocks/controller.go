@@ -7,11 +7,11 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	set "github.com/stackrox/rox/pkg/set"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockController is a mock of Controller interface.

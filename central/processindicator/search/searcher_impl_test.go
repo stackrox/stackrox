@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	indexMock "github.com/stackrox/rox/central/processindicator/index/mocks"
 	storeMock "github.com/stackrox/rox/central/processindicator/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestIndicatorSearch(t *testing.T) {

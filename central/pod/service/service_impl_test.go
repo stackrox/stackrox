@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestAuthz(t *testing.T) {

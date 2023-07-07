@@ -10,7 +10,7 @@ import (
 
 	request "github.com/aws/aws-sdk-go/aws/request"
 	securityhub "github.com/aws/aws-sdk-go/service/securityhub"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSecurityHubAPI is a mock of SecurityHubAPI interface.

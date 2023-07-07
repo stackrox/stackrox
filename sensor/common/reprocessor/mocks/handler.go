@@ -7,10 +7,10 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockHandler is a mock of Handler interface.

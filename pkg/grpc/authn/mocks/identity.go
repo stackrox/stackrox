@@ -8,10 +8,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
 	permissions "github.com/stackrox/rox/pkg/auth/permissions"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockIdentity is a mock of Identity interface.

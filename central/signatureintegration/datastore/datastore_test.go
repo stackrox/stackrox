@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	policyDataStoreMock "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSignatureDataStore(t *testing.T) {

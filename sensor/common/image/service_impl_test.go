@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	imageMocks "github.com/stackrox/rox/sensor/common/image/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestImageService(t *testing.T) {

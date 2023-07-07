@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheckClusterCheckedInInThePastHour(t *testing.T) {

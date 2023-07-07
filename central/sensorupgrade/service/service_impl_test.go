@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	managerMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/sensorupgradeconfig/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type SensorUpgradeServiceTestSuite struct {

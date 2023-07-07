@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	queue "github.com/stackrox/rox/central/deployment/queue"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDeploymentObservationQueue is a mock of DeploymentObservationQueue interface.

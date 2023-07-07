@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 var (

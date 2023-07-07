@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNamespacePermissionsForSubject(t *testing.T) {

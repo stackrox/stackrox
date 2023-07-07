@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	evaluatorMocks "github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
 	"github.com/stackrox/rox/central/risk/getters"
 	deploymentMultiplier "github.com/stackrox/rox/central/risk/multipliers/deployment"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/risk/scorer/image"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 // GetMockImagesRisk returns a slice of mock image risk
