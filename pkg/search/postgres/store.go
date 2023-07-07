@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -22,6 +23,7 @@ const (
 // PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
 	CountAllowed(ctx context.Context) (bool, error)
+	DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
 	ExistsAllowed(ctx context.Context) (bool, error)
 	GetAllowed(ctx context.Context) (bool, error)
 	WalkAllowed(ctx context.Context) (bool, error)
@@ -337,4 +339,31 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// DeleteByQuery removes the objects from the store based on the passed query.
+func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.DeleteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrResourceAccessDenied
+		}
+	} else {
+		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		query,
+	)
+
+	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
