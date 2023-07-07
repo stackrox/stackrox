@@ -572,45 +572,6 @@ func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []{{$singlePK.Ty
 {{- end }}
 
 {{- if $singlePK }}
-{{- if .SearchCategory }}
-
-// GetByQuery returns the objects from the store matching the query.
-func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*{{.Type}}, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetByQuery, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-    {{ if .Obj.HasPermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
-        return nil, err
-    } else if !ok {
-        return nil, nil
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-        return nil, err
-	}
-    {{- end }}
-    pagination := query.GetPagination()
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-    q.Pagination = pagination
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[{{.Type}}](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-		    return nil, nil
-		}
-		return nil, err
-	}
-	return rows, nil
-}
-{{- end }}
-{{- end }}
-
-{{- if $singlePK }}
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (s *storeImpl) GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
