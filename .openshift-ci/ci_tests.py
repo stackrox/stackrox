@@ -147,6 +147,20 @@ class UIE2eTest(BaseTest):
         )
 
 
+class ComplianceE2eTest(BaseTest):
+    TEST_TIMEOUT = 2 * 60 * 60
+
+    def run(self):
+        print("Executing compliance e2e test")
+
+        self.run_with_graceful_kill(
+            [
+                "tests/e2e/run-compliance-e2e.sh",
+            ],
+            ComplianceE2eTest.TEST_TIMEOUT,
+        )
+
+
 class NonGroovyE2e(BaseTest):
     TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
