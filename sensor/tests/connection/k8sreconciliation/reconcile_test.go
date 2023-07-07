@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/require"
 	appsV1 "k8s.io/api/apps/v1"
@@ -19,11 +19,11 @@ var (
 )
 
 func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
-        s.T().Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
-        if !features.PreventSensorRestartOnDisconnect.Enabled() {
-          s.T().Skip("Skip tests when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is disabled")
-          s.T().SkipNow()
-        }
+	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
+	if !features.PreventSensorRestartOnDisconnect.Enabled() {
+		t.Skip("Skip tests when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is disabled")
+		t.SkipNow()
+	}
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
