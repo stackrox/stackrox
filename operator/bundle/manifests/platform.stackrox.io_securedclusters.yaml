@@ -397,6 +397,7 @@ spec:
                         - EBPF
                         - CORE_BPF
                         - NoCollection
+                        - KernelModule
                         type: string
                       imageFlavor:
                         default: Regular
