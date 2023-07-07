@@ -151,7 +151,7 @@ class ReconciliationTest extends BaseSpecification {
 
             orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
-            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"])
+            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
 
             orchestrator.identity {
                 // Delete objects from k8s
