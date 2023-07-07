@@ -100,11 +100,12 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	results, err := s.snapshotDS.SearchReportSnapshots(ctx, parsedQuery)
+	conjuncQuery := search.ConjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetReportConfigId()).ProtoQuery(), parsedQuery)
+	results, err := s.snapshotDS.SearchReportSnapshots(ctx, conjuncQuery)
 	if err != nil {
 		return nil, err
 	}
-	snapshots := convertPrototoV2ReportSnapshot(results)
+	snapshots := convertProtoReportSnapshotstoV2(results)
 	res := apiV2.ReportHistoryResponse{
 		ReportSnapshots: snapshots,
 	}
