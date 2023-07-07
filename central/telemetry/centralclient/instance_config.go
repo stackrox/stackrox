@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -86,6 +87,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			Endpoint:     env.TelemetryEndpoint.Setting(),
 			PushInterval: env.TelemetryFrequency.DurationSetting(),
 		}, map[string]any{
+			"Image Flavor":       defaults.GetImageFlavorNameFromEnv(),
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,
