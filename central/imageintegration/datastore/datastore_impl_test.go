@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/imageintegration/index"
 	indexMocks "github.com/stackrox/rox/central/imageintegration/index/mocks"
 	"github.com/stackrox/rox/central/imageintegration/search"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (

@@ -7,7 +7,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	scrape "github.com/stackrox/rox/central/scrape"
 	networkentities "github.com/stackrox/rox/central/sensor/networkentities"
 	networkpolicies "github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -15,6 +14,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSensorConnection is a mock of SensorConnection interface.

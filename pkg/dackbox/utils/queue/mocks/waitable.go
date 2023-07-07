@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	proto "github.com/gogo/protobuf/proto"
-	gomock "github.com/golang/mock/gomock"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockAcceptsKeyValue is a mock of AcceptsKeyValue interface.

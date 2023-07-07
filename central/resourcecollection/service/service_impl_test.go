@@ -7,7 +7,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	reportConfigurationDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCollectionService(t *testing.T) {

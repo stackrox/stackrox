@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	framework "github.com/stackrox/rox/central/compliance/framework"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockComplianceContext is a mock of ComplianceContext interface.

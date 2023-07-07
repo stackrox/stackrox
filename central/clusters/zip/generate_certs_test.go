@@ -5,11 +5,11 @@ import (
 	"encoding/pem"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/serviceidentities/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestGenerateCerts(t *testing.T) {

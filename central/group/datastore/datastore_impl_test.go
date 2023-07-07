@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestGroupDataStore(t *testing.T) {

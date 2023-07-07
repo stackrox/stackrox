@@ -9,12 +9,12 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/roxctl/common"
 	auth "github.com/stackrox/rox/roxctl/common/auth"
 	config "github.com/stackrox/rox/roxctl/common/config"
 	io "github.com/stackrox/rox/roxctl/common/io"
 	logger "github.com/stackrox/rox/roxctl/common/logger"
+	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )
 

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	declarativeConfigHealthMock "github.com/stackrox/rox/central/declarativeconfig/health/datastore/mocks"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const supportedTypesCount = 6

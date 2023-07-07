@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	telemeter "github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockTelemeter is a mock of Telemeter interface.

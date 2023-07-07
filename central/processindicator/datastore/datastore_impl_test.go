@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/processindicator"
 	indexMocks "github.com/stackrox/rox/central/processindicator/index/mocks"
 	"github.com/stackrox/rox/central/processindicator/pruner"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestIndicatorDatastore(t *testing.T) {
