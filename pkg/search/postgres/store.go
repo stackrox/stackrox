@@ -21,6 +21,7 @@ const (
 type PermissionChecker interface {
 	CountAllowed(ctx context.Context) (bool, error)
 	ExistsAllowed(ctx context.Context) (bool, error)
+	GetAllowed(ctx context.Context) (bool, error)
 	WalkAllowed(ctx context.Context) (bool, error)
 }
 
@@ -188,4 +189,34 @@ func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 		return nil
 	})
 	return objs, err
+}
+
+// Get returns the object, if it exists from the store.
+func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+			return nil, false, err
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, false, err
+		}
+		sacQueryFilter = filter
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := RunGetQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	if err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	return data, true, nil
 }
