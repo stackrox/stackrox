@@ -58,8 +58,8 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     helm repo update
 
     helm_charts=$(helm search repo stackrox-oss -l)
-    central_regex="stackrox-oss/stackrox-central-services[ \t]+.${CENTRAL_CHART_VERSION_OVERRIDE}"
-    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]+.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]+.([0-9]+\.[0-9]+\.[0-9]+)"
+    central_regex="stackrox-oss/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}"
+    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
     if  [[ $helm_charts =~ $central_regex ]]; then
         ci_export CENTRAL_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-central-services"
