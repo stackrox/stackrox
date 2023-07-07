@@ -182,6 +182,86 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportMeta
 	return s
 }
 
+/* Concurrency and scheduling functions */
+
+func (s *scheduler) Start() {
+	go s.scheduleReports()
+	go s.runReports()
+}
+
+func (s *scheduler) Stop() {
+	s.stopper.Client().Stop()
+	err := s.stopper.Client().Stopped().Wait()
+	if err != nil {
+		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
+	}
+}
+
+func (s *scheduler) scheduleReports() {
+	maxConcurrency := int32(env.ReportExecutionMaxConcurrency.IntegerSetting())
+	for {
+		select {
+		case <-s.stopper.Flow().StopRequested():
+			return
+		case <-s.sendNewReports:
+			numRoutines := s.numRoutines.Load()
+			// Checking len(s.reportsToRun) < maxConcurrency (which is also the capacity of buffered channel reportsToRun) here
+			// will ensure that we never attempt to write to full channel reportsToRun. This will further ensure that
+			// writes to reportsToRun in selectRunnableReports() are never blocked.
+			if int32(len(s.reportsToRun)) < maxConcurrency && numRoutines < maxConcurrency {
+				s.selectRunnableReports(int(maxConcurrency - numRoutines))
+			}
+		}
+	}
+}
+
+func (s *scheduler) runReports() {
+	defer s.stopper.Flow().ReportStopped()
+	for {
+		select {
+		case <-s.stopper.Flow().StopRequested():
+			return
+		case req := <-s.reportsToRun:
+			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
+			go s.sendReportResults(req)
+		}
+	}
+}
+
+func (s *scheduler) selectRunnableReports(max int) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	indices := set.NewIntSet()
+	i := 0
+	for indices.Cardinality() < max && i < len(s.queuedReports) {
+		if !s.runningReportConfigIDs.Contains(s.queuedReports[i].ReportConfig.GetId()) {
+			indices.Add(i)
+		}
+		i++
+	}
+	var requests []*ReportRequest
+	s.queuedReports, requests = removeSelectedRequests(s.queuedReports, indices)
+
+	selected := make([]*ReportRequest, 0)
+	for _, req := range requests {
+		metadata := req.ReportMetadata
+		metadata.ReportStatus.RunState = storage.ReportStatus_PREPARING
+		err := s.reportMetadataStore.UpdateReportMetadata(req.Ctx, metadata)
+		if err != nil {
+			s.logErrorAndUpsertReportStatus(errors.Wrap(err, "Error updating report status to PREPARING"), req)
+		} else {
+			selected = append(selected, req)
+			s.runningReportConfigIDs.Add(req.ReportConfig.GetId())
+		}
+	}
+	for _, req := range selected {
+		// This write should never be blocking. Otherwise it can cause a deadlock.
+		s.reportsToRun <- req
+	}
+}
+
+/* Functions to add/remove report jobs from queue */
+
 func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -298,74 +378,6 @@ func (s *scheduler) CancelReport(reportID string) {
 	panic("implement me")
 }
 
-func (s *scheduler) runReports() {
-	defer s.stopper.Flow().ReportStopped()
-	for {
-		select {
-		case <-s.stopper.Flow().StopRequested():
-			return
-		case req := <-s.reportsToRun:
-			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
-			go s.sendReportResults(req)
-		}
-	}
-}
-
-func (s *scheduler) scheduleReports() {
-	maxConcurrency := int32(env.ReportExecutionMaxConcurrency.IntegerSetting())
-	for {
-		select {
-		case <-s.stopper.Flow().StopRequested():
-			return
-		case <-s.sendNewReports:
-			numRoutines := s.numRoutines.Load()
-			// Checking len(s.reportsToRun) < maxConcurrency (which is also the capacity of buffered channel reportsToRun) here
-			// will ensure that we never attempt to write to full channel reportsToRun. This will further ensure that
-			// writes to reportsToRun in selectRunnableReports() are never blocked.
-			if int32(len(s.reportsToRun)) < maxConcurrency && numRoutines < maxConcurrency {
-				s.selectRunnableReports(int(maxConcurrency - numRoutines))
-			}
-		}
-	}
-}
-
-func (s *scheduler) selectRunnableReports(max int) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	indices := set.NewIntSet()
-	i := 0
-	for indices.Cardinality() < max && i < len(s.queuedReports) {
-		if !s.runningReportConfigIDs.Contains(s.queuedReports[i].ReportConfig.GetId()) {
-			indices.Add(i)
-		}
-		i++
-	}
-	var requests []*ReportRequest
-	s.queuedReports, requests = removeSelectedRequests(s.queuedReports, indices)
-
-	selected := make([]*ReportRequest, 0)
-	for _, req := range requests {
-		metadata := req.ReportMetadata
-		metadata.ReportStatus.RunState = storage.ReportStatus_PREPARING
-		err := s.reportMetadataStore.UpdateReportMetadata(req.Ctx, metadata)
-		if err != nil {
-			s.logErrorAndUpsertReportStatus(errors.Wrap(err, "Error updating report status to PREPARING"), req)
-		} else {
-			selected = append(selected, req)
-			s.runningReportConfigIDs.Add(req.ReportConfig.GetId())
-		}
-	}
-	for _, req := range selected {
-		// This write should never be blocking. Otherwise it can cause a deadlock.
-		s.reportsToRun <- req
-	}
-}
-
-func (s *scheduler) logErrorAndUpsertReportStatus(err error, req *ReportRequest) {
-	log.Errorf("Error running report for config '%s': %s", req.ReportConfig.GetName(), err)
-	// TODO : upsert report metadata and report snapshot with error
-}
-
 func (s *scheduler) lastSuccesfulScheduledReportTime(ctx context.Context, config *storage.ReportConfiguration) (*types.Timestamp, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, config.GetId()).
@@ -387,6 +399,8 @@ func (s *scheduler) lastSuccesfulScheduledReportTime(ctx context.Context, config
 	}
 	return results[0].GetReportStatus().GetCompletedAt(), nil
 }
+
+/* Report generation and notification functions */
 
 func (s *scheduler) sendReportResults(req *ReportRequest) {
 	s.numRoutines.Add(1)
@@ -565,6 +579,8 @@ func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuer
 	return res, nil
 }
 
+/* Helper functions */
+
 func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
 	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
 	if err != nil {
@@ -573,17 +589,9 @@ func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Q
 	return search.ResultsToIDs(results), nil
 }
 
-func (s *scheduler) Start() {
-	go s.scheduleReports()
-	go s.runReports()
-}
-
-func (s *scheduler) Stop() {
-	s.stopper.Client().Stop()
-	err := s.stopper.Client().Stopped().Wait()
-	if err != nil {
-		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
-	}
+func (s *scheduler) logErrorAndUpsertReportStatus(err error, req *ReportRequest) {
+	log.Errorf("Error running report for config '%s': %s", req.ReportConfig.GetName(), err)
+	// TODO : upsert report metadata and report snapshot with error
 }
 
 func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,
