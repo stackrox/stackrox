@@ -8,14 +8,20 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+const (
+	cursorBatchSize = 50
 )
 
 // PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
 	CountAllowed(ctx context.Context) (bool, error)
 	ExistsAllowed(ctx context.Context) (bool, error)
+	WalkAllowed(ctx context.Context) (bool, error)
 }
 
 type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
@@ -134,4 +140,40 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	}
 
 	return RunCountRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+}
+
+// Walk iterates over all the objects in the store and applies the closure.
+func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.WalkAllowed(ctx); err != nil || !ok {
+			return err
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return err
+		}
+		sacQueryFilter = filter
+	}
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, sacQueryFilter, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			if err := fn(data); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
