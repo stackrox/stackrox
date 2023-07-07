@@ -284,3 +284,57 @@ func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 
 	return identifiers, nil
 }
+
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
+func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]*T, []int, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetMany)
+
+	if len(identifiers) == 0 {
+		return nil, nil, nil
+	}
+
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+			return nil, nil, err
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, nil, err
+		}
+		sacQueryFilter = filter
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
+	)
+
+	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			missingIndices := make([]int, 0, len(identifiers))
+			for i := range identifiers {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	resultsByID := make(map[string]*T, len(rows))
+	for _, msg := range rows {
+		resultsByID[s.pkGetter(msg)] = msg
+	}
+	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input identifiers
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*T, 0, len(resultsByID))
+	for i, identifier := range identifiers {
+		if result, ok := resultsByID[identifier]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
