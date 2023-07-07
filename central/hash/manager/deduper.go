@@ -80,14 +80,8 @@ type deduperImpl struct {
 	hasher *hash.Hasher
 }
 
-// skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
-func skipDedupe(msg *central.MsgFromSensor) bool {
-	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok {
-		return true
-	}
-	event := eventMsg.Event
-
+func isAlwaysTrackedObject(event *central.SensorEvent) bool {
+	// This switch specifies the events that should always be tracked unconditionally
 	switch event.Resource.(type) {
 	case *central.SensorEvent_NetworkPolicy:
 	case *central.SensorEvent_Deployment:
@@ -102,21 +96,36 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	case *central.SensorEvent_ComplianceOperatorScan:
 	case *central.SensorEvent_ComplianceOperatorRule:
 	case *central.SensorEvent_ComplianceOperatorScanSettingBinding:
-	case *central.SensorEvent_AlertResults:
-		results := event.GetAlertResults()
-		if !alert.IsDeployTimeAlertResult(event.GetAlertResults()) {
-			return true
-		}
-		if alert.IsAlertResultResolved(results) {
-			return true
-		}
-		if alert.AnyAttemptedAlert(results.GetAlerts()...) {
-			return true
-		}
 	default:
+		// If the object is not in the above list, return false
+		return false
+	}
+	return true
+}
+
+// skipDedupe signifies that a message from Sensor cannot be deduped and won't be stored
+func skipDedupe(msg *central.MsgFromSensor) bool {
+	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
+	if !ok {
 		return true
 	}
-	return false
+	event := eventMsg.Event
+
+	// If the object should always be tracked, then we should never skip deduping
+	if isAlwaysTrackedObject(event) {
+		return false
+	}
+	if results := event.GetAlertResults(); results != nil {
+		// Do not dedupe deploy time alerts that are unresolved and are not attempted
+		if alert.IsDeployTimeAlertResult(event.GetAlertResults()) &&
+			!alert.IsAlertResultResolved(results) &&
+			!alert.AnyAttemptedAlert(results.GetAlerts()...) {
+			return false
+		}
+	}
+	// If we did not match an expected case, then skip deduping which will not have any correctness implications
+	// just potential performance implications
+	return true
 }
 
 func (d *deduperImpl) shouldReprocess(hashKey string, hash uint64) bool {
