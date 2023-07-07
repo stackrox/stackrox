@@ -490,35 +490,6 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 }
 {{- end}}
 
-{{- if not .JoinTable }}
-
-// DeleteByQuery removes the objects from the store based on the passed query.
-func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-
-    var sacQueryFilter *v1.Query
-    {{- if .PermissionChecker }}
-    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else }}
-    sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-    if err != nil {
-        return err
-    }
-    {{- end }}
-
-    q := search.ConjunctionQuery(
-        sacQueryFilter,
-        query,
-    )
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-{{- end}}
-
 {{- if $singlePK }}
 {{- if not .JoinTable }}
 
