@@ -96,7 +96,7 @@ class ReconciliationTest extends BaseSpecification {
                 orchestrator.getOrchestratorDeployment("stackrox", "sensor")
         Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
 
-        List<AlertOuterClass.ListAlert> violations
+        List<AlertOuterClass.ListAlert> violations = []
         Deployment busyboxDeployment
         String secretID
         String networkPolicyID
@@ -110,7 +110,7 @@ class ReconciliationTest extends BaseSpecification {
         def namespaceID = orchestrator.createNamespace(ns)
         NamespaceService.waitForNamespace(namespaceID, 10)
 
-        Set<String> podsBeforeDeleting
+        Set<String> podsBeforeDeleting = [] as Set
 
         try {
             addStackroxImagePullSecret(ns)
@@ -191,9 +191,13 @@ class ReconciliationTest extends BaseSpecification {
         then:
         "Verify that we don't have references to resources removed when sensor was gone"
         // Get the resources from central and make sure the values exist
-        int retries = maxWaitForSync / interval
+        int retries = (int) (maxWaitForSync / interval)
         Timer t = new Timer(retries, interval)
-        int numDeployments, numPods, numNamespaces, numNetworkPolicies, numSecrets
+        int numDeployments = -1
+        int numPods = -1
+        int numNamespaces = -1
+        int numNetworkPolicies = -1
+        int numSecrets = -1
         while (t.IsValid()) {
             numDeployments = Services.getDeployments().findAll { it.name == busyboxDeployment.getName() }.size()
             numPods = Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size()
