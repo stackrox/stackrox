@@ -24,6 +24,7 @@ import (
 
 var (
 	fakeClientCAFile   = "./testdata/ca.pem"
+	fakeNoClientCAFile = "./testdata/no_ca.pem"
 	fakeClientCertFile = "./testdata/client.crt"
 	fakeClientKeyFile  = "./testdata/client.key"
 	fakeCertFile       = "./testdata/tls.crt"

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
@@ -22,7 +23,7 @@ import (
 
 const (
 	clientCAKey = "client-ca-file"
-	signerName  = "kubelet-signer"
+	signerName  = "kube-csr-signer"
 )
 
 func certFilePath() string {
@@ -76,7 +77,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
-		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig),
+		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig, tls.RequireAndVerifyClientCert),
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
@@ -181,9 +182,12 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 		}
 		var signerCAs []*x509.Certificate
 		for _, c := range certs {
-			if c.Issuer.CommonName == signerName {
+			if strings.HasPrefix(c.Subject.CommonName, signerName) {
 				signerCAs = append(signerCAs, c)
 			}
+		}
+		if len(signerCAs) == 0 {
+			log.Warnf("No client CAs signed by %q have been found", signerName)
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()
