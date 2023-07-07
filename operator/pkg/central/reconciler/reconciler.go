@@ -42,6 +42,9 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
+
+	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
+
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.Translator{}, proxyEnv),
