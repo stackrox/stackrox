@@ -818,7 +818,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         ],
         defaultValue: false,
         canBooleanLogic: false,
-        featureFlagDependency: 'ROX_NETPOL_FIELDS',
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
@@ -841,7 +840,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         defaultValue: false,
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
-        featureFlagDependency: 'ROX_NETPOL_FIELDS',
     },
     cpuResource('Container CPU request'),
     cpuResource('Container CPU limit'),
