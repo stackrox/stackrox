@@ -177,3 +177,15 @@ func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) e
 	}
 	return nil
 }
+
+// GetAll retrieves all objects from the store.
+func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
+
+	var objs []PT
+	err := s.Walk(ctx, func(obj PT) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
