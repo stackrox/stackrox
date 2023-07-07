@@ -194,7 +194,8 @@ class ReconciliationTest extends BaseSpecification {
             log.info pod
         }
         log.info "Pods that were likely deleted while sensor was down:"
-        for (pod in getDifference(podsBeforeDeleting, podsBeforeRestarting)) {
+        def deletedPods = getDifference(podsBeforeDeleting, podsBeforeRestarting)
+        for (pod in deletedPods) {
             log.info pod
         }
 
@@ -233,6 +234,10 @@ class ReconciliationTest extends BaseSpecification {
         assert numNamespaces == 0
         assert numNetworkPolicies == 0
         assert numSecrets == 0
+
+        for( def gone: deletedPods) {
+            assert 0 == Services.getPods().findAll {it.name == gone}.size(), "Should not find the pod ${gone} after reconciliation"
+        }
 
         verifyReconciliationStats()
 
