@@ -727,21 +727,6 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 }
 {{- end }}
 
-{{- if .GetAll }}
-
-// GetAll retrieves all objects from the store.
-func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.TrimmedType}}")
-
-    var objs []*{{.Type}}
-    err := s.Walk(ctx, func(obj *{{.Type}}) error {
-        objs = append(objs, obj)
-        return nil
-    })
-    return objs, err
-}
-{{- end}}
-
 //// Interface functions - END
 
 //// Used for testing
