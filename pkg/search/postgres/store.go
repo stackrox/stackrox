@@ -256,3 +256,31 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 	}
 	return rows, nil
 }
+
+// GetIDs returns all the IDs for the store.
+func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
+	var sacQueryFilter *v1.Query
+	if s.hasPermissionsChecker() {
+		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+			return nil, err
+		}
+	} else {
+		filter, err := GetReadSACQuery(ctx, s.targetResource)
+		if err != nil {
+			return nil, err
+		}
+		sacQueryFilter = filter
+	}
+	result, err := RunSearchRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	identifiers := make([]string, 0, len(result))
+	for _, entry := range result {
+		identifiers = append(identifiers, entry.ID)
+	}
+
+	return identifiers, nil
+}
