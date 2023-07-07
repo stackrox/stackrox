@@ -220,8 +220,8 @@ class ReconciliationTest extends BaseSpecification {
         // We want to make sure that the pods from the list are gone, so we do not assert on the total number of
         // deletions as this may cause flakes.
         log.info "All pods after reconciliation: ", Services.getPods()
-        for(def name: deletedPods) {
-            assert 0 == Services.getPods().findAll {it.name == name}.size(),
+        for (def name: deletedPods) {
+            assert Services.getPods().findAll { it.name == name }.size() == 0,
                 "Should not find the pod ${name} after reconciliation"
         }
 
