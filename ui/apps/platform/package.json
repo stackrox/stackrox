@@ -112,7 +112,7 @@
         "eject": "react-app-rewired eject"
     },
     "devDependencies": {
-        "@babel/core": "7.22.8",
+        "@babel/core": "7.12.3",
         "@stackrox/tailwind-config": "*",
         "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^12.1.2",
