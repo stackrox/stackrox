@@ -1329,13 +1329,6 @@ func (s *violationsTestSuite) TestResponseContentType() {
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 }
 
-func (s *violationsTestSuite) TestViolationsHandlerError() {
-	// A nil writer will cause a panic
-	s.Panics(func() {
-		s.prepare().setAlerts(s.deployAlert).runRequest(nil)
-	})
-}
-
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
 	w := mock.NewFailingResponseWriter(errors.New("mock http write error"))
 	s.PanicsWithError("net/http: abort Handler", func() {
