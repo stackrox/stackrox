@@ -569,24 +569,19 @@ main-image: all-builds
 $(CURDIR)/image/rhel/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
-.PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
-$(CURDIR)/image/rhel/Dockerfile.gen:
-	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-	LABEL_VERSION=$(TAG) \
-	LABEL_RELEASE=$(TAG) \
-	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
-	envsubst '$${ROX_IMAGE_FLAVOR} $${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
-	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
-
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
-                         $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/rhel/Dockerfile.gen
+                         $(CURDIR)/image/rhel/bundle.tar.gz
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
-		--file image/rhel/Dockerfile.gen \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--build-arg LABEL_VERSION=$(TAG) \
+		--build-arg LABEL_RELEASE=$(TAG) \
+		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
@@ -681,19 +676,12 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
-.PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
-$(CURDIR)/image/postgres/Dockerfile.gen:
-	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-	envsubst '$${ROX_IMAGE_FLAVOR}' \
-	< $(CURDIR)/image/postgres/Dockerfile.envsubst > $(CURDIR)/image/postgres/Dockerfile.gen
-
 .PHONY: central-db-image
-central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz $(CURDIR)/image/postgres/Dockerfile.gen
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
 	docker build \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
-		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-		--file image/postgres/Dockerfile.gen \
+		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
 
