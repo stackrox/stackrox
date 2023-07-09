@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
@@ -55,8 +54,5 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher) // Make the
-	// UnsafeSearcher safe.
-
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
-	return paginatedSearcher
+	return filteredSearcher
 }

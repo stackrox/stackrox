@@ -104,9 +104,7 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-
 	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, policyMapping.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
-	paginatedSearcher := paginated.Paginated(transformedCategoryNameSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return paginated.WithDefaultSortOption(transformedCategoryNameSearcher, defaultSortOption)
 }

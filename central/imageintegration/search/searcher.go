@@ -28,6 +28,6 @@ func New(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: formatSearcher(indexer),
+		searcher: indexer,
 	}
 }
