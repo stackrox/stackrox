@@ -14,9 +14,6 @@ LABEL name="central-db" \
       summary="Stackrox Central Database for the StackRox Kubernetes Security Platform" \
       description="This image provides Database services to Stackrox Central in the StackRox Kubernetes Security Platform."
 
-ARG ROX_IMAGE_FLAVOR
-ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
-
 ENV PG_MAJOR=13
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
