@@ -7,7 +7,7 @@ set -euox pipefail
 fetch_stackrox_data() {
     mkdir -p /tmp/external-networks
     local latest_prefix
-    latest_prefix="$(curl https://definitions.stackrox.io/external-networks/latest_prefix)"
+    latest_prefix="$(curl --fail https://definitions.stackrox.io/external-networks/latest_prefix)"
     curl --fail --output /tmp/external-networks/checksum "https://definitions.stackrox.io/${latest_prefix}/checksum"
     test -s /tmp/external-networks/checksum
 
