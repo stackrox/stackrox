@@ -11,11 +11,11 @@ RUN microdnf install tar gzip && tar -zxf /bundle.tar.gz
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
 
 RUN mkdir /stackrox-data
-RUN microdnf upgrade && microdnf install openssl zip
+RUN microdnf upgrade --nobest && microdnf install openssl zip
 
+WORKDIR /
 COPY fetch-stackrox-data.sh .
-RUN sh -x fetch-stackrox-data.sh
-COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
+RUN /fetch-stackrox-data.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -52,6 +52,7 @@ COPY --from=extracted_bundle /bundle/postgres.rpm /tmp/
 COPY --from=extracted_bundle /bundle/go/ /go/
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \

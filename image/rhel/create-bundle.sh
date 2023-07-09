@@ -9,20 +9,12 @@ die() {
     exit 1
 }
 
-image_exists() {
-  if ! docker image inspect "$1" > /dev/null ; then
-     die "Image file $1 not found."
-  fi
-}
-
-INPUT_ROOT="$1"
-BUILDER_IMAGE="$2"
-OUTPUT_DIR="$3"
-# Install the PG repo natively if true (versus using a container)
-NATIVE_PG_INSTALL="${5:-false}"
+INPUT_ROOT="${1:-}"
+BUILDER_IMAGE="${2:-}"
+OUTPUT_DIR="${3:-}"
 
 [[ -n "$INPUT_ROOT" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
-    || die "Usage: $0 <input-root-directory> <enc-data-image> <builder-image> <output-directory>"
+    || die "Usage: $0 <input-root-directory> <builder-image> <output-directory>"
 [[ -d "$INPUT_ROOT" ]] \
     || die "Input root directory doesn't exist or is not a directory."
 [[ -d "$OUTPUT_DIR" ]] \
@@ -102,21 +94,15 @@ pg_rhel_version="${pg_rhel_major}.${pg_rhel_minor}"
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 
-# Determine the Postgres minor version
-if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
-    dnf install --disablerepo='*' -y "${postgres_repo_url}"
-    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y "postgresql${postgres_major}-devel.${arch}" | tail -n 1 | awk '{print $2}').${arch}"
-    echo "PG minor version: ${postgres_minor}"
-else
-    build_dir="$(mktemp -d)"
-    docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
+build_dir="$(mktemp -d)"
+docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
-ENTRYPOINT dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
+ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
 EOF
-    postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
-    rm -rf "${build_dir}"
-fi
+
+postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
+rm -rf "${build_dir}"
 
 curl --retry 3 -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
