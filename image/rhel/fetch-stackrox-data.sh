@@ -11,7 +11,7 @@ fetch_stackrox_data() {
     curl --fail --output /tmp/external-networks/checksum "https://definitions.stackrox.io/${latest_prefix}/checksum"
     test -s /tmp/external-networks/checksum
 
-    curl --fail "https://definitions.stackrox.io/${latest_prefix}/networks" > /tmp/external-networks/networks
+    curl --fail --output /tmp/external-networks/networks "https://definitions.stackrox.io/${latest_prefix}/networks"
     test -s /tmp/external-networks/networks
 
     sha256sum -c <( echo "$(cat /tmp/external-networks/checksum) /tmp/external-networks/networks" )
