@@ -35,7 +35,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
     private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
-    "2023-06-16-TA-rhacs-2.0.0.spl")
+    "2023-07-10-TA-stackrox-2.0.0.spl")
     // CIM downloaded from https://classic.splunkbase.splunk.com/app/1621/
     private static final String PATH_TO_CIM_TA_TGZ = Paths.get(ASSETS_DIR,
     "splunk-common-information-model-cim_511.tgz")
@@ -96,11 +96,11 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")
-        postToSplunk(port, "/servicesNS/nobody/TA-rhacs/configs/conf-ta_rhacs_settings/additional_parameters",
+        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/configs/conf-ta_stackrox_settings/additional_parameters",
                 ["central_endpoint": "${centralHost}:443",
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
-        postToSplunk(port, "/servicesNS/nobody/TA-rhacs/data/inputs/acs_violations",
+        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
