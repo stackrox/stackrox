@@ -70,6 +70,7 @@ type scheduler struct {
 	// isStopped will prevent scheduler from being re-started once it is stopped
 	isStopped atomic.Bool
 
+	/* Concurrency and synchronization related fields */
 	stopper concurrency.Stopper
 
 	// Use to synchronize access to reportConfigToEntryIDs map
@@ -112,10 +113,9 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportMeta
 		readyForReports:        concurrency.NewSignal(),
 		runningReportConfigs:   set.NewStringSet(),
 		Schema:                 schema,
-
-		stopper:         concurrency.NewStopper(),
-		cron:            cronScheduler,
-		concurrencySema: semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		stopper:                concurrency.NewStopper(),
+		cron:                   cronScheduler,
+		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
 	return s
 }
@@ -441,6 +441,9 @@ func (s *scheduler) validateAndPersistMetadata(ctx context.Context, metadata *st
 }
 
 func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID string, userID string) (bool, error) {
+	s.dbLock.Lock()
+	defer s.dbLock.Unlock()
+
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, configID).
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
