@@ -4,4 +4,5 @@
   paths = [
     # Ignore all testdata cert keys.
     '''\/testdata.*\.key$''',
+    '''\/local\-sensor\/certs\/*\.pem$''',
   ]
