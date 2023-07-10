@@ -1,6 +1,8 @@
 package admissioncontroller
 
 import (
+	"sync"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -20,8 +22,10 @@ func NewAdmCtrlMsgForwarder(admCtrlMgr SettingsManager, components ...common.Sen
 		admCtrlMgr: admCtrlMgr,
 		components: components,
 
-		stopper:  concurrency.NewStopper(),
-		centralC: make(chan *central.MsgFromSensor),
+		stopper: concurrency.NewStopper(),
+
+		connectionStop: concurrency.NewSignal(),
+		forwarderWg:    &sync.WaitGroup{},
 	}
 }
 
@@ -32,6 +36,9 @@ type admCtrlMsgForwarderImpl struct {
 	centralC chan *central.MsgFromSensor
 
 	stopper concurrency.Stopper
+
+	connectionStop concurrency.Signal
+	forwarderWg    *sync.WaitGroup
 }
 
 func (h *admCtrlMsgForwarderImpl) Start() error {
@@ -41,7 +48,6 @@ func (h *admCtrlMsgForwarderImpl) Start() error {
 		}
 	}
 
-	go h.run()
 	return nil
 }
 
@@ -57,6 +63,22 @@ func (h *admCtrlMsgForwarderImpl) Notify(event common.SensorComponentEvent) {
 	// Propagate event to sub-components
 	for _, c := range h.components {
 		c.Notify(event)
+	}
+
+	switch event {
+	case common.SensorComponentEventOfflineMode:
+		// Any messages written in the old channel must be dropped.
+		// The reader of this channel (central sender goroutine) will stop when
+		// the connection breaks. This means that no more messages should be read
+		// from this channel. By closing it and creating a new one, we are virtually
+		// guaranteeing that old messages (prior to the restart) are not considered
+		// once the connection is back up.
+		h.connectionStop.Signal()
+
+	case common.SensorComponentEventCentralReachable:
+		h.connectionStop.Reset()
+		// Only create the responses channel when the connection is available
+		go h.run()
 	}
 }
 
@@ -79,6 +101,11 @@ func (h *admCtrlMsgForwarderImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (h *admCtrlMsgForwarderImpl) run() {
+	// If the connection restarts too fast, we might try to start new forwarder channels
+	// before the old ones were flushed. First we need to make sure that any forwarders
+	// in the wait group are done.
+	h.forwarderWg.Wait()
+	h.centralC = make(chan *central.MsgFromSensor)
 	for _, component := range h.components {
 		if responsesC := component.ResponsesC(); responsesC != nil {
 			go h.forwardResponses(responsesC)
@@ -88,6 +115,9 @@ func (h *admCtrlMsgForwarderImpl) run() {
 
 func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *central.MsgFromSensor) {
 	defer h.stopper.Flow().ReportStopped()
+	defer close(h.centralC)
+	defer h.forwarderWg.Done()
+	h.forwarderWg.Add(1)
 	for {
 		select {
 		case msg, ok := <-from:
@@ -102,8 +132,12 @@ func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *central.MsgFromS
 			select {
 			case h.centralC <- msg:
 			case <-h.stopper.Flow().StopRequested():
+			case <-h.connectionStop.Done():
+				return
 			}
 		case <-h.stopper.Flow().StopRequested():
+			return
+		case <-h.connectionStop.Done():
 			return
 		}
 	}

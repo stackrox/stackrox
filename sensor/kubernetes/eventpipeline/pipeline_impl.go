@@ -29,7 +29,6 @@ type eventPipeline struct {
 	detector      detector.Detector
 	reprocessor   reprocessor.Handler
 	storeProvider *resources.InMemoryStoreProvider
-	disconnected  concurrency.Signal
 
 	offlineMode *atomic.Bool
 

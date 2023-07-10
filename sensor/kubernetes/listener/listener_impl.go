@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -31,6 +32,7 @@ type listenerImpl struct {
 	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
 	cancelContext      context.CancelFunc
+	cancelMtx          sync.Mutex
 }
 
 func (k *listenerImpl) Start() error {
@@ -55,8 +57,19 @@ func (k *listenerImpl) Stop(_ error) {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}
-	k.cancelContext()
+	k.cancelMtx.Lock()
+	defer k.cancelMtx.Unlock()
+	// cancelContext can be nil if the connection is stopping before the informer handlers are created.
+	if k.cancelContext != nil {
+		k.cancelContext()
+	}
 	k.stopSig.Signal()
+}
+
+func (k *listenerImpl) setCancelContext(cancel context.CancelFunc) {
+	k.cancelMtx.Lock()
+	defer k.cancelMtx.Unlock()
+	k.cancelContext = cancel
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {

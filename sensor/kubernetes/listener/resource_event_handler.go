@@ -53,7 +53,7 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 
 func (k *listenerImpl) handleAllEvents() {
 	ctx, cancel := context.WithCancel(context.Background())
-	k.cancelContext = cancel
+	k.setCancelContext(cancel)
 
 	// TODO(ROX-14194): remove resyncingSif once all resources are adapted
 	var resyncingSif informers.SharedInformerFactory
@@ -265,6 +265,7 @@ func (k *listenerImpl) handleAllEvents() {
 	syncingResources.Set(false)
 
 	k.outputQueue.Send(&component.ResourceEvent{
+		Context: ctx,
 		ForwardMessages: []*central.SensorEvent{
 			{
 				Resource: &central.SensorEvent_Synced{

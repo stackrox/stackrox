@@ -46,6 +46,5 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		reprocessor:   reprocessor,
 		offlineMode:   offlineMode,
 		storeProvider: storeProvider,
-		disconnected:  concurrency.NewSignal(),
 	}
 }
