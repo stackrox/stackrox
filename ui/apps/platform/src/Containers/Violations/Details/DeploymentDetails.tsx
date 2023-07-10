@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Card, CardBody, Title, Divider } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    Flex,
+    FlexItem,
+    Card,
+    CardBody,
+    Title,
+    Divider,
+} from '@patternfly/react-core';
 import { TableComposable, Caption, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
@@ -7,15 +16,12 @@ import { portExposureLabels } from 'messages/common';
 import ObjectDescriptionList from 'Components/ObjectDescriptionList';
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { NetworkPolicy } from 'types/networkPolicy.proto';
 import { Alert as AlertViolation } from '../types/violationTypes';
 import DeploymentOverview from './Deployment/DeploymentOverview';
 import SecurityContext from './Deployment/SecurityContext';
 import ContainerConfiguration from './Deployment/ContainerConfiguration';
-
-type NetworkPolicy = {
-    id: string;
-    name: string;
-};
+import NetworkPolicyModal from './NetworkPolicyModal';
 
 type PortExposure = 'EXTERNAL' | 'NODE' | 'HOST' | 'INTERNAL' | 'UNSET';
 
@@ -73,11 +79,15 @@ const compareNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
 };
 
 export type DeploymentDetailsProps = {
-    alertDeployment: NonNullable<AlertViolation['deployment']>;
+    alertDeployment: Pick<
+        NonNullable<AlertViolation['deployment']>,
+        'id' | 'clusterId' | 'namespace'
+    >;
 };
 
 const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
     const [namespacePolicies, setNamespacePolicies] = useState<NetworkPolicy[]>([]);
+    const [selectedNetworkPolicy, setSelectedNetworkPolicy] = useState<NetworkPolicy | null>(null);
 
     // attempt to fetch related deployment to selected alert
     const { deployment: relatedDeployment, error: relatedDeploymentFetchError } =
@@ -162,7 +172,7 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                         <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
-                        <Card isFlat data-testid="network-policy">
+                        <Card isFlat aria-label="Network policies in namespace">
                             <CardBody>
                                 {namespacePolicies.length > 0 ? (
                                     <TableComposable variant="compact">
@@ -176,12 +186,27 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                                             </Tr>
                                         </Thead>
                                         <Tbody>
+                                            {selectedNetworkPolicy && (
+                                                <NetworkPolicyModal
+                                                    networkPolicy={selectedNetworkPolicy}
+                                                    isOpen={selectedNetworkPolicy !== null}
+                                                    onClose={() => setSelectedNetworkPolicy(null)}
+                                                />
+                                            )}
                                             {namespacePolicies
                                                 .sort(compareNetworkPolicies)
                                                 .map((netpol: NetworkPolicy) => (
-                                                    // TODO(ROX-11034): This should be a link to the Network Policy yaml or detail screen.
                                                     <Tr key={netpol.id}>
-                                                        <Td dataLabel="Name">{netpol.name}</Td>
+                                                        <Td dataLabel="Name">
+                                                            <Button
+                                                                variant="link"
+                                                                onClick={() =>
+                                                                    setSelectedNetworkPolicy(netpol)
+                                                                }
+                                                            >
+                                                                {netpol.name}
+                                                            </Button>
+                                                        </Td>
                                                     </Tr>
                                                 ))}
                                         </Tbody>

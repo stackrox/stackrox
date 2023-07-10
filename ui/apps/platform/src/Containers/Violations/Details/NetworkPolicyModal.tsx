@@ -1,0 +1,57 @@
+import React, { useState } from 'react';
+import { Button, Flex, FlexItem, Modal, ModalVariant, Title } from '@patternfly/react-core';
+import { CodeEditor, Language } from '@patternfly/react-code-editor';
+
+import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
+import { NetworkPolicy } from 'types/networkPolicy.proto';
+import download from 'utils/download';
+
+export type NetworkPolicyModalProps = {
+    networkPolicy: Pick<NetworkPolicy, 'name' | 'yaml'>;
+    isOpen: boolean;
+    onClose: () => void;
+};
+
+function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyModalProps) {
+    const [isDarkMode, setIsDarkMode] = useState(false);
+
+    function exportYAMLHandler() {
+        download(`${networkPolicy.name}.yml`, networkPolicy.yaml, 'yml');
+    }
+
+    return (
+        <Modal
+            title="Network policy details"
+            variant={ModalVariant.small}
+            isOpen={isOpen}
+            onClose={onClose}
+        >
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Title headingLevel="h3">{networkPolicy.name}</Title>
+
+                <CodeEditor
+                    isDarkTheme={isDarkMode}
+                    customControls={
+                        <CodeEditorDarkModeControl
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode((wasDarkMode) => !wasDarkMode)}
+                        />
+                    }
+                    isCopyEnabled
+                    isLineNumbersVisible
+                    isReadOnly
+                    code={networkPolicy.yaml}
+                    language={Language.yaml}
+                    height="450px"
+                />
+                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                    <Button className="pf-u-display-inline-block" onClick={exportYAMLHandler}>
+                        Export YAML
+                    </Button>
+                </FlexItem>
+            </Flex>
+        </Modal>
+    );
+}
+
+export default NetworkPolicyModal;
