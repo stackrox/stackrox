@@ -8,6 +8,7 @@ import (
 	reportMetadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -26,6 +27,7 @@ func initialize() {
 		reportSnapshotDS.Singleton(),
 		notifierDS.Singleton(),
 		deploymentDS.Singleton(),
+		watchedImageDS.Singleton(),
 		collectionDatastore,
 		collectionQueryRes,
 		notifierProcessor.Singleton(),

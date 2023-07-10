@@ -35,8 +35,10 @@ func initializeScheduler(metadataDataStore metadataDS.DataStore) schedulerV2.Sch
 
 	scheduler := schedulerV2.Singleton()
 	reportConfigDatastore := reportConfigDS.Singleton()
-	queuePendingReports(ctx, scheduler, metadataDataStore, reportConfigDatastore)
-	queueScheduledReports(ctx, scheduler, reportConfigDatastore)
+
+	// Queuing pending and scheduled reports in separate routines to prevent blocking main routine during startup
+	go queuePendingReports(ctx, scheduler, metadataDataStore, reportConfigDatastore)
+	go queueScheduledReports(ctx, scheduler, reportConfigDatastore)
 
 	scheduler.Start()
 	return scheduler

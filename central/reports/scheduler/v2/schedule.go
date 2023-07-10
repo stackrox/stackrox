@@ -1,14 +1,7 @@
 package v2
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"sort"
-	"strings"
-	"sync/atomic"
-	"text/template"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -19,62 +12,75 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reports/common"
 	reportMetadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
-	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/templates"
-	"github.com/stackrox/rox/pkg/timestamp"
+	"golang.org/x/exp/slices"
+	"golang.org/x/sync/semaphore"
 	"gopkg.in/robfig/cron.v2"
 )
 
 const (
-	deploymentsPaginationLimit = 50
+	paginationLimit = 50
 
-	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
-							$cvequery: String, $pagination: Pagination) {
-							deployments: deployments(query: $scopequery, pagination: $pagination) {
-								clusterName
-								namespace
-								name
-								images {
-									name {
-										full_name:fullName
-									}
-									imageComponents {
-										name
-										imageVulnerabilities(query: $cvequery) {
-											...cveFields
-										}
-									}
-								}
-							}
-						}
-	fragment cveFields on ImageVulnerability {
-        cve
-	    severity
-        fixedByVersion
-        isFixable
-        discoveredAtImage
-		link
-    }`
+	cveFieldsFragment = `fragment cveFields on ImageVulnerability {
+                             cve
+	                         severity
+                             fixedByVersion
+                             isFixable
+                             discoveredAtImage
+		                     link
+                         }`
+
+	deployedImagesReportQuery = `query getDeployedImagesReportData($scopequery: String, 
+                               $cvequery: String, $pagination: Pagination) {
+							       deployments: deployments(query: $scopequery, pagination: $pagination) {
+                                       clusterName
+								       namespace
+                                       name
+                                       images {
+                                           name {
+								               full_name:fullName
+								           }
+                                           imageComponents {
+									           name
+									           imageVulnerabilities(query: $cvequery) {
+										           ...cveFields
+									           }
+								           }
+							           }
+						           }
+					           }` +
+		cveFieldsFragment
+	deployedImagesReportQueryOpName = "getDeployedImagesReportData"
+
+	watchedImagesReportQuery = `query getWatchedImagesReportData($scopequery: String, $cvequery: String, $pagination: Pagination) {
+                              images: images(query: $scopequery, pagination: $pagination) {
+                                  name {
+                                      full_name:fullName
+                                  }
+                                  imageComponents {
+                                      name
+                                      imageVulnerabilities(query: $cvequery) {
+                                          ...cveFields
+                                      }
+                                  }
+                              }
+                          }` +
+		cveFieldsFragment
+	watchedImagesReportQueryOpName = "getWatchedImagesReportData"
 
 	vulnReportEmailTemplate = `
 	{{.BrandedProductName}} has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
@@ -98,14 +104,12 @@ type Scheduler interface {
 	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
 	RemoveReportSchedule(reportConfigID string)
 	SubmitReport(request *ReportRequest, reSubmission bool) (string, error)
-	CancelReport(reportID string)
+	CancelReport(ctx context.Context, reportID string) error
 	Start()
 	Stop()
 }
 
 type scheduler struct {
-	lock                   sync.Mutex
-	cron                   *cron.Cron
 	reportConfigToEntryIDs map[string]cron.EntryID
 
 	reportConfigDatastore   reportConfigDS.DataStore
@@ -113,19 +117,30 @@ type scheduler struct {
 	reportSnapshotStore     reportSnapshotDS.DataStore
 	notifierDatastore       notifierDS.DataStore
 	deploymentDatastore     deploymentDS.DataStore
+	watchedImageDatastore   watchedImageDS.DataStore
 	collectionDatastore     collectionDS.DataStore
 	collectionQueryResolver collectionDS.QueryResolver
 	notificationProcessor   notifier.Processor
 
-	queuedReports          []*ReportRequest
-	reportsToRun           chan *ReportRequest
+	reportsQueue           []*ReportRequest
 	sendNewReports         chan bool
-	numRoutines            atomic.Int32
 	runningReportConfigIDs set.StringSet
+	Schema                 *graphql.Schema
 
+	/* Concurrency and synchronization related fields */
 	stopper concurrency.Stopper
 
-	Schema *graphql.Schema
+	// Use to synchronize access to reportConfigToEntryIDs map
+	cronJobsLock sync.Mutex
+	// Use to synchronize access to reportsQueue and runningReportConfigIDs
+	schedulerLock sync.Mutex
+	// Use to lock any database tables if needed to prevent race conditions
+	dbLock sync.Mutex
+	// NOTE: Lock only one mutex at a time. Do not lock another mutex when one is already held.
+	//      If you need to lock another mutex, you must free the one already locked first.
+
+	cron            *cron.Cron
+	concurrencySema *semaphore.Weighted
 }
 
 // ReportRequest is a request to the scheduler to run a scheduled or on demand report
@@ -144,8 +159,9 @@ type reportEmailFormat struct {
 // New instantiates a new cron scheduler and supports adding and removing report requests
 func New(reportConfigDatastore reportConfigDS.DataStore, reportMetadataStore reportMetadataDS.DataStore,
 	reportSnapshotStore reportSnapshotDS.DataStore, notifierDatastore notifierDS.DataStore,
-	deploymentDatastore deploymentDS.DataStore, collectionDatastore collectionDS.DataStore,
-	collectionQueryRes collectionDS.QueryResolver, notificationProcessor notifier.Processor) Scheduler {
+	deploymentDatastore deploymentDS.DataStore, watchedImageDatastore watchedImageDS.DataStore,
+	collectionDatastore collectionDS.DataStore, collectionQueryRes collectionDS.QueryResolver,
+	notificationProcessor notifier.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
@@ -153,39 +169,40 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportMetadataStore rep
 		panic(err)
 	}
 	return newSchedulerImpl(reportConfigDatastore, reportMetadataStore, reportSnapshotStore, notifierDatastore,
-		deploymentDatastore, collectionDatastore, collectionQueryRes, notificationProcessor, cronScheduler, ourSchema)
+		deploymentDatastore, watchedImageDatastore, collectionDatastore, collectionQueryRes, notificationProcessor, cronScheduler, ourSchema)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportMetadataStore reportMetadataDS.DataStore,
 	reportSnapshotStore reportSnapshotDS.DataStore, notifierDatastore notifierDS.DataStore,
-	deploymentDatastore deploymentDS.DataStore, collectionDatastore collectionDS.DataStore,
-	collectionQueryRes collectionDS.QueryResolver, notificationProcessor notifier.Processor,
-	cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
+	deploymentDatastore deploymentDS.DataStore, watchedImageDatastore watchedImageDS.DataStore,
+	collectionDatastore collectionDS.DataStore, collectionQueryRes collectionDS.QueryResolver,
+	notificationProcessor notifier.Processor, cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
 	s := &scheduler{
 		reportConfigToEntryIDs:  make(map[string]cron.EntryID),
-		cron:                    cronScheduler,
 		reportConfigDatastore:   reportConfigDatastore,
 		reportMetadataStore:     reportMetadataStore,
 		reportSnapshotStore:     reportSnapshotStore,
 		notifierDatastore:       notifierDatastore,
 		deploymentDatastore:     deploymentDatastore,
+		watchedImageDatastore:   watchedImageDatastore,
 		collectionDatastore:     collectionDatastore,
 		collectionQueryResolver: collectionQueryRes,
 		notificationProcessor:   notificationProcessor,
-		queuedReports:           make([]*ReportRequest, 0),
-		reportsToRun:            make(chan *ReportRequest, env.ReportExecutionMaxConcurrency.IntegerSetting()),
-		sendNewReports:          make(chan bool, 100),
+		reportsQueue:            make([]*ReportRequest, 0),
+		sendNewReports:          make(chan bool, 200),
 		runningReportConfigIDs:  set.NewStringSet(),
 		Schema:                  schema,
+
+		stopper:         concurrency.NewStopper(),
+		cron:            cronScheduler,
+		concurrencySema: semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
-	s.numRoutines.Store(0)
 	return s
 }
 
 /* Concurrency and scheduling functions */
 
 func (s *scheduler) Start() {
-	go s.scheduleReports()
 	go s.runReports()
 }
 
@@ -197,74 +214,87 @@ func (s *scheduler) Stop() {
 	}
 }
 
-func (s *scheduler) scheduleReports() {
-	maxConcurrency := int32(env.ReportExecutionMaxConcurrency.IntegerSetting())
-	for {
-		select {
-		case <-s.stopper.Flow().StopRequested():
-			return
-		case <-s.sendNewReports:
-			numRoutines := s.numRoutines.Load()
-			// Checking len(s.reportsToRun) < maxConcurrency (which is also the capacity of buffered channel reportsToRun) here
-			// will ensure that we never attempt to write to full channel reportsToRun. This will further ensure that
-			// writes to reportsToRun in selectRunnableReports() are never blocked.
-			if int32(len(s.reportsToRun)) < maxConcurrency && numRoutines < maxConcurrency {
-				s.selectRunnableReports(int(maxConcurrency - numRoutines))
-			}
-		}
-	}
-}
-
 func (s *scheduler) runReports() {
 	defer s.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
 			return
-		case req := <-s.reportsToRun:
-			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
-			go s.sendReportResults(req)
+		case <-s.sendNewReports:
+			reportRequest := s.selectNextRunnableReport()
+			if reportRequest == nil {
+				continue
+			}
+			if err := s.concurrencySema.Acquire(scheduledCtx, 1); err != nil {
+				log.Errorf("Error acquiring semaphore to run new report: %v", err)
+				continue
+			}
+			log.Infof("Executing report '%s' at %v", reportRequest.ReportConfig.GetName(), time.Now().Format(time.RFC822))
+			go s.runSingleReport(reportRequest)
 		}
 	}
 }
 
-func (s *scheduler) selectRunnableReports(max int) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	indices := set.NewIntSet()
-	i := 0
-	for indices.Cardinality() < max && i < len(s.queuedReports) {
-		if !s.runningReportConfigIDs.Contains(s.queuedReports[i].ReportConfig.GetId()) {
-			indices.Add(i)
-		}
-		i++
-	}
-	var requests []*ReportRequest
-	s.queuedReports, requests = removeSelectedRequests(s.queuedReports, indices)
+func (s *scheduler) selectNextRunnableReport() *ReportRequest {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
 
-	selected := make([]*ReportRequest, 0)
-	for _, req := range requests {
-		metadata := req.ReportMetadata
-		metadata.ReportStatus.RunState = storage.ReportStatus_PREPARING
-		err := s.reportMetadataStore.UpdateReportMetadata(req.Ctx, metadata)
-		if err != nil {
-			s.logErrorAndUpsertReportStatus(errors.Wrap(err, "Error updating report status to PREPARING"), req)
-		} else {
-			selected = append(selected, req)
-			s.runningReportConfigIDs.Add(req.ReportConfig.GetId())
+	runnableReportIdx := -1
+	for i, reportReq := range s.reportsQueue {
+		if !s.runningReportConfigIDs.Contains(reportReq.ReportConfig.GetId()) {
+			runnableReportIdx = i
+			break
 		}
 	}
-	for _, req := range selected {
-		// This write should never be blocking. Otherwise it can cause a deadlock.
-		s.reportsToRun <- req
+	if runnableReportIdx < 0 {
+		// did not find any reports to run
+		return nil
 	}
+	request := s.reportsQueue[runnableReportIdx]
+	s.reportsQueue = slices.Delete(s.reportsQueue, runnableReportIdx, runnableReportIdx+1)
+	s.runningReportConfigIDs.Add(request.ReportConfig.GetId())
+	return request
 }
 
-/* Functions to add/remove report jobs from queue */
+func (s *scheduler) runSingleReport(req *ReportRequest) {
+	defer s.notifySchedulerForMoreReports()
+	defer s.concurrencySema.Release(1)
+	defer s.removeFromRunningReportConfigs(req.ReportConfig.GetId())
+
+	collection, found, err := s.collectionDatastore.Get(req.Ctx, req.ReportConfig.GetResourceScope().GetCollectionId())
+	if err != nil {
+		s.logErrorAndUpsertReportStatus(
+			errors.Wrapf(err, "Error finding collection ID '%s'", req.ReportConfig.GetResourceScope().GetCollectionId()),
+			req, "")
+		return
+	}
+	if !found {
+		s.logErrorAndUpsertReportStatus(
+			errors.Errorf("Collection ID '%s' no longer exists", req.ReportConfig.GetResourceScope().GetCollectionId()),
+			req, "")
+		return
+	}
+
+	err = s.generateAndSendReport(req, collection)
+	if err != nil {
+		s.logErrorAndUpsertReportStatus(err, req, collection.GetName())
+	}
+	s.takeReportSnapshot(req, collection.GetName())
+}
+
+func (s *scheduler) notifySchedulerForMoreReports() {
+	s.sendNewReports <- true
+}
+
+func (s *scheduler) removeFromRunningReportConfigs(configID string) {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
+	s.runningReportConfigIDs.Remove(configID)
+}
 
 func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.cronJobsLock.Lock()
+	defer s.cronJobsLock.Unlock()
 
 	cronSpec := ""
 	var err error
@@ -291,29 +321,9 @@ func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfigurati
 	return nil
 }
 
-func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
-	return func() {
-		log.Infof("Submitting scheduled report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
-		_, err := s.SubmitReport(&ReportRequest{
-			ReportConfig: reportConfig,
-			ReportMetadata: &storage.ReportMetadata{
-				ReportConfigId: reportConfig.Id,
-				ReportStatus: &storage.ReportStatus{
-					RunState:                 storage.ReportStatus_WAITING,
-					ReportRequestType:        storage.ReportStatus_SCHEDULED,
-					ReportNotificationMethod: storage.ReportStatus_EMAIL,
-				},
-			},
-		}, false)
-		if err != nil {
-			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
-		}
-	}
-}
-
 func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.cronJobsLock.Lock()
+	defer s.cronJobsLock.Unlock()
 
 	oldEntryID, exists := s.reportConfigToEntryIDs[reportConfigID]
 	if exists {
@@ -322,6 +332,55 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 	}
 }
 
+/* Functions to add/remove report jobs from queue */
+
+// CancelReport cancels a report that is still waiting in queue.
+// If the report is already being prepared or has completed execution, it cannot be cancelled.
+func (s *scheduler) CancelReport(ctx context.Context, reportID string) error {
+	metadata, found, err := s.reportMetadataStore.Get(ctx, reportID)
+	if err != nil {
+		return errors.Errorf("Error finding report ID '%s': %s", reportID, err)
+	}
+	if !found {
+		return errors.Errorf("Report ID '%s' does not found", reportID)
+	}
+	if metadata.ReportStatus.RunState == storage.ReportStatus_SUCCESS ||
+		metadata.ReportStatus.RunState == storage.ReportStatus_FAILURE {
+		return errors.Errorf("Cannot cancel. Report ID '%s' has already completed execution", reportID)
+	}
+
+	if !s.tryRemoveReportFromQueue(reportID) {
+		return errors.Errorf("Canot cancel. Report ID '%s' is already being prepared", reportID)
+	}
+	err = s.reportMetadataStore.DeleteReportMetadata(ctx, reportID)
+	if err != nil {
+		return errors.Errorf("Error deleting report ID '%s' from storage", reportID)
+	}
+
+	return nil
+}
+
+func (s *scheduler) tryRemoveReportFromQueue(reportID string) bool {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
+
+	idxToRemove := -1
+	for i, req := range s.reportsQueue {
+		if req.ReportMetadata.GetReportId() == reportID {
+			idxToRemove = i
+			break
+		}
+	}
+	if idxToRemove < 0 {
+		return false
+	}
+	s.reportsQueue = slices.Delete(s.reportsQueue, idxToRemove, idxToRemove+1)
+	return true
+}
+
+// SubmitReport submits a report for scheduling either on demand or on a schedule.
+// If it's on demand, it will begin running if there isn't already one running from the same requesting user.
+// However, the same report can be run concurrently by different users including the system.
 func (s *scheduler) SubmitReport(request *ReportRequest, reSubmission bool) (string, error) {
 	request.Ctx = selectContext(request)
 	var err error
@@ -347,15 +406,42 @@ func (s *scheduler) SubmitReport(request *ReportRequest, reSubmission bool) (str
 		return "", err
 	}
 
-	s.lock.Lock()
-	s.queuedReports = append(s.queuedReports, request)
-	s.lock.Unlock()
+	s.appendToReportsQueue(request)
 	s.sendNewReports <- true
 
 	return request.ReportMetadata.GetReportId(), nil
 }
 
+func (s *scheduler) appendToReportsQueue(req *ReportRequest) {
+	s.schedulerLock.Lock()
+	defer s.schedulerLock.Unlock()
+	s.reportsQueue = append(s.reportsQueue, req)
+}
+
+func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
+	return func() {
+		log.Infof("Submitting scheduled report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
+		_, err := s.SubmitReport(&ReportRequest{
+			ReportConfig: reportConfig,
+			ReportMetadata: &storage.ReportMetadata{
+				ReportConfigId: reportConfig.Id,
+				ReportStatus: &storage.ReportStatus{
+					RunState:                 storage.ReportStatus_WAITING,
+					ReportRequestType:        storage.ReportStatus_SCHEDULED,
+					ReportNotificationMethod: storage.ReportStatus_EMAIL,
+				},
+			},
+		}, false)
+		if err != nil {
+			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
+		}
+	}
+}
+
 func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID string, userID string) (bool, error) {
+	s.dbLock.Lock()
+	defer s.dbLock.Unlock()
+
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, configID).
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
@@ -373,250 +459,11 @@ func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID stri
 	return false, nil
 }
 
-func (s *scheduler) CancelReport(reportID string) {
-	//TODO implement me
-	panic("implement me")
-}
+/* Utility Functions */
 
-func (s *scheduler) lastSuccesfulScheduledReportTime(ctx context.Context, config *storage.ReportConfiguration) (*types.Timestamp, error) {
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.ReportConfigID, config.GetId()).
-		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String()).
-		WithPagination(search.NewPagination().
-			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
-			Limit(1)).
-		ProtoQuery()
-	results, err := s.reportMetadataStore.SearchReportMetadatas(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error finding last successful scheduled report time")
-	}
-	if len(results) > 1 {
-		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
-	}
-	if len(results) == 0 {
-		return nil, nil
-	}
-	return results[0].GetReportStatus().GetCompletedAt(), nil
-}
-
-/* Report generation and notification functions */
-
-func (s *scheduler) sendReportResults(req *ReportRequest) {
-	s.numRoutines.Add(1)
-	defer s.notifySchedulerForMoreReports()
-	defer s.numRoutines.Add(-1)
-	defer s.runningReportConfigIDs.Remove(req.ReportConfig.GetId())
-
-	var dataStartTime *types.Timestamp
-	var err error
-	if req.ReportConfig.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		dataStartTime, err = s.lastSuccesfulScheduledReportTime(req.Ctx, req.ReportConfig)
-		if err != nil {
-			s.logErrorAndUpsertReportStatus(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
-		}
-	} else if req.ReportConfig.GetVulnReportFilters().GetSinceStartDate() != nil {
-		dataStartTime = req.ReportConfig.GetVulnReportFilters().GetSinceStartDate()
-	}
-
-	// Get the results of running the report query
-	reportData, err := s.getReportData(req.Ctx, req.ReportConfig, dataStartTime)
-	if err != nil {
-		s.logErrorAndUpsertReportStatus(err, req)
-		return
-	}
-
-	// Format results into CSV
-	zippedCSVData, err := common.Format(reportData)
-	if err != nil {
-		s.logErrorAndUpsertReportStatus(err, req)
-		return
-	}
-
-	// If it is an empty report, do not send an attachment in the final notification email and the email body
-	// will indicate that no vulns were found
-	templateStr := vulnReportEmailTemplate
-	if zippedCSVData == nil {
-		// If it is an empty report, the email body will indicate that no vulns were found
-		templateStr = noVulnsFoundEmailTemplate
-	}
-
-	messageText, err := formatMessage(dataStartTime, templateStr)
-	if err != nil {
-		s.logErrorAndUpsertReportStatus(errors.Wrap(err, "error formatting the report email text"), req)
-		return
-	}
-
-	errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
-	for _, notifierConfig := range req.ReportConfig.GetNotifiers() {
-		nf := s.notificationProcessor.GetNotifier(req.Ctx, notifierConfig.GetEmailConfig().GetNotifierId())
-		reportNotifier, ok := nf.(notifiers.ReportNotifier)
-		if !ok {
-			errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierConfig.GetEmailConfig().GetNotifierId()))
-			continue
-		}
-		err := s.retryableSendReportResults(req.Ctx, reportNotifier, notifierConfig.GetEmailConfig().GetMailingLists(),
-			zippedCSVData, messageText)
-		if err != nil {
-			errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
-				notifierConfig.GetEmailConfig().GetNotifierId(), err))
-		}
-	}
-	if !errorList.Empty() {
-		s.logErrorAndUpsertReportStatus(errorList.ToError(), req)
-	}
-}
-
-func (s *scheduler) retryableSendReportResults(ctx context.Context, reportNotifier notifiers.ReportNotifier, mailingList []string,
-	zippedCSVData *bytes.Buffer, messageText string) error {
-	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(ctx, zippedCSVData, mailingList, messageText)
-	},
-		retry.OnlyRetryableErrors(),
-		retry.Tries(3),
-		retry.BetweenAttempts(func(previousAttempt int) {
-			wait := time.Duration(previousAttempt * previousAttempt * 100)
-			time.Sleep(wait * time.Millisecond)
-		}),
-	)
-}
-
-func (s *scheduler) notifySchedulerForMoreReports() {
-	s.sendNewReports <- true
-}
-
-func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration, dataStartTime *types.Timestamp) ([]common.Result, error) {
-	var results []common.Result
-
-	if filterOnImageType(rc.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
-		collection, found, err := s.collectionDatastore.Get(ctx, rc.GetResourceScope().GetCollectionId())
-		if err != nil {
-			return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
-		}
-		if !found {
-			return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
-		}
-		rQuery, err := s.buildDeployedImagesQuery(ctx, rc, collection, dataStartTime)
-		if err != nil {
-			return nil, err
-		}
-		deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
-		if err != nil {
-			return nil, err
-		}
-		result, err := s.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
-		if err != nil {
-			return nil, err
-		}
-		result.Deployments = orderByClusterAndNamespace(result.Deployments)
-		results = append(results, result)
-	}
-
-	if filterOnImageType(rc.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
-		//TODO implement me
-		panic("implement me")
-	}
-
-	return results, nil
-}
-
-func (s *scheduler) buildDeployedImagesQuery(ctx context.Context, rc *storage.ReportConfiguration,
-	collection *storage.ResourceCollection, dataStartTime *types.Timestamp) (*common.ReportQuery, error) {
-	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
-		timestamp.FromProtobuf(dataStartTime).GoTime())
-	rQuery, err := qb.BuildQuery(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "error building report query")
-	}
-	return rQuery, nil
-}
-
-// Returns vuln report data from deployments matched by embedded resource collection.
-func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.Result, error) {
-	offset := paginatedQueryStartOffset
-	var resultData common.Result
-	for {
-		if offset >= len(deploymentIds) {
-			break
-		}
-		// deploymentsQuery is a *v1.Query and graphQL resolvers accept a string queries.
-		// With nested collections, deploymentsQuery could be a disjunction of conjunctions like the example below.
-		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
-		// Current string query language doesn't support disjunction of multiple conjunctions, so we cannot build a
-		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
-		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
-		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
-			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
-		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
-		if err != nil {
-			return r, err
-		}
-		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
-		offset += deploymentsPaginationLimit
-	}
-	return resultData, nil
-}
-
-func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuery, cveQuery string, offset int) (common.Result, error) {
-	response := s.Schema.Exec(ctx,
-		gqlQuery, "getVulnReportData", map[string]interface{}{
-			"scopequery": scopeQuery,
-			"cvequery":   cveQuery,
-			"pagination": map[string]interface{}{
-				"offset": offset,
-				"limit":  deploymentsPaginationLimit,
-			},
-		})
-	if len(response.Errors) > 0 {
-		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
-		return common.Result{}, response.Errors[0].Err
-	}
-	var res common.Result
-	if err := json.Unmarshal(response.Data, &res); err != nil {
-		return common.Result{}, err
-	}
-	return res, nil
-}
-
-/* Helper functions */
-
-func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
-	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
-	if err != nil {
-		return nil, err
-	}
-	return search.ResultsToIDs(results), nil
-}
-
-func (s *scheduler) logErrorAndUpsertReportStatus(err error, req *ReportRequest) {
-	log.Errorf("Error running report for config '%s': %s", req.ReportConfig.GetName(), err)
-	// TODO : upsert report metadata and report snapshot with error
-}
-
-func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,
-	target storage.VulnerabilityReportFilters_ImageType) bool {
-	for _, typ := range imageTypes {
-		if typ == target {
-			return true
-		}
-	}
-	return false
-}
-
-func removeSelectedRequests(original []*ReportRequest, indices set.IntSet) ([]*ReportRequest, []*ReportRequest) {
-	c := indices.Cardinality()
-	removed := make([]*ReportRequest, 0, c)
-	remaining := make([]*ReportRequest, 0, len(original)-c)
-
-	for i := 0; i < len(original) && len(removed) < c; i++ {
-		if indices.Contains(i) {
-			removed = append(removed, original[i])
-		} else {
-			remaining = append(remaining, original[i])
-		}
-	}
-	return remaining, removed
+func (s *scheduler) upsertReportStatus(ctx context.Context, metadata *storage.ReportMetadata, status storage.ReportStatus_RunState) error {
+	metadata.ReportStatus.RunState = status
+	return s.reportMetadataStore.UpdateReportMetadata(ctx, metadata)
 }
 
 func selectContext(req *ReportRequest) context.Context {
@@ -626,29 +473,58 @@ func selectContext(req *ReportRequest) context.Context {
 	return req.Ctx
 }
 
-func formatMessage(dataStartTime *types.Timestamp, emailTemplate string) (string, error) {
-	data := &reportEmailFormat{
-		BrandedProductName: branding.GetProductName(),
-		WhichVulns:         "for all vulnerabilities",
-		DateStr:            time.Now().Format("January 02, 2006"),
-	}
-	if dataStartTime != nil {
-		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
-			timestamp.FromProtobuf(dataStartTime).GoTime().Format("January 02, 2006"))
-	}
-	tmpl, err := template.New("emailBody").Parse(emailTemplate)
+func (s *scheduler) logErrorAndUpsertReportStatus(reportErr error, req *ReportRequest, collectionName string) {
+	log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
+
+	req.ReportMetadata.ReportStatus.ErrorMsg = reportErr.Error()
+	req.ReportMetadata.ReportStatus.CompletedAt = types.TimestampNow()
+	err := s.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_FAILURE)
 	if err != nil {
-		return "", err
+		log.Errorf("Error changing report status to FAILURE for report config '%s', report ID '%s': %s",
+			req.ReportConfig.GetName(), req.ReportMetadata.GetReportId(), err)
 	}
-	return templates.ExecuteToString(tmpl, data)
+
+	s.takeReportSnapshot(req, collectionName)
 }
 
-func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
-	sort.SliceStable(deployments, func(i, j int) bool {
-		if deployments[i].Cluster.GetName() == deployments[j].Cluster.GetName() {
-			return deployments[i].Namespace < deployments[j].Namespace
-		}
-		return deployments[i].Cluster.GetName() < deployments[j].Cluster.GetName()
-	})
-	return deployments
+func (s *scheduler) takeReportSnapshot(req *ReportRequest, collectionName string) {
+	snapshot := generateReportSnapshot(req.ReportConfig, req.ReportMetadata, collectionName)
+	err := s.reportSnapshotStore.AddReportSnapshot(req.Ctx, snapshot)
+	if err != nil {
+		log.Errorf("Error storing snapshot for report config '%s', report ID '%s': %s",
+			req.ReportConfig.GetName(), req.ReportMetadata.GetReportId(), err)
+	}
+}
+
+func generateReportSnapshot(config *storage.ReportConfiguration, metadata *storage.ReportMetadata, collectionName string) *storage.ReportSnapshot {
+	snapshot := &storage.ReportSnapshot{
+		ReportId:              metadata.GetReportId(),
+		ReportConfigurationId: config.GetId(),
+		Name:                  config.GetName(),
+		Description:           config.GetDescription(),
+		Type:                  storage.ReportSnapshot_VULNERABILITY,
+		Filter: &storage.ReportSnapshot_VulnReportFilters{
+			VulnReportFilters: config.GetVulnReportFilters(),
+		},
+		Collection: &storage.CollectionSnapshot{
+			Id:   config.GetResourceScope().GetCollectionId(),
+			Name: collectionName,
+		},
+		Schedule:     config.GetSchedule(),
+		ReportStatus: metadata.GetReportStatus(),
+		Requester:    metadata.GetRequester(),
+	}
+
+	notifierSnaps := make([]*storage.NotifierSnapshot, 0, len(config.GetNotifiers()))
+	for _, notifierConf := range config.GetNotifiers() {
+		notifierSnaps = append(notifierSnaps, &storage.NotifierSnapshot{
+			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
+				EmailConfig: &storage.EmailNotifierSnapshot{
+					MailingLists: notifierConf.GetEmailConfig().GetMailingLists(),
+				},
+			},
+		})
+	}
+	snapshot.Notifiers = notifierSnaps
+	return snapshot
 }
