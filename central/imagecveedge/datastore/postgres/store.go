@@ -23,8 +23,6 @@ const (
 	baseTable = "image_cve_edges"
 	storeName = "ImageCVEEdge"
 
-	batchAfter = 100
-
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -64,8 +62,11 @@ func New(db postgres.DB) Store {
 			db,
 			schema,
 			pkGetter,
+			nil,
+			nil,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 			targetResource,
 		),
 	}
