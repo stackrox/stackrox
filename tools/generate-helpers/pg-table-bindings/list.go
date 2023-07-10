@@ -54,6 +54,7 @@ func init() {
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,
 		&storage.LogImbue{}:                                     resources.Administration,
+		&storage.Maximus{}:                                      resources.Administration,
 		&storage.NamespaceMetadata{}:                            resources.Namespace,
 		&storage.NetworkBaseline{}:                              resources.DeploymentExtension,
 		&storage.NetworkEntity{}:                                resources.NetworkGraph,

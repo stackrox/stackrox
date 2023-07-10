@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package storage;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+message Maximus {
+  string metric = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  int32 value = 2;
+  google.protobuf.Timestamp ts = 3;
+}
