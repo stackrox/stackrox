@@ -3,7 +3,6 @@
 // prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_ACTIVE_VULN_MGMT'
-    | 'ROX_CLAIR_V4_SCANNING'
     | 'ROX_COMPLIANCE_ENHANCEMENTS'
     | 'ROX_DISABLE_COMPLIANCE_STANDARDS'
     | 'ROX_NETWORK_GRAPH_PATTERNFLY'
