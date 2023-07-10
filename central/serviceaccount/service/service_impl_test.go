@@ -207,8 +207,12 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
-		AddExactMatches(search.SubjectName, expectedSA.Name).
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).ProtoQuery()
+		AddLinkedFields(
+			[]search.FieldLabel{search.SubjectName, search.SubjectKind},
+			[]string{
+				search.ExactMatchString(expectedSA.Name),
+				search.ExactMatchString(storage.SubjectKind_SERVICE_ACCOUNT.String())},
+		).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{rolebinding}, nil)
 
