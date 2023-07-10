@@ -4,8 +4,9 @@ import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
 import { vulnManagementPath } from 'routePaths';
-import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
+
+import KeyValuePairs from './KeyValuePairs';
 
 const containerConfigMap = {
     command: { label: 'Commands' },
@@ -123,9 +124,9 @@ const ContainerConfigurations = ({ deployment }) => {
                         <>
                             <div className="py-3 border-b border-base-300">
                                 <div className="pr-1 font-700 ">Resources:</div>
-                                <ul className="ml-2 mt-2 w-full">
+                                <div className="ml-2 mt-2 w-full">
                                     <Resources resources={resources} />
-                                </ul>
+                                </div>
                             </div>
                             <div className="py-3 border-b border-base-300">
                                 <div className="pr-1 font-700">Volumes:</div>
@@ -135,9 +136,9 @@ const ContainerConfigurations = ({ deployment }) => {
                             </div>
                             <div className="py-3 border-b border-base-300">
                                 <div className="pr-1 font-700">Secrets:</div>
-                                <ul className="ml-2 mt-2 w-full">
+                                <div className="ml-2 mt-2 w-full">
                                     <ContainerSecrets secrets={secrets} />
-                                </ul>
+                                </div>
                             </div>
                         </>
                     )}

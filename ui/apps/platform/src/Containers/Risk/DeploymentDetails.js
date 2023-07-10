@@ -5,11 +5,11 @@ import { Message } from '@stackrox/ui-components';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { fetchDeployment } from 'services/DeploymentsService';
-import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
+import KeyValuePairs from './KeyValuePairs';
 
 export const formatDeploymentPorts = (ports) => {
     return ports.map(({ exposure, exposureInfos, ...rest }) => {
