@@ -187,7 +187,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 			}
 		}
 		if len(signerCAs) == 0 {
-			log.Warnf("No client CAs signed by %q have been found", signerName)
+			log.Warnf("No client CAs signed by %q have been found in %q/%q", signerName, t.clientCANamespace, t.clientCAConfigMap)
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()
