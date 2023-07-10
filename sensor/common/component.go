@@ -1,6 +1,8 @@
 package common
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -29,6 +31,13 @@ type SensorComponent interface {
 
 	ProcessMessage(msg *central.MsgToSensor) error
 	ResponsesC() <-chan *central.MsgFromSensor
+}
+
+// ExpiringSensorMessage carries a message with a context.Context which will be canceled if the message is no longer
+// valid.
+type ExpiringSensorMessage struct {
+	Context context.Context
+	Message *central.MsgFromSensor
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

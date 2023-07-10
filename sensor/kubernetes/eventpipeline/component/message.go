@@ -1,6 +1,8 @@
 package component
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
@@ -52,6 +54,10 @@ type ResourceEvent struct {
 
 	// DeploymentReferences returns a list of deployment references generated from a Kubernetes Event
 	DeploymentReferences []DeploymentReference
+
+	// Context should be checked for the message validity. The context will be cancelled if the message should
+	// no longer be considered (e.g. if the connection broke and the resource will eventually be reconciled).
+	Context context.Context
 }
 
 // NewEvent creates a resource event with preset sensor event messages.

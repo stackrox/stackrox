@@ -1,6 +1,8 @@
 package listener
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -27,6 +29,7 @@ type resourceEventHandlerImpl struct {
 	seenIDs                    map[types.UID]struct{}
 	missingInitialIDs          map[types.UID]struct{}
 	hasSeenAllInitialIDsSignal concurrency.Signal
+	context                    context.Context
 }
 
 func (h *resourceEventHandlerImpl) OnAdd(obj interface{}) {
@@ -106,6 +109,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 	}
 
 	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
+	message.Context = h.context
 	h.resolver.Send(message)
 }
 

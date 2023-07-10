@@ -3,7 +3,7 @@ package output
 import (
 	"sync/atomic"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -11,7 +11,7 @@ import (
 // New instantiates a an output Queue component
 func New(detector detector.Detector, queueSize int) component.OutputQueue {
 	ch := make(chan *component.ResourceEvent, queueSize)
-	forwardQueue := make(chan *central.MsgFromSensor)
+	forwardQueue := make(chan common.ExpiringSensorMessage)
 	outputQueue := &outputQueueImpl{
 		detector:     detector,
 		innerQueue:   ch,

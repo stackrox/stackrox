@@ -37,13 +37,15 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 
 	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{
-		eventsC:     pipelineResponses,
-		stopSig:     concurrency.NewSignal(),
-		output:      outputQueue,
-		resolver:    depResolver,
-		listener:    resourceListener,
-		detector:    detector,
-		reprocessor: reprocessor,
-		offlineMode: offlineMode,
+		eventsC:       pipelineResponses,
+		stopSig:       concurrency.NewSignal(),
+		output:        outputQueue,
+		resolver:      depResolver,
+		listener:      resourceListener,
+		detector:      detector,
+		reprocessor:   reprocessor,
+		offlineMode:   offlineMode,
+		storeProvider: storeProvider,
+		disconnected:  concurrency.NewSignal(),
 	}
 }

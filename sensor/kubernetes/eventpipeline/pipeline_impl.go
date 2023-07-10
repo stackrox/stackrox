@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
 var (
@@ -22,11 +23,13 @@ var (
 )
 
 type eventPipeline struct {
-	output      component.OutputQueue
-	resolver    component.Resolver
-	listener    component.PipelineComponent
-	detector    detector.Detector
-	reprocessor reprocessor.Handler
+	output        component.OutputQueue
+	resolver      component.Resolver
+	listener      component.PipelineComponent
+	detector      detector.Detector
+	reprocessor   reprocessor.Handler
+	storeProvider *resources.InMemoryStoreProvider
+	disconnected  concurrency.Signal
 
 	offlineMode *atomic.Bool
 
@@ -109,6 +112,7 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 		// Stop listening to events
 		if p.offlineMode.CompareAndSwap(false, true) {
 			p.listener.Stop(errors.New("gRPC connection stopped"))
+			p.storeProvider.CleanupStores()
 		}
 	}
 }
@@ -124,7 +128,14 @@ func (p *eventPipeline) forwardMessages() {
 				log.Error("Output component channel closed")
 				return
 			}
-			p.eventsC <- msg
+			if msg.Message.GetEvent().GetDeployment().GetNamespace() == "sensor-integration" {
+				log.Infof("PIPELINE OUTPUT(%s): %s", msg.Message.GetEvent().GetTiming().GetDispatcher(), msg.Message.GetEvent().GetDeployment().GetName())
+			}
+
+			select {
+			case p.eventsC <- msg.Message:
+			case <-msg.Context.Done():
+			}
 		}
 	}
 }

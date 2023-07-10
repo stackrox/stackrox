@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -16,7 +17,7 @@ var (
 
 type outputQueueImpl struct {
 	innerQueue   chan *component.ResourceEvent
-	forwardQueue chan *central.MsgFromSensor
+	forwardQueue chan common.ExpiringSensorMessage
 	detector     detector.Detector
 	stopped      *atomic.Bool
 }
@@ -30,7 +31,7 @@ func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 }
 
 // ResponsesC returns the MsgFromSensor channel
-func (q *outputQueueImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (q *outputQueueImpl) ResponsesC() <-chan common.ExpiringSensorMessage {
 	return q.forwardQueue
 }
 
@@ -55,10 +56,21 @@ func (q *outputQueueImpl) runOutputQueue() {
 		if !more {
 			return
 		}
+
+		select {
+		case <-msg.Context.Done():
+			log.Infof("Message from dispatcher %s dropped (context canceled)", msg.DeploymentTiming.GetDispatcher())
+			continue
+		default:
+		}
+
 		for _, resourceUpdates := range msg.ForwardMessages {
-			q.forwardQueue <- &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: resourceUpdates,
+			q.forwardQueue <- common.ExpiringSensorMessage{
+				Context: msg.Context,
+				Message: &central.MsgFromSensor{
+					Msg: &central.MsgFromSensor_Event{
+						Event: resourceUpdates,
+					},
 				},
 			}
 		}

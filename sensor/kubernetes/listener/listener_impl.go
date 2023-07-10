@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -29,6 +30,7 @@ type listenerImpl struct {
 	traceWriter        io.Writer
 	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
+	cancelContext      context.CancelFunc
 }
 
 func (k *listenerImpl) Start() error {
@@ -53,6 +55,7 @@ func (k *listenerImpl) Stop(_ error) {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}
+	k.cancelContext()
 	k.stopSig.Signal()
 }
 
