@@ -37,11 +37,16 @@ class ImageService extends BaseService {
 
     static scanImage(String image, Boolean includeSnoozed = true, Boolean force = false) {
         try {
-            return getImageClient().scanImage(ImageServiceOuterClass.ScanImageRequest.newBuilder()
-                    .setImageName(image)
-                    .setIncludeSnoozed(includeSnoozed)
-                    .setForce(force)
-                    .build())
+            def req = ImageServiceOuterClass.ScanImageRequest.newBuilder()
+                .setImageName(image)
+                .setIncludeSnoozed(includeSnoozed)
+                .setForce(force)
+                .build()
+            def response
+            withRetry(1, 15) {
+                response = getImageClient().scanImage(req)
+            }
+            return response
         } catch (Exception e) {
             log.error("Image failed to scan: ${image}", e)
         }

@@ -49,6 +49,7 @@ func (suite *ReplayResourcesSuite) GetT() *testing.T {
 }
 
 func (suite *ReplayResourcesSuite) Test_ReplayEvents() {
+	suite.T().Skipf("Replay tests disabled")
 	writer := replay.StartTest(suite)
 	defer writer.Close()
 

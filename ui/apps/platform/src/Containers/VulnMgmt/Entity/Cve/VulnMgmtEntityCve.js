@@ -12,8 +12,8 @@ import {
     NODE_CVE_DETAIL_FRAGMENT,
     CLUSTER_CVE_DETAIL_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
 import {

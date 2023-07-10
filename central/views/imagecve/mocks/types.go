@@ -9,11 +9,11 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	views "github.com/stackrox/rox/central/views"
 	common "github.com/stackrox/rox/central/views/common"
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockCveCore is a mock of CveCore interface.
@@ -82,10 +82,10 @@ func (mr *MockCveCoreMockRecorder) GetCVEIDs() *gomock.Call {
 }
 
 // GetFirstDiscoveredInSystem mocks base method.
-func (m *MockCveCore) GetFirstDiscoveredInSystem() time.Time {
+func (m *MockCveCore) GetFirstDiscoveredInSystem() *time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFirstDiscoveredInSystem")
-	ret0, _ := ret[0].(time.Time)
+	ret0, _ := ret[0].(*time.Time)
 	return ret0
 }
 

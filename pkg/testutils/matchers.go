@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 var (

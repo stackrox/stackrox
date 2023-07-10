@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/mocks"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var _ types.Registry = (*mockRegistry)(nil)

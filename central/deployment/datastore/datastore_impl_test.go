@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/analystnotes"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestDeploymentDatastoreSuite(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	indexMocks "github.com/stackrox/rox/central/alert/datastore/internal/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (

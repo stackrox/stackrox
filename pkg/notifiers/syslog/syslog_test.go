@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -16,6 +15,7 @@ import (
 	metadataGetterMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stackrox/rox/pkg/notifiers/syslog/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSyslogNotifier(t *testing.T) {

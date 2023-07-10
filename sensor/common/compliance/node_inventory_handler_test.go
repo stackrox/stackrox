@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -136,6 +139,72 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(h.Stopped().Wait())
 }
 
+type testState struct {
+	event             common.SensorComponentEvent
+	expectedACKCount  int
+	expectedNACKCount int
+}
+
+// This test simulates a running Sensor loosing connection to Central, followed by a reconnect.
+// As soon as Sensor enters offline mode, it should send NACKs to Compliance.
+// In online mode, inventories are forwarded to Central, which responds with an ACK, that is passed to Compliance.
+func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
+	ch := make(chan *storage.NodeInventory)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	s.NoError(h.Start())
+
+	states := []testState{
+		{
+			event:             common.SensorComponentEventCentralReachable,
+			expectedACKCount:  1,
+			expectedNACKCount: 0,
+		},
+		{
+			event:             common.SensorComponentEventOfflineMode,
+			expectedACKCount:  0,
+			expectedNACKCount: 1,
+		},
+		{
+			event:             common.SensorComponentEventCentralReachable,
+			expectedACKCount:  1,
+			expectedNACKCount: 0,
+		},
+	}
+
+	for i, state := range states {
+		h.Notify(state.event)
+		ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", i))
+		if state.event == common.SensorComponentEventCentralReachable {
+			s.NoError(mockCentralAck(h))
+		}
+		result := consumeAndCountCompliance(h.ComplianceC(), 1)
+		s.NoError(result.sc.Stopped().Wait())
+		s.Equal(state.expectedACKCount, result.ACKCount)
+		s.Equal(state.expectedNACKCount, result.NACKCount)
+	}
+
+	h.Stop(nil)
+	s.T().Logf("waiting for handler to stop")
+	s.NoError(h.Stopped().Wait())
+}
+
+func mockCentralAck(h *nodeInventoryHandlerImpl) error {
+	select {
+	case <-h.ResponsesC():
+		err := h.ProcessMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
+				ClusterId: "4",
+				NodeName:  "4",
+				Action:    central.NodeInventoryACK_ACK,
+			}},
+		})
+		return err
+	case <-time.After(5 * time.Second):
+		return errors.New("ResponsesC msg didn't arrive after 5 seconds")
+	}
+}
+
 // generateTestInputNoClose generates numToProduce messages of type NodeInventory.
 // It returns a channel that must be closed by the caller.
 func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, concurrency.StopperClient) {
@@ -175,6 +244,41 @@ func consumeAndCount[T any](ch <-chan T, numToConsume int) concurrency.StopperCl
 		}
 	}()
 	return st.Client()
+}
+
+type messageStats struct {
+	NACKCount int
+	ACKCount  int
+	sc        concurrency.StopperClient
+}
+
+func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, numToConsume int) *messageStats {
+	ms := &messageStats{0, 0, nil}
+	st := concurrency.NewStopper()
+	go func() {
+		defer st.Flow().ReportStopped()
+		for i := 0; i < numToConsume; i++ {
+			select {
+			case <-st.Flow().StopRequested():
+				st.LowLevel().ResetStopRequest()
+				st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
+				return
+			case msg, ok := <-ch:
+				if !ok {
+					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
+					return
+				}
+				switch msg.Msg.GetAck().GetAction() {
+				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
+					ms.ACKCount++
+				case sensor.MsgToCompliance_NodeInventoryACK_NACK:
+					ms.NACKCount++
+				}
+			}
+		}
+	}()
+	ms.sc = st.Client()
+	return ms
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {

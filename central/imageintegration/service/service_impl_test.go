@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/enrichment/mocks"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
 

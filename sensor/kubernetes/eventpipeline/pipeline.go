@@ -2,6 +2,7 @@ package eventpipeline
 
 import (
 	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -31,6 +32,9 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
 	}
 
+	offlineMode := &atomic.Bool{}
+	offlineMode.Store(true)
+
 	pipelineResponses := make(chan *central.MsgFromSensor)
 	return &eventPipeline{
 		eventsC:     pipelineResponses,
@@ -40,5 +44,6 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 		listener:    resourceListener,
 		detector:    detector,
 		reprocessor: reprocessor,
+		offlineMode: offlineMode,
 	}
 }

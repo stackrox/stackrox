@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNetworkPolicySAC(t *testing.T) {

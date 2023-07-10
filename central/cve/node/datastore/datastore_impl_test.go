@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/cve/common"
 	searchMocks "github.com/stackrox/rox/central/cve/node/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/node/datastore/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (

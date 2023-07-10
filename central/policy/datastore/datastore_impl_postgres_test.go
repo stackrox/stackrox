@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
@@ -25,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 

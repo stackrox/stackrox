@@ -162,10 +162,10 @@ func initializeFieldMetadata() FieldMetadata {
 	}
 
 	f.registerFieldMetadata(fieldnames.AddCaps,
-		querybuilders.ForFieldLabelExact(search.AddCapabilities),
+		querybuilders.ForAddCaps(),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return capabilitiesValueRegex
+			return addCapabilitiesValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{},
@@ -298,7 +298,7 @@ func initializeFieldMetadata() FieldMetadata {
 		querybuilders.ForDropCaps(),
 		violationmessages.ContainerContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
-			return capabilitiesValueRegex
+			return dropCapabilitiesValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden)

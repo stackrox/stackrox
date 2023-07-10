@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	indexMocks "github.com/stackrox/rox/central/policycategory/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/policycategory/store/mocks"
 	policyCategoryEdgeDSMocks "github.com/stackrox/rox/central/policycategoryedge/datastore/mocks"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPolicyCategoryDatastore(t *testing.T) {

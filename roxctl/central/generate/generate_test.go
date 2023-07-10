@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	io2 "github.com/stackrox/rox/roxctl/common/io"
@@ -143,35 +144,38 @@ func TestTelemetryConfiguration(t *testing.T) {
 		err     error
 		key     interface{}
 	}
+	dirtyVersion := "1.2.3-dirty"
+	releaseVersion := "1.2.3"
+	var disabledInDebug any
+	if !buildinfo.ReleaseBuild || buildinfo.TestBuild {
+		disabledInDebug = phonehome.DisabledKey
+	}
+
 	testCases := []struct {
-		testDir   string
-		offline   bool
+		testName  string
+		version   string
 		telemetry bool
 		key       string
 		expected  result
 	}{
-		{testDir: "test1", offline: false, telemetry: false, key: "", expected: result{enabled: false}},
-		{testDir: "test2", offline: true, telemetry: false, key: "", expected: result{enabled: false}},
-		// TODO(ROX-13889): (when the key is hardcoded for on-prem telemetry)
-		// {testDir: "test3", offline: false, telemetry: true, key: "", expected: result{err: errox.InvalidArgs}},
-		{testDir: "test3", offline: false, telemetry: true, key: "", expected: result{enabled: false}},
-		{testDir: "test4", offline: false, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
-		{testDir: "test5", offline: false, telemetry: false, key: "test", expected: result{enabled: false, key: "test"}},
-		{testDir: "test6", offline: true, telemetry: true, key: "test", expected: result{enabled: true, key: "test"}},
+		{testName: "test1", version: dirtyVersion, telemetry: true, key: "", expected: result{enabled: false, key: phonehome.DisabledKey}},
+		{testName: "test2", version: dirtyVersion, telemetry: false, key: "", expected: result{enabled: false, key: phonehome.DisabledKey}},
+		{testName: "test3", version: dirtyVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
+		{testName: "test4", version: dirtyVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: phonehome.DisabledKey}},
+
+		{testName: "test5", version: releaseVersion, telemetry: true, key: "", expected: result{enabled: buildinfo.ReleaseBuild && !buildinfo.TestBuild, key: disabledInDebug}},
+		{testName: "test6", version: releaseVersion, telemetry: false, key: "", expected: result{enabled: false, key: phonehome.DisabledKey}},
+		{testName: "test7", version: releaseVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
+		{testName: "test8", version: releaseVersion, telemetry: false, key: "KEY", expected: result{enabled: false, key: phonehome.DisabledKey}},
 	}
 
 	logio, _, _, _ := io2.TestIO()
 	logger := logger.NewLogger(logio, printer.DefaultColorPrinter())
 
 	for _, testCase := range testCases {
-		t.Run(testCase.testDir, func(t *testing.T) {
-			if testCase.telemetry {
-				t.Setenv(env.TelemetryStorageKey.EnvVar(), testCase.key)
-			} else {
-				t.Setenv(env.TelemetryStorageKey.EnvVar(), "")
-			}
-
-			config.K8sConfig.OfflineMode = testCase.offline
+		t.Run(testCase.testName, func(t *testing.T) {
+			t.Setenv(env.TelemetryStorageKey.EnvVar(), testCase.key)
+			testutils.SetMainVersion(t, testCase.version)
 			config.K8sConfig.Telemetry.Enabled = testCase.telemetry
 
 			bundleio, _, out, _ := io2.TestIO()

@@ -26,20 +26,6 @@ export type Cluster = {
     name: string;
 };
 
-// @TODO, We may not need this API function after we migrate to a standalone Clusters page
-//        Check to see if fetchClusters and fletchClustersByArray can be collapsed
-//        into one function
-/**
- * Fetches list of registered clusters.
- */
-// TODO specify return type after we rewrite without normalize
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function fetchClusters() {
-    return axios.get<{ clusters: Cluster[] }>(clustersUrl).then((response) => ({
-        response: normalize(response.data, { clusters: [clusterSchema] }),
-    }));
-}
-
 /**
  * Fetches list of registered clusters.
  */
@@ -145,17 +131,6 @@ export function rotateClusterCerts(id: string): Promise<Empty> {
  */
 export function upgradeClusters(ids = []): Promise<Empty[]> {
     return Promise.all(ids.map((id) => upgradeCluster(id)));
-}
-
-/**
- * Fetches cluster by its ID.
- */
-// TODO specify return type after we rewrite without normalize
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function fetchCluster(id: string) {
-    return axios.get(`${clustersUrl}/${id}`).then((response) => ({
-        response: normalize(response.data, { cluster: clusterSchema }),
-    }));
 }
 
 /**

@@ -108,6 +108,7 @@ import (
 	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
+	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -275,7 +276,7 @@ func main() {
 	}
 
 	// Start the prometheus metrics server
-	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
+	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
@@ -377,8 +378,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processBaselineService.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
-		reportService.Singleton(),
 		roleService.Singleton(),
+		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
@@ -401,7 +402,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
-		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton())
+		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -428,7 +429,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 	return servicesToRegister
 }
 
-func watchdog(signal *concurrency.Signal, timeout time.Duration) {
+func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 	if !concurrency.WaitWithTimeout(signal, timeout) {
 		log.Errorf("API server failed to start within %v!", timeout)
 		log.Error("This usually means something is *very* wrong. Terminating ...")
@@ -703,7 +704,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/db/backup",
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedOnManagedServices(
+			ServerHandler: notImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
 			),
 			Compression: true,
@@ -711,7 +712,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/api/extensions/backup",
 			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedOnManagedServices(
+			ServerHandler: notImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
 			),
 			Compression: true,
@@ -775,9 +776,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	return utils.IfThenElse[http.Handler](
-		env.ManagedCentral.BooleanSetting(), httputil.NotImplementedHandler("api is not supported in a managed central environment."),
-		fn)
+	if env.ManagedCentral.BooleanSetting() {
+		return httputil.NotImplementedHandler("api is not supported in a managed central environment.")
+	}
+
+	return fn
+}
+
+func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
+	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
+		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
+	}
+
+	return fn
 }
 
 func debugRoutes() []routes.CustomRoute {

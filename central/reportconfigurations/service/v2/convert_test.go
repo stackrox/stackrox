@@ -3,13 +3,13 @@ package v2
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestConvertV2ReportConfigurationToProto(t *testing.T) {

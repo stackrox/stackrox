@@ -22,8 +22,7 @@ import util.Env
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 60
 
     @Unroll
     @Tag("BAT")
@@ -45,6 +44,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, verb, resourceType)
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "The resource is created, accessed and deleted"
@@ -101,6 +101,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "A violation is generated and resolved"
@@ -168,6 +169,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "A violation is generated and resolved"
@@ -226,6 +228,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy to propagate to sensor
 
         and:
         "The resource is accessed"

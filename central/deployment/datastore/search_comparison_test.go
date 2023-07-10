@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (

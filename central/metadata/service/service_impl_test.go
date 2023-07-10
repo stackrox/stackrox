@@ -13,17 +13,19 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -34,6 +36,10 @@ const (
 
 func TestServiceImpl(t *testing.T) {
 	suite.Run(t, new(serviceImplTestSuite))
+}
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }
 
 type serviceImplTestSuite struct {
@@ -110,6 +116,16 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Equal("failed to verify rsa signature: crypto/rsa: verification error", err.Error())
 }
 
+func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
+	service := serviceImpl{}
+	req := &v1.TLSChallengeRequest{}
+
+	resp, err := service.TLSChallenge(context.TODO(), req)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(resp)
+}
+
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 	service := serviceImpl{}
 	req := &v1.TLSChallengeRequest{
@@ -118,7 +134,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
 	s.Require().Error(err)
-	s.EqualError(err, "challenge token must be a valid base64 string: illegal base64 data at input byte 4: invalid arguments")
+	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 }
 
@@ -183,13 +199,6 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
-	s.Run("when not authenticated", func() {
-		caps, err := (&serviceImpl{}).GetCentralCapabilities(context.Background(), nil)
-
-		s.Nil(caps)
-		s.ErrorContains(err, "not authorized")
-	})
-
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	ctx := authn.ContextWithIdentity(sac.WithNoAccess(context.Background()), mockID, s.T())
 

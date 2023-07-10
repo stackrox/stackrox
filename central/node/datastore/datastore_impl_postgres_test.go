@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -21,9 +20,9 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/nodes/converter"
@@ -35,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 

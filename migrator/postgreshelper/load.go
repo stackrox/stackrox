@@ -29,19 +29,23 @@ func Load(databaseName string) (postgres.DB, *gorm.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	// Create the central database if necessary
-	exists, err := pgadmin.CheckIfDBExists(adminConfig, databaseName)
-	if err != nil {
-		log.WriteToStderrf("Could not check for central database: %v", err)
-		return nil, nil, err
-	}
-	if !exists {
-		err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.EmptyDB, databaseName)
+
+	if !pgconfig.IsExternalDatabase() {
+		// Create the central database if necessary
+		exists, err := pgadmin.CheckIfDBExists(adminConfig, databaseName)
 		if err != nil {
-			log.WriteToStderrf("Could not create central database: %v", err)
+			log.WriteToStderrf("Could not check for central database: %v", err)
 			return nil, nil, err
 		}
+		if !exists {
+			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.EmptyDB, databaseName)
+			if err != nil {
+				log.WriteToStderrf("Could not create central database: %v", err)
+				return nil, nil, err
+			}
+		}
 	}
+
 	// For migrations we may have long running jobs.  Here we explicitly turn
 	// off the statement timeout for the connection and will rely on the context
 	// timeouts to control this.

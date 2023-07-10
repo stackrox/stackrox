@@ -102,6 +102,7 @@ scripts/release-tools/setup-central-access.sh
 scripts/release-tools/upgrade-cluster-client.sh
 scripts/style/shellcheck.sh
 scripts/sync-release-branch.sh
+tests/e2e/run-compliance-e2e.sh
 tests/e2e/run-e2e-tests.sh
 tests/e2e/run-scale.sh
 tests/e2e/run-ui-e2e.sh

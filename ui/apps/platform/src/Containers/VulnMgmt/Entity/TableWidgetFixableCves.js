@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
 import { Message } from '@stackrox/ui-components';
 
@@ -11,14 +10,16 @@ import {
     CLUSTER_CVE_LIST_FRAGMENT,
     NODE_CVE_LIST_FRAGMENT,
     IMAGE_CVE_LIST_FRAGMENT,
-    VULN_CVE_LIST_FRAGMENT,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
-import { resourceLabels } from 'messages/common';
 import queryService from 'utils/queryService';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
+import {
+    entityNounOrdinaryCase,
+    entityNounOrdinaryCaseSingular,
+} from '../entitiesForVulnerabilityManagement';
 import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from './TableWidget';
 import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
@@ -39,23 +40,21 @@ const TableWidgetFixableCves = ({
     entityType,
     name,
     id,
-    vulnType = entityTypes.CVE,
+    vulnType,
 }) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
 
-    const displayedEntityType = resourceLabels[entityType];
-    const displayedVulnType = resourceLabels[vulnType];
+    const displayedEntityType = entityNounOrdinaryCaseSingular[entityType];
 
     const queryFieldName = queryFieldNames[entityType];
-    let queryVulnCounterFieldName = showVMUpdates ? 'imageVulnerabilityCounter' : 'vulnCounter';
-    let queryVulnsFieldName = showVMUpdates ? 'imageVulnerabilities' : 'vulns';
-    let queryCVEFieldsName = showVMUpdates ? 'imageCVEFields' : 'cveFields';
-    let queryFragment = showVMUpdates ? IMAGE_CVE_LIST_FRAGMENT : VULN_CVE_LIST_FRAGMENT;
-    let exportType = entityTypes.CVE;
+    let queryVulnCounterFieldName = 'imageVulnerabilityCounter';
+    let queryVulnsFieldName = 'imageVulnerabilities';
+    let queryCVEFieldsName = 'imageCVEFields';
+    let queryFragment = IMAGE_CVE_LIST_FRAGMENT;
+    let exportType = entityTypes.IMAGE_CVE;
 
     if (vulnType === entityTypes.CLUSTER_CVE) {
         queryVulnCounterFieldName = 'clusterVulnerabilityCounter';
@@ -69,13 +68,6 @@ const TableWidgetFixableCves = ({
         queryCVEFieldsName = 'nodeCVEFields';
         queryFragment = NODE_CVE_LIST_FRAGMENT;
         exportType = entityTypes.NODE_CVE;
-    } else if (entityType === entityTypes.IMAGE_COMPONENT || vulnType === entityTypes.IMAGE_CVE) {
-        // TODO: after the split of CVE types is released, make this the default
-        queryVulnCounterFieldName = 'imageVulnerabilityCounter';
-        queryVulnsFieldName = 'imageVulnerabilities';
-        queryCVEFieldsName = 'imageCVEFields';
-        queryFragment = IMAGE_CVE_LIST_FRAGMENT;
-        exportType = entityTypes.IMAGE_CVE;
     }
 
     // `id` field is not needed in result,
@@ -128,6 +120,7 @@ const TableWidgetFixableCves = ({
         setPage: setFixableCvesPage,
         totalCount: fixableCount,
     };
+    const displayedVulnType = entityNounOrdinaryCase(fixableCount, vulnType);
 
     const cveActions = (
         <FixableCveExportButton
@@ -158,10 +151,7 @@ const TableWidgetFixableCves = ({
             )}
             {!cvesLoading && !cvesError && (
                 <TableWidget
-                    header={`${fixableCount} fixable ${pluralize(
-                        displayedVulnType,
-                        fixableCount
-                    )} found across this ${displayedEntityType}`}
+                    header={`${fixableCount} fixable ${displayedVulnType} found across this ${displayedEntityType}`}
                     headerActions={cveActions}
                     rows={fixableCves}
                     entityType={vulnType}

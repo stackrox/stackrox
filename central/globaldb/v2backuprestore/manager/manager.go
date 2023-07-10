@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -137,6 +138,10 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 		if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
 			return nil, err
 		}
+	}
+
+	if process.postgresBundle && pgconfig.IsExternalDatabase() {
+		return nil, errors.New("restore is not supported with external database.  Use your normal DB restoration methods.")
 	}
 
 	// Create the paths for the restore directory

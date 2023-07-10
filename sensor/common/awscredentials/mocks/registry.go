@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	awscredentials "github.com/stackrox/rox/sensor/common/awscredentials"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockRegistryCredentialsManager is a mock of RegistryCredentialsManager interface.

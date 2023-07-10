@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	pgconn "github.com/jackc/pgconn"
 	pgx "github.com/jackc/pgx/v4"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPgxPoolConn is a mock of PgxPoolConn interface.

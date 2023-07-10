@@ -3520,7 +3520,7 @@
     schema-utils "^3.0.0"
     source-map "^0.7.3"
 
-"@popperjs/core@^2.0.0", "@popperjs/core@^2.9.0":
+"@popperjs/core@^2.9.0":
   version "2.11.4"
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.4.tgz#d8c7b8db9226d2d7664553a0741ad7d0397ee503"
   integrity sha512-q/ytXxO5NKvyT37pmisQAItCFqA7FD/vNb8dgaJy3/630Fsc+Mz9/9f2SziBoIZ30TJooXyTwZmhi1zjXmObYg==
@@ -5526,11 +5526,6 @@ attr-accept@^1.1.3:
   dependencies:
     core-js "^2.5.0"
 
-attr-accept@^2.2.1:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/attr-accept/-/attr-accept-2.2.2.tgz#646613809660110749e92f2c10833b70968d929b"
-  integrity sha512-7prDjvt9HmqiZ0cl5CRjtS84sEyhsHP2coDkaZKRKVfCDo9s7iw7ChVmar78Gu9pC4SoR/28wFu/G5JJhTnqEg==
-
 autoprefixer@10.4.5, autoprefixer@^10.2.5, autoprefixer@^10.4.5, autoprefixer@^10.4.7:
   version "10.4.5"
   resolved "https://registry.yarnpkg.com/autoprefixer/-/autoprefixer-10.4.5.tgz#662193c744094b53d3637f39be477e07bd904998"
@@ -6260,20 +6255,10 @@ caniuse-api@^3.0.0:
     lodash.memoize "^4.1.2"
     lodash.uniq "^4.5.0"
 
-caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001181:
-  version "1.0.30001202"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001202.tgz#4cb3bd5e8a808e8cd89e4e66c549989bc8137201"
-  integrity sha512-ZcijQNqrcF8JNLjzvEiXqX4JUYxoZa7Pvcsd9UD8Kz4TvhTonOSNRsK+qtvpVL4l6+T1Rh4LFtLfnNWg6BGWCQ==
-
-caniuse-lite@^1.0.30001332:
-  version "1.0.30001400"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001400.tgz#3038bee70d8b875604cd8833cb0e5e254ee0281a"
-  integrity sha512-Mv659Hn65Z4LgZdJ7ge5JTVbE3rqbJaaXgW5LEI9/tOaXclfIZ8DW7D7FCWWWmWiiPS7AC48S8kf3DApSxQdgA==
-
-caniuse-lite@^1.0.30001370:
-  version "1.0.30001374"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001374.tgz#3dab138e3f5485ba2e74bd13eca7fe1037ce6f57"
-  integrity sha512-mWvzatRx3w+j5wx/mpFN5v5twlPrabG8NqX2c6e45LCpymdoGqNvRkRutFUqpRTXKFQFNQJasvK0YT7suW6/Hw==
+caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001181, caniuse-lite@^1.0.30001332, caniuse-lite@^1.0.30001370:
+  version "1.0.30001513"
+  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001513.tgz"
+  integrity sha512-pnjGJo7SOOjAGytZZ203Em95MRM8Cr6jhCXNF/FAXTpCTRTECnqQWLpiTRqrFtdYcth8hf4WECUpkezuYsMVww==
 
 canvg@^3.0.6:
   version "3.0.6"
@@ -6976,27 +6961,15 @@ core-js@^2.5.0:
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.12.tgz#d9333dfa7b065e347cc5682219d6f690859cc2ec"
   integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
 
-core-js@^3.1.4:
-  version "3.19.0"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.19.0.tgz#9e40098a9bc326c7e81b486abbd5e12b9d275176"
-  integrity sha512-L1TpFRWXZ76vH1yLM+z6KssLZrP8Z6GxxW4auoCj+XiViOzNPJCAuTIkn03BGdFe6Z5clX5t64wRIRypsZQrUg==
-
-core-js@^3.19.2:
-  version "3.24.1"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.24.1.tgz#cf7724d41724154010a6576b7b57d94c5d66e64f"
-  integrity sha512-0QTBSYSUZ6Gq21utGzkfITDylE8jWC9Ne1D2MrhvlsZBI1x39OdDIVbzSqtgMndIy6BlHxBXpMGqzZmnztg2rg==
+core-js@^3.19.2, core-js@^3.31.1:
+  version "3.31.1"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.31.1.tgz#f2b0eea9be9da0def2c5fece71064a7e5d687653"
+  integrity sha512-2sKLtfq1eFST7l7v62zaqXacPc7uG8ZAya8ogijLhTtaKNcpzpB4TMoTw2Si+8GYKRwFPMMtUT0263QFWFfqyQ==
 
 core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
-
-cose-base@^1.0.0:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/cose-base/-/cose-base-1.0.1.tgz#8b8dd73d3cc5dc72bd038c6160e49757f703d9b8"
-  integrity sha512-LErvsHUOzYseXGFKWGCAQBTePO1iYZ9JL+YZlmoyqZ7EDcBzrEMRSouOGszQl72J6VK0AVrJbnNCf3eciqy7SA==
-  dependencies:
-    layout-base "^1.0.0"
 
 cosmiconfig@^5.1.0, cosmiconfig@^5.2.0:
   version "5.2.1"
@@ -7387,36 +7360,6 @@ cypress@^12.15.0:
     tmp "~0.2.1"
     untildify "^4.0.0"
     yauzl "^2.10.0"
-
-cytoscape-cose-bilkent@^4.0.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/cytoscape-cose-bilkent/-/cytoscape-cose-bilkent-4.1.0.tgz#762fa121df9930ffeb51a495d87917c570ac209b"
-  integrity sha512-wgQlVIUJF13Quxiv5e1gstZ08rnZj2XaLHGoFMYXz7SkNfCDOOteKBE6SYRfA9WxxI/iBc3ajfDoc6hb/MRAHQ==
-  dependencies:
-    cose-base "^1.0.0"
-
-cytoscape-node-html-label@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/cytoscape-node-html-label/-/cytoscape-node-html-label-1.2.2.tgz#cad4942a52be2075f55521b3ea376daadc67d65f"
-  integrity sha512-oUVwrlsIlaJJ8QrQFSMdv3uXVXPg6tMH/Tfofr8JuZIovqI4fPqBi6sQgCMcVpS6k9Td0TTjowBsNRw32CESWg==
-
-cytoscape-popper@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/cytoscape-popper/-/cytoscape-popper-2.0.0.tgz#d93917695a9b8af3dbda1d8ee433618ac4d4e359"
-  integrity sha512-b7WSOn8qXHWtdIXFNmrgc8qkaOs16tMY0EwtRXlxzvn8X+al6TAFrUwZoYATkYSlotfd/36ZMoeKMEoUck6feA==
-  dependencies:
-    "@popperjs/core" "^2.0.0"
-
-cytoscape@^3.2.19, cytoscape@^3.21.1:
-  version "3.21.1"
-  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.21.1.tgz#2d3a8b8ade8661c9efab2e9bf7a354b374d6cf0e"
-  integrity sha512-mxdxCzuGHOMSWHUFO+/ZQPeMNtJAm81LGzdwP02LhT592ZRfHWCvHUY++HpnSjg/SgrKg1CMqegY/HvYLUS1qg==
-  dependencies:
-    heap "^0.2.6"
-    lodash.debounce "^4.0.8"
-    lodash.get "^4.4.2"
-    lodash.set "^4.3.2"
-    lodash.topath "^4.5.2"
 
 d3-array@1, d3-array@^1.1.1, d3-array@^1.2.0:
   version "1.2.4"
@@ -9622,13 +9565,6 @@ file-selector@^0.1.8:
   dependencies:
     tslib "^2.0.1"
 
-file-selector@^0.2.2:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/file-selector/-/file-selector-0.2.3.tgz#e2958cdd4366f95e59dc618b95c700abe72ed7a6"
-  integrity sha512-d+hc9ctodLSVG55V2V5I4/eJBEr2p2na/kDN46Ty7PBhdp/Q5NmeQTXKa1Hx3AcIL1lgSFKZI0ve/v5ZXGCDkQ==
-  dependencies:
-    tslib "^2.0.3"
-
 filelist@^1.0.1:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/filelist/-/filelist-1.0.4.tgz#f78978a1e944775ff9e62e744424f215e58352b5"
@@ -10504,11 +10440,6 @@ he@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
-
-heap@^0.2.6:
-  version "0.2.6"
-  resolved "https://registry.yarnpkg.com/heap/-/heap-0.2.6.tgz#087e1f10b046932fc8594dd9e6d378afc9d1e5ac"
-  integrity sha1-CH4fELBGky/IWU3Z5tN4r8nR5aw=
 
 hey-listen@^1.0.5, hey-listen@^1.0.8:
   version "1.0.8"
@@ -12724,11 +12655,6 @@ language-tags@^1.0.5:
   dependencies:
     language-subtag-registry "~0.3.2"
 
-layout-base@^1.0.0:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/layout-base/-/layout-base-1.0.1.tgz#247175d33c2a1da1fcaecfc9e2127ef47ff851fd"
-  integrity sha512-ROrEqaKkA3IIOEgtsRE4qk4XWTXRhJq54CvWr+5EqMjMWBtxc/yngFOGXwG8iztipot6sTujXS5zjUOU6OZnnQ==
-
 lazy-ass@^1.6.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/lazy-ass/-/lazy-ass-1.6.0.tgz#7999655e8646c17f089fdd187d150d3324d54513"
@@ -12989,11 +12915,6 @@ lodash.toarray@^4.4.0:
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/lodash.toarray/-/lodash.toarray-4.4.0.tgz#24c4bfcd6b2fba38bfd0594db1179d8e9b656561"
   integrity sha1-JMS/zWsvuji/0FlNsRedjptlZWE=
-
-lodash.topath@^4.5.2:
-  version "4.5.2"
-  resolved "https://registry.yarnpkg.com/lodash.topath/-/lodash.topath-4.5.2.tgz#3616351f3bba61994a0931989660bd03254fd009"
-  integrity sha1-NhY1Hzu6YZlKCTGYlmC9AyVP0Ak=
 
 lodash.truncate@^4.4.2:
   version "4.4.2"
@@ -15924,14 +15845,6 @@ react-copy-to-clipboard@^5.0.3:
     copy-to-clipboard "^3"
     prop-types "^15.5.8"
 
-react-cytoscapejs@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/react-cytoscapejs/-/react-cytoscapejs-1.2.1.tgz#ccce46acabf4f0c41dce9070743854f92b0dc050"
-  integrity sha512-8exVCetpzyGCAKuRjXPWGjFCnb22boZ3SXUPpPB/+wQI8Q8BwkT1URN3A7J1Czvj1qAbShh5QQ514mBUp7i7kw==
-  dependencies:
-    cytoscape "^3.2.19"
-    prop-types "^15.6.2"
-
 react-dev-utils@^12.0.1:
   version "12.0.1"
   resolved "https://registry.yarnpkg.com/react-dev-utils/-/react-dev-utils-12.0.1.tgz#ba92edb4a1f379bd46ccd6bcd4e7bc398df33e73"
@@ -15998,15 +15911,6 @@ react-dropzone@9.0.0:
     file-selector "^0.1.8"
     prop-types "^15.6.2"
     prop-types-extra "^1.1.0"
-
-react-dropzone@^11.3.1:
-  version "11.3.1"
-  resolved "https://registry.yarnpkg.com/react-dropzone/-/react-dropzone-11.3.1.tgz#a3115e728b32b33e89f03d691b5b3b44b7f9072f"
-  integrity sha512-gPyw524T6dYZW81aQoBGmBG90cVNs+YJreh3HaN45Yw09Bm6m4aA6IF9ergHZQAWGeDSJ+DUhDKKAAaDdTj3RQ==
-  dependencies:
-    attr-accept "^2.2.1"
-    file-selector "^0.2.2"
-    prop-types "^15.7.2"
 
 react-error-boundary@^3.1.0:
   version "3.1.0"
@@ -16293,11 +16197,6 @@ react-table-6@^6.11.0:
   integrity sha512-zO24J+1Qg2AHxtSNMfHeGW1dxFcmLJQrAeLJyCAENdNdwJt+YolDDtJEBdZlukon7rZeAdB3d5gUH6eb9Dn5Ug==
   dependencies:
     classnames "^2.2.5"
-
-react-table@^7.6.2:
-  version "7.6.2"
-  resolved "https://registry.yarnpkg.com/react-table/-/react-table-7.6.2.tgz#b60932fa6d457c2bca0da49815cd6a8fe9451f77"
-  integrity sha512-urwNZTieb+xg/+BITUIrqdH5jZfJlw7rKVAAq25iXpBPwbQojLCEKJuGycLbVwn8fzU+Ovly3y8HHNaLNrPCvQ==
 
 react-tabs@^3.2.2:
   version "3.2.2"
@@ -18897,20 +18796,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typeface-open-sans-condensed@^1.1.13:
-  version "1.1.13"
-  resolved "https://registry.yarnpkg.com/typeface-open-sans-condensed/-/typeface-open-sans-condensed-1.1.13.tgz#965ad2953c433a9ba9df28f46a0f3946ae1bfac8"
-  integrity sha512-7gl9wcHYIXLLHUTG9pQzbPz117ZFXyPcFGjlHouqn00BawEJFLEL3hcrE1J3zyNVzj25MtnA0BxOpeptMzs/xA==
-
-typeface-open-sans@^1.1.13:
-  version "1.1.13"
-  resolved "https://registry.yarnpkg.com/typeface-open-sans/-/typeface-open-sans-1.1.13.tgz#32a09ebd7df59601e01ad81216f98ce641eeafd1"
-  integrity sha512-lVGVHvYl7UJDFB9vN8r7NHw3sVm7Rjeow6b9AeABc/J+2mDaCkmcdVtw3QZnsJW39P+xm5zeggIj9gLHYGn9Iw==
-
-typescript@^5.1.3:
-  version "5.1.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.1.3.tgz#8d84219244a6b40b6fb2b33cc1c062f715b9e826"
-  integrity sha512-XH627E9vkeqhlZFQuL+UsyAXEnibT0kWR2FWONlr4sTjvxyJYnyefgrkyECLzM5NenmKzRAy2rR/OlYLA1HkZw==
+typescript@^5.1.5:
+  version "5.1.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.1.5.tgz#a3ae755082488b6046fe64345d293ef26af08671"
+  integrity sha512-FOH+WN/DQjUvN6WgW+c4Ml3yi0PH+a/8q+kNIfRehv1wLhWONedw85iu+vQ39Wp49IzTJEsZ2lyLXpBF7mkF1g==
 
 uglify-js@^3.1.4:
   version "3.13.7"

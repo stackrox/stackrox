@@ -13,16 +13,12 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
-import {
-    NAMESPACE_LIST_FRAGMENT,
-    NAMESPACE_LIST_FRAGMENT_UPDATED,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { NAMESPACE_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { namespaceSortFields } from 'constants/sortFields';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultNamespaceSort = [
     {
@@ -32,13 +28,6 @@ export const defaultNamespaceSort = [
 ];
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const fragmentToUse = isFrontendVMUpdatesEnabled
-        ? NAMESPACE_LIST_FRAGMENT_UPDATED
-        : NAMESPACE_LIST_FRAGMENT;
-
     function getNamespaceTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -54,36 +43,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 id: namespaceSortFields.NAMESPACE,
                 accessor: 'metadata.name',
                 sortField: namespaceSortFields.NAMESPACE,
-            },
-            {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: `w-1/8 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { vulnCounter, metadata } = original;
-                    if (!vulnCounter || vulnCounter.all.total === 0) {
-                        return 'No CVEs';
-                    }
-
-                    const newState = workflowState
-                        .pushListItem(metadata.id)
-                        .pushList(entityTypes.CVE);
-                    const cvesUrl = newState.toUrl();
-                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
-
-                    return (
-                        <CVEStackedPill
-                            vulnCounter={vulnCounter}
-                            url={cvesUrl}
-                            fixableUrl={fixableUrl}
-                            hideLink={pdf}
-                        />
-                    );
-                },
-                id: namespaceSortFields.CVE_COUNT,
-                accessor: 'vulnCounter.all.total',
-                sortField: namespaceSortFields.CVE_COUNT,
             },
             {
                 Header: `Image CVEs`,
@@ -174,27 +133,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 // sortField: componentSortFields.IMAGES,
                 sortable: false,
             },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/8 ${defaultColumnClassName}`,
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={pdf}
-            //             selectedRowId={original.metadata.id}
-            //         />
-            //     ),
-            //     id: namespaceSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: namespaceSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
             {
                 Header: `Latest Violation`,
                 headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
@@ -219,17 +157,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
             },
         ];
 
-        const flagGatedTableColumns = tableColumns.filter((col) => {
-            if (isFrontendVMUpdatesEnabled) {
-                if (col.Header === 'CVEs') {
-                    return false;
-                }
-            } else if (col.Header === 'Image CVEs') {
-                return false;
-            }
-            return true;
-        });
-        return removeEntityContextColumns(flagGatedTableColumns, workflowState);
+        return removeEntityContextColumns(tableColumns, workflowState);
     }
 
     const query = gql`
@@ -240,7 +168,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
             }
             count: namespaceCount(query: $query)
         }
-        ${fragmentToUse}
+        ${NAMESPACE_LIST_FRAGMENT_UPDATED}
     `;
     const tableSort = sort || defaultNamespaceSort;
     const queryOptions = {

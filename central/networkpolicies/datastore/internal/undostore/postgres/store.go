@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
@@ -27,6 +25,7 @@ import (
 
 const (
 	baseTable = "networkpolicyapplicationundorecords"
+	storeName = "NetworkPolicyApplicationUndoRecord"
 
 	batchAfter = 100
 
@@ -34,9 +33,6 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
-
-	cursorBatchSize = 50
-	deleteBatchSize = 5000
 )
 
 var (
@@ -64,6 +60,7 @@ type Store interface {
 }
 
 type storeImpl struct {
+	*pgSearch.GenericStore[storage.NetworkPolicyApplicationUndoRecord, *storage.NetworkPolicyApplicationUndoRecord]
 	db    postgres.DB
 	mutex sync.RWMutex
 }
@@ -72,10 +69,30 @@ type storeImpl struct {
 func New(db postgres.DB) Store {
 	return &storeImpl{
 		db: db,
+		GenericStore: pgSearch.NewGenericStore[storage.NetworkPolicyApplicationUndoRecord, *storage.NetworkPolicyApplicationUndoRecord](
+			db,
+			schema,
+			pkGetter,
+			metricsSetAcquireDBConnDuration,
+			metricsSetPostgresOperationDurationTime,
+			targetResource,
+		),
 	}
 }
 
-//// Helper functions
+// region Helper functions
+
+func pkGetter(obj *storage.NetworkPolicyApplicationUndoRecord) string {
+	return obj.GetClusterId()
+}
+
+func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetPostgresOperationDurationTime(start, op, storeName)
+}
+
+func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
+	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
 
 func insertIntoNetworkpolicyapplicationundorecords(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoRecord) error {
 
@@ -159,21 +176,12 @@ func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Cont
 	return err
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkPolicyApplicationUndoRecord")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -193,11 +201,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicy
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkPolicyApplicationUndoRecord")
+	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
 	}
-	defer release()
+	defer conn.Release()
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
@@ -220,7 +228,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkPolicyAp
 	return nil
 }
 
-//// Helper functions - END
+// endregion Helper functions
 
 //// Interface functions
 
@@ -262,240 +270,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkPolic
 
 		return s.copyFrom(ctx, objs...)
 	})
-}
-
-// Delete removes the object associated to the specified ID from the store.
-func (s *storeImpl) Delete(ctx context.Context, clusterID string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-	if err != nil {
-		return err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(clusterID).ProtoQuery(),
-	)
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// DeleteByQuery removes the objects from the store based on the passed query.
-func (s *storeImpl) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-	if err != nil {
-		return err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
-}
-
-// DeleteMany removes the objects associated to the specified IDs from the store.
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadWriteSACQuery(ctx, targetResource)
-	if err != nil {
-		return err
-	}
-
-	// Batch the deletes
-	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(identifiers)
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
-
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-		)
-
-		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
-		}
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
-	}
-
-	return nil
-}
-
-// Count returns the number of objects in the store.
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return 0, err
-	}
-
-	return pgSearch.RunCountRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-}
-
-// Exists returns if the ID exists in the store.
-func (s *storeImpl) Exists(ctx context.Context, clusterID string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(clusterID).ProtoQuery(),
-	)
-
-	count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
-	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
-	// returns more than 1, despite the fact that the identifier is unique in the table.
-	return count > 0, err
-}
-
-// Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkPolicyApplicationUndoRecord")
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, false, err
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(clusterID).ProtoQuery(),
-	)
-
-	data, err := pgSearch.RunGetQueryForSchema[storage.NetworkPolicyApplicationUndoRecord](ctx, schema, q, s.db)
-	if err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	return data, true, nil
-}
-
-// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
-func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkPolicyApplicationUndoRecord, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicyApplicationUndoRecord")
-
-	if len(identifiers) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, nil, err
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
-
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.NetworkPolicyApplicationUndoRecord](ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.NetworkPolicyApplicationUndoRecord, len(rows))
-	for _, msg := range rows {
-		resultsByID[msg.GetClusterId()] = msg
-	}
-	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input identifiers
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.NetworkPolicyApplicationUndoRecord, 0, len(resultsByID))
-	for i, identifier := range identifiers {
-		if result, ok := resultsByID[identifier]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
-}
-
-// GetIDs returns all the IDs for the store.
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkPolicyApplicationUndoRecordIDs")
-	var sacQueryFilter *v1.Query
-
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return nil, err
-	}
-	result, err := pgSearch.RunSearchRequestForSchema(ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return nil, err
-	}
-
-	identifiers := make([]string, 0, len(result))
-	for _, entry := range result {
-		identifiers = append(identifiers, entry.ID)
-	}
-
-	return identifiers, nil
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkPolicyApplicationUndoRecord) error) error {
-	var sacQueryFilter *v1.Query
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
-	if err != nil {
-		return err
-	}
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.NetworkPolicyApplicationUndoRecord](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
 
 //// Interface functions - END

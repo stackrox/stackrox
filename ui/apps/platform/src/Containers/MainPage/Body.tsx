@@ -5,7 +5,7 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
-    networkPathPF,
+    networkPath,
     violationsPath,
     compliancePath,
     clustersListPath,
@@ -28,7 +28,8 @@ import {
     vulnManagementRiskAcceptancePath,
     collectionsPath,
     vulnerabilitiesWorkloadCvesPath,
-    vulnerabilityReportingPath,
+    vulnerabilityReportsPath,
+    listeningEndpointsBasePath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -93,8 +94,12 @@ const AsyncVulnMgmtReports = asyncComponent(
 const AsyncVulnMgmtRiskAcceptancePage = asyncComponent(
     () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
 );
-const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
+const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout'));
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
+
+const AsyncListeningEndpointsPage = asyncComponent(
+    () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')
+);
 
 type BodyProps = {
     hasReadAccess: HasReadAccess;
@@ -131,7 +136,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     {isNetworkGraphPatternflyEnabled && (
-                        <Route path={networkPathPF} component={AsyncNetworkGraphPage} />
+                        <Route path={networkPath} component={AsyncNetworkGraphPage} />
                     )}
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
@@ -157,17 +162,13 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     {hasVulnerabilityReportsPermission &&
                         isVulnerabilityReportingEnhancementsEnabled && (
                             <Route
-                                path={vulnerabilityReportingPath}
+                                path={vulnerabilityReportsPath}
                                 component={AsyncVulnerabilityReportingPage}
                             />
                         )}
-                    {hasVulnerabilityReportsPermission &&
-                        !isVulnerabilityReportingEnhancementsEnabled && (
-                            <Route
-                                path={vulnManagementReportsPath}
-                                component={AsyncVulnMgmtReports}
-                            />
-                        )}
+                    {hasVulnerabilityReportsPermission && (
+                        <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
+                    )}
                     <Route
                         path={vulnManagementRiskAcceptancePath}
                         component={AsyncVulnMgmtRiskAcceptancePage}
@@ -183,6 +184,14 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         <Route path={clustersListPath} component={AsyncPFClustersPage} />
                     )}
                     <Route path={systemHealthPath} component={AsyncSystemHealthPage} />
+                    {/* 
+                    TODO - Add any necessary permissions to the following route. The user will need read access to
+                          'Cluster' and 'Deployment' at the very least.
+                     */}
+                    <Route
+                        path={listeningEndpointsBasePath}
+                        component={AsyncListeningEndpointsPage}
+                    />
                     <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>

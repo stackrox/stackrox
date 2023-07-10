@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestGraphQLImageVulnerabilityEndpoints(t *testing.T) {

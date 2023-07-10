@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestGraphQLNodeVulnerabilityEndpoints(t *testing.T) {

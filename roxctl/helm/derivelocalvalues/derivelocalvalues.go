@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -24,9 +25,10 @@ var (
 	supportedCharts = []string{common.ChartCentralServices}
 )
 
-func deriveLocalValuesForChart(env environment.Environment, namespace, chartName, input, output string, useDirectory bool) error {
+func deriveLocalValuesForChart(env environment.Environment, namespace, chartName, input, output string,
+	useDirectory bool, timeout time.Duration) error {
 	var err error
-	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	switch chartName {
 	case common.ChartCentralServices:

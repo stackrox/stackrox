@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestRetrieveToken_Empty(t *testing.T) {

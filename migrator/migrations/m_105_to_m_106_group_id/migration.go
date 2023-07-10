@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	bolt "go.etcd.io/bbolt"
 )
@@ -69,7 +70,8 @@ func fetchGroupsToMigrate(db *bolt.DB) (groupsStoredByCompositeKey []groupStored
 				return err
 			}
 
-			groupsStoredByCompositeKey = append(groupsStoredByCompositeKey, groupStoredByCompositeKey{grp: grp, compositeKey: k})
+			groupsStoredByCompositeKey = append(groupsStoredByCompositeKey, groupStoredByCompositeKey{grp: grp,
+				compositeKey: sliceutils.ShallowClone(k)})
 
 			return nil
 		})

@@ -165,7 +165,6 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 		t:                t,
 		r:                r,
 		env:              envConfig,
-		centralReceived:  make(chan *central.MsgFromSensor, 100),
 		centralStopped:   atomic.Bool{},
 		config:           config,
 		archivedMessages: [][]*central.MsgFromSensor{},
@@ -258,6 +257,11 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 	}, nil
 }
 
+// ArchivedMessages returns a slice of slices, each contain messages received by Central before restarting
+func (c *TestContext) ArchivedMessages() [][]*central.MsgFromSensor {
+	return c.archivedMessages
+}
+
 // StopCentralGRPC will attempt to stop fake central. If it was already stopped, nothing happens
 func (c *TestContext) StopCentralGRPC() {
 	if c.centralStopped.CompareAndSwap(false, true) {
@@ -291,9 +295,6 @@ func (c *TestContext) StartFakeGRPC() {
 		c.grpcFactory.OverwriteCentralConnection(conn)
 	}
 
-	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		c.centralReceived <- msg
-	})
 	fakeCentral.OnShutdown(shutdown)
 	c.fakeCentral = fakeCentral
 }
@@ -331,7 +332,7 @@ func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase Tes
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
 		obj := objByKind(resources[i].Kind)
-		removeFn, err := c.ApplyResource(context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
+		removeFn, err := c.ApplyResourceAndWait(context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
 			return errors.Errorf("fail to apply resource: %s", err)
 		}
@@ -430,6 +431,26 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 	}
 }
 
+// WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
+func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
+	ticker := time.NewTicker(defaultTicker)
+	timeoutTimer := time.NewTicker(timeout)
+	for {
+		select {
+		case <-timeoutTimer.C:
+			c.t.Errorf("timeout (%s) reached waiting for sync event", timeout)
+			return
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			for _, m := range messages {
+				if m.GetEvent().GetSynced() != nil {
+					return
+				}
+			}
+		}
+	}
+}
+
 // WaitForDeploymentEvent waits until sensor process a given deployment
 func (c *TestContext) WaitForDeploymentEvent(name string) {
 	c.WaitForDeploymentEventWithTimeout(name, defaultWaitTimeout)
@@ -466,11 +487,12 @@ func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, mes
 func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
-	var lastErr error
+	lastErr := errors.New("no deployment found")
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			c.t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
@@ -485,14 +507,19 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 	}
 }
 
-// DeploymentCreateReceived checks if a deployment object was received with CREATE action
+// DeploymentCreateReceived checks if a deployment object was received with CREATE action.
 func (c *TestContext) DeploymentCreateReceived(name string) {
+	c.DeploymentActionReceived(name, central.ResourceAction_CREATE_RESOURCE)
+}
+
+// DeploymentActionReceived checks if a deployment object was received with specific action type.
+func (c *TestContext) DeploymentActionReceived(name string, expectedAction central.ResourceAction) {
 	c.LastDeploymentState(name, func(_ *storage.Deployment, action central.ResourceAction) error {
-		if action != central.ResourceAction_CREATE_RESOURCE {
-			return errors.New("event received is not CREATE")
+		if action != expectedAction {
+			return errors.Errorf("event action is %s, but expected %s", action, expectedAction)
 		}
 		return nil
-	}, "Deployment should be created")
+	}, fmt.Sprintf("Deployment %s should be received with action %s", name, expectedAction))
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -645,10 +672,27 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, closeF
 }
 
-// ApplyResourceNoObject creates a Kubernetes resource using `ApplyResource` without requiring an object reference.
-func (c *TestContext) ApplyResourceNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
+// ApplyResourceAndWaitNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
+// Use this if there is no need to get or manipulate the data in the YAML file.
+func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
-	return c.ApplyResource(ctx, ns, &resource, obj, retryFn)
+	return c.ApplyResourceAndWait(ctx, ns, &resource, obj, retryFn)
+}
+
+// ApplyResourceAndWait calls ApplyResource and waits for the resource if it's "waitable" (e.g. Deployment or Pod).
+func (c *TestContext) ApplyResourceAndWait(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+	fn, err := c.ApplyResource(ctx, ns, resource, obj, retryFn)
+	if err != nil {
+		return nil, err
+	}
+
+	if resource.Kind == "Deployment" || resource.Kind == "Pod" {
+		if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
+			return nil, err
+		}
+	}
+
+	return fn, nil
 }
 
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see
@@ -674,7 +718,7 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 		); err != nil {
 			return nil, err
 		}
-		resource.Name = resource.YamlFile
+		resource.Name = obj.GetName()
 	}
 
 	if shouldRetryResource(resource.Kind) || retryFn != nil {
@@ -691,12 +735,6 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 		}
 	} else {
 		if err := c.r.Create(ctx, obj); err != nil {
-			return nil, err
-		}
-	}
-
-	if resource.Kind == "Deployment" || resource.Kind == "Pod" {
-		if err := c.waitForResource(defaultCreationTimeout, deploymentName(obj.GetName())); err != nil {
 			return nil, err
 		}
 	}
@@ -744,16 +782,16 @@ func deploymentName(s string) condition {
 
 func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error {
 	afterTimeout := time.After(timeout)
+	ticker := time.NewTicker(defaultTicker)
 	for {
 		select {
 		case <-afterTimeout:
 			return errors.New("timeout reached waiting for event")
-		case d, more := <-c.centralReceived:
-			if !more {
-				return errors.New("channel closed")
-			}
-			if fn(d.GetEvent()) {
-				return nil
+		case <-ticker.C:
+			for _, msg := range c.GetFakeCentral().GetAllMessages() {
+				if fn(msg.GetEvent()) {
+					return nil
+				}
 			}
 		}
 	}

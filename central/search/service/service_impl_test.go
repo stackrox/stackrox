@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -40,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {

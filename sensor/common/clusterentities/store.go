@@ -59,16 +59,20 @@ type Store struct {
 // Note: Generally, you probably do not want to call this function, but use the singleton instance returned by
 // `StoreInstance()`.
 func NewStore() *Store {
-	return &Store{
-		ipMap:                 make(map[net.IPAddress]map[string]struct{}),
-		endpointMap:           make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
-		containerIDMap:        make(map[string]ContainerMetadata),
-		reverseIPMap:          make(map[string]map[net.IPAddress]struct{}),
-		reverseEndpointMap:    make(map[string]map[net.NumericEndpoint]struct{}),
-		reverseContainerIDMap: make(map[string]map[string]struct{}),
-		publicIPRefCounts:     make(map[net.IPAddress]*int),
-		publicIPsListeners:    make(map[PublicIPsListener]struct{}),
-	}
+	store := &Store{}
+	store.initMaps()
+	return store
+}
+
+func (e *Store) initMaps() {
+	e.ipMap = make(map[net.IPAddress]map[string]struct{})
+	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
+	e.containerIDMap = make(map[string]ContainerMetadata)
+	e.reverseIPMap = make(map[string]map[net.IPAddress]struct{})
+	e.reverseEndpointMap = make(map[string]map[net.NumericEndpoint]struct{})
+	e.reverseContainerIDMap = make(map[string]map[string]struct{})
+	e.publicIPRefCounts = make(map[net.IPAddress]*int)
+	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
 }
 
 // EndpointTargetInfo is the target port for an endpoint (container port, service port etc.).
@@ -106,6 +110,13 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 		ed.containerIDs = make(map[string]ContainerMetadata)
 	}
 	ed.containerIDs[containerID] = container
+}
+
+// Cleanup deletes all entries from store
+func (e *Store) Cleanup() {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+	e.initMaps()
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment

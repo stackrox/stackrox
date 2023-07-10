@@ -74,6 +74,15 @@ func (m *Mutex) Lock() {
 	m.acquireTime = time.Now()
 }
 
+// TryLock wraps the call to sync.Mutex TryLock. It returns true if the lock was acquired.
+func (m *Mutex) TryLock() bool {
+	if m.Mutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
 // Unlock releases an acquired lock on the mutex.
 func (m *Mutex) Unlock() {
 	panicIfTooMuchTimeElapsed("Mutex.Unlock", m.acquireTime, lockTimeout, 1)
@@ -95,6 +104,24 @@ func (m *RWMutex) RLock() {
 func (m *RWMutex) Lock() {
 	panicOnTimeout("RWMutex.Lock", m.RWMutex.Lock, lockTimeout)
 	m.acquireTime = time.Now()
+}
+
+// TryRLock wraps the call to sync.RWMutex TryRLock. It returns true if the lock was acquired.
+func (m *RWMutex) TryRLock() bool {
+	if m.RWMutex.TryRLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
+// TryLock wraps the call to sync.RWMutex TryLock. It returns true if the lock was acquired.
+func (m *RWMutex) TryLock() bool {
+	if m.RWMutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
 }
 
 // Unlock releases an acquired writer (exclusive) lock on the mutex.

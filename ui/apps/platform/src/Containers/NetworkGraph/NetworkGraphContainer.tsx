@@ -275,7 +275,6 @@ type NetworkGraphContainerProps = {
     edgeState: EdgeState;
     displayOptions: DisplayOption[];
     simulation: Simulation;
-    selectedClusterId: string;
     clusterDeploymentCount: number;
 };
 
@@ -292,7 +291,6 @@ function NetworkGraphContainer({
     edgeState,
     displayOptions,
     simulation,
-    selectedClusterId,
     clusterDeploymentCount,
 }: NetworkGraphContainerProps) {
     // these are the unfiltered, unmodified data models
@@ -356,7 +354,6 @@ function NetworkGraphContainer({
         <NetworkGraph
             model={updatedModel}
             simulation={simulation}
-            selectedClusterId={selectedClusterId || ''}
             selectedNode={selectedNode}
             edgeState={edgeState}
         />

@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	proto "github.com/gogo/protobuf/proto"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockResourceUpdater is a mock of ResourceUpdater interface.

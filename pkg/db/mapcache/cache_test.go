@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db/mocks"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (

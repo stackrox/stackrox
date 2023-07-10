@@ -1,7 +1,6 @@
 import { uniq } from 'lodash';
 
-import { EntityType } from 'Containers/Network/networkTypes';
-import { L4Protocol } from 'types/networkFlow.proto';
+import { L4Protocol, NetworkEntityInfoType as EntityType } from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
 import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';

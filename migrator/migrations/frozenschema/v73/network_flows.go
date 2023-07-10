@@ -17,7 +17,7 @@ var (
 	CreateTableNetworkFlowsStmt = &postgres.CreateStmts{
 		GormModel: (*NetworkFlows)(nil),
 		PostStmts: []string{
-			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp ON public.network_flows USING brin (lastseentimestamp) WITH (pages_per_range='32')",
+			"CREATE INDEX IF NOT EXISTS network_flows_lastseentimestamp ON network_flows USING brin (lastseentimestamp) WITH (pages_per_range='32')",
 		},
 	}
 

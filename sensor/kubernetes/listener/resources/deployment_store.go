@@ -46,6 +46,15 @@ func (ds *DeploymentStore) addOrUpdateDeploymentNoLock(wrap *deploymentWrap) {
 	ds.deployments[wrap.GetId()] = wrap
 }
 
+// Cleanup deletes all entries from store
+func (ds *DeploymentStore) Cleanup() {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	ds.deploymentIDs = make(map[string]map[string]struct{})
+	ds.deployments = make(map[string]*deploymentWrap)
+}
+
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
@@ -126,7 +135,7 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	var ret []*storage.Deployment
 	for _, wrap := range ds.deployments {
 		if wrap != nil {
-			ret = append(ret, wrap.GetDeployment())
+			ret = append(ret, wrap.GetDeployment().Clone())
 		}
 	}
 	return ret
@@ -214,8 +223,11 @@ func (ds *DeploymentStore) getWrapNoLock(id string) *deploymentWrap {
 
 // Get returns deployment for supplied id.
 func (ds *DeploymentStore) Get(id string) *storage.Deployment {
-	wrap := ds.getWrap(id)
-	return wrap.GetDeployment()
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	wrap := ds.getWrapNoLock(id)
+	return wrap.GetDeployment().Clone()
 }
 
 // GetBuiltDeployment returns a cloned deployment for supplied id and a flag if it is fully built.

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 
-import { fetchPluginIntegrationsHealth } from 'services/IntegrationHealthService';
+import { fetchNotifierIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
@@ -18,7 +18,7 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
 
     useEffect(() => {
         setIsFetching(true);
-        Promise.all([fetchPluginIntegrationsHealth(), fetchNotifierIntegrations()])
+        Promise.all([fetchNotifierIntegrationsHealth(), fetchNotifierIntegrations()])
             .then(([integrationsHealth, notifiers]) => {
                 setNotifiersMerged(
                     mergeIntegrationResponses(

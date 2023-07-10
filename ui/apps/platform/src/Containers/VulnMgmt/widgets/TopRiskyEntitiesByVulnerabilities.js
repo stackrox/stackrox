@@ -13,7 +13,6 @@ import Scatterplot from 'Components/visuals/Scatterplot';
 import HoverHintListItem from 'Components/visuals/HoverHintListItem';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
-import entityLabels from 'messages/entity';
 import { policySeverityColorMap } from 'constants/visuals/colors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
 import { policySeverities } from 'types/policy.proto';
@@ -21,7 +20,8 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
-import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
+import { entityPriorityField } from '../VulnMgmt.constants';
+import { entityNounOrdinaryCasePlural } from '../entitiesForVulnerabilityManagement';
 
 // Beware, policy instead of vulnerability severities because of getSeverityByCvss function!
 
@@ -179,7 +179,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
     const entityOptions = riskEntityTypes.map((entityType) => ({
-        label: `Top risky ${pluralize(entityLabels[entityType])} by CVE count & CVSS score`,
+        label: `Top risky ${entityNounOrdinaryCasePlural[entityType]} by CVE count & CVSS score`,
         value: entityType,
     }));
     function onChange(datum) {

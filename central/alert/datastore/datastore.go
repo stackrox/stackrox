@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -47,7 +46,7 @@ func New(alertStore store.Store, searcher search.Searcher) (DataStore, error) {
 		storage:    alertStore,
 		searcher:   searcher,
 		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
-		keyFence:   dackboxConcurrency.NewKeyFence(),
+		keyFence:   concurrency.NewKeyFence(),
 	}
 	return ds, nil
 }

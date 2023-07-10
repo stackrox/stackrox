@@ -178,8 +178,12 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 }
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
+	ts := resolver.data.GetFirstDiscoveredInSystem()
+	if ts == nil {
+		return nil
+	}
 	return &graphql.Time{
-		Time: resolver.data.GetFirstDiscoveredInSystem(),
+		Time: *ts,
 	}
 }
 

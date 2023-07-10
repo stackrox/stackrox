@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterhealthupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperator/complianceoperatorinfo"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofiles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorresults"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorrules"
@@ -84,6 +85,9 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 			complianceoperatorrules.GetPipeline(),
 			complianceoperatorscans.GetPipeline(),
 		)
+	}
+	if features.ComplianceEnhancements.Enabled() {
+		pipelines = append(pipelines, complianceoperatorinfo.GetPipeline())
 	}
 	deduper := s.manager.GetDeduper(ctx, clusterID)
 	return NewClusterPipeline(clusterID, deduper, pipelines...), nil

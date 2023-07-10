@@ -23,8 +23,8 @@ import {
     systemHealthPath,
     collectionsBasePath,
     vulnerabilitiesWorkloadCvesPath,
-    networkBasePathPF,
-    vulnerabilityReportingPath,
+    networkBasePath,
+    vulnerabilityReportsPath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -75,7 +75,7 @@ function NavigationSidebar({
         );
     }
 
-    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportingPath];
+    const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportsPath];
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -86,8 +86,8 @@ function NavigationSidebar({
                     title={basePathToLabelMap[dashboardPath]}
                 />
                 <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePathPF)}
-                    path={networkBasePathPF}
+                    isActive={location.pathname.includes(networkBasePath)}
+                    path={networkBasePath}
                     title="Network Graph"
                 />
                 <LeftNavItem
@@ -125,12 +125,10 @@ function NavigationSidebar({
                         {isReportingEnhancementsEnabled &&
                             hasReadAccess('WorkflowAdministration') && (
                                 <LeftNavItem
-                                    key={vulnerabilityReportingPath}
-                                    isActive={location.pathname.includes(
-                                        vulnerabilityReportingPath
-                                    )}
-                                    path={vulnerabilityReportingPath}
-                                    title={basePathToLabelMap[vulnerabilityReportingPath]}
+                                    key={vulnerabilityReportsPath}
+                                    isActive={location.pathname.includes(vulnerabilityReportsPath)}
+                                    path={vulnerabilityReportsPath}
+                                    title={basePathToLabelMap[vulnerabilityReportsPath]}
                                 />
                             )}
                     </NavExpandable>

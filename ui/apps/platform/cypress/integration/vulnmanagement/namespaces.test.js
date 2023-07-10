@@ -6,13 +6,12 @@ import {
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
 import {
-    getCountAndNounFromImageCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'namespaces';
 
@@ -79,13 +78,7 @@ describe('Vulnerability Management Namespaces', () => {
             this.skip(); // TODO verify and remove
         }
 
-        verifyConditionalCVEs(
-            entitiesKey,
-            'image-cves',
-            3,
-            'imageVulnerabilityCounter',
-            getCountAndNounFromImageCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'image-cves', 3, 'imageVulnerabilityCounter');
     });
 
     it('should display links for deployments', () => {

@@ -1,3 +1,5 @@
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -529,11 +531,28 @@ class AdmissionControllerTest extends BaseSpecification {
 
         when:
         "A deployment with an image violating a policy is created"
-        def created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+        def created
+        def consecutiveRejectionsCount = 0
+        withRetry(40, 5) {
+            created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+            if (created) {
+                consecutiveRejectionsCount = 0
+                deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
+            }
+            else {
+                consecutiveRejectionsCount++
+            }
+            assert !created
+            assert consecutiveRejectionsCount == 5
+        }
 
         then:
         "Creation should fail"
         assert !created
+
+        and:
+        "Creation should fail consistently"
+        assert consecutiveRejectionsCount == 5
 
         cleanup:
         "Stop ChaosMonkey ASAP to not lose logs"

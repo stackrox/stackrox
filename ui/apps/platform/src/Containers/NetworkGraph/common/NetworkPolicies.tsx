@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import {
     Alert,
+    AlertGroup,
     AlertVariant,
     Bullseye,
     Button,
@@ -20,6 +21,7 @@ import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type NetworkPoliciesProps = {
     entityName: string;
@@ -34,7 +36,8 @@ type NetworkPolicyYAML = {
 const allNetworkPoliciesId = 'All network policies';
 
 function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
-    const { networkPolicies, isLoading, error } = useFetchNetworkPolicies(policyIds);
+    const { networkPolicies, networkPolicyErrors, isLoading, error } =
+        useFetchNetworkPolicies(policyIds);
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
 
@@ -100,24 +103,51 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
 
     if (error) {
         return (
-            <Alert isInline variant={AlertVariant.danger} title={error} className="pf-u-mb-lg" />
+            <Alert
+                isInline
+                variant={AlertVariant.danger}
+                title={getAxiosErrorMessage(error)}
+                className="pf-u-mb-lg"
+            />
+        );
+    }
+
+    let policyErrorBanner: React.ReactNode = null;
+
+    if (networkPolicyErrors.length > 0) {
+        policyErrorBanner = (
+            <AlertGroup className="pf-u-mb-lg">
+                {networkPolicyErrors.map((networkPolicyError) => (
+                    <Alert
+                        isInline
+                        variant={AlertVariant.warning}
+                        title="There was an error loading network policy data"
+                    >
+                        {getAxiosErrorMessage(networkPolicyError)}
+                    </Alert>
+                ))}
+            </AlertGroup>
         );
     }
 
     if (networkPolicies.length === 0) {
         return (
-            <Bullseye>
-                <EmptyState variant={EmptyStateVariant.xs}>
-                    <Title headingLevel="h4" size="md">
-                        No network policies
-                    </Title>
-                </EmptyState>
-            </Bullseye>
+            <>
+                {policyErrorBanner}
+                <Bullseye>
+                    <EmptyState variant={EmptyStateVariant.xs}>
+                        <Title headingLevel="h4" size="md">
+                            No network policies
+                        </Title>
+                    </EmptyState>
+                </Bullseye>
+            </>
         );
     }
 
     return (
         <div className="pf-u-h-100 pf-u-p-md">
+            {policyErrorBanner}
             <Stack hasGutter>
                 <StackItem>
                     <SelectSingle

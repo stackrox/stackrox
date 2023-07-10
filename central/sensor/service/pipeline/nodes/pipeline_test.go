@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	protobuf "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_pipelineImpl_Run(t *testing.T) {

@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPipelineComponent is a mock of PipelineComponent interface.

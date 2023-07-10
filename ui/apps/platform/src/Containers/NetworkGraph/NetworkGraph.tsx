@@ -17,16 +17,9 @@ export type NetworkGraphProps = {
     model: CustomModel;
     simulation: Simulation;
     selectedNode?: CustomNodeModel;
-    selectedClusterId: string;
     edgeState: EdgeState;
 };
-function NetworkGraph({
-    model,
-    simulation,
-    selectedClusterId,
-    selectedNode,
-    edgeState,
-}: NetworkGraphProps) {
+function NetworkGraph({ model, simulation, selectedNode, edgeState }: NetworkGraphProps) {
     const controller = useMemo(() => {
         const newController = new Visualization();
         newController.registerLayoutFactory(defaultLayoutFactory);
@@ -36,7 +29,6 @@ function NetworkGraph({
     }, []);
     const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
         simulation,
-        clusterId: selectedClusterId,
     });
 
     const isSimulating =
@@ -51,7 +43,6 @@ function NetworkGraph({
                 <TopologyComponent
                     model={model}
                     simulation={simulation}
-                    selectedClusterId={selectedClusterId}
                     simulator={simulator}
                     selectedNode={selectedNode}
                     setNetworkPolicyModification={setNetworkPolicyModification}

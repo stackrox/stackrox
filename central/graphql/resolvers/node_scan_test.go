@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	nodeCVEsDSMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	nodeDSMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -14,6 +13,7 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (

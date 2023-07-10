@@ -27,6 +27,7 @@ func init() {
 		&storage.ComplianceDomain{}:                             resources.Compliance,
 		&storage.ComplianceStrings{}:                            resources.Compliance,
 		&storage.ComplianceConfig{}:                             resources.Compliance,
+		&storage.ComplianceIntegration{}:                        resources.Integration,
 		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
@@ -87,7 +88,7 @@ func init() {
 		&storage.TokenMetadata{}:                                resources.Integration,
 		&storage.User{}:                                         resources.Access,
 		// Tests
-		&storage.TestMultiKeyStruct{}:      resources.Namespace,
+		&storage.TestStruct{}:              resources.Namespace,
 		&storage.TestSingleKeyStruct{}:     resources.Namespace,
 		&storage.TestSingleUUIDKeyStruct{}: resources.Namespace,
 		&storage.TestGrandparent{}:         resources.Namespace,

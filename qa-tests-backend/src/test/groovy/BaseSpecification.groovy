@@ -66,7 +66,7 @@ class BaseSpecification extends Specification {
 
     public static strictIntegrationTesting = false
 
-    Map<String, List<String>> resourceRecord = [:]
+    private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
 
@@ -150,7 +150,9 @@ class BaseSpecification extends Specification {
             tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }
 
+        assert tokenResp
         allAccessToken = tokenResp.token
+        assert allAccessToken
 
         setupCoreImageIntegration()
 
@@ -161,6 +163,11 @@ class BaseSpecification extends Specification {
         } catch (Exception e) {
             LOG.error("Error setting up orchestrator", e)
             throw e
+        }
+
+        // ROX-9950 Limit to GKE due to issues on other providers.
+        if (orchestrator.isGKE()) {
+            recordResourcesAtRunStart(orchestrator)
         }
 
         addShutdownHook {
@@ -184,6 +191,11 @@ class BaseSpecification extends Specification {
             } catch (Exception e) {
                 LOG.error("Failed to clean up orchestrator", e)
                 throw e
+            }
+
+            // ROX-9950 Limit to GKE due to issues on other providers.
+            if (orchestrator.isGKE()) {
+                compareResourcesAtRunEnd(orchestrator)
             }
         }
 
@@ -222,8 +234,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        recordResourcesAtSpecStart()
     }
 
     static setupCoreImageIntegration() {
@@ -251,7 +261,7 @@ class BaseSpecification extends Specification {
         }
     }
 
-    def recordResourcesAtSpecStart() {
+    private static void recordResourcesAtRunStart(OrchestratorMain orchestrator) {
         resourceRecord = [
                 "namespaces": orchestrator.getNamespaces(),
                 "deployments": orchestrator.getDeployments("default") +
@@ -259,28 +269,40 @@ class BaseSpecification extends Specification {
         ]
     }
 
-    def resetAuth() {
+    // useDesiredServiceAuth() - configure the central gRPC connection auth as
+    // desired for test.
+    def useDesiredServiceAuth() {
         BaseService.setUseClientCert(false)
-        if (allAccessToken) {
-            BaseService.useApiToken(allAccessToken)
-        } else {
-            BaseService.useBasicAuth()
-        }
+        useTokenServiceAuth()
+    }
+
+    // useTokenServiceAuth() - configure the central gRPC connection auth to
+    // use an all access token.
+    def useTokenServiceAuth() {
+        assert allAccessToken
+        BaseService.useApiToken(allAccessToken)
     }
 
     def setup() {
         log.info("Starting testcase")
 
-        //Always make sure to revert back to the allAccessToken before each test
-        resetAuth()
+        // Make sure to use or revert back to the desired central gRPC auth
+        // before each test.
+        useDesiredServiceAuth()
 
-        if (ClusterService.isEKS() && System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+        if (ClusterService.isEKS()) {
             // Avoid EKS k8s client time out which occurs at approx. 15 minutes.
-            orchestrator = OrchestratorType.create(
-                    Env.mustGetOrchestratorType(),
-                    Constants.ORCHESTRATOR_NAMESPACE
-            )
-            orchestratorCreateTime = System.currentTimeSeconds()
+            synchronized(orchestrator) {
+                // synchronized() because orchestrator would be shared amongst
+                // concurrent feature threads.
+                if (System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+                    orchestrator = OrchestratorType.create(
+                            Env.mustGetOrchestratorType(),
+                            Constants.ORCHESTRATOR_NAMESPACE
+                    )
+                    orchestratorCreateTime = System.currentTimeSeconds()
+                }
+            }
         }
     }
 
@@ -289,14 +311,9 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        // https://issues.redhat.com/browse/ROX-9950 -- fails on OSD-on-AWS
-        if (orchestrator.isGKE()) {
-            compareResourcesAtSpecEnd()
-        }
     }
 
-    def compareResourcesAtSpecEnd() {
+    private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
         Javers javers = JaversBuilder.javers()
                 .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                 .build()
@@ -304,8 +321,8 @@ class BaseSpecification extends Specification {
         List<String> namespaces = orchestrator.getNamespaces()
         Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
-            log.info "There is a difference in namespaces between the start and end of this test spec:"
-            log.info diff.prettyPrint()
+            LOG.info "There is a difference in namespaces between the start and end of this test run:"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
                     "in a test spec is deleted in that test spec.")
         }
@@ -314,8 +331,8 @@ class BaseSpecification extends Specification {
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
         diff = javers.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
-            log.info "There is a difference in deployments between the start and end of this test spec"
-            log.info diff.prettyPrint()
+            LOG.info "There is a difference in deployments between the start and end of this test run"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
                     "in a test spec are destroyed in that test spec.")
         }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/audit"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCVEScoping(t *testing.T) {

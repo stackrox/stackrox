@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
@@ -12,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestReportConfigurationServicePostgres(t *testing.T) {

@@ -31,11 +31,11 @@ const (
 	// serviceOperatorCAPath points to the secret of the service account, which within an OpenShift environment
 	// also has the service-ca.crt, which includes the CA to verify certificates issued by the service-ca operator.
 	// This could be i.e. the default ingress controller certificate.
-	serviceOperatorCAPath = "/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 	// internalServicesCAPath points to the secret of the service account, which includes the internal CAs to
 	// verify internal cluster services.
 	// This could be i.e. the openshiftAPIUrl or other internal services.
-	internalServicesCAPath = "/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	internalServicesCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 	// injectedCAPath points to the bundle of user-provided and system CA certificates
 	// merged by the Cluster Network Operator.
 	injectedCAPath = "/etc/pki/injected-ca-trust/tls-ca-bundle.pem"

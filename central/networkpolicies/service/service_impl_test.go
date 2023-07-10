@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -31,6 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const fakeClusterID = "FAKECLUSTERID"

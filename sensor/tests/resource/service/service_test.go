@@ -374,7 +374,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	// Adding retries on creation helped a lot, but it's still not enough.
 	s.testContext.RunTest(
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment, nil)
+			deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
 			require.NoError(t, err)
 
@@ -389,7 +389,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 			}
 			setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
 
-			deleteService, err := testC.ApplyResourceNoObject(context.Background(), helper.DefaultNamespace, nginxServiceNodePort,
+			deleteService, err := testC.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, nginxServiceNodePort,
 				func(err error, obj k8s.Object) error {
 					// Only checking services
 					if _, ok := obj.(*v1.Service); !ok {

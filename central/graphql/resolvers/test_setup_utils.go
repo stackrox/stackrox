@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
@@ -56,9 +55,10 @@ import (
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 // SetupTestPostgresConn sets up postgres testDB for testing
