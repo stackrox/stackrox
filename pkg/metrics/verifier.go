@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/tlscheck"
 )
 
 type clientCertVerifier struct {
@@ -19,7 +19,7 @@ func (v *clientCertVerifier) VerifyPeerCertificate(leaf *x509.Certificate, chain
 		verifyErrs.AddError(errox.NotAuthorized.CausedByf("expected Subject.CN=%q, got %q", v.subjectCN, leaf.Subject.CommonName))
 	}
 
-	intermediates := clientconn.NewCertPool(chainRest...)
+	intermediates := tlscheck.NewCertPool(chainRest...)
 	clientVerifyOpts := x509.VerifyOptions{
 		Intermediates: intermediates,
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},

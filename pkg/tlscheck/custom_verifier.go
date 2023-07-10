@@ -1,4 +1,4 @@
-package clientconn
+package tlscheck
 
 import (
 	"crypto/tls"
@@ -40,3 +40,4 @@ func VerifyPeerCertFunc(conf *tls.Config, verifier TLSCertVerifier) func([][]byt
 		return verifier.VerifyPeerCertificate(certs[0], certs[1:], conf)
 	}
 }
+
