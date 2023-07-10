@@ -112,8 +112,7 @@ func (c *Client) GetPing(ctx context.Context) (*v1.PongMessage, error) {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	var pong v1.PongMessage
-	err = jsonutil.JSONReaderToProto(resp.Body, &pong)
-	if err != nil {
+	if err := jsonutil.JSONReaderToProto(resp.Body, &pong); err != nil {
 		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", pingRoute, resp.StatusCode)
 	}
 
@@ -244,7 +243,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "creating request for %s", route)
+		return nil, nil, errors.Wrapf(err, "creating request for %s", u.String())
 	}
 
 	req.Header.Set("User-Agent", clientconn.GetUserAgent())
@@ -265,7 +264,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 		if err != nil {
 			return nil, peerCertificates, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
 		}
-		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, route, resp.Status, body)
+		return nil, peerCertificates, errors.Errorf("HTTP request %s with code '%s', body: %s", u.String(), resp.Status, body)
 	}
 	return resp, peerCertificates, nil
 }

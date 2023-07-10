@@ -36,9 +36,9 @@ var (
 			"/v1.MetadataService/GetDatabaseBackupStatus",
 			"/v1.MetadataService/GetCentralCapabilities",
 		},
-		// When this endpoint was public, Sensor has been relying on it to check
-		// Central's availability. While Sensor might not do so today, we need
-		// to ensure backward compatibility with older Sensors.
+		// When this endpoint was public, Sensor relied on it to check Central's
+		// availability. While Sensor might not do so today, we need to ensure
+		// backward compatibility with older Sensors.
 		or.SensorOrAuthorizer(user.With()): {
 			"/v1.MetadataService/GetMetadata",
 		},
