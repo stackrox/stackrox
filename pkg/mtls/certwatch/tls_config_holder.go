@@ -15,8 +15,9 @@ var (
 
 // TLSConfigHolder holds a pointer to the tls.Config instance and provides an ability to update it in runtime.
 type TLSConfigHolder struct {
-	rootTLSConfig           *tls.Config
-	fallbackClientAuthNoCAs tls.ClientAuthType
+	rootTLSConfig *tls.Config
+	// fallbackClientAuth overrides rootTLSConfig.ClientAuth if clientCASources is empty.
+	fallbackClientAuth tls.ClientAuthType
 
 	serverCertSources []*[]tls.Certificate
 	clientCASources   []*[]*x509.Certificate
@@ -25,10 +26,10 @@ type TLSConfigHolder struct {
 }
 
 // NewTLSConfigHolder instantiates a new instance of TLSConfigHolder
-func NewTLSConfigHolder(rootCfg *tls.Config, fallbackClientAuthNoCAs tls.ClientAuthType) *TLSConfigHolder {
+func NewTLSConfigHolder(rootCfg *tls.Config, fallbackClientAuth tls.ClientAuthType) *TLSConfigHolder {
 	return &TLSConfigHolder{
-		rootTLSConfig:           rootCfg,
-		fallbackClientAuthNoCAs: fallbackClientAuthNoCAs,
+		rootTLSConfig:      rootCfg,
+		fallbackClientAuth: fallbackClientAuth,
 	}
 }
 
@@ -52,7 +53,7 @@ func (c *TLSConfigHolder) UpdateTLSConfig() {
 	if hasClientCAs {
 		newTLSConfig.ClientCAs = clientCAs
 	} else {
-		newTLSConfig.ClientAuth = c.fallbackClientAuthNoCAs
+		newTLSConfig.ClientAuth = c.fallbackClientAuth
 	}
 
 	atomic.StorePointer(&c.liveTLSConfig, (unsafe.Pointer)(newTLSConfig))
