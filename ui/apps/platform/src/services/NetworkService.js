@@ -276,9 +276,7 @@ export function fetchNetworkPoliciesInNamespace(clusterId, namespaceId) {
         method: 'GET',
         url: `${networkPoliciesBaseUrl}?cluster_id=${clusterId}&namespace=${namespaceId}`,
     };
-    return axios(options).then((response) => ({
-        response: response.data,
-    }));
+    return axios(options).then((response) => response.data.networkPolicies);
 }
 
 /**

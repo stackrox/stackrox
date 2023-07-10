@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { Card, CardBody, DescriptionList, Divider, Flex, FlexItem } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { Deployment } from 'types/deployment.proto';
 import ContainerVolumes from './ContainerVolumes';
 import ContainerSecrets from './ContainerSecrets';
 import ContainerResources from './ContainerResources';
@@ -74,11 +75,15 @@ function ContainerConfiguration({ container }): ReactElement {
     );
 }
 
-function ContainerConfigurations({ deployment }): ReactElement {
+export type ContainerConfigurationsProps = {
+    deployment: Deployment | null;
+};
+
+function ContainerConfigurations({ deployment }: ContainerConfigurationsProps): ReactElement {
     return (
         <Card isFlat>
             <CardBody>
-                {deployment?.containers?.length > 0
+                {deployment && deployment.containers.length > 0
                     ? deployment.containers.map((container, idx) => (
                           // eslint-disable-next-line react/no-array-index-key
                           <ContainerConfiguration container={container} key={idx} />
