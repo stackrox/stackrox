@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromHashes(ctx context.Context, tx *postgres.Tx, objs ..
 	var deletes []string
 
 	copyCols := []string{
-
 		"clusterid",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromHashes(ctx context.Context, tx *postgres.Tx, objs ..
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetClusterId(),
-
 			serialized,
 		})
 

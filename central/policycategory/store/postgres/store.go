@@ -127,11 +127,8 @@ func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx *postgres.T
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"serialized",
 	}
 
@@ -147,11 +144,8 @@ func (s *storeImpl) copyFromPolicyCategories(ctx context.Context, tx *postgres.T
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			serialized,
 		})
 

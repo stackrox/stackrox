@@ -134,27 +134,16 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx *postgres.Tx, objs
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"cvebaseinfo_cve",
-
 		"cvebaseinfo_publishedon",
-
 		"cvebaseinfo_createdat",
-
 		"operatingsystem",
-
 		"cvss",
-
 		"severity",
-
 		"impactscore",
-
 		"snoozed",
-
 		"snoozeexpiry",
-
 		"serialized",
 	}
 
@@ -170,27 +159,16 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx *postgres.Tx, objs
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetCveBaseInfo().GetCve(),
-
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-
 			obj.GetOperatingSystem(),
-
 			obj.GetCvss(),
-
 			obj.GetSeverity(),
-
 			obj.GetImpactScore(),
-
 			obj.GetSnoozed(),
-
 			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
-
 			serialized,
 		})
 

@@ -131,21 +131,13 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx *postgres.Tx,
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"version",
-
 		"priority",
-
 		"riskscore",
-
 		"topcvss",
-
 		"operatingsystem",
-
 		"serialized",
 	}
 
@@ -161,21 +153,13 @@ func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx *postgres.Tx,
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			obj.GetVersion(),
-
 			obj.GetPriority(),
-
 			obj.GetRiskScore(),
-
 			obj.GetTopCvss(),
-
 			obj.GetOperatingSystem(),
-
 			serialized,
 		})
 

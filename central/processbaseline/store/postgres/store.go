@@ -130,15 +130,10 @@ func (s *storeImpl) copyFromProcessBaselines(ctx context.Context, tx *postgres.T
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"key_deploymentid",
-
 		"key_clusterid",
-
 		"key_namespace",
-
 		"serialized",
 	}
 
@@ -154,15 +149,10 @@ func (s *storeImpl) copyFromProcessBaselines(ctx context.Context, tx *postgres.T
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			pgutils.NilOrUUID(obj.GetKey().GetDeploymentId()),
-
 			pgutils.NilOrUUID(obj.GetKey().GetClusterId()),
-
 			obj.GetKey().GetNamespace(),
-
 			serialized,
 		})
 

@@ -127,13 +127,9 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx *postgres.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"parentid",
-
 		"val",
-
 		"serialized",
 	}
 
@@ -149,13 +145,9 @@ func (s *storeImpl) copyFromTestParent2(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetParentId(),
-
 			obj.GetVal(),
-
 			serialized,
 		})
 

@@ -152,13 +152,9 @@ func (s *storeImpl) copyFromTestParent1(ctx context.Context, tx *postgres.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"parentid",
-
 		"val",
-
 		"serialized",
 	}
 
@@ -174,13 +170,9 @@ func (s *storeImpl) copyFromTestParent1(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetParentId(),
-
 			obj.GetVal(),
-
 			serialized,
 		})
 
@@ -227,11 +219,8 @@ func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgr
 	var err error
 
 	copyCols := []string{
-
 		"test_parent1_id",
-
 		"idx",
-
 		"childid",
 	}
 
@@ -242,11 +231,8 @@ func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgr
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			testParent1ID,
-
 			idx,
-
 			obj.GetChildId(),
 		})
 

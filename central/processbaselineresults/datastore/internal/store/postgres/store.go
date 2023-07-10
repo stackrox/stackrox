@@ -129,13 +129,9 @@ func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx *post
 	var deletes []string
 
 	copyCols := []string{
-
 		"deploymentid",
-
 		"clusterid",
-
 		"namespace",
-
 		"serialized",
 	}
 
@@ -151,13 +147,9 @@ func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx *post
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetNamespace(),
-
 			serialized,
 		})
 

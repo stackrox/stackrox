@@ -132,23 +132,14 @@ func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx,
 	var deletes []string
 
 	copyCols := []string{
-
 		"reportid",
-
 		"reportconfigid",
-
 		"requester_name",
-
 		"reportstatus_runstate",
-
 		"reportstatus_queuedat",
-
 		"reportstatus_completedat",
-
 		"reportstatus_reportrequesttype",
-
 		"reportstatus_reportnotificationmethod",
-
 		"serialized",
 	}
 
@@ -164,23 +155,14 @@ func (s *storeImpl) copyFromReportMetadata(ctx context.Context, tx *postgres.Tx,
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetReportId()),
-
 			obj.GetReportConfigId(),
-
 			obj.GetRequester().GetName(),
-
 			obj.GetReportStatus().GetRunState(),
-
 			pgutils.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
-
 			pgutils.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
-
 			obj.GetReportStatus().GetReportRequestType(),
-
 			obj.GetReportStatus().GetReportNotificationMethod(),
-
 			serialized,
 		})
 

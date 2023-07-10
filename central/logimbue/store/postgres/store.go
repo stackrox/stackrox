@@ -125,9 +125,7 @@ func (s *storeImpl) copyFromLogImbues(ctx context.Context, tx *postgres.Tx, objs
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"serialized",
 	}
 
@@ -143,9 +141,7 @@ func (s *storeImpl) copyFromLogImbues(ctx context.Context, tx *postgres.Tx, objs
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			serialized,
 		})
 

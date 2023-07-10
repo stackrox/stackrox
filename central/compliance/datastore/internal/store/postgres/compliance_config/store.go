@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromComplianceConfigs(ctx context.Context, tx *postgres.
 	var deletes []string
 
 	copyCols := []string{
-
 		"standardid",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromComplianceConfigs(ctx context.Context, tx *postgres.
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetStandardId(),
-
 			serialized,
 		})
 

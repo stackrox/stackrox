@@ -134,23 +134,14 @@ func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx *postgres.Tx, objs 
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"namespace",
-
 		"clusterid",
-
 		"clustername",
-
 		"clusterrole",
-
 		"labels",
-
 		"annotations",
-
 		"serialized",
 	}
 
@@ -166,23 +157,14 @@ func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx *postgres.Tx, objs 
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetClusterRole(),
-
 			obj.GetLabels(),
-
 			obj.GetAnnotations(),
-
 			serialized,
 		})
 

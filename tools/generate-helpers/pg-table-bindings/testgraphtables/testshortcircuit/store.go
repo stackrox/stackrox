@@ -127,13 +127,9 @@ func (s *storeImpl) copyFromTestShortCircuits(ctx context.Context, tx *postgres.
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"childid",
-
 		"g2grandchildid",
-
 		"serialized",
 	}
 
@@ -149,13 +145,9 @@ func (s *storeImpl) copyFromTestShortCircuits(ctx context.Context, tx *postgres.
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetChildId(),
-
 			obj.GetG2GrandchildId(),
-
 			serialized,
 		})
 

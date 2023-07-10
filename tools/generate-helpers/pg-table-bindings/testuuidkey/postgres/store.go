@@ -136,29 +136,17 @@ func (s *storeImpl) copyFromTestSingleUUIDKeyStructs(ctx context.Context, tx *po
 	var deletes []string
 
 	copyCols := []string{
-
 		"key",
-
 		"name",
-
 		"stringslice",
-
 		"bool",
-
 		"uint64",
-
 		"int64",
-
 		"float",
-
 		"labels",
-
 		"timestamp",
-
 		"enum",
-
 		"enums",
-
 		"serialized",
 	}
 
@@ -174,29 +162,17 @@ func (s *storeImpl) copyFromTestSingleUUIDKeyStructs(ctx context.Context, tx *po
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetKey()),
-
 			obj.GetName(),
-
 			obj.GetStringSlice(),
-
 			obj.GetBool(),
-
 			obj.GetUint64(),
-
 			obj.GetInt64(),
-
 			obj.GetFloat(),
-
 			obj.GetLabels(),
-
 			pgutils.NilOrTime(obj.GetTimestamp()),
-
 			obj.GetEnum(),
-
 			obj.GetEnums(),
-
 			serialized,
 		})
 

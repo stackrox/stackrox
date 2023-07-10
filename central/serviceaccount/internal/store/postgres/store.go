@@ -133,21 +133,13 @@ func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx *postgres.Tx
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"namespace",
-
 		"clustername",
-
 		"clusterid",
-
 		"labels",
-
 		"annotations",
-
 		"serialized",
 	}
 
@@ -163,21 +155,13 @@ func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx *postgres.Tx
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			obj.GetNamespace(),
-
 			obj.GetClusterName(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetLabels(),
-
 			obj.GetAnnotations(),
-
 			serialized,
 		})
 

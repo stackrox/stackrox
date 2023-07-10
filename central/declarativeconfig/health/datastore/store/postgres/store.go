@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromDeclarativeConfigHealths(ctx context.Context, tx *po
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromDeclarativeConfigHealths(ctx context.Context, tx *po
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			serialized,
 		})
 
