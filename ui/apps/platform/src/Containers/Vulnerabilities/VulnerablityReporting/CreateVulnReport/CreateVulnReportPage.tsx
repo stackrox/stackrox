@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -8,6 +9,11 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Wizard,
+    Alert,
+    AlertVariant,
+    Button,
+    WizardFooter,
+    WizardContextConsumer,
 } from '@patternfly/react-core';
 
 import { vulnerabilityReportsPath } from 'routePaths';
@@ -17,13 +23,56 @@ import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm';
 import ReportReviewForm from '../forms/ReportReviewForm';
+import useCreateReport from '../api/useCreateReport';
+
+const wizardSteps = [
+    'Configure report parameters',
+    'Configure delivery destinations (Optional)',
+    'Review and create',
+];
 
 function VulnReportsPage() {
-    const { formValues, setFormValues } = useReportFormValues();
+    const alertRef = React.useRef<HTMLInputElement>(null);
+    const history = useHistory();
+
+    const { formValues, setFormFieldValue, clearFormValues } = useReportFormValues();
+    const { data, isLoading, error, createReport } = useCreateReport();
+
+    // When report is created, navigate to the vuln reports page
+    useEffect(() => {
+        if (data) {
+            clearFormValues();
+            history.push(vulnerabilityReportsPath);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
+
+    // When an error occurs, scroll the message into view
+    useEffect(() => {
+        if (error && alertRef.current) {
+            alertRef.current?.scrollIntoView({
+                behavior: 'smooth',
+            });
+        }
+    }, [error]);
+
+    function onSave() {
+        createReport(formValues);
+    }
 
     return (
         <>
             <PageTitle title="Create vulnerability report" />
+            {error && (
+                <div ref={alertRef}>
+                    <Alert
+                        isInline
+                        variant={AlertVariant.danger}
+                        title={error}
+                        className="pf-u-mb-sm"
+                    />
+                </div>
+            )}
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
@@ -51,24 +100,66 @@ function VulnReportsPage() {
                     navAriaLabel="Report creation steps"
                     // @TODO: Make the mainAriaLabel dynamic based on whether you're creating, editing, or cloning
                     mainAriaLabel="Report creation content"
+                    hasNoBodyPadding
                     steps={[
                         {
-                            name: 'Configure report parameters',
+                            name: wizardSteps[0],
                             component: (
                                 <ReportParametersForm
                                     formValues={formValues}
-                                    setFormValues={setFormValues}
+                                    setFormFieldValue={setFormFieldValue}
                                 />
                             ),
                         },
-                        { name: 'Configure delivery destinations (Optional)', component: <p /> },
+                        { name: wizardSteps[1], component: <p /> },
                         {
-                            name: 'Review and create',
+                            name: wizardSteps[2],
                             component: <ReportReviewForm formValues={formValues} />,
                             nextButtonText: 'Create',
                         },
                     ]}
-                    hasNoBodyPadding
+                    onSave={onSave}
+                    footer={
+                        <WizardFooter>
+                            <WizardContextConsumer>
+                                {({ activeStep, onNext, onBack, onClose }) => {
+                                    const lastStep = wizardSteps[wizardSteps.length - 1];
+                                    return (
+                                        <>
+                                            {activeStep.name !== lastStep ? (
+                                                <Button
+                                                    variant="primary"
+                                                    type="submit"
+                                                    onClick={onNext}
+                                                >
+                                                    Next
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="primary"
+                                                    type="submit"
+                                                    onClick={onSave}
+                                                    isLoading={isLoading}
+                                                >
+                                                    Create
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="secondary"
+                                                onClick={onBack}
+                                                isDisabled={activeStep.name !== lastStep}
+                                            >
+                                                Back
+                                            </Button>
+                                            <Button variant="link" onClick={onClose}>
+                                                Cancel
+                                            </Button>
+                                        </>
+                                    );
+                                }}
+                            </WizardContextConsumer>
+                        </WizardFooter>
+                    }
                 />
             </PageSection>
         </>
