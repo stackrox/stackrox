@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -520,6 +521,13 @@ func (c *TestContext) DeploymentActionReceived(name string, expectedAction centr
 		}
 		return nil
 	}, fmt.Sprintf("Deployment %s should be received with action %s", name, expectedAction))
+}
+
+// DeploymentNotReceived checks that a deployment event for deployment with name should not have been received by fake central.
+func (c *TestContext) DeploymentNotReceived(name string) {
+	messages := c.GetFakeCentral().GetAllMessages()
+	lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
+	assert.Nilf(c.t, lastDeploymentUpdate, "should not have found deployment with name %s: %+v", name, lastDeploymentUpdate)
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
