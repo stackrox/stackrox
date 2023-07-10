@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/tlscheck"
 )
@@ -14,9 +14,10 @@ type clientCertVerifier struct {
 }
 
 func (v *clientCertVerifier) VerifyPeerCertificate(leaf *x509.Certificate, chainRest []*x509.Certificate, tlsConfig *tls.Config) error {
-	verifyErrs := errorhelpers.NewErrorList("verifying certificate")
+	var verifyErr error
 	if leaf.Subject.CommonName != v.subjectCN {
-		verifyErrs.AddError(errox.NotAuthorized.CausedByf("expected Subject.CN=%q, got %q", v.subjectCN, leaf.Subject.CommonName))
+		noAuthErr := errox.NotAuthorized.CausedByf("expected Subject.CN=%q, got %q", v.subjectCN, leaf.Subject.CommonName)
+		verifyErr = multierror.Append(verifyErr, noAuthErr)
 	}
 
 	intermediates := tlscheck.NewCertPool(chainRest...)
@@ -27,8 +28,8 @@ func (v *clientCertVerifier) VerifyPeerCertificate(leaf *x509.Certificate, chain
 	}
 	_, clientVerifyErr := leaf.Verify(clientVerifyOpts)
 	if clientVerifyErr != nil {
-		verifyErrs.AddError(errox.NotAuthorized.CausedBy(clientVerifyErr))
+		verifyErr = multierror.Append(verifyErr, errox.NotAuthorized.CausedBy(clientVerifyErr))
 	}
 
-	return verifyErrs.ToError()
+	return verifyErr
 }

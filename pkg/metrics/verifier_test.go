@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,6 +62,7 @@ func TestClientCertVerifier(t *testing.T) {
 
 			if c.isError {
 				assert.Error(t, err)
+				assert.ErrorIs(t, err, errox.NotAuthorized)
 			} else {
 				assert.NoError(t, err)
 			}
