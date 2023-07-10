@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"fmt"
-	"math/rand"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -34,8 +33,4 @@ func GetMultipleK8SRoles(numRoles int) []*storage.K8SRole {
 		clusterRole = !clusterRole
 	}
 	return roles
-}
-
-func randomClusterRole() bool {
-	return rand.Float32() < 0.5
 }

@@ -120,8 +120,11 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
-		AddExactMatches(search.SubjectName, "subject").
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).ProtoQuery()
+		AddLinkedFields(
+			[]search.FieldLabel{search.SubjectName, search.SubjectKind},
+			[]string{
+				search.ExactMatchString("subject"),
+				search.ExactMatchString(storage.SubjectKind_SERVICE_ACCOUNT.String())}).ProtoQuery()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -150,8 +153,8 @@ func BenchmarkGetBindingsAndRoles(b *testing.B) {
 	bindingStore, err := roleBindingDS.GetTestPostgresDataStore(b, pool)
 	require.NoError(b, err)
 
-	bindings := fixtures.GetMultipleK8sRoleBindings(10000, 10)
 	roles := fixtures.GetMultipleK8SRoles(10000)
+	bindings := fixtures.GetMultipleK8sRoleBindingsWithRole(10000, 10, roles)
 
 	for _, role := range roles {
 		require.NoError(b, roleStore.UpsertRole(ctx, role))
