@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
@@ -11,7 +10,8 @@ import {
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 const entitiesKey = 'cluster-cves';
 
@@ -89,8 +89,6 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
 
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
-
-    // Some tests might fail in local deployment.
 
     it('should display links for clusters', function () {
         if (hasOrchestratorFlavor('openshift')) {

@@ -8,7 +8,9 @@ import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+    visitVulnerabilityManagementEntityInSidePanel,
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 const entitiesKey = 'nodes';
 
@@ -102,5 +104,17 @@ describe('Vulnerability Management Nodes', () => {
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
         });
+    });
+
+    it('should show a message when node scan data is incomplete', () => {
+        const fixturePath = 'nodes/vmNodeOverview.json';
+
+        cy.fixture(fixturePath).then((body) => {
+            const { id } = body.data.result;
+            const staticResponse = { body };
+            visitVulnerabilityManagementEntityInSidePanel(entitiesKey, id, staticResponse);
+        });
+
+        cy.get(selectors.scanDataMessage);
     });
 });

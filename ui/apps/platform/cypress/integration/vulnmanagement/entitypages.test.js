@@ -1,13 +1,13 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
     interactAndWaitForVulnerabilityManagementEntities,
     interactAndWaitForVulnerabilityManagementEntity,
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 describe('Entities single views', () => {
     withAuth();
@@ -28,7 +28,7 @@ describe('Entities single views', () => {
         // Specify td elements for Image CVEs instead of Node CVEs or Platform CVEs.
         interactAndWaitForVulnerabilityManagementSecondaryEntities(
             () => {
-                cy.get(`.rt-td:nth-child(3) ${selectors.fixableCvesLink}:eq(0)`).click();
+                cy.get(`.rt-td:nth-child(3) [data-testid="fixableCvesLink"]:eq(0)`).click();
             },
             entitiesKey1,
             'image-cves'
@@ -38,7 +38,7 @@ describe('Entities single views', () => {
             cy.get(selectors.backButton).click();
         }, entitiesKey1);
 
-        cy.get(`${selectors.deploymentTileLink} ${selectors.tileLinkSuperText}`)
+        cy.get(`${selectors.deploymentTileLink} [data-testid="tileLinkSuperText"]`)
             .invoke('text')
             .then((numDeployments) => {
                 interactAndWaitForVulnerabilityManagementSecondaryEntities(
@@ -75,11 +75,11 @@ describe('Entities single views', () => {
             entitiesKey2
         );
 
-        cy.get(selectors.sidePanelTableBodyRows).then((value) => {
+        cy.get('[data-testid="side-panel"] .rt-tbody .rt-tr').then((value) => {
             const { length: numRows } = value;
             if (numRows) {
                 // TODO positive tests for the numbers are more robust, pardon pun.
-                cy.get(selectors.entityRowHeader)
+                cy.get('[data-testid="side-panel"] [data-testid="panel-header"]')
                     .invoke('text')
                     .then((headerText) => {
                         expect(headerText).not.to.equal('0 deployments');
@@ -125,7 +125,7 @@ describe('Entities single views', () => {
 
                 if (firstPolicyStatus === 'pass') {
                     cy.get(
-                        `${selectors.emptyFindingsSection}:contains("No deployments have failed across this policy")`
+                        '[data-testid="results-message"]:contains("No deployments have failed across this policy")'
                     );
 
                     interactAndWaitForVulnerabilityManagementSecondaryEntities(
@@ -211,7 +211,7 @@ describe('Entities single views', () => {
                     cy.get(`${selectors.tableBodyRows}:eq(0)`).click();
                 }, entitiesKey);
 
-                cy.get(`${selectors.entityOverview} ${selectors.metadataDescription}`)
+                cy.get(`[data-testid="entity-overview"] ${selectors.metadataDescription}`)
                     .invoke('text')
                     .then((descriptionInSidePanel) => {
                         expect(descriptionInSidePanel).to.equal(descriptionInList);
@@ -239,7 +239,7 @@ describe('Entities single views', () => {
         }, entitiesKey);
 
         interactAndWaitForVulnerabilityManagementEntity(() => {
-            cy.get(`${selectors.metadataClusterValue} a`).click();
+            cy.get('[data-testid="Cluster-value"] a').click();
         }, 'clusters');
 
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}`).should('exist');
