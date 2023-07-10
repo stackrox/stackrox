@@ -198,7 +198,8 @@ run_proxy_tests() {
 
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-    local ping_response_http="$(
+    local ping_response_http
+    ping_response_http="$(
         curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
         -f \
         http://"${server_name}":10080/"${ping_endpoint}" | jq -r '.status')"
@@ -207,7 +208,8 @@ run_proxy_tests() {
 
     info "Test HTTPS access to multiplexed TLS proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-    local ping_response_https="$(
+    local ping_response_https
+    ping_response_https="$(
         curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
         --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
         -f \
