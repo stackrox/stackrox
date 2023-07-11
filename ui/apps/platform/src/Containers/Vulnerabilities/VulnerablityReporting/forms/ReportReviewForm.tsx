@@ -80,6 +80,8 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
                         <DescriptionList
                             columnModifier={{
                                 default: '2Col',
+                                md: '2Col',
+                                sm: '1Col',
                             }}
                         >
                             <DescriptionListGroup>
