@@ -2,6 +2,7 @@ package billingmetrics
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	bmstore "github.com/stackrox/rox/central/billing_metrics/store"
@@ -60,7 +61,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetMaximum(ctx context.Context, m *v1.MaximumValueRequest) (*v1.MaximumValueResponse, error) {
 	maximum, ok, err := s.store.Get(ctx, m.Metric)
 	if err != nil || !ok {
-		return nil, err
+		return nil, fmt.Errorf("cannot get maximum value of %s: %w", m.Metric, err)
 	}
 	return &v1.MaximumValueResponse{Metric: maximum.Metric, Value: maximum.Value, Ts: maximum.Ts}, nil
 }
@@ -68,10 +69,16 @@ func (s *serviceImpl) GetMaximum(ctx context.Context, m *v1.MaximumValueRequest)
 // GetMaximumValue returns the publicly available config
 func (s *serviceImpl) PostMaximum(ctx context.Context, m *v1.MaximumValueUpdateRequest) (*v1.Empty, error) {
 	v := &storage.Maximus{Metric: m.Metric, Value: m.Value, Ts: m.Ts}
-	return nil, s.store.Upsert(ctx, v)
+	if err := s.store.Upsert(ctx, v); err != nil {
+		return nil, fmt.Errorf("cannot update maximum value of %s: %w", m.Metric, err)
+	}
+	return nil, nil
 }
 
 // DeleteMaximumValue returns the publicly available config
 func (s *serviceImpl) DeleteMaximum(ctx context.Context, m *v1.MaximumValueRequest) (*v1.Empty, error) {
-	return nil, s.store.Delete(ctx, m.Metric)
+	if err := s.store.Delete(ctx, m.Metric); err != nil {
+		return nil, fmt.Errorf("cannot delete maximum value of %s: %w", m.Metric, err)
+	}
+	return nil, nil
 }
