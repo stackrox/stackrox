@@ -167,10 +167,6 @@
                         "value": "true"
                     },
                     {
-                        "name": "ROX_NETWORK_GRAPH_PATTERNFLY",
-                        "value": "false"
-                    },
-                    {
                         "name": "ROX_PROCESSES_LISTENING_ON_PORT",
                         "value": "false"
                     },
