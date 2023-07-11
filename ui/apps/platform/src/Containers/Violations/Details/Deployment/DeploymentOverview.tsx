@@ -12,6 +12,7 @@ export type DeploymentOverviewProps = {
 };
 
 function DeploymentOverview({ deployment }: DeploymentOverviewProps): ReactElement {
+    const imagePullSecrets = deployment?.imagePullSecrets || [];
     return (
         <DescriptionList isHorizontal>
             <DescriptionListItem term="Deployment ID" desc={deployment.id} />
@@ -37,11 +38,8 @@ function DeploymentOverview({ deployment }: DeploymentOverviewProps): ReactEleme
                 desc={<ObjectDescriptionList data={deployment.annotations} />}
             />
             <DescriptionListItem term="Service account" desc={deployment.serviceAccount} />
-            {deployment.imagePullSecrets.length > 0 && (
-                <DescriptionListItem
-                    term="Image pull secrets"
-                    desc={deployment.imagePullSecrets.join(', ')}
-                />
+            {imagePullSecrets.length > 0 && (
+                <DescriptionListItem term="Image pull secrets" desc={imagePullSecrets.join(', ')} />
             )}
         </DescriptionList>
     );

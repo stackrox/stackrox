@@ -86,10 +86,12 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
     useEffect(() => {
         fetchNetworkPoliciesInNamespace(alertDeployment.clusterId, alertDeployment.namespace).then(
             // TODO Infer type from response once NetworkService.js is typed
-            (policies: NetworkPolicy[]) => setNamespacePolicies(policies),
+            (policies: NetworkPolicy[]) => setNamespacePolicies(policies ?? []),
             () => setNamespacePolicies([])
         );
     }, [alertDeployment.namespace, alertDeployment.clusterId, setNamespacePolicies]);
+
+    const relatedDeploymentPorts = relatedDeployment?.ports || [];
 
     return (
         <Flex
@@ -133,8 +135,8 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                     <FlexItem>
                         <Card isFlat data-testid="port-configuration">
                             <CardBody>
-                                {relatedDeployment && relatedDeployment.ports.length > 0
-                                    ? formatDeploymentPorts(relatedDeployment.ports).map(
+                                {relatedDeploymentPorts.length > 0
+                                    ? formatDeploymentPorts(relatedDeploymentPorts).map(
                                           (port, idx) => (
                                               // eslint-disable-next-line react/no-array-index-key
                                               <ObjectDescriptionList data={port} key={idx} />
