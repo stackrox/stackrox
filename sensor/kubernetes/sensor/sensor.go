@@ -158,7 +158,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, nodeInventoryHandler, complianceMultiplexer)
 	}
 	if features.ComplianceEnhancements.Enabled() {
-		components = append(components, complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0))
+		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0)
+		components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater))
 	}
 
 	if !cfg.localSensor {

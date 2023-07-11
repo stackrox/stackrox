@@ -38,11 +38,10 @@ type expectedInfo struct {
 	version        string
 	namespace      string
 	desired, ready int32
-	errors         []string
+	error          string
 }
 
 func (s *UpdaterTestSuite) SetupSuite() {
-	s.client = fake.NewSimpleClientset()
 	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 
 	if !features.ComplianceEnhancements.Enabled() {
@@ -69,7 +68,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		[]string{"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found"},
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
 }
 
@@ -81,13 +80,13 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		[]string{"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found"},
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
 }
 
 func (s *UpdaterTestSuite) TestNotFound() {
 	actual := s.getInfo(1)
-	s.assertEqual(expectedInfo{errors: []string{"deployment compliance-operator not found"}}, actual)
+	s.assertEqual(expectedInfo{error: "deployment compliance-operator not found"}, actual)
 }
 
 func (s *UpdaterTestSuite) getInfo(times int) *central.ComplianceOperatorInfo {
@@ -159,9 +158,9 @@ func (s *UpdaterTestSuite) createCO(ds *appsV1.Deployment) {
 
 func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.ComplianceOperatorInfo) {
 	expectedVal := &central.ComplianceOperatorInfo{
-		Version:      expected.version,
-		Namespace:    expected.namespace,
-		StatusErrors: expected.errors,
+		Version:     expected.version,
+		Namespace:   expected.namespace,
+		StatusError: expected.error,
 	}
 
 	if expected.desired > 0 {
