@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +12,6 @@ import (
 // searcherImpl provides an intermediary implementation layer for image integration.
 type searcherImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 

@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,12 +17,11 @@ var (
 
 type searcherImpl struct {
 	storage           store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
 
 func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
-	results, err := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
+	results, err := s.formattedSearcher.Search(ctx, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
