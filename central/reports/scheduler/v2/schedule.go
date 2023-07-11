@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/semaphore"
@@ -239,19 +240,16 @@ func (s *scheduler) selectNextRunnableReport() *ReportRequest {
 	s.schedulerLock.Lock()
 	defer s.schedulerLock.Unlock()
 
-	runnableReportIdx := -1
-	for i, reportReq := range s.reportsQueue {
-		if !s.runningReportConfigIDs.Contains(reportReq.ReportConfig.GetId()) {
-			runnableReportIdx = i
-			break
-		}
-	}
-	if runnableReportIdx < 0 {
+	reportIdx := sliceutils.FindMatching(s.reportsQueue, func(req *ReportRequest) bool {
+		return !s.runningReportConfigIDs.Contains(req.ReportConfig.GetId())
+	})
+
+	if reportIdx < 0 {
 		// did not find any reports to run
 		return nil
 	}
-	request := s.reportsQueue[runnableReportIdx]
-	s.reportsQueue = slices.Delete(s.reportsQueue, runnableReportIdx, runnableReportIdx+1)
+	request := s.reportsQueue[reportIdx]
+	s.reportsQueue = slices.Delete(s.reportsQueue, reportIdx, reportIdx+1)
 	s.runningReportConfigIDs.Add(request.ReportConfig.GetId())
 	return request
 }
@@ -296,26 +294,19 @@ func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfigurati
 	s.cronJobsLock.Lock()
 	defer s.cronJobsLock.Unlock()
 
-	cronSpec := ""
-	var err error
-	var entryID cron.EntryID
-	if reportConfig.GetSchedule() != nil {
-		cronSpec, err = schedule.ConvertToCronTab(reportConfig.GetSchedule())
-		if err != nil {
-			return err
-		}
-		entryID, err = s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig))
-		if err != nil {
-			return err
-		}
-	}
-
 	// Remove the old entry if this is an update
 	if oldEntryID, ok := s.reportConfigToEntryIDs[reportConfig.GetId()]; ok {
 		s.cron.Remove(oldEntryID)
 	}
-	// Only add to entries if this is still a scheduled report config
-	if cronSpec != "" {
+	if reportConfig.GetSchedule() != nil {
+		cronSpec, err := schedule.ConvertToCronTab(reportConfig.GetSchedule())
+		if err != nil {
+			return err
+		}
+		entryID, err := s.cron.AddFunc(cronSpec, s.reportClosure(reportConfig))
+		if err != nil {
+			return err
+		}
 		s.reportConfigToEntryIDs[reportConfig.GetId()] = entryID
 	}
 	return nil
