@@ -528,7 +528,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 			}
 		case <-time.After(500 * time.Millisecond):
 			if state == common.SensorComponentEventCentralReachable {
-				s.Fail("CentralC msg didn't arrive within 1 second")
+				s.Fail("CentralC msg didn't arrive within deadline")
 			}
 		}
 
