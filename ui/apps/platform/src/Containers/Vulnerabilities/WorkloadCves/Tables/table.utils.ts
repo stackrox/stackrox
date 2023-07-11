@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
+import sortBy from 'lodash/sortBy';
 import { severityRankings } from 'constants/vulnerabilities';
-import { sortBy } from 'lodash';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { ApiSortOption } from 'types/search';
 
