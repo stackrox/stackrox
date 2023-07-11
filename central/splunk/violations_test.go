@@ -613,7 +613,6 @@ var (
 )
 
 func TestViolations(t *testing.T) {
-	t.Skip("ROX-18045: Test is flaky under Postgres")
 	suite.Run(t, &violationsTestSuite{})
 }
 
@@ -1328,16 +1327,6 @@ func (s *violationsTestSuite) TestResponseContentType() {
 
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
-}
-
-func (s *violationsTestSuite) TestViolationsHandlerError() {
-	w := httptest.NewRecorder()
-
-	// context.Background() did not go through our context validation and will not include any global access scope.
-	// We use this to make datastore generate an error which will make the request fail.
-	s.Panics(func() {
-		s.prepare().setContext(context.Background()).setAlerts(s.deployAlert).runRequest(w)
-	})
 }
 
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {

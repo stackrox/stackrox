@@ -16,6 +16,8 @@ func Mux() http.Handler {
 		http.ServeFile(w, r, "/ui/service-worker.js")
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Frame-Options", "sameorigin")
+		w.Header().Set("Content-Security-Policy", "frame-ancestors 'self'")
 		http.ServeFile(w, r, "/ui/index.html")
 	})
 	return mux

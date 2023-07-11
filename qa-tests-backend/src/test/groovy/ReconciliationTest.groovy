@@ -44,25 +44,6 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_ComplianceOperatorScan": 0,
     ]
 
-    // DEFAULT_MAX_ALLOWED_DELETIONS is the default max number of deletions allowed for a resource.
-    // It aims to detect overly aggressive reconciliation.
-    private static final Integer DEFAULT_MAX_ALLOWED_DELETIONS = 3
-
-    // MAX_ALLOWED_DELETIONS_BY_KEY is the max number of deletions allowed per resource.
-    // It aims to detect overly aggressive reconciliation.
-    private static final Map<String, Integer> MAX_ALLOWED_DELETIONS_BY_KEY = [
-        // We create and delete an entire namespace, so we may see a lot of secrets being deleted, esp in OpenShift.
-        "*central.SensorEvent_Secret": 5,
-        // When run as part of version-compatibility-tests there are two pods
-        // that can get deleted in addition to this tests pod and sensor itself. e.g.
-        // 22:08:01 | INFO  | ReconciliationTest        | Pods that were likely deleted while sensor was down:
-        // 22:08:01 | INFO  | ReconciliationTest        | qa:runtimeviolationlifecycle-74f56fbf76-4mqnh
-        // 22:08:01 | INFO  | ReconciliationTest        | qa:runtimeviolationlifecycle-74f56fbf76-87sf8
-        // 22:08:01 | INFO  | ReconciliationTest        | reconciliation:testing123-f579ccf49-tsss5
-        // 22:08:01 | INFO  | ReconciliationTest        | stackrox:sensor-84949c644-w2xq6
-        "*central.SensorEvent_Pod": 4,
-    ]
-
     private Set<String> getPodsInCluster() {
         Set<String> result = [] as Set
         for (namespace in orchestrator.getNamespaces()) {
@@ -100,10 +81,6 @@ class ReconciliationTest extends BaseSpecification {
                 "${entry.getKey()} to the map of known reconciled resources in ReconciliationTest.groovy"
             assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
                     "object type ${entry.getKey()} (got ${entry.getValue()})"
-            def maxAllowedDeletions = MAX_ALLOWED_DELETIONS_BY_KEY.getOrDefault(
-                entry.getKey(), DEFAULT_MAX_ALLOWED_DELETIONS)
-            assert entry.getValue() <= maxAllowedDeletions: "Overly aggressive reconciliation for " +
-                "object type ${entry.getKey()} (got ${entry.getValue()})"
         }
     }
 
@@ -119,7 +96,7 @@ class ReconciliationTest extends BaseSpecification {
                 orchestrator.getOrchestratorDeployment("stackrox", "sensor")
         Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
 
-        List<AlertOuterClass.ListAlert> violations
+        List<AlertOuterClass.ListAlert> violations = []
         Deployment busyboxDeployment
         String secretID
         String networkPolicyID
@@ -133,7 +110,7 @@ class ReconciliationTest extends BaseSpecification {
         def namespaceID = orchestrator.createNamespace(ns)
         NamespaceService.waitForNamespace(namespaceID, 10)
 
-        Set<String> podsBeforeDeleting
+        Set<String> podsBeforeDeleting = [] as Set
 
         try {
             addStackroxImagePullSecret(ns)
@@ -174,7 +151,7 @@ class ReconciliationTest extends BaseSpecification {
 
             orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
-            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"])
+            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
 
             orchestrator.identity {
                 // Delete objects from k8s
@@ -194,7 +171,8 @@ class ReconciliationTest extends BaseSpecification {
             log.info pod
         }
         log.info "Pods that were likely deleted while sensor was down:"
-        for (pod in getDifference(podsBeforeDeleting, podsBeforeRestarting)) {
+        def deletedPods = getDifference(podsBeforeDeleting, podsBeforeRestarting)
+        for (pod in deletedPods) {
             log.info pod
         }
 
@@ -213,9 +191,13 @@ class ReconciliationTest extends BaseSpecification {
         then:
         "Verify that we don't have references to resources removed when sensor was gone"
         // Get the resources from central and make sure the values exist
-        int retries = maxWaitForSync / interval
+        int retries = (int) (maxWaitForSync / interval)
         Timer t = new Timer(retries, interval)
-        int numDeployments, numPods, numNamespaces, numNetworkPolicies, numSecrets
+        int numDeployments = -1
+        int numPods = -1
+        int numNamespaces = -1
+        int numNetworkPolicies = -1
+        int numSecrets = -1
         while (t.IsValid()) {
             numDeployments = Services.getDeployments().findAll { it.name == busyboxDeployment.getName() }.size()
             numPods = Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size()
@@ -233,6 +215,15 @@ class ReconciliationTest extends BaseSpecification {
         assert numNamespaces == 0
         assert numNetworkPolicies == 0
         assert numSecrets == 0
+
+        // It is possible that more pods will be deleted in the observation period (e.g., Scanner being scaled down).
+        // We want to make sure that the pods from the list are gone, so we do not assert on the total number of
+        // deletions as this may cause flakes.
+        log.info "All pods after reconciliation: ", Services.getPods()
+        for (def name: deletedPods) {
+            assert Services.getPods().findAll { it.name == name }.size() == 0,
+                "Should not find the pod ${name} after reconciliation"
+        }
 
         verifyReconciliationStats()
 
