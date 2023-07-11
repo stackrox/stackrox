@@ -74,13 +74,20 @@ func insertIntoMaximus(ctx context.Context, tx *postgres.Tx, obj *storage.Maximu
 	return nil
 }
 
+func checkScope(ctx context.Context, am storage.Access) error {
+	if !sac.GlobalAccessScopeChecker(ctx).AccessMode(am).
+		Resource(targetResource).IsAllowed() {
+		return sac.ErrResourceAccessDenied
+	}
+	return nil
+}
+
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Maximus) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Maximus")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	if err := checkScope(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
 	}
 
 	// Ignore noneseconds, as DB timestamp is not precise enough.
@@ -108,8 +115,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Maximus) e
 func (s *storeImpl) Get(ctx context.Context, metric string) (*storage.Maximus, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Maximus")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
+	if err := checkScope(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, false, nil
 	}
 
@@ -152,9 +158,8 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 func (s *storeImpl) Delete(ctx context.Context, metric string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Maximus")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
+	if err := checkScope(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return err
 	}
 
 	return pgutils.Retry(func() error {

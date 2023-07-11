@@ -1,39 +1,38 @@
 syntax = "proto3";
 
-option go_package = "v1";
-
-option java_package = "io.stackrox.proto.api.v1";
-
-import "google/protobuf/timestamp.proto";
-
-import "storage/billing_metrics.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message MaximumValueRequest {
-    string metric = 1;
+  string metric = 1;
+}
+
+message MaximumValueUpdateRequest {
+  string metric = 1;
+  int32 value = 2;
+  google.protobuf.Timestamp ts = 3;
 }
 
 message MaximumValueResponse {
-    string metric = 1;
-    int32 value  = 2;
-    google.protobuf.Timestamp ts = 3;
+  string metric = 1;
+  int32 value = 2;
+  google.protobuf.Timestamp ts = 3;
 }
 
 service MaximumValueService {
-    rpc GetMaximum(MaximumValueRequest) returns (MaximumValueResponse) {
-        option (google.api.http) = {
-            get: "/v1/maximum"
-        };
-    }
-    rpc PostMaximum(MaximumValueResponse) returns (MaximumValueResponse) {
-        option (google.api.http) = {
-            post: "/v1/maximum"
-        };
-    }
-    rpc DeleteMaximum(MaximumValueRequest) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/maximum"
-        };
-    }
+  rpc GetMaximum(MaximumValueRequest) returns (MaximumValueResponse) {
+    option (google.api.http) = {get: "/v1/maximum"};
+  }
+  rpc PostMaximum(MaximumValueUpdateRequest) returns (Empty) {
+    option (google.api.http) = {post: "/v1/maximum"};
+  }
+  rpc DeleteMaximum(MaximumValueRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/maximum"};
+  }
 }

@@ -4,10 +4,13 @@
 package v1
 
 import (
+	context "context"
 	fmt "fmt"
 	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
-	_ "github.com/stackrox/rox/generated/storage"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -25,12 +28,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type MaximumValueRequest struct {
-	Metric               string           `protobuf:"bytes,1,opt,name=metric,proto3" json:"metric,omitempty"`
-	Value                int32            `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
-	Ts                   *types.Timestamp `protobuf:"bytes,3,opt,name=ts,proto3" json:"ts,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	Metric               string   `protobuf:"bytes,1,opt,name=metric,proto3" json:"metric,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MaximumValueRequest) Reset()         { *m = MaximumValueRequest{} }
@@ -73,20 +74,6 @@ func (m *MaximumValueRequest) GetMetric() string {
 	return ""
 }
 
-func (m *MaximumValueRequest) GetValue() int32 {
-	if m != nil {
-		return m.Value
-	}
-	return 0
-}
-
-func (m *MaximumValueRequest) GetTs() *types.Timestamp {
-	if m != nil {
-		return m.Ts
-	}
-	return nil
-}
-
 func (m *MaximumValueRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -97,33 +84,348 @@ func (m *MaximumValueRequest) Clone() *MaximumValueRequest {
 	cloned := new(MaximumValueRequest)
 	*cloned = *m
 
+	return cloned
+}
+
+type MaximumValueUpdateRequest struct {
+	Metric               string           `protobuf:"bytes,1,opt,name=metric,proto3" json:"metric,omitempty"`
+	Value                int32            `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
+	Ts                   *types.Timestamp `protobuf:"bytes,3,opt,name=ts,proto3" json:"ts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
+}
+
+func (m *MaximumValueUpdateRequest) Reset()         { *m = MaximumValueUpdateRequest{} }
+func (m *MaximumValueUpdateRequest) String() string { return proto.CompactTextString(m) }
+func (*MaximumValueUpdateRequest) ProtoMessage()    {}
+func (*MaximumValueUpdateRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3e239058a0eb27dc, []int{1}
+}
+func (m *MaximumValueUpdateRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MaximumValueUpdateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MaximumValueUpdateRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MaximumValueUpdateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MaximumValueUpdateRequest.Merge(m, src)
+}
+func (m *MaximumValueUpdateRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *MaximumValueUpdateRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_MaximumValueUpdateRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MaximumValueUpdateRequest proto.InternalMessageInfo
+
+func (m *MaximumValueUpdateRequest) GetMetric() string {
+	if m != nil {
+		return m.Metric
+	}
+	return ""
+}
+
+func (m *MaximumValueUpdateRequest) GetValue() int32 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
+func (m *MaximumValueUpdateRequest) GetTs() *types.Timestamp {
+	if m != nil {
+		return m.Ts
+	}
+	return nil
+}
+
+func (m *MaximumValueUpdateRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *MaximumValueUpdateRequest) Clone() *MaximumValueUpdateRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(MaximumValueUpdateRequest)
+	*cloned = *m
+
+	cloned.Ts = m.Ts.Clone()
+	return cloned
+}
+
+type MaximumValueResponse struct {
+	Metric               string           `protobuf:"bytes,1,opt,name=metric,proto3" json:"metric,omitempty"`
+	Value                int32            `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
+	Ts                   *types.Timestamp `protobuf:"bytes,3,opt,name=ts,proto3" json:"ts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
+}
+
+func (m *MaximumValueResponse) Reset()         { *m = MaximumValueResponse{} }
+func (m *MaximumValueResponse) String() string { return proto.CompactTextString(m) }
+func (*MaximumValueResponse) ProtoMessage()    {}
+func (*MaximumValueResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3e239058a0eb27dc, []int{2}
+}
+func (m *MaximumValueResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MaximumValueResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MaximumValueResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MaximumValueResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MaximumValueResponse.Merge(m, src)
+}
+func (m *MaximumValueResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MaximumValueResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MaximumValueResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MaximumValueResponse proto.InternalMessageInfo
+
+func (m *MaximumValueResponse) GetMetric() string {
+	if m != nil {
+		return m.Metric
+	}
+	return ""
+}
+
+func (m *MaximumValueResponse) GetValue() int32 {
+	if m != nil {
+		return m.Value
+	}
+	return 0
+}
+
+func (m *MaximumValueResponse) GetTs() *types.Timestamp {
+	if m != nil {
+		return m.Ts
+	}
+	return nil
+}
+
+func (m *MaximumValueResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *MaximumValueResponse) Clone() *MaximumValueResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(MaximumValueResponse)
+	*cloned = *m
+
 	cloned.Ts = m.Ts.Clone()
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*MaximumValueRequest)(nil), "v1.MaximumValueRequest")
+	proto.RegisterType((*MaximumValueUpdateRequest)(nil), "v1.MaximumValueUpdateRequest")
+	proto.RegisterType((*MaximumValueResponse)(nil), "v1.MaximumValueResponse")
 }
 
 func init() { proto.RegisterFile("api/v1/billing_service.proto", fileDescriptor_3e239058a0eb27dc) }
 
 var fileDescriptor_3e239058a0eb27dc = []byte{
-	// 231 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0x8e, 0xc1, 0x4a, 0xc4, 0x30,
-	0x10, 0x86, 0x4d, 0x64, 0x17, 0x8c, 0xb7, 0x2a, 0x52, 0x8a, 0xd6, 0xe2, 0xa9, 0x78, 0x48, 0xa9,
-	0xbe, 0x81, 0x77, 0x2f, 0x45, 0x3c, 0x78, 0x91, 0xb4, 0x8c, 0x65, 0xb0, 0x31, 0x35, 0x33, 0x09,
-	0xfb, 0x28, 0x3e, 0x92, 0x47, 0x1f, 0x41, 0xea, 0x8b, 0x88, 0x1b, 0x77, 0x8f, 0xff, 0x3f, 0xdf,
-	0xfc, 0x7c, 0xea, 0xdc, 0xcc, 0xd8, 0xc4, 0xb6, 0xe9, 0x71, 0x9a, 0xf0, 0x6d, 0x7c, 0x26, 0xf0,
-	0x11, 0x07, 0xd0, 0xb3, 0x77, 0xec, 0x32, 0x19, 0xdb, 0xe2, 0x72, 0x74, 0x6e, 0x9c, 0xa0, 0xd9,
-	0x36, 0x7d, 0x78, 0x69, 0x18, 0x2d, 0x10, 0x1b, 0x3b, 0x27, 0xa8, 0xb8, 0x20, 0x76, 0xde, 0x8c,
-	0xb0, 0xdf, 0xb0, 0xc0, 0x1e, 0x07, 0x4a, 0xe7, 0x2b, 0xa7, 0x4e, 0xee, 0xcd, 0x06, 0x6d, 0xb0,
-	0x8f, 0x66, 0x0a, 0xd0, 0xc1, 0x7b, 0x00, 0xe2, 0xec, 0x4c, 0xad, 0x13, 0x97, 0x8b, 0x4a, 0xd4,
-	0x47, 0xdd, 0x7f, 0xca, 0x4e, 0xd5, 0x2a, 0xfe, 0x71, 0xb9, 0xac, 0x44, 0xbd, 0xea, 0x52, 0xc8,
-	0xae, 0x95, 0x64, 0xca, 0x0f, 0x2b, 0x51, 0x1f, 0xdf, 0x14, 0x3a, 0x19, 0xe9, 0x9d, 0x91, 0x7e,
-	0xd8, 0x19, 0x75, 0x92, 0xe9, 0x4e, 0x7f, 0x2e, 0xa5, 0xf8, 0x5a, 0x4a, 0xf1, 0xbd, 0x94, 0xe2,
-	0xe3, 0xa7, 0x3c, 0x50, 0x39, 0x3a, 0x4d, 0x6c, 0x86, 0x57, 0xef, 0x36, 0xe9, 0x4b, 0x9b, 0x19,
-	0x75, 0x6c, 0x9f, 0x64, 0x6c, 0xfb, 0xf5, 0xb6, 0xb9, 0xfd, 0x0d, 0x00, 0x00, 0xff, 0xff, 0xd1,
-	0xfc, 0xbd, 0x1b, 0x0b, 0x01, 0x00, 0x00,
+	// 361 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x52, 0xc1, 0x4a, 0xf3, 0x40,
+	0x18, 0xfc, 0x37, 0x3f, 0x2d, 0x74, 0x4b, 0x2f, 0xdb, 0xa2, 0x31, 0xd4, 0x58, 0x72, 0x2a, 0x05,
+	0x37, 0xa4, 0xbe, 0x81, 0x28, 0x7a, 0x50, 0x90, 0x58, 0x45, 0xbc, 0xc8, 0xb6, 0xae, 0x65, 0x31,
+	0xc9, 0xae, 0xd9, 0x2f, 0xa1, 0x5e, 0xf5, 0x11, 0xbc, 0xf8, 0x48, 0x1e, 0x05, 0x5f, 0x40, 0xaa,
+	0x0f, 0x22, 0x69, 0x52, 0x69, 0xac, 0xd0, 0x93, 0xc7, 0xf9, 0x66, 0xbe, 0xd9, 0x61, 0xbe, 0xc5,
+	0x6d, 0xa6, 0x84, 0x9b, 0x7a, 0xee, 0x50, 0x04, 0x81, 0x88, 0xc6, 0x57, 0x9a, 0xc7, 0xa9, 0x18,
+	0x71, 0xaa, 0x62, 0x09, 0x92, 0x18, 0xa9, 0x67, 0x91, 0x42, 0xc1, 0x43, 0x05, 0xf7, 0xf9, 0xdc,
+	0x6a, 0x8f, 0xa5, 0x1c, 0x07, 0xdc, 0xcd, 0x28, 0x16, 0x45, 0x12, 0x18, 0x08, 0x19, 0xe9, 0x82,
+	0xdd, 0x2a, 0xd8, 0x19, 0x1a, 0x26, 0x37, 0x2e, 0x88, 0x90, 0x6b, 0x60, 0xa1, 0xca, 0x05, 0xce,
+	0x36, 0x6e, 0x1e, 0xb3, 0x89, 0x08, 0x93, 0xf0, 0x9c, 0x05, 0x09, 0xf7, 0xf9, 0x5d, 0xc2, 0x35,
+	0x90, 0x35, 0x5c, 0x0d, 0x39, 0xc4, 0x62, 0x64, 0xa2, 0x0e, 0xea, 0xd6, 0xfc, 0x02, 0x39, 0x09,
+	0xde, 0x58, 0x94, 0x9f, 0xa9, 0x6b, 0x06, 0xab, 0x96, 0x48, 0x0b, 0x57, 0xd2, 0x4c, 0x6d, 0x1a,
+	0x1d, 0xd4, 0xad, 0xf8, 0x39, 0x20, 0x3d, 0x6c, 0x80, 0x36, 0xff, 0x77, 0x50, 0xb7, 0xde, 0xb7,
+	0x68, 0x9e, 0x93, 0xce, 0x73, 0xd2, 0xc1, 0x3c, 0xa7, 0x6f, 0x80, 0x76, 0x14, 0x6e, 0x95, 0x53,
+	0x6a, 0x25, 0x23, 0xcd, 0xff, 0xee, 0xc5, 0xfe, 0xa3, 0x51, 0x2e, 0xe6, 0x34, 0x3f, 0x06, 0x19,
+	0x60, 0x7c, 0xc0, 0xa1, 0x60, 0xc8, 0x3a, 0x4d, 0x3d, 0xfa, 0x4b, 0x7f, 0x96, 0xb9, 0x4c, 0xe4,
+	0x91, 0x9d, 0xe6, 0xc3, 0xdb, 0xe7, 0x93, 0xd1, 0x20, 0xf5, 0xec, 0x90, 0x61, 0xe1, 0x73, 0x84,
+	0xeb, 0x27, 0x52, 0x7f, 0xdb, 0x6e, 0xfe, 0xdc, 0x2e, 0xf5, 0x6c, 0xd5, 0x32, 0x7a, 0x3f, 0xfb,
+	0x03, 0x73, 0x37, 0xa7, 0xe4, 0x76, 0x88, 0x1b, 0x7b, 0x3c, 0xe0, 0xc0, 0x57, 0xc6, 0x5c, 0x76,
+	0xea, 0x2d, 0x3a, 0xed, 0xd2, 0x97, 0xa9, 0x8d, 0x5e, 0xa7, 0x36, 0x7a, 0x9f, 0xda, 0xe8, 0xf9,
+	0xc3, 0xfe, 0x87, 0x4d, 0x21, 0xa9, 0x06, 0x36, 0xba, 0x8d, 0xe5, 0x24, 0xef, 0x8e, 0x32, 0x25,
+	0x68, 0xea, 0x5d, 0x1a, 0xa9, 0x77, 0x81, 0x86, 0xd5, 0xd9, 0x6c, 0xe7, 0x2b, 0x00, 0x00, 0xff,
+	0xff, 0xec, 0x3d, 0x74, 0xd4, 0xcd, 0x02, 0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// MaximumValueServiceClient is the client API for MaximumValueService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
+type MaximumValueServiceClient interface {
+	GetMaximum(ctx context.Context, in *MaximumValueRequest, opts ...grpc.CallOption) (*MaximumValueResponse, error)
+	PostMaximum(ctx context.Context, in *MaximumValueUpdateRequest, opts ...grpc.CallOption) (*Empty, error)
+	DeleteMaximum(ctx context.Context, in *MaximumValueRequest, opts ...grpc.CallOption) (*Empty, error)
+}
+
+type maximumValueServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewMaximumValueServiceClient(cc grpc.ClientConnInterface) MaximumValueServiceClient {
+	return &maximumValueServiceClient{cc}
+}
+
+func (c *maximumValueServiceClient) GetMaximum(ctx context.Context, in *MaximumValueRequest, opts ...grpc.CallOption) (*MaximumValueResponse, error) {
+	out := new(MaximumValueResponse)
+	err := c.cc.Invoke(ctx, "/v1.MaximumValueService/GetMaximum", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *maximumValueServiceClient) PostMaximum(ctx context.Context, in *MaximumValueUpdateRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.MaximumValueService/PostMaximum", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *maximumValueServiceClient) DeleteMaximum(ctx context.Context, in *MaximumValueRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.MaximumValueService/DeleteMaximum", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MaximumValueServiceServer is the server API for MaximumValueService service.
+type MaximumValueServiceServer interface {
+	GetMaximum(context.Context, *MaximumValueRequest) (*MaximumValueResponse, error)
+	PostMaximum(context.Context, *MaximumValueUpdateRequest) (*Empty, error)
+	DeleteMaximum(context.Context, *MaximumValueRequest) (*Empty, error)
+}
+
+// UnimplementedMaximumValueServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedMaximumValueServiceServer struct {
+}
+
+func (*UnimplementedMaximumValueServiceServer) GetMaximum(ctx context.Context, req *MaximumValueRequest) (*MaximumValueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMaximum not implemented")
+}
+func (*UnimplementedMaximumValueServiceServer) PostMaximum(ctx context.Context, req *MaximumValueUpdateRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostMaximum not implemented")
+}
+func (*UnimplementedMaximumValueServiceServer) DeleteMaximum(ctx context.Context, req *MaximumValueRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMaximum not implemented")
+}
+
+func RegisterMaximumValueServiceServer(s *grpc.Server, srv MaximumValueServiceServer) {
+	s.RegisterService(&_MaximumValueService_serviceDesc, srv)
+}
+
+func _MaximumValueService_GetMaximum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MaximumValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MaximumValueServiceServer).GetMaximum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.MaximumValueService/GetMaximum",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MaximumValueServiceServer).GetMaximum(ctx, req.(*MaximumValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MaximumValueService_PostMaximum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MaximumValueUpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MaximumValueServiceServer).PostMaximum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.MaximumValueService/PostMaximum",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MaximumValueServiceServer).PostMaximum(ctx, req.(*MaximumValueUpdateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MaximumValueService_DeleteMaximum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MaximumValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MaximumValueServiceServer).DeleteMaximum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.MaximumValueService/DeleteMaximum",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MaximumValueServiceServer).DeleteMaximum(ctx, req.(*MaximumValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _MaximumValueService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.MaximumValueService",
+	HandlerType: (*MaximumValueServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetMaximum",
+			Handler:    _MaximumValueService_GetMaximum_Handler,
+		},
+		{
+			MethodName: "PostMaximum",
+			Handler:    _MaximumValueService_PostMaximum_Handler,
+		},
+		{
+			MethodName: "DeleteMaximum",
+			Handler:    _MaximumValueService_DeleteMaximum_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/billing_service.proto",
 }
 
 func (m *MaximumValueRequest) Marshal() (dAtA []byte, err error) {
@@ -142,6 +444,91 @@ func (m *MaximumValueRequest) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *MaximumValueRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Metric) > 0 {
+		i -= len(m.Metric)
+		copy(dAtA[i:], m.Metric)
+		i = encodeVarintBillingService(dAtA, i, uint64(len(m.Metric)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MaximumValueUpdateRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MaximumValueUpdateRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MaximumValueUpdateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Ts != nil {
+		{
+			size, err := m.Ts.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintBillingService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Value != 0 {
+		i = encodeVarintBillingService(dAtA, i, uint64(m.Value))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Metric) > 0 {
+		i -= len(m.Metric)
+		copy(dAtA[i:], m.Metric)
+		i = encodeVarintBillingService(dAtA, i, uint64(len(m.Metric)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MaximumValueResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MaximumValueResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MaximumValueResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -198,6 +585,45 @@ func (m *MaximumValueRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovBillingService(uint64(l))
 	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MaximumValueUpdateRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Metric)
+	if l > 0 {
+		n += 1 + l + sovBillingService(uint64(l))
+	}
+	if m.Value != 0 {
+		n += 1 + sovBillingService(uint64(m.Value))
+	}
+	if m.Ts != nil {
+		l = m.Ts.Size()
+		n += 1 + l + sovBillingService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *MaximumValueResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Metric)
+	if l > 0 {
+		n += 1 + l + sovBillingService(uint64(l))
+	}
 	if m.Value != 0 {
 		n += 1 + sovBillingService(uint64(m.Value))
 	}
@@ -244,6 +670,227 @@ func (m *MaximumValueRequest) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: MaximumValueRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metric", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBillingService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Metric = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBillingService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MaximumValueUpdateRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBillingService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MaximumValueUpdateRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MaximumValueUpdateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metric", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBillingService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Metric = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			m.Value = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBillingService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Value |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBillingService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Ts == nil {
+				m.Ts = &types.Timestamp{}
+			}
+			if err := m.Ts.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBillingService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthBillingService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MaximumValueResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBillingService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MaximumValueResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MaximumValueResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
