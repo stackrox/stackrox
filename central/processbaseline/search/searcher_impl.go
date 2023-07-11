@@ -23,12 +23,7 @@ type searcherImpl struct {
 }
 
 func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
-	var (
-		results []search.Result
-		err     error
-	)
-	results, err = deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
-
+	results, err := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -53,6 +48,6 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher) // Make the
+	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher)
 	return filteredSearcher
 }
