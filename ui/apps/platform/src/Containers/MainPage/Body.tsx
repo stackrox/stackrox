@@ -115,7 +115,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     const { isDarkMode } = useTheme();
 
-    const isNetworkGraphPatternflyEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_PATTERNFLY');
     const isVulnMgmtWorkloadCvesEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_WORKLOAD_CVES');
     const isVulnerabilityReportingEnhancementsEnabled = isFeatureFlagEnabled(
         'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
@@ -135,9 +134,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
-                    {isNetworkGraphPatternflyEnabled && (
-                        <Route path={networkPath} component={AsyncNetworkGraphPage} />
-                    )}
+                    <Route path={networkPath} component={AsyncNetworkGraphPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
