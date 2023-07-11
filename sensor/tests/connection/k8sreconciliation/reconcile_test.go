@@ -85,8 +85,8 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		//   No event for nginx-deployment-2 (was deleted while connection was down)
 		// This reconciliation state will make Central delete Nginx2, keep Nginx1 and create Nginx3
 		testContext.WaitForSyncEvent(2 * time.Minute)
-		testContext.DeploymentActionReceived(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
-		testContext.DeploymentActionReceived(NginxDeployment3.Name, central.ResourceAction_SYNC_RESOURCE)
+		testContext.FirstDeploymentReceivedWithAction(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
+		testContext.FirstDeploymentReceivedWithAction(NginxDeployment3.Name, central.ResourceAction_SYNC_RESOURCE)
 		testContext.DeploymentNotReceived(NginxDeployment2.Name)
 	}))
 
