@@ -146,7 +146,7 @@ func (suite *DefaultPoliciesTestSuite) addImage(img *storage.Image) *storage.Ima
 func imageWithComponents(components []*storage.EmbeddedImageScanComponent) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
+		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Registry: "docker.io", Remote: "ASFASF"},
 		Scan: &storage.ImageScan{
 			Components: components,
 		},
@@ -156,7 +156,7 @@ func imageWithComponents(components []*storage.EmbeddedImageScanComponent) *stor
 func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
+		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Registry: "docker.io", Remote: "ASFASF"},
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Layers: layers,
@@ -168,10 +168,17 @@ func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
 func imageWithOS(os string) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
+		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Registry: "docker.io", Remote: "ASFASF"},
 		Scan: &storage.ImageScan{
 			OperatingSystem: os,
 		},
+	}
+}
+
+func imageWithNoRegistry() *storage.Image {
+	return &storage.Image{
+		Id:   uuid.NewV4().String(),
+		Name: &storage.ImageName{FullName: "cmd/node-0.13", Registry: "", Remote: "cmd/node-0.13"},
 	}
 }
 
@@ -2056,6 +2063,36 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 			assert.ElementsMatch(t, matched.AsSlice(), c.expectedMatches, "Got %v, expected: %v", matched.AsSlice(), c.expectedMatches)
 		})
 	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestImageRegistry() {
+	depMatcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(
+		fieldnames.ImageRegistry, []string{"^$", "quay.io"}, true, storage.BooleanOperator_OR))
+
+	imgNoReg := imageWithNoRegistry()
+	dep := fixtures.GetDeployment().Clone()
+	dep.Containers = []*storage.Container{
+		{
+			Name:  imgNoReg.GetName().FullName,
+			Image: types.ToContainerImage(imgNoReg),
+		},
+	}
+	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{imgNoReg}))
+	require.NoError(suite.T(), err)
+	require.Len(suite.T(), violations.AlertViolations, 0)
+
+	imgWithOS := imageWithOS("rhel")
+	dep1 := fixtures.GetDeployment().Clone()
+	dep1.Containers = []*storage.Container{
+		{
+			Name:  imgWithOS.GetName().FullName,
+			Image: types.ToContainerImage(imageWithOS("rhel")),
+		},
+	}
+	violations, err = depMatcher.MatchDeployment(nil, enhancedDeployment(dep1, []*storage.Image{imgWithOS}))
+	require.NoError(suite.T(), err)
+	require.Len(suite.T(), violations.AlertViolations, 1)
+
 }
 
 func (suite *DefaultPoliciesTestSuite) TestImageOS() {

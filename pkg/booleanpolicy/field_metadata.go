@@ -380,7 +380,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{})
 
 	f.registerFieldMetadata(fieldnames.ImageRegistry,
-		querybuilders.ForFieldLabelRegex(search.ImageRegistry),
+		querybuilders.ForFieldLabelMultipleValues(search.ImageRegistry),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
@@ -389,7 +389,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{})
 
 	f.registerFieldMetadata(fieldnames.ImageRemote,
-		querybuilders.ForFieldLabelRegex(search.ImageRemote),
+		querybuilders.ForFieldLabelMultipleValues(search.ImageRemote),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex

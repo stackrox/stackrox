@@ -27,7 +27,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 correctly for the specified values.
 - Rollback to a 3.y release or the 4.0 release will no longer be supported starting from 4.3.
 - Rollbacks from future releases to the 4.2 or later release will no longer require `ForceRollbackVersion` to be set.
-
+- ROX-18389: The  implementation of Image Registry and Image Remote policy criteria has been fixed to ensure violations are generated \
+  correctly for the specified values.
 ## [4.1.0]
 
 

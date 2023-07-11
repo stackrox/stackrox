@@ -169,6 +169,18 @@ func ForFieldLabelNil(label search.FieldLabel) QueryBuilder {
 	})
 }
 
+// ForFieldLabelMultipleValues returns the field queries for multiple re
+func ForFieldLabelMultipleValues(label search.FieldLabel) QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{{
+			Field:    label.String(),
+			Values:   mapValues(group, valueToStringRegex),
+			Operator: operatorProtoMap[group.GetBooleanOperator()],
+			Negate:   group.GetNegate(),
+		}}
+	})
+}
+
 func fieldQueryFromGroup(group *storage.PolicyGroup, label search.FieldLabel, mapFunc func(string) string) *query.FieldQuery {
 	return &query.FieldQuery{
 		Field:    label.String(),
