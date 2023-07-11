@@ -32,25 +32,27 @@ func convertProtoReportCollectiontoV2(collection *storage.CollectionSnapshot) *a
 }
 
 // ConvertProtoNotifierSnapshotToV2 converts notifiersnapshot proto to v2
-func ConvertProtoNotifierSnapshotToV2(notifierConfig *storage.NotifierSnapshot) (*apiV2.NotifierConfiguration, error) {
-	if notifierConfig == nil {
-		return nil, nil
+func ConvertProtoNotifierSnapshotToV2(notifierSnapshot *storage.NotifierSnapshot) *apiV2.NotifierSnapshot {
+	if notifierSnapshot == nil {
+		return nil
+	}
+	if notifierSnapshot.GetEmailConfig() == nil {
+		return &apiV2.NotifierSnapshot{}
 	}
 
-	ret := &apiV2.NotifierConfiguration{}
-	if notifierConfig.GetEmailConfig() != nil {
-		emailConfig := &apiV2.EmailNotifierConfiguration{}
+	emailConfig := &apiV2.EmailNotifierConfiguration{}
+	emailConfig.MailingLists = append(emailConfig.MailingLists, notifierSnapshot.GetEmailConfig().GetMailingLists()...)
 
-		emailConfig.MailingLists = append(emailConfig.MailingLists, notifierConfig.GetEmailConfig().GetMailingLists()...)
-
-		ret.NotifierConfig = &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: emailConfig,
-		}
-
-		notifierName := notifierConfig.GetNotifierName()
-		ret.NotifierName = notifierName
+	notifierConfig := &apiV2.NotifierSnapshot_EmailConfig{
+		EmailConfig: emailConfig,
 	}
-	return ret, nil
+
+	notifierName := notifierSnapshot.GetNotifierName()
+
+	return &apiV2.NotifierSnapshot{
+		NotifierName:   notifierName,
+		NotifierConfig: notifierConfig,
+	}
 }
 
 // convertPrototoV2ReportSnapshot converts storage.ReportSnapshot to apiV2.ReportSnapshot
@@ -58,7 +60,7 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 	if snapshots == nil {
 		return nil
 	}
-	res := []*apiV2.ReportSnapshot{}
+	res := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
 	for _, snapshot := range snapshots {
 		snapshotv2 := &apiV2.ReportSnapshot{
 			ReportStatus:       convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
@@ -76,10 +78,7 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 			},
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
-			converted, err := ConvertProtoNotifierSnapshotToV2(notifier)
-			if err != nil {
-				return nil
-			}
+			converted := ConvertProtoNotifierSnapshotToV2(notifier)
 			snapshotv2.Notifiers = append(snapshotv2.Notifiers, converted)
 		}
 		res = append(res, snapshotv2)

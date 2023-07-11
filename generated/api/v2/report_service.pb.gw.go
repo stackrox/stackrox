@@ -142,12 +142,30 @@ func local_request_ReportService_GetLastReportStatusConfigID_0(ctx context.Conte
 }
 
 var (
-	filter_ReportService_GetReportHistory_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_ReportService_GetReportHistory_0 = &utilities.DoubleArray{Encoding: map[string]int{"report_config_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ReportService_GetReportHistory_0(ctx context.Context, marshaler runtime.Marshaler, client ReportServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetReportHistoryRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["report_config_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "report_config_id")
+	}
+
+	protoReq.ReportConfigId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "report_config_id", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -164,6 +182,24 @@ func request_ReportService_GetReportHistory_0(ctx context.Context, marshaler run
 func local_request_ReportService_GetReportHistory_0(ctx context.Context, marshaler runtime.Marshaler, server ReportServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetReportHistoryRequest
 	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["report_config_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "report_config_id")
+	}
+
+	protoReq.ReportConfigId, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "report_config_id", err)
+	}
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
@@ -361,7 +397,7 @@ var (
 
 	pattern_ReportService_GetLastReportStatusConfigID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "last-status", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ReportService_GetReportHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "reports", "history"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_GetReportHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "history", "report_config_id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

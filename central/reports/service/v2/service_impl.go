@@ -96,7 +96,10 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-	parsedQuery, err := search.ParseQuery(req.GetQuery().GetQuery(), search.MatchAllIfEmpty())
+	if req == nil || req.GetReportConfigId() == "" {
+		return nil, errors.New("Empty request or id")
+	}
+	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}

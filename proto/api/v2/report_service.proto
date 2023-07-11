@@ -14,7 +14,7 @@ package v2;
 
 message GetReportHistoryRequest {
     string   report_config_id  = 1;
-    RawQuery query             = 2;
+    RawQuery report_param_query = 2;
 }
 
 message CollectionSnapshot {
@@ -33,8 +33,15 @@ message ReportSnapshot {
     CollectionSnapshot         collection_snapshot        = 6;
     ReportSchedule                   schedule                   = 7;
     ReportStatus               report_status              = 8;
-    repeated NotifierConfiguration notifiers                   = 9;
+    repeated NotifierSnapshot notifiers                   = 9;
     SlimUser                  user                        = 10;
+}
+
+message NotifierSnapshot {
+    oneof notifier_config {
+        EmailNotifierConfiguration email_config = 1;
+    }
+    string notifier_name = 2;
 }
 
 message ReportHistoryResponse {
@@ -85,7 +92,7 @@ service ReportService {
     // GetReportHistory returns the full history for a report configuration with the specified ID.
     rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
         option (google.api.http) = {
-            get: "/v2/reports/history"
+            get: "/v2/reports/history/{report_config_id}"
         };
     }
 
