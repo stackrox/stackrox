@@ -21,7 +21,7 @@ import {
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { getDate } from 'utils/dateUtils';
-import VulnerabilitySeverityIconText from '../components/VulnerabilitySeverityIconText';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { cveStatusLabelMap, cvesDiscoveredSinceLabelMap, imageTypeLabelMap } from '../utils';
 import exampleReportsCSVData from '../exampleReportsCSVData';
 

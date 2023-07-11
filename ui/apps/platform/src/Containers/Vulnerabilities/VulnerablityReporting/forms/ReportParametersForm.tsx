@@ -22,8 +22,8 @@ import usePermissions from 'hooks/usePermissions';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import CollectionSelection from './CollectionSelection';
-import VulnerabilitySeverityIconText from '../components/VulnerabilitySeverityIconText';
 import { cveStatusLabelMap, cvesDiscoveredSinceLabelMap, imageTypeLabelMap } from '../utils';
 
 export type ReportParametersFormParams = {

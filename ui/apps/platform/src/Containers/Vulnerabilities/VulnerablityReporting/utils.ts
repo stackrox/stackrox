@@ -1,14 +1,5 @@
-import { VulnerabilitySeverity } from 'types/cve.proto';
 import { ImageType } from 'types/reportConfigurationService.proto';
 import { CVESDiscoveredSince, CVEStatus } from './forms/useReportFormValues';
-
-export const cveSeverityLabelMap: Record<VulnerabilitySeverity, string> = {
-    UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown',
-    CRITICAL_VULNERABILITY_SEVERITY: 'Critical',
-    IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
-    MODERATE_VULNERABILITY_SEVERITY: 'Moderate',
-    LOW_VULNERABILITY_SEVERITY: 'Low',
-};
 
 export const cveStatusLabelMap: Record<CVEStatus, string> = {
     FIXABLE: 'Fixable',
