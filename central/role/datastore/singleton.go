@@ -5,12 +5,12 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	groupFilter "github.com/stackrox/rox/central/group/datastore/filter"
-	"github.com/stackrox/rox/central/role/resources"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )

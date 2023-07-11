@@ -7,7 +7,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 

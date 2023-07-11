@@ -7,10 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (

@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )

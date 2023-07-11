@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )

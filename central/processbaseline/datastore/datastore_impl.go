@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/store"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 

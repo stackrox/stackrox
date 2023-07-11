@@ -8,11 +8,11 @@ import (
 
 	roleDS "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDS "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

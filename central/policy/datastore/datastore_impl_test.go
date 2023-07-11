@@ -13,12 +13,12 @@ import (
 	storeMocks "github.com/stackrox/rox/central/policy/store/mocks"
 	categoriesMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )

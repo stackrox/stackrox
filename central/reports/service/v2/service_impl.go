@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
