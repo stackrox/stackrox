@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+# Note: Any changes here should be considered for scanner/image/scanner/scripts/restore-all-dir-contents.
+
 [ -d /.init-dirs ] || exit 0
 
 cp -rfP /.init-dirs/* /
