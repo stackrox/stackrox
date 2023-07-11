@@ -28,6 +28,16 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1MaximumValueUpdateRequest"
+            }
+          }
+        ],
         "tags": [
           "MaximumValueService"
         ]
@@ -133,6 +143,22 @@
       "type": "object"
     },
     "v1MaximumValueResponse": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "type": "string"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1MaximumValueUpdateRequest": {
       "type": "object",
       "properties": {
         "metric": {
