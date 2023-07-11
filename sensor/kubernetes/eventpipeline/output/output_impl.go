@@ -57,11 +57,15 @@ func (q *outputQueueImpl) runOutputQueue() {
 			return
 		}
 
-		select {
-		case <-msg.Context.Done():
-			log.Infof("Message from dispatcher %s dropped (context canceled)", msg.DeploymentTiming.GetDispatcher())
-			continue
-		default:
+		if msg.Context != nil {
+			select {
+			case <-msg.Context.Done():
+				log.Infof("Message from dispatcher %s dropped (context canceled)", msg.DeploymentTiming.GetDispatcher())
+				continue
+			default:
+			}
+		} else {
+			log.Warnf("Message has no context: (%+v)", msg)
 		}
 
 		for _, resourceUpdates := range msg.ForwardMessages {
