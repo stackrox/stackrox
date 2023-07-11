@@ -27,12 +27,12 @@ message MaximumValueResponse {
 
 service MaximumValueService {
   rpc GetMaximum(MaximumValueRequest) returns (MaximumValueResponse) {
-    option (google.api.http) = {get: "/v1/maximum"};
+    option (google.api.http) = {get: "/v1/maximum/{metric}"};
   }
   rpc PostMaximum(MaximumValueUpdateRequest) returns (Empty) {
     option (google.api.http) = {post: "/v1/maximum"};
   }
   rpc DeleteMaximum(MaximumValueRequest) returns (Empty) {
-    option (google.api.http) = {delete: "/v1/maximum"};
+    option (google.api.http) = {delete: "/v1/maximum/{metric}"};
   }
 }

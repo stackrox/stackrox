@@ -12,6 +12,28 @@
   ],
   "paths": {
     "/v1/maximum": {
+      "post": {
+        "operationId": "MaximumValueService_PostMaximum",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "MaximumValueService"
+        ]
+      }
+    },
+    "/v1/maximum/{metric}": {
       "get": {
         "operationId": "MaximumValueService_GetMaximum",
         "responses": {
@@ -31,8 +53,8 @@
         "parameters": [
           {
             "name": "metric",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
@@ -59,31 +81,11 @@
         "parameters": [
           {
             "name": "metric",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],
-        "tags": [
-          "MaximumValueService"
-        ]
-      },
-      "post": {
-        "operationId": "MaximumValueService_PostMaximum",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
         "tags": [
           "MaximumValueService"
         ]

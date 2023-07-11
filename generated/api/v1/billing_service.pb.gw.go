@@ -33,19 +33,26 @@ var _ = utilities.NewDoubleArray
 var _ = descriptor.ForMessage
 var _ = metadata.Join
 
-var (
-	filter_MaximumValueService_GetMaximum_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_MaximumValueService_GetMaximum_0(ctx context.Context, marshaler runtime.Marshaler, client MaximumValueServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MaximumValueRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["metric"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "metric")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_MaximumValueService_GetMaximum_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Metric, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "metric", err)
 	}
 
 	msg, err := client.GetMaximum(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -57,11 +64,22 @@ func local_request_MaximumValueService_GetMaximum_0(ctx context.Context, marshal
 	var protoReq MaximumValueRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["metric"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "metric")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_MaximumValueService_GetMaximum_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Metric, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "metric", err)
 	}
 
 	msg, err := server.GetMaximum(ctx, &protoReq)
@@ -105,19 +123,26 @@ func local_request_MaximumValueService_PostMaximum_0(ctx context.Context, marsha
 
 }
 
-var (
-	filter_MaximumValueService_DeleteMaximum_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
 func request_MaximumValueService_DeleteMaximum_0(ctx context.Context, marshaler runtime.Marshaler, client MaximumValueServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq MaximumValueRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["metric"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "metric")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_MaximumValueService_DeleteMaximum_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Metric, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "metric", err)
 	}
 
 	msg, err := client.DeleteMaximum(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -129,11 +154,22 @@ func local_request_MaximumValueService_DeleteMaximum_0(ctx context.Context, mars
 	var protoReq MaximumValueRequest
 	var metadata runtime.ServerMetadata
 
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["metric"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "metric")
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_MaximumValueService_DeleteMaximum_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Metric, err = runtime.String(val)
+
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "metric", err)
 	}
 
 	msg, err := server.DeleteMaximum(ctx, &protoReq)
@@ -321,11 +357,11 @@ func RegisterMaximumValueServiceHandlerClient(ctx context.Context, mux *runtime.
 }
 
 var (
-	pattern_MaximumValueService_GetMaximum_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "maximum"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_MaximumValueService_GetMaximum_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "maximum", "metric"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_MaximumValueService_PostMaximum_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "maximum"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_MaximumValueService_DeleteMaximum_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "maximum"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_MaximumValueService_DeleteMaximum_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "maximum", "metric"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

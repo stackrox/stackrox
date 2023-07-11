@@ -20,6 +20,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	bmService "github.com/stackrox/rox/central/billing_metrics"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	"github.com/stackrox/rox/central/cli"
@@ -345,6 +346,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
+		bmService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),

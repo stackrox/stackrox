@@ -89,6 +89,9 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 		clusterList = append(clusterList, c.clusterFromDatastores(ctx, storageCluster))
 	}
 
+	// Update maximum values for the observable clusters.
+	updateMaxima(ctx, clusterList)
+
 	return clusterList
 }
 

@@ -90,6 +90,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Maximus) error {
 		return err
 	}
 
+	if obj.Ts == nil {
+		obj.Ts = protoconv.ConvertTimeToTimestamp(time.Now())
+	}
 	// Ignore noneseconds, as DB timestamp is not precise enough.
 	obj.Ts.Nanos = 0
 
