@@ -251,17 +251,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             setMessageState(null);
             setSubmissionError('');
             saveCluster(selectedCluster)
-                .then((response) => {
-                    /*
-                    setSelectedCluster(response.cluster);
-                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
-                    */
-                    // TODO After saveCluster returns response without normalize,
-                    // something like the preceding commented lines should replace the following:
+                .then((clusterResponse) => {
                     analyticsTrack(CLUSTER_CREATED);
-                    const newId = response.response.result.cluster; // really is nested like this
+                    const newId = clusterResponse.cluster.id;
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
+                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
 
                     setWizardStep('DEPLOYMENT');
 

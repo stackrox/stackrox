@@ -50,7 +50,6 @@
         "monaco-editor": "^0.21.3",
         "monaco-editor-webpack-plugin": "^2.1.0",
         "monaco-yaml": "^4.0.4",
-        "normalizr": "^3.6.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
