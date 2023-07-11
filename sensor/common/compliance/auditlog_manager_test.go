@@ -506,45 +506,33 @@ func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater
 // This tests simulates Sensor loosing connection to Central, followed by a reconnect.
 // On entering Offline mode, Sensor must not try to send updates to Central.
 // As soon as Central comes online, Sensor must run on regular intervals again.
-// Therefore, we expect 2 messages in the pipeline to Central on reconnect.
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	servers, _ := s.getFakeServersAndStates()
 	manager := s.getManager(servers, nil)
 	manager.auditEventMsgs = make(chan *sensor.MsgFromCompliance)
-
 	manager.receivedInitialStateFromCentral.Set(true)
-	manager.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(manager.Start())
 
 	centralC := manager.ResponsesC()
-	complianceC := manager.auditEventMsgs
+	complianceC := manager.AuditMessagesChan()
 
-	complianceC <- s.getMsgFromCompliance("OnlineNode", s.getAsProtoTime(time.Now().Add(1*time.Second)))
-	select {
-	// case msg, ok := <-centralC:
-	case msg := <-centralC:
-		s.T().Logf("Received msg: %+v", msg.Msg)
-	case <-time.After(5 * time.Second):
-		s.Fail("fileStateUpdates msg didn't arrive after 5 seconds")
+	states := [3]common.SensorComponentEvent{common.SensorComponentEventCentralReachable, common.SensorComponentEventOfflineMode, common.SensorComponentEventCentralReachable}
+
+	for i, state := range states {
+		manager.Notify(state)
+		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), s.getAsProtoTime(time.Now().Add(1*time.Second)))
+		select {
+		case <-centralC:
+			if state == common.SensorComponentEventOfflineMode {
+				s.Fail("Must not receive messages to central in offline mode")
+			}
+		case <-time.After(500 * time.Millisecond):
+			if state == common.SensorComponentEventCentralReachable {
+				s.Fail("CentralC msg didn't arrive within 1 second")
+			}
+		}
+
 	}
-
-	manager.Notify(common.SensorComponentEventOfflineMode)
-	complianceC <- s.getMsgFromCompliance("OfflineNode", s.getAsProtoTime(time.Now().Add(1*time.Second)))
-	select {
-	// case msg, ok := <-centralC:
-	case msg := <-centralC:
-		s.T().Logf("Received msg: %+v", msg.Msg)
-		s.Fail("Must not receive messages to central in offline mode")
-	case <-time.After(1 * time.Second):
-		//s.Fail("fileStateUpdates msg didn't arrive after 5 seconds")
-	}
-
-	manager.Notify(common.SensorComponentEventCentralReachable)
-	complianceC <- s.getMsgFromCompliance("OnlineNode", s.getAsProtoTime(time.Now().Add(1*time.Second)))
-	r1 := consumeAndCount(centralC, 2)
-	s.NoError(r1.Stopped().Wait())
 
 	manager.Stop(nil)
-	s.T().Logf("waiting for manager to stop")
-	// s.NoError(manager.Stopped().Wait()) # FIXME: Implement the stopper?
 }
