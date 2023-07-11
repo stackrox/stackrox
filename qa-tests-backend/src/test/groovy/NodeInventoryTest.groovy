@@ -56,7 +56,7 @@ class NodeInventoryTest extends BaseSpecification {
                         orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, "collector")
                     }
                 }
-                catch (RuntimeException ignored) {
+                catch (Exception ignored) {
                     log.info("Unable to bring collector ds to the desired state")
                     return false
                 }
