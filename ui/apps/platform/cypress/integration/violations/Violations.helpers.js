@@ -202,9 +202,7 @@ export function clickDeploymentTabWithFixture(fixturePath) {
 
     interactAndWaitForResponses(
         () => {
-            cy.log('click tab');
             cy.get(deploymentTab).click();
-            cy.log('after click tab');
         },
         routeMatcherMapForDeployment,
         staticResponseMapForDeployment
