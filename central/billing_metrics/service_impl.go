@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	datastore "github.com/stackrox/rox/central/billing_metrics/store"
+	bmstore "github.com/stackrox/rox/central/billing_metrics/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +21,7 @@ var (
 	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.MaximumValueService/GetMaximumValue",
+			"/v1.MaximumValueService/GetMaximum",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.MaximumValueService/PostMaximum",
@@ -31,13 +31,13 @@ var (
 )
 
 type serviceImpl struct {
-	datastore datastore.Store
+	store bmstore.Store
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.Store) Service {
+func New(datastore bmstore.Store) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		store: datastore,
 	}
 }
 
@@ -58,7 +58,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetMaximumValue returns the publicly available config
 func (s *serviceImpl) GetMaximum(ctx context.Context, m *v1.MaximumValueRequest) (*v1.MaximumValueResponse, error) {
-	maximum, ok, err := s.datastore.Get(ctx, m.Metric)
+	maximum, ok, err := s.store.Get(ctx, m.Metric)
 	if err != nil || !ok {
 		return nil, err
 	}
@@ -68,10 +68,10 @@ func (s *serviceImpl) GetMaximum(ctx context.Context, m *v1.MaximumValueRequest)
 // GetMaximumValue returns the publicly available config
 func (s *serviceImpl) PostMaximum(ctx context.Context, m *v1.MaximumValueUpdateRequest) (*v1.Empty, error) {
 	v := &storage.Maximus{Metric: m.Metric, Value: m.Value, Ts: m.Ts}
-	return nil, s.datastore.Upsert(ctx, v)
+	return nil, s.store.Upsert(ctx, v)
 }
 
 // DeleteMaximumValue returns the publicly available config
 func (s *serviceImpl) DeleteMaximum(ctx context.Context, m *v1.MaximumValueRequest) (*v1.Empty, error) {
-	return nil, s.datastore.Delete(ctx, m.Metric)
+	return nil, s.store.Delete(ctx, m.Metric)
 }
