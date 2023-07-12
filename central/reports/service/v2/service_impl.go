@@ -88,6 +88,7 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
 	}
 	if len(results) == 0 {
+		log.Infof("chsheth: returning nil, nil")
 		return nil, nil
 	}
 	status := convertPrototoV2Reportstatus(results[0].GetReportStatus())
