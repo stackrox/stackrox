@@ -335,9 +335,7 @@ function launch_central {
       fi
 
       if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ]]; then
-        helm_args+=(
-          --version="${CENTRAL_CHART_VERSION_OVERRIDE}"
-        )
+        MAIN_IMAGE_TAG="${CENTRAL_CHART_VERSION_OVERRIDE}"
       fi
 
       set -x
