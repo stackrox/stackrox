@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,6 +49,7 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, cfgrTLSConfig.ClientCAs)
 
+	clientCAKey := env.SecureMetricsClientCAKey.Setting()
 	watcher.Modify(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
 		Data:       map[string]string{clientCAKey: string(caFileRaw)},
@@ -73,6 +75,7 @@ func TestTLSConfigurerNoClientCAs(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, cfgrTLSConfig.ClientCAs)
 
+	clientCAKey := env.SecureMetricsClientCAKey.Setting()
 	watcher.Modify(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
 		Data:       map[string]string{clientCAKey: "invalid-PEM"},

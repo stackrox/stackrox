@@ -32,6 +32,10 @@ var (
 	SecureMetricsClientCANamespace = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CA_NS", WithDefault("kube-system"))
 	// SecureMetricsClientCAConfigMap has the config map that contains the client CA.
 	SecureMetricsClientCAConfigMap = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CA_CFG", WithDefault("extension-apiserver-authentication"))
+	// SecureMetricsClientCAKey has the config map key that contains the client CA.
+	SecureMetricsClientCAKey = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CA_KEY", WithDefault("client-ca-file"))
+	// SecureMetricsClientCertCN has the expected subject common name of the client cert.
+	SecureMetricsClientCertCN = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CERT_CN", WithDefault("system:serviceaccount:openshift-monitoring:prometheus-k8s"))
 )
 
 func validatePort(setting Setting) error {
