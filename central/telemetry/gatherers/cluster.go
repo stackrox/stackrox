@@ -84,13 +84,13 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 		}
 	}
 
+	// Update the maximum node and millicores values for the active clusters.
+	updateMaxima(ctx, clusterList)
+
 	// Get inactive clusters
 	for _, storageCluster := range clusterMap {
 		clusterList = append(clusterList, c.clusterFromDatastores(ctx, storageCluster))
 	}
-
-	// Update maximum values for the observable clusters.
-	updateMaxima(ctx, clusterList)
 
 	return clusterList
 }

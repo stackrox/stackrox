@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	mockstore "github.com/stackrox/rox/central/billing_metrics/store/mocks"
+	mockstore "github.com/stackrox/rox/central/billingmetrics/store/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv"

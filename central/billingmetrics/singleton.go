@@ -1,7 +1,7 @@
 package billingmetrics
 
 import (
-	bmstore "github.com/stackrox/rox/central/billing_metrics/store/postgres"
+	bmstore "github.com/stackrox/rox/central/billingmetrics/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 )

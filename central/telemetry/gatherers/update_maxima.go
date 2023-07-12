@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	bmetrics "github.com/stackrox/rox/central/billing_metrics"
+	bmetrics "github.com/stackrox/rox/central/billingmetrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/telemetry/data"

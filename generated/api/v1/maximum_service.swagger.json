@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/billing_service.proto",
+    "title": "api/v1/maximum_service.proto",
     "version": "version not set"
   },
   "consumes": [
