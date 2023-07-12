@@ -51,10 +51,7 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 	return obj, nil
 }
 
-func (k *listenerImpl) handleAllEvents() {
-	ctx, cancel := context.WithCancel(context.Background())
-	k.setCancelContext(cancel)
-
+func (k *listenerImpl) handleAllEvents(ctx context.Context) {
 	// TODO(ROX-14194): remove resyncingSif once all resources are adapted
 	var resyncingSif informers.SharedInformerFactory
 	if env.ResyncDisabled.BooleanSetting() {

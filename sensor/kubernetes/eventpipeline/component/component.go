@@ -1,6 +1,8 @@
 package component
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/sensor/common"
 )
 
@@ -25,4 +27,10 @@ type OutputQueue interface {
 	PipelineComponent
 	Send(event *ResourceEvent)
 	ResponsesC() <-chan common.ExpiringSensorMessage
+}
+
+// Listener component contains all the Kubernetes informers and processes incoming events.
+type Listener interface {
+	PipelineComponent
+	SetContext(ctx context.Context)
 }

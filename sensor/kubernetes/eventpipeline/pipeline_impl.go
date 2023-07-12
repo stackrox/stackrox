@@ -1,6 +1,7 @@
 package eventpipeline
 
 import (
+	"context"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
@@ -25,7 +27,7 @@ var (
 type eventPipeline struct {
 	output        component.OutputQueue
 	resolver      component.Resolver
-	listener      component.PipelineComponent
+	listener      component.Listener
 	detector      detector.Detector
 	reprocessor   reprocessor.Handler
 	storeProvider *resources.InMemoryStoreProvider
@@ -34,6 +36,10 @@ type eventPipeline struct {
 
 	eventsC chan *central.MsgFromSensor
 	stopSig concurrency.Signal
+
+	pipelineContext context.Context
+	cancelFunction  context.CancelFunc
+	contextMutex    *sync.RWMutex
 }
 
 // Capabilities implements common.SensorComponent
@@ -83,11 +89,32 @@ func (p *eventPipeline) Start() error {
 	return nil
 }
 
+func (p *eventPipeline) invalidateCurrentContext() {
+	p.contextMutex.Lock()
+	defer p.contextMutex.Unlock()
+	p.cancelFunction()
+}
+
+func (p *eventPipeline) swapContext() {
+	p.contextMutex.Lock()
+	defer p.contextMutex.Unlock()
+
+	p.pipelineContext, p.cancelFunction = context.WithCancel(context.Background())
+}
+
+func (p *eventPipeline) getContext() context.Context {
+	p.contextMutex.RLock()
+	p.contextMutex.RUnlock()
+
+	return p.pipelineContext
+}
+
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop(_ error) {
 	defer close(p.eventsC)
 	// The order is important here, we need to stop the components
 	// that send messages to other components first
+	p.invalidateCurrentContext()
 	p.listener.Stop(nil)
 	if env.ResyncDisabled.BooleanSetting() {
 		p.resolver.Stop(nil)
@@ -103,6 +130,8 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {
 			log.Infof("Connection established: Starting Kubernetes listener")
+			p.swapContext()
+			p.listener.SetContext(p.getContext())
 			if err := p.listener.Start(); err != nil {
 				log.Fatalf("Failed to start listener component. Sensor cannot run without listening to Kubernetes events: %s", err)
 			}
@@ -110,6 +139,7 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 	case common.SensorComponentEventOfflineMode:
 		// Stop listening to events
 		if p.offlineMode.CompareAndSwap(false, true) {
+			p.invalidateCurrentContext()
 			p.listener.Stop(errors.New("gRPC connection stopped"))
 			p.storeProvider.CleanupStores()
 		}
@@ -154,6 +184,7 @@ func (p *eventPipeline) processReassessPolicies() error {
 		// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
 			component.WithForceDetection())
+		message.Context = p.getContext()
 		p.resolver.Send(message)
 	}
 	return nil
@@ -169,6 +200,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 		// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
 		message.AddDeploymentReference(resolver.ResolveAllDeployments(),
 			component.WithForceDetection())
+		message.Context = p.getContext()
 		p.resolver.Send(message)
 	}
 	return nil
@@ -184,6 +216,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
 			component.WithForceDetection(),
 			component.WithSkipResolving())
+		message.Context = p.getContext()
 		p.resolver.Send(message)
 	}
 	return nil
@@ -199,6 +232,7 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 		message.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
 			component.WithForceDetection(),
 			component.WithSkipResolving())
+		message.Context = p.getContext()
 		p.resolver.Send(message)
 	}
 	return nil
@@ -223,6 +257,7 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 		message.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),
 			component.WithForceDetection(),
 			component.WithSkipResolving())
+		message.Context = p.getContext()
 		p.resolver.Send(message)
 	}
 	return nil
