@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Flex, FlexItem, Modal, ModalVariant, Title } from '@patternfly/react-core';
+import { Button, Flex, Modal, ModalVariant, Title } from '@patternfly/react-core';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
@@ -25,10 +25,14 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
             variant={ModalVariant.small}
             isOpen={isOpen}
             onClose={onClose}
+            actions={[
+                <Button className="pf-u-display-inline-block" onClick={exportYAMLHandler}>
+                    Export YAML
+                </Button>,
+            ]}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <Title headingLevel="h3">{networkPolicy.name}</Title>
-
                 <CodeEditor
                     isDarkTheme={isDarkMode}
                     customControls={
@@ -44,11 +48,6 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
                     language={Language.yaml}
                     height="450px"
                 />
-                <FlexItem>
-                    <Button className="pf-u-display-inline-block" onClick={exportYAMLHandler}>
-                        Export YAML
-                    </Button>
-                </FlexItem>
             </Flex>
         </Modal>
     );
