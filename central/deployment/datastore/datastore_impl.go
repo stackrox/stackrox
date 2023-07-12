@@ -245,12 +245,13 @@ func (ds *datastoreImpl) mergeJobs(ctx context.Context, deployment *storage.Depl
 			continue
 		}
 		oldContainer := oldDeployment.Containers[i]
-		if oldContainer.GetId() == "" {
+		if oldContainer.GetImage().GetId() == "" {
 			continue
 		}
-		if container.GetImage().GetName() == oldContainer.GetImage().GetName() {
-			container.Image.Id = oldContainer.GetImage().GetId()
+		if container.GetImage().GetName().GetFullName() != oldContainer.GetImage().GetName().GetFullName() {
+			continue
 		}
+		container.Image.Id = oldContainer.GetImage().GetId()
 	}
 	return nil
 }
