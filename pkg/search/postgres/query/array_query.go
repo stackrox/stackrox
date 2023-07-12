@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jackc/pgtype"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -22,15 +21,15 @@ func getStringArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) i
 		return nil, errors.New("no filter func found")
 	}
 	return func(val interface{}) interface{} {
-		textArray, _ := val.(*pgtype.TextArray)
+		textArray, _ := val.(*[]string)
 		if textArray == nil {
-			return (*pgtype.TextArray)(nil)
+			return (*[]string)(nil)
 		}
 
 		var out []string
-		for _, elem := range textArray.Elements {
-			if elem.Status == pgtype.Present && filterFunc(elem.String) {
-				out = append(out, elem.String)
+		for _, elem := range *textArray {
+			if filterFunc(elem) {
+				out = append(out, elem)
 			}
 		}
 		return out
