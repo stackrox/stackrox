@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	metrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
 	"github.com/stackrox/rox/generated/storage"

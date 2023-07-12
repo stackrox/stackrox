@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"

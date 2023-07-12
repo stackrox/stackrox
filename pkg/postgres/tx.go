@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -34,7 +34,7 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (command
 	ct, err := t.Tx.Exec(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
-		return nil, err
+		return pgconn.CommandTag{}, err
 	}
 	return ct, err
 }

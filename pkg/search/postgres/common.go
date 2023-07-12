@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -647,7 +647,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "could not scan row")
 		}
 
 		idParts := make([]string, 0, numPrimaryKeys)

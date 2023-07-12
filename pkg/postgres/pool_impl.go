@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stackrox/rox/pkg/contextutil"
 )
 
@@ -15,7 +15,7 @@ func New(ctx context.Context, config *Config) (*db, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, 10*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.ConnectConfig(ctx, config.Config)
+	pool, err := pgxpool.NewWithConfig(ctx, config.Config)
 	if err != nil {
 		incQueryErrors("connect", err)
 		return nil, err
@@ -39,7 +39,7 @@ func Connect(ctx context.Context, sourceWithDatabase string) (*db, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, 10*time.Second)
 	defer cancel()
 
-	pool, err := pgxpool.Connect(ctx, sourceWithDatabase)
+	pool, err := pgxpool.New(ctx, sourceWithDatabase)
 	if err != nil {
 		incQueryErrors("connect", err)
 		return nil, err
@@ -91,7 +91,7 @@ func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 	}
 	if err != nil {
 		incQueryErrors(sql, err)
-		return nil, toErrox(err)
+		return pgconn.CommandTag{}, toErrox(err)
 	}
 	return ct, nil
 }
