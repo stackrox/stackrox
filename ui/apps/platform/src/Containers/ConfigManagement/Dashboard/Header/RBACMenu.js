@@ -24,7 +24,7 @@ const RBACMenu = ({ match, location }) => {
     const urlBuilder = URLService.getURL(match, location);
     const options = createOptions(urlBuilder, types);
 
-    return <DashboardMenu text="RBAC Visibility & Configuration" options={options} />;
+    return <DashboardMenu text="Role-Based Access Control" options={options} />;
 };
 
 export default withRouter(RBACMenu);
