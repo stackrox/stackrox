@@ -113,7 +113,7 @@ func (s *postgresConnTestSuite) TestConnExec() {
 }
 
 func (s *postgresConnTestSuite) TestConnQuery() {
-	expectedRows := pkgmocks.NewMockRows(s.mockCtrl)
+	expectedRows := pkgmocks.NewRows(nil).ToPgxRows()
 	errFunc := func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
 		return nil, errFake
 	}
@@ -149,7 +149,7 @@ func (s *postgresConnTestSuite) TestConnQuery() {
 }
 
 func (s *postgresConnTestSuite) TestConnQueryRow() {
-	expectedRow := pkgmocks.NewMockRow(s.mockCtrl)
+	expectedRow := pkgmocks.NewRows(nil).ToPgxRows()
 	successFunc := func(ctx context.Context, sql string, args ...interface{}) pgx.Row {
 		return expectedRow
 	}
