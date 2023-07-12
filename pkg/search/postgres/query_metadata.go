@@ -41,7 +41,8 @@ var (
 		},
 		postgres.StringArray: {
 			alloc: func() interface{} {
-				return &pgtype.TextArray{}
+				out := make([]string, 0)
+				return &out
 			},
 			printer: func(val interface{}) []string {
 				// All the work of conversion is done by the post transform func, so

@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 )
