@@ -113,7 +113,7 @@ func (t *tlsConfigurerImpl) watchForChanges() {
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
 
 	// Watch for changes of client CA.
-	go t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
+	t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
 }
 
 // TLSConfig returns the current TLS config.
