@@ -193,7 +193,7 @@ func (e *containerEndpoint) String() string {
 
 // NewManager creates a new instance of network flow manager
 func NewManager(
-	clusterEntities *clusterentities.Store,
+	clusterEntities EntityStore,
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 ) Manager {
@@ -214,7 +214,7 @@ type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
-	clusterEntities *clusterentities.Store
+	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
 
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS

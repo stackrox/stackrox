@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
 const (
@@ -44,7 +43,7 @@ func newPublicIPsManager() *publicIPsManager {
 	}
 }
 
-func (m *publicIPsManager) Run(ctx concurrency.Waitable, clusterEntities *clusterentities.Store) {
+func (m *publicIPsManager) Run(ctx concurrency.Waitable, clusterEntities EntityStore) {
 	clusterEntities.RegisterPublicIPsListener(m)
 	defer clusterEntities.UnregisterPublicIPsListener(m)
 
