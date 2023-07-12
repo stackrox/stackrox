@@ -44,7 +44,7 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
                     language={Language.yaml}
                     height="450px"
                 />
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                <FlexItem>
                     <Button className="pf-u-display-inline-block" onClick={exportYAMLHandler}>
                         Export YAML
                     </Button>
