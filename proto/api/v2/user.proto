@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+package v2;
+
+message SlimUser {
+    string id   = 1;
+    string name = 2;
+}
