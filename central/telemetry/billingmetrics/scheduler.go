@@ -17,7 +17,9 @@ var (
 )
 
 func gather() {
-	_ = gatherers.Singleton().Gather(context.Background(), true, false)
+	if data := gatherers.Singleton().Gather(context.Background(), true, false); data != nil {
+		updateMaxima(context.Background(), data.Clusters)
+	}
 }
 
 // Schedule starts a periodic data gathering from the secured clusters, updating

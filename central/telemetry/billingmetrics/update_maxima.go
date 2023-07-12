@@ -1,4 +1,4 @@
-package gatherers
+package billingmetrics
 
 import (
 	"context"
@@ -6,17 +6,25 @@ import (
 
 	bmetrics "github.com/stackrox/rox/central/billingmetrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 func updateMaxima(ctx context.Context, clusters []*data.ClusterInfo) {
 	var totalMilliCores, totalNodes int
-	for _, c := range clusters {
-		totalNodes += len(c.Nodes)
-		for _, n := range c.Nodes {
-			if n != nil && n.TotalResources != nil {
-				totalMilliCores += n.TotalResources.MilliCores
+	for _, cluster := range clusters {
+		if cluster.Sensor == nil || !cluster.Sensor.CurrentlyConnected {
+			continue
+		}
+		totalNodes += len(cluster.Nodes)
+		for _, node := range cluster.Nodes {
+			if node != nil && node.TotalResources != nil {
+				totalMilliCores += node.TotalResources.MilliCores
 			}
 		}
 	}
