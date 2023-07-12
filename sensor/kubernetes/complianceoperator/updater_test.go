@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	compv1alpha1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/features"
@@ -13,7 +12,6 @@ import (
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -174,16 +172,4 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 		}
 	}
 	s.EqualValues(expectedVal, actual)
-}
-
-func getAllObjs() []runtime.Object {
-	return []runtime.Object{
-		&compv1alpha1.Profile{},
-		&compv1alpha1.Rule{},
-		&compv1alpha1.ScanSetting{},
-		&compv1alpha1.ScanSettingBinding{},
-		&compv1alpha1.ComplianceScan{},
-		&compv1alpha1.ComplianceSuite{},
-		&compv1alpha1.ComplianceCheckResult{},
-	}
 }

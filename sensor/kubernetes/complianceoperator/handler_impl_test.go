@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/features"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
@@ -33,7 +33,7 @@ type ManagerTestSuite struct {
 
 	client         *fake.FakeDynamicClient
 	requestHandler common.SensorComponent
-	infoUpdater    *mocks.MockInfoUpdater
+	statusInfo     *mocks.MockStatusInfo
 }
 
 func (s *ManagerTestSuite) SetupSuite() {
@@ -47,8 +47,8 @@ func (s *ManagerTestSuite) SetupSuite() {
 
 func (s *ManagerTestSuite) SetupTest() {
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
-	s.infoUpdater = mocks.NewMockInfoUpdater(gomock.NewController(s.T()))
-	s.requestHandler = NewRequestHandler(s.client, s.infoUpdater)
+	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
+	s.requestHandler = NewRequestHandler(s.client, s.statusInfo)
 	s.Require().NoError(s.requestHandler.Start())
 }
 
@@ -62,7 +62,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanSuccess() {
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
 	}
 
-	s.infoUpdater.EXPECT().GetLastKnownComplianceOperatorInfo().Return(&central.ComplianceOperatorInfo{Namespace: "ns"})
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 }
@@ -95,14 +95,14 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanComplianceDisabled() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyOneTimeScanOperatorInfoError() {
+func (s *ManagerTestSuite) TestProcessApplyOneTimeScanOperatorNSUnknown() {
 	msg := getTestOneTimeScanRequestMsg("ad-hoc", "ocp4-cis")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
-		errSubstr: "fake error",
+		errSubstr: "namespace not known",
 	}
 
-	s.infoUpdater.EXPECT().GetLastKnownComplianceOperatorInfo().Return(&central.ComplianceOperatorInfo{StatusError: "fake error"})
+	s.statusInfo.EXPECT().GetNamespace().Return("")
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 }
@@ -113,7 +113,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanAlreadyExists() {
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
 	}
 
-	s.infoUpdater.EXPECT().GetLastKnownComplianceOperatorInfo().Return(&central.ComplianceOperatorInfo{Namespace: "ns"})
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 
@@ -124,7 +124,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanAlreadyExists() {
 		errSubstr: "\"ad-hoc\" already exists",
 	}
 
-	s.infoUpdater.EXPECT().GetLastKnownComplianceOperatorInfo().Return(&central.ComplianceOperatorInfo{Namespace: "ns"})
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
 	actual = s.sendMessage(1, msg)
 	s.assert(expected, actual)
 }

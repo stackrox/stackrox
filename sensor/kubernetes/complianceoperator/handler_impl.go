@@ -23,8 +23,8 @@ var (
 )
 
 type handlerImpl struct {
-	client                        dynamic.Interface
-	complianceOperatorInfoUpdater InfoStore
+	client                 dynamic.Interface
+	complianceOperatorInfo StatusInfo
 
 	response chan *central.MsgFromSensor
 	request  chan *central.ComplianceRequest
@@ -34,10 +34,10 @@ type handlerImpl struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfoUpdater InfoStore) common.SensorComponent {
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo) common.SensorComponent {
 	return &handlerImpl{
-		client:                        client,
-		complianceOperatorInfoUpdater: complianceOperatorInfoUpdater,
+		client:                 client,
+		complianceOperatorInfo: complianceOperatorInfo,
 
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *central.MsgFromSensor),
@@ -148,12 +148,11 @@ func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *centr
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
 	}
 	// TODO: Check if default ACS scan setting CR exists. If it doesn't exist, create one.
-	coInfo := m.getComplianceOperatorInfo()
-	if coInfo.GetStatusError() != "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New(coInfo.GetStatusError()))
-	}
 
-	ns := coInfo.GetNamespace()
+	ns := m.complianceOperatorInfo.GetNamespace()
+	if ns == "" {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
+	}
 	obj, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -174,18 +173,15 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 	case <-m.stopSignal.Done():
 		return true
 	default:
-		coInfo := m.getComplianceOperatorInfo()
-		if coInfo.GetStatusError() != "" {
-			err := errors.Errorf("Cannot process delete scan config request: %s", coInfo.GetStatusError())
-			return m.composeAndSendDeleteResponse(request.GetId(), "", err)
-		}
-
 		// TODO: Make sure default ScanSetting CR is never deleted.
 
 		// Delete ScanSetting and ScanSettingBinding custom resource. Deleting ScanSettingBindings deletes all owned resources.
 		// Each ad-hoc scan creates a unique ScanSettingBinding that reuses default ACS ScanSetting CR.
 		// Each scheduled scan configuration has a uniquely identifiable ScanSetting and ScanSettingBinding.
-		ns := coInfo.GetNamespace()
+		ns := m.complianceOperatorInfo.GetNamespace()
+		if ns == "" {
+			return m.composeAndSendDeleteResponse(request.GetId(), "", errors.New("Compliance operator not known"))
+		}
 		deletePolicy := v1.DeletePropagationForeground
 		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns)
 		err := scanSettingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
@@ -269,7 +265,7 @@ func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, resource st
 	}
 	if err != nil {
 		if resource != "" {
-			err = errors.Wrapf(err, "Could not delete namespaces/%s/%s", m.getComplianceOperatorInfo().GetNamespace(), resource)
+			err = errors.Wrapf(err, "Could not delete namespaces/%s/%s", m.complianceOperatorInfo.GetNamespace(), resource)
 		}
 		log.Error(err)
 		msg.GetDeleteComplianceScanConfigResponse().Payload = &central.ComplianceResponse_DeleteComplianceScanConfigResponse_Error{
@@ -290,10 +286,6 @@ func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) bool {
 	case <-m.stopSignal.Done():
 		return false
 	}
-}
-
-func (m *handlerImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	return m.complianceOperatorInfoUpdater.GetLastKnownComplianceOperatorInfo()
 }
 
 func (m *handlerImpl) ctx() context.Context {

@@ -30,21 +30,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// InfoStore is an interface that provides functionality to fetch compliance operator info.
-//
-//go:generate mockgen-wrapper
-type InfoStore interface {
-	GetLastKnownComplianceOperatorInfo() *central.ComplianceOperatorInfo
-}
-
-// InfoUpdater is an interface that provides functionality to periodically scan secured cluster for compliance operator info.
-//
-//go:generate mockgen-wrapper
-type InfoUpdater interface {
-	common.SensorComponent
-	InfoStore
-}
-
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
 func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) InfoUpdater {
 	if updateInterval == 0 {
@@ -59,11 +44,11 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 }
 
 type updaterImpl struct {
-	client         kubernetes.Interface
-	updateInterval time.Duration
-	lastKnownInfo  *central.ComplianceOperatorInfo
-	response       chan *central.MsgFromSensor
-	stopSig        concurrency.Signal
+	client               kubernetes.Interface
+	updateInterval       time.Duration
+	response             chan *central.MsgFromSensor
+	stopSig              concurrency.Signal
+	complianceOperatorNS string
 }
 
 func (u *updaterImpl) Start() error {
@@ -92,8 +77,8 @@ func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return u.response
 }
 
-func (u *updaterImpl) GetLastKnownComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	return u.lastKnownInfo
+func (u *updaterImpl) GetNamespace() string {
+	return u.complianceOperatorNS
 }
 
 func (u *updaterImpl) run() {
@@ -103,10 +88,12 @@ func (u *updaterImpl) run() {
 	for {
 		select {
 		case <-ticker.C:
-			u.lastKnownInfo = u.getComplianceOperatorInfo()
+			info := u.getComplianceOperatorInfo()
+			u.complianceOperatorNS = info.GetNamespace()
+
 			msg := &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-					ComplianceOperatorInfo: u.lastKnownInfo,
+					ComplianceOperatorInfo: info,
 				},
 			}
 
@@ -127,7 +114,7 @@ func (u *updaterImpl) run() {
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
 	var err error
 	var ns string
-	if u.lastKnownInfo.GetNamespace() == "" {
+	if u.complianceOperatorNS == "" {
 		ns, err = u.getComplianceOperatorNamespace()
 		if err != nil {
 			return &central.ComplianceOperatorInfo{
@@ -137,6 +124,15 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 	}
 
 	complianceOperator, err := getComplianceOperator(u.ctx(), u.client, ns)
+	if err != nil {
+		// Lookup all namespaces again to cover the case that compliance operator was moved to different complianceOperatorNS.
+		if kubeAPIErr.IsNotFound(err) {
+			ns, err = u.getComplianceOperatorNamespace()
+			if err == nil {
+				complianceOperator, err = getComplianceOperator(u.ctx(), u.client, ns)
+			}
+		}
+	}
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
 			StatusError: err.Error(),
@@ -193,7 +189,7 @@ func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
 		return "", err
 	}
 
-	return "", errors.Errorf("deployment %s not found", complianceoperator.Name)
+	return "", errors.Errorf("deployment %s not found in any namespacce", complianceoperator.Name)
 }
 
 func (u *updaterImpl) ctx() context.Context {
