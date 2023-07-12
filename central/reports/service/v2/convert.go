@@ -40,18 +40,13 @@ func ConvertProtoNotifierSnapshotToV2(notifierSnapshot *storage.NotifierSnapshot
 		return &apiV2.NotifierSnapshot{}
 	}
 
-	emailConfig := &apiV2.EmailNotifierConfiguration{}
-	emailConfig.MailingLists = append(emailConfig.MailingLists, notifierSnapshot.GetEmailConfig().GetMailingLists()...)
-
-	notifierConfig := &apiV2.NotifierSnapshot_EmailConfig{
-		EmailConfig: emailConfig,
-	}
-
-	notifierName := notifierSnapshot.GetNotifierName()
-
 	return &apiV2.NotifierSnapshot{
-		NotifierName:   notifierName,
-		NotifierConfig: notifierConfig,
+		NotifierName: notifierSnapshot.GetNotifierName(),
+		NotifierConfig: &apiV2.NotifierSnapshot_EmailConfig{
+			EmailConfig: &apiV2.EmailNotifierConfiguration{
+				MailingLists: notifierSnapshot.GetEmailConfig().GetMailingLists(),
+			},
+		},
 	}
 }
 
@@ -64,7 +59,7 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 	for _, snapshot := range snapshots {
 		snapshotv2 := &apiV2.ReportSnapshot{
 			ReportStatus:       convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
-			Id:                 snapshot.GetReportId(),
+			Id:                 snapshot.GetReportConfigurationId(),
 			Name:               snapshot.GetName(),
 			Description:        snapshot.GetDescription(),
 			CollectionSnapshot: convertProtoReportCollectiontoV2(snapshot.GetCollection()),
@@ -79,7 +74,9 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := ConvertProtoNotifierSnapshotToV2(notifier)
-			snapshotv2.Notifiers = append(snapshotv2.Notifiers, converted)
+			if converted != nil {
+				snapshotv2.Notifiers = append(snapshotv2.Notifiers, converted)
+			}
 		}
 		res = append(res, snapshotv2)
 
