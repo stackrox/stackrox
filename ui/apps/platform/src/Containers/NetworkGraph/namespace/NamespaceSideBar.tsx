@@ -12,9 +12,9 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
+import uniq from 'lodash/uniq';
 
 import useTabs from 'hooks/patternfly/useTabs';
-import { uniq } from 'lodash';
 import {
     getDeploymentNodesInNamespace,
     getNodeById,
