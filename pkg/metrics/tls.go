@@ -20,11 +20,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const (
-	clientCAKey      = "client-ca-file"
-	prometheusCertCN = "system:serviceaccount:openshift-monitoring:prometheus-k8s"
-)
-
 func certFilePath() string {
 	certDir := env.SecureMetricsCertDir.Setting()
 	certFile := filepath.Join(certDir, env.TLSCertFileName)
@@ -82,7 +77,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
 	tlsVerifier := &clientCertVerifier{
-		subjectCN: prometheusCertCN,
+		subjectCN: env.SecureMetricsClientCertCN.Setting(),
 	}
 	cfgr.tlsConfigHolder.SetCustomCertVerifier(tlsVerifier)
 	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
@@ -177,7 +172,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	if cm == nil {
 		return
 	}
-	if caFile, ok := cm.Data[clientCAKey]; ok {
+	if caFile, ok := cm.Data[env.SecureMetricsClientCAKey.Setting()]; ok {
 		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
 		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {
