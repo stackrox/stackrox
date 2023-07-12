@@ -62,15 +62,15 @@ var (
 	}
 )
 
-func TestNetworkflowManager(t *testing.T) {
-	suite.Run(t, new(NetworkflowManagerTestSuite))
+func TestNetworkFlowManager(t *testing.T) {
+	suite.Run(t, new(NetworkFlowManagerTestSuite))
 }
 
-type NetworkflowManagerTestSuite struct {
+type NetworkFlowManagerTestSuite struct {
 	suite.Suite
 }
 
-func (suite *NetworkflowManagerTestSuite) TestAddNothing() {
+func (s *NetworkFlowManagerTestSuite) TestAddNothing() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
@@ -78,11 +78,11 @@ func (suite *NetworkflowManagerTestSuite) TestAddNothing() {
 	nowTimestamp := timestamp.Now()
 	var sequenceID int64
 	err := h.Process(networkInfo, nowTimestamp, sequenceID)
-	suite.NoError(err)
-	suite.Len(h.endpoints, 0)
+	s.NoError(err)
+	s.Len(h.endpoints, 0)
 }
 
-func (suite *NetworkflowManagerTestSuite) TestAddOpen() {
+func (s *NetworkFlowManagerTestSuite) TestAddOpen() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
@@ -94,11 +94,11 @@ func (suite *NetworkflowManagerTestSuite) TestAddOpen() {
 	var sequenceID int64
 	h.connectionsSequenceID = sequenceID
 	err := h.Process(networkInfo, nowTimestamp, sequenceID)
-	suite.NoError(err)
-	suite.Len(h.endpoints, 1)
+	s.NoError(err)
+	s.Len(h.endpoints, 1)
 }
 
-func (suite *NetworkflowManagerTestSuite) TestAddOpenAndClosed() {
+func (s *NetworkFlowManagerTestSuite) TestAddOpenAndClosed() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
@@ -115,15 +115,15 @@ func (suite *NetworkflowManagerTestSuite) TestAddOpenAndClosed() {
 	h.connectionsSequenceID = sequenceID
 
 	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
-	suite.NoError(err)
+	s.NoError(err)
 
 	err = h.Process(networkInfoClosed, nowTimestamp, sequenceID)
-	suite.NoError(err)
+	s.NoError(err)
 
-	suite.Len(h.endpoints, 1)
+	s.Len(h.endpoints, 1)
 }
 
-func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferent() {
+func (s *NetworkFlowManagerTestSuite) TestAddTwoDifferent() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
@@ -140,15 +140,15 @@ func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferent() {
 	h.connectionsSequenceID = sequenceID
 
 	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
-	suite.NoError(err)
+	s.NoError(err)
 
 	err = h.Process(networkInfoOpen81, nowTimestamp, sequenceID)
-	suite.NoError(err)
+	s.NoError(err)
 
-	suite.Len(h.endpoints, 2)
+	s.Len(h.endpoints, 2)
 }
 
-func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferentSameBatch() {
+func (s *NetworkFlowManagerTestSuite) TestAddTwoDifferentSameBatch() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
@@ -161,12 +161,12 @@ func (suite *NetworkflowManagerTestSuite) TestAddTwoDifferentSameBatch() {
 	h.connectionsSequenceID = sequenceID
 
 	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
-	suite.NoError(err)
+	s.NoError(err)
 
-	suite.Len(h.endpoints, 2)
+	s.Len(h.endpoints, 2)
 }
 
-func (suite *NetworkflowManagerTestSuite) TestAddNoOriginator() {
+func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
@@ -179,7 +179,7 @@ func (suite *NetworkflowManagerTestSuite) TestAddNoOriginator() {
 	h.connectionsSequenceID = sequenceID
 
 	err := h.Process(networkInfoOpen, nowTimestamp, sequenceID)
-	suite.NoError(err)
+	s.NoError(err)
 
-	suite.Len(h.endpoints, 1)
+	s.Len(h.endpoints, 1)
 }
