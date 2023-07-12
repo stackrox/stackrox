@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -212,6 +213,48 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 	return ds.upsertDeployment(ctx, deployment)
 }
 
+func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
+	for _, c := range d.GetContainers() {
+		if c.GetImage().GetId() == "" {
+			return false
+		}
+	}
+	return true
+}
+
+func (ds *datastoreImpl) mergeJobs(ctx context.Context, deployment *storage.Deployment) error {
+	if deployment.GetType() != kubernetes.CronJob && deployment.GetType() != kubernetes.Job {
+		return nil
+	}
+	if allImagesAreSpecifiedByDigest(deployment) {
+		return nil
+	}
+	oldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	// Major changes to spec, just upsert
+	if len(oldDeployment.GetContainers()) != len(deployment.GetContainers()) {
+		return nil
+	}
+	for i, container := range deployment.GetContainers() {
+		if container.GetImage().GetId() != "" {
+			continue
+		}
+		oldContainer := oldDeployment.Containers[i]
+		if oldContainer.GetId() == "" {
+			continue
+		}
+		if container.GetImage().GetName() == oldContainer.GetImage().GetName() {
+			container.Image.Id = oldContainer.GetImage().GetId()
+		}
+	}
+	return nil
+}
+
 // upsertDeployment inserts a deployment into deploymentStore
 func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
@@ -222,6 +265,12 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
+
+	// Deployments that run intermittently and do not have images that are referenced by digest
+	// should maintain the digest of the last used image
+	if err := ds.mergeJobs(ctx, deployment); err != nil {
+		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
+	}
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
