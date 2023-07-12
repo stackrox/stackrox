@@ -62,20 +62,19 @@ message ReportStatus {
     }
 
     enum NotificationMethod {
-        UNSET = 0;
-        EMAIL = 1;
+        UNSET    = 0;
+        EMAIL    = 1;
         DOWNLOAD = 2;
     }
 
-    RunState                   run_state       = 1;
-    google.protobuf.Timestamp  completed_at        = 2;
-    string                     error_msg       = 3;
-    ReportMethod               report_request_type   = 4;
+    RunState                   run_state                  = 1;
+    google.protobuf.Timestamp  completed_at               = 2;
+    string                     error_msg                  = 3;
+    ReportMethod               report_request_type        = 4;
     NotificationMethod         report_notification_method = 5;
 }
 
 service ReportService {
-
     // GetReportStatus returns report status
     rpc GetReportStatus (ResourceByID) returns (ReportStatus) {
         option (google.api.http) = {
