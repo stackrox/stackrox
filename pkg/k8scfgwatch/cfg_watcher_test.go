@@ -57,7 +57,7 @@ func TestConfigMapTrigger(t *testing.T) {
 				defer mutex.Unlock()
 				currentCfgData = cm.Data[cfgKey]
 			})
-			go cfgWatcher.Watch(context.TODO(), cfgNamespace, cfgName)
+			cfgWatcher.Watch(context.TODO(), cfgNamespace, cfgName)
 
 			cm := &v1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{Name: cfgName, Namespace: cfgNamespace},
@@ -112,7 +112,7 @@ func TestConfigMapContextCancelled(t *testing.T) {
 			})
 			ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Millisecond)
 			defer cancel()
-			go cfgWatcher.Watch(ctx, cfgNamespace, cfgName)
+			cfgWatcher.Watch(ctx, cfgNamespace, cfgName)
 			time.Sleep(100 * time.Millisecond)
 
 			cm := &v1.ConfigMap{

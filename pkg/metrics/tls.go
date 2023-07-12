@@ -22,7 +22,6 @@ import (
 
 const (
 	clientCAKey = "client-ca-file"
-	signerName  = "kubelet-signer"
 )
 
 func certFilePath() string {
@@ -76,7 +75,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
-		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig),
+		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig, tls.RequireAndVerifyClientCert),
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
@@ -114,7 +113,7 @@ func (t *tlsConfigurerImpl) watchForChanges() {
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
 
 	// Watch for changes of client CA.
-	go t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
+	t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
 }
 
 // TLSConfig returns the current TLS config.
@@ -174,16 +173,13 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	}
 	if caFile, ok := cm.Data[clientCAKey]; ok {
 		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
-		certs, err := helpers.ParseCertificatesPEM([]byte(caFile))
+		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {
 			log.Errorw("Unable to parse client CAs", zap.Error(err))
 			return
 		}
-		var signerCAs []*x509.Certificate
-		for _, c := range certs {
-			if c.Issuer.CommonName == signerName {
-				signerCAs = append(signerCAs, c)
-			}
+		if len(signerCAs) == 0 {
+			log.Warnf("No client CAs have been found in %q/%q", t.clientCANamespace, t.clientCAConfigMap)
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()
