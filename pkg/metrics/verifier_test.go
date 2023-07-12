@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClientCertVerifier(t *testing.T) {
+	prometheusCertCN := env.SecureMetricsClientCertCN.Setting()
 	cases := map[string]struct {
 		certFilePath string
 		subjectCN    string
