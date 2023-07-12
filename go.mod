@@ -30,7 +30,6 @@ require (
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/driftprogramming/pgxpoolmock v1.1.0
 	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.15.0
 	github.com/fullsailor/pkcs7 v0.0.0
