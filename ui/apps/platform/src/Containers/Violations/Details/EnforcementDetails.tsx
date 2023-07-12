@@ -14,17 +14,17 @@ function getRuntimeEnforcementCount(processViolation) {
 
 type EnforcementDetailsProps = {
     alert: Alert;
+    enforcement: NonNullable<Alert['enforcement']>;
 };
 
-function EnforcementDetails({ alert }: EnforcementDetailsProps): ReactElement {
-    const { lifecycleStage, processViolation, enforcement, policy } = alert;
+function EnforcementDetails({ alert, enforcement }: EnforcementDetailsProps): ReactElement {
+    const { lifecycleStage, processViolation, policy } = alert;
     let enforcementCount = 0;
     if (lifecycleStage === LIFECYCLE_STAGES.RUNTIME) {
-        if (enforcement?.action === ENFORCEMENT_ACTIONS.KILL_POD_ENFORCEMENT) {
-            enforcementCount =
-                enforcement && processViolation?.processes
-                    ? getRuntimeEnforcementCount(processViolation)
-                    : 0;
+        if (enforcement.action === ENFORCEMENT_ACTIONS.KILL_POD_ENFORCEMENT) {
+            enforcementCount = processViolation?.processes
+                ? getRuntimeEnforcementCount(processViolation)
+                : 0;
         } else {
             enforcementCount = 1;
         }
@@ -39,9 +39,9 @@ function EnforcementDetails({ alert }: EnforcementDetailsProps): ReactElement {
                     <Header
                         lifecycleStage={alert.lifecycleStage}
                         enforcementCount={enforcementCount}
-                        enforcementAction={enforcement?.action}
+                        enforcementAction={enforcement.action}
                     />
-                    {enforcement && enforcementCount && (
+                    {enforcementCount && (
                         <>
                             <Divider component="div" inset={{ default: 'insetMd' }} />
                             <Explanation
