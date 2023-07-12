@@ -2068,6 +2068,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 func (suite *DefaultPoliciesTestSuite) TestImageRegistry() {
 	depMatcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(
 		fieldnames.ImageRegistry, []string{"^$", "quay.io"}, true, storage.BooleanOperator_OR))
+	require.NoError(suite.T(), err)
 
 	imgNoReg := imageWithNoRegistry()
 	dep := fixtures.GetDeployment().Clone()
