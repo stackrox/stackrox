@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Flex, FlexItem, Card, CardBody, Title, Divider } from '@patternfly/react-core';
+import { TableComposable, Caption, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
-import { fetchDeployment } from 'services/DeploymentsService';
 import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
 import { portExposureLabels } from 'messages/common';
 import ObjectDescriptionList from 'Components/ObjectDescriptionList';
-import { TableComposable, Caption, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import useFetchDeployment from 'hooks/useFetchDeployment';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { Alert as AlertViolation } from '../types/violationTypes';
 import DeploymentOverview from './Deployment/DeploymentOverview';
 import SecurityContext from './Deployment/SecurityContext';
 import ContainerConfiguration from './Deployment/ContainerConfiguration';
@@ -70,27 +72,26 @@ const compareNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
     return a.name.localeCompare(b.name);
 };
 
-const DeploymentDetails = ({ deployment }) => {
+export type DeploymentDetailsProps = {
+    alertDeployment: NonNullable<AlertViolation['deployment']>;
+};
+
+const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
+    const [namespacePolicies, setNamespacePolicies] = useState<NetworkPolicy[]>([]);
+
     // attempt to fetch related deployment to selected alert
-    const [relatedDeployment, setRelatedDeployment] = useState(deployment);
-    const [namespacePolicies, setNamespacePolicies] = useState([]);
+    const { deployment: relatedDeployment, error: relatedDeploymentFetchError } =
+        useFetchDeployment(alertDeployment.id);
 
     useEffect(() => {
-        fetchDeployment(deployment.id).then(
-            (dep) => setRelatedDeployment(dep),
-            () => setRelatedDeployment(null)
-        );
-    }, [deployment.id, setRelatedDeployment]);
-
-    useEffect(() => {
-        fetchNetworkPoliciesInNamespace(deployment.clusterId, deployment.namespace).then(
-            (policies) => setNamespacePolicies(policies.response.networkPolicies),
+        fetchNetworkPoliciesInNamespace(alertDeployment.clusterId, alertDeployment.namespace).then(
+            // TODO Infer type from response once NetworkService.js is typed
+            (policies: NetworkPolicy[]) => setNamespacePolicies(policies ?? []),
             () => setNamespacePolicies([])
         );
-    }, [deployment.namespace, deployment.clusterId, setNamespacePolicies]);
+    }, [alertDeployment.namespace, alertDeployment.clusterId, setNamespacePolicies]);
 
-    const deploymentObj = relatedDeployment || deployment;
-    const namespacePoliciesList = namespacePolicies || [];
+    const relatedDeploymentPorts = relatedDeployment?.ports || [];
 
     return (
         <Flex
@@ -98,13 +99,15 @@ const DeploymentDetails = ({ deployment }) => {
             flex={{ default: 'flex_1' }}
             data-testid="deployment-details"
         >
-            {!relatedDeployment && (
+            {!relatedDeployment && relatedDeploymentFetchError && (
                 <Alert
                     variant="warning"
                     isInline
-                    title="This data is a snapshot of a deployment that no longer exists."
+                    title="There was an error fetching the deployment details. This deployment may no longer exist."
                     data-testid="deployment-snapshot-warning"
-                />
+                >
+                    {getAxiosErrorMessage(relatedDeploymentFetchError)}
+                </Alert>
             )}
             <Flex flex={{ default: 'flex_1' }}>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
@@ -117,7 +120,9 @@ const DeploymentDetails = ({ deployment }) => {
                     <FlexItem>
                         <Card isFlat data-testid="deployment-overview">
                             <CardBody>
-                                <DeploymentOverview deployment={deploymentObj} />
+                                {relatedDeployment && (
+                                    <DeploymentOverview deployment={relatedDeployment} />
+                                )}
                             </CardBody>
                         </Card>
                     </FlexItem>
@@ -130,8 +135,8 @@ const DeploymentDetails = ({ deployment }) => {
                     <FlexItem>
                         <Card isFlat data-testid="port-configuration">
                             <CardBody>
-                                {deploymentObj?.ports?.length > 0
-                                    ? formatDeploymentPorts(deploymentObj.ports).map(
+                                {relatedDeploymentPorts.length > 0
+                                    ? formatDeploymentPorts(relatedDeploymentPorts).map(
                                           (port, idx) => (
                                               // eslint-disable-next-line react/no-array-index-key
                                               <ObjectDescriptionList data={port} key={idx} />
@@ -159,11 +164,11 @@ const DeploymentDetails = ({ deployment }) => {
                     <FlexItem>
                         <Card isFlat data-testid="network-policy">
                             <CardBody>
-                                {namespacePoliciesList?.length > 0 ? (
+                                {namespacePolicies.length > 0 ? (
                                     <TableComposable variant="compact">
                                         <Caption>
                                             <Title headingLevel="h3">All network policies</Title>
-                                            in &quot;{deploymentObj.namespace}&quot; namespace
+                                            in &quot;{alertDeployment.namespace}&quot; namespace
                                         </Caption>
                                         <Thead>
                                             <Tr>
@@ -171,7 +176,7 @@ const DeploymentDetails = ({ deployment }) => {
                                             </Tr>
                                         </Thead>
                                         <Tbody>
-                                            {namespacePoliciesList
+                                            {namespacePolicies
                                                 .sort(compareNetworkPolicies)
                                                 .map((netpol: NetworkPolicy) => (
                                                     // TODO(ROX-11034): This should be a link to the Network Policy yaml or detail screen.
@@ -184,7 +189,7 @@ const DeploymentDetails = ({ deployment }) => {
                                 ) : (
                                     <>
                                         No network policies found in &quot;
-                                        {deploymentObj.namespace}&quot; namespace
+                                        {alertDeployment.namespace}&quot; namespace
                                     </>
                                 )}
                             </CardBody>
