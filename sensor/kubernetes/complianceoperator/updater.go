@@ -189,7 +189,7 @@ func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
 		return "", err
 	}
 
-	return "", errors.Errorf("deployment %s not found in any namespacce", complianceoperator.Name)
+	return "", errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
 }
 
 func (u *updaterImpl) ctx() context.Context {

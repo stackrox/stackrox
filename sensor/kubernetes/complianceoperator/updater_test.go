@@ -84,7 +84,7 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 
 func (s *UpdaterTestSuite) TestNotFound() {
 	actual := s.getInfo(1)
-	s.assertEqual(expectedInfo{error: "deployment compliance-operator not found"}, actual)
+	s.assertEqual(expectedInfo{error: "deployment compliance-operator not found in any namespace"}, actual)
 }
 
 func (s *UpdaterTestSuite) getInfo(times int) *central.ComplianceOperatorInfo {
