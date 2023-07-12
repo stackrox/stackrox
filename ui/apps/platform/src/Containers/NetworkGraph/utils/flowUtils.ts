@@ -1,4 +1,4 @@
-import { uniq } from 'lodash';
+import uniq from 'lodash/uniq';
 
 import { L4Protocol, NetworkEntityInfoType as EntityType } from 'types/networkFlow.proto';
 import { GroupedDiffFlows } from 'types/networkPolicyService';
