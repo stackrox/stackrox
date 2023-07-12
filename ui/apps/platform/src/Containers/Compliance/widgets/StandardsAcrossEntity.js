@@ -3,12 +3,9 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import pluralize from 'pluralize';
-import toLower from 'lodash/toLower';
 import merge from 'lodash/merge';
 
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
-import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
 import URLService from 'utils/URLService';
 import Widget from 'Components/Widget';
@@ -17,6 +14,8 @@ import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
+
+import { entityNounOrdinaryCasePlural } from '../entitiesForCompliance';
 
 function formatAsPercent(x) {
     return `${x}%`;
@@ -53,8 +52,7 @@ function setStandardsMapping(data, key, type) {
 
 const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const entityTypeLabel = resourceLabels[entityType];
-    const headerText = `Passing standards across ${entityTypeLabel}s`;
+    const headerText = `Passing standards across ${entityNounOrdinaryCasePlural[entityType]}`;
 
     function processData(data, type) {
         if (!data || !data.results || !data.results.results.length) {
@@ -87,9 +85,9 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 x: percentagePassing,
                 hint: {
                     title: `${standard?.name} Standard - ${percentagePassing}% Passing`,
-                    body: `${
-                        totalControls - passingControls
-                    } failing controls across all ${pluralize(resourceLabels[type])}`,
+                    body: `${totalControls - passingControls} failing controls across all ${
+                        entityNounOrdinaryCasePlural[entityType][type]
+                    }`,
                 },
                 link,
             };
@@ -111,7 +109,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             <Widget
                 className={`s-2 ${className}`}
                 header={headerText}
-                id={`standards-across-${toLower(entityType)}`}
                 bodyClassName={`graph-bottom-border ${bodyClassName}`}
             >
                 <div>
@@ -137,7 +134,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         <Widget
             className={`s-2 ${className}`}
             header={headerText}
-            id={`standards-across-${toLower(entityType)}`}
             bodyClassName={`graph-bottom-border ${bodyClassName}`}
         >
             {contents}
