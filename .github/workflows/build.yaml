@@ -458,7 +458,7 @@ jobs:
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
               push_context="merge-to-master"
             fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}-${{ env.ARCH }}"
+            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}-${{ matrix.arch }}"
 
       - name: Push matching collector and scanner images
         # Skip for external contributions.
@@ -466,7 +466,7 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}-${{ env.ARCH }}"
+            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}-${{ matrix.arch }}"
 
       - name: Comment on the PR
         # Skip for external contributions.

@@ -1,5 +1,5 @@
 name: Setup ppc64le cross-compiler
-description: Cross-compile rocksdb on Power using IBM Power cross-compiler
+description: Setup IBM Advanced Toolchain cross-compiler for power
 runs:
   using: composite
   steps:
