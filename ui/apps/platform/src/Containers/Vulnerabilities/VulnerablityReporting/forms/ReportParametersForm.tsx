@@ -19,12 +19,16 @@ import {
     SetReportFormValues,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import usePermissions from 'hooks/usePermissions';
+import { fixabilityLabels } from 'constants/reportConstants';
+import {
+    cvesDiscoveredSinceLabelMap,
+    imageTypeLabelMap,
+} from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import CollectionSelection from './CollectionSelection';
-import { cveStatusLabelMap, cvesDiscoveredSinceLabelMap, imageTypeLabelMap } from '../utils';
 
 export type ReportParametersFormParams = {
     formValues: ReportFormValues;
@@ -164,9 +168,9 @@ function ReportParametersForm({
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
                         placeholderText="CVE status"
                     >
-                        <SelectOption value="FIXABLE">{cveStatusLabelMap.FIXABLE}</SelectOption>
+                        <SelectOption value="FIXABLE">{fixabilityLabels.FIXABLE}</SelectOption>
                         <SelectOption value="NOT_FIXABLE">
-                            {cveStatusLabelMap.NOT_FIXABLE}
+                            {fixabilityLabels.NOT_FIXABLE}
                         </SelectOption>
                     </CheckboxSelect>
                 </FormGroup>

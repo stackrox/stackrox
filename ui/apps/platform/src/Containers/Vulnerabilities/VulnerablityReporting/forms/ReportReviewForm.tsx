@@ -21,8 +21,14 @@ import {
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { getDate } from 'utils/dateUtils';
+import {
+    cvesDiscoveredSinceLabelMap,
+    imageTypeLabelMap,
+} from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
+import { fixabilityLabels } from 'constants/reportConstants';
+
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { cveStatusLabelMap, cvesDiscoveredSinceLabelMap, imageTypeLabelMap } from '../utils';
+
 import exampleReportsCSVData from '../exampleReportsCSVData';
 
 export type ReportReviewFormParams = {
@@ -43,7 +49,7 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
     const cveStatuses =
         formValues.reportParameters.cveStatus.length !== 0 ? (
             formValues.reportParameters.cveStatus.map((status) => (
-                <li key={status}>{cveStatusLabelMap[status]}</li>
+                <li key={status}>{fixabilityLabels[status]}</li>
             ))
         ) : (
             <li>None</li>

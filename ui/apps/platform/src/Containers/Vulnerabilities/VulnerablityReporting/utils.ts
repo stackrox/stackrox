@@ -1,10 +1,5 @@
 import { ImageType } from 'types/reportConfigurationService.proto';
-import { CVESDiscoveredSince, CVEStatus } from './forms/useReportFormValues';
-
-export const cveStatusLabelMap: Record<CVEStatus, string> = {
-    FIXABLE: 'Fixable',
-    NOT_FIXABLE: 'Not fixable',
-};
+import { CVESDiscoveredSince } from './forms/useReportFormValues';
 
 export const imageTypeLabelMap: Record<ImageType, string> = {
     DEPLOYED: 'Deployed images',
