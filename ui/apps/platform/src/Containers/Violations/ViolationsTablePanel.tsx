@@ -140,7 +140,7 @@ function ViolationsTablePanel({
                         {pluralize(violationsCount, 'result')} found
                     </Title>
                 </FlexItem>
-                <FlexItem data-testid="violations-bulk-actions-dropdown">
+                <FlexItem>
                     <Select
                         onToggle={onToggleSelect}
                         isOpen={isSelectOpen}
