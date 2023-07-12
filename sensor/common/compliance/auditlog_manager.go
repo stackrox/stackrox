@@ -52,6 +52,7 @@ func NewAuditLogCollectionManager() AuditLogCollectionManager {
 		fileStateUpdates:        make(chan *central.MsgFromSensor),
 		stopSig:                 concurrency.NewSignal(),
 		forceUpdateSig:          concurrency.NewSignal(),
+		centralReady:            concurrency.NewSignal(),
 		updateInterval:          defaultInterval,
 	}
 }
