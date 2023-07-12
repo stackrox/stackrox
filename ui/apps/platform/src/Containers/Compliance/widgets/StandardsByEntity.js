@@ -9,7 +9,6 @@ import chunk from 'lodash/chunk';
 
 import entityTypes from 'constants/entityTypes';
 import URLService from 'utils/URLService';
-import { resourceLabels } from 'messages/common';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
@@ -17,6 +16,8 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import { AGGREGATED_RESULTS_STANDARDS_BY_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
+
+import { entityNounOrdinaryCaseSingular } from '../entitiesForCompliance';
 
 function processData(match, location, data, entityType, searchParam) {
     if (!data || !data.results.results.length || !data.entityList) {
@@ -57,7 +58,7 @@ function processData(match, location, data, entityType, searchParam) {
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id] || standard.id,
-                body: `${numFailingControls} controls failing in this ${resourceLabels[entityType]}`,
+                body: `${numFailingControls} controls failing in this ${entityNounOrdinaryCaseSingular[entityType]}`,
             },
             link,
         };
@@ -101,7 +102,7 @@ function getLabelLinks(match, location, data, entityType) {
 
 const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const headerText = `Passing standards by ${resourceLabels[entityType]}`;
+    const headerText = `Passing standards by ${entityNounOrdinaryCaseSingular[entityType]}`;
 
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
