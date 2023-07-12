@@ -6,7 +6,7 @@
 
 .ReactModal__Content,
 #main-page-container > div > :not(.pf-c-page__main-section) {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--base-600);
 }
 

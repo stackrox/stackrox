@@ -29,7 +29,7 @@ const TileContent = ({
             data-testid={dataTestId}
         >
             {superText !== '' && (
-                <div className="text-2xl pb-1" data-testid="tileLinkSuperText">
+                <div className="text-lg pb-1" data-testid="tileLinkSuperText">
                     {superText}
                 </div>
             )}
