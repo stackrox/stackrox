@@ -37,12 +37,10 @@ func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage
 }
 
 func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "K8SRoleBinding", "SearchRoleBindings")
 	return d.searcher.SearchRoleBindings(ctx, q)
 }
 
 func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Query) ([]*storage.K8SRoleBinding, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "K8SRoleBinding", "SearchRawRoleBindings")
 	return d.searcher.SearchRawRoleBindings(ctx, request)
 }
 
@@ -67,9 +65,14 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "K8SRoleBinding", "Search")
 	return d.searcher.Search(ctx, q)
 }
 
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
+}
+
+func (d *datastoreImpl) GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
+	return d.storage.GetMany(ctx, ids)
 }
