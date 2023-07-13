@@ -4,6 +4,7 @@ import {
     clickFirstDrillDownButtonInEventTimeline,
     clickNextPageInEventTimelineWithoutRequest,
     clickTab,
+    filterEventsByType,
     getFormattedEventTimeById,
     viewGraph,
     viewRiskDeploymentByName,
@@ -73,14 +74,6 @@ describe('Risk Event Timeline for Pod', () => {
     });
 
     describe('Filtering Events By Type', () => {
-        const FILTER_OPTIONS = {
-            SHOW_ALL: 0,
-            POLICY_VIOLATIONS: 1,
-            PROCESS_ACTIVITIES: 2,
-            RESTARTS: 3,
-            TERMINATIONS: 4,
-        };
-
         it('should filter policy violation events', () => {
             openEventTimeline();
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
@@ -90,10 +83,7 @@ describe('Risk Event Timeline for Pod', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.policyViolation);
 
             // filter by something else
-            cy.get(selectors.eventTimeline.select.input).click();
-            cy.get(
-                `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.PROCESS_ACTIVITIES})`
-            ).click();
+            filterEventsByType('Process Activities');
 
             // the policy violation event should not be visible
             cy.get(selectors.eventTimeline.timeline.mainView.event.policyViolation).should(
@@ -111,10 +101,7 @@ describe('Risk Event Timeline for Pod', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity);
 
             // filter by something else
-            cy.get(selectors.eventTimeline.select.input).click();
-            cy.get(
-                `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
-            ).click();
+            filterEventsByType('Policy Violations');
 
             // the process activity + process in baseline activity event should not be visible
             cy.get(selectors.eventTimeline.timeline.mainView.event.processActivity).should(
@@ -134,10 +121,7 @@ describe('Risk Event Timeline for Pod', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.restart);
 
             // filter by something else
-            cy.get(selectors.eventTimeline.select.input).click();
-            cy.get(
-                `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
-            ).click();
+            filterEventsByType('Policy Violations');
 
             // thecontainer restart event should not be visible
             cy.get(selectors.eventTimeline.timeline.mainView.event.restart).should('not.exist');
@@ -152,10 +136,7 @@ describe('Risk Event Timeline for Pod', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.termination);
 
             // filter by something else
-            cy.get(selectors.eventTimeline.select.input).click();
-            cy.get(
-                `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
-            ).click();
+            filterEventsByType('Policy Violations');
 
             // the container termination event should not be visible
             cy.get(selectors.eventTimeline.timeline.mainView.event.containerTermination).should(

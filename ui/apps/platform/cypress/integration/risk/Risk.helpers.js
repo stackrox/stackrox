@@ -74,12 +74,6 @@ export function viewRiskDeploymentInNetworkGraph() {
     });
 }
 
-// interact
-
-export function clickTab(tabText) {
-    cy.get(`button[data-testid="tab"]:contains("${tabText}")`).click();
-}
-
 // Process Discovery
 
 const getDeploymentEventTimelineAlias = 'getDeploymentEventTimeline';
@@ -161,4 +155,15 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
             },
         }
     );
+}
+
+// interact
+
+export function clickTab(tabText) {
+    cy.get(`button[data-testid="tab"]:contains("${tabText}")`).click();
+}
+
+export function filterEventsByType(eventType) {
+    cy.get('[aria-label="Modal"] .react-select__control').click();
+    cy.get(`[aria-label="Modal"] .react-select__option:contains("${eventType}")`).click();
 }
