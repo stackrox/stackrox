@@ -73,14 +73,20 @@ func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 			expected:       clusterVerboseMatch(topLevelTest, planetArrakis),
 		},
 		{
-			description:    "Scope tree with only partial cluster nodes generates a MatchNone query filter",
+			description:    "Scope tree with only partial cluster nodes generates a Conjunction of Match query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceMixIncluded,
-			expected:       getMatchNoneQuery(),
+			expected: search.DisjunctionQuery(
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				clusterVerboseMatch(topLevelTest, planetEarth),
+			),
 		},
 		{
-			description:    "Scope tree with one included cluster tree and partial clusters generate only a Match for the included cluster",
+			description:    "Scope tree with one included cluster tree and partial clusters generate a Disjunction of Match for the included clusters",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
-			expected:       clusterVerboseMatch(topLevelTest, planetArrakis),
+			expected: search.DisjunctionQuery(
+				clusterVerboseMatch(topLevelTest, planetArrakis),
+				clusterVerboseMatch(topLevelTest, planetEarth),
+			),
 		},
 		{
 			description:    "Scope tree with multiple included cluster trees generates a Disjunction of Match for the included clusters",
