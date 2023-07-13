@@ -25,6 +25,6 @@ func New(metadataDatastore metadataDS.DataStore, snapshotDS snapshotDataStore.Da
 	}
 	return &serviceImpl{
 		metadataDatastore: metadataDatastore,
-		snapshotDS:        snapshotDS,
+		snapshotDatastore: snapshotDS,
 	}
 }
