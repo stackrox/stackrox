@@ -197,6 +197,8 @@ func {{ template "insertFunctionName" $schema }}({{ if eq (len $schema.Children)
         pgutils.NilOrTime({{$field.Getter "obj"}}),
         {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
+        {{- else if eq $field.DataType "map" }}
+        pgutils.EmptyOrMap({{$field.Getter "obj"}}),
         {{- else }}
         {{$field.Getter "obj"}},{{end}}
         {{- end}}
@@ -267,7 +269,9 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
             pgutils.NilOrTime({{$field.Getter "obj"}}),
             {{- else if eq $field.SQLType "uuid" }}
             pgutils.NilOrUUID({{$field.Getter "obj"}}),
-            {{- else}}
+            {{- else if eq $field.DataType "map" }}
+            pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+            {{- else }}
             {{$field.Getter "obj"}},{{end}}
             {{- end}}
         })

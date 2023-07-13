@@ -121,8 +121,8 @@ func insertIntoK8sRoles(_ context.Context, batch *pgx.Batch, obj *storage.K8SRol
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetClusterRole(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
 	}
 
@@ -169,8 +169,8 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
 			obj.GetClusterRole(),
-			obj.GetLabels(),
-			obj.GetAnnotations(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
 		})
 

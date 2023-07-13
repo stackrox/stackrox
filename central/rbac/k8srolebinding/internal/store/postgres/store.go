@@ -121,8 +121,8 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetClusterRole(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		pgutils.NilOrUUID(obj.GetRoleId()),
 		serialized,
 	}
@@ -197,8 +197,8 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
 			obj.GetClusterRole(),
-			obj.GetLabels(),
-			obj.GetAnnotations(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			pgutils.NilOrUUID(obj.GetRoleId()),
 			serialized,
 		})

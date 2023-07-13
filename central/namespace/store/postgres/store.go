@@ -119,8 +119,8 @@ func insertIntoNamespaces(_ context.Context, batch *pgx.Batch, obj *storage.Name
 		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
 	}
 
@@ -163,8 +163,8 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
-			obj.GetLabels(),
-			obj.GetAnnotations(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
 		})
 

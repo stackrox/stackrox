@@ -117,7 +117,7 @@ func insertIntoClusters(_ context.Context, batch *pgx.Batch, obj *storage.Cluste
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
-		obj.GetLabels(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
 		serialized,
 	}
 

@@ -120,8 +120,8 @@ func insertIntoServiceAccounts(_ context.Context, batch *pgx.Batch, obj *storage
 		obj.GetNamespace(),
 		obj.GetClusterName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
 	}
 
@@ -166,8 +166,8 @@ func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetNamespace(),
 			obj.GetClusterName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetLabels(),
-			obj.GetAnnotations(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
 		})
 
