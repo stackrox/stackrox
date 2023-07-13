@@ -32,7 +32,7 @@ func Export(ctx context.Context, outputDir string) error {
 	// Append updater sets directly to the updaters
 	appendUpdaterSet := func(updaterSet driver.UpdaterSet, err error) {
 		if err != nil {
-			zlog.Error(ctx).Msg(err.Error())
+			zlog.Error(ctx).Err(err).Send()
 			return
 		}
 		updaters = append(updaters, updaterSet.Updaters()...)
@@ -108,13 +108,11 @@ func Export(ctx context.Context, outputDir string) error {
 	if err != nil {
 		return err
 	}
-
 	defer os.Remove(outputFile.Name())
 
 	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
-
 	httpClient := &http.Client{
-		Transport: &rateLimitTransport{
+		Transport: &rateLimitedTransport{
 			limiter:   limiter,
 			transport: http.DefaultTransport,
 		},
@@ -169,12 +167,12 @@ func Export(ctx context.Context, outputDir string) error {
 	return nil
 }
 
-type rateLimitTransport struct {
+type rateLimitedTransport struct {
 	limiter   *rate.Limiter
 	transport http.RoundTripper
 }
 
-func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *rateLimitedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := t.limiter.Wait(req.Context()); err != nil {
 		return nil, err
 	}

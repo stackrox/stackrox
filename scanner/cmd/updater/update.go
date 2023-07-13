@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	// Parse command-line flags
 	outputDir := flag.String("outputDir", "", "Output directory")
 	flag.Parse()
@@ -21,7 +20,6 @@ func main() {
 	}
 
 	ctx := context.Background()
-
 	if err := updater.Export(ctx, *outputDir); err != nil {
 		zlog.Error(ctx).Err(err).Send()
 	}

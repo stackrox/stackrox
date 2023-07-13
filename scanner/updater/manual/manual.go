@@ -3,11 +3,9 @@ package manual
 import (
 	"context"
 	"io"
-	"net/http"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
 )
 
 // Factory is the UpdaterSetFactory exposed by this package.
@@ -29,14 +27,6 @@ type updater struct {
 var _ driver.Updater = (*updater)(nil)
 
 func (u *updater) Name() string { return `manual updater` }
-
-// Configure implements driver.Configurable.
-func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/manual/updater.Configure")
-
-	zlog.Debug(ctx).Msg("loaded incoming config")
-	return nil
-}
 
 func (u *updater) Fetch(_ context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	return nil, "", nil
