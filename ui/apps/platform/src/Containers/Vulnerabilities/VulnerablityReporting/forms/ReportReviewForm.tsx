@@ -63,6 +63,25 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
             <li>None</li>
         );
 
+    const deliveryDestinations =
+        formValues.deliveryDestinations.length !== 0 ? (
+            formValues.deliveryDestinations.map((deliveryDestination) => (
+                <li key={deliveryDestination.notifier?.id}>{deliveryDestination.notifier?.name}</li>
+            ))
+        ) : (
+            <li>None</li>
+        );
+
+    const mailingLists =
+        formValues.deliveryDestinations.length !== 0 ? (
+            formValues.deliveryDestinations.map((deliveryDestination) => {
+                const emails = deliveryDestination.mailingLists.join(', ');
+                return <li key={emails}>{emails}</li>;
+            })
+        ) : (
+            <li>None</li>
+        );
+
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
@@ -157,13 +176,13 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Email notifier</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    Email integration 1
+                                    <ul>{deliveryDestinations}</ul>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Destribution list</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    sara@example.com
+                                    <ul>{mailingLists}</ul>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                         </DescriptionList>
