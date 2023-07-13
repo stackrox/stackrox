@@ -26,7 +26,7 @@ compatibility_test() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    info "Starting test (sensor compatibility test Central version - ${CENTRAL_CHART_VERSION_OVERRIDE}, Sensor version - ${SENSOR_CHART_VERSION_OVERRIDE})"
+    info "Starting test (compatibility test Central version - ${CENTRAL_CHART_VERSION_OVERRIDE}, Sensor version - ${SENSOR_CHART_VERSION_OVERRIDE})"
 
     export_test_environment
 
