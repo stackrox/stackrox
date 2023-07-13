@@ -63,16 +63,16 @@ type NetworkEntityDataStoreTestSuite struct {
 func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.elevatedCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.noAccessCtx = sac.WithNoAccess(context.Background())
 	suite.globalReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.globalWriteAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
@@ -310,17 +310,17 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 
 	cluster1ReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedClusterLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster1)))
 	cluster1WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedClusterLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster1)))
 	cluster2WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedClusterLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster2)))
 

@@ -43,11 +43,11 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 }
 

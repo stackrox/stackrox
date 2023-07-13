@@ -170,7 +170,7 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 
 	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	return ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
 }

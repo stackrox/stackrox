@@ -900,14 +900,14 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 		},
 		"access to clusterA": {
 			checker: sac.AllowFixedClusterLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA")),
 			expectAllowed: true,
 		},
 		"exactly matching namespaces": {
 			checker: sac.AllowFixedNamespaceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
 				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux")),
@@ -915,7 +915,7 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 		},
 		"more namespaces": {
 			checker: sac.AllowFixedNamespaceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
 				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux", "quuz")),
@@ -927,14 +927,14 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 		},
 		"access to clusterB": {
 			checker: sac.AllowFixedClusterLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterB")),
 			expectAllowed: false,
 		},
 		"correct namespaces in wrong cluster": {
 			checker: sac.AllowFixedNamespaceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterB"),
 				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux")),
@@ -942,7 +942,7 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 		},
 		"one namespace missing": {
 			checker: sac.AllowFixedNamespaceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
 				sac.NamespaceScopeKeys("bar", "baz", "qux")),

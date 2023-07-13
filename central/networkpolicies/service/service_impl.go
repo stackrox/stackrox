@@ -952,7 +952,7 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)

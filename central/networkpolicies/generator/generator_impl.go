@@ -110,7 +110,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedClusterLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(clusterID)))
 

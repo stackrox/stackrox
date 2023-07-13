@@ -116,7 +116,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedClusterLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
@@ -124,7 +124,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedNamespaceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
@@ -133,7 +133,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedClusterLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
@@ -141,7 +141,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedNamespaceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
@@ -149,7 +149,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 	ctxWithUnrestrictedWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedResourceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	// Test Update

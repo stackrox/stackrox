@@ -179,7 +179,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Node, resources.NetworkGraph)))
 
 	clusters, err := ds.collectClusters(ctx)
@@ -328,7 +328,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
 	if _, err := ds.netFlowsDataStore.CreateFlowStore(networkGraphElevatedCtx, cluster.GetId()); err != nil {

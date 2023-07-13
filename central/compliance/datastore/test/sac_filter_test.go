@@ -32,7 +32,7 @@ func (s *sacFilterTestSuite) TestRunNotFiltered() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment, resources.Node)))
 
 	resultToFilter := &storage.ComplianceRunResults{
@@ -87,7 +87,7 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment, resources.Node)))
 
 	resultToFilter := &storage.ComplianceRunResults{
@@ -178,7 +178,7 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Node)))
 
 	resultToFilter := &storage.ComplianceRunResults{
@@ -376,7 +376,7 @@ func (s *sacFilterTestSuite) TestFilterNodes() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment)))
 
 	resultToFilter := &storage.ComplianceRunResults{
@@ -458,7 +458,7 @@ func (s *sacFilterTestSuite) TestFiltersClustersBatch() {
 	cluster2 := "c2"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedClusterLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Compliance, resources.Deployment, resources.Node),
 			sac.ClusterScopeKeys(cluster2)))
 

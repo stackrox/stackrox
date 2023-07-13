@@ -69,15 +69,6 @@ func AccessModeScopeKeys(ams ...storage.Access) []AccessModeScopeKey {
 	return keys
 }
 
-// AccessModeScopeKeyList wraps the given access modes in an access scope key slice.
-func AccessModeScopeKeyList(ams ...storage.Access) []AccessModeScopeKey {
-	keys := make([]AccessModeScopeKey, len(ams))
-	for i, am := range ams {
-		keys[i] = AccessModeScopeKey(am)
-	}
-	return keys
-}
-
 // ResourceScopeKey is the scope key for the resource scope.
 type ResourceScopeKey permissions.Resource
 

@@ -28,7 +28,7 @@ var (
 	log                = logging.LoggerForModule()
 	riskReprocessorCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment, resources.Image, resources.DeploymentExtension, resources.Node),
 		))
 	// Used for scorer.score() as the different Multipliers which will eventually use this context will require different permissions

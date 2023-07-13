@@ -255,7 +255,7 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 	errorList := errorhelpers.NewErrorList("deleting images")
 	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	for _, id := range ids {
@@ -296,7 +296,7 @@ func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve strin
 func (ds *datastoreImpl) initializeRankers() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Image)))
 
 	results, err := ds.searcher.Search(readCtx, pkgSearch.EmptyQuery())

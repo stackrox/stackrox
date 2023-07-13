@@ -64,7 +64,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 	ii, _, err := store.Singleton().Get(
 		sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedResourceLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.InstallationInfo))))
 
 	if err != nil || ii == nil {

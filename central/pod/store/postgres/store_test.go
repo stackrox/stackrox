@@ -413,3 +413,55 @@ func (s *PodsStoreSuite) TestSACGetMany() {
 		assert.Nil(t, missingIndices)
 	})
 }
+<<<<<<< HEAD
+=======
+
+const (
+	withAllAccess                = "AllAccess"
+	withNoAccess                 = "NoAccess"
+	withAccessToDifferentNs      = "AccessToDifferentNs"
+	withAccessToDifferentCluster = "AccessToDifferentCluster"
+	withAccess                   = "Access"
+	withAccessToCluster          = "AccessToCluster"
+	withNoAccessToCluster        = "NoAccessToCluster"
+)
+
+func getSACContexts(obj *storage.Pod, access storage.Access) map[string]context.Context {
+	return map[string]context.Context{
+		withAllAccess: sac.WithAllAccess(context.Background()),
+		withNoAccess:  sac.WithNoAccess(context.Background()),
+		withAccessToDifferentCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeys(access),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+			)),
+		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeys(access),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys("unknown ns"),
+			)),
+		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeys(access),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys(obj.GetNamespace()),
+			)),
+		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeys(access),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+			)),
+		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeys(access),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(uuid.Nil.String()),
+			)),
+	}
+}
+>>>>>>> d6486707d8 (Re-adjust function renames)

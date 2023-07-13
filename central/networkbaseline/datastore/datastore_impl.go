@@ -131,7 +131,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 	// First check permission
 	elevatedCheckForDeleteCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	for _, id := range deploymentIDs {

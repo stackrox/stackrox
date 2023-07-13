@@ -161,7 +161,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		"read-write on the right cluster and partial namespace access can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
 				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterIDs...),
 					sac.NamespaceScopeKeys("someNamespace"))),

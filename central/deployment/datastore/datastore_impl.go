@@ -70,7 +70,7 @@ func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.S
 func (ds *datastoreImpl) initializeRanker() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment)))
 
 	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
@@ -303,7 +303,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph, resources.DeploymentExtension),
 		))
 

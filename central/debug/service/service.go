@@ -151,7 +151,7 @@ func (s *serviceImpl) InternalDiagnosticsHandler() http.HandlerFunc {
 		// Adding scope checker as no authorizer is used, ergo no identity in context by default.
 		ctx := sac.WithGlobalAccessScopeChecker(r.Context(),
 			sac.AllowFixedAccessLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS)))
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
 		s.getDiagnosticDumpWithCentral(responseWriter, r.WithContext(ctx), true)
 	}
 }
@@ -437,7 +437,7 @@ func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
 func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
 	return s.groupDataStore.GetAll(accessGroupsCtx)
@@ -452,7 +452,7 @@ type diagResolvedRole struct {
 func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
@@ -484,7 +484,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
 
 	return s.notifierDataStore.GetScrubbedNotifiers(accessNotifierCtx)
@@ -493,7 +493,7 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)

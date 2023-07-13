@@ -44,7 +44,7 @@ func getRolesForRoleBindings(ctx context.Context, roleStore datastore.DataStore,
 		if !clusterK8SRoleScopeChecker.IsAllowed() {
 			clusterRoleCtx = sac.WithGlobalAccessScopeChecker(ctx,
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.K8sRole),
 					sac.ClusterScopeKeys(clusterID)))
 		}

@@ -42,7 +42,7 @@ func (s *groupsWithPostgresTestSuite) SetupSuite() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
 	s.testPostgres = pgtest.ForT(s.T())

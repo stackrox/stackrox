@@ -18,7 +18,7 @@ import (
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
 	totals := make(map[string]any)

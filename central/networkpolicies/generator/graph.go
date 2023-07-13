@@ -260,7 +260,7 @@ func (g *generator) buildGraph(ctx context.Context, clusterID string, selectedDe
 		q := search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery()
 		viewAllDeploymentsInClusterCtx := sac.WithGlobalAccessScopeChecker(ctx,
 			sac.AllowFixedClusterLevelScopes(
-				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Deployment),
 				sac.ClusterScopeKeys(clusterID)))
 		results, err := g.deploymentStore.Search(viewAllDeploymentsInClusterCtx, q)

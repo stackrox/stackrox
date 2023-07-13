@@ -338,7 +338,7 @@ func TestBaselineCheck(t *testing.T) {
 	}
 	hasReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension, resources.Deployment)))
 	mockCtrl := gomock.NewController(t)
 	deployments := deploymentMocks.NewMockDataStore(mockCtrl)

@@ -37,7 +37,7 @@ var (
 	networkGraphSAC       = sac.ForResource(resources.NetworkGraph)
 	administrationReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 )
 
@@ -465,7 +465,7 @@ func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...strin
 	// If push request if for a global network entity, push to all known clusters once and return.
 	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
 	if set.NewStringSet(clusters...).Contains("") {
