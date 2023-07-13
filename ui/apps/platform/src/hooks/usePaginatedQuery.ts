@@ -84,8 +84,8 @@ export function usePaginatedQuery<Item, ItemKey>(
     // the `fetchPageHandler` function below relies on the reference of `dedupKeyFn`. By storing these
     // in state, it removes the burden of wrapping in a useCallback or useMemo from the caller.
     const [{ debounceRate, dedupKeyFn, onError, manualFetch = false }] = useState(initialOptions);
-    const [isRefreshingResults, setIsRefreshingResults] = useState(false);
-    const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+    const [isRefreshingResults, setIsRefreshingResults] = useState(!manualFetch);
+    const [isFetchingNextPage, setIsFetchingNextPage] = useState(!manualFetch);
     const [isEndOfResults, setIsEndOfResults] = useState(false);
     const [lastFetchError, setLastFetchError] = useState<Error | null>(null);
 
