@@ -340,10 +340,6 @@ function launch_central {
         helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
 
-      if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ]]; then
-        MAIN_IMAGE_TAG="${CENTRAL_CHART_VERSION_OVERRIDE}"
-      fi
-
       set -x
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
