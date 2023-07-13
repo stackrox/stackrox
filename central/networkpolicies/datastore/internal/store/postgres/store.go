@@ -43,10 +43,12 @@ var (
 	targetResource = resources.NetworkPolicy
 )
 
+type storeType = storage.NetworkPolicy
+
 // Store is the interface to interact with the storage for storage.NetworkPolicy
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.NetworkPolicy) error
-	UpsertMany(ctx context.Context, objs []*storage.NetworkPolicy) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -54,25 +56,23 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkPolicy, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkPolicy, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.NetworkPolicy) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.NetworkPolicy, *storage.NetworkPolicy]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.NetworkPolicy, *storage.NetworkPolicy](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -85,7 +85,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.NetworkPolicy) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -189,7 +189,7 @@ func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx *postgres.Tx
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicy) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicy
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkPolicy) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -245,8 +245,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkPolicy) 
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkPolicy) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkPolicy")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
 		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
@@ -260,8 +260,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkPolicy) erro
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkPolicy) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkPolicy")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

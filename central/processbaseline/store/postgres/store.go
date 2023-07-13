@@ -43,10 +43,12 @@ var (
 	targetResource = resources.DeploymentExtension
 )
 
+type storeType = storage.ProcessBaseline
+
 // Store is the interface to interact with the storage for storage.ProcessBaseline
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.ProcessBaseline) error
-	UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -54,25 +56,23 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessBaseline, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.ProcessBaseline, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.ProcessBaseline) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.ProcessBaseline, *storage.ProcessBaseline]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.ProcessBaseline, *storage.ProcessBaseline](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -85,7 +85,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.ProcessBaseline) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -194,7 +194,7 @@ func (s *storeImpl) copyFromProcessBaselines(ctx context.Context, tx *postgres.T
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseline) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -250,8 +250,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ProcessBaseline")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
 		ClusterID(obj.GetKey().GetClusterId()).Namespace(obj.GetKey().GetNamespace())
@@ -265,8 +265,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) er
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ProcessBaseline")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

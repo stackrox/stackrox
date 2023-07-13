@@ -39,10 +39,12 @@ var (
 	schema = pkgSchema.NetworkEntitiesSchema
 )
 
+type storeType = storage.NetworkEntity
+
 // Store is the interface to interact with the storage for storage.NetworkEntity
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.NetworkEntity) error
-	UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, infoID string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -50,25 +52,23 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, infoID string) (bool, error)
 
-	Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkEntity, []int, error)
+	Get(ctx context.Context, infoID string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.NetworkEntity, *storage.NetworkEntity]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStoreWithPermissionChecker[storage.NetworkEntity, *storage.NetworkEntity](
+		GenericStore: pgSearch.NewGenericStoreWithPermissionChecker[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -81,7 +81,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.NetworkEntity) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetInfo().GetId()
 }
 
@@ -180,7 +180,7 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx *postgres.Tx
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkEntity) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -204,7 +204,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkEntity
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -236,8 +236,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) 
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkEntity) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkEntity")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	if ok, err := permissionCheckerSingleton().UpsertAllowed(ctx); err != nil {
 		return err
@@ -251,8 +251,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkEntity) erro
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkEntity) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkEntity")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	if ok, err := permissionCheckerSingleton().UpsertManyAllowed(ctx); err != nil {
 		return err
