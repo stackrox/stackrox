@@ -35,7 +35,7 @@ type ComplianceOperatorInfo struct {
 	//	*ComplianceOperatorInfo_TotalReadyPods
 	TotalReadyPodsOpt isComplianceOperatorInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
 	// Collection of errors that occurred while trying to obtain collector health info.
-	StatusErrors         []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
+	StatusError          string   `protobuf:"bytes,5,opt,name=status_error,json=statusError,proto3" json:"status_error,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -156,11 +156,11 @@ func (m *ComplianceOperatorInfo) GetTotalReadyPods() int32 {
 	return 0
 }
 
-func (m *ComplianceOperatorInfo) GetStatusErrors() []string {
+func (m *ComplianceOperatorInfo) GetStatusError() string {
 	if m != nil {
-		return m.StatusErrors
+		return m.StatusError
 	}
-	return nil
+	return ""
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
@@ -187,15 +187,1305 @@ func (m *ComplianceOperatorInfo) Clone() *ComplianceOperatorInfo {
 	if m.TotalReadyPodsOpt != nil {
 		cloned.TotalReadyPodsOpt = m.TotalReadyPodsOpt.Clone()
 	}
-	if m.StatusErrors != nil {
-		cloned.StatusErrors = make([]string, len(m.StatusErrors))
-		copy(cloned.StatusErrors, m.StatusErrors)
+	return cloned
+}
+
+type EnableComplianceRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EnableComplianceRequest) Reset()         { *m = EnableComplianceRequest{} }
+func (m *EnableComplianceRequest) String() string { return proto.CompactTextString(m) }
+func (*EnableComplianceRequest) ProtoMessage()    {}
+func (*EnableComplianceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{1}
+}
+func (m *EnableComplianceRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EnableComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EnableComplianceRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EnableComplianceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnableComplianceRequest.Merge(m, src)
+}
+func (m *EnableComplianceRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *EnableComplianceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnableComplianceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnableComplianceRequest proto.InternalMessageInfo
+
+func (m *EnableComplianceRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *EnableComplianceRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *EnableComplianceRequest) Clone() *EnableComplianceRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(EnableComplianceRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+type DisableComplianceRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DisableComplianceRequest) Reset()         { *m = DisableComplianceRequest{} }
+func (m *DisableComplianceRequest) String() string { return proto.CompactTextString(m) }
+func (*DisableComplianceRequest) ProtoMessage()    {}
+func (*DisableComplianceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{2}
+}
+func (m *DisableComplianceRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DisableComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DisableComplianceRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DisableComplianceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DisableComplianceRequest.Merge(m, src)
+}
+func (m *DisableComplianceRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DisableComplianceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DisableComplianceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DisableComplianceRequest proto.InternalMessageInfo
+
+func (m *DisableComplianceRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DisableComplianceRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DisableComplianceRequest) Clone() *DisableComplianceRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DisableComplianceRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+// ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
+type ApplyComplianceScanConfigRequest struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Types that are valid to be assigned to ScanRequest:
+	//	*ApplyComplianceScanConfigRequest_OneTimeScan_
+	ScanRequest          isApplyComplianceScanConfigRequest_ScanRequest `protobuf_oneof:"scan_request"`
+	XXX_NoUnkeyedLiteral struct{}                                       `json:"-"`
+	XXX_unrecognized     []byte                                         `json:"-"`
+	XXX_sizecache        int32                                          `json:"-"`
+}
+
+func (m *ApplyComplianceScanConfigRequest) Reset()         { *m = ApplyComplianceScanConfigRequest{} }
+func (m *ApplyComplianceScanConfigRequest) String() string { return proto.CompactTextString(m) }
+func (*ApplyComplianceScanConfigRequest) ProtoMessage()    {}
+func (*ApplyComplianceScanConfigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{3}
+}
+func (m *ApplyComplianceScanConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ApplyComplianceScanConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ApplyComplianceScanConfigRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ApplyComplianceScanConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ApplyComplianceScanConfigRequest.Merge(m, src)
+}
+func (m *ApplyComplianceScanConfigRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ApplyComplianceScanConfigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ApplyComplianceScanConfigRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ApplyComplianceScanConfigRequest proto.InternalMessageInfo
+
+type isApplyComplianceScanConfigRequest_ScanRequest interface {
+	isApplyComplianceScanConfigRequest_ScanRequest()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isApplyComplianceScanConfigRequest_ScanRequest
+}
+
+type ApplyComplianceScanConfigRequest_OneTimeScan_ struct {
+	OneTimeScan *ApplyComplianceScanConfigRequest_OneTimeScan `protobuf:"bytes,2,opt,name=one_time_scan,json=oneTimeScan,proto3,oneof" json:"one_time_scan,omitempty"`
+}
+
+func (*ApplyComplianceScanConfigRequest_OneTimeScan_) isApplyComplianceScanConfigRequest_ScanRequest() {
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan_) Clone() isApplyComplianceScanConfigRequest_ScanRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ApplyComplianceScanConfigRequest_OneTimeScan_)
+	*cloned = *m
+
+	cloned.OneTimeScan = m.OneTimeScan.Clone()
+	return cloned
+}
+
+func (m *ApplyComplianceScanConfigRequest) GetScanRequest() isApplyComplianceScanConfigRequest_ScanRequest {
+	if m != nil {
+		return m.ScanRequest
+	}
+	return nil
+}
+
+func (m *ApplyComplianceScanConfigRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ApplyComplianceScanConfigRequest) GetOneTimeScan() *ApplyComplianceScanConfigRequest_OneTimeScan {
+	if x, ok := m.GetScanRequest().(*ApplyComplianceScanConfigRequest_OneTimeScan_); ok {
+		return x.OneTimeScan
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ApplyComplianceScanConfigRequest) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ApplyComplianceScanConfigRequest_OneTimeScan_)(nil),
+	}
+}
+
+func (m *ApplyComplianceScanConfigRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ApplyComplianceScanConfigRequest) Clone() *ApplyComplianceScanConfigRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ApplyComplianceScanConfigRequest)
+	*cloned = *m
+
+	if m.ScanRequest != nil {
+		cloned.ScanRequest = m.ScanRequest.Clone()
+	}
+	return cloned
+}
+
+type ApplyComplianceScanConfigRequest_BaseScanSettings struct {
+	DbRecordId             string   `protobuf:"bytes,1,opt,name=db_record_id,json=dbRecordId,proto3" json:"db_record_id,omitempty"`
+	ScanName               string   `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
+	ShowNotApplicable      bool     `protobuf:"varint,3,opt,name=show_not_applicable,json=showNotApplicable,proto3" json:"show_not_applicable,omitempty"`
+	StrictNodeScan         bool     `protobuf:"varint,4,opt,name=strict_node_scan,json=strictNodeScan,proto3" json:"strict_node_scan,omitempty"`
+	AutoApplyRemediations  bool     `protobuf:"varint,5,opt,name=auto_apply_remediations,json=autoApplyRemediations,proto3" json:"auto_apply_remediations,omitempty"`
+	AutoUpdateRemediations bool     `protobuf:"varint,6,opt,name=auto_update_remediations,json=autoUpdateRemediations,proto3" json:"auto_update_remediations,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
+	XXX_unrecognized       []byte   `json:"-"`
+	XXX_sizecache          int32    `json:"-"`
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) Reset() {
+	*m = ApplyComplianceScanConfigRequest_BaseScanSettings{}
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoMessage() {}
+func (*ApplyComplianceScanConfigRequest_BaseScanSettings) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{3, 0}
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ApplyComplianceScanConfigRequest_BaseScanSettings.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ApplyComplianceScanConfigRequest_BaseScanSettings.Merge(m, src)
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_Size() int {
+	return m.Size()
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) XXX_DiscardUnknown() {
+	xxx_messageInfo_ApplyComplianceScanConfigRequest_BaseScanSettings.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ApplyComplianceScanConfigRequest_BaseScanSettings proto.InternalMessageInfo
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) GetDbRecordId() string {
+	if m != nil {
+		return m.DbRecordId
+	}
+	return ""
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) GetScanName() string {
+	if m != nil {
+		return m.ScanName
+	}
+	return ""
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) GetShowNotApplicable() bool {
+	if m != nil {
+		return m.ShowNotApplicable
+	}
+	return false
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) GetStrictNodeScan() bool {
+	if m != nil {
+		return m.StrictNodeScan
+	}
+	return false
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) GetAutoApplyRemediations() bool {
+	if m != nil {
+		return m.AutoApplyRemediations
+	}
+	return false
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) GetAutoUpdateRemediations() bool {
+	if m != nil {
+		return m.AutoUpdateRemediations
+	}
+	return false
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) Clone() *ApplyComplianceScanConfigRequest_BaseScanSettings {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ApplyComplianceScanConfigRequest_BaseScanSettings)
+	*cloned = *m
+
+	return cloned
+}
+
+type ApplyComplianceScanConfigRequest_OneTimeScan struct {
+	ScanSettings         *ApplyComplianceScanConfigRequest_BaseScanSettings `protobuf:"bytes,1,opt,name=scan_settings,json=scanSettings,proto3" json:"scan_settings,omitempty"`
+	Profiles             []string                                           `protobuf:"bytes,2,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                           `json:"-"`
+	XXX_unrecognized     []byte                                             `json:"-"`
+	XXX_sizecache        int32                                              `json:"-"`
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) Reset() {
+	*m = ApplyComplianceScanConfigRequest_OneTimeScan{}
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ApplyComplianceScanConfigRequest_OneTimeScan) ProtoMessage() {}
+func (*ApplyComplianceScanConfigRequest_OneTimeScan) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{3, 1}
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ApplyComplianceScanConfigRequest_OneTimeScan.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ApplyComplianceScanConfigRequest_OneTimeScan.Merge(m, src)
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_Size() int {
+	return m.Size()
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) XXX_DiscardUnknown() {
+	xxx_messageInfo_ApplyComplianceScanConfigRequest_OneTimeScan.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ApplyComplianceScanConfigRequest_OneTimeScan proto.InternalMessageInfo
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
+	if m != nil {
+		return m.ScanSettings
+	}
+	return nil
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) GetProfiles() []string {
+	if m != nil {
+		return m.Profiles
+	}
+	return nil
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) Clone() *ApplyComplianceScanConfigRequest_OneTimeScan {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ApplyComplianceScanConfigRequest_OneTimeScan)
+	*cloned = *m
+
+	cloned.ScanSettings = m.ScanSettings.Clone()
+	if m.Profiles != nil {
+		cloned.Profiles = make([]string, len(m.Profiles))
+		copy(cloned.Profiles, m.Profiles)
+	}
+	return cloned
+}
+
+// DeleteComplianceScanConfigRequest contains information about compliance scan configuration to be deleted from secured cluster.
+type DeleteComplianceScanConfigRequest struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteComplianceScanConfigRequest) Reset()         { *m = DeleteComplianceScanConfigRequest{} }
+func (m *DeleteComplianceScanConfigRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteComplianceScanConfigRequest) ProtoMessage()    {}
+func (*DeleteComplianceScanConfigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{4}
+}
+func (m *DeleteComplianceScanConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteComplianceScanConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteComplianceScanConfigRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteComplianceScanConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteComplianceScanConfigRequest.Merge(m, src)
+}
+func (m *DeleteComplianceScanConfigRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteComplianceScanConfigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteComplianceScanConfigRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteComplianceScanConfigRequest proto.InternalMessageInfo
+
+func (m *DeleteComplianceScanConfigRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DeleteComplianceScanConfigRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *DeleteComplianceScanConfigRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DeleteComplianceScanConfigRequest) Clone() *DeleteComplianceScanConfigRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DeleteComplianceScanConfigRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+// ComplianceRequest is a message from Central (to Sensor) to perform an action related to compliance.
+type ComplianceRequest struct {
+	// Types that are valid to be assigned to Request:
+	//	*ComplianceRequest_EnableCompliance
+	//	*ComplianceRequest_DisableCompliance
+	//	*ComplianceRequest_ApplyScanConfig
+	//	*ComplianceRequest_DeleteScanConfig
+	Request              isComplianceRequest_Request `protobuf_oneof:"request"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *ComplianceRequest) Reset()         { *m = ComplianceRequest{} }
+func (m *ComplianceRequest) String() string { return proto.CompactTextString(m) }
+func (*ComplianceRequest) ProtoMessage()    {}
+func (*ComplianceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{5}
+}
+func (m *ComplianceRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceRequest.Merge(m, src)
+}
+func (m *ComplianceRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceRequest proto.InternalMessageInfo
+
+type isComplianceRequest_Request interface {
+	isComplianceRequest_Request()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isComplianceRequest_Request
+}
+
+type ComplianceRequest_EnableCompliance struct {
+	EnableCompliance *EnableComplianceRequest `protobuf:"bytes,1,opt,name=enable_compliance,json=enableCompliance,proto3,oneof" json:"enable_compliance,omitempty"`
+}
+type ComplianceRequest_DisableCompliance struct {
+	DisableCompliance *DisableComplianceRequest `protobuf:"bytes,2,opt,name=disable_compliance,json=disableCompliance,proto3,oneof" json:"disable_compliance,omitempty"`
+}
+type ComplianceRequest_ApplyScanConfig struct {
+	ApplyScanConfig *ApplyComplianceScanConfigRequest `protobuf:"bytes,3,opt,name=apply_scan_config,json=applyScanConfig,proto3,oneof" json:"apply_scan_config,omitempty"`
+}
+type ComplianceRequest_DeleteScanConfig struct {
+	DeleteScanConfig *DeleteComplianceScanConfigRequest `protobuf:"bytes,4,opt,name=delete_scan_config,json=deleteScanConfig,proto3,oneof" json:"delete_scan_config,omitempty"`
+}
+
+func (*ComplianceRequest_EnableCompliance) isComplianceRequest_Request() {}
+func (m *ComplianceRequest_EnableCompliance) Clone() isComplianceRequest_Request {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceRequest_EnableCompliance)
+	*cloned = *m
+
+	cloned.EnableCompliance = m.EnableCompliance.Clone()
+	return cloned
+}
+func (*ComplianceRequest_DisableCompliance) isComplianceRequest_Request() {}
+func (m *ComplianceRequest_DisableCompliance) Clone() isComplianceRequest_Request {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceRequest_DisableCompliance)
+	*cloned = *m
+
+	cloned.DisableCompliance = m.DisableCompliance.Clone()
+	return cloned
+}
+func (*ComplianceRequest_ApplyScanConfig) isComplianceRequest_Request() {}
+func (m *ComplianceRequest_ApplyScanConfig) Clone() isComplianceRequest_Request {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceRequest_ApplyScanConfig)
+	*cloned = *m
+
+	cloned.ApplyScanConfig = m.ApplyScanConfig.Clone()
+	return cloned
+}
+func (*ComplianceRequest_DeleteScanConfig) isComplianceRequest_Request() {}
+func (m *ComplianceRequest_DeleteScanConfig) Clone() isComplianceRequest_Request {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceRequest_DeleteScanConfig)
+	*cloned = *m
+
+	cloned.DeleteScanConfig = m.DeleteScanConfig.Clone()
+	return cloned
+}
+
+func (m *ComplianceRequest) GetRequest() isComplianceRequest_Request {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (m *ComplianceRequest) GetEnableCompliance() *EnableComplianceRequest {
+	if x, ok := m.GetRequest().(*ComplianceRequest_EnableCompliance); ok {
+		return x.EnableCompliance
+	}
+	return nil
+}
+
+func (m *ComplianceRequest) GetDisableCompliance() *DisableComplianceRequest {
+	if x, ok := m.GetRequest().(*ComplianceRequest_DisableCompliance); ok {
+		return x.DisableCompliance
+	}
+	return nil
+}
+
+func (m *ComplianceRequest) GetApplyScanConfig() *ApplyComplianceScanConfigRequest {
+	if x, ok := m.GetRequest().(*ComplianceRequest_ApplyScanConfig); ok {
+		return x.ApplyScanConfig
+	}
+	return nil
+}
+
+func (m *ComplianceRequest) GetDeleteScanConfig() *DeleteComplianceScanConfigRequest {
+	if x, ok := m.GetRequest().(*ComplianceRequest_DeleteScanConfig); ok {
+		return x.DeleteScanConfig
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ComplianceRequest) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ComplianceRequest_EnableCompliance)(nil),
+		(*ComplianceRequest_DisableCompliance)(nil),
+		(*ComplianceRequest_ApplyScanConfig)(nil),
+		(*ComplianceRequest_DeleteScanConfig)(nil),
+	}
+}
+
+func (m *ComplianceRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceRequest) Clone() *ComplianceRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceRequest)
+	*cloned = *m
+
+	if m.Request != nil {
+		cloned.Request = m.Request.Clone()
+	}
+	return cloned
+}
+
+// ComplianceResponse is a message from Sensor (to Central) representing success/failure processing request.
+type ComplianceResponse struct {
+	// Types that are valid to be assigned to Response:
+	//	*ComplianceResponse_EnableComplianceResponse_
+	//	*ComplianceResponse_DisableComplianceResponse_
+	//	*ComplianceResponse_ApplyComplianceScanConfigResponse_
+	//	*ComplianceResponse_DeleteComplianceScanConfigResponse_
+	Response             isComplianceResponse_Response `protobuf_oneof:"response"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *ComplianceResponse) Reset()         { *m = ComplianceResponse{} }
+func (m *ComplianceResponse) String() string { return proto.CompactTextString(m) }
+func (*ComplianceResponse) ProtoMessage()    {}
+func (*ComplianceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{6}
+}
+func (m *ComplianceResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceResponse.Merge(m, src)
+}
+func (m *ComplianceResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceResponse proto.InternalMessageInfo
+
+type isComplianceResponse_Response interface {
+	isComplianceResponse_Response()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isComplianceResponse_Response
+}
+
+type ComplianceResponse_EnableComplianceResponse_ struct {
+	EnableComplianceResponse *ComplianceResponse_EnableComplianceResponse `protobuf:"bytes,1,opt,name=enable_compliance_response,json=enableComplianceResponse,proto3,oneof" json:"enable_compliance_response,omitempty"`
+}
+type ComplianceResponse_DisableComplianceResponse_ struct {
+	DisableComplianceResponse *ComplianceResponse_DisableComplianceResponse `protobuf:"bytes,2,opt,name=disable_compliance_response,json=disableComplianceResponse,proto3,oneof" json:"disable_compliance_response,omitempty"`
+}
+type ComplianceResponse_ApplyComplianceScanConfigResponse_ struct {
+	ApplyComplianceScanConfigResponse *ComplianceResponse_ApplyComplianceScanConfigResponse `protobuf:"bytes,3,opt,name=apply_compliance_scan_config_response,json=applyComplianceScanConfigResponse,proto3,oneof" json:"apply_compliance_scan_config_response,omitempty"`
+}
+type ComplianceResponse_DeleteComplianceScanConfigResponse_ struct {
+	DeleteComplianceScanConfigResponse *ComplianceResponse_DeleteComplianceScanConfigResponse `protobuf:"bytes,4,opt,name=delete_compliance_scan_config_response,json=deleteComplianceScanConfigResponse,proto3,oneof" json:"delete_compliance_scan_config_response,omitempty"`
+}
+
+func (*ComplianceResponse_EnableComplianceResponse_) isComplianceResponse_Response() {}
+func (m *ComplianceResponse_EnableComplianceResponse_) Clone() isComplianceResponse_Response {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_EnableComplianceResponse_)
+	*cloned = *m
+
+	cloned.EnableComplianceResponse = m.EnableComplianceResponse.Clone()
+	return cloned
+}
+func (*ComplianceResponse_DisableComplianceResponse_) isComplianceResponse_Response() {}
+func (m *ComplianceResponse_DisableComplianceResponse_) Clone() isComplianceResponse_Response {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_DisableComplianceResponse_)
+	*cloned = *m
+
+	cloned.DisableComplianceResponse = m.DisableComplianceResponse.Clone()
+	return cloned
+}
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse_) isComplianceResponse_Response() {}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) Clone() isComplianceResponse_Response {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_ApplyComplianceScanConfigResponse_)
+	*cloned = *m
+
+	cloned.ApplyComplianceScanConfigResponse = m.ApplyComplianceScanConfigResponse.Clone()
+	return cloned
+}
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse_) isComplianceResponse_Response() {}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) Clone() isComplianceResponse_Response {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_DeleteComplianceScanConfigResponse_)
+	*cloned = *m
+
+	cloned.DeleteComplianceScanConfigResponse = m.DeleteComplianceScanConfigResponse.Clone()
+	return cloned
+}
+
+func (m *ComplianceResponse) GetResponse() isComplianceResponse_Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *ComplianceResponse) GetEnableComplianceResponse() *ComplianceResponse_EnableComplianceResponse {
+	if x, ok := m.GetResponse().(*ComplianceResponse_EnableComplianceResponse_); ok {
+		return x.EnableComplianceResponse
+	}
+	return nil
+}
+
+func (m *ComplianceResponse) GetDisableComplianceResponse() *ComplianceResponse_DisableComplianceResponse {
+	if x, ok := m.GetResponse().(*ComplianceResponse_DisableComplianceResponse_); ok {
+		return x.DisableComplianceResponse
+	}
+	return nil
+}
+
+func (m *ComplianceResponse) GetApplyComplianceScanConfigResponse() *ComplianceResponse_ApplyComplianceScanConfigResponse {
+	if x, ok := m.GetResponse().(*ComplianceResponse_ApplyComplianceScanConfigResponse_); ok {
+		return x.ApplyComplianceScanConfigResponse
+	}
+	return nil
+}
+
+func (m *ComplianceResponse) GetDeleteComplianceScanConfigResponse() *ComplianceResponse_DeleteComplianceScanConfigResponse {
+	if x, ok := m.GetResponse().(*ComplianceResponse_DeleteComplianceScanConfigResponse_); ok {
+		return x.DeleteComplianceScanConfigResponse
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ComplianceResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ComplianceResponse_EnableComplianceResponse_)(nil),
+		(*ComplianceResponse_DisableComplianceResponse_)(nil),
+		(*ComplianceResponse_ApplyComplianceScanConfigResponse_)(nil),
+		(*ComplianceResponse_DeleteComplianceScanConfigResponse_)(nil),
+	}
+}
+
+func (m *ComplianceResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceResponse) Clone() *ComplianceResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse)
+	*cloned = *m
+
+	if m.Response != nil {
+		cloned.Response = m.Response.Clone()
+	}
+	return cloned
+}
+
+type ComplianceResponse_EnableComplianceResponse struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//	*ComplianceResponse_EnableComplianceResponse_Error
+	Payload              isComplianceResponse_EnableComplianceResponse_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}                                              `json:"-"`
+	XXX_unrecognized     []byte                                                `json:"-"`
+	XXX_sizecache        int32                                                 `json:"-"`
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) Reset() {
+	*m = ComplianceResponse_EnableComplianceResponse{}
+}
+func (m *ComplianceResponse_EnableComplianceResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ComplianceResponse_EnableComplianceResponse) ProtoMessage() {}
+func (*ComplianceResponse_EnableComplianceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{6, 0}
+}
+func (m *ComplianceResponse_EnableComplianceResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceResponse_EnableComplianceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceResponse_EnableComplianceResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceResponse_EnableComplianceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceResponse_EnableComplianceResponse.Merge(m, src)
+}
+func (m *ComplianceResponse_EnableComplianceResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceResponse_EnableComplianceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceResponse_EnableComplianceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceResponse_EnableComplianceResponse proto.InternalMessageInfo
+
+type isComplianceResponse_EnableComplianceResponse_Payload interface {
+	isComplianceResponse_EnableComplianceResponse_Payload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isComplianceResponse_EnableComplianceResponse_Payload
+}
+
+type ComplianceResponse_EnableComplianceResponse_Error struct {
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"`
+}
+
+func (*ComplianceResponse_EnableComplianceResponse_Error) isComplianceResponse_EnableComplianceResponse_Payload() {
+}
+func (m *ComplianceResponse_EnableComplianceResponse_Error) Clone() isComplianceResponse_EnableComplianceResponse_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_EnableComplianceResponse_Error)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) GetPayload() isComplianceResponse_EnableComplianceResponse_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) GetError() string {
+	if x, ok := m.GetPayload().(*ComplianceResponse_EnableComplianceResponse_Error); ok {
+		return x.Error
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ComplianceResponse_EnableComplianceResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ComplianceResponse_EnableComplianceResponse_Error)(nil),
+	}
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceResponse_EnableComplianceResponse) Clone() *ComplianceResponse_EnableComplianceResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_EnableComplianceResponse)
+	*cloned = *m
+
+	if m.Payload != nil {
+		cloned.Payload = m.Payload.Clone()
+	}
+	return cloned
+}
+
+type ComplianceResponse_DisableComplianceResponse struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//	*ComplianceResponse_DisableComplianceResponse_Error
+	Payload              isComplianceResponse_DisableComplianceResponse_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}                                               `json:"-"`
+	XXX_unrecognized     []byte                                                 `json:"-"`
+	XXX_sizecache        int32                                                  `json:"-"`
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) Reset() {
+	*m = ComplianceResponse_DisableComplianceResponse{}
+}
+func (m *ComplianceResponse_DisableComplianceResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ComplianceResponse_DisableComplianceResponse) ProtoMessage() {}
+func (*ComplianceResponse_DisableComplianceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{6, 1}
+}
+func (m *ComplianceResponse_DisableComplianceResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceResponse_DisableComplianceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceResponse_DisableComplianceResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceResponse_DisableComplianceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceResponse_DisableComplianceResponse.Merge(m, src)
+}
+func (m *ComplianceResponse_DisableComplianceResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceResponse_DisableComplianceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceResponse_DisableComplianceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceResponse_DisableComplianceResponse proto.InternalMessageInfo
+
+type isComplianceResponse_DisableComplianceResponse_Payload interface {
+	isComplianceResponse_DisableComplianceResponse_Payload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isComplianceResponse_DisableComplianceResponse_Payload
+}
+
+type ComplianceResponse_DisableComplianceResponse_Error struct {
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"`
+}
+
+func (*ComplianceResponse_DisableComplianceResponse_Error) isComplianceResponse_DisableComplianceResponse_Payload() {
+}
+func (m *ComplianceResponse_DisableComplianceResponse_Error) Clone() isComplianceResponse_DisableComplianceResponse_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_DisableComplianceResponse_Error)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) GetPayload() isComplianceResponse_DisableComplianceResponse_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) GetError() string {
+	if x, ok := m.GetPayload().(*ComplianceResponse_DisableComplianceResponse_Error); ok {
+		return x.Error
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ComplianceResponse_DisableComplianceResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ComplianceResponse_DisableComplianceResponse_Error)(nil),
+	}
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceResponse_DisableComplianceResponse) Clone() *ComplianceResponse_DisableComplianceResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_DisableComplianceResponse)
+	*cloned = *m
+
+	if m.Payload != nil {
+		cloned.Payload = m.Payload.Clone()
+	}
+	return cloned
+}
+
+type ComplianceResponse_ApplyComplianceScanConfigResponse struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//	*ComplianceResponse_ApplyComplianceScanConfigResponse_Error
+	Payload              isComplianceResponse_ApplyComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}                                                       `json:"-"`
+	XXX_unrecognized     []byte                                                         `json:"-"`
+	XXX_sizecache        int32                                                          `json:"-"`
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Reset() {
+	*m = ComplianceResponse_ApplyComplianceScanConfigResponse{}
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse) ProtoMessage() {}
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{6, 2}
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceResponse_ApplyComplianceScanConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceResponse_ApplyComplianceScanConfigResponse.Merge(m, src)
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceResponse_ApplyComplianceScanConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceResponse_ApplyComplianceScanConfigResponse proto.InternalMessageInfo
+
+type isComplianceResponse_ApplyComplianceScanConfigResponse_Payload interface {
+	isComplianceResponse_ApplyComplianceScanConfigResponse_Payload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isComplianceResponse_ApplyComplianceScanConfigResponse_Payload
+}
+
+type ComplianceResponse_ApplyComplianceScanConfigResponse_Error struct {
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"`
+}
+
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse_Error) isComplianceResponse_ApplyComplianceScanConfigResponse_Payload() {
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) Clone() isComplianceResponse_ApplyComplianceScanConfigResponse_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_ApplyComplianceScanConfigResponse_Error)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) GetPayload() isComplianceResponse_ApplyComplianceScanConfigResponse_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) GetError() string {
+	if x, ok := m.GetPayload().(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error); ok {
+		return x.Error
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ComplianceResponse_ApplyComplianceScanConfigResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error)(nil),
+	}
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Clone() *ComplianceResponse_ApplyComplianceScanConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_ApplyComplianceScanConfigResponse)
+	*cloned = *m
+
+	if m.Payload != nil {
+		cloned.Payload = m.Payload.Clone()
+	}
+	return cloned
+}
+
+type ComplianceResponse_DeleteComplianceScanConfigResponse struct {
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//	*ComplianceResponse_DeleteComplianceScanConfigResponse_Error
+	Payload              isComplianceResponse_DeleteComplianceScanConfigResponse_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}                                                        `json:"-"`
+	XXX_unrecognized     []byte                                                          `json:"-"`
+	XXX_sizecache        int32                                                           `json:"-"`
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) Reset() {
+	*m = ComplianceResponse_DeleteComplianceScanConfigResponse{}
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse) ProtoMessage() {}
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b16c1ba535ff8dc9, []int{6, 3}
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceResponse_DeleteComplianceScanConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceResponse_DeleteComplianceScanConfigResponse.Merge(m, src)
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceResponse_DeleteComplianceScanConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceResponse_DeleteComplianceScanConfigResponse proto.InternalMessageInfo
+
+type isComplianceResponse_DeleteComplianceScanConfigResponse_Payload interface {
+	isComplianceResponse_DeleteComplianceScanConfigResponse_Payload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isComplianceResponse_DeleteComplianceScanConfigResponse_Payload
+}
+
+type ComplianceResponse_DeleteComplianceScanConfigResponse_Error struct {
+	Error string `protobuf:"bytes,2,opt,name=error,proto3,oneof" json:"error,omitempty"`
+}
+
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse_Error) isComplianceResponse_DeleteComplianceScanConfigResponse_Payload() {
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) Clone() isComplianceResponse_DeleteComplianceScanConfigResponse_Payload {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_DeleteComplianceScanConfigResponse_Error)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) GetPayload() isComplianceResponse_DeleteComplianceScanConfigResponse_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) GetError() string {
+	if x, ok := m.GetPayload().(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error); ok {
+		return x.Error
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ComplianceResponse_DeleteComplianceScanConfigResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error)(nil),
+	}
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) Clone() *ComplianceResponse_DeleteComplianceScanConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceResponse_DeleteComplianceScanConfigResponse)
+	*cloned = *m
+
+	if m.Payload != nil {
+		cloned.Payload = m.Payload.Clone()
 	}
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*ComplianceOperatorInfo)(nil), "central.ComplianceOperatorInfo")
+	proto.RegisterType((*EnableComplianceRequest)(nil), "central.EnableComplianceRequest")
+	proto.RegisterType((*DisableComplianceRequest)(nil), "central.DisableComplianceRequest")
+	proto.RegisterType((*ApplyComplianceScanConfigRequest)(nil), "central.ApplyComplianceScanConfigRequest")
+	proto.RegisterType((*ApplyComplianceScanConfigRequest_BaseScanSettings)(nil), "central.ApplyComplianceScanConfigRequest.BaseScanSettings")
+	proto.RegisterType((*ApplyComplianceScanConfigRequest_OneTimeScan)(nil), "central.ApplyComplianceScanConfigRequest.OneTimeScan")
+	proto.RegisterType((*DeleteComplianceScanConfigRequest)(nil), "central.DeleteComplianceScanConfigRequest")
+	proto.RegisterType((*ComplianceRequest)(nil), "central.ComplianceRequest")
+	proto.RegisterType((*ComplianceResponse)(nil), "central.ComplianceResponse")
+	proto.RegisterType((*ComplianceResponse_EnableComplianceResponse)(nil), "central.ComplianceResponse.EnableComplianceResponse")
+	proto.RegisterType((*ComplianceResponse_DisableComplianceResponse)(nil), "central.ComplianceResponse.DisableComplianceResponse")
+	proto.RegisterType((*ComplianceResponse_ApplyComplianceScanConfigResponse)(nil), "central.ComplianceResponse.ApplyComplianceScanConfigResponse")
+	proto.RegisterType((*ComplianceResponse_DeleteComplianceScanConfigResponse)(nil), "central.ComplianceResponse.DeleteComplianceScanConfigResponse")
 }
 
 func init() {
@@ -203,24 +1493,61 @@ func init() {
 }
 
 var fileDescriptor_b16c1ba535ff8dc9 = []byte{
-	// 262 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x90, 0xc1, 0x4a, 0x33, 0x31,
-	0x14, 0x46, 0x9b, 0xf6, 0xef, 0x5f, 0x26, 0xa8, 0x48, 0x90, 0x21, 0x82, 0x0c, 0x83, 0x6e, 0x06,
-	0xc1, 0x76, 0xe1, 0x1b, 0x54, 0x05, 0x5d, 0x29, 0xb3, 0x74, 0x13, 0xae, 0x33, 0x57, 0x08, 0x4c,
-	0x73, 0xc3, 0x4d, 0x14, 0x5c, 0xfb, 0x12, 0x3e, 0x92, 0x4b, 0x1f, 0x41, 0xc6, 0x17, 0x11, 0x33,
-	0xad, 0x82, 0x2e, 0x73, 0xce, 0x81, 0x5c, 0x3e, 0x79, 0x62, 0x5d, 0x44, 0x76, 0xd0, 0x81, 0xb7,
-	0x8b, 0x06, 0x5d, 0x64, 0xe8, 0x16, 0x0d, 0xad, 0x7c, 0x67, 0xc1, 0x35, 0x68, 0xc8, 0x23, 0x43,
-	0x24, 0x9e, 0x7b, 0xa6, 0x48, 0x6a, 0xb6, 0x4e, 0x0e, 0x9f, 0xc7, 0x32, 0x3f, 0xfb, 0xce, 0xae,
-	0xd7, 0xd5, 0x95, 0xbb, 0x27, 0xa5, 0xe5, 0xec, 0x11, 0x39, 0x58, 0x72, 0x5a, 0x94, 0xa2, 0xca,
-	0xea, 0xcd, 0x53, 0x1d, 0xc8, 0xcc, 0xc1, 0x0a, 0x83, 0x87, 0x06, 0xf5, 0x38, 0xb9, 0x1f, 0xa0,
-	0xe6, 0x52, 0x45, 0x8a, 0xd0, 0x99, 0x16, 0x83, 0x65, 0x6c, 0x8d, 0xa7, 0x36, 0xe8, 0x49, 0x29,
-	0xaa, 0xe9, 0xe5, 0xa8, 0xde, 0x4d, 0xee, 0x7c, 0x50, 0x37, 0xd4, 0x06, 0x75, 0x2c, 0x07, 0x66,
-	0x18, 0xa1, 0x7d, 0x1a, 0xea, 0x7f, 0xa9, 0x16, 0xf5, 0x4e, 0x32, 0xf5, 0x97, 0x48, 0xed, 0x91,
-	0xdc, 0x0e, 0x11, 0xe2, 0x43, 0x30, 0xc8, 0x4c, 0x1c, 0xf4, 0xb4, 0x9c, 0x54, 0x59, 0xbd, 0x35,
-	0xc0, 0x8b, 0xc4, 0x96, 0x5a, 0xe6, 0x7f, 0x0f, 0x30, 0xe4, 0xe3, 0x32, 0x97, 0x7b, 0xbf, 0xbf,
-	0x4a, 0x7c, 0xff, 0xb5, 0x2f, 0xc4, 0x5b, 0x5f, 0x88, 0xf7, 0xbe, 0x10, 0x2f, 0x1f, 0xc5, 0xe8,
-	0x76, 0x33, 0xd0, 0xdd, 0xff, 0x34, 0xd8, 0xe9, 0x67, 0x00, 0x00, 0x00, 0xff, 0xff, 0x61, 0x38,
-	0x4a, 0x6c, 0x61, 0x01, 0x00, 0x00,
+	// 854 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xf6, 0xba, 0x4e, 0xe3, 0x3c, 0xa7, 0x21, 0x1e, 0xc0, 0xdd, 0xb8, 0x28, 0xb2, 0x2d, 0x81,
+	0xd2, 0x48, 0xb8, 0x52, 0xf8, 0x21, 0x84, 0x04, 0x52, 0xdd, 0x54, 0xb8, 0x07, 0x12, 0xb4, 0x05,
+	0x2a, 0x95, 0xc3, 0x68, 0xb2, 0x33, 0x29, 0x23, 0xad, 0x67, 0x96, 0x99, 0x09, 0x95, 0x8f, 0x5c,
+	0x7b, 0x43, 0xe2, 0xc0, 0x85, 0xff, 0x87, 0x03, 0x07, 0xfe, 0x04, 0x14, 0xfe, 0x09, 0x8e, 0x68,
+	0xdf, 0xac, 0x77, 0xb7, 0x76, 0x6c, 0xa7, 0xb9, 0x65, 0xde, 0xf7, 0xe6, 0x9b, 0xf7, 0xbe, 0xef,
+	0x3d, 0x67, 0xe1, 0x43, 0xa9, 0x9c, 0x30, 0x8a, 0x25, 0x2c, 0x95, 0x0f, 0x62, 0xa1, 0x9c, 0x61,
+	0xc9, 0x83, 0x58, 0x4f, 0xd2, 0x44, 0x32, 0x15, 0x0b, 0xaa, 0x53, 0x61, 0x98, 0xd3, 0x66, 0x98,
+	0x1a, 0xed, 0x34, 0xd9, 0xcc, 0x53, 0x06, 0xbf, 0xd4, 0xa1, 0xf3, 0xa8, 0x48, 0x3b, 0xcd, 0xb3,
+	0x9e, 0xa8, 0x73, 0x4d, 0x42, 0xd8, 0xfc, 0x59, 0x18, 0x2b, 0xb5, 0x0a, 0x83, 0x5e, 0x70, 0xb0,
+	0x15, 0xcd, 0x8e, 0xe4, 0x3d, 0xd8, 0x52, 0x6c, 0x22, 0x6c, 0xca, 0x62, 0x11, 0xd6, 0x11, 0x2b,
+	0x03, 0x64, 0x08, 0xc4, 0x69, 0xc7, 0x12, 0xca, 0x85, 0x95, 0x46, 0x70, 0x9a, 0x6a, 0x6e, 0xc3,
+	0x5b, 0xbd, 0xe0, 0x60, 0x63, 0x5c, 0x8b, 0x76, 0x11, 0x3b, 0xf6, 0xd0, 0x37, 0x9a, 0x5b, 0x72,
+	0x08, 0x3e, 0x46, 0x8d, 0x60, 0x7c, 0xea, 0xb3, 0x1b, 0x98, 0x1d, 0x44, 0x3b, 0x88, 0x44, 0x19,
+	0x80, 0xb9, 0x7d, 0xd8, 0xb6, 0x8e, 0xb9, 0x0b, 0x4b, 0x85, 0x31, 0xda, 0x84, 0x1b, 0xf8, 0x78,
+	0xcb, 0xc7, 0x1e, 0x67, 0xa1, 0x51, 0x08, 0x9d, 0xc5, 0xe7, 0xa9, 0x4e, 0xdd, 0xa8, 0x03, 0xef,
+	0xcc, 0x3f, 0x94, 0xc5, 0x07, 0xf7, 0xe1, 0xee, 0x63, 0xc5, 0xce, 0x12, 0x51, 0x0a, 0x11, 0x89,
+	0x9f, 0x2e, 0x84, 0x75, 0x64, 0x07, 0xea, 0x92, 0xe7, 0xed, 0xd7, 0x25, 0x1f, 0x1c, 0x42, 0x78,
+	0x2c, 0xed, 0xf5, 0x72, 0xff, 0x6a, 0x40, 0xef, 0x61, 0x9a, 0x26, 0xd3, 0x32, 0xf5, 0x69, 0xcc,
+	0xd4, 0x23, 0xad, 0xce, 0xe5, 0x8b, 0x25, 0x97, 0xc8, 0x0f, 0x70, 0x47, 0x2b, 0x41, 0x9d, 0x9c,
+	0x08, 0x6a, 0x63, 0xa6, 0x50, 0xde, 0xd6, 0xd1, 0x27, 0xc3, 0xdc, 0xb0, 0xe1, 0x3a, 0xc6, 0xe1,
+	0xa9, 0x12, 0xdf, 0xca, 0x09, 0x02, 0xe3, 0x5a, 0xd4, 0xd2, 0xe5, 0xb1, 0xfb, 0x47, 0x1d, 0x76,
+	0x47, 0xcc, 0xe2, 0xe1, 0xa9, 0x70, 0x4e, 0xaa, 0x17, 0x96, 0xf4, 0x60, 0x9b, 0x9f, 0x51, 0x23,
+	0x62, 0x6d, 0x38, 0x2d, 0x6a, 0x01, 0x7e, 0x16, 0x61, 0xe8, 0x09, 0x27, 0xf7, 0x60, 0x2b, 0x2b,
+	0x85, 0x66, 0x16, 0xe7, 0x76, 0x37, 0xb3, 0xc0, 0x09, 0x9b, 0x64, 0x6e, 0xbf, 0x6d, 0x7f, 0xd4,
+	0x2f, 0xa9, 0xd2, 0x8e, 0xb2, 0x34, 0x4d, 0x64, 0x9c, 0xa9, 0x83, 0x76, 0x37, 0xa3, 0x76, 0x06,
+	0x9d, 0x68, 0xf7, 0xb0, 0x00, 0xc8, 0x01, 0xec, 0x5a, 0x67, 0x64, 0xec, 0xa8, 0xd2, 0x3c, 0xef,
+	0xb1, 0x81, 0xc9, 0x3b, 0x3e, 0x7e, 0xa2, 0x39, 0x16, 0x48, 0x3e, 0x85, 0xbb, 0xec, 0xc2, 0x69,
+	0x64, 0x9d, 0x52, 0x23, 0x26, 0x82, 0x4b, 0xe6, 0xa4, 0x56, 0x16, 0x6d, 0x6f, 0x46, 0xef, 0x66,
+	0x30, 0xea, 0x11, 0x55, 0x40, 0xf2, 0x19, 0x84, 0x78, 0xef, 0x22, 0xe5, 0xcc, 0x89, 0xd7, 0x2f,
+	0xde, 0xc6, 0x8b, 0x9d, 0x0c, 0xff, 0x0e, 0xe1, 0xea, 0xcd, 0xee, 0xab, 0x00, 0x5a, 0x15, 0xf9,
+	0x08, 0x85, 0x3b, 0xd8, 0xb8, 0xcd, 0xb5, 0x42, 0x6d, 0x5a, 0x47, 0x9f, 0x5f, 0xdf, 0x8c, 0x79,
+	0xb5, 0xa3, 0x6d, 0x5b, 0xd5, 0xbe, 0x0b, 0xcd, 0xd4, 0xe8, 0x73, 0x99, 0x08, 0x1b, 0xd6, 0x7b,
+	0xb7, 0x32, 0x61, 0x67, 0xe7, 0xd1, 0x0e, 0x60, 0x2e, 0x35, 0x9e, 0x6a, 0xf0, 0x15, 0xf4, 0x8f,
+	0x45, 0x22, 0x9c, 0x78, 0x93, 0x71, 0x22, 0xd0, 0xa8, 0xb8, 0x86, 0x7f, 0x0f, 0xfe, 0xab, 0x43,
+	0x7b, 0x71, 0x7a, 0x4f, 0xa1, 0x2d, 0x70, 0x09, 0x68, 0xf9, 0xab, 0x91, 0xf7, 0xdb, 0x2b, 0xfa,
+	0x5d, 0xb2, 0x26, 0xd9, 0x5a, 0x8b, 0x39, 0x88, 0x44, 0x40, 0xb8, 0x5f, 0x95, 0x2a, 0xa3, 0x1f,
+	0xe7, 0x7e, 0xc1, 0xb8, 0x6c, 0x9b, 0xc6, 0xb5, 0xa8, 0xcd, 0xe7, 0x31, 0xf2, 0x0c, 0xda, 0x7e,
+	0x1a, 0x50, 0x99, 0x18, 0x5b, 0xc7, 0x51, 0x6b, 0x1d, 0xdd, 0xbf, 0xb6, 0x29, 0xe3, 0x5a, 0xf4,
+	0x16, 0xb2, 0x94, 0x08, 0x79, 0x0e, 0x84, 0xa3, 0xb8, 0xaf, 0x31, 0x37, 0x90, 0xf9, 0xb0, 0x2c,
+	0x76, 0x9d, 0xfe, 0x99, 0x10, 0x9e, 0xa7, 0x84, 0x46, 0x5b, 0xb0, 0x39, 0xf3, 0xf0, 0xd5, 0x26,
+	0x90, 0x6a, 0xab, 0x36, 0xd5, 0xca, 0x0a, 0xe2, 0xa0, 0xbb, 0xa0, 0x3d, 0x35, 0x39, 0x9a, 0x9b,
+	0xf0, 0x71, 0x51, 0xc5, 0x22, 0xc1, 0x15, 0xbe, 0x78, 0x60, 0x5c, 0x8b, 0x42, 0xb1, 0x04, 0x23,
+	0x2f, 0xe1, 0xde, 0xa2, 0x41, 0xe5, 0xb3, 0xf3, 0x3f, 0x3c, 0x57, 0x3c, 0x7b, 0x85, 0x79, 0xc5,
+	0xbb, 0x7b, 0x7c, 0x19, 0x48, 0x7e, 0x0d, 0xe0, 0x7d, 0x6f, 0x63, 0xe5, 0xdd, 0x8a, 0xee, 0x65,
+	0x0d, 0xde, 0xda, 0x2f, 0x56, 0xd5, 0xb0, 0xc2, 0xed, 0xa2, 0x96, 0x3e, 0x5b, 0x97, 0x44, 0x7e,
+	0x0b, 0xe0, 0x83, 0x7c, 0x02, 0xd6, 0x15, 0xe5, 0xa7, 0xe2, 0xcb, 0x95, 0xc2, 0xac, 0x18, 0x94,
+	0xa2, 0xaa, 0x01, 0x5f, 0x9b, 0xd5, 0xfd, 0x1a, 0xc2, 0x65, 0xde, 0x2e, 0xec, 0x7a, 0x07, 0x36,
+	0xfc, 0x3f, 0x45, 0x5c, 0xf6, 0x71, 0x2d, 0xf2, 0xc7, 0x6c, 0xfe, 0x52, 0x36, 0x4d, 0x34, 0xe3,
+	0xdd, 0x13, 0xd8, 0x5b, 0xea, 0xd9, 0x4d, 0xf8, 0xbe, 0x87, 0xfe, 0x5a, 0xfd, 0x6f, 0xc2, 0xfb,
+	0x0c, 0x06, 0xeb, 0x25, 0xbc, 0x01, 0xf1, 0x08, 0xa0, 0x39, 0xf3, 0x71, 0xb4, 0xf7, 0xe7, 0xe5,
+	0x7e, 0xf0, 0xf7, 0xe5, 0x7e, 0xf0, 0xcf, 0xe5, 0x7e, 0xf0, 0xfb, 0xbf, 0xfb, 0xb5, 0xe7, 0xb3,
+	0xaf, 0xa2, 0xb3, 0xdb, 0xf8, 0x95, 0xf4, 0xd1, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff, 0xdc, 0xbc,
+	0x61, 0xaa, 0x56, 0x09, 0x00, 0x00,
 }
 
 func (m *ComplianceOperatorInfo) Marshal() (dAtA []byte, err error) {
@@ -247,14 +1574,12 @@ func (m *ComplianceOperatorInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.StatusErrors) > 0 {
-		for iNdEx := len(m.StatusErrors) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.StatusErrors[iNdEx])
-			copy(dAtA[i:], m.StatusErrors[iNdEx])
-			i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.StatusErrors[iNdEx])))
-			i--
-			dAtA[i] = 0x2a
-		}
+	if len(m.StatusError) > 0 {
+		i -= len(m.StatusError)
+		copy(dAtA[i:], m.StatusError)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.StatusError)))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.TotalReadyPodsOpt != nil {
 		{
@@ -315,6 +1640,776 @@ func (m *ComplianceOperatorInfo_TotalReadyPods) MarshalToSizedBuffer(dAtA []byte
 	dAtA[i] = 0x20
 	return len(dAtA) - i, nil
 }
+func (m *EnableComplianceRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EnableComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EnableComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DisableComplianceRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DisableComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DisableComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ApplyComplianceScanConfigRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ApplyComplianceScanConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ApplyComplianceScanConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ScanRequest != nil {
+		{
+			size := m.ScanRequest.Size()
+			i -= size
+			if _, err := m.ScanRequest.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.OneTimeScan != nil {
+		{
+			size, err := m.OneTimeScan.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.AutoUpdateRemediations {
+		i--
+		if m.AutoUpdateRemediations {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.AutoApplyRemediations {
+		i--
+		if m.AutoApplyRemediations {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.StrictNodeScan {
+		i--
+		if m.StrictNodeScan {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.ShowNotApplicable {
+		i--
+		if m.ShowNotApplicable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.ScanName) > 0 {
+		i -= len(m.ScanName)
+		copy(dAtA[i:], m.ScanName)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.ScanName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.DbRecordId) > 0 {
+		i -= len(m.DbRecordId)
+		copy(dAtA[i:], m.DbRecordId)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.DbRecordId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Profiles) > 0 {
+		for iNdEx := len(m.Profiles) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Profiles[iNdEx])
+			copy(dAtA[i:], m.Profiles[iNdEx])
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Profiles[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.ScanSettings != nil {
+		{
+			size, err := m.ScanSettings.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DeleteComplianceScanConfigRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteComplianceScanConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteComplianceScanConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Request != nil {
+		{
+			size := m.Request.Size()
+			i -= size
+			if _, err := m.Request.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceRequest_EnableCompliance) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceRequest_EnableCompliance) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EnableCompliance != nil {
+		{
+			size, err := m.EnableCompliance.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceRequest_DisableCompliance) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceRequest_DisableCompliance) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.DisableCompliance != nil {
+		{
+			size, err := m.DisableCompliance.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceRequest_ApplyScanConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceRequest_ApplyScanConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ApplyScanConfig != nil {
+		{
+			size, err := m.ApplyScanConfig.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceRequest_DeleteScanConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceRequest_DeleteScanConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.DeleteScanConfig != nil {
+		{
+			size, err := m.DeleteScanConfig.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Response != nil {
+		{
+			size := m.Response.Size()
+			i -= size
+			if _, err := m.Response.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EnableComplianceResponse != nil {
+		{
+			size, err := m.EnableComplianceResponse.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_DisableComplianceResponse_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.DisableComplianceResponse != nil {
+		{
+			size, err := m.DisableComplianceResponse.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ApplyComplianceScanConfigResponse != nil {
+		{
+			size, err := m.ApplyComplianceScanConfigResponse.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.DeleteComplianceScanConfigResponse != nil {
+		{
+			size, err := m.DeleteComplianceScanConfigResponse.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceOperator(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_EnableComplianceResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Payload != nil {
+		{
+			size := m.Payload.Size()
+			i -= size
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse_Error) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse_Error) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Error)
+	copy(dAtA[i:], m.Error)
+	i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Error)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_DisableComplianceResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Payload != nil {
+		{
+			size := m.Payload.Size()
+			i -= size
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse_Error) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse_Error) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Error)
+	copy(dAtA[i:], m.Error)
+	i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Error)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Payload != nil {
+		{
+			size := m.Payload.Size()
+			i -= size
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Error)
+	copy(dAtA[i:], m.Error)
+	i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Error)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Payload != nil {
+		{
+			size := m.Payload.Size()
+			i -= size
+			if _, err := m.Payload.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Error)
+	copy(dAtA[i:], m.Error)
+	i = encodeVarintComplianceOperator(dAtA, i, uint64(len(m.Error)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
 func encodeVarintComplianceOperator(dAtA []byte, offset int, v uint64) int {
 	offset -= sovComplianceOperator(v)
 	base := offset
@@ -346,11 +2441,9 @@ func (m *ComplianceOperatorInfo) Size() (n int) {
 	if m.TotalReadyPodsOpt != nil {
 		n += m.TotalReadyPodsOpt.Size()
 	}
-	if len(m.StatusErrors) > 0 {
-		for _, s := range m.StatusErrors {
-			l = len(s)
-			n += 1 + l + sovComplianceOperator(uint64(l))
-		}
+	l = len(m.StatusError)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -374,6 +2467,385 @@ func (m *ComplianceOperatorInfo_TotalReadyPods) Size() (n int) {
 	var l int
 	_ = l
 	n += 1 + sovComplianceOperator(uint64(m.TotalReadyPods))
+	return n
+}
+func (m *EnableComplianceRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DisableComplianceRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ApplyComplianceScanConfigRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.ScanRequest != nil {
+		n += m.ScanRequest.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.OneTimeScan != nil {
+		l = m.OneTimeScan.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DbRecordId)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	l = len(m.ScanName)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.ShowNotApplicable {
+		n += 2
+	}
+	if m.StrictNodeScan {
+		n += 2
+	}
+	if m.AutoApplyRemediations {
+		n += 2
+	}
+	if m.AutoUpdateRemediations {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ScanSettings != nil {
+		l = m.ScanSettings.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if len(m.Profiles) > 0 {
+		for _, s := range m.Profiles {
+			l = len(s)
+			n += 1 + l + sovComplianceOperator(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteComplianceScanConfigRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Request != nil {
+		n += m.Request.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceRequest_EnableCompliance) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EnableCompliance != nil {
+		l = m.EnableCompliance.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceRequest_DisableCompliance) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DisableCompliance != nil {
+		l = m.DisableCompliance.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceRequest_ApplyScanConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ApplyScanConfig != nil {
+		l = m.ApplyScanConfig.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceRequest_DeleteScanConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DeleteScanConfig != nil {
+		l = m.DeleteScanConfig.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Response != nil {
+		n += m.Response.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EnableComplianceResponse != nil {
+		l = m.EnableComplianceResponse.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceResponse_DisableComplianceResponse_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DisableComplianceResponse != nil {
+		l = m.DisableComplianceResponse.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ApplyComplianceScanConfigResponse != nil {
+		l = m.ApplyComplianceScanConfigResponse.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DeleteComplianceScanConfigResponse != nil {
+		l = m.DeleteComplianceScanConfigResponse.Size()
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	return n
+}
+func (m *ComplianceResponse_EnableComplianceResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.Payload != nil {
+		n += m.Payload.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceResponse_EnableComplianceResponse_Error) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Error)
+	n += 1 + l + sovComplianceOperator(uint64(l))
+	return n
+}
+func (m *ComplianceResponse_DisableComplianceResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.Payload != nil {
+		n += m.Payload.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceResponse_DisableComplianceResponse_Error) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Error)
+	n += 1 + l + sovComplianceOperator(uint64(l))
+	return n
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.Payload != nil {
+		n += m.Payload.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse_Error) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Error)
+	n += 1 + l + sovComplianceOperator(uint64(l))
+	return n
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceOperator(uint64(l))
+	}
+	if m.Payload != nil {
+		n += m.Payload.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse_Error) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Error)
+	n += 1 + l + sovComplianceOperator(uint64(l))
 	return n
 }
 
@@ -518,7 +2990,7 @@ func (m *ComplianceOperatorInfo) Unmarshal(dAtA []byte) error {
 			m.TotalReadyPodsOpt = &ComplianceOperatorInfo_TotalReadyPods{v}
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field StatusErrors", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field StatusError", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -546,7 +3018,1562 @@ func (m *ComplianceOperatorInfo) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StatusErrors = append(m.StatusErrors, string(dAtA[iNdEx:postIndex]))
+			m.StatusError = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EnableComplianceRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EnableComplianceRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EnableComplianceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DisableComplianceRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DisableComplianceRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DisableComplianceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ApplyComplianceScanConfigRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OneTimeScan", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ApplyComplianceScanConfigRequest_OneTimeScan{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.ScanRequest = &ApplyComplianceScanConfigRequest_OneTimeScan_{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BaseScanSettings: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BaseScanSettings: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DbRecordId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DbRecordId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScanName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShowNotApplicable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.ShowNotApplicable = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StrictNodeScan", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.StrictNodeScan = bool(v != 0)
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoApplyRemediations", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AutoApplyRemediations = bool(v != 0)
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoUpdateRemediations", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AutoUpdateRemediations = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ApplyComplianceScanConfigRequest_OneTimeScan) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: OneTimeScan: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: OneTimeScan: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanSettings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ScanSettings == nil {
+				m.ScanSettings = &ApplyComplianceScanConfigRequest_BaseScanSettings{}
+			}
+			if err := m.ScanSettings.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Profiles", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Profiles = append(m.Profiles, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteComplianceScanConfigRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteComplianceScanConfigRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteComplianceScanConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComplianceRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ComplianceRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ComplianceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EnableCompliance", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &EnableComplianceRequest{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Request = &ComplianceRequest_EnableCompliance{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisableCompliance", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &DisableComplianceRequest{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Request = &ComplianceRequest_DisableCompliance{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplyScanConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ApplyComplianceScanConfigRequest{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Request = &ComplianceRequest_ApplyScanConfig{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeleteScanConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &DeleteComplianceScanConfigRequest{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Request = &ComplianceRequest_DeleteScanConfig{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComplianceResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ComplianceResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ComplianceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EnableComplianceResponse", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ComplianceResponse_EnableComplianceResponse{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Response = &ComplianceResponse_EnableComplianceResponse_{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisableComplianceResponse", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ComplianceResponse_DisableComplianceResponse{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Response = &ComplianceResponse_DisableComplianceResponse_{v}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplyComplianceScanConfigResponse", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ComplianceResponse_ApplyComplianceScanConfigResponse{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Response = &ComplianceResponse_ApplyComplianceScanConfigResponse_{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeleteComplianceScanConfigResponse", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ComplianceResponse_DeleteComplianceScanConfigResponse{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Response = &ComplianceResponse_DeleteComplianceScanConfigResponse_{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComplianceResponse_EnableComplianceResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EnableComplianceResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EnableComplianceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = &ComplianceResponse_EnableComplianceResponse_Error{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComplianceResponse_DisableComplianceResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DisableComplianceResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DisableComplianceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = &ComplianceResponse_DisableComplianceResponse_Error{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComplianceResponse_ApplyComplianceScanConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ApplyComplianceScanConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ApplyComplianceScanConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = &ComplianceResponse_ApplyComplianceScanConfigResponse_Error{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceOperator(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComplianceResponse_DeleteComplianceScanConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceOperator
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteComplianceScanConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteComplianceScanConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceOperator
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceOperator
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = &ComplianceResponse_DeleteComplianceScanConfigResponse_Error{string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

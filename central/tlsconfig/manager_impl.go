@@ -149,7 +149,7 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 	if opts.RequireClientCert {
 		rootCfg.ClientAuth = tls.RequireAndVerifyClientCert
 	}
-	configurer := certwatch.NewTLSConfigHolder(rootCfg)
+	configurer := certwatch.NewTLSConfigHolder(rootCfg, tls.NoClientCert)
 
 	for _, serverCert := range opts.ServerCerts {
 		switch serverCert {

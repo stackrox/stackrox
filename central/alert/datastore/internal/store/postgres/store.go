@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -29,8 +28,6 @@ const (
 	baseTable = "alerts"
 	storeName = "Alert"
 
-	batchAfter = 100
-
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -43,10 +40,12 @@ var (
 	targetResource = resources.Alert
 )
 
+type storeType = storage.Alert
+
 // Store is the interface to interact with the storage for storage.Alert
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.Alert) error
-	UpsertMany(ctx context.Context, objs []*storage.Alert) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -54,30 +53,31 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Alert, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.Alert, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.Alert) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.Alert, *storage.Alert]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.Alert, *storage.Alert](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
+			insertIntoAlerts,
+			copyFromAlerts,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			isUpsertAllowed,
 			targetResource,
 		),
 	}
@@ -85,7 +85,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.Alert) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -95,6 +95,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying alerts with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoAlerts(_ context.Context, batch *pgx.Batch, obj *storage.Alert) error {
@@ -145,7 +162,7 @@ func insertIntoAlerts(_ context.Context, batch *pgx.Batch, obj *storage.Alert) e
 	return nil
 }
 
-func (s *storeImpl) copyFromAlerts(ctx context.Context, tx *postgres.Tx, objs ...*storage.Alert) error {
+func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Alert) error {
 
 	inputRows := [][]interface{}{}
 
@@ -156,67 +173,36 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx *postgres.Tx, objs ..
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"policy_id",
-
 		"policy_name",
-
 		"policy_description",
-
 		"policy_disabled",
-
 		"policy_categories",
-
 		"policy_severity",
-
 		"policy_enforcementactions",
-
 		"policy_lastupdated",
-
 		"policy_sortname",
-
 		"policy_sortlifecyclestage",
-
 		"policy_sortenforcement",
-
 		"lifecyclestage",
-
 		"clusterid",
-
 		"clustername",
-
 		"namespace",
-
 		"namespaceid",
-
 		"deployment_id",
-
 		"deployment_name",
-
 		"deployment_inactive",
-
 		"image_id",
-
 		"image_name_registry",
-
 		"image_name_remote",
-
 		"image_name_tag",
-
 		"image_name_fullname",
-
 		"resource_resourcetype",
-
 		"resource_name",
-
 		"enforcement_action",
-
 		"time",
-
 		"state",
-
 		"serialized",
 	}
 
@@ -232,67 +218,36 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx *postgres.Tx, objs ..
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetPolicy().GetId(),
-
 			obj.GetPolicy().GetName(),
-
 			obj.GetPolicy().GetDescription(),
-
 			obj.GetPolicy().GetDisabled(),
-
 			obj.GetPolicy().GetCategories(),
-
 			obj.GetPolicy().GetSeverity(),
-
 			obj.GetPolicy().GetEnforcementActions(),
-
 			pgutils.NilOrTime(obj.GetPolicy().GetLastUpdated()),
-
 			obj.GetPolicy().GetSORTName(),
-
 			obj.GetPolicy().GetSORTLifecycleStage(),
-
 			obj.GetPolicy().GetSORTEnforcement(),
-
 			obj.GetLifecycleStage(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetNamespaceId()),
-
 			pgutils.NilOrUUID(obj.GetDeployment().GetId()),
-
 			obj.GetDeployment().GetName(),
-
 			obj.GetDeployment().GetInactive(),
-
 			obj.GetImage().GetId(),
-
 			obj.GetImage().GetName().GetRegistry(),
-
 			obj.GetImage().GetName().GetRemote(),
-
 			obj.GetImage().GetName().GetTag(),
-
 			obj.GetImage().GetName().GetFullName(),
-
 			obj.GetResource().GetResourceType(),
-
 			obj.GetResource().GetName(),
-
 			obj.GetEnforcement().GetAction(),
-
 			pgutils.NilOrTime(obj.GetTime()),
-
 			obj.GetState(),
-
 			serialized,
 		})
 
@@ -324,115 +279,9 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx *postgres.Tx, objs ..
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromAlerts(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Alert) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoAlerts(ctx, batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // endregion Helper functions
 
-//// Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Alert) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Alert")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Alert) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Alert")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		var deniedIDs []string
-		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-			if !subScopeChecker.IsAllowed() {
-				deniedIDs = append(deniedIDs, obj.GetId())
-			}
-		}
-		if len(deniedIDs) != 0 {
-			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying alerts with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-		}
-	}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-}
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -450,4 +299,4 @@ func dropTableAlerts(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing

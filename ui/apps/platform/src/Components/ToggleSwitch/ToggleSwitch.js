@@ -64,7 +64,7 @@ ToggleSwitch.propTypes = {
 
 ToggleSwitch.defaultProps = {
     label: '',
-    labelClassName: 'text-xs text-grey-dark',
+    labelClassName: 'text-sm text-grey-dark',
     enabled: false,
     extraClassNames: '',
     flipped: false,

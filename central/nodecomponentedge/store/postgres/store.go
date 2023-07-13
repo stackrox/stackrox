@@ -23,8 +23,6 @@ const (
 	baseTable = "node_component_edges"
 	storeName = "NodeComponentEdge"
 
-	batchAfter = 100
-
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
@@ -37,35 +35,38 @@ var (
 	targetResource = resources.Node
 )
 
+type storeType = storage.NodeComponentEdge
+
 // Store is the interface to interact with the storage for storage.NodeComponentEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.NodeComponentEdge, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeComponentEdge, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.NodeComponentEdge, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.NodeComponentEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.NodeComponentEdge, *storage.NodeComponentEdge]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.NodeComponentEdge, *storage.NodeComponentEdge](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
+			nil,
+			nil,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 			targetResource,
 		),
 	}
@@ -73,7 +74,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.NodeComponentEdge) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -87,11 +88,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 // endregion Helper functions
 
-//// Interface functions
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -109,4 +106,4 @@ func dropTableNodeComponentEdges(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing

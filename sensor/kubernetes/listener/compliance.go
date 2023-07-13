@@ -6,7 +6,7 @@ import (
 )
 
 func complianceCRDExists(client kubernetes.Interface) (bool, error) {
-	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(complianceoperator.ComplianceGroupVersion)
+	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(complianceoperator.GetGroupVersion().String())
 	if err != nil {
 		return false, err
 	}

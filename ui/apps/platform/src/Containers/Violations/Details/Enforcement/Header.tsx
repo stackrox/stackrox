@@ -37,14 +37,14 @@ function getRuntimeHeader(enforcementAction, enforcementCount) {
 
 type HeaderProps = {
     lifecycleStage: LifecycleStage;
-    enforcementCount?: number;
-    enforcementAction?: string;
+    enforcementCount: number;
+    enforcementAction: string;
 };
 
 function Header({
     lifecycleStage,
-    enforcementCount = 0,
-    enforcementAction = ENFORCEMENT_ACTIONS.UNSET_ENFORCEMENT,
+    enforcementCount,
+    enforcementAction,
 }: HeaderProps): ReactElement {
     let countMessage = '';
     if (lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {

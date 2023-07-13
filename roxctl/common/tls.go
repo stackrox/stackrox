@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 )
@@ -33,7 +34,7 @@ type insecureVerifierWithWarning struct {
 func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certificate, chainRest []*x509.Certificate, conf *tls.Config) error {
 	verifyOpts := x509.VerifyOptions{
 		DNSName:       conf.ServerName,
-		Intermediates: clientconn.NewCertPool(chainRest...),
+		Intermediates: tlscheck.NewCertPool(chainRest...),
 		Roots:         conf.RootCAs,
 	}
 
@@ -81,7 +82,7 @@ func tlsConfigOptsForCentral(logger logger.Logger) (*clientconn.TLSConfigOptions
 
 	skipVerify := false
 	var roots *x509.CertPool
-	var customVerifier clientconn.TLSCertVerifier
+	var customVerifier tlscheck.TLSCertVerifier
 	if flags.CAFile() != "" {
 		caPEMData, err := os.ReadFile(flags.CAFile())
 		if err != nil {

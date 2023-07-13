@@ -69,7 +69,7 @@ CollapsibleSection.defaultProps = {
     id: null,
     headerClassName: 'py-4',
     headerComponents: null,
-    titleClassName: 'p-4 text-xl',
+    titleClassName: 'p-4 text-lg',
     dataTestId: null,
     defaultOpen: true,
 };

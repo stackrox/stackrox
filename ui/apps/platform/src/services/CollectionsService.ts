@@ -36,6 +36,8 @@ export type Collection = {
     embeddedCollections: { id: string }[];
 };
 
+export type CollectionSlim = Pick<Collection, 'id' | 'name' | 'description'>;
+
 /**
  * Fetch a paginated list of Collection objects
  */

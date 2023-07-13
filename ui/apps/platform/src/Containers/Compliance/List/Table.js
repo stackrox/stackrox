@@ -6,7 +6,6 @@ import { useQuery } from '@apollo/client';
 import { Message } from '@stackrox/ui-components';
 
 import entityTypes, { standardTypes } from 'constants/entityTypes';
-import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import Table from 'Components/Table';
@@ -22,6 +21,8 @@ import createPDFTable from 'utils/pdfUtils';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
 import { LIST_STANDARD, STANDARDS_QUERY } from 'queries/standard';
 import queryService from 'utils/queryService';
+
+import { complianceEntityTypes, entityCountNounOrdinaryCase } from '../entitiesForCompliance';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -275,7 +276,6 @@ const ListTable = ({
         tableColumns = getColumnsByEntity(entityType, standardsData.results);
     }
     let tableData;
-    const entityTypeLabel = resourceLabels[entityType];
 
     return (
         <Query query={gqlQuery} variables={variables}>
@@ -288,27 +288,27 @@ const ListTable = ({
                 if (!loading || (data && data.results)) {
                     const formattedData = formatData(data, entityType);
                     if (!formattedData) {
-                        headerText = `0 ${pluralize(entityTypeLabel, totalRows)}`;
+                        headerText = entityCountNounOrdinaryCase(0, entityType);
                         contents = <NoResultsMessage message="No data matched your search." />;
                     } else {
                         tableData = filterByComplianceState(formattedData, query, isControlList);
                         totalRows = getTotalRows(tableData, isControlList);
+                        const entityCountNoun = entityCountNounOrdinaryCase(totalRows, entityType);
                         const { groupBy } = query;
 
                         // Resouces: CLUSTER, NAMESPACE, NODE, DEPLOYMENT.
                         // Or CATEGORY from View Standard link of sunburst graph on dashboard.
                         // Or STANDARD on Controls tab of resource single page.
                         // Otherwise undefined.
+                        const { length } = tableData;
                         const groupedByText = groupBy
-                            ? `across ${tableData.length} ${pluralize(
-                                  resourceLabels[groupBy] ?? groupBy.toLowerCase(),
-                                  tableData.length
-                              )}`
+                            ? ` across ${
+                                  complianceEntityTypes.includes(groupBy)
+                                      ? entityCountNounOrdinaryCase(length, groupBy)
+                                      : `${length} ${pluralize(groupBy.toLowerCase(), length)}`
+                              }`
                             : '';
-                        headerText = `${totalRows} ${pluralize(
-                            entityTypeLabel,
-                            totalRows
-                        )} ${groupedByText}`;
+                        headerText = `${entityCountNoun}${groupedByText}`;
 
                         if (tableData && tableData.length) {
                             createPDFTable(tableData, entityType, query, pdfId, tableColumns);
