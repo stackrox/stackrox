@@ -9,7 +9,9 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -787,6 +790,61 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	// And locked state should be updated
 	afterLockUpdateState = suite.mustGetBaseline(1).GetLocked()
 	suite.False(afterLockUpdateState)
+}
+
+func (suite *ManagerTestSuite) TestAddBaselineWithFinishedFlow() {
+	deploymentID := "deployment-id"
+	deploymentName := "deployment-name"
+	clusterID := clusterID(1)
+	namespace := "test"
+	observationEnd := timestamp.Now()
+	mockCtrl := gomock.NewController(suite.T())
+	mockClusterDataStore := networkFlowDSMocks.NewMockClusterDataStore(mockCtrl)
+	mockFlowStore := networkFlowDSMocks.NewMockFlowDataStore(mockCtrl)
+	mockDataStore := mocks.NewMockDataStore(mockCtrl)
+	mockQueue := queueMocks.NewMockDeploymentObservationQueue(mockCtrl)
+	m := &manager{
+		clusterFlows:               mockClusterDataStore,
+		ds:                         mockDataStore,
+		deploymentObservationQueue: mockQueue,
+	}
+	m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
+	mockClusterDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_, _ any) (flowDataStore.FlowDataStore, error) {
+		return mockFlowStore, nil
+	})
+	mockFlowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_, _, _ any) ([]*storage.NetworkFlow, error) {
+		return []*storage.NetworkFlow{
+			{
+				Props: &storage.NetworkFlowProperties{
+					DstPort: 22,
+					DstEntity: &storage.NetworkEntityInfo{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						Id:   deploymentID,
+					},
+					SrcEntity: &storage.NetworkEntityInfo{
+						Type: storage.NetworkEntityInfo_INTERNET,
+						Id:   "internet-id",
+					},
+					L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+				},
+				ClusterId:         clusterID,
+				LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour * 2)),
+			},
+		}, nil
+	})
+	mockDataStore.EXPECT().UpsertNetworkBaselines(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_, baselinesInput any) error {
+		baselines, ok := baselinesInput.([]*storage.NetworkBaseline)
+		suite.Assert().True(ok)
+		for _, baseline := range baselines {
+			fmt.Println(baseline)
+			for _, peer := range baseline.Peers {
+				suite.Assert().Equal("internet-id", peer.GetEntity().GetInfo().GetId())
+			}
+		}
+		return nil
+	})
+	mockQueue.EXPECT().RemoveDeployment(deploymentID).Times(1)
+	suite.Assert().NoError(m.addBaseline(deploymentID, deploymentName, clusterID, namespace, observationEnd))
 }
 
 ///// Helper functions to make test code less verbose.
