@@ -117,8 +117,8 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     static final private Deployment NGINX_LATEST = new Deployment()
             .setName(NGINX_LATEST_NAME)
-            .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest" +
-                "@sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:latest" +
+                "@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e")
             .setCommand(["sleep", "60000"])
             .setSkipReplicaWait(false)
 
