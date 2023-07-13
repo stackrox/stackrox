@@ -16,7 +16,7 @@ tests:
       expect: |
         .roles["central-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["central-prometheus-k8s"] | assertThat(. != null)
-        .servicemonitors["central-monitor"] | assertThat(. != null)
+        .servicemonitors["central-monitor-stackrox-central-services-stackrox"] | assertThat(. != null)
 
     - name: "monitoring is exposed"
     - name: "enableOpenShiftMonitoring overrides central.exposeMonitoring"
