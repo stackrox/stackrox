@@ -77,7 +77,7 @@ function ClusterLabelsTable({
                 <Tr>
                     <Th>Key</Th>
                     <Th>Value</Th>
-                    {hasAction && <Td />}
+                    {hasAction && <Th>Action</Th>}
                 </Tr>
             </Thead>
             <Tbody>
