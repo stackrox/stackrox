@@ -17,6 +17,14 @@ message GetReportHistoryRequest {
     RawQuery report_param_query = 2;
 }
 
+message ReportHistoryResponse {
+    repeated ReportSnapshot report_snapshots = 1;
+}
+
+message ReportStatusResponse {
+    ReportStatus status = 1;
+}
+
 message CollectionSnapshot {
     string id   = 1;
     string name = 2;
@@ -42,10 +50,6 @@ message NotifierSnapshot {
         EmailNotifierConfiguration email_config = 1;
     }
     string notifier_name = 2;
-}
-
-message ReportHistoryResponse {
-    repeated ReportSnapshot report_snapshots = 1;
 }
 
 message ReportStatus {
@@ -76,13 +80,13 @@ message ReportStatus {
 
 service ReportService {
     // GetReportStatus returns report status
-    rpc GetReportStatus (ResourceByID) returns (ReportStatus) {
+    rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
             get: "/v2/reports/status/{id}"
         };
     }
     // GetReportStatusConfigID returns report status for a report config id
-    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatus) {
+    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
             get: "/v2/reports/last-status/{id}"
         };
