@@ -7,6 +7,7 @@ import {
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
+    clickTab,
     deploymentswithprocessinfoAlias,
     deploymentscountAlias,
     visitRiskDeployments,
@@ -120,8 +121,8 @@ describe('Risk', () => {
             viewRiskDeploymentByName('collector');
 
             cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
-            cy.get(RiskPageSelectors.panelTabs.riskIndicators);
-            cy.get(RiskPageSelectors.sidePanel.closeButton).click();
+            cy.get('button[data-testid="tab"]:contains("Risk Indicators")');
+            cy.get('button[aria-label="Close"]').click();
             cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
         });
 
@@ -130,8 +131,8 @@ describe('Risk', () => {
             viewRiskDeploymentByName('collector');
 
             cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
-            cy.get(RiskPageSelectors.panelTabs.deploymentDetails);
-            cy.get(RiskPageSelectors.sidePanel.closeButton).click();
+            cy.get('button[data-testid="tab"]:contains("Deployment Details")');
+            cy.get('button[aria-label="Close"]').click();
             cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
         });
 
@@ -139,7 +140,7 @@ describe('Risk', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            cy.get(RiskPageSelectors.panelTabs.deploymentDetails).click();
+            clickTab('Deployment Details');
             cy.get(RiskPageSelectors.imageLink).first().click();
             cy.location('pathname').should('contain', '/main/vulnerability-management/image');
         });
