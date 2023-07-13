@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 	var deletes []string
 
 	copyCols := []string{
-
 		"deploymentid",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
 			serialized,
 		})
 

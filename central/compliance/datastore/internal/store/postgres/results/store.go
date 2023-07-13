@@ -130,15 +130,10 @@ func (s *storeImpl) copyFromComplianceRunResults(ctx context.Context, tx *postgr
 	var deletes []string
 
 	copyCols := []string{
-
 		"runmetadata_runid",
-
 		"runmetadata_standardid",
-
 		"runmetadata_clusterid",
-
 		"runmetadata_finishtimestamp",
-
 		"serialized",
 	}
 
@@ -154,15 +149,10 @@ func (s *storeImpl) copyFromComplianceRunResults(ctx context.Context, tx *postgr
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetRunMetadata().GetRunId(),
-
 			obj.GetRunMetadata().GetStandardId(),
-
 			pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
-
 			pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
-
 			serialized,
 		})
 

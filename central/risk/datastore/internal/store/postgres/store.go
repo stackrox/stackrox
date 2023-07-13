@@ -131,17 +131,11 @@ func (s *storeImpl) copyFromRisks(ctx context.Context, tx *postgres.Tx, objs ...
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"subject_namespace",
-
 		"subject_clusterid",
-
 		"subject_type",
-
 		"score",
-
 		"serialized",
 	}
 
@@ -157,17 +151,11 @@ func (s *storeImpl) copyFromRisks(ctx context.Context, tx *postgres.Tx, objs ...
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetSubject().GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetSubject().GetClusterId()),
-
 			obj.GetSubject().GetType(),
-
 			obj.GetScore(),
-
 			serialized,
 		})
 

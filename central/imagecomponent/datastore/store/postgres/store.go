@@ -132,23 +132,14 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx *postgres.Tx
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"version",
-
 		"priority",
-
 		"source",
-
 		"riskscore",
-
 		"topcvss",
-
 		"operatingsystem",
-
 		"serialized",
 	}
 
@@ -164,23 +155,14 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx *postgres.Tx
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			obj.GetVersion(),
-
 			obj.GetPriority(),
-
 			obj.GetSource(),
-
 			obj.GetRiskScore(),
-
 			obj.GetTopCvss(),
-
 			obj.GetOperatingSystem(),
-
 			serialized,
 		})
 

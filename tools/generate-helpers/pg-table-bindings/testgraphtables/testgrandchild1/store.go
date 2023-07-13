@@ -128,15 +128,10 @@ func (s *storeImpl) copyFromTestGrandChild1(ctx context.Context, tx *postgres.Tx
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"parentid",
-
 		"childid",
-
 		"val",
-
 		"serialized",
 	}
 
@@ -152,15 +147,10 @@ func (s *storeImpl) copyFromTestGrandChild1(ctx context.Context, tx *postgres.Tx
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetParentId(),
-
 			obj.GetChildId(),
-
 			obj.GetVal(),
-
 			serialized,
 		})
 

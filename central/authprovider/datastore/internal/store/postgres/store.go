@@ -126,11 +126,8 @@ func (s *storeImpl) copyFromAuthProviders(ctx context.Context, tx *postgres.Tx, 
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"serialized",
 	}
 
@@ -146,11 +143,8 @@ func (s *storeImpl) copyFromAuthProviders(ctx context.Context, tx *postgres.Tx, 
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			serialized,
 		})
 

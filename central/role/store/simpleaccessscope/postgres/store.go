@@ -125,11 +125,8 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx *postgres
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"serialized",
 	}
 
@@ -145,11 +142,8 @@ func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx *postgres
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			serialized,
 		})
 

@@ -129,17 +129,11 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"type",
-
 		"scopeid",
-
 		"resourcescope_collectionid",
-
 		"serialized",
 	}
 
@@ -155,17 +149,11 @@ func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx *postgr
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			obj.GetType(),
-
 			obj.GetScopeId(),
-
 			obj.GetResourceScope().GetCollectionId(),
-
 			serialized,
 		})
 

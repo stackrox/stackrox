@@ -184,19 +184,12 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx *postgres.Tx, objs .
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"clusterid",
-
 		"clustername",
-
 		"namespace",
-
 		"createdat",
-
 		"serialized",
 	}
 
@@ -212,19 +205,12 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx *postgres.Tx, objs .
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrTime(obj.GetCreatedAt()),
-
 			serialized,
 		})
 
@@ -271,13 +257,9 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 	var err error
 
 	copyCols := []string{
-
 		"secrets_id",
-
 		"idx",
-
 		"type",
-
 		"cert_enddate",
 	}
 
@@ -288,13 +270,9 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx *postgres.Tx, s
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(secretID),
-
 			idx,
-
 			obj.GetType(),
-
 			pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 		})
 
@@ -332,13 +310,9 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *post
 	var err error
 
 	copyCols := []string{
-
 		"secrets_id",
-
 		"secrets_files_idx",
-
 		"idx",
-
 		"name",
 	}
 
@@ -349,13 +323,9 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx *post
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(secretID),
-
 			secretFileIdx,
-
 			idx,
-
 			obj.GetName(),
 		})
 

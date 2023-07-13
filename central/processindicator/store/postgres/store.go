@@ -139,33 +139,19 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx *postgres.
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"deploymentid",
-
 		"containername",
-
 		"podid",
-
 		"poduid",
-
 		"signal_containerid",
-
 		"signal_time",
-
 		"signal_name",
-
 		"signal_args",
-
 		"signal_execfilepath",
-
 		"signal_uid",
-
 		"clusterid",
-
 		"namespace",
-
 		"serialized",
 	}
 
@@ -181,33 +167,19 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx *postgres.
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
 			obj.GetContainerName(),
-
 			obj.GetPodId(),
-
 			pgutils.NilOrUUID(obj.GetPodUid()),
-
 			obj.GetSignal().GetContainerId(),
-
 			pgutils.NilOrTime(obj.GetSignal().GetTime()),
-
 			obj.GetSignal().GetName(),
-
 			obj.GetSignal().GetArgs(),
-
 			obj.GetSignal().GetExecFilePath(),
-
 			obj.GetSignal().GetUid(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetNamespace(),
-
 			serialized,
 		})
 

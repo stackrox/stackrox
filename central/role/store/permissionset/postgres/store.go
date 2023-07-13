@@ -125,11 +125,8 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"serialized",
 	}
 
@@ -145,11 +142,8 @@ func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx *postgres.Tx,
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			serialized,
 		})
 

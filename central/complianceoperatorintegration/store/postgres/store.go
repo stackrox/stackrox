@@ -127,13 +127,9 @@ func (s *storeImpl) copyFromComplianceIntegrations(ctx context.Context, tx *post
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"version",
-
 		"clusterid",
-
 		"serialized",
 	}
 
@@ -149,13 +145,9 @@ func (s *storeImpl) copyFromComplianceIntegrations(ctx context.Context, tx *post
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetVersion(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			serialized,
 		})
 

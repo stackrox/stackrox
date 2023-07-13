@@ -130,19 +130,12 @@ func (s *storeImpl) copyFromListeningEndpoints(ctx context.Context, tx *postgres
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"port",
-
 		"protocol",
-
 		"processindicatorid",
-
 		"closed",
-
 		"deploymentid",
-
 		"serialized",
 	}
 
@@ -158,19 +151,12 @@ func (s *storeImpl) copyFromListeningEndpoints(ctx context.Context, tx *postgres
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetPort(),
-
 			obj.GetProtocol(),
-
 			pgutils.NilOrUUID(obj.GetProcessIndicatorId()),
-
 			obj.GetClosed(),
-
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
 			serialized,
 		})
 

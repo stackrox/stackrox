@@ -161,25 +161,15 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, o
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"namespace",
-
 		"clusterid",
-
 		"clustername",
-
 		"clusterrole",
-
 		"labels",
-
 		"annotations",
-
 		"roleid",
-
 		"serialized",
 	}
 
@@ -195,25 +185,15 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, o
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetClusterRole(),
-
 			obj.GetLabels(),
-
 			obj.GetAnnotations(),
-
 			pgutils.NilOrUUID(obj.GetRoleId()),
-
 			serialized,
 		})
 
@@ -260,13 +240,9 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgr
 	var err error
 
 	copyCols := []string{
-
 		"role_bindings_id",
-
 		"idx",
-
 		"kind",
-
 		"name",
 	}
 
@@ -277,13 +253,9 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgr
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(roleBindingID),
-
 			idx,
-
 			obj.GetKind(),
-
 			obj.GetName(),
 		})
 

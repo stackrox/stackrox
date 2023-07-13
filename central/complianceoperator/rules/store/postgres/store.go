@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromComplianceOperatorRules(ctx context.Context, tx *pos
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromComplianceOperatorRules(ctx context.Context, tx *pos
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			serialized,
 		})
 

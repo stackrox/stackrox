@@ -156,17 +156,11 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"deploymentid",
-
 		"namespace",
-
 		"clusterid",
-
 		"serialized",
 	}
 
@@ -182,17 +176,11 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			serialized,
 		})
 
@@ -239,11 +227,8 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.
 	var err error
 
 	copyCols := []string{
-
 		"pods_id",
-
 		"idx",
-
 		"imagedigest",
 	}
 
@@ -254,11 +239,8 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(podID),
-
 			idx,
-
 			obj.GetImageDigest(),
 		})
 

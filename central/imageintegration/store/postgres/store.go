@@ -128,13 +128,9 @@ func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx *postgres.
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"clusterid",
-
 		"serialized",
 	}
 
@@ -150,13 +146,9 @@ func (s *storeImpl) copyFromImageIntegrations(ctx context.Context, tx *postgres.
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			serialized,
 		})
 

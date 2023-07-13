@@ -216,9 +216,9 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     {{end}}
 
     copyCols := []string {
-    {{range $index, $field := $schema.DBColumnFields}}
+    {{- range $index, $field := $schema.DBColumnFields }}
         "{{$field.ColumnName|lowerCase}}",
-    {{end}}
+    {{- end }}
     }
 
     for idx, obj := range objs {
@@ -236,14 +236,14 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         {{end}}
 
         inputRows = append(inputRows, []interface{}{
-            {{ range $index, $field := $schema.DBColumnFields }}
-            {{if eq $field.DataType "datetime"}}
+            {{- range $index, $field := $schema.DBColumnFields }}
+            {{- if eq $field.DataType "datetime"}}
             pgutils.NilOrTime({{$field.Getter "obj"}}),
             {{- else if eq $field.SQLType "uuid" }}
             pgutils.NilOrUUID({{$field.Getter "obj"}}),
             {{- else}}
             {{$field.Getter "obj"}},{{end}}
-            {{end}}
+            {{- end}}
         })
 
         {{ if not $schema.Parent }}

@@ -126,11 +126,8 @@ func (s *storeImpl) copyFromNotifiers(ctx context.Context, tx *postgres.Tx, objs
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"serialized",
 	}
 
@@ -146,11 +143,8 @@ func (s *storeImpl) copyFromNotifiers(ctx context.Context, tx *postgres.Tx, objs
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			serialized,
 		})
 

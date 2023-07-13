@@ -179,15 +179,10 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx *postgres.T
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"val",
-
 		"priority",
-
 		"riskscore",
-
 		"serialized",
 	}
 
@@ -203,15 +198,10 @@ func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx *postgres.T
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetVal(),
-
 			obj.GetPriority(),
-
 			obj.GetRiskScore(),
-
 			serialized,
 		})
 
@@ -258,11 +248,8 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *p
 	var err error
 
 	copyCols := []string{
-
 		"test_grandparents_id",
-
 		"idx",
-
 		"val",
 	}
 
@@ -273,11 +260,8 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx *p
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			testGrandparentID,
-
 			idx,
-
 			obj.GetVal(),
 		})
 
@@ -315,13 +299,9 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Conte
 	var err error
 
 	copyCols := []string{
-
 		"test_grandparents_id",
-
 		"test_grandparents_embeddeds_idx",
-
 		"idx",
-
 		"val",
 	}
 
@@ -332,13 +312,9 @@ func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Conte
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			testGrandparentID,
-
 			testGrandparentEmbeddedIdx,
-
 			idx,
-
 			obj.GetVal(),
 		})
 
