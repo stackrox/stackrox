@@ -79,6 +79,7 @@ function useCreateReport(): CreateReportResult {
                     collectionName: reportParameters.reportScope?.name || '',
                 },
             },
+            // @TODO: Replace hardcoded values when we do notifiers and schedule
             notifiers: [],
             schedule: {
                 intervalType: 'WEEKLY',

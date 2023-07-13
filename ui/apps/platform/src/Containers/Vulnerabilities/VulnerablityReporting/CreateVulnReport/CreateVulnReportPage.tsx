@@ -25,7 +25,7 @@ import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporti
 import ReportReviewForm from '../forms/ReportReviewForm';
 import useCreateReport from '../api/useCreateReport';
 
-const wizardSteps = [
+const wizardStepNames = [
     'Configure report parameters',
     'Configure delivery destinations (Optional)',
     'Review and create',
@@ -39,6 +39,7 @@ function VulnReportsPage() {
     const { data, isLoading, error, createReport } = useCreateReport();
 
     // When report is created, navigate to the vuln reports page
+    // @TODO: We want to change this in the future to navigate to the read-only report page to verify the details
     useEffect(() => {
         if (data) {
             clearFormValues();
@@ -103,7 +104,7 @@ function VulnReportsPage() {
                     hasNoBodyPadding
                     steps={[
                         {
-                            name: wizardSteps[0],
+                            name: wizardStepNames[0],
                             component: (
                                 <ReportParametersForm
                                     formValues={formValues}
@@ -111,9 +112,9 @@ function VulnReportsPage() {
                                 />
                             ),
                         },
-                        { name: wizardSteps[1], component: <p /> },
+                        { name: wizardStepNames[1], component: <p /> },
                         {
-                            name: wizardSteps[2],
+                            name: wizardStepNames[2],
                             component: <ReportReviewForm formValues={formValues} />,
                             nextButtonText: 'Create',
                         },
@@ -123,10 +124,11 @@ function VulnReportsPage() {
                         <WizardFooter>
                             <WizardContextConsumer>
                                 {({ activeStep, onNext, onBack, onClose }) => {
-                                    const lastStep = wizardSteps[wizardSteps.length - 1];
+                                    const lastStepName =
+                                        wizardStepNames[wizardStepNames.length - 1];
                                     return (
                                         <>
-                                            {activeStep.name !== lastStep ? (
+                                            {activeStep.name !== lastStepName ? (
                                                 <Button
                                                     variant="primary"
                                                     type="submit"
@@ -147,7 +149,7 @@ function VulnReportsPage() {
                                             <Button
                                                 variant="secondary"
                                                 onClick={onBack}
-                                                isDisabled={activeStep.name !== lastStep}
+                                                isDisabled={activeStep.name !== lastStepName}
                                             >
                                                 Back
                                             </Button>
