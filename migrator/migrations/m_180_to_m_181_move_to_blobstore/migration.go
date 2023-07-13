@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
@@ -43,7 +42,7 @@ var (
 		StartingSeqNum: 180,
 		VersionAfter:   &storage.Version{SeqNum: 181},
 		Run: func(databases *types.Databases) error {
-			err := moveToBlobs(databases.GormDB)
+			err := moveToBlobs(databases.DBCtx, databases.GormDB)
 			if err != nil {
 				return errors.Wrap(err, "moving persistent files to blobs")
 			}
@@ -53,8 +52,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func moveToBlobs(db *gorm.DB) (err error) {
-	ctx := sac.WithAllAccess(context.Background())
+// TODO(ROX-18149) figure out how to deal with gorm vs our transactions.
+func moveToBlobs(ctx context.Context, db *gorm.DB) (err error) {
 	db = db.WithContext(ctx).Table(schema.BlobsTableName)
 	pgutils.CreateTableFromModel(context.Background(), db, schema.CreateTableBlobsStmt)
 

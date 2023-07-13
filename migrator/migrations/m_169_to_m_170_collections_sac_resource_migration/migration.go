@@ -9,7 +9,6 @@ import (
 	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_169_to_m_170_collections_sac_resource_migration/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -26,7 +25,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 170
 		Run: func(databases *types.Databases) error {
-			err := migrateWorkflowAdministrationPermissionSet(databases.PostgresDB)
+			err := migrateWorkflowAdministrationPermissionSet(databases.DBCtx, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrapf(err, "updating %q permissions", workflowAdminResource)
 			}
@@ -35,8 +34,7 @@ var (
 	}
 )
 
-func migrateWorkflowAdministrationPermissionSet(db postgres.DB) error {
-	ctx := sac.WithAllAccess(context.Background())
+func migrateWorkflowAdministrationPermissionSet(ctx context.Context, db postgres.DB) error {
 	pgStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)
 	err := pgStore.Walk(ctx, func(obj *storage.PermissionSet) error {

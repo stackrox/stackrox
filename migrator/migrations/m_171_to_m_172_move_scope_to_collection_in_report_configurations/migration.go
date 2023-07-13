@@ -39,7 +39,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 172
 		Run: func(databases *types.Databases) error {
-			err := moveScopesInReportsToCollections(databases.GormDB, databases.PostgresDB)
+			err := moveScopesInReportsToCollections(databases.DBCtx, databases.GormDB, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "error converting scopes to collections in reportConfigurations")
 			}
@@ -222,8 +222,7 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	return newScopeID, true
 }
 
-func moveScopesInReportsToCollections(gormDB *gorm.DB, db postgres.DB) error {
-	ctx := context.Background()
+func moveScopesInReportsToCollections(ctx context.Context, gormDB *gorm.DB, db postgres.DB) error {
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableCollectionsStmt)
 	reportConfigStore := reportConfigurationPostgres.New(db)
 	accessScopeStore := accessScopePostgres.New(db)

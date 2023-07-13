@@ -27,7 +27,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 169
 		Run: func(databases *types.Databases) error {
-			err := cleanupPermissionSets(databases.PostgresDB)
+			err := cleanupPermissionSets(databases.DBCtx, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "updating PermissionSet schema")
 			}
@@ -51,8 +51,7 @@ func propagateAccessForPermission(permission string, accessLevel storage.Access,
 	return accessLevel
 }
 
-func cleanupPermissionSets(db postgres.DB) error {
-	ctx := context.Background()
+func cleanupPermissionSets(ctx context.Context, db postgres.DB) error {
 	permissionSetStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)
 	err := permissionSetStore.Walk(ctx, func(obj *storage.PermissionSet) error {

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -28,11 +27,12 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 174
 		Run: func(databases *types.Databases) error {
-			if err := ensureUniqueGroups(databases.PostgresDB); err != nil {
+			if err := ensureUniqueGroups(databases.DBCtx, databases.PostgresDB); err != nil {
 				return errors.Wrap(err, "ensuring only unique groups are within table")
 			}
+			// TODO(ROX-18149) figure out if we can do this in a transaction
 			migrateSchema(databases.GormDB)
-			if err := reUpsertGroupEntries(databases.PostgresDB); err != nil {
+			if err := reUpsertGroupEntries(databases.DBCtx, databases.PostgresDB); err != nil {
 				return errors.Wrap(err, "re-upserting group entries after schema change")
 			}
 			return nil
@@ -44,8 +44,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func ensureUniqueGroups(postgresDB postgres.DB) error {
-	ctx := sac.WithAllAccess(context.Background())
+func ensureUniqueGroups(ctx context.Context, postgresDB postgres.DB) error {
 	previousStore := previous.New(postgresDB)
 
 	uniqueGroups := map[string]struct{}{}
@@ -83,8 +82,7 @@ func migrateSchema(gormDB *gorm.DB) {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenschema.CreateTableGroupsStmt)
 }
 
-func reUpsertGroupEntries(postgresDB postgres.DB) error {
-	ctx := sac.WithAllAccess(context.Background())
+func reUpsertGroupEntries(ctx context.Context, postgresDB postgres.DB) error {
 	updatedStore := updated.New(postgresDB)
 
 	groupsToUpsert := make([]*storage.Group, 0, batchSize)

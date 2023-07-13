@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	pglog "github.com/stackrox/rox/migrator/log"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 // MigratePoliciesWithDiffsAndStore migrates policies with the given diffs.
@@ -20,7 +19,7 @@ import (
 // This function then automatically computes the diff for each policy, and executes the migration.
 // This method requires the caller to provide funcs that check if a policy exists,
 // fetches policy from the store and will upsert a policy to the store
-func MigratePoliciesWithDiffsAndStore(policyDiffFS embed.FS,
+func MigratePoliciesWithDiffsAndStore(ctx context.Context, policyDiffFS embed.FS,
 	policyDiffs []PolicyDiff,
 	policyExists func(context.Context, string) (bool, error),
 	getPolicy func(context.Context, string) (*storage.Policy, bool, error),
@@ -47,21 +46,18 @@ func MigratePoliciesWithDiffsAndStore(policyDiffFS embed.FS,
 		policiesToMigrate[beforePolicy.GetId()] = PolicyChanges{FieldsToCompare: diff.FieldsToCompare, ToChange: updates}
 		preMigrationPolicies[beforePolicy.GetId()] = beforePolicy
 	}
-	return MigratePoliciesWithStore(policiesToMigrate, preMigrationPolicies, policyExists, getPolicy, upsertPolicy)
+	return MigratePoliciesWithStore(ctx, policiesToMigrate, preMigrationPolicies, policyExists, getPolicy, upsertPolicy)
 }
 
 // MigratePoliciesWithStore will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
 // matches the policies within comparisonPolicies. This method requires the caller to provide funcs that check if a policy exists,
 // fetches policy from the store and will upsert a policy to the store
-func MigratePoliciesWithStore(policiesToMigrate map[string]PolicyChanges,
+func MigratePoliciesWithStore(ctx context.Context, policiesToMigrate map[string]PolicyChanges,
 	comparisonPolicies map[string]*storage.Policy,
 	policyExists func(context.Context, string) (bool, error),
 	getPolicy func(context.Context, string) (*storage.Policy, bool, error),
 	upsertPolicy func(context.Context, *storage.Policy) error,
 ) error {
-
-	ctx := sac.WithAllAccess(context.Background())
-
 	for policyID, updateDetails := range policiesToMigrate {
 		if exists, err := policyExists(ctx, policyID); err != nil {
 			pglog.WriteToStderrf("err getting policy with id %s. Will not update.", policyID)

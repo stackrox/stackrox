@@ -24,7 +24,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 179
 		Run: func(database *types.Databases) error {
-			return migrateReportConfigs(database.PostgresDB, database.GormDB)
+			return migrateReportConfigs(database.DBCtx, database.PostgresDB, database.GormDB)
 		},
 	}
 )
@@ -33,8 +33,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func migrateReportConfigs(postgresDB postgres.DB, gormDB *gorm.DB) error {
-	ctx := context.Background()
+func migrateReportConfigs(ctx context.Context, postgresDB postgres.DB, gormDB *gorm.DB) error {
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
 	newReportStore := newStore.New(postgresDB)
 

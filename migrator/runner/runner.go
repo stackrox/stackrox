@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -12,6 +13,8 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -73,10 +76,23 @@ func Run(databases *types.Databases) error {
 }
 
 func runMigrations(databases *types.Databases, startingSeqNum int) error {
+	// First cut, wrapping all the migrations in a transaction.  Can evaluate whether we should
+	// work this way or wrap them individually later.
+	ctx = sac.WithAllAccess(context.Background())
+
+	tx, err := databases.PostgresDB.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	ctx = pgPkg.ContextWithTx(ctx, tx)
+
+	// Set the context with the databases so the wrapped transaction can be used
+	databases.DBCtx = ctx
+
 	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		migration, ok := migrations.Get(seqNum)
 		if !ok {
-			return fmt.Errorf("no migration found starting at %d", seqNum)
+			return wrapRollback(ctx, tx, fmt.Errorf("no migration found starting at %d", seqNum))
 		}
 
 		if skipMigrationMap.Contains(seqNum) {
@@ -84,16 +100,25 @@ func runMigrations(databases *types.Databases, startingSeqNum int) error {
 		} else {
 			err := migration.Run(databases)
 			if err != nil {
-				return errors.Wrapf(err, "error running migration starting at %d", seqNum)
+				return wrapRollback(ctx, tx, errors.Wrapf(err, "error running migration starting at %d", seqNum))
 			}
 		}
 
+		// TODO(ROX-18149) deal with version and transaction, may be tricky as it uses Gorm
 		err := updateVersion(databases, migration.VersionAfter)
 		if err != nil {
-			return errors.Wrapf(err, "failed to update version after migration %d", seqNum)
+			return wrapRollback(ctx, tx, errors.Wrapf(err, "failed to update version after migration %d", seqNum))
 		}
 		log.WriteToStderrf("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
 	}
 
-	return nil
+	return tx.Commit(ctx)
+}
+
+func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+	}
+	return err
 }

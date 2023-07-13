@@ -25,7 +25,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 173
 		Run: func(databases *types.Databases) error {
-			err := MigrateToPartitions(databases.GormDB, databases.PostgresDB)
+			err := MigrateToPartitions(databases.DBCtx, databases.GormDB, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "updating network_flows to partitions")
 			}
@@ -37,9 +37,7 @@ var (
 )
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
-func MigrateToPartitions(gormDB *gorm.DB, db postgres.DB) error {
-	ctx := context.Background()
-
+func MigrateToPartitions(ctx context.Context, gormDB *gorm.DB, db postgres.DB) error {
 	err := analyzeOldTable(ctx, db)
 	if err != nil {
 		log.WriteToStderrf("unable to analyze network_flows.  Will continue processing though it may be slow. %v", err)

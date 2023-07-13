@@ -1,6 +1,7 @@
 package m185tom186
 
 import (
+	"context"
 	"embed"
 
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ var (
 		StartingSeqNum: 185,
 		VersionAfter:   &storage.Version{SeqNum: 186},
 		Run: func(databases *types.Databases) error {
-			err := updatePolicies(databases.PostgresDB)
+			err := updatePolicies(databases.DBCtx, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "updating policies")
 			}
@@ -101,10 +102,11 @@ var (
 	}
 )
 
-func updatePolicies(db postgres.DB) error {
+func updatePolicies(ctx context.Context, db postgres.DB) error {
 	policyStore := policypostgresstore.New(db)
 
 	return policymigrationhelper.MigratePoliciesWithDiffsAndStore(
+		ctx,
 		policyDiffFS,
 		policyDiffs,
 		policyStore.Exists,

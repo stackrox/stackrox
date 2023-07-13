@@ -23,7 +23,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 177
 		Run: func(database *types.Databases) error {
-			return addCIDRBlockToBaselines(database.PostgresDB)
+			return addCIDRBlockToBaselines(database.DBCtx, database.PostgresDB)
 		},
 	}
 )
@@ -76,8 +76,7 @@ func updatePeer(
 	return false, nil
 }
 
-func addCIDRBlockToBaselines(postgresDB postgres.DB) error {
-	ctx := context.Background()
+func addCIDRBlockToBaselines(ctx context.Context, postgresDB postgres.DB) error {
 	networkBaselineStore := networkbaselinestore.New(postgresDB)
 	networkEntityStore := networkentitystore.New(postgresDB)
 

@@ -8,7 +8,6 @@ import (
 	permissionsetpostgresstore "github.com/stackrox/rox/migrator/migrations/m_177_to_m_178_group_permissions/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -42,7 +41,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 178
 		Run: func(database *types.Databases) error {
-			return migrateReplacedResourcesInPermissionSets(database.PostgresDB)
+			return migrateReplacedResourcesInPermissionSets(database.DBCtx, database.PostgresDB)
 		},
 	}
 
@@ -75,8 +74,7 @@ func propagateAccessForPermission(permission string, accessLevel storage.Access,
 	return accessLevel
 }
 
-func migrateReplacedResourcesInPermissionSets(db postgres.DB) error {
-	ctx := sac.WithAllAccess(context.Background())
+func migrateReplacedResourcesInPermissionSets(ctx context.Context, db postgres.DB) error {
 	store := permissionsetpostgresstore.New(db)
 
 	migratedPermissionSets := make([]*storage.PermissionSet, 0, batchSize)

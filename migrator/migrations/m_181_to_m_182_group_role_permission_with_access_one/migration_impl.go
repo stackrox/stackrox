@@ -1,12 +1,9 @@
 package m181tom182
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/storage"
 	permissionsetstore "github.com/stackrox/rox/migrator/migrations/m_181_to_m_182_group_role_permission_with_access_one/permissionsetstore"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -20,7 +17,7 @@ const (
 )
 
 func migrate(database *types.Databases) error {
-	ctx := sac.WithAllAccess(context.Background())
+	ctx := database.DBCtx
 	store := permissionsetstore.New(database.PostgresDB)
 
 	migratedPermissionSets := make([]*storage.PermissionSet, 0, batchSize)

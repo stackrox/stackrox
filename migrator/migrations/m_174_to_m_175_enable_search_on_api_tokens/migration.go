@@ -25,7 +25,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
 		Run: func(database *types.Databases) error {
-			return migrateAPITokens(database.PostgresDB, database.GormDB)
+			return migrateAPITokens(database.DBCtx, database.PostgresDB, database.GormDB)
 		},
 	}
 )
@@ -34,8 +34,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func migrateAPITokens(postgresDB postgres.DB, gormDB *gorm.DB) error {
-	ctx := context.Background()
+func migrateAPITokens(ctx context.Context, postgresDB postgres.DB, gormDB *gorm.DB) error {
 	oldStore := oldAPITokenStore.New(postgresDB)
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableAPITokensStmt)
 	newStore := newAPITokenStore.New(postgresDB)

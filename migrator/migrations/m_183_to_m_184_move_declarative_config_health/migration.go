@@ -21,7 +21,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
 		Run: func(database *types.Databases) error {
-			return moveDeclarativeConfigHealthToNewStore(database.PostgresDB, database.GormDB)
+			return moveDeclarativeConfigHealthToNewStore(database.DBCtx, database.PostgresDB, database.GormDB)
 		},
 	}
 )
@@ -30,8 +30,7 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func moveDeclarativeConfigHealthToNewStore(db postgres.DB, gormDB *gorm.DB) error {
-	ctx := context.Background()
+func moveDeclarativeConfigHealthToNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) error {
 	pgutils.CreateTableFromModel(ctx, gormDB, schema.CreateTableDeclarativeConfigHealthsStmt)
 
 	configStore := declarativeConfigStore.New(db)

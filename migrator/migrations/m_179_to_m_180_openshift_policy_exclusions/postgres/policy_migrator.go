@@ -11,7 +11,6 @@ import (
 	pglog "github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -117,7 +116,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 // 3. For each policy being migrated, there must be one copy in the "before" directory and one in the "after" directory.
 // 4. The file names for a policy should match the PolicyFileName in the corresponding PolicyDiff passed in the third argument.
 // This function then automatically computes the diff for each policy, and executes the migration.
-func MigratePoliciesWithDiffs(db postgres.DB, policyDiffFS embed.FS, policyDiffs []PolicyDiff) error {
+func MigratePoliciesWithDiffs(ctx context.Context, db postgres.DB, policyDiffFS embed.FS, policyDiffs []PolicyDiff) error {
 	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
 	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
 	for _, diff := range policyDiffs {
@@ -144,9 +143,7 @@ func MigratePoliciesWithDiffs(db postgres.DB, policyDiffFS embed.FS, policyDiffs
 
 // MigratePolicies will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
 // matches the policies within comparisonPolicies.
-func MigratePolicies(db postgres.DB, policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
-
-	ctx := sac.WithAllAccess(context.Background())
+func MigratePolicies(ctx context.Context, db postgres.DB, policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
 	policyStore := New(db)
 
 	for policyID, updateDetails := range policiesToMigrate {

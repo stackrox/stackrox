@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -27,7 +26,7 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)}, // 171
 		Run: func(databases *types.Databases) error {
-			err := CreatePolicyCategoryEdges(databases.GormDB, databases.PostgresDB)
+			err := CreatePolicyCategoryEdges(databases.DBCtx, databases.GormDB, databases.PostgresDB)
 			if err != nil {
 				return errors.Wrap(err, "updating policy categories schema")
 			}
@@ -103,10 +102,9 @@ var (
 )
 
 // CreatePolicyCategoryEdges reads policies and creates categories and policy <-> category edges
-func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
+func CreatePolicyCategoryEdges(ctx context.Context, gormDB *gorm.DB, db postgres.DB) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePolicyCategoryEdgesStmt)
 
-	ctx := sac.WithAllAccess(context.Background())
 	policyStore := policyPostgresStore.New(db)
 	categoriesStore := policyCategoryPostgresStore.New(db)
 	edgeStore := policyCategoryEdgePostgresStore.New(db)

@@ -12,7 +12,6 @@ import (
 	roleStore "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/rolestore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -47,7 +46,7 @@ var (
 )
 
 func migrate(database *types.Databases) error {
-	ctx := sac.WithAllAccess(context.Background())
+	ctx := database.DBCtx
 
 	apiTokenStorage := apiTokenStore.New(database.PostgresDB)
 	groupStorage := groupStore.New(database.PostgresDB)
