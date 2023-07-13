@@ -85,7 +85,7 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230411213734-d75b95d65d28
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230628181306-03df53267a74
 	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.5
