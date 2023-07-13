@@ -1,11 +1,11 @@
-import tableSelectors from '../selectors/table';
-import selectSelectors from '../selectors/select';
-import paginationSelectors from '../selectors/pagination';
-import tooltipSelectors from '../selectors/tooltip';
-import navigationSelectors from '../selectors/navigation';
-import scopeSelectors from '../helpers/scopeSelectors';
+import tableSelectors from '../../selectors/table';
+import selectSelectors from '../../selectors/select';
+import paginationSelectors from '../../selectors/pagination';
+import tooltipSelectors from '../../selectors/tooltip';
+import navigationSelectors from '../../selectors/navigation';
+import scopeSelectors from '../../helpers/scopeSelectors';
 
-export const url = '/main/risk';
+// export const url = '/main/risk';
 
 /*
 // TODO after PatternFly conversion: update if relevant or delete if not relevant.

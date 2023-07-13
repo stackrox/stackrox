@@ -1,13 +1,4 @@
-import { selectors as RiskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
-import {
-    deploymentswithprocessinfoAlias,
-    deploymentscountAlias,
-    visitRiskDeployments,
-    visitRiskDeploymentsWithSearchQuery,
-    viewRiskDeploymentByName,
-    viewRiskDeploymentInNetworkGraph,
-} from '../../helpers/risk';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -15,7 +6,17 @@ import {
 } from '../../helpers/sort';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
-describe('Risk page', () => {
+import {
+    deploymentswithprocessinfoAlias,
+    deploymentscountAlias,
+    visitRiskDeployments,
+    visitRiskDeploymentsWithSearchQuery,
+    viewRiskDeploymentByName,
+    viewRiskDeploymentInNetworkGraph,
+} from './Risk.helpers';
+import { selectors as RiskPageSelectors } from './Risk.selectors';
+
+describe('Risk', () => {
     withAuth();
 
     describe('without mock API', () => {

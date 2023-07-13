@@ -1,5 +1,6 @@
-import { selectors as riskSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
+
+import { selectors as riskSelectors } from './Risk.selectors';
 
 const riskUrl = '/main/risk';
 const policiesUrl = '/main/policy-management/policies';
