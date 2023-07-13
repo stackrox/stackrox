@@ -5,12 +5,14 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
@@ -271,4 +273,39 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 	err = row.Scan(&count)
 	s.Nil(err)
 	s.Equal(count, 2)
+}
+
+func (s *NetworkflowStoreSuite) TestGetFlowsForDeployment() {
+	deploymentID := "deployment-id"
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deploymentID,
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   "internet-id",
+				},
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour * 2)),
+		},
+	}
+
+	err := s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	s.Nil(err)
+
+	row := s.pool.QueryRow(s.ctx, flowsCountStmt)
+	var count int
+	err = row.Scan(&count)
+	s.Nil(err)
+	s.Equal(count, len(flows))
+
+	flowsFromStore, err := s.store.GetFlowsForDeployment(s.ctx, deploymentID)
+	s.Assert().NoError(err)
+	s.Assert().Equal(len(flows), len(flowsFromStore))
 }
