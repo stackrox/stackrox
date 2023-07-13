@@ -153,13 +153,9 @@ func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx *postgres.T
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"deploymentid",
-
 		"componentid",
-
 		"serialized",
 	}
 
@@ -175,13 +171,9 @@ func (s *storeImpl) copyFromActiveComponents(ctx context.Context, tx *postgres.T
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
-
 			obj.GetComponentId(),
-
 			serialized,
 		})
 
@@ -228,13 +220,9 @@ func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Con
 	var err error
 
 	copyCols := []string{
-
 		"active_components_id",
-
 		"idx",
-
 		"containername",
-
 		"imageid",
 	}
 
@@ -245,13 +233,9 @@ func (s *storeImpl) copyFromActiveComponentsActiveContextsSlices(ctx context.Con
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			activeComponentID,
-
 			idx,
-
 			obj.GetContainerName(),
-
 			obj.GetImageId(),
 		})
 

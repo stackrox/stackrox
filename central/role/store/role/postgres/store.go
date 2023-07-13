@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromRoles(ctx context.Context, tx *postgres.Tx, objs ...
 	var deletes []string
 
 	copyCols := []string{
-
 		"name",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromRoles(ctx context.Context, tx *postgres.Tx, objs ...
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetName(),
-
 			serialized,
 		})
 

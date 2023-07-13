@@ -125,11 +125,8 @@ func (s *storeImpl) copyFromSignatureIntegrations(ctx context.Context, tx *postg
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"serialized",
 	}
 
@@ -145,11 +142,8 @@ func (s *storeImpl) copyFromSignatureIntegrations(ctx context.Context, tx *postg
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			serialized,
 		})
 

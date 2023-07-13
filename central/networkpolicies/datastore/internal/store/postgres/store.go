@@ -129,13 +129,9 @@ func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx *postgres.Tx
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"clusterid",
-
 		"namespace",
-
 		"serialized",
 	}
 
@@ -151,13 +147,9 @@ func (s *storeImpl) copyFromNetworkpolicies(ctx context.Context, tx *postgres.Tx
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetNamespace(),
-
 			serialized,
 		})
 

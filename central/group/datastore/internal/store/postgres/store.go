@@ -129,17 +129,11 @@ func (s *storeImpl) copyFromGroups(ctx context.Context, tx *postgres.Tx, objs ..
 	var deletes []string
 
 	copyCols := []string{
-
 		"props_id",
-
 		"props_authproviderid",
-
 		"props_key",
-
 		"props_value",
-
 		"rolename",
-
 		"serialized",
 	}
 
@@ -155,17 +149,11 @@ func (s *storeImpl) copyFromGroups(ctx context.Context, tx *postgres.Tx, objs ..
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetProps().GetId(),
-
 			obj.GetProps().GetAuthProviderId(),
-
 			obj.GetProps().GetKey(),
-
 			obj.GetProps().GetValue(),
-
 			obj.GetRoleName(),
-
 			serialized,
 		})
 

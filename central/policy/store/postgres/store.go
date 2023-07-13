@@ -137,31 +137,18 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs 
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"description",
-
 		"disabled",
-
 		"categories",
-
 		"lifecyclestages",
-
 		"severity",
-
 		"enforcementactions",
-
 		"lastupdated",
-
 		"sortname",
-
 		"sortlifecyclestage",
-
 		"sortenforcement",
-
 		"serialized",
 	}
 
@@ -177,31 +164,18 @@ func (s *storeImpl) copyFromPolicies(ctx context.Context, tx *postgres.Tx, objs 
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			obj.GetDescription(),
-
 			obj.GetDisabled(),
-
 			obj.GetCategories(),
-
 			obj.GetLifecycleStages(),
-
 			obj.GetSeverity(),
-
 			obj.GetEnforcementActions(),
-
 			pgutils.NilOrTime(obj.GetLastUpdated()),
-
 			obj.GetSORTName(),
-
 			obj.GetSORTLifecycleStage(),
-
 			obj.GetSORTEnforcement(),
-
 			serialized,
 		})
 

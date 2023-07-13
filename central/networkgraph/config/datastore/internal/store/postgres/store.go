@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromNetworkGraphConfigs(ctx context.Context, tx *postgre
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromNetworkGraphConfigs(ctx context.Context, tx *postgre
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			serialized,
 		})
 

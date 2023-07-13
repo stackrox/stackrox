@@ -153,15 +153,10 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx *postgres.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"createdby_name",
-
 		"updatedby_name",
-
 		"serialized",
 	}
 
@@ -177,15 +172,10 @@ func (s *storeImpl) copyFromCollections(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetName(),
-
 			obj.GetCreatedBy().GetName(),
-
 			obj.GetUpdatedBy().GetName(),
-
 			serialized,
 		})
 
@@ -232,11 +222,8 @@ func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, 
 	var err error
 
 	copyCols := []string{
-
 		"collections_id",
-
 		"idx",
-
 		"id",
 	}
 
@@ -247,11 +234,8 @@ func (s *storeImpl) copyFromCollectionsEmbeddedCollections(ctx context.Context, 
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			collectionID,
-
 			idx,
-
 			obj.GetId(),
 		})
 

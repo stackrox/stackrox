@@ -132,19 +132,12 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx *postgres.Tx, obj
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"clusterid",
-
 		"clustername",
-
 		"labels",
-
 		"annotations",
-
 		"serialized",
 	}
 
@@ -160,19 +153,12 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx *postgres.Tx, obj
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetLabels(),
-
 			obj.GetAnnotations(),
-
 			serialized,
 		})
 

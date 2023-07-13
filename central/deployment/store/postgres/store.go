@@ -317,41 +317,23 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"type",
-
 		"namespace",
-
 		"namespaceid",
-
 		"orchestratorcomponent",
-
 		"labels",
-
 		"podlabels",
-
 		"created",
-
 		"clusterid",
-
 		"clustername",
-
 		"annotations",
-
 		"priority",
-
 		"imagepullsecrets",
-
 		"serviceaccount",
-
 		"serviceaccountpermissionlevel",
-
 		"riskscore",
-
 		"serialized",
 	}
 
@@ -367,41 +349,23 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			obj.GetType(),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetNamespaceId()),
-
 			obj.GetOrchestratorComponent(),
-
 			obj.GetLabels(),
-
 			obj.GetPodLabels(),
-
 			pgutils.NilOrTime(obj.GetCreated()),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetAnnotations(),
-
 			obj.GetPriority(),
-
 			obj.GetImagePullSecrets(),
-
 			obj.GetServiceAccount(),
-
 			obj.GetServiceAccountPermissionLevel(),
-
 			obj.GetRiskScore(),
-
 			serialized,
 		})
 
@@ -451,35 +415,20 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 	var err error
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"idx",
-
 		"image_id",
-
 		"image_name_registry",
-
 		"image_name_remote",
-
 		"image_name_tag",
-
 		"image_name_fullname",
-
 		"securitycontext_privileged",
-
 		"securitycontext_dropcapabilities",
-
 		"securitycontext_addcapabilities",
-
 		"securitycontext_readonlyrootfilesystem",
-
 		"resources_cpucoresrequest",
-
 		"resources_cpucoreslimit",
-
 		"resources_memorymbrequest",
-
 		"resources_memorymblimit",
 	}
 
@@ -490,35 +439,20 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			idx,
-
 			obj.GetImage().GetId(),
-
 			obj.GetImage().GetName().GetRegistry(),
-
 			obj.GetImage().GetName().GetRemote(),
-
 			obj.GetImage().GetName().GetTag(),
-
 			obj.GetImage().GetName().GetFullName(),
-
 			obj.GetSecurityContext().GetPrivileged(),
-
 			obj.GetSecurityContext().GetDropCapabilities(),
-
 			obj.GetSecurityContext().GetAddCapabilities(),
-
 			obj.GetSecurityContext().GetReadOnlyRootFilesystem(),
-
 			obj.GetResources().GetCpuCoresRequest(),
-
 			obj.GetResources().GetCpuCoresLimit(),
-
 			obj.GetResources().GetMemoryMbRequest(),
-
 			obj.GetResources().GetMemoryMbLimit(),
 		})
 
@@ -562,17 +496,11 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *p
 	var err error
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_containers_idx",
-
 		"idx",
-
 		"key",
-
 		"value",
-
 		"envvarsource",
 	}
 
@@ -583,17 +511,11 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *p
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentContainerIdx,
-
 			idx,
-
 			obj.GetKey(),
-
 			obj.GetValue(),
-
 			obj.GetEnvVarSource(),
 		})
 
@@ -623,21 +545,13 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 	var err error
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_containers_idx",
-
 		"idx",
-
 		"name",
-
 		"source",
-
 		"destination",
-
 		"readonly",
-
 		"type",
 	}
 
@@ -648,21 +562,13 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentContainerIdx,
-
 			idx,
-
 			obj.GetName(),
-
 			obj.GetSource(),
-
 			obj.GetDestination(),
-
 			obj.GetReadOnly(),
-
 			obj.GetType(),
 		})
 
@@ -692,15 +598,10 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 	var err error
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_containers_idx",
-
 		"idx",
-
 		"name",
-
 		"path",
 	}
 
@@ -711,15 +612,10 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentContainerIdx,
-
 			idx,
-
 			obj.GetName(),
-
 			obj.GetPath(),
 		})
 
@@ -749,15 +645,10 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 	var err error
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"idx",
-
 		"containerport",
-
 		"protocol",
-
 		"exposure",
 	}
 
@@ -768,15 +659,10 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			idx,
-
 			obj.GetContainerPort(),
-
 			obj.GetProtocol(),
-
 			obj.GetExposure(),
 		})
 
@@ -814,23 +700,14 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 	var err error
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_ports_idx",
-
 		"idx",
-
 		"level",
-
 		"servicename",
-
 		"serviceport",
-
 		"nodeport",
-
 		"externalips",
-
 		"externalhostnames",
 	}
 
@@ -841,23 +718,14 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentPortIdx,
-
 			idx,
-
 			obj.GetLevel(),
-
 			obj.GetServiceName(),
-
 			obj.GetServicePort(),
-
 			obj.GetNodePort(),
-
 			obj.GetExternalIps(),
-
 			obj.GetExternalHostnames(),
 		})
 

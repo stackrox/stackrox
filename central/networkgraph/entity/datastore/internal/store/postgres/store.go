@@ -124,11 +124,8 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx *postgres.Tx
 	var deletes []string
 
 	copyCols := []string{
-
 		"info_id",
-
 		"info_externalsource_default",
-
 		"serialized",
 	}
 
@@ -144,11 +141,8 @@ func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx *postgres.Tx
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetInfo().GetId(),
-
 			obj.GetInfo().GetExternalSource().GetDefault(),
-
 			serialized,
 		})
 

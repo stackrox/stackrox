@@ -168,35 +168,20 @@ func (s *storeImpl) copyFromTestStructs(ctx context.Context, tx *postgres.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
 		"key1",
-
 		"key2",
-
 		"stringslice",
-
 		"bool",
-
 		"uint64",
-
 		"int64",
-
 		"float",
-
 		"labels",
-
 		"timestamp",
-
 		"enum",
-
 		"enums",
-
 		"string_",
-
 		"int32slice",
-
 		"oneofnested_nested",
-
 		"serialized",
 	}
 
@@ -212,35 +197,20 @@ func (s *storeImpl) copyFromTestStructs(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetKey1(),
-
 			obj.GetKey2(),
-
 			obj.GetStringSlice(),
-
 			obj.GetBool(),
-
 			obj.GetUint64(),
-
 			obj.GetInt64(),
-
 			obj.GetFloat(),
-
 			obj.GetLabels(),
-
 			pgutils.NilOrTime(obj.GetTimestamp()),
-
 			obj.GetEnum(),
-
 			obj.GetEnums(),
-
 			obj.GetString_(),
-
 			obj.GetInt32Slice(),
-
 			obj.GetOneofnested().GetNested(),
-
 			serialized,
 		})
 
@@ -287,21 +257,13 @@ func (s *storeImpl) copyFromTestStructsNesteds(ctx context.Context, tx *postgres
 	var err error
 
 	copyCols := []string{
-
 		"test_structs_key1",
-
 		"idx",
-
 		"nested",
-
 		"isnested",
-
 		"int64",
-
 		"nested2_nested2",
-
 		"nested2_isnested",
-
 		"nested2_int64",
 	}
 
@@ -312,21 +274,13 @@ func (s *storeImpl) copyFromTestStructsNesteds(ctx context.Context, tx *postgres
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			testStructKey1,
-
 			idx,
-
 			obj.GetNested(),
-
 			obj.GetIsNested(),
-
 			obj.GetInt64(),
-
 			obj.GetNested2().GetNested2(),
-
 			obj.GetNested2().GetIsNested(),
-
 			obj.GetNested2().GetInt64(),
 		})
 

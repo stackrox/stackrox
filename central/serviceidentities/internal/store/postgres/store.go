@@ -125,9 +125,7 @@ func (s *storeImpl) copyFromServiceIdentities(ctx context.Context, tx *postgres.
 	var deletes []string
 
 	copyCols := []string{
-
 		"serialstr",
-
 		"serialized",
 	}
 
@@ -143,9 +141,7 @@ func (s *storeImpl) copyFromServiceIdentities(ctx context.Context, tx *postgres.
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetSerialStr(),
-
 			serialized,
 		})
 

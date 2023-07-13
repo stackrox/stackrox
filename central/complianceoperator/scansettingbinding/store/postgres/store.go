@@ -124,9 +124,7 @@ func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Co
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"serialized",
 	}
 
@@ -142,9 +140,7 @@ func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Co
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			serialized,
 		})
 

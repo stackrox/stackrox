@@ -131,21 +131,13 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx *postg
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"sensorhealthstatus",
-
 		"collectorhealthstatus",
-
 		"overallhealthstatus",
-
 		"admissioncontrolhealthstatus",
-
 		"scannerhealthstatus",
-
 		"lastcontact",
-
 		"serialized",
 	}
 
@@ -161,21 +153,13 @@ func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx *postg
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetSensorHealthStatus(),
-
 			obj.GetCollectorHealthStatus(),
-
 			obj.GetOverallHealthStatus(),
-
 			obj.GetAdmissionControlHealthStatus(),
-
 			obj.GetScannerHealthStatus(),
-
 			pgutils.NilOrTime(obj.GetLastContact()),
-
 			serialized,
 		})
 

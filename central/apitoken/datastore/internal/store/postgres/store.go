@@ -127,13 +127,9 @@ func (s *storeImpl) copyFromAPITokens(ctx context.Context, tx *postgres.Tx, objs
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"expiration",
-
 		"revoked",
-
 		"serialized",
 	}
 
@@ -149,13 +145,9 @@ func (s *storeImpl) copyFromAPITokens(ctx context.Context, tx *postgres.Tx, objs
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			pgutils.NilOrTime(obj.GetExpiration()),
-
 			obj.GetRevoked(),
-
 			serialized,
 		})
 

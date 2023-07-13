@@ -134,27 +134,16 @@ func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx *postgres.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
 		"id",
-
 		"cvebaseinfo_cve",
-
 		"cvebaseinfo_publishedon",
-
 		"cvebaseinfo_createdat",
-
 		"cvss",
-
 		"severity",
-
 		"impactscore",
-
 		"snoozed",
-
 		"snoozeexpiry",
-
 		"type",
-
 		"serialized",
 	}
 
@@ -170,27 +159,16 @@ func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			obj.GetId(),
-
 			obj.GetCveBaseInfo().GetCve(),
-
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-
 			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-
 			obj.GetCvss(),
-
 			obj.GetSeverity(),
-
 			obj.GetImpactScore(),
-
 			obj.GetSnoozed(),
-
 			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
-
 			obj.GetType(),
-
 			serialized,
 		})
 
