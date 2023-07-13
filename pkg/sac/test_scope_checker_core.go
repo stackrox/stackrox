@@ -120,10 +120,10 @@ func (c *testScopeCheckerCore) Allowed() bool {
 	// Drill down to resource level.
 	resource := c.path[1]
 	resourceKey, resourceOK := resource.(ResourceScopeKey)
-	targetResource := permissions.Resource(resourceKey)
 	if !resourceOK {
 		return false
 	}
+	targetResource := permissions.Resource(resourceKey.String())
 	resourceScope := c.scope[accessMode][targetResource]
 	if resourceScope == nil {
 		return false
