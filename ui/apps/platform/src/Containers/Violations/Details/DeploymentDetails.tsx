@@ -167,7 +167,7 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                     </FlexItem>
                     <FlexItem>
                         <Title headingLevel="h3" className="pf-u-my-md">
-                            Network Policy
+                            Network policy
                         </Title>
                         <Divider component="div" />
                     </FlexItem>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Flex, Modal, ModalVariant, Title } from '@patternfly/react-core';
+import { Button, Flex, Modal, ModalVariant } from '@patternfly/react-core';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
@@ -31,8 +31,8 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
                 </Button>,
             ]}
         >
-            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <Title headingLevel="h3">{networkPolicy.name}</Title>
+            <Flex direction={{ default: 'column' }}>
+                <p>Policy name: {networkPolicy.name}</p>
                 <CodeEditor
                     isDarkTheme={isDarkMode}
                     customControls={

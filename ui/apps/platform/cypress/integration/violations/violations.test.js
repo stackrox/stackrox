@@ -157,6 +157,7 @@ describe('Violations', () => {
 
         // Check for substrings in the YAML code editor
         cy.get(`${selectors.deployment.networkPolicy} button:contains("central-db")`).click();
+        cy.get(`${selectors.deployment.networkPolicyModal} *:contains("Policy name: central-db")`);
         cy.get(`${selectors.deployment.networkPolicyModal}`)
             .invoke('text')
             .should('to.match', /name:\s*central-db/)
@@ -172,6 +173,7 @@ describe('Violations', () => {
         cy.get(`${selectors.deployment.networkPolicyModal} button[aria-label="Close"]`).click();
 
         cy.get(`${selectors.deployment.networkPolicy} button:contains("sensor")`).click();
+        cy.get(`${selectors.deployment.networkPolicyModal} *:contains("Policy name: sensor")`);
         cy.get(`${selectors.deployment.networkPolicyModal}`)
             .invoke('text')
             .should('to.match', /name:\s*sensor/)
