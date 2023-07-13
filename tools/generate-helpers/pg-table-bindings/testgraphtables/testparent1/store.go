@@ -41,10 +41,12 @@ var (
 	targetResource = resources.Namespace
 )
 
+type storeType = storage.TestParent1
+
 // Store is the interface to interact with the storage for storage.TestParent1
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.TestParent1) error
-	UpsertMany(ctx context.Context, objs []*storage.TestParent1) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -52,25 +54,23 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.TestParent1, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TestParent1, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.TestParent1, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.TestParent1) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.TestParent1, *storage.TestParent1]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.TestParent1, *storage.TestParent1](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -83,7 +83,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.TestParent1) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -269,7 +269,7 @@ func (s *storeImpl) copyFromTestParent1Childrens(ctx context.Context, tx *postgr
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent1) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -293,7 +293,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent1) 
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent1) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -325,8 +325,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent1) er
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestParent1) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TestParent1")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -339,8 +339,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestParent1) error 
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestParent1) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestParent1")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

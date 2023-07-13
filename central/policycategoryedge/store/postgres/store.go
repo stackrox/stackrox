@@ -41,10 +41,12 @@ var (
 	targetResource = resources.WorkflowAdministration
 )
 
+type storeType = storage.PolicyCategoryEdge
+
 // Store is the interface to interact with the storage for storage.PolicyCategoryEdge
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.PolicyCategoryEdge) error
-	UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -52,26 +54,24 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.PolicyCategoryEdge, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.PolicyCategoryEdge, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.PolicyCategoryEdge, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetAll(ctx context.Context) ([]*storage.PolicyCategoryEdge, error)
+	GetAll(ctx context.Context) ([]*storeType, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.PolicyCategoryEdge, *storage.PolicyCategoryEdge]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.PolicyCategoryEdge, *storage.PolicyCategoryEdge](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -84,7 +84,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.PolicyCategoryEdge) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -188,7 +188,7 @@ func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx *postgre
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategoryEdge) error {
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -212,7 +212,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PolicyCategor
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryEdge) error {
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
 	conn, err := s.AcquireConn(ctx, ops.Get)
 	if err != nil {
 		return err
@@ -244,8 +244,8 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryE
 // region Interface functions
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.PolicyCategoryEdge) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "PolicyCategoryEdge")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {
@@ -258,8 +258,8 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.PolicyCategoryEdge)
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "PolicyCategoryEdge")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
+	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if !scopeChecker.IsAllowed() {

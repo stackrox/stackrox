@@ -37,30 +37,30 @@ var (
 	targetResource = resources.Image
 )
 
+type storeType = storage.ImageCVEEdge
+
 // Store is the interface to interact with the storage for storage.ImageCVEEdge
 type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEEdge, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.ImageCVEEdge, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.ImageCVEEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 type storeImpl struct {
-	*pgSearch.GenericStore[storage.ImageCVEEdge, *storage.ImageCVEEdge]
-	db    postgres.DB
+	*pgSearch.GenericStore[storeType, *storeType]
 	mutex sync.RWMutex
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
 	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.ImageCVEEdge, *storage.ImageCVEEdge](
+		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
 			db,
 			schema,
 			pkGetter,
@@ -73,7 +73,7 @@ func New(db postgres.DB) Store {
 
 // region Helper functions
 
-func pkGetter(obj *storage.ImageCVEEdge) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
