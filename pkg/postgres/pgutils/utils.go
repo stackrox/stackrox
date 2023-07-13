@@ -80,6 +80,13 @@ func NilOrUUID(value string) *uuid.UUID {
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
 	// Partitioned tables are not supported by Gorm migration or models
 	// For partitioned tables the necessary DDL will be contained in PartitionCreate.
+	sql := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
+		return db.WithContext(ctx).
+		return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
+	})
+	log.Infof("SHREWS -- %q", sql)
+
+
 	if !createStmt.Partition {
 		err := Retry(func() error {
 			return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
