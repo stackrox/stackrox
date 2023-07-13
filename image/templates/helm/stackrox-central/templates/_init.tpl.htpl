@@ -99,13 +99,19 @@
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
+    {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+    {{ $_ := set $._rox "monitoring" dict }}
+    {{ $_ := set $._rox.monitoring "openshift" dict }}
+    {{ $_ := set $._rox.monitoring.openshift "enabled" true }}
+{{ end }}
+{{ if $._rox.monitoring.openshift.enabled }}
   {{ if (ne $._rox.env.openshift 4) }}
-    {{ include "srox.fail" "'enableOpenShiftMonitoring' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
+    {{ include "srox.fail" "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
   {{ end }}
 
   {{/* Override monitoring exposure when openshift monitoring is desired */}}
   {{ if not $._rox.central.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'central.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
+    {{ include "srox.warn" (list . "The default or set value of 'central.exposeMonitoring' is false but 'monitoring.openshift.enabled' is true.") }}
     {{ include "srox.warn" (list . "'central.exposeMonitoring' will be overridden and set to true.") }}
     {{ $_ := set $._rox.central "exposeMonitoring" true }}
   {{ end }}
