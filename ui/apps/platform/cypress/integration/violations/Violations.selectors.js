@@ -25,5 +25,8 @@ export const selectors = {
             '[data-testid="deployment-details"] [data-testid="container-configuration"]',
         securityContext: '[data-testid="deployment-details"] [data-testid="security-context"]',
         portConfiguration: '[data-testid="deployment-details"] [data-testid="port-configuration"]',
+        networkPolicy:
+            '[data-testid="deployment-details"] [aria-label="Network policies in namespace"]',
+        networkPolicyModal: "[role='dialog']:contains('Network policy details')",
     },
 };
