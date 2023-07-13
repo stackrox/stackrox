@@ -67,8 +67,8 @@ func trackClusterInitialized(cluster *storage.Cluster) {
 // Gather the number of clusters.
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster)))
 
 	props := make(map[string]any, 1)
@@ -83,8 +83,8 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics *central.ClusterMetrics) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		ctx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedResourceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster)))
 
 		cluster, ok, err := Singleton().GetCluster(ctx, clusterID)

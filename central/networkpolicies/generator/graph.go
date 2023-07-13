@@ -258,10 +258,11 @@ func (g *generator) buildGraph(ctx context.Context, clusterID string, selectedDe
 		// This step exists to ensure that a recently deleted deployment is not interpreted as a masked deployment, which
 		// would be extremely bad user experience as the generated policies for its peers would be useless.
 		q := search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery()
-		viewAllDeploymentsInClusterCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment),
-			sac.ClusterScopeKeys(clusterID)))
+		viewAllDeploymentsInClusterCtx := sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Deployment),
+				sac.ClusterScopeKeys(clusterID)))
 		results, err := g.deploymentStore.Search(viewAllDeploymentsInClusterCtx, q)
 		if err != nil {
 			return nil, err

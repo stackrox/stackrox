@@ -30,8 +30,8 @@ func Singleton() DataStore {
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage, groupFilter.GetFiltered)
 
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AllowFixedResourceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Access)))
 		roles, permissionSets, accessScopes := getDefaultObjects()
 		utils.Must(roleStorage.UpsertMany(ctx, roles))

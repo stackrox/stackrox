@@ -19,31 +19,53 @@ var (
 	scopedResB = permissions.ResourceMetadata{Resource: "scoped-resB", Scope: permissions.ClusterScope}
 
 	readOnAllRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resA, resB)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resA, resB)))
 	writeOnAllRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resA, resB)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resA, resB)))
 	readWriteOnAllRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resA, resB)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resA, resB)))
 	readOnOneRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resA)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resA)))
 	writeOnOneRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resB)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resB)))
 	readWriteOnOneRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resA)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resA)))
 	noAccessAllRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_NO_ACCESS), sac.ResourceScopeKeys(resA, resB)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_NO_ACCESS),
+			sac.ResourceScopeKeys(resA, resB)))
 	noAccessOneRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_NO_ACCESS), sac.ResourceScopeKeys(resA)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_NO_ACCESS),
+			sac.ResourceScopeKeys(resA)))
 	accessOnOtherRes = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resC, resD)))
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resC, resD)))
 
 	readOnAScopedResWithCorrectScope = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(scopedRes, resD), sac.ClusterScopeKeys("cluster-1")))
+		sac.AllowFixedClusterLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(scopedRes, resD),
+			sac.ClusterScopeKeys("cluster-1")))
 
 	readOnAllScopedResWithCorrectScope = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(scopedRes, scopedResB), sac.ClusterScopeKeys("cluster-1")))
+		sac.AllowFixedClusterLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(scopedRes, scopedResB),
+			sac.ClusterScopeKeys("cluster-1")))
 )
 
 type forResourcesHelpersTestSuite struct {
@@ -167,7 +189,7 @@ func (s *forResourcesHelpersTestSuite) TestForAccessToAnyWithScopeKeys() {
 			title:        "Can only read when user has read on all the required resources with correct scope",
 			ctx:          readOnAScopedResWithCorrectScope,
 			resources:    []permissions.ResourceMetadata{scopedRes},
-			scopeKeys:    sac.ClusterScopeKeys("cluster-1"),
+			scopeKeys:    []sac.ScopeKey{sac.ClusterScopeKey("cluster-1")},
 			readAllowed:  true,
 			writeAllowed: false,
 		},
@@ -175,7 +197,7 @@ func (s *forResourcesHelpersTestSuite) TestForAccessToAnyWithScopeKeys() {
 			title:        "Can't read or write when user has read on all the required resources with incorrect scope",
 			ctx:          readOnAScopedResWithCorrectScope,
 			resources:    []permissions.ResourceMetadata{scopedRes, resD},
-			scopeKeys:    sac.ClusterScopeKeys("cluster-2"),
+			scopeKeys:    []sac.ScopeKey{sac.ClusterScopeKey("cluster-2")},
 			readAllowed:  false,
 			writeAllowed: false,
 		},
@@ -313,7 +335,7 @@ func (s *forResourcesHelpersTestSuite) TestForAccessToAllWithScopeKeys() {
 			title:        "Can only read when user has read on all the required resources with correct scope",
 			ctx:          readOnAllScopedResWithCorrectScope,
 			resources:    []permissions.ResourceMetadata{scopedRes, scopedResB},
-			scopeKeys:    sac.ClusterScopeKeys("cluster-1"),
+			scopeKeys:    []sac.ScopeKey{sac.ClusterScopeKey("cluster-1")},
 			readAllowed:  true,
 			writeAllowed: false,
 		},
@@ -321,7 +343,7 @@ func (s *forResourcesHelpersTestSuite) TestForAccessToAllWithScopeKeys() {
 			title:        "Can't read or write when user has read on some of the required resources with correct scope",
 			ctx:          readOnAScopedResWithCorrectScope,
 			resources:    []permissions.ResourceMetadata{scopedRes, scopedResB},
-			scopeKeys:    sac.ClusterScopeKeys("cluster-1"),
+			scopeKeys:    []sac.ScopeKey{sac.ClusterScopeKey("cluster-1")},
 			readAllowed:  false,
 			writeAllowed: false,
 		},
@@ -329,7 +351,7 @@ func (s *forResourcesHelpersTestSuite) TestForAccessToAllWithScopeKeys() {
 			title:        "Can't read or write when user has read on all the required resources with incorrect scope",
 			ctx:          readOnAScopedResWithCorrectScope,
 			resources:    []permissions.ResourceMetadata{scopedRes, scopedResB},
-			scopeKeys:    sac.ClusterScopeKeys("cluster-2"),
+			scopeKeys:    []sac.ScopeKey{sac.ClusterScopeKey("cluster-2")},
 			readAllowed:  false,
 			writeAllowed: false,
 		},

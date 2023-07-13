@@ -115,16 +115,16 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 	ctxWithWrongClusterReadAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithReadAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
@@ -132,24 +132,24 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 	ctxWithWrongClusterWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
 	ctxWithUnrestrictedWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.AllowFixedResourceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	// Test Update

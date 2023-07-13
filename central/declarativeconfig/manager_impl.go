@@ -89,8 +89,8 @@ func New(reconciliationTickerDuration, watchIntervalDuration time.Duration, upda
 	declarativeConfigHealthStore declarativeConfigHealth.DataStore, nameExtractor types.NameExtractor, idExtractor types.IDExtractor) Manager {
 	writeDeclarativeRoleCtx := declarativeconfig.WithModifyDeclarativeResource(context.Background())
 	writeDeclarativeRoleCtx = sac.WithGlobalAccessScopeChecker(writeDeclarativeRoleCtx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access, resources.Integration)))
 
 	return &managerImpl{

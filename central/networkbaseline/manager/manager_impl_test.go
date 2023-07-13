@@ -827,12 +827,13 @@ func expectOneTimeCallToConnectionManagerWithBaseline(suite *ManagerTestSuite, b
 }
 
 func ctxWithAccessToWrite(id int) context.Context {
-	return sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.DeploymentExtension),
-		sac.ClusterScopeKeys(clusterID(id)),
-		sac.NamespaceScopeKeys(ns(id)),
-	))
+	return sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedNamespaceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
+			sac.ClusterScopeKeys(clusterID(id)),
+			sac.NamespaceScopeKeys(ns(id)),
+		))
 }
 
 func modifyPeersReq(id int, peers ...*v1.NetworkBaselinePeerStatus) *v1.ModifyBaselineStatusForPeersRequest {

@@ -27,10 +27,11 @@ func TestAllowFixedScopes(t *testing.T) {
 		Resource: permissions.Resource("resC"),
 	}
 
-	sc := NewScopeChecker(AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		ResourceScopeKeys(resA, resB),
-	))
+	sc := NewScopeChecker(
+		AllowFixedResourceLevelScopes(
+			AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			ResourceScopeKeys(resA, resB),
+		))
 
 	cases := []struct {
 		scope    []ScopeKey
@@ -199,29 +200,29 @@ func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 	namespaceA := "namespaceA"
 	namespaceB := "namespaceB"
 
-	emptyAllowedScope := AllowFixedScopes()
+	emptyAllowedScope := AllowFixedGlobalLevelScopes()
 
-	readAllAllowedScope := AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS))
+	readAllAllowedScope := AllowFixedAccessLevelScopes(
+		AccessModeScopeKeyList(storage.Access_READ_ACCESS))
 
-	readWriteAllAllowedScope := AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS))
+	readWriteAllAllowedScope := AllowFixedAccessLevelScopes(
+		AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS))
 
-	readResourceAScope := AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS),
+	readResourceAScope := AllowFixedResourceLevelScopes(
+		AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA))
 
-	readWriteResourceAScope := AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+	readWriteResourceAScope := AllowFixedResourceLevelScopes(
+		AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		ResourceScopeKeys(resA))
 
-	readResourceACluster1Scope := AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS),
+	readResourceACluster1Scope := AllowFixedClusterLevelScopes(
+		AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA),
 		ClusterScopeKeys(cluster1))
 
-	readResourceACluster1NamespacesABScope := AllowFixedScopes(
-		AccessModeScopeKeys(storage.Access_READ_ACCESS),
+	readResourceACluster1NamespacesABScope := AllowFixedNamespaceLevelScopes(
+		AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA),
 		ClusterScopeKeys(cluster1),
 		NamespaceScopeKeys(namespaceA, namespaceB))

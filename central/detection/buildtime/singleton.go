@@ -19,7 +19,8 @@ var (
 	policySet detection.PolicySet
 	detector  Detector
 	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 

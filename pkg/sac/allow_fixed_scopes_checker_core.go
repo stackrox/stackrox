@@ -148,6 +148,42 @@ func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 
 // region Public constructors
 
+// AllowFixedGlobalLevelScopes returns a scope checker core that allows those scopes that
+// are in the cross product of all access and resource individual scope key lists. I.e.,
+//
+//	AllowFixedGlobalLevelScopes()
+//
+// returns a scope checker core that allows read and write access to all cluster resources.
+func AllowFixedGlobalLevelScopes() ScopeCheckerCore {
+	return &allowedFixedScopesCheckerCore{
+		checkerLevel:  GlobalScopeKind,
+		accessKeys:    set.NewSet[AccessModeScopeKey](),
+		resourceKeys:  set.NewSet[ResourceScopeKey](),
+		clusterKeys:   set.NewSet[ClusterScopeKey](),
+		namespaceKeys: set.NewSet[NamespaceScopeKey](),
+	}
+}
+
+// AllowFixedAccessLevelScopes returns a scope checker core that allows those scopes that
+// are in the cross product of all access and resource individual scope key lists. I.e.,
+//
+//	 AllowFixedAccessLevelScopes(
+//			AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
+//	 )
+//
+// returns a scope checker core that allows read and write access to all cluster resources.
+func AllowFixedAccessLevelScopes(
+	accessLevelKeys []AccessModeScopeKey,
+) ScopeCheckerCore {
+	return &allowedFixedScopesCheckerCore{
+		checkerLevel:  GlobalScopeKind,
+		accessKeys:    set.NewSet(accessLevelKeys...),
+		resourceKeys:  set.NewSet[ResourceScopeKey](),
+		clusterKeys:   set.NewSet[ClusterScopeKey](),
+		namespaceKeys: set.NewSet[NamespaceScopeKey](),
+	}
+}
+
 // AllowFixedResourceLevelScopes returns a scope checker core that allows those scopes that
 // are in the cross product of all access and resource individual scope key lists. I.e.,
 //

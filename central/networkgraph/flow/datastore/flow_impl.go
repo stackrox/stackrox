@@ -72,7 +72,8 @@ func (fds *flowDataStoreImpl) GetFlowsForDeployment(ctx context.Context, deploym
 
 func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(_ context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {
 	graphConfigReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
 	config, err := fds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)

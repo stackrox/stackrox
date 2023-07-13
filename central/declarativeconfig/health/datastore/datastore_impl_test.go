@@ -44,15 +44,15 @@ func (s *declarativeConfigHealthDatastoreSuite) SetupTest() {
 	s.datastore = New(declarativeConfigHealthStore)
 
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration),
 		),
 	)
 
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration),
 		),
 	)

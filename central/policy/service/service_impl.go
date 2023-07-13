@@ -90,7 +90,8 @@ const (
 
 var (
 	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	partialListPolicyGroups = set.NewStringSet(fieldnames.ImageComponent, fieldnames.DockerfileLine, fieldnames.EnvironmentVariable)

@@ -190,8 +190,8 @@ func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissio
 	id.EXPECT().Permissions().Return(perms).AnyTimes()
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resKeys...)))
 
 	return authn.ContextWithIdentity(ctx, id, s.T())

@@ -86,15 +86,15 @@ func (h *clusterSACHelperImpl) GetClustersForPermissions(
 	var clusterLookupCtx context.Context
 	if hasFullAccess {
 		clusterLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedResourceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 			),
 		)
 	} else {
 		clusterLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys(clusterIDsInScope.AsSlice()...),
 			),
@@ -131,8 +131,8 @@ func (h *clusterSACHelperImpl) IsClusterVisibleForPermissions(
 		// This context must not be propagated.
 		elevatedCtx := sac.WithGlobalAccessScopeChecker(
 			ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedResourceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 			),
 		)
@@ -172,16 +172,16 @@ func (h *clusterNamespaceSACHelperImpl) GetNamespacesForClusterAndPermissions(
 	var namespaceLookupCtx context.Context
 	if hasFullAccess {
 		namespaceLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Namespace),
 				sac.ClusterScopeKeys(clusterID),
 			),
 		)
 	} else {
 		namespaceLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Namespace),
 				sac.ClusterScopeKeys(clusterID),
 				sac.NamespaceScopeKeys(namespacesInScope.AsSlice()...),

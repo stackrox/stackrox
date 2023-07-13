@@ -391,8 +391,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedClusterLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(request.GetClusterId())))
 
@@ -521,8 +521,8 @@ func filterFlowsAndMaskScopeAlienDeployments(
 	if len(missingDeploymentIDs) > 0 {
 		allDeploymentsReadCtx := sac.WithGlobalAccessScopeChecker(
 			ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Deployment),
 				sac.ClusterScopeKeys(clusterID)))
 

@@ -13,8 +13,8 @@ import (
 // Gather number of signature integrations.
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedResourceLevelScopes(
+			sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
 	totals := make(map[string]any)
 	si := Singleton()

@@ -180,9 +180,11 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 			results: []bool{false},
 		},
 		{
-			name:      "error when wrong sub scope",
-			scopeKeys: sac.ClusterScopeKeys(firstClusterID),
-			results:   []bool{},
+			name: "error when wrong sub scope",
+			scopeKeys: []sac.ScopeKey{
+				sac.ClusterScopeKey(firstClusterID),
+			},
+			results: []bool{},
 		},
 		{
 			name: "error when wrong sub scope",

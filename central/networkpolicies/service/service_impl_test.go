@@ -899,23 +899,23 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 			expectAllowed: true,
 		},
 		"access to clusterA": {
-			checker: sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			checker: sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA")),
 			expectAllowed: true,
 		},
 		"exactly matching namespaces": {
-			checker: sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			checker: sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
 				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux")),
 			expectAllowed: true,
 		},
 		"more namespaces": {
-			checker: sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			checker: sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
 				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux", "quuz")),
@@ -926,23 +926,23 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 			expectAllowed: false,
 		},
 		"access to clusterB": {
-			checker: sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			checker: sac.AllowFixedClusterLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterB")),
 			expectAllowed: false,
 		},
 		"correct namespaces in wrong cluster": {
-			checker: sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			checker: sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterB"),
 				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux")),
 			expectAllowed: false,
 		},
 		"one namespace missing": {
-			checker: sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			checker: sac.AllowFixedNamespaceLevelScopes(
+				sac.AccessModeScopeKeyList(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
 				sac.NamespaceScopeKeys("bar", "baz", "qux")),
