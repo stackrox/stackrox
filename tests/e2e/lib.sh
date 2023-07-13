@@ -431,6 +431,9 @@ patch_resources_for_test() {
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
         check_endpoint_availability "$target_port"
     done
+
+    # Ensure the API is available as well after patching the load balancer.
+    wait_for_api
 }
 
 check_endpoint_availability() {

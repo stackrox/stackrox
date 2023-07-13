@@ -40,9 +40,6 @@ test_e2e() {
 
     prepare_for_endpoints_test
 
-    # Give some time for the changes to the load balancer to be applied
-    wait_for_api
-
     run_roxctl_tests
     run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
     store_test_results "roxctl-test-output" "roxctl-test-output"
