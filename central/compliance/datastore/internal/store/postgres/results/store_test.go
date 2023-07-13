@@ -162,7 +162,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
@@ -175,7 +175,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
@@ -188,7 +188,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
@@ -201,7 +201,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
@@ -214,7 +214,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedNamespaceLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),

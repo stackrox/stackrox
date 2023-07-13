@@ -206,7 +206,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withNoAccessToCluster: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
@@ -219,7 +219,11 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withAccess: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+		    	{{- if .Obj.IsNamespaceScope }}
+				sac.AllowFixedNamespaceLevelScopes(
+				{{- else }}
+				sac.AllowFixedClusterLevelScopes(
+				{{- end }}
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
@@ -235,7 +239,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withAccessToCluster: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
@@ -248,7 +252,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withAccessToDifferentCluster: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
@@ -261,7 +265,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withAccessToDifferentNs: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedNamespaceLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
