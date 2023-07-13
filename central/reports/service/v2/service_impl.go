@@ -97,7 +97,7 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
 	if req == nil || req.GetReportConfigId() == "" {
-		return nil, errors.New("Empty request or id")
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
 	}
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
