@@ -87,11 +87,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 // endregion Helper functions
 
-//// Interface functions
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -109,4 +105,4 @@ func dropTableImageComponentCveEdges(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing
