@@ -1,6 +1,8 @@
 import upperFirst from 'lodash/upperFirst';
 
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
+
 import {
     applyLocalSeverityFilters,
     selectResourceFilterType,
@@ -12,6 +14,12 @@ import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Image Single page', () => {
     withAuth();
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
+            this.skip();
+        }
+    });
 
     it('should correctly handle Image single page specific behavior', () => {
         visitWorkloadCveOverview();
