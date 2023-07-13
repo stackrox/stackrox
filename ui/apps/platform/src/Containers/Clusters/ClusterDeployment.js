@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { CheckCircle, Download } from 'react-feather';
+import { Button } from '@patternfly/react-core';
+import { DownloadIcon } from '@patternfly/react-icons';
+import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 import { Message } from '@stackrox/ui-components';
-import { Spinner } from '@patternfly/react-core';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import ToggleSwitch from 'Components/ToggleSwitch';
@@ -39,10 +40,7 @@ const ClusterDeploymentPage = ({
                 )}
                 {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
                     <div className={baseClass}>
-                        <CollapsibleCard
-                            title="1. Download files"
-                            titleClassName="border-b px-1 border-primary-300 leading-normal cursor-pointer flex justify-between items-center bg-primary-200 hover:border-primary-400"
-                        >
+                        <CollapsibleCard title="1. Download files">
                             <div className="w-full h-full p-3 leading-normal">
                                 <div className="border-b pb-3 mb-3 border-primary-300">
                                     Download the required configuration files, keys, and scripts.
@@ -62,20 +60,15 @@ const ClusterDeploymentPage = ({
                                     />
                                 </div>
                                 <div className="flex justify-center px-3">
-                                    {isDownloadingBundle ? (
-                                        <Spinner isSVG size="lg" />
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100 flex items-center"
-                                            onClick={onFileDownload}
-                                        >
-                                            <span className="pr-2">
-                                                Download YAML file and keys
-                                            </span>
-                                            <Download className="h-3 w-3" />
-                                        </button>
-                                    )}
+                                    <Button
+                                        variant="secondary"
+                                        icon={<DownloadIcon />}
+                                        onClick={onFileDownload}
+                                        isDisabled={isDownloadingBundle}
+                                        isLoading={isDownloadingBundle}
+                                    >
+                                        Download YAML file and keys
+                                    </Button>
                                 </div>
                                 <div className="py-2 text-xs text-center text-base-600">
                                     <p className="pb-2">
@@ -86,10 +79,7 @@ const ClusterDeploymentPage = ({
                             </div>
                         </CollapsibleCard>
                         <div className="mt-4">
-                            <CollapsibleCard
-                                title="2. Deploy"
-                                titleClassName="border-b px-1 border-primary-300 leading-normal cursor-pointer flex justify-between items-center bg-primary-200 hover:border-primary-400"
-                            >
+                            <CollapsibleCard title="2. Deploy">
                                 <div className="w-full h-full p-3 leading-normal">
                                     Use the deploy script inside the bundle to set up your cluster.
                                 </div>
