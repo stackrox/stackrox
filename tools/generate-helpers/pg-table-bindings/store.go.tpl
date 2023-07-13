@@ -61,8 +61,6 @@ const (
         baseTable = {{ .Table | quote }}
         storeName = {{ .TrimmedType | quote }}
 
-        batchAfter = 100
-
         // using copyFrom, we may not even want to batch.  It would probably be simpler
         // to deal with failures if we just sent it all.  Something to think about as we
         // proceed and move into more e2e and larger performance testing
@@ -125,8 +123,24 @@ func New(db postgres.DB) Store {
             db,
             schema,
             pkGetter,
+            {{- if not .JoinTable }}
+            {{ template "insertFunctionName" .Schema }},
+                {{- if not .NoCopyFrom }}
+                {{ template "copyFunctionName" .Schema }},
+                {{- else }}
+                nil,
+                {{- end }}
+            {{- else }}
+            nil,
+            nil,
+            {{- end }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
+            {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
+            pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+            {{- else if .Obj.IsDirectlyScoped }}
+            isUpsertAllowed,
+            {{- end }}
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
         ),
     }
@@ -145,6 +159,31 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
     metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+
+{{- if .Obj.IsDirectlyScoped }}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if scopeChecker.IsAllowed() {
+        return nil
+    }
+    var deniedIDs []string
+    for _, obj := range objs {
+        {{- if .Obj.IsClusterScope }}
+        subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }})
+        {{- else if .Obj.IsNamespaceScope }}
+        subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
+        {{- end }}
+        if !subScopeChecker.IsAllowed() {
+            deniedIDs = append(deniedIDs, {{ "obj" | .Obj.GetID }})
+        }
+    }
+    if len(deniedIDs) != 0 {
+        return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+    }
+    return nil
+}
+{{- end }}
+
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
@@ -203,7 +242,7 @@ func {{ template "insertFunctionName" $schema }}({{ if eq (len $schema.Children)
 
 {{- define "copyObject"}}
 {{- $schema := .schema }}
-func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
 
     inputRows := [][]interface{}{}
 
@@ -285,7 +324,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     for idx, obj := range objs {
         _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
         {{range $child := $schema.Children }}
-        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+        if err = {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
         {{- end}}
@@ -303,157 +342,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{- end }}
 {{- end }}
 
-{{- if not .JoinTable }}
-{{- if not .NoCopyFrom }}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
-    conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-	    return err
-	}
-    defer conn.Release()
-
-    tx, err := conn.Begin(ctx)
-    if err != nil {
-        return err
-    }
-
-    if err := s.{{ template "copyFunctionName" .Schema }}(ctx, tx, objs...); err != nil {
-        if err := tx.Rollback(ctx); err != nil {
-            return err
-        }
-        return err
-    }
-    if err := tx.Commit(ctx); err != nil {
-        return err
-    }
-    return nil
-}
-{{- end}}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
-    conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-	    return err
-	}
-	defer conn.Release()
-
-    for _, obj := range objs {
-        batch := &pgx.Batch{}
-	    if err := {{ template "insertFunctionName" .Schema }}(ctx, batch, obj); err != nil {
-		    return err
-        }
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-    }
-    return nil
-}
-{{- end }}
-
 // endregion Helper functions
-
-{{- if not .JoinTable }}
-// region Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-    defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
-
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.UpsertAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}.
-        ClusterID({{ "obj" | .Obj.GetClusterID }})
-    {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsNamespaceScope) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}.
-        ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
-    {{- end }}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped)  }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- end }}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
-    defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
-
-    {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.UpsertManyAllowed(ctx); err != nil {
-        return err
-    } else if !ok {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        return sac.ErrResourceAccessDenied
-    }
-    {{- else if .Obj.IsDirectlyScoped -}}
-    {{ template "defineScopeChecker" "READ_WRITE" }}
-    if !scopeChecker.IsAllowed() {
-        var deniedIDs []string
-        for _, obj := range objs {
-            {{- if .Obj.IsClusterScope }}
-            subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }})
-            {{- else if .Obj.IsNamespaceScope }}
-            subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
-            {{- end }}
-            if !subScopeChecker.IsAllowed() {
-                deniedIDs = append(deniedIDs, {{ "obj" | .Obj.GetID }})
-            }
-        }
-        if len(deniedIDs) != 0 {
-            return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-        }
-    }
-    {{- end }}
-
-    {{- if .NoCopyFrom }}
-    return s.upsert(ctx, objs...)
-    {{- else }}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-		    s.mutex.RLock()
-		    defer s.mutex.RUnlock()
-
-		    return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-    {{- end }}
-}
-
-// endregion Interface functions
-{{- end }}
 
 // region Used for testing
 
