@@ -25,24 +25,9 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-func (s *scheduler) generateAndSendReport(req *ReportRequest, collection *storage.ResourceCollection) error {
-	err := s.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_PREPARING)
-	if err != nil {
-		return errors.Wrap(err, "Error changing report status to PREPARING")
-	}
-
-	var dataStartTime *types.Timestamp
-	if req.ReportConfig.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		dataStartTime, err = s.lastSuccesfulScheduledReportTime(req.Ctx, req.ReportConfig)
-		if err != nil {
-			return errors.Wrap(err, "Error finding last successful scheduled report time")
-		}
-	} else if req.ReportConfig.GetVulnReportFilters().GetSinceStartDate() != nil {
-		dataStartTime = req.ReportConfig.GetVulnReportFilters().GetSinceStartDate()
-	}
-
+func (s *scheduler) generateAndSendReportResult(req *ReportRequest) error {
 	// Get the results of running the report query
-	deployedImgData, watchedImgData, err := s.getReportData(req.Ctx, req.ReportConfig, collection, dataStartTime)
+	deployedImgData, watchedImgData, err := s.getReportData(req.Ctx, req.ReportConfig, req.collection, req.dataStartTime)
 	if err != nil {
 		return err
 	}
@@ -61,7 +46,7 @@ func (s *scheduler) generateAndSendReport(req *ReportRequest, collection *storag
 		templateStr = noVulnsFoundEmailTemplate
 	}
 
-	messageText, err := formatMessage(dataStartTime, templateStr)
+	messageText, err := formatMessage(req.dataStartTime, templateStr)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report email text")
 	}
@@ -83,12 +68,6 @@ func (s *scheduler) generateAndSendReport(req *ReportRequest, collection *storag
 	}
 	if !errorList.Empty() {
 		return errorList.ToError()
-	}
-
-	req.ReportMetadata.ReportStatus.CompletedAt = types.TimestampNow()
-	err = s.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_SUCCESS)
-	if err != nil {
-		return errors.Wrap(err, "Error changing report status to SUCCESS")
 	}
 	return nil
 }
@@ -259,28 +238,6 @@ func (s *scheduler) getWatchedImages(ctx context.Context) ([]string, error) {
 		results = append(results, img.GetName())
 	}
 	return results, nil
-}
-
-func (s *scheduler) lastSuccesfulScheduledReportTime(ctx context.Context, config *storage.ReportConfiguration) (*types.Timestamp, error) {
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.ReportConfigID, config.GetId()).
-		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String()).
-		WithPagination(search.NewPagination().
-			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
-			Limit(1)).
-		ProtoQuery()
-	results, err := s.reportMetadataStore.SearchReportMetadatas(ctx, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error finding last successful scheduled report time")
-	}
-	if len(results) > 1 {
-		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
-	}
-	if len(results) == 0 {
-		return nil, nil
-	}
-	return results[0].GetReportStatus().GetCompletedAt(), nil
 }
 
 func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,

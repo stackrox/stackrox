@@ -94,7 +94,6 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 	}
 	status := convertPrototoV2Reportstatus(results[0].GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
-
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
@@ -115,5 +114,4 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		ReportSnapshots: snapshots,
 	}
 	return &res, nil
-
 }
