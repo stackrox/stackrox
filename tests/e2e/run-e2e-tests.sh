@@ -332,6 +332,7 @@ _EOWARNING_
 
 run_qa_flavor() {
     source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+    setup_podsecuritypolicies_config
 
     if [[ -z "${TASK_OR_SUITE}" && -z "${CASE}" ]]; then
         (
