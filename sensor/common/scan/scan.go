@@ -48,9 +48,9 @@ var (
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
-	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 	fetchSignaturesWithRetry          func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
-	scannerClientSingleton            func() *scannerclient.Client
+	scannerClientSingleton            func() scannerclient.Client
 	getRegistryForImageInNamespace    func(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
 	getGlobalRegistryForImage         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 	createNoAuthImageRegistry         func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
@@ -281,7 +281,7 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 
 // scanImage will scan the given image and return its components.
 func scanImage(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry, scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	registry registryTypes.ImageRegistry, scannerClient scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
 	if err != nil {

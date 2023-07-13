@@ -20,15 +20,22 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Client is a Scanner gRPC Client.
-type Client struct {
+// Client represents a gRPC client interface.
+type Client interface {
+	Dial(endpoint string) (Client, error)
+	GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error)
+	Close() error
+}
+
+// GrpcClient is a Scanner gRPC GrpcClient.
+type GrpcClient struct {
 	client scannerV1.ImageScanServiceClient
 	conn   *grpc.ClientConn
 }
 
-// dial Scanner and return a new Client.
-// dial is non-blocking and returns a non-nil error upon configuration error.
-func dial(endpoint string) (*Client, error) {
+// Dial Scanner and return a new GrpcClient.
+// Dial is non-blocking and returns a non-nil error upon configuration error.
+func (c *GrpcClient) Dial(endpoint string) (Client, error) {
 	if endpoint == "" {
 		return nil, errors.New("Invalid Scanner endpoint (empty)")
 	}
@@ -49,19 +56,19 @@ func dial(endpoint string) (*Client, error) {
 	// then add the grpc.WithBlock() DialOption.
 	conn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to dial Scanner")
+		return nil, errors.Wrap(err, "failed to Dial Scanner")
 	}
 
 	log.Infof("Dialing Scanner at %s", endpoint)
 
-	return &Client{
+	return &GrpcClient{
 		client: scannerV1.NewImageScanServiceClient(conn),
 		conn:   conn,
 	}, nil
 }
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
-func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error) {
+func (c *GrpcClient) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error) {
 	name := image.GetName().GetFullName()
 
 	// The WaitForReady option will cause invocations to block (until server ready or ctx done/expires)
@@ -87,6 +94,6 @@ func (c *Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg
 }
 
 // Close closes the underlying grpc.ClientConn.
-func (c *Client) Close() error {
+func (c *GrpcClient) Close() error {
 	return c.conn.Close()
 }
