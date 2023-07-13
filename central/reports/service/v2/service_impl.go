@@ -73,8 +73,9 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 
 func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatus, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.New("Empty request or id")
+		return nil, errors.New("Empty request or report config id")
 	}
+	exists :=
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
 		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
 		WithPagination(search.NewPagination().
