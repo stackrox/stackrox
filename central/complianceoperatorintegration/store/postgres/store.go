@@ -26,7 +26,7 @@ import (
 const (
 	baseTable = "compliance_integrations"
 	storeName = "ComplianceIntegration"
-22
+
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -54,14 +54,9 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-<<<<<<< HEAD
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
-=======
-	Get(ctx context.Context, id string) (*storage.ComplianceIntegration, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ComplianceIntegration, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.ComplianceIntegration, []int, error)
->>>>>>> eb5e9e8de4 (X-Smart-Squash: Squashed 10 commits:)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetAll(ctx context.Context) ([]*storeType, error)
 
@@ -138,14 +133,8 @@ func (s *storeImpl) copyFromComplianceIntegrations(ctx context.Context, tx *post
 		"id",
 		"version",
 		"clusterid",
-<<<<<<< HEAD
-=======
-
 		"namespace",
-
 		"namespaceid",
-
->>>>>>> eb5e9e8de4 (X-Smart-Squash: Squashed 10 commits:)
 		"serialized",
 	}
 
@@ -164,14 +153,8 @@ func (s *storeImpl) copyFromComplianceIntegrations(ctx context.Context, tx *post
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetVersion(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-<<<<<<< HEAD
-=======
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetNamespaceId()),
-
->>>>>>> eb5e9e8de4 (X-Smart-Squash: Squashed 10 commits:)
 			serialized,
 		})
 
