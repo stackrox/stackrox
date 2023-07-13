@@ -194,6 +194,7 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 	_, err = m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns).Create(m.ctx(), scanSetting, v1.CreateOptions{})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	_, err = m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
