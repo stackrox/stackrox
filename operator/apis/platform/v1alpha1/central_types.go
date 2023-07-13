@@ -131,6 +131,14 @@ type CentralComponentSpec struct {
 	DeploymentSpec `json:",inline"`
 }
 
+// GetDB returns Central's db config
+func (c *CentralComponentSpec) GetDB() *CentralDBSpec {
+	if c == nil {
+		return nil
+	}
+	return c.DB
+}
+
 // GetPersistence returns Central's persistence config
 func (c *CentralComponentSpec) GetPersistence() *Persistence {
 	if c == nil {
