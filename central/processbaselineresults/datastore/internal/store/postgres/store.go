@@ -242,8 +242,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline
 }
 
 // endregion Helper functions
-
-//// Interface functions
+// region Interface functions
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessBaselineResults) error {
@@ -295,9 +294,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBasel
 	})
 }
 
-//// Interface functions - END
+// endregion Interface functions
 
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -315,4 +314,4 @@ func dropTableProcessBaselineResults(ctx context.Context, db postgres.DB) {
 
 }
 
-//// Used for testing - END
+// endregion Used for testing
