@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -28,8 +27,6 @@ import (
 const (
 	baseTable = "pods"
 	storeName = "Pod"
-
-	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -76,8 +73,11 @@ func New(db postgres.DB) Store {
 			db,
 			schema,
 			pkGetter,
+			insertIntoPods,
+			copyFromPods,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			isUpsertAllowed,
 			targetResource,
 		),
 	}
@@ -95,6 +95,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying pods with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) error {
@@ -145,7 +162,7 @@ func insertIntoPodsLiveInstances(_ context.Context, batch *pgx.Batch, obj *stora
 	return nil
 }
 
-func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*storage.Pod) error {
+func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Pod) error {
 
 	inputRows := [][]interface{}{}
 
@@ -212,7 +229,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromPodsLiveInstances(ctx, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
+		if err = copyFromPodsLiveInstances(ctx, s, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
 			return err
 		}
 	}
@@ -220,7 +237,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx *postgres.Tx, objs ...*
 	return err
 }
 
-func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
+func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 
@@ -263,112 +280,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx *postgres.
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromPods(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoPods(ctx, batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // endregion Helper functions
-// region Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		var deniedIDs []string
-		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-			if !subScopeChecker.IsAllowed() {
-				deniedIDs = append(deniedIDs, obj.GetId())
-			}
-		}
-		if len(deniedIDs) != 0 {
-			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying pods with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-		}
-	}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-}
-
-// endregion Interface functions
 
 // region Used for testing
 

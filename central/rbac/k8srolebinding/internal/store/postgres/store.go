@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -28,8 +27,6 @@ import (
 const (
 	baseTable = "role_bindings"
 	storeName = "K8SRoleBinding"
-
-	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -76,8 +73,11 @@ func New(db postgres.DB) Store {
 			db,
 			schema,
 			pkGetter,
+			insertIntoRoleBindings,
+			copyFromRoleBindings,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			isUpsertAllowed,
 			targetResource,
 		),
 	}
@@ -95,6 +95,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying k8SRoleBindings with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
@@ -150,7 +167,7 @@ func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *st
 	return nil
 }
 
-func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
+func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
 
 	inputRows := [][]interface{}{}
 
@@ -225,7 +242,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, o
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromRoleBindingsSubjects(ctx, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
+		if err = copyFromRoleBindingsSubjects(ctx, s, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
 			return err
 		}
 	}
@@ -233,7 +250,7 @@ func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx *postgres.Tx, o
 	return err
 }
 
-func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
+func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
 
 	inputRows := [][]interface{}{}
 
@@ -278,112 +295,7 @@ func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx *postgr
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromRoleBindings(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoRoleBindings(ctx, batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // endregion Helper functions
-// region Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		var deniedIDs []string
-		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-			if !subScopeChecker.IsAllowed() {
-				deniedIDs = append(deniedIDs, obj.GetId())
-			}
-		}
-		if len(deniedIDs) != 0 {
-			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying k8SRoleBindings with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-		}
-	}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-}
-
-// endregion Interface functions
 
 // region Used for testing
 

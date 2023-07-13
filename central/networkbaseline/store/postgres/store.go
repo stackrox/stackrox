@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -28,8 +27,6 @@ import (
 const (
 	baseTable = "network_baselines"
 	storeName = "NetworkBaseline"
-
-	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -76,8 +73,11 @@ func New(db postgres.DB) Store {
 			db,
 			schema,
 			pkGetter,
+			insertIntoNetworkBaselines,
+			copyFromNetworkBaselines,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			isUpsertAllowed,
 			targetResource,
 		),
 	}
@@ -95,6 +95,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetDeploymentId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying networkBaselines with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {
@@ -118,7 +135,7 @@ func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storag
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkBaseline) error {
+func copyFromNetworkBaselines(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkBaseline) error {
 
 	inputRows := [][]interface{}{}
 
@@ -181,112 +198,7 @@ func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx *postgres.T
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromNetworkBaselines(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoNetworkBaselines(ctx, batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // endregion Helper functions
-// region Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		var deniedIDs []string
-		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-			if !subScopeChecker.IsAllowed() {
-				deniedIDs = append(deniedIDs, obj.GetDeploymentId())
-			}
-		}
-		if len(deniedIDs) != 0 {
-			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying networkBaselines with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-		}
-	}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-}
-
-// endregion Interface functions
 
 // region Used for testing
 

@@ -6,7 +6,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
@@ -26,8 +24,6 @@ import (
 const (
 	baseTable = "test_structs"
 	storeName = "TestStruct"
-
-	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -74,8 +70,11 @@ func New(db postgres.DB) Store {
 			db,
 			schema,
 			pkGetter,
+			insertIntoTestStructs,
+			copyFromTestStructs,
 			metricsSetAcquireDBConnDuration,
 			metricsSetPostgresOperationDurationTime,
+			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 			targetResource,
 		),
 	}
@@ -157,7 +156,7 @@ func insertIntoTestStructsNesteds(_ context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromTestStructs(ctx context.Context, tx *postgres.Tx, objs ...*storage.TestStruct) error {
+func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestStruct) error {
 
 	inputRows := [][]interface{}{}
 
@@ -242,7 +241,7 @@ func (s *storeImpl) copyFromTestStructs(ctx context.Context, tx *postgres.Tx, ob
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromTestStructsNesteds(ctx, tx, obj.GetKey1(), obj.GetNested()...); err != nil {
+		if err = copyFromTestStructsNesteds(ctx, s, tx, obj.GetKey1(), obj.GetNested()...); err != nil {
 			return err
 		}
 	}
@@ -250,7 +249,7 @@ func (s *storeImpl) copyFromTestStructs(ctx context.Context, tx *postgres.Tx, ob
 	return err
 }
 
-func (s *storeImpl) copyFromTestStructsNesteds(ctx context.Context, tx *postgres.Tx, testStructKey1 string, objs ...*storage.TestStruct_Nested) error {
+func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testStructKey1 string, objs ...*storage.TestStruct_Nested) error {
 
 	inputRows := [][]interface{}{}
 
@@ -303,102 +302,7 @@ func (s *storeImpl) copyFromTestStructsNesteds(ctx context.Context, tx *postgres
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromTestStructs(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storeType) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoTestStructs(ctx, batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // endregion Helper functions
-// region Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.Upsert)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
-	defer metricsSetPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-}
-
-// endregion Interface functions
 
 // region Used for testing
 
