@@ -300,15 +300,15 @@ h6 {
 }
 
 .btn-sm {
-    @apply btn-class py-1 text-xs !important;
+    @apply btn-class py-1 text-sm !important;
 }
 
 .btn {
-    @apply btn-class py-2 text-sm !important;
+    @apply btn-class py-2 !important;
 }
 
 .btn-icon {
-    @apply flex py-2 px-2 rounded-sm text-center text-sm items-center justify-center bg-base-200 border !important;
+    @apply flex py-2 px-2 rounded-sm text-center items-center justify-center bg-base-200 border !important;
 }
 
 .btn-success {

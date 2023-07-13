@@ -20,11 +20,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const (
-	clientCAKey = "client-ca-file"
-	signerName  = "kubelet-signer"
-)
-
 func certFilePath() string {
 	certDir := env.SecureMetricsCertDir.Setting()
 	certFile := filepath.Join(certDir, env.TLSCertFileName)
@@ -72,14 +67,19 @@ var _ verifier.TLSConfigurer = (*tlsConfigurerImpl)(nil)
 func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANamespace, clientCAConfigMap string) verifier.TLSConfigurer {
 	tlsRootConfig := verifier.DefaultTLSServerConfig(nil, nil)
 	tlsRootConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	tlsConfigHolder := certwatch.NewTLSConfigHolder(tlsRootConfig, tls.RequireAndVerifyClientCert)
 	cfgr := &tlsConfigurerImpl{
 		certDir:           certDir,
 		clientCANamespace: clientCANamespace,
 		clientCAConfigMap: clientCAConfigMap,
-		tlsConfigHolder:   certwatch.NewTLSConfigHolder(tlsRootConfig),
+		tlsConfigHolder:   tlsConfigHolder,
 	}
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
+	tlsVerifier := &clientCertVerifier{
+		subjectCN: env.SecureMetricsClientCertCN.Setting(),
+	}
+	cfgr.tlsConfigHolder.SetCustomCertVerifier(tlsVerifier)
 	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
 	cfgr.watchForChanges()
 	return cfgr
@@ -114,7 +114,7 @@ func (t *tlsConfigurerImpl) watchForChanges() {
 	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
 
 	// Watch for changes of client CA.
-	go t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
+	t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)
 }
 
 // TLSConfig returns the current TLS config.
@@ -172,18 +172,15 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	if cm == nil {
 		return
 	}
-	if caFile, ok := cm.Data[clientCAKey]; ok {
+	if caFile, ok := cm.Data[env.SecureMetricsClientCAKey.Setting()]; ok {
 		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
-		certs, err := helpers.ParseCertificatesPEM([]byte(caFile))
+		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {
 			log.Errorw("Unable to parse client CAs", zap.Error(err))
 			return
 		}
-		var signerCAs []*x509.Certificate
-		for _, c := range certs {
-			if c.Issuer.CommonName == signerName {
-				signerCAs = append(signerCAs, c)
-			}
+		if len(signerCAs) == 0 {
+			log.Warnf("No client CAs have been found in %q/%q", t.clientCANamespace, t.clientCAConfigMap)
 		}
 		t.mutex.Lock()
 		defer t.mutex.Unlock()

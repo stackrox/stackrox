@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction, useState } from 'react';
+import { Collection } from 'services/CollectionsService';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { ImageType } from 'types/reportConfigurationService.proto';
@@ -22,7 +23,7 @@ export type ReportParametersFormValues = {
     imageType: ImageType[];
     cvesDiscoveredSince: CVESDiscoveredSince;
     cvesDiscoveredStartDate: string | undefined;
-    reportScope: string;
+    reportScope: Collection | null;
 };
 
 export type CVEStatus = 'FIXABLE' | 'NOT_FIXABLE';
@@ -38,7 +39,7 @@ export const defaultReportFormValues: ReportFormValues = {
         imageType: [],
         cvesDiscoveredSince: 'ALL_VULN',
         cvesDiscoveredStartDate: undefined,
-        reportScope: '',
+        reportScope: null,
     },
 };
 

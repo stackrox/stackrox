@@ -6,7 +6,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/prometheus/client_golang v1.16.0
-	github.com/quay/claircore v1.5.8
+	github.com/quay/claircore v1.5.9
 	github.com/quay/zlog v1.1.4
 	github.com/stackrox/rox v0.0.0
 	google.golang.org/grpc v1.56.2
@@ -32,7 +32,7 @@ require (
 	github.com/jackc/pgx/v4 v4.18.1 // indirect
 	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/klauspost/compress v1.16.5 // indirect
+	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f // indirect
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d // indirect
 	github.com/knqyf263/go-rpm-version v0.0.0-20220614171824-631e686d1075 // indirect
@@ -85,7 +85,7 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230411213734-d75b95d65d28
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230628181306-03df53267a74
 	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.5

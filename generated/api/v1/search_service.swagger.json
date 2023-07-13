@@ -95,7 +95,8 @@
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
                 "REPORT_METADATA",
-                "REPORT_SNAPSHOT"
+                "REPORT_SNAPSHOT",
+                "COMPLIANCE_INTEGRATIONS"
               ]
             },
             "collectionFormat": "multi"
@@ -190,7 +191,8 @@
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
                 "REPORT_METADATA",
-                "REPORT_SNAPSHOT"
+                "REPORT_SNAPSHOT",
+                "COMPLIANCE_INTEGRATIONS"
               ]
             },
             "collectionFormat": "multi"
@@ -279,7 +281,8 @@
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
                 "REPORT_METADATA",
-                "REPORT_SNAPSHOT"
+                "REPORT_SNAPSHOT",
+                "COMPLIANCE_INTEGRATIONS"
               ]
             },
             "collectionFormat": "multi"
@@ -417,10 +420,11 @@
         "PROCESS_LISTENING_ON_PORT",
         "API_TOKEN",
         "REPORT_METADATA",
-        "REPORT_SNAPSHOT"
+        "REPORT_SNAPSHOT",
+        "COMPLIANCE_INTEGRATIONS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 54"
+      "title": "Next available tag: 55"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

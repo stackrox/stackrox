@@ -11,11 +11,10 @@ export const vulnerabilitySeverityLabels: VulnerabilitySeverityLabels = {
     UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown',
 };
 
-export type FixabilityLabelKey = Exclude<Fixability, 'BOTH'>;
+export type FixabilityLabelKey = Exclude<Fixability, 'BOTH' | 'UNSET'>;
 type FixabilityLabels = Record<FixabilityLabelKey, string>;
 
 export const fixabilityLabels: FixabilityLabels = {
     FIXABLE: 'Fixable',
     NOT_FIXABLE: 'Unfixable',
-    UNSET: '',
 };

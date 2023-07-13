@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/tlscheck"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -87,7 +88,7 @@ type TLSConfigOptions struct {
 	UseClientCert      UseClientCertSetting
 	ServerName         string
 	InsecureSkipVerify bool
-	CustomCertVerifier TLSCertVerifier
+	CustomCertVerifier tlscheck.TLSCertVerifier
 	RootCAs            *x509.CertPool
 
 	GRPCOnly bool
@@ -149,7 +150,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	}
 
 	if customVerifier != nil {
-		conf.VerifyPeerCertificate = verifyPeerCertFunc(conf, customVerifier)
+		conf.VerifyPeerCertificate = tlscheck.VerifyPeerCertFunc(conf, customVerifier)
 		conf.InsecureSkipVerify = true
 	}
 

@@ -1,10 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { DocumentNode, gql, useQuery } from '@apollo/client';
-import pluralize from 'pluralize';
 
-import { resourceLabels } from 'messages/common';
 import { complianceBasePath } from 'routePaths';
+
+import {
+    entityCountNounOrdinaryCase,
+    entityNounOrdinaryCasePlural,
+} from '../entitiesForCompliance';
 
 const CLUSTERS_COUNT = gql`
     query clustersCount {
@@ -30,16 +33,17 @@ const DEPLOYMENTS_COUNT = gql`
     }
 `;
 
-type ComplianceEntityType = 'CLUSTER' | 'DEPLOYMENT' | 'NAMESPACE' | 'NODE';
+// Subset of ComplianceEntityType
+type DashboardTileEntityType = 'CLUSTER' | 'DEPLOYMENT' | 'NAMESPACE' | 'NODE';
 
-const queryMap: Record<ComplianceEntityType, DocumentNode> = {
+const queryMap: Record<DashboardTileEntityType, DocumentNode> = {
     CLUSTER: CLUSTERS_COUNT,
     DEPLOYMENT: DEPLOYMENTS_COUNT,
     NAMESPACE: NAMESPACES_COUNT,
     NODE: NODES_COUNT,
 };
 
-const entityPathSegmentMap: Record<ComplianceEntityType, string> = {
+const entityPathSegmentMap: Record<DashboardTileEntityType, string> = {
     CLUSTER: 'clusters',
     DEPLOYMENT: 'deployments',
     NAMESPACE: 'namespaces',
@@ -47,23 +51,21 @@ const entityPathSegmentMap: Record<ComplianceEntityType, string> = {
 };
 
 export type ComplianceDashboardTileProps = {
-    entityType: ComplianceEntityType;
+    entityType: DashboardTileEntityType;
 };
 
 function ComplianceDashboardTile({ entityType }: ComplianceDashboardTileProps) {
     const QUERY = queryMap[entityType];
     const url = `${complianceBasePath}/${entityPathSegmentMap[entityType]}`;
-    const resourceLabel = resourceLabels[entityType];
 
     const { loading, data, error } = useQuery(QUERY);
 
     if (loading || error || !data) {
         return (
             <div className="btn btn-base h-10 mr-2">
-                <div className="flex items-center normal-case">
-                    {pluralize(resourceLabel)}
-                    <br />
-                    {error ? '(not scanned)' : 'scanned'}
+                <div className="flex flex-col text-center">
+                    <div>{entityNounOrdinaryCasePlural[entityType]}</div>
+                    <div className="text-sm">{error ? '(not scanned)' : 'scanned'}</div>
                 </div>
             </div>
         );
@@ -72,10 +74,9 @@ function ComplianceDashboardTile({ entityType }: ComplianceDashboardTileProps) {
     const count: number = typeof data?.results === 'number' ? data.results : 0;
     return (
         <Link to={url} className="btn btn-base h-10 mr-2 no-underline">
-            <div className="flex items-center whitespace-nowrap normal-case">
-                {`${count} ${pluralize(resourceLabel, count)}`}
-                <br />
-                (scanned)
+            <div className="flex flex-col text-center whitespace-nowrap">
+                <div>{entityCountNounOrdinaryCase(count, entityType)}</div>
+                <div className="text-sm">(scanned)</div>
             </div>
         </Link>
     );

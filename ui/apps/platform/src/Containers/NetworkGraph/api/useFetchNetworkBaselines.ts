@@ -1,5 +1,5 @@
-import { uniqBy } from 'lodash';
 import { useEffect, useState } from 'react';
+import uniqBy from 'lodash/uniqBy';
 
 import { fetchNetworkBaselines } from 'services/NetworkService';
 import { NetworkBaseline } from 'types/networkBaseline.proto';

@@ -1,9 +1,17 @@
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { visitWorkloadCveOverview } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload table toolbar', () => {
     withAuth();
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
+            this.skip();
+        }
+    });
+
     it('should correctly handle applied filters', () => {
         visitWorkloadCveOverview();
 

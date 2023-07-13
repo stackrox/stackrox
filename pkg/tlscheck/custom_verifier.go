@@ -1,4 +1,4 @@
-package clientconn
+package tlscheck
 
 import (
 	"crypto/tls"
@@ -21,7 +21,8 @@ func NewCertPool(certs ...*x509.Certificate) *x509.CertPool {
 	return pool
 }
 
-func verifyPeerCertFunc(conf *tls.Config, verifier TLSCertVerifier) func([][]byte, [][]*x509.Certificate) error {
+// VerifyPeerCertFunc returns a custom certificate verifier suitable for as a VerifyPeerCertificate callback.
+func VerifyPeerCertFunc(conf *tls.Config, verifier TLSCertVerifier) func([][]byte, [][]*x509.Certificate) error {
 	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {
 			return errors.New("remote peer presented no certificates")

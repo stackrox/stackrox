@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	compv1alpha1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -32,24 +31,24 @@ var (
 )
 
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
-func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) common.SensorComponent {
+func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) InfoUpdater {
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
 	return &updaterImpl{
 		client:         client,
 		updateInterval: updateInterval,
-		output:         make(chan *central.MsgFromSensor),
+		response:       make(chan *central.MsgFromSensor),
 		stopSig:        concurrency.NewSignal(),
 	}
 }
 
 type updaterImpl struct {
-	client         kubernetes.Interface
-	updateInterval time.Duration
-	output         chan *central.MsgFromSensor
-	stopSig        concurrency.Signal
-	namespace      string
+	client               kubernetes.Interface
+	updateInterval       time.Duration
+	response             chan *central.MsgFromSensor
+	stopSig              concurrency.Signal
+	complianceOperatorNS string
 }
 
 func (u *updaterImpl) Start() error {
@@ -75,7 +74,11 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return u.output
+	return u.response
+}
+
+func (u *updaterImpl) GetNamespace() string {
+	return u.complianceOperatorNS
 }
 
 func (u *updaterImpl) run() {
@@ -85,16 +88,19 @@ func (u *updaterImpl) run() {
 	for {
 		select {
 		case <-ticker.C:
+			info := u.getComplianceOperatorInfo()
+			u.complianceOperatorNS = info.GetNamespace()
+
 			msg := &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-					ComplianceOperatorInfo: u.getComplianceOperatorInfo(),
+					ComplianceOperatorInfo: info,
 				},
 			}
 
 			log.Debugf("Compliance Operator Info: %v", protoutils.NewWrapper(msg.GetComplianceOperatorInfo()))
 
 			select {
-			case u.output <- msg:
+			case u.response <- msg:
 				continue
 			case <-u.stopSig.Done():
 				return
@@ -106,20 +112,30 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
-	if u.namespace == "" {
-		ns, err := u.getComplianceOperatorNamespace()
+	var err error
+	var ns string
+	if u.complianceOperatorNS == "" {
+		ns, err = u.getComplianceOperatorNamespace()
 		if err != nil {
 			return &central.ComplianceOperatorInfo{
-				StatusErrors: []string{err.Error()},
+				StatusError: err.Error(),
 			}
 		}
-		u.namespace = ns
 	}
 
-	complianceOperator, err := getComplianceOperator(u.ctx(), u.client, u.namespace)
+	complianceOperator, err := getComplianceOperator(u.ctx(), u.client, ns)
+	if err != nil {
+		// Lookup all namespaces again to cover the case that compliance operator was moved to different complianceOperatorNS.
+		if kubeAPIErr.IsNotFound(err) {
+			ns, err = u.getComplianceOperatorNamespace()
+			if err == nil {
+				complianceOperator, err = getComplianceOperator(u.ctx(), u.client, ns)
+			}
+		}
+	}
 	if err != nil {
 		return &central.ComplianceOperatorInfo{
-			StatusErrors: []string{err.Error()},
+			StatusError: err.Error(),
 		}
 	}
 
@@ -143,19 +159,19 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 
 	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
 	if err != nil {
-		info.StatusErrors = append(info.StatusErrors, err.Error())
+		info.StatusError = err.Error()
 		return info
 	}
 
 	if err := checkRequiredComplianceCRDsExist(resourceList); err != nil {
-		info.StatusErrors = append(info.StatusErrors, err.Error())
+		info.StatusError = err.Error()
 	}
 
 	return info
 }
 
 func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
-	// List all namespace to begin the lookup for compliance operator.
+	// List all namespaces to begin the lookup for compliance operator.
 	namespaceList, err := u.client.CoreV1().Namespaces().List(u.ctx(), metav1.ListOptions{})
 	if err != nil {
 		return "", err
@@ -173,7 +189,7 @@ func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
 		return "", err
 	}
 
-	return "", errors.Errorf("deployment %s not found", complianceoperator.Name)
+	return "", errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
 }
 
 func (u *updaterImpl) ctx() context.Context {
@@ -181,12 +197,12 @@ func (u *updaterImpl) ctx() context.Context {
 }
 
 func getResourceListForComplianceGroupVersion(client kubernetes.Interface) (*metav1.APIResourceList, error) {
-	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(compv1alpha1.SchemeGroupVersion.String())
+	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(complianceoperator.GetGroupVersion().String())
 	if err != nil {
 		return nil, err
 	}
 	if resourceList == nil {
-		return nil, errors.Errorf("API group-version %q not found", compv1alpha1.SchemeGroupVersion.String())
+		return nil, errors.Errorf("API group-version %q not found", complianceoperator.GetGroupVersion().String())
 	}
 	return resourceList, nil
 }
@@ -202,7 +218,7 @@ func checkRequiredComplianceCRDsExist(resourceList *metav1.APIResourceList) erro
 	}
 
 	errorList := errorhelpers.NewErrorList("checking for CRDs required for compliance")
-	for _, requiredGVK := range complianceoperator.GetAllRequiredComplianceGVKs() {
+	for _, requiredGVK := range complianceoperator.GetAllRequiredGVKs() {
 		if detectedKinds.Contains(requiredGVK.Kind) {
 			errorList.AddError(errors.Errorf("required GroupVersionKind %q not found", requiredGVK.String()))
 		}
