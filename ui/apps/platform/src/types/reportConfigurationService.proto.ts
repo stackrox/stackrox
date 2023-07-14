@@ -10,12 +10,12 @@ export type ReportConfiguration = {
     description: string;
     type: ReportType;
     vulnReportFilters: VulnerabilityReportFilters;
-    emailConfig: EmailNotifierConfiguration;
+    notifiers: NotifierConfiguration[];
     schedule: Schedule;
     resourceScope: ResourceScope;
 };
 
-type VulnerabilityReportFiltersBase = {
+export type VulnerabilityReportFiltersBase = {
     fixability: Fixability;
     severities: VulnerabilitySeverity[];
     imageTypes: ImageType[];
@@ -35,6 +35,14 @@ export type VulnerabilityReportFilters =
 export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
 
 export type ImageType = 'DEPLOYED' | 'WATCHED';
+
+export type NotifierConfiguration = {
+    emailConfig: {
+        notifierId: string;
+        mailingLists: string[];
+    }[];
+    notifierName: string;
+};
 
 export type EmailNotifierConfiguration = {
     notifierId: string;
