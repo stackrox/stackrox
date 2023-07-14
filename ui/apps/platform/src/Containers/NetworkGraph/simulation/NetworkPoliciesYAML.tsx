@@ -6,8 +6,12 @@ import { useTheme } from 'Containers/ThemeProvider';
 import download from 'utils/download';
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
 
+import './NetworkPoliciesYAML.css';
+
 type NetworkPoliciesYAMLProp = {
     yaml: string;
+    height?: string;
+    additionalControls?: React.ReactNode[];
 };
 
 const labels = {
@@ -18,7 +22,11 @@ const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
     download(`${fileName}.yml`, fileContent, 'yml');
 };
 
-function NetworkPoliciesYAML({ yaml }: NetworkPoliciesYAMLProp) {
+function NetworkPoliciesYAML({
+    yaml,
+    height = '300px',
+    additionalControls = [],
+}: NetworkPoliciesYAMLProp) {
     const { isDarkMode } = useTheme();
     const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
 
@@ -37,7 +45,7 @@ function NetworkPoliciesYAML({ yaml }: NetworkPoliciesYAMLProp) {
     );
 
     return (
-        <div className="pf-u-h-100">
+        <div className="network-policies-yaml pf-u-h-100">
             <CodeEditor
                 isDarkTheme={customDarkMode}
                 customControls={[
@@ -46,13 +54,14 @@ function NetworkPoliciesYAML({ yaml }: NetworkPoliciesYAMLProp) {
                         onToggleDarkMode={onToggleDarkMode}
                     />,
                     downloadYAMLControl,
+                    ...additionalControls,
                 ]}
                 isCopyEnabled
                 isLineNumbersVisible
                 isReadOnly
                 code={yaml}
                 language={Language.yaml}
-                height="300px"
+                height={height}
             />
         </div>
     );
