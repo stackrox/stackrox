@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/stackrox/rox/pkg/lru"
+	"github.com/stackrox/rox/pkg/logging/internal/lru"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
 )

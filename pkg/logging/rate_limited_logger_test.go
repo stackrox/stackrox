@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/pkg/logging/internal/lru"
 	"github.com/stackrox/rox/pkg/logging/mocks"
-	"github.com/stackrox/rox/pkg/lru"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap/zapcore"
 )
