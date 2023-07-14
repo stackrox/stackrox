@@ -31,16 +31,21 @@ type Compliance struct {
 	nodeScanner      NodeScanner
 	umh              UnconfirmedMessageHandler
 	cache            *sensor.MsgFromCompliance
+	runCtx           context.Context
+	runCtxCancel     context.CancelFunc
 }
 
-// NewComplianceApp contsructs the Compliance app object
+// NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner,
 	srh UnconfirmedMessageHandler) *Compliance {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Compliance{
 		nodeNameProvider: nnp,
 		nodeScanner:      scanner,
 		umh:              srh,
 		cache:            nil,
+		runCtx:           ctx,
+		runCtxCancel:     cancel,
 	}
 }
 
@@ -78,7 +83,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
+	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner != nil && c.nodeScanner.IsActive() {
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {

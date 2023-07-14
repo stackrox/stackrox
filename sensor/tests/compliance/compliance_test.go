@@ -18,8 +18,8 @@ func Test_SensorCompliance(t *testing.T) {
 	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
+		StartCompliance:       true,
 	})
-
 	require.NoError(t, err)
 
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {

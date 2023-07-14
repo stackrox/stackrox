@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -16,7 +17,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
@@ -24,6 +27,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -145,6 +149,7 @@ func DefaultCentralConfig() CentralConfig {
 	return CentralConfig{
 		InitialSystemPolicies: policies,
 		CertFilePath:          "../../../../tools/local-sensor/certs/",
+		StartCompliance:       false,
 	}
 }
 
@@ -170,10 +175,34 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 		archivedMessages: [][]*central.MsgFromSensor{},
 	}
 
+	setupCertificates(t, tc.config.CertFilePath)
+
 	tc.StartFakeGRPC()
 	tc.startSensorInstance(envConfig)
+	if config.StartCompliance {
+		tc.StartCompliance(envConfig)
+	}
 
 	return &tc, nil
+}
+
+func setupCertificates(t *testing.T, certPath string) {
+	// Generate a client certificate (this does not need to be related to the central CA from testdata).
+	ca, err := certgen.GenerateCA()
+	assert.NoError(t, err)
+
+	leafCert, err := ca.IssueCertForSubject(mtls.SensorSubject)
+	assert.NoError(t, err)
+
+	assert.NoError(t, os.WriteFile(filepath.Join(certPath, "/cert.pem"), leafCert.CertPEM, 0644))
+	assert.NoError(t, os.WriteFile(filepath.Join(certPath, "/key.pem"), leafCert.KeyPEM, 0600))
+	t.Setenv(mtls.CertFilePathEnvName, path.Join(certPath, "/cert.pem"))
+	t.Setenv(mtls.KeyFileEnvName, path.Join(certPath, "/key.pem"))
+
+	assert.NoError(t, os.WriteFile(filepath.Join(certPath, "/caCert.pem"), ca.CertPEM(), 0644))
+	assert.NoError(t, os.WriteFile(filepath.Join(certPath, "/caKey.pem"), ca.KeyPEM(), 0644))
+	t.Setenv(mtls.CAFileEnvName, filepath.Join(certPath, "/caCert.pem"))
+	t.Setenv(mtls.CAKeyFileEnvName, filepath.Join(certPath, "/caKey.pem"))
 }
 
 // WithPermutation sets whether the test should run with permutations
@@ -615,14 +644,10 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 	CertFilePath          string
+	StartCompliance       bool
 }
 
 func (c *TestContext) startSensorInstance(env *envconf.Config) {
-	c.t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
-	c.t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
-	c.t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
-	c.t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
-
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).

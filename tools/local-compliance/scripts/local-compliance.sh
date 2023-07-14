@@ -3,7 +3,7 @@ set -exEuo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-# Use less standart local port 8554
+# Use less standard local port 8554
 kubectl -n stackrox port-forward deploy/sensor 8554:8443 > /dev/null &
 PID=$!
 
