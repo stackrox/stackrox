@@ -19,7 +19,7 @@ type perPathHTTPMetrics struct {
 	normalInvocationStats      map[int]int64
 	normalInvocationStatsMutex sync.RWMutex
 
-	panics lru.*Cache[string, *int64]
+	panics *lru.Cache[string, *int64]
 }
 
 func (h *httpMetricsImpl) WrapHandler(handler http.Handler, path string) http.Handler {

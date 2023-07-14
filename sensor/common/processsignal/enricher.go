@@ -19,7 +19,7 @@ const (
 )
 
 type enricher struct {
-	lru                  lru.*Cache[string, *containerWrap]
+	lru                  *lru.Cache[string, *containerWrap]
 	clusterEntities      *clusterentities.Store
 	indicators           chan *storage.ProcessIndicator
 	metadataCallbackChan <-chan clusterentities.ContainerMetadata

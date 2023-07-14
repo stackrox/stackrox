@@ -26,7 +26,7 @@ type grpcMetricsImpl struct {
 type perPathGRPCMetrics struct {
 	normalInvocationStats map[codes.Code]int64
 
-	panics lru.*Cache[string, int64]
+	panics *lru.Cache[string, int64]
 }
 
 func (g *grpcMetricsImpl) getOrCreateAllMetrics(path string) *perPathGRPCMetrics {

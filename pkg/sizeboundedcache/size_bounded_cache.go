@@ -36,7 +36,7 @@ type sizeBoundedCache[K comparable, V any] struct {
 	sizeFunc    func(key K, value V) int64
 
 	cacheLock sync.RWMutex
-	cache     lru.*Cache[K, *valueEntry[V]]
+	cache     *lru.Cache[K, *valueEntry[V]]
 }
 
 // New creates a new cost cache with the passed parameters
