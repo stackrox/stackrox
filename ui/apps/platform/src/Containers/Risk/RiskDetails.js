@@ -14,7 +14,7 @@ const Factor = ({ message, url }) => {
 
     return (
         <div className="px-3">
-            <div className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300">
+            <div className="py-3 pb-2 leading-normal border-b border-base-300">
                 {renderedMessage}
             </div>
         </div>

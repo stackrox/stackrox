@@ -27,7 +27,7 @@ const ProcessBaselineElementList = ({ baselineKey, elements, processEpoch, setPr
             {elements.map(({ element }) => (
                 <li
                     key={element.processName}
-                    className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 flex justify-between items-center"
+                    className="py-3 pb-2 leading-normal border-b border-base-300 flex justify-between items-center"
                 >
                     <span>{element.processName}</span>
                     <Tooltip content="Remove process from baseline">
