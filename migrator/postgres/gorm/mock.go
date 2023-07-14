@@ -16,3 +16,13 @@ func SetupAndGetMockConfig(t *testing.T) Config {
 	})
 	return gConfig
 }
+
+// SetupAndGetMockConfigWithDatabase creates a gorm config for testing with a specific database
+func SetupAndGetMockConfigWithDatabase(t *testing.T, database string) Config {
+	once.Do(func() {
+		source := conn.GetConnectionStringWithDatabaseName(t, database)
+		source = pgutils.PgxpoolDsnToPgxDsn(source)
+		gConfig = &gormConfig{source: source, password: "MockPass"}
+	})
+	return gConfig
+}
