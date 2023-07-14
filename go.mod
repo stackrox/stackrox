@@ -14,6 +14,7 @@ require (
 	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/RoaringBitmap/roaring v1.3.0
 	github.com/VividCortex/ewma v1.2.0
+	github.com/adhocore/gronx v1.6.3
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/aws/aws-sdk-go v1.44.257
 	github.com/cenkalti/backoff/v3 v3.2.2
@@ -413,7 +414,7 @@ replace (
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230628181306-03df53267a74
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
 
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
 	// Both github.com/go-yaml/yaml/v2 and github.com/go-yaml/yaml/v3 do not provide go.sum

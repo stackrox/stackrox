@@ -27,6 +27,7 @@ type dbCloneManagerImpl struct {
 	adminConfig          *postgres.Config
 	sourceMap            map[string]string
 	gc                   migGorm.Config
+	supportPrevious      bool
 }
 
 // New - returns a new ready-to-use store.
@@ -43,7 +44,7 @@ func (d *dbCloneManagerImpl) getVersion() (*migrations.MigrationVersion, error) 
 	ctx := sac.WithAllAccess(context.Background())
 
 	gc := migGorm.GetConfig()
-	db, err := gc.ConnectWithRetries(d.adminConfig.ConnConfig.Database)
+	db, err := gc.ConnectDatabaseWithRetries()
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +53,7 @@ func (d *dbCloneManagerImpl) getVersion() (*migrations.MigrationVersion, error) 
 	return migVer.ReadVersionGormDB(ctx, db)
 }
 
-func (d *dbCloneManagerImpl) ensureVersionCompatible() error {
-	ver, err := d.getVersion()
-	if err != nil {
-		return err
-	}
-	log.Infof("db is of version %v", ver)
-
+func (d *dbCloneManagerImpl) ensureVersionCompatible(ver *migrations.MigrationVersion) error {
 	if d.versionExists(ver) {
 		// current sequence number == database sequence number -- All good
 		// current sequence number != database sequence number BUT database min >= current min -- ALL Good
@@ -74,50 +69,78 @@ func (d *dbCloneManagerImpl) ensureVersionCompatible() error {
 // Scan - checks the persistent data of central and gather the clone information
 // from disk.
 func (d *dbCloneManagerImpl) Scan() error {
+	// Beginning in 4.2 we are transitioning away from having multiple copies of the database.  Rollbacks to
+	// 4.1 and later will all occur within the working database.  As we transition we need to check the
+	// version to determine if it is valid to have other databases.  For instance if we are upgrading from 4.0 to 4.2
+	// then we need to create a `central_previous`.  However, if we are upgrading from 4.1 or later to 4.2 or later,
+	// then we do not.  Additionally, if we are upgrading from 4.1 and a `central_previous` still exists, we need to
+	// remove it for consistency.
 
+	// Get the version of the working database
+	ctx := sac.WithAllAccess(context.Background())
 	if pgconfig.IsExternalDatabase() {
-		return d.ensureVersionCompatible()
+		ver, err := d.getVersion()
+		if err != nil {
+			return err
+		}
+
+		return d.ensureVersionCompatible(ver)
 	}
 
-	clones, err := pgadmin.GetDatabaseClones(d.adminConfig)
+	// Get the version of the active DB.
+	ver, err := migVer.ReadVersionPostgres(ctx, CurrentClone)
 	if err != nil {
 		return err
 	}
-	ctx := sac.WithAllAccess(context.Background())
+	d.cloneMap[CurrentClone] = metadata.NewPostgres(ver, CurrentClone)
+	log.Infof("db is of version %v", ver)
+
+	if err := d.ensureVersionCompatible(ver); err != nil {
+		return err
+	}
+
+	// Check to see if we are coming from pre-4.1 version where we may need to create and maintain `central_previous`
+	if version.CompareVersions(ver.MainVersion, migrations.LastPostgresPreviousVersion) < 0 {
+		d.supportPrevious = true
+	}
 
 	// We use clones to collect all db clones (directory starting with db- or .restore-) matching upgrade or restore pattern.
 	// We maintain clones with a known link in cloneMap. All unknown clones are to be removed.
 	clonesToRemove := set.NewStringSet()
-	for _, clone := range clones {
-		switch name := clone; {
-		case knownClones.Contains(name):
-			// Get a short-lived connection for the purposes of checking the version of the clone.
-			ver, err := migVer.ReadVersionPostgres(ctx, name)
-			if err != nil {
-				return err
-			}
-			log.Infof("clone %s is of version %v", name, ver)
-
-			d.cloneMap[name] = metadata.NewPostgres(ver, name)
-			log.Debugf("Closing the pool from scan %q", name)
-		case name == TempClone:
-			clonesToRemove.Add(name)
-		}
+	clonesToRemove.Add(TempClone)
+	//  Check for `central_previous`
+	prevExists, err := pgadmin.CheckIfDBExists(d.adminConfig, PreviousClone)
+	if err != nil {
+		return err
 	}
-
-	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists || currClone.GetMigVersion() == nil {
-		log.Info("Cannot find the current database or it has no version, so we need to let it create and ignore other clones.")
-	} else {
-		// current sequence number == database sequence number -- All good
-		// current sequence number != database sequence number BUT database min >= current min -- ALL Good
-		// version min < current database min -- DO NOT ROLLBACK
-		if currClone.GetMinimumSeqNum() > migrations.MinimumSupportedDBVersionSeqNum() {
-			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.MinimumSupportedDBVersionSeqNum(), currClone.GetMinimumSeqNum())
+	if prevExists && d.supportPrevious {
+		// Get a short-lived connection for the purposes of checking the version of the clone.
+		ver, err := migVer.ReadVersionPostgres(ctx, PreviousClone)
+		if err != nil {
+			return err
 		}
+		log.Infof("clone %s is of version %v", PreviousClone, ver)
+
+		d.cloneMap[PreviousClone] = metadata.NewPostgres(ver, PreviousClone)
+	} else {
+		clonesToRemove.Add(PreviousClone)
 	}
 
 	// Check restore version
+	restoreInProgress, err := pgadmin.CheckIfDBExists(d.adminConfig, RestoreClone)
+	if err != nil {
+		return err
+	}
+	if restoreInProgress {
+		// Get a short-lived connection for the purposes of checking the version of the clone.
+		ver, err := migVer.ReadVersionPostgres(ctx, RestoreClone)
+		if err != nil {
+			return err
+		}
+		log.Infof("clone %s is of version %v", RestoreClone, ver)
+
+		d.cloneMap[RestoreClone] = metadata.NewPostgres(ver, RestoreClone)
+	}
 	restoreClone, restoreExists := d.cloneMap[RestoreClone]
 	if restoreExists {
 		// Restore from a newer version of central
@@ -126,7 +149,7 @@ func (d *dbCloneManagerImpl) Scan() error {
 		}
 	}
 
-	// Remove unknown clones that is not in use
+	// Remove unknown clones that are not in use
 	for _, r := range d.cloneMap {
 		clonesToRemove.Remove(r.GetDirName())
 	}
@@ -165,24 +188,37 @@ func (d *dbCloneManagerImpl) databaseExists(clone string) (bool, error) {
 	return pgadmin.CheckIfDBExists(d.adminConfig, clone)
 }
 
-func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.MigrationVersion) (string, bool, error) {
+func (d *dbCloneManagerImpl) shouldMigrateFromRocks(rocksVersion *migrations.MigrationVersion, pgVersion *migrations.MigrationVersion) bool {
 	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
 	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
 	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
 	// of Rocks -> Postgres fails so we can start fresh.
 	if d.versionExists(rocksVersion) {
 		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		ver, err := d.getVersion()
-		if err != nil {
-			return "", false, err
-		}
-		log.Infof("db is of version %v", ver)
-
-		if !d.versionExists(ver) {
-			return d.adminConfig.ConnConfig.Database, true, nil
+		// If we have not started nor completed migrating from RocksDB we need to return the flag that we
+		// need RocksDB
+		if !d.versionExists(pgVersion) || pgVersion.SeqNum < migrations.LastRocksDBToPostgresVersionSeqNum() {
+			return true
 		}
 	}
-	return d.adminConfig.ConnConfig.Database, false, nil
+
+	return false
+}
+
+func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
+	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
+	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
+	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
+	// of Rocks -> Postgres fails so we can start fresh.
+	ver, err := d.getVersion()
+	if err != nil {
+		return "", false, err
+	}
+	log.Infof("db is of version %v", ver)
+
+	migrateFromRocks := restoreFromRocks || d.shouldMigrateFromRocks(rocksVersion, ver)
+
+	return d.adminConfig.ConnConfig.Database, migrateFromRocks, nil
 }
 
 // GetCloneToMigrate - finds a clone to migrate.
@@ -190,7 +226,7 @@ func (d *dbCloneManagerImpl) checkForRocksToExternal(rocksVersion *migrations.Mi
 func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.MigrationVersion, restoreFromRocks bool) (string, bool, error) {
 	log.Info("GetCloneToMigrate")
 	if pgconfig.IsExternalDatabase() {
-		return d.checkForRocksToExternal(rocksVersion)
+		return d.checkForRocksToExternal(rocksVersion, restoreFromRocks)
 	}
 
 	// If a restore clone exists, our focus is to try to restore that database.
@@ -209,20 +245,15 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
-
-	// If the current Postgres version is less than Rocks version then we need to migrate rocks to postgres
-	// If the versions are the same, but rocks has a more recent update then we need to migrate rocks to postgres
-	// Otherwise we roll with Postgres->Postgres.  We use central_temp as that will get cleaned up if the migration
-	// of Rocks -> Postgres fails so we can start fresh.
-	if d.versionExists(rocksVersion) {
-		log.Infof("A previously used version of Rocks exists -- %v", rocksVersion)
-		if !currExists || !d.versionExists(currClone.GetMigVersion()) {
-			d.cloneMap[TempClone] = metadata.NewPostgres(nil, TempClone)
-			return TempClone, true, nil
-		}
+	if !currExists {
+		d.cloneMap[CurrentClone] = metadata.NewPostgres(nil, CurrentClone)
 	}
 
-	// TODO(ROX-16774) -- Remove the use of central_temp and central_previous as all work will be done in
+	if d.shouldMigrateFromRocks(rocksVersion, currClone.GetMigVersion()) {
+		return CurrentClone, true, nil
+	}
+
+	// TODO(ROX-18005) -- Remove the use of central_temp and central_previous as all work will be done in
 	// central_active.
 	// Only need to make a copy if the migrations need to be performed
 	if d.rollbackEnabled() && currClone.GetSeqNum() != migrations.CurrentDBVersionSeqNum() {
@@ -236,9 +267,9 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate(rocksVersion *migrations.Migratio
 		}
 
 		d.safeRemove(PreviousClone)
-		// This is an upgrade, we are going to use `central_temp` until ROX-16774 so that a rollback to the previous
-		// version works.  At the point of ROX-16774 all upgrades and rollbacks will use a single database.
-		if d.hasSpaceForRollback() {
+		// This is an upgrade, we are going to use `central_temp` until ROX-18005 so that a rollback to the previous
+		// version works.  At the point of ROX-18005 all upgrades and rollbacks will use a single database.
+		if d.hasSpaceForRollback() && d.supportPrevious {
 			// Create a temp clone for processing of current
 			// If such a clone already exists then we were previously in the middle of processing
 			exists, err := d.databaseExists(TempClone)
@@ -346,7 +377,7 @@ func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
 	return nil
 }
 
-// TODO(ROX-16774) -- remove this.  At that point all work will be performend in a single database with the possible
+// TODO(ROX-18005) -- remove this.  At that point all work will be performend in a single database with the possible
 // exception of restores for a ACS hosted Postgres.
 func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) error {
 	// Connect to different database for admin functions
@@ -400,7 +431,7 @@ func (d *dbCloneManagerImpl) moveClones(previousClone, updatedClone string) erro
 	return nil
 }
 
-// TODO(ROX-16774) -- remove this.  At that point all work will be performend in a single database with the possible
+// TODO(ROX-18005) -- remove this.  At that point all work will be performend in a single database with the possible
 // exception of restores for a ACS hosted Postgres.
 func (d *dbCloneManagerImpl) renameClone(ctx context.Context, tx *postgres.Tx, srcClone, destClone string) error {
 	// Move the current to the previous clone
@@ -431,7 +462,7 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 	return currClone.GetSeqNum() != 0
 }
 
-// TODO(ROX-16774) -- remove this.  At that point all work will be performed in a single database with the possible
+// TODO(ROX-18005) -- remove this.  At that point all work will be performed in a single database with the possible
 // exception of restores for a ACS hosted Postgres.
 func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	currReplica, currExists := d.cloneMap[CurrentClone]

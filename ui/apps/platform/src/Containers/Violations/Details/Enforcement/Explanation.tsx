@@ -29,7 +29,7 @@ function Explanation({ lifecycleStage, enforcement, policyId }: ExplanationProps
     const linkAddr = `../policies/${policyId}`;
 
     return (
-        <div className="pf-u-p-md" data-testid="enforcement-explanation-message">
+        <div className="pf-u-p-md" aria-label="Enforcement explanation message">
             <div className="pf-u-pb-md">
                 {getEnforcementExplanation(lifecycleStage, enforcement.message)}
             </div>

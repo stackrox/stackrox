@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -61,7 +62,12 @@ func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
 
 	var gormDB *gorm.DB
 	var pgPool postgres.DB
-	pgPool, gormDB, err = postgreshelper.Load(dbClone)
+	// TODO(ROX-18005) Update to only use single DB when `central_previous` is no longer supported
+	if pgconfig.IsExternalDatabase() {
+		pgPool, gormDB, err = postgreshelper.GetConnections()
+	} else {
+		pgPool, gormDB, err = postgreshelper.Load(dbClone)
+	}
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to postgres DB")
 	}

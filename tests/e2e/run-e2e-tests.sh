@@ -88,6 +88,7 @@ handle_tag_requirements() {
     fi
 
     export ROXCTL_FOR_TEST="$ROOT/bin/linux/roxctl-$tag"
+    mkdir -p "$ROOT/bin/linux"
 
     if [[ ! -f "$ROXCTL_FOR_TEST" ]]; then
         local roxctl_image="quay.io/stackrox-io/roxctl:$tag"
@@ -132,7 +133,6 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -w "$ROOT" \
       -e "KUBECONFIG=${kubeconfig}" \
       -v "${kubeconfig}:${kubeconfig}:z" \
-      -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
       -e "BUILD_TAG=${BUILD_TAG:-}" \
@@ -214,7 +214,7 @@ get_options() {
             ;;
     esac
     export ROX_POSTGRES_DATASTORE="true"
-    export SUITE="${2:-}"
+    export TASK_OR_SUITE="${2:-}"
     export CASE="${3:-}"
 
     export_job_name
@@ -224,8 +224,8 @@ get_options() {
     fi
 
     if [[ "$FLAVOR" == "e2e" ]]; then
-        if [[ -n "${suite}" || -n "${case}" ]]; then
-            die "ERROR: Suite and Case are not supported with e2e flavor"
+        if [[ -n "${TASK_OR_SUITE}" || -n "${CASE}" ]]; then
+            die "ERROR: Target, Suite and Case are not supported with e2e flavor"
         fi
         if [[ "${CONFIG_ONLY}" == "true" || "${TEST_ONLY}" == "true" ]]; then
             die "--config-only and --test-only are not supported with e2e flavor"
@@ -332,8 +332,9 @@ _EOWARNING_
 
 run_qa_flavor() {
     source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+    setup_podsecuritypolicies_config
 
-    if [[ -z "$SUITE" && -z "$CASE" ]]; then
+    if [[ -z "${TASK_OR_SUITE}" && -z "${CASE}" ]]; then
         (
             if [[ "${TEST_ONLY}" == "false" ]]; then
                 config_part_1
@@ -352,10 +353,16 @@ run_qa_flavor() {
         info "Config reuse succeeded."
 
         pushd qa-tests-backend
-        if [[ -z "$CASE" ]]; then
-            spin ./gradlew test --console=plain --tests="$SUITE"
+        if [[ -z "${CASE}" ]]; then
+            if [[ "${TASK_OR_SUITE}" =~ ^[A-Z] ]]; then
+                # Suite (.groovy test Specification)
+                spin ./gradlew test --console=plain --tests="${TASK_OR_SUITE}"
+            else
+                # build.gradle task
+                spin ./gradlew "${TASK_OR_SUITE}" --console=plain
+            fi
         else
-            spin ./gradlew test --console=plain --tests="$SUITE.$CASE"
+            spin ./gradlew test --console=plain --tests="${TASK_OR_SUITE}.${CASE}"
         fi
         popd
     fi

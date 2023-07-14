@@ -148,6 +148,11 @@ func GetConnectionString(t testing.TB) string {
 	return conn.GetConnectionStringWithDatabaseName(t, env.GetString("POSTGRES_DB", "postgres"))
 }
 
+// GetConnectionStringWithDatabaseName returns a connection string for integration testing with Postgres
+func GetConnectionStringWithDatabaseName(t testing.TB, database string) string {
+	return conn.GetConnectionStringWithDatabaseName(t, database)
+}
+
 // OpenGormDB opens a Gorm DB to the Postgres DB
 func OpenGormDB(t testing.TB, source string) *gorm.DB {
 	return conn.OpenGormDB(t, source, false)

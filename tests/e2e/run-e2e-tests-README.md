@@ -73,6 +73,12 @@ Run tests repeatedly:
 run-e2e-tests.sh --spin-cycle=100 qa IntegrationsSplunkViolationsTest
 ```
 
+Run a gradle task (assumes a prior config step was executed):
+```
+# Run all @Tag("Parallel") tests
+run-e2e-tests.sh qa testParallel
+```
+
 ### Non groovy tests - 'e2e' flavor
 
 Run everything just like CI:

@@ -136,10 +136,15 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 		if request.GetScanRequest() == nil {
 			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Compliance scan request is empty"))
 		}
-		if req := request.GetOneTimeScan(); req != nil {
-			return m.processOneTimeScanRequest(request.GetId(), req)
+
+		switch r := request.GetScanRequest().(type) {
+		case *central.ApplyComplianceScanConfigRequest_OneTimeScan_:
+			return m.processOneTimeScanRequest(request.GetId(), r.OneTimeScan)
+		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
+			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
+		default:
+			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
 		}
-		return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
 	}
 }
 
@@ -153,14 +158,48 @@ func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *centr
 	if ns == "" {
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
-	obj, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request))
+
+	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns).Create(m.ctx(), obj, v1.CreateOptions{})
+	_, err = m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
 	if err != nil {
-		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, obj.GetName())
+		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
+	}
+	return m.composeAndSendApplyScanConfigResponse(requestID, err)
+}
+
+func (m *handlerImpl) processScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) bool {
+	if err := validateApplyScheduledScanConfigRequest(request); err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
+	}
+
+	ns := m.complianceOperatorInfo.GetNamespace()
+	if ns == "" {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
+	}
+
+	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request))
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	_, err = m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns).Create(m.ctx(), scanSetting, v1.CreateOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	_, err = m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
