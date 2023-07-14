@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -55,6 +56,13 @@ func run() error {
 		log.WriteToStderrf("conf.Maintenance.ForceRollbackVersion: %s", rollbackVersion)
 	}
 
+	// If using internal database, ensure the default database (`central_active`) exists
+	if !pgconfig.IsExternalDatabase() {
+		if err := ensureDatabaseExists(); err != nil {
+			return err
+		}
+	}
+
 	// Create the clone manager
 	sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
 	if err != nil {
@@ -92,6 +100,31 @@ func run() error {
 
 	if err = dbm.Persist(clone, pgClone, processBoth); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func ensureDatabaseExists() error {
+	sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		return err
+	}
+
+	if !pgconfig.IsExternalDatabase() {
+		// Create the central database if necessary
+		exists, err := pgadmin.CheckIfDBExists(adminConfig, pgconfig.GetActiveDB())
+		if err != nil {
+			log.WriteToStderrf("Could not check for central database: %v", err)
+			return err
+		}
+		if !exists {
+			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.EmptyDB, pgconfig.GetActiveDB())
+			if err != nil {
+				log.WriteToStderrf("Could not create central database: %v", err)
+				return err
+			}
+		}
 	}
 
 	return nil

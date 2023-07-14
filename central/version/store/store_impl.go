@@ -27,7 +27,7 @@ func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 }
 
 // GetPreviousVersion returns the version found in central_previous.
-// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 // the older database.  In that case we will need to process the serialized data.
 func (s *storeImpl) GetPreviousVersion() (*storage.Version, error) {
 	ctx := sac.WithAllAccess(context.Background())

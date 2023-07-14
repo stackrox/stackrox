@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package pgadmin
+package postgreshelper
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -49,17 +50,15 @@ func (s *PostgresRestoreSuite) SetupTest() {
 	s.pool = pool
 	s.config = config
 	s.sourceMap, err = pgconfig.ParseSource(source)
-	if err != nil {
-		log.Infof("Unable to parse source %q", source)
-	}
+	s.Nil(err)
 }
 
 func (s *PostgresRestoreSuite) TearDownTest() {
 	if s.pool != nil {
 		// Clean up
-		s.Nil(DropDB(s.sourceMap, s.config, restoreDB))
-		s.Nil(DropDB(s.sourceMap, s.config, activeDB))
-		s.Nil(DropDB(s.sourceMap, s.config, tempDB))
+		s.Nil(pgadmin.DropDB(s.sourceMap, s.config, restoreDB))
+		s.Nil(pgadmin.DropDB(s.sourceMap, s.config, activeDB))
+		s.Nil(pgadmin.DropDB(s.sourceMap, s.config, tempDB))
 		s.pool.Close()
 	}
 }
@@ -67,42 +66,48 @@ func (s *PostgresRestoreSuite) TearDownTest() {
 func (s *PostgresRestoreSuite) TestUtilities() {
 	// Drop the restore DB if it is lingering from a previous test.
 	// Clean up any databases that were created
-	_ = DropDB(s.sourceMap, s.config, restoreDB)
+	_ = pgadmin.DropDB(s.sourceMap, s.config, restoreDB)
 
 	// Everything fresh.  A restore database should not exist.
-	s.False(CheckIfDBExists(s.config, restoreDB))
+	s.False(pgadmin.CheckIfDBExists(s.config, restoreDB))
 
 	// Create a restore DB
-	err := CreateDB(s.sourceMap, s.config, adminDB, restoreDB)
+	err := pgadmin.CreateDB(s.sourceMap, s.config, adminDB, restoreDB)
 	s.Nil(err)
 
 	// Verify restore DB was created
-	s.True(CheckIfDBExists(s.config, restoreDB))
+	s.True(pgadmin.CheckIfDBExists(s.config, restoreDB))
 
 	// Get a connection to the restore database
-	restorePool, err := GetClonePool(s.config, restoreDB)
+	restorePool, err := pgadmin.GetClonePool(s.config, restoreDB)
 	s.Nil(err)
 	s.NotNil(restorePool)
 	err = restorePool.Ping(s.ctx)
 	s.Nil(err)
 
 	// Successfully create active DB from restore DB
-	err = CreateDB(s.sourceMap, s.config, restoreDB, activeDB)
+	err = pgadmin.CreateDB(s.sourceMap, s.config, restoreDB, activeDB)
 	s.Nil(err)
 	// Have to terminate connections from the source DB before we can create
 	// the copy.  Make sure connection was terminated.
 	err = restorePool.Ping(s.ctx)
 	s.NotNil(err)
 
-	// Reacquire a connection to the restore database
-	restorePool, err = GetClonePool(s.config, restoreDB)
-	s.Nil(err)
-	s.NotNil(restorePool)
-	s.Nil(restorePool.Ping(s.ctx))
+	// Rename database to a database that exists
+	err = RenameDB(s.pool, restoreDB, activeDB)
+	s.NotNil(err)
 
-	// Successfully drop the restore DB
-	err = DropDB(s.sourceMap, s.config, restoreDB)
+	// Get a connection to the active DB
+	activePool, err := pgadmin.GetClonePool(s.config, activeDB)
 	s.Nil(err)
-	// Make sure the connection to the restore db was terminated
-	s.NotNil(restorePool.Ping(s.ctx))
+	s.NotNil(activePool)
+
+	// Rename activeDB to a new one
+	err = RenameDB(s.pool, activeDB, tempDB)
+	s.Nil(err)
+	exists, err := pgadmin.CheckIfDBExists(s.config, tempDB)
+	s.Nil(err)
+	s.True(exists)
+	// Make sure connection to active database was terminated
+	s.NotNil(activePool.Ping(s.ctx))
 }

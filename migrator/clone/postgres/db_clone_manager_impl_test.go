@@ -209,7 +209,6 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	pgtest.DropDatabase(s.T(), tempDB)
 	pgtest.DropDatabase(s.T(), migrations.RestoreDatabase)
 	pgtest.DropDatabase(s.T(), migrations.BackupDatabase)
-	pgtest.DropDatabase(s.T(), migrations.CurrentDatabase)
 
 	dbm := New("", s.config, s.sourceMap)
 
@@ -224,7 +223,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 
 	// No central_active exists so we return the temp clone to use and migrate to rocks
 	clone, migrateRocks, err := dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(clone, TempClone)
+	s.Equal(CurrentClone, clone)
 	s.True(migrateRocks)
 	s.Nil(err)
 
@@ -233,7 +232,7 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 
 	// Still migrate from Rocks because no version in Postgres meaning it is empty
 	clone, migrateRocks, err = dbm.GetCloneToMigrate(rocksVersion, false)
-	s.Equal(clone, TempClone)
+	s.Equal(CurrentClone, clone)
 	s.True(migrateRocks)
 	s.Nil(err)
 
@@ -252,7 +251,6 @@ func (s *PostgresCloneManagerSuite) TestGetCloneMigrateRocks() {
 	s.Equal(clone, CurrentClone)
 	s.False(migrateRocks)
 	s.Nil(err)
-
 }
 
 func (s *PostgresCloneManagerSuite) TestGetCloneFreshCurrent() {
