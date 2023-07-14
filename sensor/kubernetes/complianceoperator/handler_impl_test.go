@@ -1,7 +1,6 @@
 package complianceoperator
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -129,13 +128,84 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanAlreadyExists() {
 	s.assert(expected, actual)
 }
 
+func (s *ManagerTestSuite) TestProcessApplyScheduledScanSuccess() {
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessApplyScheduledScanInvalid() {
+	msg := getTestScheduledScanRequestMsg("error", "error")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "compliance profiles not specified, schedule is not valid",
+	}
+
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessApplyScheduledScanComplianceDisabled() {
+	msg := getDisableComplianceMsg()
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
+	}
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	msg = getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
+	expected = expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "Compliance is disabled",
+	}
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessApplyScheduledScanOperatorNSUnknown() {
+	msg := getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "namespace not known",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessApplyScheduledScanAlreadyExists() {
+	msg := getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	// Retry should fail.
+	msg = getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
+	expected = expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "\"midnight\" already exists",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
 func (s *ManagerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
 
 	for i := 0; i < times; i++ {
-		fmt.Println("send")
-
 		s.NoError(s.requestHandler.ProcessMessage(msg))
 
 		select {
@@ -185,8 +255,32 @@ func getTestOneTimeScanRequestMsg(name string, profiles ...string) *central.MsgT
 								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 									ScanName:       name,
 									StrictNodeScan: true,
+									Profiles:       profiles,
 								},
-								Profiles: profiles,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestScheduledScanRequestMsg(name, cron string, profiles ...string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_ApplyScanConfig{
+					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+						Id: uuid.NewV4().String(),
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
+							ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
+								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+									ScanName:       name,
+									StrictNodeScan: true,
+									Profiles:       profiles,
+								},
+								Cron: cron,
 							},
 						},
 					},

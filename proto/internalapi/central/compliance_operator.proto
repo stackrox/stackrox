@@ -32,23 +32,28 @@ message DisableComplianceRequest {
 // ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
 message ApplyComplianceScanConfigRequest {
     message BaseScanSettings {
-        string  db_record_id                = 1;
-        string  scan_name                   = 2;
+        string              db_record_id    = 1;
+        string              scan_name       = 2;
+        repeated string     profiles        = 3;
 
-        bool    show_not_applicable         = 3;
-        bool    strict_node_scan            = 4;
-        bool    auto_apply_remediations     = 5;
-        bool    auto_update_remediations    = 6;
+        bool    show_not_applicable         = 4;
+        bool    strict_node_scan            = 5;
+        bool    auto_apply_remediations     = 6;
+        bool    auto_update_remediations    = 7;
     }
 
     message OneTimeScan {
         BaseScanSettings    scan_settings = 1;
-        repeated string     profiles      = 2;
+    }
+    message ScheduledScan {
+        BaseScanSettings    scan_settings = 1;
+        string              cron          = 2;
     }
 
-    string          id            = 1;
+    string              id              = 1;
     oneof scan_request {
-        OneTimeScan one_time_scan = 2;
+        OneTimeScan     one_time_scan   = 2;
+        ScheduledScan   scheduled_scan  = 3;
     }
 }
 
