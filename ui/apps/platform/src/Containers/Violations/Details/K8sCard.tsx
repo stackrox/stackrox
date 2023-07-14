@@ -33,7 +33,7 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
     }
 
     return (
-        <div className="pf-u-pb-md" key={message} data-testid="runtime-processes">
+        <div className="pf-u-pb-md" key={message}>
             <Card isExpanded={isExpanded} id={message} isFlat>
                 <CardHeader onExpand={onExpand}>
                     <CardTitle>{message}</CardTitle>

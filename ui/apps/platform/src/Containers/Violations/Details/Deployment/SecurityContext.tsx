@@ -2,18 +2,24 @@ import React, { ReactElement } from 'react';
 import { Card, CardBody, DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { Deployment } from 'types/deployment.proto';
 
-function SecurityContext({ deployment }): ReactElement {
-    const securityContextContainers = deployment?.containers?.filter(
-        (container) =>
-            !!(
-                container?.securityContext?.privileged ||
-                container?.securityContext?.addCapabilities.length > 0 ||
-                container?.securityContext?.dropCapabilities.length > 0
-            )
-    );
+export type SecurityContextProps = {
+    deployment: Deployment | null;
+};
+
+function SecurityContext({ deployment }: SecurityContextProps): ReactElement {
+    const securityContextContainers =
+        deployment?.containers?.filter(
+            (container) =>
+                !!(
+                    container?.securityContext?.privileged ||
+                    container?.securityContext?.addCapabilities.length > 0 ||
+                    container?.securityContext?.dropCapabilities.length > 0
+                )
+        ) ?? [];
     return (
-        <Card isFlat data-testid="security-context">
+        <Card isFlat aria-label="Security context">
             <CardBody>
                 {securityContextContainers?.length > 0
                     ? securityContextContainers.map((container, idx) => {

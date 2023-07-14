@@ -29,7 +29,7 @@ function ContainerConfiguration({ container }: ContainerConfigurationProps): Rea
     const { resources, volumes, secrets, config, image } = container;
     const { command, args } = config || {};
     return (
-        <DescriptionList data-testid="container-configuration" isHorizontal>
+        <DescriptionList isHorizontal>
             <ContainerImage image={image} />
             <Divider component="div" />
             {(command?.length > 0 || args?.length > 0) && (
@@ -38,14 +38,14 @@ function ContainerConfiguration({ container }: ContainerConfigurationProps): Rea
                         <DescriptionListItem
                             term="Commands"
                             desc={<MultilineDescription descArr={command} />}
-                            data-testid="commands"
+                            aria-label="Commands"
                         />
                     )}
                     {args?.length > 0 && (
                         <DescriptionListItem
                             term="Arguments"
                             desc={<MultilineDescription descArr={args} />}
-                            data-testid="arguments"
+                            aria-label="Arguments"
                         />
                     )}
                     <Divider component="div" />
@@ -86,7 +86,7 @@ export type ContainerConfigurationsProps = {
 function ContainerConfigurations({ deployment }: ContainerConfigurationsProps): ReactElement {
     const containers = deployment?.containers || [];
     return (
-        <Card isFlat>
+        <Card isFlat aria-label="Container configuration">
             <CardBody>
                 {containers.length > 0
                     ? containers.map((container, idx) => (
