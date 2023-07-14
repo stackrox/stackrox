@@ -810,8 +810,11 @@ class ImageScanningTest extends BaseSpecification {
             imageDigest = images.find { it.name == imageName }
             assert imageDigest?.id, "image ${imageName} not found among ${images*.name}"
         }
-        ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest?.id)
-        validateImageMetadata(imageDetail, source)
+        ImageOuterClass.Image imageDetail
+        withRetry(10, 20) {
+            imageDetail = ImageService.getImage(imageDigest?.id)
+            validateImageMetadata(imageDetail, source)
+        }
         return imageDetail
     }
 
