@@ -114,14 +114,11 @@ func insertIntoTestGGrandChild1(_ context.Context, batch *pgx.Batch, obj *storag
 }
 
 func copyFromTestGGrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestGGrandChild1) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
+	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -158,20 +155,17 @@ func copyFromTestGGrandChild1(ctx context.Context, s pgSearch.Deleter, tx *postg
 				return err
 			}
 			// clear the inserts and vals for the next batch
-			deletes = nil
+			deletes = deletes[:0]
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_g_grand_child1"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_g_grand_child1"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
 // endregion Helper functions
