@@ -45,8 +45,8 @@ function ProcessesDiscoveryCardHeader({
             data-testid={suspicious ? 'suspicious-process' : 'process'}
         >
             <div className={`p-3 ${textClass} flex flex-col`}>
-                <h1 className="font-700">{trimmedName}</h1>
-                <h2 className="text-sm">{`in container ${containerName} `}</h2>
+                <div className="font-700">{trimmedName}</div>
+                <div className="text-sm">{`in container ${containerName} `}</div>
             </div>
             <div className="flex content-center">
                 {suspicious && (
@@ -56,13 +56,18 @@ function ProcessesDiscoveryCardHeader({
                                 type="button"
                                 onClick={addBaseline}
                                 className="border rounded p-px mr-3 ml-3 border-alert-300 flex items-center hover:bg-alert-200"
+                                aria-label="Add process to baseline"
                             >
                                 <Icon.Plus className="h-4 w-4 text-alert-700" />
                             </button>
                         </Tooltip>
                     </div>
                 )}
-                <button type="button" className={`pl-3 pr-3 ${suspicious && 'text-alert-700'}`}>
+                <button
+                    type="button"
+                    className={`pl-3 pr-3 ${suspicious ? 'text-alert-700' : ''}`}
+                    aria-label="Expand or Collapse"
+                >
                     {icon}
                 </button>
             </div>

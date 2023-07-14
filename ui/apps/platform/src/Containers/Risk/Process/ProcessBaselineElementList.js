@@ -35,6 +35,7 @@ const ProcessBaselineElementList = ({ baselineKey, elements, processEpoch, setPr
                             className="flex p-1 rounded border content-center hover:bg-base-300"
                             type="button"
                             onClick={deleteCurrentProcess(element)}
+                            aria-label="Remove process from baseline"
                         >
                             <Icon.Minus className="h-4 w-4" />
                         </button>
