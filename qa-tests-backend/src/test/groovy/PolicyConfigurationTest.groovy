@@ -25,7 +25,6 @@ import services.ClusterService
 import services.ImageService
 import services.NodeService
 import services.PolicyService
-import util.Timer
 
 import org.junit.Assume
 import spock.lang.Shared
