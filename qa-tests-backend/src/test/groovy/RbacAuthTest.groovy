@@ -12,6 +12,7 @@ import services.BaseService
 import services.ClusterService
 import services.NetworkPolicyService
 import services.RoleService
+import util.Helpers
 
 import spock.lang.Shared
 import spock.lang.Tag
@@ -39,19 +40,16 @@ spec:
     // TESTING NOTE: if you specify permissions for a resource in the BAT test, then you should make sure to have
     // this map filled in for that resource to ensure proper permission testing
     static final private Map<String, Map<RoleOuterClass.Access, Closure>> RESOURCE_FUNCTION_MAP = [
-            "Cluster": [(RoleOuterClass.Access.READ_ACCESS):
-                                ( { ClusterService.getClusterId() }),
-                        (RoleOuterClass.Access.READ_WRITE_ACCESS):
-                                ( {
+            "Cluster": [(RoleOuterClass.Access.READ_ACCESS): ( { ClusterService.getClusterId() }),
+                        (RoleOuterClass.Access.READ_WRITE_ACCESS): ( {
                                     ClusterService.createCluster(
                                         "automation",
                                         "stackrox/main:latest",
                                         "central.stackrox:443")
                                 })],
-            "NetworkPolicy": [(RoleOuterClass.Access.READ_ACCESS):
-                                      ( { NetworkPolicyService.generateNetworkPolicies() }),
-                              (RoleOuterClass.Access.READ_WRITE_ACCESS):
-                                      ( {
+            "NetworkPolicy": [(RoleOuterClass.Access.READ_ACCESS): (
+                    { NetworkPolicyService.generateNetworkPolicies() }),
+                              (RoleOuterClass.Access.READ_WRITE_ACCESS): ( {
                                           def netPolMod =
                                                   new NetworkPolicyOuterClass.NetworkPolicyModification.Builder()
                                                       .setApplyYaml(NETPOL_YAML)
@@ -145,22 +143,8 @@ spec:
         useDesiredServiceAuth()
 
         "remove role and token"
-        if (resourceAccess.containsKey("NetworkPolicy") &&
-                resourceAccess.get("NetworkPolicy") == RoleOuterClass.Access.READ_WRITE_ACCESS) {
-            NetworkPolicyService.applyGeneratedNetworkPolicy(
-                    NetworkPolicyService.undoGeneratedNetworkPolicy().undoModification
-            )
-        }
-        if (testRole?.name != null) {
-            RoleService.deleteRole(testRole.name)
-        }
-        if (token?.metadata?.id != null) {
-            ApiTokenService.revokeToken(token.metadata.id)
-        }
-        def testClusterId = ClusterService.getClusterId("automation")
-        if (testClusterId != null) {
-            ClusterService.deleteCluster(testClusterId)
-        }
+
+        cleanupRoleAndToken(resourceAccess, testRole, token)
 
         where:
         "Data inputs"
@@ -178,5 +162,33 @@ spec:
          "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
          "NetworkPolicy": RoleOuterClass.Access.READ_WRITE_ACCESS,] | ["NetworkPolicy"]
+    }
+
+    private cleanupRoleAndToken(Map<String, RoleOuterClass.Access> resourceAccess,
+                                RoleOuterClass.Role testRole, GenerateTokenResponse token) {
+        if (resourceAccess.containsKey("NetworkPolicy") &&
+                resourceAccess.get("NetworkPolicy") == RoleOuterClass.Access.READ_WRITE_ACCESS) {
+            Helpers.withRetry(3, 2) {
+                NetworkPolicyService.applyGeneratedNetworkPolicy(
+                        NetworkPolicyService.undoGeneratedNetworkPolicy().undoModification
+                )
+            }
+        }
+        if (testRole?.name != null) {
+            Helpers.withRetry(3, 2) {
+                RoleService.deleteRole(testRole.name)
+            }
+        }
+        if (token?.metadata?.id != null) {
+            Helpers.withRetry(3, 2) {
+                ApiTokenService.revokeToken(token.metadata.id)
+            }
+        }
+        def testClusterId = ClusterService.getClusterId("automation")
+        if (testClusterId != null) {
+            Helpers.withRetry(3, 2) {
+                ClusterService.deleteCluster(testClusterId)
+            }
+        }
     }
 }
