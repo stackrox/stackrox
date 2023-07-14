@@ -44,6 +44,8 @@ Options:
     [qa flavor only]
   -s, --spin-cycle=<count> - repeat the test portion until a failure
     occurs or <count> is reached with no failures. [qa flavor only]
+  -w, --spin-wait=<seconds> - delay between tests when running repeat 
+    tests. default: no wait. [qa flavor only]
   -t <tag> - override 'make tag' which sets the main version to install
     and is used by some tests.
   -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
@@ -149,8 +151,8 @@ get_options() {
     # in stackrox-test container getopt supports long options
     normalized_opts=$(\
       getopt \
-        -o cdo:s:t:y \
-        --long config-only,test-only,gather-debug,spin-cycle:,orchestrator:,db: \
+        -o cdo:s:w:t:y \
+        --long config-only,test-only,gather-debug,spin-cycle:,spin-wait:,orchestrator:,db: \
         -n 'run-e2e-tests.sh' -- "$@" \
     )
 
@@ -160,6 +162,7 @@ get_options() {
     export TEST_ONLY="false"
     export GATHER_QA_TEST_DEBUG_LOGS="false"
     export SPIN_CYCLE_COUNT=1
+    export SPIN_CYCLE_WAIT=0
     export ORCHESTRATOR="k8s"
     export DATABASE="postgres"
     export PROMPT="true"
@@ -180,6 +183,10 @@ get_options() {
                 ;;
             -s | --spin-cycle)
                 export SPIN_CYCLE_COUNT="$2"
+                shift 2
+                ;;
+            -w | --spin-wait)
+                export SPIN_CYCLE_WAIT="$2"
                 shift 2
                 ;;
             -o | --orchestrator)
@@ -378,6 +385,10 @@ spin() {
         "$@"
         (( count++ )) || true
         info "Completed test cycle: $count"
+        if (( SPIN_CYCLE_COUNT > count )); then
+            info "Waiting ${SPIN_CYCLE_WAIT} seconds between test cycles to allow resources to complete deletion"
+            sleep "${SPIN_CYCLE_WAIT}"
+        fi
     done
 }
 
