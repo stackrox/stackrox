@@ -117,11 +117,7 @@ describe('Vulnerability Management Node Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    it('should display either links for node CVEs or text for No CVEs', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip(); // TODO verify and remove
-        }
-
+    it('should display either links for node CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(entitiesKey, 'node-cves', 4, 'vulnCounter');
     });
 
