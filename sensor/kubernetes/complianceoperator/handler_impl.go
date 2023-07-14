@@ -224,7 +224,7 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 
 	var complianceScan v1alpha1.ComplianceScan
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
-		err = errors.Wrapf(err, "Could not convert unstructured to compliance scan")
+		err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
