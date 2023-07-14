@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -78,7 +79,7 @@ func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *commandHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 

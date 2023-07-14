@@ -1,11 +1,13 @@
 package output
 
 import (
+	"context"
 	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -16,7 +18,7 @@ var (
 
 type outputQueueImpl struct {
 	innerQueue   chan *component.ResourceEvent
-	forwardQueue chan *central.MsgFromSensor
+	forwardQueue chan *message.ExpiringMessage
 	detector     detector.Detector
 	stopped      *atomic.Bool
 }
@@ -30,7 +32,7 @@ func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 }
 
 // ResponsesC returns the MsgFromSensor channel
-func (q *outputQueueImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (q *outputQueueImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return q.forwardQueue
 }
 
@@ -55,14 +57,27 @@ func (q *outputQueueImpl) runOutputQueue() {
 		if !more {
 			return
 		}
+
+		if msg.Context == nil {
+			msg.Context = context.Background()
+		}
+
 		for _, resourceUpdates := range msg.ForwardMessages {
-			q.forwardQueue <- &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: resourceUpdates,
+			expiringMessage := message.ExpiringMessage{
+				MsgFromSensor: &central.MsgFromSensor{
+					Msg: &central.MsgFromSensor_Event{
+						Event: resourceUpdates,
+					},
 				},
+				Context: msg.Context,
+			}
+
+			if !expiringMessage.IsExpired() {
+				q.forwardQueue <- &expiringMessage
 			}
 		}
 
+		// TODO: Don't process message in the detector if message expired
 		// The order here is important. We rely on the ReprocessDeployment being called before ProcessDeployment to remove the deployments from the deduper.
 		q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
 		for _, detectorRequest := range msg.DetectorMessages {

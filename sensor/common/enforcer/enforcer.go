@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -46,7 +47,7 @@ func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (e *enforcer) ResponsesC() <-chan *central.MsgFromSensor {
+func (e *enforcer) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 

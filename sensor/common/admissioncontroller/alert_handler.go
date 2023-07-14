@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -22,7 +23,7 @@ type AlertHandler interface {
 }
 
 type alertHandlerImpl struct {
-	output       chan *central.MsgFromSensor
+	output       chan *message.ExpiringMessage
 	stopSig      concurrency.Signal
 	centralReady concurrency.Signal
 }
@@ -53,7 +54,7 @@ func (h *alertHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (h *alertHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *alertHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.output
 }
 
@@ -80,8 +81,8 @@ func (h *alertHandlerImpl) processAlerts(alertMsg *sensor.AdmissionControlAlerts
 	}
 }
 
-func createAlertResultsMsg(alertResult *central.AlertResults) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
+func createAlertResultsMsg(alertResult *central.AlertResults) *message.ExpiringMessage {
+	return message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id: alertResult.GetDeploymentId(),
@@ -94,5 +95,5 @@ func createAlertResultsMsg(alertResult *central.AlertResults) *central.MsgFromSe
 				},
 			},
 		},
-	}
+	})
 }

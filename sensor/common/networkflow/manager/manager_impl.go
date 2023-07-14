@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
@@ -200,7 +201,7 @@ func NewManager(
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
-		sensorUpdates:     make(chan *central.MsgFromSensor),
+		sensorUpdates:     make(chan *message.ExpiringMessage),
 		publicIPs:         newPublicIPsManager(),
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
@@ -221,7 +222,7 @@ type networkFlowManager struct {
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
 
 	done          concurrency.Signal
-	sensorUpdates chan *central.MsgFromSensor
+	sensorUpdates chan *message.ExpiringMessage
 
 	publicIPs *publicIPsManager
 
@@ -248,7 +249,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 
 func (m *networkFlowManager) Notify(common.SensorComponentEvent) {}
 
-func (m *networkFlowManager) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
 }
 
@@ -299,11 +300,11 @@ func (m *networkFlowManager) enrichAndSend() {
 	select {
 	case <-m.done.Done():
 		return
-	case m.sensorUpdates <- &central.MsgFromSensor{
+	case m.sensorUpdates <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	}:
+	}):
 		return
 	}
 }
@@ -328,11 +329,11 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	select {
 	case <-m.done.Done():
 		return
-	case m.sensorUpdates <- &central.MsgFromSensor{
+	case m.sensorUpdates <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
-	}:
+	}):
 		return
 	}
 }
