@@ -65,9 +65,8 @@ class KeyValuePairs extends Component {
 
             return (
                 <div
-                    className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 last:border-b-0"
+                    className="py-3 pb-2 leading-normal border-b border-base-300 last:border-b-0"
                     key={key}
-                    data-testid={label}
                 >
                     <div className="pr-1 font-700 inline">{label}:</div>
                     <span className={`flex-1 min-w-0 ${className}`}>
