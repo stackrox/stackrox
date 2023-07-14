@@ -98,3 +98,13 @@ export function fetchReportConfigurations(): Promise<ReportConfiguration[]> {
             return response?.data?.reportConfigs ?? [];
         });
 }
+
+export function createReportConfiguration(
+    report: ReportConfiguration
+): Promise<ReportConfiguration> {
+    return axios
+        .post<ReportConfiguration>('/v2/reports/configurations', report)
+        .then((response) => {
+            return response.data;
+        });
+}

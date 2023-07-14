@@ -12,11 +12,10 @@ import {
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import set from 'lodash/set';
 
 import {
     ReportFormValues,
-    SetReportFormValues,
+    SetReportFormFieldValue,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import usePermissions from 'hooks/usePermissions';
 import { fixabilityLabels } from 'constants/reportConstants';
@@ -32,54 +31,34 @@ import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
     formValues: ReportFormValues;
-    setFormValues: SetReportFormValues;
+    setFormFieldValue: SetReportFormFieldValue;
 };
 
 function ReportParametersForm({
     formValues,
-    setFormValues,
+    setFormFieldValue,
 }: ReportParametersFormParams): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
 
     const handleTextChange = (fieldName: string) => (value: string) => {
-        setFormValues((prevValues) => {
-            const newValues = { ...prevValues };
-            set(newValues, fieldName, value);
-            return newValues;
-        });
+        setFormFieldValue(fieldName, value);
     };
 
     const handleSelectChange = (name: string, value: string) => {
-        setFormValues((prevValues) => {
-            const newValues = { ...prevValues };
-            set(newValues, name, value);
-            return newValues;
-        });
+        setFormFieldValue(name, value);
     };
 
     const handleCheckboxSelectChange = (fieldName: string) => (selection: string[]) => {
-        setFormValues((prevValues) => {
-            const newValues = { ...prevValues };
-            set(newValues, fieldName, selection);
-            return newValues;
-        });
+        setFormFieldValue(fieldName, selection);
     };
 
-    const handleDateSelection = (fieldName: string) => (_event, str) => {
-        setFormValues((prevValues) => {
-            const newValues = { ...prevValues };
-            set(newValues, fieldName, str);
-            return newValues;
-        });
+    const handleDateSelection = (fieldName: string) => (_event, selection) => {
+        setFormFieldValue(fieldName, selection);
     };
 
     const handleCollectionSelection = (fieldName: string) => (selection) => {
-        setFormValues((prevValues) => {
-            const newValues = { ...prevValues };
-            set(newValues, fieldName, selection);
-            return newValues;
-        });
+        setFormFieldValue(fieldName, selection);
     };
 
     const handleCVEsDiscoveredStartDate = handleDateSelection(

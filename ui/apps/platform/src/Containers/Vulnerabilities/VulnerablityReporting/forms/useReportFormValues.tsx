@@ -1,19 +1,25 @@
 import { Dispatch, SetStateAction, useState } from 'react';
-import { Collection } from 'services/CollectionsService';
+import cloneDeep from 'lodash/cloneDeep';
+import set from 'lodash/set';
 
+import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { ImageType } from 'types/reportConfigurationService.proto';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
     setFormValues: SetReportFormValues;
+    clearFormValues: () => void;
+    setFormFieldValue: SetReportFormFieldValue;
 };
-
-export type SetReportFormValues = Dispatch<SetStateAction<ReportFormValues>>;
 
 export type ReportFormValues = {
     reportParameters: ReportParametersFormValues;
 };
+
+export type SetReportFormValues = Dispatch<SetStateAction<ReportFormValues>>;
+
+export type SetReportFormFieldValue = (fieldName: string, value: string | string[]) => void;
 
 export type ReportParametersFormValues = {
     reportName: string;
@@ -46,9 +52,23 @@ export const defaultReportFormValues: ReportFormValues = {
 function useReportFormValues(): ReportFormValuesResult {
     const [formValues, setFormValues] = useState<ReportFormValues>(defaultReportFormValues);
 
+    function setFormFieldValue(fieldName: string, value: string | string[]) {
+        setFormValues((prevValues) => {
+            const newValues = cloneDeep(prevValues);
+            set(newValues, fieldName, value);
+            return newValues;
+        });
+    }
+
+    function clearFormValues() {
+        setFormValues(defaultReportFormValues);
+    }
+
     return {
         formValues,
         setFormValues,
+        clearFormValues,
+        setFormFieldValue,
     };
 }
 

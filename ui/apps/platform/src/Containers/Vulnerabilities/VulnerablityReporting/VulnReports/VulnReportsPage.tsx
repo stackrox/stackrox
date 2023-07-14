@@ -35,10 +35,17 @@ const reportConfigurations: ReportConfiguration[] = [
             imageTypes: ['DEPLOYED', 'WATCHED'],
             allVuln: true,
         },
-        emailConfig: {
-            notifierId: 'notifier-1',
-            mailingLists: ['bob@example.com', 'alice@example.com'],
-        },
+        notifiers: [
+            {
+                emailConfig: [
+                    {
+                        notifierId: 'notifier-1',
+                        mailingLists: ['bob@example.com', 'alice@example.com'],
+                    },
+                ],
+                notifierName: 'notifier-1',
+            },
+        ],
         resourceScope: {
             collectionScope: {
                 collectionId: 'collection-1',
