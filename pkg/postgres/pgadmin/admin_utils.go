@@ -53,6 +53,10 @@ const (
 
 // DropDB - drops a database.
 func DropDB(sourceMap map[string]string, adminConfig *postgres.Config, databaseName string) error {
+	if pgconfig.IsExternalDatabase() {
+		utils.Should(errors.New("unexpected call, should not try to drop a database from an external Postgres."))
+	}
+
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-f",
@@ -77,6 +81,10 @@ func DropDB(sourceMap map[string]string, adminConfig *postgres.Config, databaseN
 
 // CreateDB - creates a database from template with the given database name
 func CreateDB(sourceMap map[string]string, adminConfig *postgres.Config, dbTemplate, dbName string) error {
+	if pgconfig.IsExternalDatabase() {
+		utils.Should(errors.New("unexpected call, should not try to create a database from an external Postgres."))
+	}
+
 	log.Infof("CreateDB %q", dbName)
 
 	// Set the options for pg_dump from the connection config
@@ -102,26 +110,6 @@ func CreateDB(sourceMap map[string]string, adminConfig *postgres.Config, dbTempl
 
 	log.Infof("%q has been created", dbName)
 	return ExecutePostgresCmd(cmd)
-}
-
-// RenameDB - renames a database
-func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
-	log.Debugf("Renaming database %q to %q", originalDB, newDB)
-	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
-	defer cancel()
-
-	// Terminate connections to the source database.  You cannot move a database if
-	// there are open connections to it.
-	err := TerminateConnection(adminPool.Config(), originalDB)
-	if err != nil {
-		return err
-	}
-
-	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", originalDB, newDB)
-
-	_, err = adminPool.Exec(ctx, sqlStmt)
-
-	return err
 }
 
 // CheckIfDBExists - checks to see if a restore database exists
@@ -212,6 +200,10 @@ func AnalyzeDatabase(config *postgres.Config, dbName string) error {
 
 // TerminateConnection - terminates connections to the specified database
 func TerminateConnection(config *postgres.Config, dbName string) error {
+	if pgconfig.IsExternalDatabase() {
+		utils.Should(errors.New("unexpected call, should not try to terminate connections from an external Postgres."))
+	}
+
 	log.Debugf("TerminateConnection - %q", dbName)
 
 	// Connect to different database for admin functions
@@ -240,7 +232,7 @@ func GetAdminPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 		tempConfig.ConnConfig.Database = AdminDB
 	}
 
-	postgresDB, err := getPool(tempConfig)
+	postgresDB, err := GetPool(tempConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +254,7 @@ func GetClonePool(postgresConfig *postgres.Config, clone string) (postgres.DB, e
 		tempConfig.ConnConfig.Database = clone
 	}
 
-	postgresDB, err := getPool(tempConfig)
+	postgresDB, err := GetPool(tempConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +264,9 @@ func GetClonePool(postgresConfig *postgres.Config, clone string) (postgres.DB, e
 	return postgresDB, nil
 }
 
-func getPool(postgresConfig *postgres.Config) (postgres.DB, error) {
+// GetPool - returns a connection pool for the given config
+// THIS POOL SHOULD BE CLOSED ONCE ITS PURPOSE HAS BEEN FULFILLED.
+func GetPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 	var err error
 	var postgresDB postgres.DB
 

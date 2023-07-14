@@ -37,13 +37,8 @@ type Deleter interface {
 
 // PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
-	CountAllowed(ctx context.Context) (bool, error)
-	DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
-	DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
-	ExistsAllowed(ctx context.Context) (bool, error)
-	GetAllowed(ctx context.Context) (bool, error)
-	UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
-	WalkAllowed(ctx context.Context) (bool, error)
+	ReadAllowed(ctx context.Context) (bool, error)
+	WriteAllowed(ctx context.Context) (bool, error)
 }
 
 type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
@@ -123,7 +118,7 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ExistsAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil {
 			return false, err
 		} else if !ok {
 			return false, nil
@@ -153,7 +148,7 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.CountAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return 0, err
 		}
 	} else {
@@ -171,7 +166,7 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WalkAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return err
 		}
 	} else {
@@ -221,7 +216,7 @@ func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, false, err
 		}
 	} else {
@@ -251,7 +246,7 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, err
 		}
 	} else {
@@ -284,7 +279,7 @@ func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, err
 		}
 	} else {
@@ -317,7 +312,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, nil, err
 		}
 	} else {
@@ -367,7 +362,7 @@ func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.DeleteAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
 			return err
 		} else if !ok {
 			return sac.ErrResourceAccessDenied
@@ -400,7 +395,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.DeleteManyAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
 			return err
 		} else if !ok {
 			return sac.ErrResourceAccessDenied
@@ -513,7 +508,7 @@ func (s *GenericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context)
 	if !s.hasPermissionsChecker() {
 		return utils.ShouldErr(errInvalidOperation)
 	}
-	allowed, err := s.permissionChecker.UpsertAllowed(ctx)
+	allowed, err := s.permissionChecker.WriteAllowed(ctx)
 	if err != nil {
 		return err
 	}

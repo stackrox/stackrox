@@ -258,15 +258,17 @@ func main() {
 		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
-	// Need to remove the backup clone and set the current version
-	sourceMap, config, err := pgconfig.GetPostgresConfig()
-	if err != nil {
-		log.Errorf("Unable to get Postgres DB config: %v", err)
-	}
+	if !pgconfig.IsExternalDatabase() {
+		// Need to remove the backup clone and set the current version
+		sourceMap, config, err := pgconfig.GetPostgresConfig()
+		if err != nil {
+			log.Errorf("Unable to get Postgres DB config: %v", err)
+		}
 
-	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-	if err != nil {
-		log.Errorf("Failed to remove backup DB: %v", err)
+		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+		if err != nil {
+			log.Errorf("Failed to remove backup DB: %v", err)
+		}
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 

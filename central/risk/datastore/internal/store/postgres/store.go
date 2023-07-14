@@ -138,14 +138,11 @@ func insertIntoRisks(_ context.Context, batch *pgx.Batch, obj *storage.Risk) err
 }
 
 func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Risk) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
+	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -188,20 +185,17 @@ func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 				return err
 			}
 			// clear the inserts and vals for the next batch
-			deletes = nil
+			deletes = deletes[:0]
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risks"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"risks"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
 // endregion Helper functions

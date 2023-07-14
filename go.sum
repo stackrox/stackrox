@@ -136,6 +136,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/acomagu/bufpipe v1.0.4 h1:e3H4WUzM3npvo5uv95QuJM3cQspFNtFBzvJ2oNjKIDQ=
 github.com/acomagu/bufpipe v1.0.4/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
+github.com/adhocore/gronx v1.6.3 h1:bnm5vieTrY3QQPpsfB0hrAaeaHDpuZTUC2LLCVMLe9c=
+github.com/adhocore/gronx v1.6.3/go.mod h1:7oUY1WAU8rEJWmAxXR2DN0JaO4gi9khSgKjiRypqteg=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/ajg/form v1.5.1/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -1445,8 +1447,8 @@ github.com/spf13/viper v1.15.0/go.mod h1:fFcTBJxvhhzSJiZy8n+PeW6t8l+KeT/uTARa0jH
 github.com/ssgreg/nlreturn/v2 v2.1.0/go.mod h1:E/iiPB78hV7Szg2YfRgyIrk1AD6JVMTRkkxBiELzh2I=
 github.com/stackrox/cosign/v2 v2.0.0-20230524131509-aa1a890d9fb7 h1:OFgyyLUzzXukOdtCE8Sq1Ol3Sk9Qrh8ig6SzNsW/a5s=
 github.com/stackrox/cosign/v2 v2.0.0-20230524131509-aa1a890d9fb7/go.mod h1:yJXtRmWrumyQA/XPjTTjOufnNckI87mmmVxv9rtEqgE=
-github.com/stackrox/docker-registry-client v0.0.0-20230628181306-03df53267a74 h1:WCHzKEXXL61bTwH1jQS23zWWU/1+SpJBSPina7xSfSs=
-github.com/stackrox/docker-registry-client v0.0.0-20230628181306-03df53267a74/go.mod h1:iwIKehlIlCdcEJ0VWrqKoVLz3mjtEh7VkgYo3FFz6u0=
+github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a h1:juSJ9wpfERc5Arhqkgm9LMUQ8Kk8pVQFLHBQbR5Gt3E=
+github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a/go.mod h1:iwIKehlIlCdcEJ0VWrqKoVLz3mjtEh7VkgYo3FFz6u0=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
 github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7 h1:F4Gq3G5G07HQ/ECrg/+EQxFBmCTcq9ZDyLPI5LaDUKI=
