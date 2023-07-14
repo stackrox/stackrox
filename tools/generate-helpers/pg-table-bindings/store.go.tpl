@@ -243,15 +243,11 @@ func {{ template "insertFunctionName" $schema }}({{ if eq (len $schema.Children)
 {{- define "copyObject"}}
 {{- $schema := .schema }}
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
-
-    inputRows := [][]interface{}{}
-
-    var err error
-
+    inputRows := make([][]interface{}, 0, batchSize)
     {{if and (eq (len $schema.PrimaryKeys) 1) (not $schema.Parent) }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
-    var deletes []string
+    deletes := make([]string, 0, batchSize)
     {{end}}
 
     copyCols := []string {
@@ -265,7 +261,6 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
 		"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 		"to simply use the object.  %s", obj)
-
         {{/* If embedded, the top-level has the full serialized object */}}
         {{if not $schema.Parent }}
         serialized, marshalErr := obj.Marshal()
@@ -293,7 +288,6 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         if err := s.Delete(ctx, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
             return err
         }
-
         {{end}}
         {{end}}
 
@@ -306,15 +300,11 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
                 return err
             }
             // clear the inserts and vals for the next batch
-            deletes = nil
+            deletes = deletes[:0]
             {{end}}
-
-            _, err = tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows))
-
-            if err != nil {
+            if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
                 return err
             }
-
             // clear the input rows for the next batch
             inputRows = inputRows[:0]
         }
@@ -324,14 +314,13 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     for idx, obj := range objs {
         _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
         {{range $child := $schema.Children }}
-        if err = {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+        if err := {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
         {{- end}}
     }
     {{end}}
-
-    return err
+    return nil
 }
 {{range $child := $schema.Children}}{{ template "copyObject" dict "schema" $child }}{{end}}
 {{- end}}

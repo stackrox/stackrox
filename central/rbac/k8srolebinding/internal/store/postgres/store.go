@@ -168,14 +168,11 @@ func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *st
 }
 
 func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
+	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -226,14 +223,11 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 				return err
 			}
 			// clear the inserts and vals for the next batch
-			deletes = nil
+			deletes = deletes[:0]
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
@@ -242,19 +236,16 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = copyFromRoleBindingsSubjects(ctx, s, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
+		if err := copyFromRoleBindingsSubjects(ctx, s, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
 func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"role_bindings_id",
@@ -281,18 +272,15 @@ func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *p
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
 // endregion Helper functions

@@ -157,14 +157,11 @@ func insertIntoTestStructsNesteds(_ context.Context, batch *pgx.Batch, obj *stor
 }
 
 func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestStruct) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
+	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
 		"key1",
@@ -225,14 +222,11 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 				return err
 			}
 			// clear the inserts and vals for the next batch
-			deletes = nil
+			deletes = deletes[:0]
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
@@ -241,19 +235,16 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = copyFromTestStructsNesteds(ctx, s, tx, obj.GetKey1(), obj.GetNested()...); err != nil {
+		if err := copyFromTestStructsNesteds(ctx, s, tx, obj.GetKey1(), obj.GetNested()...); err != nil {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
 func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testStructKey1 string, objs ...*storage.TestStruct_Nested) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
 		"test_structs_key1",
@@ -288,18 +279,15 @@ func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *pos
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"test_structs_nesteds"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
 // endregion Helper functions
