@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -15,11 +15,8 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
-)
-
-var (
-	defaultScanSettingName = "default-" + branding.GetProductNameShort()
 )
 
 type handlerImpl struct {
@@ -142,6 +139,8 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 			return m.processOneTimeScanRequest(request.GetId(), r.OneTimeScan)
 		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
 			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
+		case *central.ApplyComplianceScanConfigRequest_RerunScan:
+			return m.processRerunScheduledScanRequest(request.GetId(), r.RerunScan)
 		default:
 			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
 		}
@@ -204,6 +203,49 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
 
+func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) bool {
+	if err := validateApplyRerunScheduledScanRequest(request); err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
+	}
+
+	ns := m.complianceOperatorInfo.GetNamespace()
+	if ns == "" {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
+	}
+
+	// Conventionally, compliance scan can be rerun by applying an annotation to ComplianceScan CR. Note that the CRs
+	// created from a scan configuration have the same name as scan configuration.
+	resI := m.client.Resource(complianceoperator.ComplianceScanGVR).Namespace(ns)
+	obj, err := resI.Get(m.ctx(), request.GetScanName(), v1.GetOptions{})
+	if err != nil || obj == nil {
+		err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, request.GetScanName())
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	var complianceScan v1alpha1.ComplianceScan
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
+		err = errors.Wrapf(err, "Could not convert unstructured to compliance scan")
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	// Apply annotation to indicate compliance scan be rerun.
+	if complianceScan.GetAnnotations() == nil {
+		complianceScan.Annotations = make(map[string]string)
+	}
+	complianceScan.Annotations[rescanAnnotation] = ""
+
+	obj, err = runtimeObjToUnstructured(&complianceScan)
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+	_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, request.GetScanName())
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+	return m.composeAndSendApplyScanConfigResponse(requestID, err)
+}
+
 func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest) bool {
 	select {
 	case <-m.disabled.Done():
@@ -212,7 +254,9 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 	case <-m.stopSignal.Done():
 		return true
 	default:
-		// TODO: Make sure default ScanSetting CR is never deleted.
+		if request.GetName() == defaultScanSettingName {
+			return m.composeAndSendDeleteResponse(request.GetId(), "", errors.Errorf("Default compliance scan configuration %q cannot be deleted", defaultScanSettingName))
+		}
 
 		// Delete ScanSetting and ScanSettingBinding custom resource. Deleting ScanSettingBindings deletes all owned resources.
 		// Each ad-hoc scan creates a unique ScanSettingBinding that reuses default ACS ScanSetting CR.
@@ -222,18 +266,18 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 			return m.composeAndSendDeleteResponse(request.GetId(), "", errors.New("Compliance operator not known"))
 		}
 		deletePolicy := v1.DeletePropagationForeground
-		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns)
-		err := scanSettingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
-		if err != nil && !kubeAPIErr.IsNotFound(err) {
-			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettings/%s", request.GetName()), err)
-		}
-
 		scanSettingBindingResourceI := m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns)
-		err = scanSettingBindingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+		err := scanSettingBindingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
 			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettingbindings/%s", request.GetName()), err)
 		}
-		return true
+
+		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns)
+		err = scanSettingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+		if err != nil && !kubeAPIErr.IsNotFound(err) {
+			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettings/%s", request.GetName()), err)
+		}
+		return m.composeAndSendDeleteResponse(request.GetId(), "", nil)
 	}
 }
 
