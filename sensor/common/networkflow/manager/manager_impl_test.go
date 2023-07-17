@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,10 +10,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
@@ -423,6 +426,93 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 	}
 }
 
+func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
+	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
+	containerID := "container-id"
+	mockCtrl := gomock.NewController(s.T())
+	m, mockEntity, _, mockDetector := createManager(mockCtrl)
+	states := []struct {
+		notify                      common.SensorComponentEvent
+		connections                 []*connectionHostnamePair
+		expectEntityLookupContainer expectFn
+		expectEntityLookupEndpoint  expectFn
+		expectDetector              expectFn
+		expectedSensorMessage       []*central.MsgFromSensor
+	}{
+		{
+			notify:      common.SensorComponentEventOfflineMode,
+			connections: []*connectionHostnamePair{createConnectionHostnamePair("hostname-1", createConnectionPair(false, false, timestamp.Now()))},
+		},
+		{
+			notify: common.SensorComponentEventCentralReachable,
+			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntity, 1, clusterentities.ContainerMetadata{
+				DeploymentID: containerID,
+			}, true),
+			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntity, 1, []clusterentities.LookupResult{
+				{
+					Entity:         networkgraph.Entity{ID: containerID},
+					ContainerPorts: []uint16{80},
+				},
+			}),
+			expectDetector: expectDetectorHelper(mockDetector, 1),
+			expectedSensorMessage: []*central.MsgFromSensor{
+				{
+					Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+						NetworkFlowUpdate: &central.NetworkFlowUpdate{
+							Updated: []*storage.NetworkFlow{
+								{
+									Props: &storage.NetworkFlowProperties{
+										SrcEntity: networkgraph.EntityForDeployment(containerID).ToProto(),
+										DstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
+											Id: containerID,
+										}).ToProto(),
+										DstPort:    80,
+										L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	fakeTicker := make(chan time.Time, 1)
+	defer close(fakeTicker)
+	go m.enrichConnections(fakeTicker)
+	for i, state := range states {
+		for _, cnn := range state.connections {
+			addHostConnection(m, cnn.hostname, cnn.conn)
+		}
+		s.Run(fmt.Sprintf("iteration %d", i), func() {
+			state.expectEntityLookupContainer.runIfSet()
+			state.expectEntityLookupEndpoint.runIfSet()
+			state.expectDetector.runIfSet()
+			m.Notify(state.notify)
+			fakeTicker <- time.Now()
+			if len(state.expectedSensorMessage) > 0 {
+				select {
+				case <-time.After(10 * time.Second):
+					s.Fail("timeout")
+				case msg, ok := <-m.sensorUpdates:
+					s.Require().True(ok, "channel should not be closed")
+					s.Assert().NotNil(msg)
+				}
+			} else {
+				select {
+				case _, ok := <-m.sensorUpdates:
+					s.Require().True(ok, "channel should not be closed")
+					s.Fail("Should not received a message")
+				case <-time.After(time.Second):
+					break
+				}
+			}
+		})
+	}
+	m.Stop(nil)
+	m.done.Wait()
+}
+
 //endregion
 
 //region Helper functions
@@ -439,6 +529,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		connectionsByHost: make(map[string]*hostConnections),
 		sensorUpdates:     make(chan *central.MsgFromSensor),
 		publicIPs:         newPublicIPsManager(),
+		centralReady:      concurrency.NewSignal(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
@@ -472,6 +563,12 @@ func expectExternalLookupHelper(mockExternalStore *mocksExternalSrc.MockStore, t
 		mockExternalStore.EXPECT().LookupByNetwork(gomock.Any()).Times(times).DoAndReturn(func(_ any) *storage.NetworkEntityInfo {
 			return retVal
 		})
+	}
+}
+
+func expectDetectorHelper(mockDetector *mocksDetector.MockDetector, times int) expectFn {
+	return func() {
+		mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any()).MinTimes(times)
 	}
 }
 
@@ -560,6 +657,33 @@ func createContainerPair(firstSeen timestamp.MicroTS) *containerPair {
 			firstSeen: firstSeen,
 		},
 	}
+}
+
+type connectionHostnamePair struct {
+	hostname string
+	conn     *connectionPair
+}
+
+func createConnectionHostnamePair(hostname string, connPair *connectionPair) *connectionHostnamePair {
+	return &connectionHostnamePair{
+		hostname: hostname,
+		conn:     connPair,
+	}
+}
+
+func addHostConnection(mgr *networkFlowManager, hostName string, connPair *connectionPair) {
+	mgr.connectionsByHostMutex.Lock()
+	defer mgr.connectionsByHostMutex.Unlock()
+	conn := *connPair.conn
+	h, ok := mgr.connectionsByHost[hostName]
+	if !ok {
+		h = &hostConnections{}
+	}
+	if h.connections == nil {
+		h.connections = make(map[connection]*connStatus)
+	}
+	h.connections[conn] = connPair.status
+	mgr.connectionsByHost[hostName] = h
 }
 
 //endregion
