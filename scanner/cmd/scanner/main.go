@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 
-	"github.com/pkg/errors"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/central/grpc/metrics"
@@ -101,7 +101,7 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	// Create identity extractors.
 	identityExtractor, err := service.NewExtractor()
 	if err != nil {
-		return nil, errors.WithMessagef(err, "identity extractor")
+		return nil, fmt.Errorf("identity extractor: %w", err)
 	}
 	// Create gRPC API service.
 	grpcSrv := grpc.NewAPI(grpc.Config{
@@ -124,14 +124,14 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	if backends.Indexer != nil {
 		s, err := indexer.NewIndexerService(backends.Indexer)
 		if err != nil {
-			return nil, errors.WithMessage(err, "indexer service")
+			return nil, fmt.Errorf("indexer service: %w", err)
 		}
 		srvs = append(srvs, s)
 	}
 	if backends.Matcher != nil {
 		s, err := matcher.NewMatcherService(backends.Matcher)
 		if err != nil {
-			return nil, errors.WithMessage(err, "matcher service")
+			return nil, fmt.Errorf("matcher service: %w", err)
 		}
 		srvs = append(srvs, s)
 	}
@@ -146,12 +146,12 @@ func createBackends(ctx context.Context) (*Backends, error) {
 	// Indexer.
 	i, err := indexer.NewIndexer(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, "indexer")
+		return nil, fmt.Errorf("indexer: %w", err)
 	}
 	// Matcher.
 	m, err := matcher.NewMatcher(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, "matcher")
+		return nil, fmt.Errorf("matcher: %w", err)
 	}
 	return &Backends{
 		Indexer: i,
