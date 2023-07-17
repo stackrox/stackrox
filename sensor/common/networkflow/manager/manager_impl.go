@@ -265,6 +265,15 @@ func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
 }
 
+func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
+	select {
+	case <-m.done.Done():
+		return false
+	case m.sensorUpdates <- message.New(msg):
+		return true
+	}
+}
+
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	for {
 		select {
@@ -290,6 +299,9 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState)
 
+	prevConns := m.enrichedConnsLastSentState
+	prevEndpoints := m.enrichedEndpointsLastSentState
+
 	m.enrichedConnsLastSentState = currentConns
 	m.enrichedEndpointsLastSentState = currentEndpoints
 
@@ -311,15 +323,13 @@ func (m *networkFlowManager) enrichAndSend() {
 	metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 	metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	log.Debugf("Flow update : %v", protoToSend)
-	select {
-	case <-m.done.Done():
-		return
-	case m.sensorUpdates <- message.New(&central.MsgFromSensor{
+	if !m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	}):
-		return
+	}) {
+		m.enrichedConnsLastSentState = prevConns
+		m.enrichedEndpointsLastSentState = prevEndpoints
 	}
 }
 
@@ -328,6 +338,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 
 	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState)
 
+	prevProcesses := m.enrichedProcessesLastSentState
 	m.enrichedProcessesLastSentState = currentProcesses
 
 	if len(updatedProcesses) == 0 {
@@ -340,15 +351,12 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 
 	metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
-	select {
-	case <-m.done.Done():
-		return
-	case m.sensorUpdates <- message.New(&central.MsgFromSensor{
+	if !m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
-	}):
-		return
+	}) {
+		m.enrichedProcessesLastSentState = prevProcesses
 	}
 }
 
