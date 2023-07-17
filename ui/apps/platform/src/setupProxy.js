@@ -45,6 +45,7 @@ module.exports = function main(app) {
 
     const proxy = proxyWithTarget(process.env.YARN_START_TARGET || 'https://localhost:8000');
     app.use('/v1', proxy);
+    app.use('/v2', proxy);
     app.use('/api', proxy);
     app.use('/docs', proxy);
     app.use('/sso', proxy);

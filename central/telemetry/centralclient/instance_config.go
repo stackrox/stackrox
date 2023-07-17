@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,9 +35,13 @@ var (
 )
 
 func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
-	key := env.TelemetryStorageKey.Setting()
-	if key == "" || env.OfflineModeEnv.BooleanSetting() {
+	if env.OfflineModeEnv.BooleanSetting() {
 		return nil, nil, nil
+	}
+	key, err := phonehome.GetKey(env.TelemetryStorageKey.Setting(),
+		env.TelemetryConfigURL.Setting())
+	if key == "" || err != nil {
+		return nil, nil, err
 	}
 
 	// k8s apiserver is not accessible in cloud service environment.
@@ -82,6 +87,7 @@ func getInstanceConfig() (*phonehome.Config, map[string]any, error) {
 			Endpoint:     env.TelemetryEndpoint.Setting(),
 			PushInterval: env.TelemetryFrequency.DurationSetting(),
 		}, map[string]any{
+			"Image Flavor":       defaults.GetImageFlavorNameFromEnv(),
 			"Central version":    version.GetMainVersion(),
 			"Chart version":      version.GetChartVersion(),
 			"Orchestrator":       orchestrator,

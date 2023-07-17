@@ -8,20 +8,4 @@ export const selectors = {
             secondRowName: 'div.rt-tr-group > .rt-tr.-even:first [data-testid="table-row-name"]',
         },
     },
-    widget: {
-        passingStandardsAcrossClusters: {
-            axisLinks: '[data-testid="standards-across-cluster"] a',
-        },
-        passingStandardsAcrossNamespaces: {
-            axisLinks: '[data-testid="standards-across-namespace"] a',
-        },
-        passingStandardsAcrossNodes: {
-            axisLinks: '[data-testid="standards-across-node"] a',
-        },
-        PCICompliance: {
-            controls:
-                '[data-testid="PCI-compliance"] .widget-detail-bullet span:contains("Controls")',
-        },
-        relatedEntities: '[data-testid="related-resource-list"]',
-    },
 };

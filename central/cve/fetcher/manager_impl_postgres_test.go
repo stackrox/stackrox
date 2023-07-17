@@ -10,7 +10,6 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
@@ -29,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestReconcileIstioCVEsInPostgres(t *testing.T) {

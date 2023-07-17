@@ -131,6 +131,14 @@ type CentralComponentSpec struct {
 	DeploymentSpec `json:",inline"`
 }
 
+// GetDB returns Central's db config
+func (c *CentralComponentSpec) GetDB() *CentralDBSpec {
+	if c == nil {
+		return nil
+	}
+	return c.DB
+}
+
 // GetPersistence returns Central's persistence config
 func (c *CentralComponentSpec) GetPersistence() *Persistence {
 	if c == nil {
@@ -431,6 +439,8 @@ type ExposureRoute struct {
 // Telemetry defines telemetry settings for Central.
 type Telemetry struct {
 	// Specifies if Telemetry is enabled.
+	//+kubebuilder:validation:Default=true
+	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Enabled *bool `json:"enabled,omitempty"`
 

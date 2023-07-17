@@ -31,4 +31,5 @@ const (
 	ComplianceOperatorScanSettingBinding
 	ComplianceOperatorRule
 	ComplianceOperatorScan
+	ComplianceOperatorInfo
 )

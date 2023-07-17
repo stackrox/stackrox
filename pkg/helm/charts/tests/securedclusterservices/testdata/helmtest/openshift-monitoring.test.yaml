@@ -3,38 +3,44 @@ server:
   - openshift-4.1.0
   - com.coreos
 tests:
-- name: "When enabled"
+- name: "When enabled (legacy)"
   set:
     enableOpenShiftMonitoring: true
     env.openshift: 4
-  tests:
-    - name: "resources are created for prometheus-operator"
-      expect: |
-        .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
-        .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
-        .servicemonitors["sensor-monitor"] | assertThat(. != null)
-        .podmonitors["collector-monitor"] | assertThat(. != null)
+  tests: &enabled-test
+  - name: "resources are created for prometheus-operator"
+    expect: |
+      .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
+      .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
+      .servicemonitors["sensor-monitor"] | assertThat(. != null)
+      .podmonitors["collector-monitor"] | assertThat(. != null)
 
-    - name: "monitoring is exposed"
-    - name: "enableOpenShiftMonitoring overrides exposeMonitoring"
-      set:
-        exposeMonitoring: false
-    - name: "enableOpenShiftMonitoring overrides x.exposeMonitoring"
-      set:
-        sensor.exposeMonitoring: false
-        collector.exposeMonitoring: false
-        admissionControl.exposeMonitoring: false
-      expect: |
-        verifyMonitoringExposed(.services.sensor)
-        verifyMonitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
-        .networkpolicys["sensor-monitoring"] | assertThat(. != null)
-        verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
-        .networkpolicys["collector-monitoring"] | assertThat(. != null)
-        .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+  - name: "monitoring is exposed"
+  - name: "enableOpenShiftMonitoring overrides exposeMonitoring"
+    set:
+      exposeMonitoring: false
+  - name: "enableOpenShiftMonitoring overrides x.exposeMonitoring"
+    set:
+      sensor.exposeMonitoring: false
+      collector.exposeMonitoring: false
+      admissionControl.exposeMonitoring: false
+    expect: |
+      verifyMonitoringExposed(.services.sensor)
+      verifyMonitoringContainerPortExposed(container(.deployments.sensor; "sensor"))
+      .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+      verifyMonitoringContainerPortExposed(container(.daemonsets.collector; "collector"))
+      .networkpolicys["collector-monitoring"] | assertThat(. != null)
+      .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
 
-    - name: "a note for the namespace label is added"
-      expect:
-        .notes | assertThat(contains("To have openshift-monitoring include metrics from the"))
+  - name: "a note for the namespace label is added"
+    expect:
+      .notes | assertThat(contains("To have openshift-monitoring include metrics from the"))
+
+- name: "When enabled"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+  tests: *enabled-test
 
 - name: "When disabled"
   set:
@@ -43,7 +49,7 @@ tests:
     - name: "resources are not created when disabled (by default)"
     - name: "resources are not created when explicitly disabled"
       set:
-        enableOpenShiftMonitoring: false
+        monitoring.openshift.enabled: false
       expect: |
         .roles["secured-cluster-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. == null)
@@ -53,7 +59,7 @@ tests:
 - name: "An error is thrown when enableOpenShiftMonitoring is true in an env that does not support it"
   expectError: true
   set:
-    enableOpenShiftMonitoring: true
+    monitoring.openshift.enabled: true
   tests:
   - name: "cannot be enabled due to default env not being openshift"
   - name: "on an explicit non-OpenShift environment"
@@ -70,4 +76,4 @@ tests:
       kubeVersion:
         version: "v1.11.0"
     expect: |
-      .error | assertThat(contains("enableOpenShiftMonitoring") and contains("but the chart is not being deployed in an OpenShift 4 cluster"))
+      .error | assertThat(contains("monitoring.openshift.enabled") and contains("but the chart is not being deployed in an OpenShift 4 cluster"))

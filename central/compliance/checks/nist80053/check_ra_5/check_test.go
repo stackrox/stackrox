@@ -3,10 +3,10 @@ package checkra5
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
+	"go.uber.org/mock/gomock"
 )
 
 type alert struct {

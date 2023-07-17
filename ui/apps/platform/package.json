@@ -25,11 +25,7 @@
         "classnames": "^2.3.2",
         "computed-style-to-inline-style": "^3.0.0",
         "connected-react-router": "^6.9.2",
-        "core-js": "^3.1.4",
-        "cytoscape": "^3.21.1",
-        "cytoscape-cose-bilkent": "^4.0.0",
-        "cytoscape-node-html-label": "^1.2.2",
-        "cytoscape-popper": "^2.0.0",
+        "core-js": "^3.31.1",
         "d3-axis": "^1.0.12",
         "d3-brush": "^3.0.0",
         "d3-polygon": "^3.0.1",
@@ -54,7 +50,6 @@
         "monaco-editor": "^0.21.3",
         "monaco-editor-webpack-plugin": "^2.1.0",
         "monaco-yaml": "^4.0.4",
-        "normalizr": "^3.6.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
@@ -65,11 +60,9 @@
         "react-collapsible": "^2.8.1",
         "react-color": "^2.19.3",
         "react-copy-to-clipboard": "^5.0.3",
-        "react-cytoscapejs": "^1.2.1",
         "react-dnd": "^14.0.3",
         "react-dnd-html5-backend": "^14.0.1",
         "react-dom": "^17.0.2",
-        "react-dropzone": "^11.3.1",
         "react-feather": "^2.0.9",
         "react-helmet": "^6.1.0",
         "react-modal": "^3.12.1",
@@ -84,7 +77,6 @@
         "react-router-prop-types": "^1.0.5",
         "react-select": "^2.0.0",
         "react-spinners": "^0.10.4",
-        "react-table": "^7.6.2",
         "react-table-6": "^6.11.0",
         "react-toastify": "^7.0.3",
         "react-transition-group": "^4.4.1",
@@ -99,13 +91,8 @@
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
         "tippy.js": "^6.3.7",
-        "typeface-open-sans": "^1.1.13",
-        "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.8.1",
         "yup": "^1.2.0"
-    },
-    "resolutions": {
-        "react-cytoscapejs/cytoscape": "^3.17.0"
     },
     "scripts": {
         "clean": "rm -rf ./cypress/test-results",
@@ -140,7 +127,7 @@
         "@types/segment-analytics": "^0.0.34",
         "autoprefixer": "^10.2.5",
         "babel-eslint": "^10.1.0",
-        "cypress": "^12.15.0",
+        "cypress": "^12.17.1",
         "eslint": "^7.32.0",
         "eslint-config-airbnb": "^18.2.1",
         "eslint-config-airbnb-typescript": "12.3.1",
@@ -175,9 +162,6 @@
         "typescript": "^5.1.5"
     },
     "browserslist": [
-        ">0.2%",
-        "not dead",
-        "not ie <= 11",
-        "not op_mini all"
+        "Chrome >= 80"
     ]
 }

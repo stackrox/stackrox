@@ -108,6 +108,7 @@ import (
 	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	reportService "github.com/stackrox/rox/central/reports/service"
+	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -257,15 +258,17 @@ func main() {
 		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
-	// Need to remove the backup clone and set the current version
-	sourceMap, config, err := pgconfig.GetPostgresConfig()
-	if err != nil {
-		log.Errorf("Unable to get Postgres DB config: %v", err)
-	}
+	if !pgconfig.IsExternalDatabase() {
+		// Need to remove the backup clone and set the current version
+		sourceMap, config, err := pgconfig.GetPostgresConfig()
+		if err != nil {
+			log.Errorf("Unable to get Postgres DB config: %v", err)
+		}
 
-	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-	if err != nil {
-		log.Errorf("Failed to remove backup DB: %v", err)
+		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+		if err != nil {
+			log.Errorf("Failed to remove backup DB: %v", err)
+		}
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
@@ -275,7 +278,7 @@ func main() {
 	}
 
 	// Start the prometheus metrics server
-	pkgMetrics.NewDefaultHTTPServer(pkgMetrics.CentralSubsystem).RunForever()
+	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
@@ -377,8 +380,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processBaselineService.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
-		reportService.Singleton(),
 		roleService.Singleton(),
+		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
@@ -401,7 +404,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
-		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton())
+		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

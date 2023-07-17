@@ -41,5 +41,18 @@
         "value": "1"
         }
     ],
-    "priority": "0"
+    "imagePullSecrets": [],
+    "serviceAccount": "ip-masq-agent",
+    "processes": [],
+    "priority": "0",
+    "serviceAccountPermissionLevel": "NONE",
+    "automountServiceAccountToken": true,
+    "hostNetwork": false,
+    "hostPid": false,
+    "hostIpc": false,
+    "runtimeClass": "",
+    "tolerations": [],
+    "ports": [],
+    "stateTimestamp": "1688993859040137",
+    "riskScore": 5.7972984
 }

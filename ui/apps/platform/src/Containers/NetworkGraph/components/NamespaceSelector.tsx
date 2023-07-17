@@ -16,13 +16,13 @@ import {
 } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Namespace } from 'hooks/useFetchClusterNamespacesForPermissions';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
+import { NamespaceScopeObject } from 'services/RolesService';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import { getDeploymentLookupMap, getDeploymentsAllowedByNamespaces } from '../utils/hierarchyUtils';
 
 type NamespaceSelectorProps = {
-    namespaces?: Namespace[];
+    namespaces?: NamespaceScopeObject[];
     selectedNamespaces?: string[];
     selectedDeployments?: string[];
     deploymentsByNamespace?: NamespaceWithDeployments[];

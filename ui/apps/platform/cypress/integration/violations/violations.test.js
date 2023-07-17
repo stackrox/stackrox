@@ -9,6 +9,7 @@ import {
 
 import {
     clickDeploymentTabWithFixture,
+    exportAndWaitForNetworkPolicyYaml,
     interactAndWaitForSortedViolationsResponses,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
@@ -56,7 +57,6 @@ describe('Violations', () => {
         visitViolationsWithFixture('alerts/alerts.json');
         visitViolationFromTableWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(selectors.details.page);
         cy.get(selectors.details.title).should('have.text', 'Misuse of iptables');
         cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" deployment');
     });
@@ -125,7 +125,7 @@ describe('Violations', () => {
 
         cy.get(selectors.deployment.overview);
         cy.get(selectors.deployment.containerConfiguration);
-        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+        cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
         );
         cy.get(selectors.deployment.securityContext);
@@ -138,9 +138,50 @@ describe('Violations', () => {
 
         cy.get(selectors.deployment.containerConfiguration);
         // TODO need more positive and negative assertions to contrast deployments in this and the previous test.
-        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+        cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
         );
+    });
+
+    it('should show network policy details for all policies in the namespace of the target deployment', () => {
+        // TODO - Don't fail on exceptions in the console. This is needed due to the exceptions thrown
+        //        from the Monaco editor when it first loads. This should be removed once the Monaco
+        // .      editor errors are fixed.
+        cy.on('uncaught:exception', () => false);
+
+        visitViolationWithFixture('alerts/alertWithEmptyContainerConfig.json');
+        clickDeploymentTabWithFixture('alerts/deploymentWithEmptyContainerConfig.json');
+
+        cy.get(selectors.deployment.networkPolicy).scrollIntoView();
+
+        // Check for substrings in the YAML code editor
+        cy.get(`${selectors.deployment.networkPolicy} button:contains("central-db")`).click();
+        cy.get(`${selectors.deployment.networkPolicyModal} *:contains("Policy name: central-db")`);
+        cy.get(`${selectors.deployment.networkPolicyModal}`)
+            .invoke('text')
+            .should('to.match', /name:\s*central-db/)
+            .should('to.match', /namespace:\s*stackrox/);
+
+        // Check for substrings in the downloaded file
+        exportAndWaitForNetworkPolicyYaml('central-db.yml', (fileContents) => {
+            expect(fileContents).to.match(/name:\s*central-db/);
+            expect(fileContents).to.match(/namespace:\s*stackrox/);
+        });
+
+        // Close the modal and try another network policy
+        cy.get(`${selectors.deployment.networkPolicyModal} button[aria-label="Close"]`).click();
+
+        cy.get(`${selectors.deployment.networkPolicy} button:contains("sensor")`).click();
+        cy.get(`${selectors.deployment.networkPolicyModal} *:contains("Policy name: sensor")`);
+        cy.get(`${selectors.deployment.networkPolicyModal}`)
+            .invoke('text')
+            .should('to.match', /name:\s*sensor/)
+            .should('to.match', /namespace:\s*stackrox/);
+
+        exportAndWaitForNetworkPolicyYaml('sensor.yml', (fileContents) => {
+            expect(fileContents).to.match(/name:\s*sensor/);
+            expect(fileContents).to.match(/namespace:\s*stackrox/);
+        });
     });
 
     it('should have policy information in the Policy Details tab', () => {

@@ -44,6 +44,8 @@ Options:
     [qa flavor only]
   -s, --spin-cycle=<count> - repeat the test portion until a failure
     occurs or <count> is reached with no failures. [qa flavor only]
+  -w, --spin-wait=<seconds> - delay between tests when running repeat 
+    tests. default: no wait. [qa flavor only]
   -t <tag> - override 'make tag' which sets the main version to install
     and is used by some tests.
   -o, --orchestrator=<orchestrator> - choose the cluster orchestrator.
@@ -88,6 +90,7 @@ handle_tag_requirements() {
     fi
 
     export ROXCTL_FOR_TEST="$ROOT/bin/linux/roxctl-$tag"
+    mkdir -p "$ROOT/bin/linux"
 
     if [[ ! -f "$ROXCTL_FOR_TEST" ]]; then
         local roxctl_image="quay.io/stackrox-io/roxctl:$tag"
@@ -132,7 +135,6 @@ if [[ ! -f "/i-am-rox-ci-image" ]]; then
       -w "$ROOT" \
       -e "KUBECONFIG=${kubeconfig}" \
       -v "${kubeconfig}:${kubeconfig}:z" \
-      -v "${HOME}/.gradle/caches:/root/.gradle/caches:z" \
       -v "${GOPATH}/pkg/mod/cache:/go/pkg/mod/cache:z" \
       -v "${QA_TEST_DEBUG_LOGS}:${QA_TEST_DEBUG_LOGS}:z" \
       -e "BUILD_TAG=${BUILD_TAG:-}" \
@@ -149,8 +151,8 @@ get_options() {
     # in stackrox-test container getopt supports long options
     normalized_opts=$(\
       getopt \
-        -o cdo:s:t:y \
-        --long config-only,test-only,gather-debug,spin-cycle:,orchestrator:,db: \
+        -o cdo:s:w:t:y \
+        --long config-only,test-only,gather-debug,spin-cycle:,spin-wait:,orchestrator:,db: \
         -n 'run-e2e-tests.sh' -- "$@" \
     )
 
@@ -160,6 +162,7 @@ get_options() {
     export TEST_ONLY="false"
     export GATHER_QA_TEST_DEBUG_LOGS="false"
     export SPIN_CYCLE_COUNT=1
+    export SPIN_CYCLE_WAIT=0
     export ORCHESTRATOR="k8s"
     export DATABASE="postgres"
     export PROMPT="true"
@@ -180,6 +183,10 @@ get_options() {
                 ;;
             -s | --spin-cycle)
                 export SPIN_CYCLE_COUNT="$2"
+                shift 2
+                ;;
+            -w | --spin-wait)
+                export SPIN_CYCLE_WAIT="$2"
                 shift 2
                 ;;
             -o | --orchestrator)
@@ -214,7 +221,7 @@ get_options() {
             ;;
     esac
     export ROX_POSTGRES_DATASTORE="true"
-    export SUITE="${2:-}"
+    export TASK_OR_SUITE="${2:-}"
     export CASE="${3:-}"
 
     export_job_name
@@ -224,8 +231,8 @@ get_options() {
     fi
 
     if [[ "$FLAVOR" == "e2e" ]]; then
-        if [[ -n "${suite}" || -n "${case}" ]]; then
-            die "ERROR: Suite and Case are not supported with e2e flavor"
+        if [[ -n "${TASK_OR_SUITE}" || -n "${CASE}" ]]; then
+            die "ERROR: Target, Suite and Case are not supported with e2e flavor"
         fi
         if [[ "${CONFIG_ONLY}" == "true" || "${TEST_ONLY}" == "true" ]]; then
             die "--config-only and --test-only are not supported with e2e flavor"
@@ -332,8 +339,9 @@ _EOWARNING_
 
 run_qa_flavor() {
     source "$ROOT/qa-tests-backend/scripts/run-part-1.sh"
+    setup_podsecuritypolicies_config
 
-    if [[ -z "$SUITE" && -z "$CASE" ]]; then
+    if [[ -z "${TASK_OR_SUITE}" && -z "${CASE}" ]]; then
         (
             if [[ "${TEST_ONLY}" == "false" ]]; then
                 config_part_1
@@ -352,10 +360,16 @@ run_qa_flavor() {
         info "Config reuse succeeded."
 
         pushd qa-tests-backend
-        if [[ -z "$CASE" ]]; then
-            spin ./gradlew test --console=plain --tests="$SUITE"
+        if [[ -z "${CASE}" ]]; then
+            if [[ "${TASK_OR_SUITE}" =~ ^[A-Z] ]]; then
+                # Suite (.groovy test Specification)
+                spin ./gradlew test --console=plain --tests="${TASK_OR_SUITE}"
+            else
+                # build.gradle task
+                spin ./gradlew "${TASK_OR_SUITE}" --console=plain
+            fi
         else
-            spin ./gradlew test --console=plain --tests="$SUITE.$CASE"
+            spin ./gradlew test --console=plain --tests="${TASK_OR_SUITE}.${CASE}"
         fi
         popd
     fi
@@ -371,6 +385,10 @@ spin() {
         "$@"
         (( count++ )) || true
         info "Completed test cycle: $count"
+        if (( SPIN_CYCLE_COUNT > count )); then
+            info "Waiting ${SPIN_CYCLE_WAIT} seconds between test cycles to allow resources to complete deletion"
+            sleep "${SPIN_CYCLE_WAIT}"
+        fi
     done
 }
 

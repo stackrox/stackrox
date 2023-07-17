@@ -38,5 +38,22 @@ describe('Delegate Image Scanning', () => {
         getInputByLabel('Specified registries').click();
         getInputByLabel('All registries').should('not.be.checked');
         getInputByLabel('Specified registries').should('be.checked');
+
+        // choose the first cluster in the list as the default
+        cy.get('.cluster-select').click();
+        cy.get('.cluster-select .pf-c-select__menu .pf-c-select__menu-item').then(
+            ($clusterNames) => {
+                expect($clusterNames.length).to.be.gte(0);
+            }
+        );
+        cy.get('.cluster-select .pf-c-select__menu .pf-c-select__menu-item')
+            .first()
+            .then(($firstCluster) => {
+                const firstClusterName = $firstCluster.text();
+
+                $firstCluster.click();
+
+                cy.get('.cluster-select').should('have.text', firstClusterName);
+            });
     });
 });

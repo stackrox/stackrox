@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/audit"
 	clusterMockDS "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 // While it would've been nice to use the proto object, because of the oneofs and enums json unmarshalling into that object is a struggle

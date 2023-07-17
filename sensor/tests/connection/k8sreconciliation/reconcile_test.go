@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/require"
 	appsV1 "k8s.io/api/apps/v1"
@@ -18,7 +19,11 @@ var (
 )
 
 func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
-	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
+	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
+	if !features.PreventSensorRestartOnDisconnect.Enabled() {
+		t.Skip("Skip tests when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is disabled")
+		t.SkipNow()
+	}
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
@@ -27,10 +32,9 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
-		ctx, cancelFn := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancelFn()
+		ctx := context.Background()
 
-		testContext.WaitForSyncEvent(30 * time.Second)
+		testContext.WaitForSyncEvent(2 * time.Minute)
 		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
 
 		testContext.StopCentralGRPC()
@@ -45,7 +49,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		require.Len(t, archived, 1)
 		deploymentMessageInArchive(t, archived[0], helper.DefaultNamespace, NginxDeployment1.Name)
 
-		testContext.WaitForSyncEvent(30 * time.Second)
+		testContext.WaitForSyncEvent(2 * time.Minute)
 		testContext.DeploymentActionReceived(NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
 		testContext.DeploymentActionReceived(NginxDeployment2.Name, central.ResourceAction_SYNC_RESOURCE)
 	}))

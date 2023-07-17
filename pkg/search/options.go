@@ -199,6 +199,8 @@ var (
 	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
 
+	ComplianceOperatorVersion = newFieldLabel("Compliance Operator Version")
+
 	// Node search fields
 	Node             = newFieldLabel("Node")
 	NodeID           = newFieldLabel("Node ID")

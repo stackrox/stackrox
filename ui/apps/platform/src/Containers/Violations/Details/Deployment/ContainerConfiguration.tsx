@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { Card, CardBody, DescriptionList, Divider, Flex, FlexItem } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { Container, Deployment } from 'types/deployment.proto';
 import ContainerVolumes from './ContainerVolumes';
 import ContainerSecrets from './ContainerSecrets';
 import ContainerResources from './ContainerResources';
@@ -20,11 +21,15 @@ function MultilineDescription({ descArr }) {
     );
 }
 
-function ContainerConfiguration({ container }): ReactElement {
+type ContainerConfigurationProps = {
+    container: Container;
+};
+
+function ContainerConfiguration({ container }: ContainerConfigurationProps): ReactElement {
     const { resources, volumes, secrets, config, image } = container;
     const { command, args } = config || {};
     return (
-        <DescriptionList data-testid="container-configuration" isHorizontal>
+        <DescriptionList isHorizontal>
             <ContainerImage image={image} />
             <Divider component="div" />
             {(command?.length > 0 || args?.length > 0) && (
@@ -33,14 +38,14 @@ function ContainerConfiguration({ container }): ReactElement {
                         <DescriptionListItem
                             term="Commands"
                             desc={<MultilineDescription descArr={command} />}
-                            data-testid="commands"
+                            aria-label="Commands"
                         />
                     )}
                     {args?.length > 0 && (
                         <DescriptionListItem
                             term="Arguments"
                             desc={<MultilineDescription descArr={args} />}
-                            data-testid="arguments"
+                            aria-label="Arguments"
                         />
                     )}
                     <Divider component="div" />
@@ -74,12 +79,17 @@ function ContainerConfiguration({ container }): ReactElement {
     );
 }
 
-function ContainerConfigurations({ deployment }): ReactElement {
+export type ContainerConfigurationsProps = {
+    deployment: Deployment | null;
+};
+
+function ContainerConfigurations({ deployment }: ContainerConfigurationsProps): ReactElement {
+    const containers = deployment?.containers || [];
     return (
-        <Card isFlat>
+        <Card isFlat aria-label="Container configuration">
             <CardBody>
-                {deployment?.containers?.length > 0
-                    ? deployment.containers.map((container, idx) => (
+                {containers.length > 0
+                    ? containers.map((container, idx) => (
                           // eslint-disable-next-line react/no-array-index-key
                           <ContainerConfiguration container={container} key={idx} />
                       ))

@@ -58,7 +58,7 @@ function ViolationDetailsPage(): ReactElement {
         return <ViolationNotFoundPage />;
     }
 
-    const { policy, deployment, resource, commonEntityInfo } = alert;
+    const { policy, deployment, resource, commonEntityInfo, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
     const { name: entityName } = resource || deployment || {};
     const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
@@ -70,11 +70,7 @@ function ViolationDetailsPage(): ReactElement {
                 <Title headingLevel="h1">{title}</Title>
                 <Title headingLevel="h2">{`in "${entityName as string}" ${resourceType}`}</Title>
             </PageSection>
-            <PageSection
-                variant="default"
-                padding={{ default: 'noPadding' }}
-                data-testid="violation-details-page"
-            >
+            <PageSection variant="default" padding={{ default: 'noPadding' }}>
                 <Tabs
                     mountOnEnter
                     activeKey={activeTabKey}
@@ -90,17 +86,17 @@ function ViolationDetailsPage(): ReactElement {
                             />
                         </PageSection>
                     </Tab>
-                    {alert?.enforcement && (
+                    {enforcement && (
                         <Tab eventKey={1} title={<TabTitleText>Enforcement</TabTitleText>}>
                             <PageSection variant="default">
-                                <EnforcementDetails alert={alert} />
+                                <EnforcementDetails alert={alert} enforcement={enforcement} />
                             </PageSection>
                         </Tab>
                     )}
-                    {alert?.deployment && (
+                    {deployment && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
                             <PageSection variant="default">
-                                <DeploymentDetails deployment={alert.deployment} />
+                                <DeploymentDetails alertDeployment={deployment} />
                             </PageSection>
                         </Tab>
                     )}

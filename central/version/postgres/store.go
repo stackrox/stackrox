@@ -17,7 +17,7 @@ import (
 
 const (
 	getStmt = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
-	// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+	// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 	// the older database.  In that case we will need to process the serialized data.
 	getPreviousStmt = "SELECT serialized FROM versions LIMIT 1"
 	deleteStmt      = "DELETE FROM versions"
@@ -31,7 +31,7 @@ var (
 // Store access versions in database
 type Store interface {
 	Get(ctx context.Context) (*storage.Version, bool, error)
-	// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+	// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 	// the older database.  In that case we will need to process the serialized data.
 	GetPrevious(ctx context.Context) (*storage.Version, bool, error)
 	Upsert(ctx context.Context, obj *storage.Version) error
@@ -146,7 +146,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 }
 
 // GetPrevious returns the object, if it exists from central_previous
-// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 // the older database.  In that case we will need to process the serialized data.
 func (s *storeImpl) GetPrevious(ctx context.Context) (*storage.Version, bool, error) {
 	return pgutils.Retry3(func() (*storage.Version, bool, error) {
@@ -154,7 +154,7 @@ func (s *storeImpl) GetPrevious(ctx context.Context) (*storage.Version, bool, er
 	})
 }
 
-// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 // the older database.  In that case we will need to process the serialized data.
 func (s *storeImpl) retryableGetPrevious(ctx context.Context) (*storage.Version, bool, error) {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS)

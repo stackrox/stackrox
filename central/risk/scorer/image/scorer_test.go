@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	imageMultiplier "github.com/stackrox/rox/central/risk/multipliers/image"
 	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestScore(t *testing.T) {

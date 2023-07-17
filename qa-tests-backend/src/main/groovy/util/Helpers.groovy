@@ -20,7 +20,7 @@ class Helpers {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                log.debug("Caught exception. Retrying in ${pauseSecs}s. " + t)
+                log.debug("Caught exception. Retrying in ${pauseSecs}s (attempt ${i} of ${retries}): " + t)
             }
             sleep pauseSecs * 1000
         }

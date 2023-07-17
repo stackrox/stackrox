@@ -1,12 +1,12 @@
 import React from 'react';
 import { Select, SelectOption } from '@patternfly/react-core';
 
-import { Cluster } from 'types/cluster.proto';
+import { ClusterScopeObject } from 'services/RolesService';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { ClusterIcon } from '../common/NetworkGraphIcons';
 
-type ClusterSelectorProps = {
-    clusters: Cluster[];
+export type ClusterSelectorProps = {
+    clusters: ClusterScopeObject[];
     selectedClusterName?: string;
     searchFilter: Partial<Record<string, string | string[]>>;
     setSearchFilter: (newFilter: Partial<Record<string, string | string[]>>) => void;

@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
@@ -6,7 +5,8 @@ import {
     verifyVulnerabilityManagementDashboardCVEs,
     visitVulnerabilityManagementDashboard,
     visitVulnerabilityManagementDashboardFromLeftNav,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 function verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
     entitiesKey,
@@ -22,7 +22,7 @@ function verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
 }
 
 function getViewAllSelectorForWidget(widgetHeading) {
-    return `${selectors.getWidget(widgetHeading)} ${selectors.viewAllButton}`;
+    return `${selectors.getWidget(widgetHeading)} a:contains("View All")`;
 }
 
 function selectTopRiskyOption(optionText) {

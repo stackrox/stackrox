@@ -51,6 +51,8 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		return err
 	}
 
+	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
+
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		proxy.InjectProxyEnvVars(translation.New(mgr.GetClient()), proxyEnv),

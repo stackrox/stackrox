@@ -9,19 +9,6 @@
     background: var(--base-400);
 }
 
-.theme-dark .network-panel {
-    filter: brightness(0.95);
-}
-
-.theme-dark .network-grid-bg {
-    filter: invert(0.97) hue-rotate(185deg) brightness(1.7) saturate(0.6);
-}
-
-.theme-dark .cytoscape-container {
-    filter: brightness(0.96) contrast(1) hue-rotate(0deg) saturate(7);
-    opacity: 0.75;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -303,63 +290,6 @@ h6 {
     cursor: text !important;
 }
 
-.bg-inherit {
-    background: inherit;
-}
-
-.left-navigation {
-    width: 133px;
-}
-
-.text-critical-severity {
-    color: hsl(7, 50%, 55%);
-}
-
-.text-high-severity {
-    color: hsl(349, 50%, 78%);
-}
-
-.network-grid-bg {
-    background-image: linear-gradient(hsla(216, 62%, 85%, 0.52) 1px, transparent 1px),
-        linear-gradient(90deg, hsla(216, 22%, 69%, 0.2) 1px, transparent 1px),
-        linear-gradient(hsla(216, 33%, 77%, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, hsla(216, 67%, 81%, 0.1) 1px, transparent 1px),
-        radial-gradient(#f0f5ff 45%, #e2ebff 97%);
-    background-size: 32px 32px, 32px 32px, 4px 4px, 4px 4px, 100% 100%;
-    background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px, -2px -2px;
-}
-
-/**
-  Outline for Simulation Mode
- */
-.simulator-mode.success:before,
-.simulator-mode.error:before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    pointer-events: none;
-}
-
-.simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-    box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-}
-
-.simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-    box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-}
-
-.top-navigation {
-    box-shadow: inset 0px -1px 0 0 var(--base-400);
-}
-
 .__react_component_tooltip.type-dark.place-top:after {
     border-top-color: inherit !important;
 }
@@ -370,15 +300,15 @@ h6 {
 }
 
 .btn-sm {
-    @apply btn-class py-1 text-xs !important;
+    @apply btn-class py-1 text-sm !important;
 }
 
 .btn {
-    @apply btn-class py-2 text-sm !important;
+    @apply btn-class py-2 !important;
 }
 
 .btn-icon {
-    @apply flex py-2 px-2 rounded-sm text-center text-sm items-center justify-center bg-base-200 border !important;
+    @apply flex py-2 px-2 rounded-sm text-center items-center justify-center bg-base-200 border !important;
 }
 
 .btn-success {
@@ -419,53 +349,6 @@ h6 {
 
 .btn-base:hover {
     @apply border-base-400 bg-base-200 text-base-700 !important;
-}
-
-/* Network Graph CSS Classes */
-
-.pin-network-zoom-buttons-left {
-    left: -150px !important;
-}
-
-.pin-network-update-label-left {
-    left: -175px !important;
-}
-
-.btn-graph-refresh circle {
-    fill: hsla(225, 51%, 52%, 1);
-    stroke: hsla(225, 51%, 52%, 1);
-}
-
-.node circle {
-    fill: hsl(232, 35%, 38%);
-}
-
-.node.internetAccess circle:first-child {
-    fill: hsl(316, 93%, 89%);
-}
-
-.text-separator {
-    overflow: hidden;
-}
-
-.text-separator:before,
-.text-separator:after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 1px;
-    overflow: hidden;
-    border: 1px solid currentColor;
-}
-
-.text-separator:before {
-    transform: translateX(-100%) translateY(-50%);
-    top: 50%;
-}
-
-.text-separator:after {
-    transform: translateY(-50%);
-    top: 50%;
 }
 
 /* React Select override */
@@ -551,15 +434,6 @@ h6 {
 
 .theme-dark .ReactTable .rt-th {
     @apply bg-base-0 !important; /* th also needs background for horizontal scrolling beyond tr width */
-}
-
-.theme-dark .network-panel .ReactTable .rt-thead.-header .rt-tr {
-    background: none !important;
-    box-shadow: none !important;
-}
-
-.theme-dark .network-panel .ReactTable .rt-th {
-    background: none !important;
 }
 
 .theme-dark .widget .ReactTable .rt-thead.-header .rt-tr,
@@ -1110,11 +984,6 @@ h6 {
 }
 .drag-grip::after {
     content: '... ... ... ... ... ... ...';
-}
-
-.network-overlay-bg-shadow {
-    box-shadow: 0 0 30px 0 rgba(81, 119, 255, 0.23);
-    background: rgba(81, 119, 255, 0.23);
 }
 
 .border-spacing-0 {

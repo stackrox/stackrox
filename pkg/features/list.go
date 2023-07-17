@@ -21,12 +21,6 @@ var (
 	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
 	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
-	// NetworkGraphPatternFly enables the PatternFly version of NetworkGraph. (used in the front-end app only)
-	NetworkGraphPatternFly = registerFeature("Enable PatternFly version of NetworkGraph", "ROX_NETWORK_GRAPH_PATTERNFLY", true)
-
-	// ClairV4Scanner enables Clair v4 as an Image Integration option
-	ClairV4Scanner = registerFeature("Enable Clair v4 as an Image Integration option", "ROX_CLAIR_V4_SCANNING", true)
-
 	// RoxSyslogExtraFields enables user to add additional key value pairs in syslog alert notification in cef format.
 	RoxSyslogExtraFields = registerFeature("Enable extra fields for syslog integration", "ROX_SYSLOG_EXTRA_FIELDS", true)
 

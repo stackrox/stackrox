@@ -41,7 +41,9 @@ export function visitFromLeftNavExpandable(
     interactAndWaitForResponses(
         () => {
             cy.get(`${navSelectors.navExpandable}:contains("${expandableTitle}")`).click();
-            cy.get(`${navSelectors.nestedNavLinks}:contains("${itemText}")`).click();
+            cy.get(
+                `${navSelectors.navExpandable}:contains("${expandableTitle}") + ${navSelectors.nestedNavLinks}:contains("${itemText}")`
+            ).click();
         },
         routeMatcherMap,
         staticResponseMap

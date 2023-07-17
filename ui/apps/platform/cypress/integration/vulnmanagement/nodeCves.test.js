@@ -1,4 +1,4 @@
-import { selectors } from '../../constants/VulnManagementPage';
+import { selectors } from './VulnerabilityManagement.selectors';
 import withAuth from '../../helpers/basicAuth';
 import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
@@ -13,7 +13,7 @@ import {
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'node-cves';
 

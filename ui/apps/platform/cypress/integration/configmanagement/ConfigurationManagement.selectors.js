@@ -2,7 +2,7 @@ export const dashboardSelectors = {
     tileLinks: "[data-testid='tile-link']",
     tileLinkValue: "[data-testid='tile-link-value']",
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
-    rbacVisibilityDropdown: 'button:contains("RBAC")',
+    rbacVisibilityDropdown: 'button:contains("Role-Based Access Control")',
     getMenuListItem: (name) => {
         return `[data-testid="menu-list"] [data-testid="${name}"]`;
     },

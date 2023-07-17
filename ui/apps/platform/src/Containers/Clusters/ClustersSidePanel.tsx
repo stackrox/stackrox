@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowRight, Check } from 'react-feather';
+import { Button } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
@@ -8,7 +8,6 @@ import { Message } from '@stackrox/ui-components';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-import PanelButton from 'Components/PanelButton';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
@@ -251,17 +250,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             setMessageState(null);
             setSubmissionError('');
             saveCluster(selectedCluster)
-                .then((response) => {
-                    /*
-                    setSelectedCluster(response.cluster);
-                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
-                    */
-                    // TODO After saveCluster returns response without normalize,
-                    // something like the preceding commented lines should replace the following:
+                .then((clusterResponse) => {
                     analyticsTrack(CLUSTER_CREATED);
-                    const newId = response.response.result.cluster; // really is nested like this
+                    const newId = clusterResponse.cluster.id;
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
+                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
 
                     setWizardStep('DEPLOYMENT');
 
@@ -311,26 +305,19 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
 
     // @TODO: improve error handling when adding support for new clusters
     const isForm = wizardStep === 'FORM';
-    const iconClassName = 'h-4 w-4';
 
     const panelButtons = isBlocked ? (
         <div />
     ) : (
-        <PanelButton
-            icon={
-                isForm ? (
-                    <ArrowRight className={iconClassName} />
-                ) : (
-                    <Check className={iconClassName} />
-                )
-            }
-            className={`mr-2 btn ${isForm ? 'btn-base' : 'btn-success'}`}
+        <Button
+            variant={isForm ? 'secondary' : 'primary'}
+            isSmall
+            className="pf-u-mr-md"
             onClick={onNext}
             disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
-            tooltip={isForm ? 'Next' : 'Finish'}
         >
             {isForm ? 'Next' : 'Finish'}
-        </PanelButton>
+        </Button>
     );
 
     return (

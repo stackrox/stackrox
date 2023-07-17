@@ -180,7 +180,6 @@ const integrationsList: IntegrationDescriptorMap = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
-            featureFlagDependency: 'ROX_CLAIR_V4_SCANNING',
         },
         {
             label: 'Sonatype Nexus',

@@ -101,7 +101,7 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 	for _, depMap := range ps.pods {
 		for _, podMap := range depMap {
 			for _, pod := range podMap {
-				ret = append(ret, pod)
+				ret = append(ret, pod.Clone())
 			}
 		}
 	}

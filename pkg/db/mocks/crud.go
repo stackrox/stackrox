@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	proto "github.com/gogo/protobuf/proto"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockCrud is a mock of Crud interface.

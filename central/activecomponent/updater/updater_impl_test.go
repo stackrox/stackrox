@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	acMocks "github.com/stackrox/rox/central/activecomponent/datastore/mocks"
 	aggregatorPkg "github.com/stackrox/rox/central/activecomponent/updater/aggregator"
@@ -27,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type indicatorModel struct {

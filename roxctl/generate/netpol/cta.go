@@ -13,6 +13,10 @@ import (
 	v1 "k8s.io/api/networking/v1"
 )
 
+const (
+	generatedNetworkPolicyLabel = `network-policy-buildtime-generator.stackrox.io/generated`
+)
+
 type netpolGenerator interface {
 	PoliciesFromFolderPath(string) ([]*v1.NetworkPolicy, error)
 	Errors() []npguard.FileProcessingError
@@ -55,6 +59,10 @@ func (cmd *generateNetpolCommand) ouputNetpols(recommendedNetpols []*v1.NetworkP
 	var mergedPolicy string
 	yamlPolicies := make([]string, 0, len(recommendedNetpols))
 	for _, netpol := range recommendedNetpols {
+		if netpol.Labels == nil {
+			netpol.Labels = make(map[string]string)
+		}
+		netpol.Labels[generatedNetworkPolicyLabel] = "true"
 		yamlPolicy, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: netpol}.ToYaml()
 		if err != nil {
 			return errors.Wrap(err, "error converting Network Policy object to YAML")

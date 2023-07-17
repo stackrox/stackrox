@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	storageMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	_ "github.com/stackrox/rox/central/notifiers/all"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNotifierService(t *testing.T) {

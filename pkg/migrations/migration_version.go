@@ -19,6 +19,9 @@ const (
 	MigrationVersionFile     = "migration_version.yaml"
 	migrationVersionFileMode = 0644
 	lastRocksDBVersion       = "3.74.0"
+
+	// LastPostgresPreviousVersion last software version that uses central_previous
+	LastPostgresPreviousVersion = "4.1.0"
 )
 
 var (

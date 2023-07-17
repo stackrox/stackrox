@@ -1,4 +1,5 @@
 import queryString from 'qs';
+import sortBy from 'lodash/sortBy';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
@@ -276,9 +277,7 @@ export function fetchNetworkPoliciesInNamespace(clusterId, namespaceId) {
         method: 'GET',
         url: `${networkPoliciesBaseUrl}?cluster_id=${clusterId}&namespace=${namespaceId}`,
     };
-    return axios(options).then((response) => ({
-        response: response.data,
-    }));
+    return axios(options).then((response) => response.data.networkPolicies);
 }
 
 /**
@@ -291,9 +290,21 @@ export function fetchNetworkPolicies(policyIds) {
     const networkPoliciesPromises = policyIds.map((policyId) =>
         axios.get(`${networkPoliciesBaseUrl}/${policyId}`)
     );
-    return Promise.all(networkPoliciesPromises).then((response) => ({
-        response: response.map((networkPolicy) => networkPolicy.data),
-    }));
+    return Promise.allSettled(networkPoliciesPromises).then((responses) => {
+        const responseData = {
+            policies: [],
+            errors: [],
+        };
+
+        responses.forEach((response) => {
+            if (response.status === 'fulfilled') {
+                responseData.policies.push(response.value.data);
+            } else {
+                responseData.errors.push(response.reason);
+            }
+        });
+        return responseData;
+    });
 }
 
 /**
@@ -336,14 +347,25 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
     });
 }
 
-export function fetchNetworkPoliciesByClusterId(clusterId) {
-    const params = queryString.stringify({ clusterId });
+/**
+ * Fetches the network policies applied to deployments in the given scope.
+ * @param {!String} clusterId The cluster ID.
+ * @param {!String} deploymentQuery A search filter string.
+ * @returns {Promise<import("../types/networkPolicy.proto").NetworkPolicy[]>}
+ */
+export function fetchNetworkPoliciesByClusterId(clusterId, deploymentQuery) {
+    if (clusterId === '') {
+        return Promise.resolve([]);
+    }
+    // The `deploymentQuery` param functions identically to the general `query` param used in
+    // other API calls and accepts the same search filter syntax.
+    const params = queryString.stringify({ clusterId, deploymentQuery });
     const options = {
         method: 'GET',
         url: `${networkPoliciesBaseUrl}?${params}`,
     };
     return axios(options).then((response) => {
-        return response?.data?.networkPolicies;
+        return sortBy(response?.data?.networkPolicies, 'name') ?? [];
     });
 }
 
@@ -366,7 +388,7 @@ export function getUndoNetworkModification(clusterId) {
  * Generates a modification to policies based on a graph.
  *
  * @param {!String} clusterId
- * @param {!Object} query
+ * @param {!String} query
  * @param {!String} networkDataSince
  * @param {Boolean} excludePortsProtocols
  * @returns {Promise<Object, Error>}

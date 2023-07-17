@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/driftprogramming/pgxpoolmock"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	"github.com/stackrox/rox/central/globaldb"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestDebugService(t *testing.T) {

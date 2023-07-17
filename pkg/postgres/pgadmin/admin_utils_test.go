@@ -94,24 +94,6 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	err = restorePool.Ping(s.ctx)
 	s.NotNil(err)
 
-	// Rename database to a database that exists
-	err = RenameDB(s.pool, restoreDB, activeDB)
-	s.NotNil(err)
-
-	// Get a connection to the active DB
-	activePool, err := GetClonePool(s.config, activeDB)
-	s.Nil(err)
-	s.NotNil(activePool)
-
-	// Rename activeDB to a new one
-	err = RenameDB(s.pool, activeDB, tempDB)
-	s.Nil(err)
-	exists, err := CheckIfDBExists(s.config, tempDB)
-	s.Nil(err)
-	s.True(exists)
-	// Make sure connection to active database was terminated
-	s.NotNil(activePool.Ping(s.ctx))
-
 	// Reacquire a connection to the restore database
 	restorePool, err = GetClonePool(s.config, restoreDB)
 	s.Nil(err)

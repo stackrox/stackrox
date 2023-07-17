@@ -11,10 +11,8 @@ export const authResponsePrefix = '/auth/response/';
 export const authorizeRoxctlPath = '/authorize-roxctl';
 
 export const dashboardPath = `${mainPath}/dashboard`;
-export const networkBasePath = `${mainPath}/network`;
-export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
-export const networkBasePathPF = `${mainPath}/network-graph`;
-export const networkPathPF = `${networkBasePathPF}/:detailType?/:detailId?`;
+export const networkBasePath = `${mainPath}/network-graph`;
+export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const clustersBasePath = `${mainPath}/clusters`;
@@ -165,8 +163,7 @@ const vulnerabilitiesPathToLabelMap = {
 
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
-    [networkBasePath]: 'Network Graph (1.0)',
-    [networkBasePathPF]: 'Network Graph (2.0)',
+    [networkBasePath]: 'Network Graph (2.0)',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     ...vulnerabilitiesPathToLabelMap,
