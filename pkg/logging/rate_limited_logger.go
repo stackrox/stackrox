@@ -47,6 +47,9 @@ func GetRateLimitedLogger() *RateLimitedLogger {
 
 var (
 	onEvict = func(key string, evictedLog *rateLimitedLog) {
+		if evictedLog == nil {
+			return
+		}
 		if evictedLog.count.Load() > 0 {
 			evictedLog.log()
 		}
@@ -182,6 +185,26 @@ func getTrimmedFilePath(path string) string {
 	return trimmedPath
 }
 
+func (rl *RateLimitedLogger) registerTraceAndLog(
+	level zapcore.Level,
+	limiter string,
+	key string,
+	payload string,
+	file string,
+	line int,
+) {
+	log := newRateLimitedLog(
+		rl.logger,
+		level,
+		limiter,
+		payload,
+		file,
+		line,
+	)
+	rl.rateLimitedLogs.Add(key, log)
+	log.log()
+}
+
 func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
 	payload := fmt.Sprintf(template, args...)
 	_, file, line, ok := runtime.Caller(2)
@@ -192,18 +215,12 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	key := getLogKey(limiter, level, file, line, payload)
 	if throttledLog, found := rl.rateLimitedLogs.Get(key); found && throttledLog != nil {
 		throttledLog.count.Add(1)
-	} else {
-		log := newRateLimitedLog(
-			rl.logger,
-			level,
-			limiter,
-			payload,
-			file,
-			line,
-		)
+	} else if found && throttledLog == nil {
+		// There is something wrong in the cache. Clean up.
 		rl.rateLimitedLogs.Remove(key)
-		rl.rateLimitedLogs.Add(key, log)
-		log.log()
+		rl.registerTraceAndLog(level, limiter, key, payload, file, line)
+	} else {
+		rl.registerTraceAndLog(level, limiter, key, payload, file, line)
 	}
 }
 
