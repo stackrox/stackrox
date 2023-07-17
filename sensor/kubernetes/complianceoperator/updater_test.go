@@ -17,7 +17,7 @@ import (
 
 const (
 	// Max time to receive info status. You may want to increase it if you plan to step through the code with debugger.
-	responseTimeout = 500 * time.Second
+	responseTimeout = 5 * time.Second
 	defaultNS       = "openshift-compliance"
 	customNS        = "la-la-land"
 )

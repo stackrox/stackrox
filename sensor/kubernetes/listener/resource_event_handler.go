@@ -88,13 +88,13 @@ func (k *listenerImpl) handleAllEvents() {
 		} else {
 			log.Infof("initializing compliance operator informers")
 			crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-			complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.CheckResultGVR).Informer()
+			complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResultGVR).Informer()
 			complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
 			profileLister = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Lister()
 
 			complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
 			complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.RuleGVR).Informer()
-			complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanGVR).Informer()
+			complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScanGVR).Informer()
 			complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
 		}
 	}

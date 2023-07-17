@@ -194,23 +194,28 @@ run_proxy_tests() {
     fi
 
     local server_name="$1"
+    local ping_endpoint="v1/ping"
 
     info "Test HTTP access to plain HTTP proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-    local license_status
-    license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f http://"${server_name}":10080/v1/metadata | jq -r '.licenseStatus')"
-    echo "Got license status ${license_status} from server"
-    [[ "$license_status" == "VALID" ]]
+    local ping_response_http
+    ping_response_http="$(
+        curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
+        -f \
+        http://"${server_name}":10080/"${ping_endpoint}" | jq -r '.status')"
+    echo "Got ping response '${ping_response_http}' from '${ping_endpoint}'"
+    [[ "${ping_response_http}" == "ok" ]]
 
     info "Test HTTPS access to multiplexed TLS proxy"
     # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-    license_status="$(
+    local ping_response_https
+    ping_response_https="$(
         curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
         --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
         -f \
-        https://"${server_name}":10443/v1/metadata | jq -r '.licenseStatus')"
-    echo "Got license status ${license_status} from server"
-    [[ "$license_status" == "VALID" ]]
+        https://"${server_name}":10443/"${ping_endpoint}" | jq -r '.status')"
+    echo "Got ping response '${ping_response_https}' from '${ping_endpoint}'"
+    [[ "${ping_response_https}" == "ok" ]]
 
     info "Test roxctl access to proxies"
     local proxies=(
