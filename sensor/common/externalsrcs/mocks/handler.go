@@ -7,7 +7,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -15,6 +14,7 @@ import (
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	net "github.com/stackrox/rox/pkg/net"
 	common "github.com/stackrox/rox/sensor/common"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.

@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	net "github.com/stackrox/rox/pkg/net"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockEntityStore is a mock of EntityStore interface.

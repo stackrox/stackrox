@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,6 +20,7 @@ import (
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
