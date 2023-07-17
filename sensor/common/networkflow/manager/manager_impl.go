@@ -43,6 +43,7 @@ var (
 	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
 
 	emptyProcessInfo = processInfo{}
+	tickerTime       = time.Second * 30
 )
 
 type hostConnections struct {
@@ -224,6 +225,8 @@ type networkFlowManager struct {
 	done          concurrency.Signal
 	sensorUpdates chan *message.ExpiringMessage
 
+	enricherTicker *time.Ticker
+
 	publicIPs *publicIPsManager
 
 	policyDetector detector.Detector
@@ -234,7 +237,8 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (m *networkFlowManager) Start() error {
-	go m.enrichConnections()
+	m.enricherTicker = time.NewTicker(tickerTime)
+	go m.enrichConnections(m.enricherTicker.C)
 	go m.publicIPs.Run(&m.done, m.clusterEntities)
 	return nil
 }
@@ -253,14 +257,12 @@ func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
 }
 
-func (m *networkFlowManager) enrichConnections() {
-	ticker := time.NewTicker(time.Second * 30)
-
+func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	for {
 		select {
 		case <-m.done.WaitC():
 			return
-		case <-ticker.C:
+		case <-tickerC:
 			m.enrichAndSend()
 
 			if env.ProcessesListeningOnPort.BooleanSetting() {
