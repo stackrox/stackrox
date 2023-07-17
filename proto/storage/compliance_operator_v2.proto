@@ -4,9 +4,11 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "storage/schedule.proto";
+import "storage/user.proto";
 
 package storage;
-
 
 // Next Tag: 13
 message ComplianceOperatorProfileV2 {
@@ -40,4 +42,37 @@ message ComplianceOperatorRuleV2 {
     string              description  = 9;
     string              rationale    = 10;
     string              fixes        = 11;
+}
+
+// Next Tag: 15
+message ComplianceOperatorScanSettingV2 {
+    enum NodeRole {
+        INFRA = 0;
+        WORKER = 1;
+        MASTER = 2;
+    }
+
+    string                        name                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    bool                          auto_apply_remediations  = 2;
+    bool                          auto_update_remediations = 3;
+    bool                          one_time_scan            = 4;
+    map<string, string>           labels                   = 5;
+    map<string, string>           annotations              = 6;
+    message Profile {
+        string                    profile_id               = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
+    }
+    repeated Profile              profiles                 = 7;
+    message ClusterScanStatus {
+        string                    cluster_id               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+        repeated string           errors                   = 2;
+    }
+    repeated Cluster              clusters                 = 8;
+    repeated NodeRole             node_roles               = 9;
+    bool                          strict_node_scan         = 10;
+    // Starting point for schedule will probably have to build upon it
+    storage.Schedule              schedule                 = 11;
+    google.protobuf.Timestamp     created_time             = 12;
+    google.protobuf.Timestamp     last_updated_time        = 13;
+    // Most recent user to update the scan settings
+    SlimUser                      created_by               = 14;
 }
