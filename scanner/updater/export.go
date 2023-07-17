@@ -57,7 +57,7 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 
-	osvFac := osv.Factory
+	osvFac := osv.Factory{}
 
 	cfgs := map[string]driver.ConfigUnmarshaler{
 		"debian": func(v interface{}) error {
@@ -87,7 +87,7 @@ func Export(ctx context.Context, outputDir string) error {
 		"alpine": alpineFac,
 		"rhel":   rhelFac,
 		"ubuntu": ubuntuFac,
-		"osv":    osvFac,
+		"osv":    &osvFac,
 	}
 
 	// create temp folder
