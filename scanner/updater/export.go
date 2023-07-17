@@ -8,16 +8,13 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
+	_ "github.com/quay/claircore/updater/defaults"
 	"github.com/quay/claircore/updater/osv"
 	"github.com/quay/zlog"
 	"github.com/stackrox/stackrox/scanner/v4/updater/manual"
@@ -27,22 +24,18 @@ import (
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context, outputDir string) error {
-	var updaters []driver.Updater
+	var outOfTree []driver.Updater
 
-	// Append updater sets directly to the updaters
+	// Append updater sets directly to the outOfTree
 	appendUpdaterSet := func(updaterSet driver.UpdaterSet, err error) {
 		if err != nil {
 			zlog.Error(ctx).Err(err).Send()
 			return
 		}
-		updaters = append(updaters, updaterSet.Updaters()...)
+		outOfTree = append(outOfTree, updaterSet.Updaters()...)
 	}
 
-	appendUpdaterSet(aws.UpdaterSet(ctx))
 	appendUpdaterSet(manual.UpdaterSet(ctx, nil))
-	appendUpdaterSet(oracle.UpdaterSet(ctx))
-	appendUpdaterSet(photon.UpdaterSet(ctx))
-	appendUpdaterSet(suse.UpdaterSet(ctx))
 
 	alpineFac, err := alpine.NewFactory(ctx)
 	if err != nil {
@@ -126,7 +119,8 @@ func Export(ctx context.Context, outputDir string) error {
 
 	updaterStore, err := jsonblob.New()
 	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
-		updates.WithOutOfTree(updaters),
+		updates.WithEnabled([]string{"osv", "oracle", "photon", "suse"}),
+		updates.WithOutOfTree(outOfTree),
 	)
 	if err != nil {
 		return err
