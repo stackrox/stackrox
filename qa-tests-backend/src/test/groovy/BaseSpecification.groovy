@@ -227,6 +227,7 @@ class BaseSpecification extends Specification {
     private long testSpecStartTimeMillis
 
     def setupSpec() {
+        MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testsuite")
 
@@ -286,8 +287,9 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
+        MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
-        log.info("Starting testcase")
+        log.info("Starting testcase: ${name.getMethodName()}")
 
         // Make sure to use or revert back to the desired central gRPC auth
         // before each test.
