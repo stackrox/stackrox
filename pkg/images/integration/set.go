@@ -25,10 +25,8 @@ type Set interface {
 
 // NewSet returns a new Set instance.
 func NewSet(reporter integrationhealth.Reporter) Set {
-	var registryFactory registries.Factory
-	if !env.DisableRegistryRepoList.BooleanSetting() {
-		registryFactory = registries.NewFactory(registries.FactoryOptions{})
-	} else {
+	registryFactory := registries.NewFactory(registries.FactoryOptions{})
+	if env.DisableRegistryRepoList.BooleanSetting() {
 		registryFactory = registries.NewFactory(registries.FactoryOptions{
 			CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
 		})
