@@ -87,7 +87,8 @@ func initializeLogging() error {
 		return err
 	}
 	logger := zerolog.New(os.Stdout).
-		Level(zerolog.DebugLevel).With().
+		Level(zerolog.DebugLevel).
+		With().
 		Timestamp().
 		Str("host", hostname).
 		Logger()
