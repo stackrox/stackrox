@@ -49,7 +49,7 @@ const ProcessBaselineList = ({ process, processEpoch, setProcessEpoch }) => {
             key={containerName}
             className="bg-base-100 text-base-600 rounded border border-base-400"
         >
-            <div className="text-base-600 font-700 text-lg flex justify-between items-center border-b border-base-300 p-3">
+            <div className="text-base-600 font-700 flex justify-between items-center border-b border-base-300 p-3">
                 <span>{key.containerName}</span>
                 <Tooltip content={isLocked ? unlockTooltipText : lockTooltipText}>
                     <div>
@@ -61,6 +61,7 @@ const ProcessBaselineList = ({ process, processEpoch, setProcessEpoch }) => {
                             }`}
                             type="button"
                             onClick={toggleCurrentProcessLock}
+                            aria-label="Lock baseline"
                         >
                             <Icon.Lock className="h-4 w-4" />
                         </button>
@@ -72,6 +73,7 @@ const ProcessBaselineList = ({ process, processEpoch, setProcessEpoch }) => {
                             }`}
                             type="button"
                             onClick={toggleCurrentProcessLock}
+                            aria-label="Unlock baseline"
                         >
                             <Icon.Unlock className="h-4 w-4" />
                         </button>

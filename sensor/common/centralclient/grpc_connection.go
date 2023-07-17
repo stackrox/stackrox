@@ -65,23 +65,23 @@ func (f *centralConnectionFactoryImpl) Reset() {
 	f.okSignal.Reset()
 }
 
-func (f *centralConnectionFactoryImpl) pollMetadata() error {
+func (f *centralConnectionFactoryImpl) pingCentral() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	// Metadata result doesn't matter, as long as central is reachable.
-	_, err := f.httpClient.GetMetadata(ctx)
+	// Ping result doesn't matter, as long as Central is reachable.
+	_, err := f.httpClient.GetPing(ctx)
 	return err
 }
 
-// waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
-// or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
-// will exit).
+// waitUntilCentralIsReady blocks until Central responds to a ping or until the
+// retry budget is exhausted, in which case the sensor is marked as stopped and
+// the program will exit.
 func (f *centralConnectionFactoryImpl) waitUntilCentralIsReady() error {
 	exponential := backoff.NewExponentialBackOff()
 	exponential.MaxElapsedTime = 5 * time.Minute
 	exponential.MaxInterval = 32 * time.Second
 	err := backoff.RetryNotify(func() error {
-		return f.pollMetadata()
+		return f.pingCentral()
 	}, exponential, func(err error, d time.Duration) {
 		log.Infof("Check Central status failed: %s. Retrying after %s...", err, d.Round(time.Millisecond))
 	})

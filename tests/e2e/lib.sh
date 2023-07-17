@@ -632,18 +632,18 @@ wait_for_api() {
         API_PORT=443
     fi
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
-    METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
-    info "METADATA_URL is set to ${METADATA_URL}"
+    PING_URL="https://${API_ENDPOINT}/v1/ping"
+    info "PING_URL is set to ${PING_URL}"
 
     set +e
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
     # shellcheck disable=SC2034
     for i in $(seq 1 60); do
-        metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
-        metadata_exitstatus="$?"
-        status="$(echo "$metadata" | jq '.licenseStatus' -r)"
-        if [[ "$metadata_exitstatus" -eq "0" && "$status" != "RESTARTING" ]]; then
+        pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
+        pong_exitstatus="$?"
+        status="$(echo "$pong" | jq -r '.status')"
+        if [[ "$pong_exitstatus" -eq "0" && "$status" == "ok" ]]; then
             NUM_SUCCESSES_IN_A_ROW=$((NUM_SUCCESSES_IN_A_ROW + 1))
             if [[ "${NUM_SUCCESSES_IN_A_ROW}" == "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
                 break
@@ -684,11 +684,12 @@ _record_build_info() {
         return
     fi
 
+    require_environment "ROX_PASSWORD"
+
     local build_info
 
     local metadata_url="https://${API_ENDPOINT}/v1/metadata"
-    local metadata
-    releaseBuild="$(curl -skS "${metadata_url}" | jq -r '.releaseBuild')"
+    releaseBuild="$(curl -skS -u "admin:${ROX_PASSWORD}" "${metadata_url}" | jq -r '.releaseBuild')"
 
     if [[ "$releaseBuild" == "true" ]]; then
         build_info="release"
