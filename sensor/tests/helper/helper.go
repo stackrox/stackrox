@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -621,6 +623,12 @@ type CentralConfig struct {
 }
 
 func (c *TestContext) startSensorInstance(env *envconf.Config) {
+	if buildinfo.ReleaseBuild {
+		c.t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
+		c.t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
+		c.t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
+		c.t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
+	}
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).

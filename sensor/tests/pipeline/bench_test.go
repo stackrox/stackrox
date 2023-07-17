@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -77,6 +78,10 @@ func randString(n int) string {
 }
 
 func Benchmark_Pipeline(b *testing.B) {
+	if buildinfo.ReleaseBuild {
+		b.Skip("Skip benchmark in release builds")
+		b.SkipNow()
+	}
 	b.StopTimer()
 
 	setupOnce.Do(func() {
