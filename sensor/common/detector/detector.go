@@ -387,7 +387,7 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 				},
 			}
 
-			// TODO: Add context to detector message
+			// TODO(ROX-17326): Add context to detector message
 			expiringMessage := &message.ExpiringMessage{
 				MsgFromSensor: msg,
 				Context:       context.TODO(),
@@ -492,7 +492,7 @@ func createAlertResultsMsg(action central.ResourceAction, alertResults *central.
 		},
 	}
 
-	// TODO: Add context to detector messages
+	// TODO(ROX-17326): Add context to detector messages
 	return &message.ExpiringMessage{
 		MsgFromSensor: msgFromSensor,
 		Context:       context.TODO(),
