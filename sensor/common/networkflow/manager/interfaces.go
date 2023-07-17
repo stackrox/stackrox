@@ -5,6 +5,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
+// EntityStore interface to the clusterentities.Store
+//
 //go:generate mockgen-wrapper
 type EntityStore interface {
 	LookupByContainerID(string) (clusterentities.ContainerMetadata, bool)
