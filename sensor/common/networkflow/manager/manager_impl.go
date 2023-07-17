@@ -284,12 +284,6 @@ func (m *networkFlowManager) resetLastSentState() {
 	m.enrichedProcessesLastSentState = nil
 }
 
-func (m *networkFlowManager) getCurrentStates() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS) {
-	m.lastSentStateMutex.RLock()
-	defer m.lastSentStateMutex.RUnlock()
-	return m.enrichedConnsLastSentState, m.enrichedEndpointsLastSentState, m.enrichedProcessesLastSentState
-}
-
 func (m *networkFlowManager) swapConnectionStates(newConns map[networkConnIndicator]timestamp.MicroTS, newEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
 	m.lastSentStateMutex.Lock()
 	defer m.lastSentStateMutex.Unlock()
@@ -328,10 +322,6 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
 
-	prevConns, prevEndpoints, _ := m.getCurrentStates()
-
-	m.swapConnectionStates(currentConns, currentEndpoints)
-
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
 	}
@@ -347,15 +337,15 @@ func (m *networkFlowManager) enrichAndSend() {
 		m.policyDetector.ProcessNetworkFlow(flow)
 	}
 
-	metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
-	metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	log.Debugf("Flow update : %v", protoToSend)
-	if !m.sendToCentral(&central.MsgFromSensor{
+	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
 	}) {
-		m.swapConnectionStates(prevConns, prevEndpoints)
+		m.swapConnectionStates(currentConns, currentEndpoints)
+		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
+		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	}
 }
 
@@ -363,10 +353,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	currentProcesses := m.currentEnrichedProcesses()
 
 	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
-
-	_, _, prevProcesses := m.getCurrentStates()
-
-	m.swapProcessesState(currentProcesses)
 
 	if len(updatedProcesses) == 0 {
 		return
@@ -377,13 +363,13 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		Time:                      types.TimestampNow(),
 	}
 
-	metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
-	if !m.sendToCentral(&central.MsgFromSensor{
+	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
 	}) {
-		m.swapProcessesState(prevProcesses)
+		m.swapProcessesState(currentProcesses)
+		metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
 	}
 }
 
