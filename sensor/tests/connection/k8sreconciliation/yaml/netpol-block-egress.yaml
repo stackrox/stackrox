@@ -1,0 +1,11 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: block-all-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx-2
+  policyTypes:
+     - Egress
+
