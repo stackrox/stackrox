@@ -469,6 +469,8 @@ function launch_central {
 
 function launch_sensor {
     local k8s_dir="$1"
+    local sensor_chart_version_override="$2"
+    local sensor_chart_dir_override="$3"
     local common_dir="${k8s_dir}/../common"
 
     local extra_config=()
@@ -597,13 +599,13 @@ function launch_sensor {
 
       local helm_chart="$k8s_dir/sensor-deploy/chart"
 
-      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
-        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
+      if [[ -n "${sensor_chart_dir_override}" ]]; then
+        helm_chart="${sensor_chart_dir_override}"
       fi
 
-      if [[ -n "${SENSOR_CHART_VERSION_OVERRIDE}" ]]; then
+      if [[ -n "${sensor_chart_version_override}" ]]; then
         helm_args+=(
-          --version="${SENSOR_CHART_VERSION_OVERRIDE}"
+          --version="${sensor_chart_version_override}"
         )
       fi
 

@@ -28,7 +28,7 @@ deploy_stackrox() {
     setup_client_TLS_certs "${1:-}"
     record_build_info
 
-    deploy_sensor
+    deploy_sensor "$1" "$2"
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
@@ -48,7 +48,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
     ci_export CENTRAL_CHART_VERSION_OVERRIDE "$1"
-    ci_export SENSOR_CHART_VERSION_OVERRIDE "$2"
+    sensor_chart_version_override="$2"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
     ci_export DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS "true"
@@ -69,12 +69,12 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     fi
 
     if [[ $helm_charts =~ $sensor_regex ]]; then
-        ci_export SENSOR_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-secured-cluster-services"
+        sensor_chart_dir_override="stackrox-oss/stackrox-secured-cluster-services"
     else
         echo "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
     fi
 
-    deploy_stackrox
+    deploy_stackrox sensor_chart_version_override sensor_chart_dir_override
 
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
     ci_export SENSOR_CHART_DIR_OVERRIDE ""
@@ -228,7 +228,7 @@ deploy_sensor() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/sensor.sh"
+        "$ROOT/${DEPLOY_DIR}/sensor.sh" "$1" "$2"
     fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
