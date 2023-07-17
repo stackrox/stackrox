@@ -29,6 +29,8 @@ const (
 	DefaultExpiredVulnReqRetention = 90
 	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
 	DefaultDecommissionedClusterRetentionDays = 0
+	// DefaultReportRetentionWindow number of days to retain reports
+	DefaultReportRetentionWindow = 7
 )
 
 var (
@@ -48,6 +50,7 @@ var (
 			},
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		DefaultReportRetentionWindow:        DefaultReportRetentionWindow,
 	}
 )
 
