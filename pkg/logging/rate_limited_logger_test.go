@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/logging/internal/lru"
 	"github.com/stackrox/rox/pkg/logging/mocks"
 	"github.com/stretchr/testify/suite"
+	gomock "go.uber.org/mock/gomock"
 	"go.uber.org/zap/zapcore"
 )
 
