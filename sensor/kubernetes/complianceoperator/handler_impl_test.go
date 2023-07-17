@@ -1,6 +1,7 @@
 package complianceoperator
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -201,6 +202,107 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanAlreadyExists() {
 	s.assert(expected, actual)
 }
 
+func (s *ManagerTestSuite) TestProcessDeleteScanConfigSuccess() {
+	// create
+	msg := getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	// delete
+	msg = getTestDeleteScanConfigMsg("midnight")
+	expected = expectedResponse{
+		id: msg.GetComplianceRequest().GetDeleteScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessDeleteScanConfigDefaultConfig() {
+	msg := getTestDeleteScanConfigMsg(defaultScanSettingName)
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetDeleteScanConfig().GetId(),
+		errSubstr: "cannot be deleted",
+	}
+
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessDeleteScanConfigDisabled() {
+	msg := getDisableComplianceMsg()
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
+	}
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	msg = getTestDeleteScanConfigMsg("fake")
+	expected = expectedResponse{
+		id:        msg.GetComplianceRequest().GetDeleteScanConfig().GetId(),
+		errSubstr: "Compliance is disabled",
+	}
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessDeleteScanConfigNotFound() {
+	msg := getTestDeleteScanConfigMsg("midnight")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetDeleteScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
+	// create
+	complianceScan := &v1alpha1.ComplianceScan{
+		TypeMeta: v1.TypeMeta{
+			Kind:       complianceoperator.ScanSettingGVK.Kind,
+			APIVersion: complianceoperator.GetGroupVersion().String(),
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "midnight",
+			Namespace: "ns",
+		},
+	}
+	obj, err := runtimeObjToUnstructured(complianceScan)
+	s.Require().NoError(err)
+	_, err = s.client.Resource(complianceoperator.ComplianceScanGVR).Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
+	s.Require().NoError(err)
+
+	// rerun
+	msg := getTestRerunScanMsg("midnight")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestProcessRerunScanNotFound() {
+	msg := getTestRerunScanMsg("midnight")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "namespaces/ns/compliancescans/midnight not found",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
 func (s *ManagerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
@@ -304,7 +406,7 @@ func getDisableComplianceMsg() *central.MsgToSensor {
 	}
 }
 
-func getDeleteScanConfigMsg(name string) *central.MsgToSensor {
+func getTestDeleteScanConfigMsg(name string) *central.MsgToSensor {
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ComplianceRequest{
 			ComplianceRequest: &central.ComplianceRequest{
@@ -312,6 +414,25 @@ func getDeleteScanConfigMsg(name string) *central.MsgToSensor {
 					DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
 						Id:   uuid.NewV4().String(),
 						Name: name,
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestRerunScanMsg(name string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_ApplyScanConfig{
+					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+						Id: uuid.NewV4().String(),
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_RerunScan{
+							RerunScan: &central.ApplyComplianceScanConfigRequest_RerunScheduledScan{
+								ScanName: name,
+							},
+						},
 					},
 				},
 			},

@@ -1,7 +1,19 @@
 package complianceoperator
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/sensor/common"
+)
+
+const (
+	masterRole       = "master"
+	workerRole       = "worker"
+	rescanAnnotation = v1alpha1.ComplianceScanRescanAnnotation
+)
+
+var (
+	defaultScanSettingName = "default-" + branding.GetProductNameShort()
 )
 
 // StatusInfo is an interface that provides functionality to fetch compliance operator info.
