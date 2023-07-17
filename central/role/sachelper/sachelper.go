@@ -2,7 +2,6 @@ package sachelper
 
 import (
 	"context"
-	"fmt"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
@@ -72,7 +71,6 @@ func (h *clusterSACHelperImpl) GetClustersForPermissions(
 	pagination *v1.Pagination,
 ) ([]*v1.ScopeObject, error) {
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.ClusterScope)
-	fmt.Println(resourcesWithAccess)
 	clusterIDsInScope, hasFullAccess, err := listClusterIDsInScope(ctx, resourcesWithAccess)
 	if err != nil {
 		return nil, err
