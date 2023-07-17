@@ -32,9 +32,9 @@ func Or(authorizers ...authz.Authorizer) authz.Authorizer {
 	}
 }
 
-// SensorOrAuthorizer returns an Authorizer that allows authorizes any
-// sensor, or anything that the passed authorizer authorizes.
-func SensorOrAuthorizer(authorizer authz.Authorizer) authz.Authorizer {
+// SensorOr returns an Authorizer that authorizes any sensor,
+// or anything that the passed authorizer authorizes.
+func SensorOr(authorizer authz.Authorizer) authz.Authorizer {
 	return Or(
 		idcheck.SensorsOnly(),
 		authorizer,
