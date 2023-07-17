@@ -4,10 +4,10 @@ kubectl -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,d
 
 SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
 
-if [[ ! "${SUPPORTS_PSP}" -ne 0 ]]; then
+if [[ "${SUPPORTS_PSP}" -ne 0 ]]; then
     kubectl -n stackrox delete psp -l auto-upgrade.stackrox.io/component=sensor --wait
 fi
 
-if ! kubectl get -n stackrox deploy/central; then
+if ! kubectl get -n stackrox deploy/central 2>&1; then
     kubectl delete -n stackrox secret stackrox
 fi
