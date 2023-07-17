@@ -2,7 +2,7 @@
 
 # Fetches data used by the stackrox:main image
 
-set -euox pipefail
+set -euxo pipefail
 
 fetch_stackrox_data() {
     mkdir -p /tmp/external-networks

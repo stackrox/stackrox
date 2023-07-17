@@ -10,10 +10,9 @@ die() {
 }
 
 INPUT_ROOT="${1:-}"
-BUILDER_IMAGE="${2:-}"
-OUTPUT_DIR="${3:-}"
+OUTPUT_DIR="${2:-}"
 
-[[ -n "$INPUT_ROOT" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
+[[ -n "$INPUT_ROOT" && -n "$OUTPUT_DIR" ]] \
     || die "Usage: $0 <input-root-directory> <builder-image> <output-directory>"
 [[ -d "$INPUT_ROOT" ]] \
     || die "Input root directory doesn't exist or is not a directory."
