@@ -589,7 +589,7 @@ func expectExternalLookupHelper(mockExternalStore *mocksExternalSrc.MockStore, t
 
 func expectDetectorHelper(mockDetector *mocksDetector.MockDetector, times int) expectFn {
 	return func() {
-		mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any()).MinTimes(times)
+		mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any()).Times(times)
 	}
 }
 
