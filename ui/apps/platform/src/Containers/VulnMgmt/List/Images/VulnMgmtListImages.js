@@ -1,9 +1,8 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
-import { List } from 'react-feather';
+import { Button } from '@patternfly/react-core';
 
-import PanelButton from 'Components/PanelButton';
 import ImageActiveIconText from 'Components/PatternFly/IconText/ImageActiveIconText';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
@@ -238,15 +237,9 @@ const VulnMgmtImages = ({
         setShowWatchedImagesDialog(!showWatchedImagesDialog);
     }
     const tableHeaderComponents = inactiveImageScanningEnabled ? (
-        <PanelButton
-            icon={<List className="h-4 w-4" />}
-            className="btn-icon btn-tertiary"
-            onClick={toggleWatchedImagesDialog}
-            tooltip="Manage Scanning of Watched Images"
-            dataTestId="panel-button-manage-inactive-images"
-        >
-            Manage Watches
-        </PanelButton>
+        <Button variant="secondary" onClick={toggleWatchedImagesDialog}>
+            Manage watches
+        </Button>
     ) : null;
 
     const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
