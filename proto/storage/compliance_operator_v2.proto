@@ -66,7 +66,7 @@ message ComplianceOperatorScanSettingV2 {
         string                    cluster_id               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
         repeated string           errors                   = 2;
     }
-    repeated Cluster              clusters                 = 8;
+    repeated ClusterScanStatus    clusters                 = 8;
     repeated NodeRole             node_roles               = 9;
     bool                          strict_node_scan         = 10;
     // Starting point for schedule will probably have to build upon it

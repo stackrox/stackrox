@@ -105,11 +105,11 @@ func insertIntoComplianceOperatorScanSettingV2(ctx context.Context, batch *pgx.B
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetName(),
-		obj.GetUser().GetName(),
+		obj.GetCreatedBy().GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_setting_v2 (Name, User_Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, User_Name = EXCLUDED.User_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_v2 (Name, CreatedBy_Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, CreatedBy_Name = EXCLUDED.CreatedBy_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -148,7 +148,7 @@ func insertIntoComplianceOperatorScanSettingV2Profiles(_ context.Context, batch 
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingV2Clusters(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2_Cluster, complianceOperatorScanSettingV2Name string, idx int) error {
+func insertIntoComplianceOperatorScanSettingV2Clusters(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2_ClusterScanStatus, complianceOperatorScanSettingV2Name string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -172,7 +172,7 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 
 	copyCols := []string{
 		"name",
-		"user_name",
+		"createdby_name",
 		"serialized",
 	}
 
@@ -189,7 +189,7 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetName(),
-			obj.GetUser().GetName(),
+			obj.GetCreatedBy().GetName(),
 			serialized,
 		})
 
@@ -266,7 +266,7 @@ func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSe
 	return nil
 }
 
-func copyFromComplianceOperatorScanSettingV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2Name string, objs ...*storage.ComplianceOperatorScanSettingV2_Cluster) error {
+func copyFromComplianceOperatorScanSettingV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2Name string, objs ...*storage.ComplianceOperatorScanSettingV2_ClusterScanStatus) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
