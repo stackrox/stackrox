@@ -564,6 +564,8 @@ func (suite *ManagerTestSuite) TestDeploymentDelete() {
 func (suite *ManagerTestSuite) TestDeploymentDelete_WithoutBaseline() {
 	suite.mustInitManager(
 		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		wrapWithForbidden(baselineWithPeers(3),
+			depPeer(2, properties(false, 52))),
 	)
 
 	// DeploymentID 2 should be in the internal map, but no baseline created yet.
@@ -571,8 +573,10 @@ func (suite *ManagerTestSuite) TestDeploymentDelete_WithoutBaseline() {
 
 	suite.Require().NoError(suite.m.ProcessDeploymentDelete(depID(2)))
 
+	// Should remove DeploymentID 2 from other baselines (BaselinedPeers and ForbiddenPeers) even if its baseline was never created
 	suite.assertBaselinesAre(
 		baselineWithPeers(1),
+		baselineWithPeers(3),
 	)
 }
 
