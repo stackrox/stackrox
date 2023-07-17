@@ -30,15 +30,15 @@ type Backends struct {
 
 func main() {
 	// TODO: Use a configuration file.
-	certsFlag := flag.String("certs", "", "Path to directory containing scanner certificates.")
+	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
 	flag.Parse()
 
 	// If certs was specified, configure the identity environment.
-	if *certsFlag != "" {
-		os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsFlag, mtls.CACertFileName))
-		os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsFlag, mtls.CAKeyFileName))
-		os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsFlag, mtls.ServiceCertFileName))
-		os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsFlag, mtls.ServiceKeyFileName))
+	if *certsPath != "" {
+		os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsPath, mtls.CACertFileName))
+		os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsPath, mtls.CAKeyFileName))
+		os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName))
+		os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName))
 	}
 
 	// Create cancellable context.
