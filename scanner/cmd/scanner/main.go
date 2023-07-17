@@ -63,7 +63,7 @@ func main() {
 	zlog.Info(ctx).Msg("backends are ready")
 
 	// Initialize gRPC API service.
-	grpcSrv, err := createGRPCService(ctx, backends)
+	grpcSrv, err := createGRPCService(backends)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("failed to initialize gRPC")
 		os.Exit(1)
@@ -97,7 +97,7 @@ func initializeLogging() error {
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.
-func createGRPCService(ctx context.Context, backends *Backends) (grpc.API, error) {
+func createGRPCService(backends *Backends) (grpc.API, error) {
 	// Create identity extractors.
 	identityExtractor, err := service.NewExtractor()
 	if err != nil {
