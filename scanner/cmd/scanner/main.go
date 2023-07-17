@@ -45,7 +45,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Initialize clair's zlog.
+	// Initialize logging and setup context.
 	err := initializeLogging()
 	if err != nil {
 		log.Fatalf("failed to initialize logging: %v", err)
@@ -80,7 +80,7 @@ func main() {
 	//       until all the pending RPCs are finished.
 }
 
-// initializeLogging Initialize zerolog and clair's zlog.
+// initializeLogging Initialize zerolog and Quay's zlog.
 func initializeLogging() error {
 	hostname, err := os.Hostname()
 	if err != nil {
