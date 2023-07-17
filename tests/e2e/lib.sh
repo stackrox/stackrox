@@ -62,7 +62,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
     if  [[ $helm_charts =~ $central_regex ]]; then
-        #ci_export MAIN_IMAGE_TAG "${BASH_REMATCH[1]}"
+        ci_export MAIN_IMAGE_TAG "${BASH_REMATCH[1]}"
         ci_export CENTRAL_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-central-services"
     else
         echo "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
