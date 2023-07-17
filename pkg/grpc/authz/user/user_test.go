@@ -73,14 +73,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			ctx: ctx,
 		},
 		{
-			name: "authenticated with no permissions => no error",
+			name:                "authenticated with no permissions => no error",
 			requiredPermissions: []permissions.ResourceWithAccess{},
-			ctx: ctxWithEmptyPermissions,
+			ctx:                 ctxWithEmptyPermissions,
 		},
 		{
-			name: "authenticated with no permissions and deny all scope => no error",
+			name:                "authenticated with no permissions and deny all scope => no error",
 			requiredPermissions: []permissions.ResourceWithAccess{},
-			ctx: sac.WithNoAccess(ctxWithEmptyPermissions),
+			ctx:                 sac.WithNoAccess(ctxWithEmptyPermissions),
 		},
 		{
 			name: "built-in scoped authz check permissions not sufficient permissions",
