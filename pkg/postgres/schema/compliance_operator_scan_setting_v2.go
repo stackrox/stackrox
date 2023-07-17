@@ -63,9 +63,12 @@ const (
 
 // ComplianceOperatorScanSettingV2 holds the Gorm model for Postgres table `compliance_operator_scan_setting_v2`.
 type ComplianceOperatorScanSettingV2 struct {
+<<<<<<< HEAD
 	Name          string `gorm:"column:name;type:varchar;primaryKey"`
 	CreatedByName string `gorm:"column:createdby_name;type:varchar"`
 	Serialized    []byte `gorm:"column:serialized;type:bytea"`
+=======
+	Name       string `gorm:"column:name;type:varchar;primaryKey"
 }
 
 // ComplianceOperatorScanSettingV2Profiles holds the Gorm model for Postgres table `compliance_operator_scan_setting_v2_profiles`.
