@@ -218,6 +218,7 @@ type networkFlowManager struct {
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
 
+	lastSentStateMutex             sync.RWMutex
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
@@ -255,6 +256,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
+		m.resetLastSentState()
 		m.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
 		m.centralReady.Reset()
@@ -272,6 +274,33 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 	case m.sensorUpdates <- message.New(msg):
 		return true
 	}
+}
+
+func (m *networkFlowManager) resetLastSentState() {
+	m.lastSentStateMutex.Lock()
+	defer m.lastSentStateMutex.Unlock()
+	m.enrichedConnsLastSentState = nil
+	m.enrichedEndpointsLastSentState = nil
+	m.enrichedProcessesLastSentState = nil
+}
+
+func (m *networkFlowManager) getCurrentStates() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS) {
+	m.lastSentStateMutex.RLock()
+	defer m.lastSentStateMutex.RUnlock()
+	return m.enrichedConnsLastSentState, m.enrichedEndpointsLastSentState, m.enrichedProcessesLastSentState
+}
+
+func (m *networkFlowManager) swapConnectionStates(newConns map[networkConnIndicator]timestamp.MicroTS, newEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+	m.lastSentStateMutex.Lock()
+	defer m.lastSentStateMutex.Unlock()
+	m.enrichedConnsLastSentState = newConns
+	m.enrichedEndpointsLastSentState = newEndpoints
+}
+
+func (m *networkFlowManager) swapProcessesState(newProcesses map[processListeningIndicator]timestamp.MicroTS) {
+	m.lastSentStateMutex.Lock()
+	defer m.lastSentStateMutex.Unlock()
+	m.enrichedProcessesLastSentState = newProcesses
 }
 
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
@@ -296,14 +325,12 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
-	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState)
-	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState)
+	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
+	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
 
-	prevConns := m.enrichedConnsLastSentState
-	prevEndpoints := m.enrichedEndpointsLastSentState
+	prevConns, prevEndpoints, _ := m.getCurrentStates()
 
-	m.enrichedConnsLastSentState = currentConns
-	m.enrichedEndpointsLastSentState = currentEndpoints
+	m.swapConnectionStates(currentConns, currentEndpoints)
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -328,18 +355,18 @@ func (m *networkFlowManager) enrichAndSend() {
 			NetworkFlowUpdate: protoToSend,
 		},
 	}) {
-		m.enrichedConnsLastSentState = prevConns
-		m.enrichedEndpointsLastSentState = prevEndpoints
+		m.swapConnectionStates(prevConns, prevEndpoints)
 	}
 }
 
 func (m *networkFlowManager) enrichAndSendProcesses() {
 	currentProcesses := m.currentEnrichedProcesses()
 
-	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState)
+	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
 
-	prevProcesses := m.enrichedProcessesLastSentState
-	m.enrichedProcessesLastSentState = currentProcesses
+	_, _, prevProcesses := m.getCurrentStates()
+
+	m.swapProcessesState(currentProcesses)
 
 	if len(updatedProcesses) == 0 {
 		return
@@ -356,7 +383,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
 	}) {
-		m.enrichedProcessesLastSentState = prevProcesses
+		m.swapProcessesState(prevProcesses)
 	}
 }
 
@@ -607,7 +634,7 @@ func (m *networkFlowManager) currentEnrichedProcesses() map[processListeningIndi
 	return enrichedProcesses
 }
 
-func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) []*storage.NetworkFlow {
+func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutest *sync.RWMutex) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 
 	for conn, currTS := range current {
@@ -617,6 +644,8 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 		}
 	}
 
+	previousMutest.RLock()
+	defer previousMutest.RUnlock()
 	for conn, prevTS := range previous {
 		if _, ok := current[conn]; !ok {
 			updates = append(updates, conn.toProto(prevTS))
@@ -626,7 +655,7 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 	return updates
 }
 
-func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.MicroTS, previous map[containerEndpointIndicator]timestamp.MicroTS) []*storage.NetworkEndpoint {
+func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.MicroTS, previous map[containerEndpointIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkEndpoint {
 	var updates []*storage.NetworkEndpoint
 
 	for ep, currTS := range current {
@@ -636,6 +665,8 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 		}
 	}
 
+	previousMutex.RLock()
+	defer previousMutex.RUnlock()
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
 			updates = append(updates, ep.toProto(prevTS))
@@ -645,7 +676,7 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 	return updates
 }
 
-func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
 	var updates []*storage.ProcessListeningOnPortFromSensor
 
 	for pl, currTS := range current {
@@ -655,6 +686,8 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 		}
 	}
 
+	previousMutex.RLock()
+	defer previousMutex.RUnlock()
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
 			// This condition means the deployment was removed before we got the
