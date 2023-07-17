@@ -122,8 +122,6 @@ func (suite *ResourceEventHandlerImplTestSuite) TestContextIsPassed() {
 	handler.OnAdd(obj)
 }
 
-
-
 func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToMissingSet() {
 	handler := suite.newHandlerImpl()
 

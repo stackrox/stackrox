@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -29,6 +30,7 @@ type listenerImpl struct {
 	traceWriter        io.Writer
 	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
+	context            context.Context
 }
 
 func (k *listenerImpl) Start() error {

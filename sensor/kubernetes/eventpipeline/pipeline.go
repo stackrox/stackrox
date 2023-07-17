@@ -1,6 +1,7 @@
 package eventpipeline
 
 import (
+	"context"
 	"io"
 	"sync/atomic"
 	"time"
@@ -27,9 +28,9 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	var resourceListener component.PipelineComponent
 	if env.ResyncDisabled.BooleanSetting() {
 		depResolver = resolver.New(outputQueue, storeProvider, queueSize)
-		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
+		resourceListener = listener.New(context.TODO(), client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 	} else {
-		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
+		resourceListener = listener.New(context.TODO(), client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
 	}
 
 	offlineMode := &atomic.Bool{}
