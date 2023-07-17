@@ -11,6 +11,8 @@ run_powervs_tests() {
 
     kubectl get nodes -o wide || true
     kubectl get version || true
+
+    info "reached stub end"
 }
 
 run_powervs_tests "$*"
