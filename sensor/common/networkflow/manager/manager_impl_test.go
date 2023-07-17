@@ -217,14 +217,14 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		expectedStatus              *connStatus
 	}{
 		"Rotten connection": {
-			connPair:                    createConnectionPair(true, true, timestamp.Now().Add(-maxContainerResolutionWaitPeriod*2)),
+			connPair:                    createConnectionPair(true, true, false, timestamp.Now().Add(-maxContainerResolutionWaitPeriod*2)),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
 			expectedStatus: &connStatus{
 				rotten: true,
 			},
 		},
 		"Incoming External connection no external sources hit": {
-			connPair:          createConnectionPair(true, true, timestamp.Now()),
+			connPair:          createConnectionPair(true, true, false, timestamp.Now()),
 			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
 				DeploymentID: containerID,
@@ -241,7 +241,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 			},
 		},
 		"Outgoing External external sources hit": {
-			connPair:          createConnectionPair(false, true, timestamp.Now()),
+			connPair:          createConnectionPair(false, true, false, timestamp.Now()),
 			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
 				DeploymentID: containerID,
@@ -262,7 +262,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 			},
 		},
 		"Incoming": {
-			connPair:          createConnectionPair(true, false, timestamp.Now()),
+			connPair:          createConnectionPair(true, false, false, timestamp.Now()),
 			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
 				DeploymentID: containerID,
@@ -278,8 +278,27 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 				used: true,
 			},
 		},
+		"Incoming fresh connection with valid address": {
+			connPair:          createConnectionPair(true, false, false, timestamp.Now()),
+			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
+				DeploymentID: containerID,
+			}, true),
+			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, nil),
+			expectedStatus:             &connStatus{},
+		},
+		"Incoming fresh connection with invalid address": {
+			connPair:          createConnectionPair(true, false, true, timestamp.Now()),
+			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
+				DeploymentID: containerID,
+			}, true),
+			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, nil),
+			expectExternalLookup:       expectExternalLookupHelper(mockExternalSrc, 1, nil),
+			expectedStatus:             &connStatus{},
+		},
 		"Outgoing": {
-			connPair:          createConnectionPair(false, false, timestamp.Now()),
+			connPair:          createConnectionPair(false, false, false, timestamp.Now()),
 			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
 				DeploymentID: containerID,
@@ -318,6 +337,8 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 			if tCase.expectedIndicator != nil {
 				_, ok := tCase.enrichConnections[*tCase.expectedIndicator]
 				s.Assert().True(ok)
+			} else {
+				s.Assert().Len(tCase.enrichConnections, 0)
 			}
 		})
 	}
@@ -441,7 +462,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	}{
 		{
 			notify:      common.SensorComponentEventOfflineMode,
-			connections: []*connectionHostnamePair{createConnectionHostnamePair("hostname-1", createConnectionPair(false, false, timestamp.Now()))},
+			connections: []*connectionHostnamePair{createConnectionHostnamePair("hostname-1", createConnectionPair(false, false, false, timestamp.Now()))},
 		},
 		{
 			notify: common.SensorComponentEventCentralReachable,
@@ -577,10 +598,13 @@ type connectionPair struct {
 	status *connStatus
 }
 
-func createConnectionPair(incoming bool, external bool, firstSeen timestamp.MicroTS) *connectionPair {
+func createConnectionPair(incoming bool, external bool, invalid bool, firstSeen timestamp.MicroTS) *connectionPair {
 	address := externalIPv4Addr
 	if !external {
 		address = net.ParseIP("8.8.8.8")
+	}
+	if invalid {
+		address = net.ParseIP("invalid")
 	}
 	ret := &connectionPair{
 		conn: &connection{
