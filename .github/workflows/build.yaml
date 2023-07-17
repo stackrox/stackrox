@@ -216,7 +216,7 @@ jobs:
         with:
           name: docs-build
           path: |
-            image/docs
+            image/rhel/docs
 
   build-and-push-main:
     runs-on: ubuntu-latest
@@ -318,7 +318,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: docs-build
-          path: image/docs
+          path: image/rhel/docs
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
