@@ -1,6 +1,6 @@
-import { getScopeHierarchyFromSearch } from './hierarchyUtils';
+import { getScopeHierarchyFromSearch } from './useScopeHierarchy';
 
-describe('hierarchyUtils', () => {
+describe('useScopeHierarchy', () => {
     describe('getScopeHierarchyFromSearch', () => {
         it('should return the correct cluster in the result hierarchy', () => {
             const knownClusters = [
