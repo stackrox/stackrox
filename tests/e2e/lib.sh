@@ -87,7 +87,7 @@ deploy_stackrox_with_custom_sensor() {
 export_test_environment() {
     ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
-    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
+    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-core_bpf}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
