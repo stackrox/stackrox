@@ -73,6 +73,7 @@ scripts/ci/logcheck/check.sh
 scripts/ci/metrics.sh
 scripts/ci/openshift.sh
 scripts/ci/publish-helm-charts.sh
+scripts/ci/pull-retag-push.sh
 scripts/ci/push-as-manifest-list.sh
 scripts/ci/sensorbundle-label/list-resources.sh
 scripts/ci/store-artifacts.sh
