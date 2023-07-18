@@ -55,6 +55,10 @@ message DecommissionedClusterRetentionConfig {
     google.protobuf.Timestamp created_at       = 4;
 }
 
+message ReportRetentionConfig {
+    int32 retention_duration_days              = 1;
+}
+
 // next available tag: 6
 message PrivateConfig {
     oneof alert_retention {
@@ -65,7 +69,7 @@ message PrivateConfig {
     int32                    image_retention_duration_days                  = 2;
     int32                    expired_vuln_req_retention_duration_days       = 4;
     DecommissionedClusterRetentionConfig decommissioned_cluster_retention   = 5;
-    int32                                default_report_retention_window       = 6;
+    ReportRetentionConfig             default_report_retention_window       = 6;
 }
 
 

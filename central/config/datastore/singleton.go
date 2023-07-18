@@ -50,7 +50,6 @@ var (
 			},
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
-		DefaultReportRetentionWindow:        DefaultReportRetentionWindow,
 	}
 )
 
@@ -79,6 +78,13 @@ func initialize() {
 	if privateConfig.GetDecommissionedClusterRetention() == nil {
 		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
 			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		}
+		needsUpsert = true
+	}
+
+	if privateConfig.GetDefaultReportRetentionWindow() == nil {
+		privateConfig.DefaultReportRetentionWindow = &storage.ReportRetentionConfig{
+			RetentionDurationDays: DefaultReportRetentionWindow,
 		}
 		needsUpsert = true
 	}
