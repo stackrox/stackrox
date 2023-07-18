@@ -6,7 +6,6 @@ import sortBy from 'lodash/sortBy';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
@@ -14,6 +13,8 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { cveSortFields } from 'constants/sortFields';
+
+import ViewAllButton from './ViewAllButton';
 
 const RECENTLY_DETECTED_IMAGE_VULNERABILITIES = gql`
     query recentlyDetectedImageVulnerabilities(
@@ -113,7 +114,7 @@ const RecentlyDetectedImageVulnerabilities = ({ entityContext, search, limit }) 
     return (
         <Widget
             className="h-full pdf-page"
-            header="Recently Detected Image Vulnerabilities"
+            header="Recently detected image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}

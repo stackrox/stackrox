@@ -102,7 +102,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                                 className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={componentStats}
-                                title="Details & Metadata"
+                                title="Details and metadata"
                             />
                         </div>
                         <div className="s-1">
