@@ -11,8 +11,6 @@ import {
     TextVariants,
 } from '@patternfly/react-core';
 
-import SecurityFullColorPink from 'images/Security_FullColor_Pink.svg';
-
 function AddClusterPrompt() {
     return (
         <>
@@ -28,10 +26,7 @@ function AddClusterPrompt() {
                 className="pf-u-text-align-center"
                 direction={{ default: 'column' }}
             >
-                <FlexItem className="pf-u-mb-0">
-                    <img src={SecurityFullColorPink} alt="" style={{ height: '430px' }} />
-                </FlexItem>
-                <FlexItem className="pf-u-w-66">
+                <FlexItem className="pf-u-w-66 pf-u-pt-xl">
                     <TextContent className="pf-u-mb-md">
                         <Text component={TextVariants.h2} className="pf-u-font-size-2xl">
                             Configure the clusters you want to secure.
