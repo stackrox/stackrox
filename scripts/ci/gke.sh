@@ -234,7 +234,7 @@ add_a_maintenance_exclusion() {
     plus_five="$(date -u --date=@${plus_five_epoch} +"%Y-%m-%dT%H:%M:%SZ")"
 
     gcloud container clusters update "${CLUSTER_NAME}" \
-        --add-maintenance-exclusion-name cluster-under-test \
+        --add-maintenance-exclusion-name leave-these-clusters-alone \
         --add-maintenance-exclusion-start "${from_now}" \
         --add-maintenance-exclusion-end "${plus_five}" \
         --add-maintenance-exclusion-scope no_upgrades
