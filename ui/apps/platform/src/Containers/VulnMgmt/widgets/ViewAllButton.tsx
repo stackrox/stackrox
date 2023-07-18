@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
-import { HashLink } from 'react-router-hash-link';
+import { Link } from 'react-router-dom';
 
 const ViewAllButton = ({ url }: { url: string }): ReactElement => {
     return (
-        <HashLink to={url} className="btn-sm btn-base whitespace-nowrap no-underline">
+        <Link to={url} className="btn-sm btn-base whitespace-nowrap no-underline">
             View all
-        </HashLink>
+        </Link>
     );
 };
 
