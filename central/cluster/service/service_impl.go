@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+	authorizer = or.SensorOr(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Cluster)): {
 			"/v1.ClustersService/GetClusters",
 			"/v1.ClustersService/GetCluster",
