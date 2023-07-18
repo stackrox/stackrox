@@ -4,12 +4,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	golog "log"
 	"os"
 	"os/signal"
 	"path/filepath"
 
 	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	grpcmetrics "github.com/stackrox/rox/central/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -50,7 +52,7 @@ func main() {
 	// Initialize logging and setup context.
 	err := initializeLogging()
 	if err != nil {
-		log.Fatalf("failed to initialize logging: %v", err)
+		golog.Fatalf("failed to initialize logging: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
@@ -84,6 +86,24 @@ func main() {
 	signal.Notify(sigC, os.Interrupt, unix.SIGTERM)
 	sig := <-sigC
 	zlog.Info(ctx).Str("signal", sig.String()).Send()
+}
+
+// initializeLogging Initialize zerolog and Quay's zlog.
+func initializeLogging() error {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+	logger := zerolog.New(os.Stdout).
+		Level(zerolog.DebugLevel).
+		With().
+		Timestamp().
+		Str("host", hostname).
+		Logger()
+	zlog.Set(&logger)
+	// Disable the default zerolog logger.
+	log.Logger = zerolog.Nop()
+	return nil
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.
@@ -166,16 +186,16 @@ func createBackends(ctx context.Context) (*Backends, error) {
 }
 
 func (b *Backends) Close(ctx context.Context) {
-	if b.Indexer != nil {
-		err := b.Indexer.Close(ctx)
-		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing indexer")
-		}
-	}
 	if b.Matcher != nil {
 		err := b.Matcher.Close(ctx)
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("closing matcher")
+		}
+	}
+	if b.Indexer != nil {
+		err := b.Indexer.Close(ctx)
+		if err != nil {
+			zlog.Error(ctx).Err(err).Msg("closing indexer")
 		}
 	}
 }
