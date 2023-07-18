@@ -157,6 +157,101 @@ get_central_diagnostics() {
     ls -l "${output_dir}"
 }
 
+push_main_image_set() {
+    info "Pushing main, roxctl and central-db images"
+
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_main_image_set <push_context> <brand>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+
+    local main_image_set=("main" "roxctl" "central-db")
+    if is_OPENSHIFT_CI; then
+        local main_image_srcs=("$MAIN_IMAGE" "$ROXCTL_IMAGE" "$CENTRAL_DB_IMAGE")
+        oc registry login
+    fi
+
+    _push_main_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        for image in "${main_image_set[@]}"; do
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_main_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${main_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    _mirror_main_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local idx=0
+        for image in "${main_image_set[@]}"; do
+            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            (( idx++ )) || true
+        done
+    }
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        local destination_registries=("quay.io/stackrox-io")
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        local destination_registries=("quay.io/rhacs-eng")
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+    for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
+        if is_OPENSHIFT_CI; then
+            _mirror_main_image_set "$registry" "$tag"
+        else
+            _tag_main_image_set "$tag" "$registry" "$tag"
+            _push_main_image_set "$registry" "$tag"
+        fi
+        if [[ "$push_context" == "merge-to-master" ]]; then
+            if is_OPENSHIFT_CI; then
+                _mirror_main_image_set "$registry" "latest"
+            else
+                _tag_main_image_set "$tag" "$registry" "latest"
+                _push_main_image_set "$registry" "latest"
+            fi
+        fi
+    done
+}
+
+registry_rw_login() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: registry_rw_login <registry>"
+    fi
+
+    local registry="$1"
+
+    case "$registry" in
+        quay.io/rhacs-eng)
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            ;;
+        quay.io/stackrox-io)
+            docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry login: $registry"
+    esac
+}
+
 registry_ro_login() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: registry_ro_login <registry>"
@@ -171,6 +266,61 @@ registry_ro_login() {
         *)
             die "Unsupported registry login: $registry"
     esac
+}
+
+push_matching_collector_scanner_images() {
+    info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_matching_collector_scanner_images <brand>"
+    fi
+
+    if is_OPENSHIFT_CI; then
+        oc registry login
+    fi
+
+    local brand="$1"
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        local source_registry="quay.io/stackrox-io"
+        local target_registries=( "quay.io/stackrox-io" )
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        local source_registry="quay.io/rhacs-eng"
+        local target_registries=( "quay.io/rhacs-eng" )
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    _retag_or_mirror() {
+        if is_OPENSHIFT_CI; then
+            oc_image_mirror "$1" "$2"
+        else
+            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
+        fi
+    }
+
+    local main_tag
+    main_tag="$(make --quiet --no-print-directory tag)"
+    local scanner_version
+    scanner_version="$(make --quiet --no-print-directory scanner-tag)"
+    local collector_version
+    collector_version="$(make --quiet --no-print-directory collector-tag)"
+
+    for target_registry in "${target_registries[@]}"; do
+        registry_rw_login "${target_registry}"
+
+        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+
+        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
+    done
+}
+
+oc_image_mirror() {
+    retry 5 true oc image mirror "$1" "$2"
 }
 
 poll_for_system_test_images() {
