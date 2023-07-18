@@ -6,7 +6,7 @@ import {
     ReportConfiguration,
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
-} from 'types/reportConfigurationService.proto';
+} from 'services/ReportsService.types';
 import { ReportFormValues } from '../forms/useReportFormValues';
 
 type Result = {
