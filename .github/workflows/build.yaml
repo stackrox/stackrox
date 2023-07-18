@@ -28,17 +28,23 @@ jobs:
         run: |
           source './scripts/ci/lib.sh'
 
-          matrix='{"pre_build_go_binaries": {"name":[]}, "build_and_push_main": {"name":[]} }'
+          matrix='{ "pre_build_go_binaries": { "name":[], "arch":[] }, "build_and_push_main": { "name":[], "arch":[] }, "build_and_push_main_manifests": { "name":[] } }'
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64", "ppc64le"]' <<< "$matrix")"
+
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64", "ppc64le"]' <<< "$matrix")"
+
+          matrix="$(jq '.build_and_push_main_manifests.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
           if ! is_tagged; then
             if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
               matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.build_and_push_main_manifests.name += ["prerelease"]' <<< "$matrix")"
             fi
           fi
 
@@ -46,6 +52,7 @@ jobs:
           if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
@@ -172,14 +179,21 @@ jobs:
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
-        run: make build-prep main-build-nodeps
+        run: |
+          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
+            echo "Building non-amd binary"
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+          else
+            echo "Building amd binary"
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+          fi
 
       - name: Bundle the build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
+        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
 
       - uses: actions/upload-artifact@v3
         with:
-          name: go-binaries-build-${{ matrix.name }}
+          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
 
   pre-build-docs:
@@ -247,7 +261,6 @@ jobs:
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
-
       - name: Setup build env
         run: |
           case "${{ matrix.name }}" in
@@ -273,7 +286,7 @@ jobs:
           esac
 
           {
-            echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${go_binaries}"
+            echo "GO_BINARIES_BUILD_ARTIFACT=go-binaries-build-${{ matrix.arch }}-${go_binaries}"
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
 
@@ -282,6 +295,12 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Ignore dubious repository ownership
         run: |
@@ -341,13 +360,15 @@ jobs:
         run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
       - name: Build main images
-        run: make docker-build-main-image
+        run: |
+          GOOS=linux GOARCH=${{ matrix.arch }} make docker-build-main-image
 
       - name: Check debugger presence in the main image
         run: make check-debugger
 
       - name: Build roxctl image
-        run: make docker-build-roxctl-image
+        run: |
+          GOOS=linux GOARCH=${{ matrix.arch }} make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
@@ -363,12 +384,12 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
-            echo "Will determin context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
             push_context=""
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
               push_context="merge-to-master"
             fi
-            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}"
+            push_main_image_set "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
       - name: Push matching collector and scanner images
         # Skip for external contributions.
@@ -376,17 +397,94 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
             source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}"
+            push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-      - name: Comment on the PR
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        env:
-          GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
-        run: |
-            source ./scripts/ci/lib.sh
-            add_build_comment_to_pr
+  build-and-push-main-manifests:
+    runs-on: ubuntu-latest
+    needs:
+    - define-job-matrix
+    - build-and-push-main
+    strategy:
+      # Supports four image builds (see Setup build env):
+      # STACKROX_BRANDING
+      # RHACS_BRANDING
+      # prerelease
+      # race-condition-debug
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main_manifests }}
+    env:
+      ROX_PRODUCT_BRANDING: ""
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      env:
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+    steps:
+    - name: Setup build env
+      run: |
+        case "${{ matrix.name }}" in
+          STACKROX_BRANDING)
+            brand="STACKROX_BRANDING"
+            ;;
+          RHACS_BRANDING)
+            brand="RHACS_BRANDING"
+            ;;
+          race-condition-debug)
+            brand="RHACS_BRANDING"
+            ;;
+          prerelease)
+            brand="RHACS_BRANDING"
+            ;;
+          *)
+            echo "Unsupported build: ${{ matrix.name }}"
+            exit 1
+        esac
+
+        {
+          echo "ROX_PRODUCT_BRANDING=${brand}"
+        } >> "$GITHUB_ENV"
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Checkout submodules
+      run: |
+        git submodule update --init
+
+    - name: Build and push manifest lists
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        source ./scripts/ci/lib.sh
+        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+        push_context=""
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+          push_context="merge-to-master"
+        fi
+        push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}"
+
+    - name: Comment on the PR
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      env:
+        GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+      run: |
+        source ./scripts/ci/lib.sh
+        add_build_comment_to_pr
 
   build-and-push-operator:
     runs-on: ubuntu-latest
