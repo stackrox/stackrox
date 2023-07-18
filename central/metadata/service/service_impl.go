@@ -39,7 +39,7 @@ var (
 		// When this endpoint was public, Sensor relied on it to check Central's
 		// availability. While Sensor might not do so today, we need to ensure
 		// backward compatibility with older Sensors.
-		or.SensorOrAuthorizer(user.With()): {
+		or.SensorOr(user.With()): {
 			"/v1.MetadataService/GetMetadata",
 		},
 		allow.Anonymous(): {

@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+	authorizer = or.SensorOr(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.CollectionService/GetCollection",
 			"/v1.CollectionService/GetCollectionCount",
