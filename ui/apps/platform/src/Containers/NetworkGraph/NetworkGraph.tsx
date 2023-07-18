@@ -12,14 +12,22 @@ import useNetworkPolicySimulator from './hooks/useNetworkPolicySimulator';
 import SimulationFrame from './simulation/SimulationFrame';
 import TopologyComponent from './TopologyComponent';
 import { EdgeState } from './components/EdgeStateSelect';
+import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 export type NetworkGraphProps = {
     model: CustomModel;
     simulation: Simulation;
     selectedNode?: CustomNodeModel;
     edgeState: EdgeState;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
-function NetworkGraph({ model, simulation, selectedNode, edgeState }: NetworkGraphProps) {
+function NetworkGraph({
+    model,
+    simulation,
+    selectedNode,
+    edgeState,
+    scopeHierarchy,
+}: NetworkGraphProps) {
     const controller = useMemo(() => {
         const newController = new Visualization();
         newController.registerLayoutFactory(defaultLayoutFactory);
@@ -29,6 +37,7 @@ function NetworkGraph({ model, simulation, selectedNode, edgeState }: NetworkGra
     }, []);
     const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
         simulation,
+        scopeHierarchy,
     });
 
     const isSimulating =
@@ -47,6 +56,7 @@ function NetworkGraph({ model, simulation, selectedNode, edgeState }: NetworkGra
                     selectedNode={selectedNode}
                     setNetworkPolicyModification={setNetworkPolicyModification}
                     edgeState={edgeState}
+                    scopeHierarchy={scopeHierarchy}
                 />
             </VisualizationProvider>
         </SimulationFrame>
