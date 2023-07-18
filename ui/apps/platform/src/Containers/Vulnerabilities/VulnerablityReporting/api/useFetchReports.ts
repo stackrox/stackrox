@@ -41,7 +41,7 @@ function useFetchReports(): FetchReportsResult {
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
                     // @TODO: The API returns a 500 when there's no report status. For now we'll do a try/catch, but
-                    // we should wait for backend to change this to a 400
+                    // we should wait for backend to change this to a 404 or a 200 with a proper message
                     let reportStatus: ReportStatus | null = null;
                     try {
                         reportStatus = await fetchReportStatus(reportConfiguration.id);

@@ -97,8 +97,8 @@ export type ReportStatus = {
     runState: RunState;
     completedAt: string; // google.protobuf.Timestamp
     errorMsg: string;
-    reportRequestType: 'ON_DEMAND' | 'SCHEDULED';
-    reportNotificationMethod: 'UNSET' | 'EMAIL' | 'DOWNLOAD';
+    reportRequestType: ReportRequestType;
+    reportNotificationMethod: ReportNotificationMethod;
 };
 
 export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
