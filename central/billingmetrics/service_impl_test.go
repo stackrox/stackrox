@@ -18,50 +18,50 @@ func TestAuthz(t *testing.T) {
 	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }
 
-type maximusSvcSuite struct {
+type billingMetricsSvcSuite struct {
 	suite.Suite
 
 	store *mockstore.MockStore
 	ctx   context.Context
 }
 
-var _ suite.SetupTestSuite = (*maximusSvcSuite)(nil)
+var _ suite.SetupTestSuite = (*billingMetricsSvcSuite)(nil)
 
-func (s *maximusSvcSuite) SetupTest() {
+func (s *billingMetricsSvcSuite) SetupTest() {
 	mockCtrl := gomock.NewController(s.T())
 	s.store = mockstore.NewMockStore(mockCtrl)
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *maximusSvcSuite) TestGetMaximum() {
-	exp := &v1.MaximumValueResponse{Metric: "test", Value: 10, Ts: protoconv.ConvertTimeToTimestamp(time.Time{})}
-	req := &v1.MaximumValueRequest{Metric: "test"}
-	s.store.EXPECT().Get(s.ctx, req).Times(1).Return(exp, true, nil)
+func (s *billingMetricsSvcSuite) TestGetMetrics() {
+	exp := &v1.BillingMetricsResponse{Record: []*v1.BillingMetricsResponse_BillingMetricsRecord{{
+		Ts:      protoconv.ConvertTimeToTimestamp(time.Time{}),
+		Metrics: &v1.SecuredResourcesMetrics{},
+	}}}
+	req := &v1.BillingMetricsRequest{
+		From: protoconv.ConvertTimeToTimestamp(time.Time{}),
+		To:   protoconv.ConvertTimeToTimestamp(time.Time{})}
+
+	s.store.EXPECT().Get(s.ctx, nil, nil).Times(1).Return(exp, nil)
 	svc := New(s.store)
-	res, err := svc.GetMaximum(s.ctx, req)
+	res, err := svc.GetMetrics(s.ctx, req)
 	s.Require().NoError(err)
 	s.Equal(exp, res)
 
-	s.store.EXPECT().Get(s.ctx, req).Times(1).Return(nil, false, nil)
-	res, err = svc.GetMaximum(s.ctx, req)
+	s.store.EXPECT().Get(s.ctx, nil, nil).Times(1).Return(nil, nil)
+	res, err = svc.GetMetrics(s.ctx, req)
 	s.Require().NoError(err)
 	s.Nil(res)
 }
 
-func (s *maximusSvcSuite) TestDeleteMaximum() {
-	req := &v1.MaximumValueRequest{Metric: "test"}
-	s.store.EXPECT().Delete(s.ctx, req).Times(1).Return(nil, nil)
+func (s *billingMetricsSvcSuite) TestPutMetrics() {
+	req := &v1.BillingMetricsInsertRequest{
+		Ts:      protoconv.ConvertTimeToTimestamp(time.Time{}),
+		Metrics: &v1.SecuredResourcesMetrics{Nodes: 5, Millicores: 50},
+	}
+	s.store.EXPECT().Insert(s.ctx, req).Times(1).Return(nil, nil)
 	svc := New(s.store)
-	res, err := svc.DeleteMaximum(s.ctx, req)
-	s.Require().NoError(err)
-	s.Nil(res)
-}
-
-func (s *maximusSvcSuite) TestPostMaximum() {
-	req := &v1.MaximumValueUpdateRequest{Metric: "test", Value: 20, Ts: protoconv.ConvertTimeToTimestamp(time.Time{})}
-	s.store.EXPECT().Upsert(s.ctx, req).Times(1).Return(nil, nil)
-	svc := New(s.store)
-	res, err := svc.PostMaximum(s.ctx, req)
+	res, err := svc.PutMetrics(s.ctx, req)
 	s.Require().NoError(err)
 	s.Nil(res)
 }

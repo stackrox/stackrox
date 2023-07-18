@@ -7,10 +7,10 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 )
 
-// Service provides the interface to the svc that handles API keys.
+// Service provides the interface to the svc that handles Billing Metrics.
 type Service interface {
 	pkgGRPC.APIService
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v1.MaximumValueServiceServer
+	v1.BillingMetricsServiceServer
 }

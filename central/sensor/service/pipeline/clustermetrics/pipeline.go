@@ -66,6 +66,9 @@ func (p *pipelineImpl) Run(
 	p.metricsStore.Set(clusterID, msg.GetClusterMetrics())
 
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
+
+	updateMaxima(clusterID, msg.GetClusterMetrics())
+
 	return nil
 }
 

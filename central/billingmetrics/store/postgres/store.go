@@ -20,27 +20,22 @@ import (
 )
 
 const (
-	baseTable = "maximus"
+	baseTable = "billingmetrics"
 
-	getStmt    = "SELECT value, ts FROM maximus WHERE metric = $1"
-	upsertStmt = "INSERT INTO maximus(metric, value, ts) VALUES ($1, $2, $3) " +
-		"ON CONFLICT (metric) " +
-		"DO UPDATE SET value = excluded.value, ts = excluded.ts " +
-		"WHERE maximus.value < excluded.value"
-	deleteStmt = "DELETE FROM maximus WHERE metric = $1"
+	getStmt    = "SELECT ts, value FROM billingmetrics WHERE ts >= $1 AND ts < $2"
+	insertStmt = "INSERT INTO billingmetrics(ts, value) VALUES ($1, $2)"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.MaximusSchema
+	schema         = pkgSchema.BillingMetricsSchema
 	targetResource = resources.Administration
 )
 
-// Store is the interface to interact with the storage for storage.Maximus
+// Store is the interface to interact with the storage for storage.BillingMetricsRecordl.
 type Store interface {
-	Get(ctx context.Context, metric string) (*storage.Maximus, bool, error)
-	Upsert(ctx context.Context, obj *storage.Maximus) error
-	Delete(ctx context.Context, metric string) error
+	Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error)
+	Insert(ctx context.Context, rec *storage.BillingMetricsRecord) error
 }
 
 type storeImpl struct {
@@ -55,25 +50,6 @@ func New(db postgres.DB) Store {
 	}
 }
 
-func insertIntoMaximus(ctx context.Context, tx *postgres.Tx, obj *storage.Maximus) error {
-	serialized, marshalErr := obj.Marshal()
-	if marshalErr != nil {
-		return marshalErr
-	}
-
-	values := []interface{}{
-		// parent primary keys start
-		obj.GetMetric(),
-		serialized,
-	}
-
-	_, err := tx.Exec(ctx, upsertStmt, values...)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func checkScope(ctx context.Context, am storage.Access) error {
 	if !sac.GlobalAccessScopeChecker(ctx).AccessMode(am).
 		Resource(targetResource).IsAllowed() {
@@ -83,8 +59,8 @@ func checkScope(ctx context.Context, am storage.Access) error {
 }
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Maximus) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Maximus")
+func (s *storeImpl) Insert(ctx context.Context, obj *storage.BillingMetricsRecord) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "BillingMetrics")
 
 	if err := checkScope(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
@@ -93,59 +69,73 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Maximus) error {
 	if obj.Ts == nil {
 		obj.Ts = protoconv.ConvertTimeToTimestamp(time.Now())
 	}
-	// Ignore noneseconds, as DB timestamp is not precise enough.
-	obj.Ts.Nanos = 0
 
 	return pgutils.Retry(func() error {
-		return s.retryableUpsert(ctx, obj)
+		return s.retryableInsert(ctx, obj)
 	})
 }
 
-func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Maximus) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Maximus")
+func (s *storeImpl) retryableInsert(ctx context.Context, rec *storage.BillingMetricsRecord) error {
+	serialized, err := rec.Marshal()
+	if err != nil {
+		return err
+	}
+
+	conn, release, err := s.acquireConn(ctx, ops.Get, "BillingMetrics")
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, upsertStmt, obj.Metric, obj.Value, protoconv.ConvertTimestampToTimeOrNow(obj.Ts)); err != nil {
+	if _, err := conn.Exec(ctx, insertStmt, rec.Ts, serialized); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, metric string) (*storage.Maximus, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Maximus")
+func (s *storeImpl) Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "BillingMetrics")
 
 	if err := checkScope(ctx, storage.Access_READ_ACCESS); err != nil {
-		return nil, false, nil
+		return nil, nil
 	}
 
-	return pgutils.Retry3(func() (*storage.Maximus, bool, error) {
-		return s.retryableGet(ctx, metric)
+	return pgutils.Retry2(func() ([]storage.BillingMetricsRecord, error) {
+		return s.retryableGet(ctx, from, to)
 	})
 }
 
-func (s *storeImpl) retryableGet(ctx context.Context, metric string) (*storage.Maximus, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Maximus")
+func (s *storeImpl) retryableGet(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error) {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "BillingMetrics")
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, metric)
-	var value int32
-	var ts *time.Time
-	if err := row.Scan(&value, &ts); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
+	rows, err := conn.Query(ctx, getStmt, from, to)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
 	}
-	result := storage.Maximus{
-		Metric: metric,
-		Value:  value,
-		Ts:     protoconv.ConvertTimeToTimestamp(*ts),
+
+	result := []storage.BillingMetricsRecord{}
+	for rows.Next() {
+		var ts *time.Time
+		var obj []byte
+		if err := rows.Scan(&ts, &obj); err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
+		}
+		var value storage.BillingMetricsRecord_SecuredResources
+		if err := value.Unmarshal(obj); err != nil {
+			return nil, err
+		}
+		result = append(result, storage.BillingMetricsRecord{
+			Ts: protoconv.ConvertTimeToTimestamp(*ts),
+			Sr: &value,
+		})
 	}
-	return &result, true, nil
+
+	return result, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -157,35 +147,9 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 	return conn, conn.Release, nil
 }
 
-// Delete removes the singleton from the store
-func (s *storeImpl) Delete(ctx context.Context, metric string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Maximus")
-
-	if err := checkScope(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
-		return err
-	}
-
-	return pgutils.Retry(func() error {
-		return s.retryableDelete(ctx, metric)
-	})
-}
-
-func (s *storeImpl) retryableDelete(ctx context.Context, metric string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Maximus")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, metric); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Used for Testing
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS maximus CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS billingmetrics CASCADE")
 }

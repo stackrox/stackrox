@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/maximum_service.proto",
+    "title": "api/v1/billing_metrics_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,9 +11,45 @@
     "application/json"
   ],
   "paths": {
-    "/v1/maximum": {
-      "post": {
-        "operationId": "MaximumValueService_PostMaximum",
+    "/v1/billing": {
+      "get": {
+        "operationId": "BillingMetricsService_GetMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1BillingMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "BillingMetricsService"
+        ]
+      },
+      "put": {
+        "operationId": "BillingMetricsService_PutMetrics",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -34,75 +70,29 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1MaximumValueUpdateRequest"
+              "$ref": "#/definitions/v1BillingMetricsInsertRequest"
             }
           }
         ],
         "tags": [
-          "MaximumValueService"
-        ]
-      }
-    },
-    "/v1/maximum/{metric}": {
-      "get": {
-        "operationId": "MaximumValueService_GetMaximum",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1MaximumValueResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "metric",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "MaximumValueService"
-        ]
-      },
-      "delete": {
-        "operationId": "MaximumValueService_DeleteMaximum",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "metric",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "MaximumValueService"
+          "BillingMetricsService"
         ]
       }
     }
   },
   "definitions": {
+    "BillingMetricsResponseBillingMetricsRecord": {
+      "type": "object",
+      "properties": {
+        "ts": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metrics": {
+          "$ref": "#/definitions/v1SecuredResourcesMetrics"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -139,38 +129,42 @@
         }
       }
     },
-    "v1Empty": {
-      "type": "object"
-    },
-    "v1MaximumValueResponse": {
+    "v1BillingMetricsInsertRequest": {
       "type": "object",
       "properties": {
-        "metric": {
-          "type": "string"
-        },
-        "value": {
-          "type": "integer",
-          "format": "int32"
-        },
         "ts": {
           "type": "string",
           "format": "date-time"
+        },
+        "metrics": {
+          "$ref": "#/definitions/v1SecuredResourcesMetrics"
         }
       }
     },
-    "v1MaximumValueUpdateRequest": {
+    "v1BillingMetricsResponse": {
       "type": "object",
       "properties": {
-        "metric": {
-          "type": "string"
-        },
-        "value": {
+        "record": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BillingMetricsResponseBillingMetricsRecord"
+          }
+        }
+      }
+    },
+    "v1Empty": {
+      "type": "object"
+    },
+    "v1SecuredResourcesMetrics": {
+      "type": "object",
+      "properties": {
+        "nodes": {
           "type": "integer",
           "format": "int32"
         },
-        "ts": {
-          "type": "string",
-          "format": "date-time"
+        "millicores": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     }

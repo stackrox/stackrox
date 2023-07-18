@@ -7,9 +7,10 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
-	gomock "go.uber.org/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -35,46 +36,31 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// Delete mocks base method.
-func (m *MockStore) Delete(ctx context.Context, id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete.
-func (mr *MockStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, id)
-}
-
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.Maximus, bool, error) {
+func (m *MockStore) Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.Maximus)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret := m.ctrl.Call(m, "Get", ctx, from, to)
+	ret0, _ := ret[0].([]storage.BillingMetricsRecord)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, from, to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, from, to)
 }
 
-// Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, obj *storage.Maximus) error {
+// Insert mocks base method.
+func (m *MockStore) Insert(ctx context.Context, rec *storage.BillingMetricsRecord) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
+	ret := m.ctrl.Call(m, "Insert", ctx, rec)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
+// Insert indicates an expected call of Insert.
+func (mr *MockStoreMockRecorder) Insert(ctx, rec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockStore)(nil).Insert), ctx, rec)
 }

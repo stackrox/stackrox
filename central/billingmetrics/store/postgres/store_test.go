@@ -16,85 +16,64 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type MaximusStoreSuite struct {
+type BillingMetricsStoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestMaximusStore(t *testing.T) {
-	suite.Run(t, new(MaximusStoreSuite))
+func TestBillingMetricsStore(t *testing.T) {
+	suite.Run(t, new(BillingMetricsStoreSuite))
 }
 
-func (s *MaximusStoreSuite) SetupTest() {
+func (s *BillingMetricsStoreSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *MaximusStoreSuite) TearDownTest() {
+func (s *BillingMetricsStoreSuite) TearDownTest() {
 	Destroy(context.Background(), s.testDB)
 	s.testDB.Teardown(s.T())
 }
 
-func (s *MaximusStoreSuite) TestStore() {
+func (s *BillingMetricsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
-	metric := "test"
 
-	maximus := &storage.Maximus{
-		Metric: metric,
-		Value:  1,
-		Ts:     protoconv.ConvertTimeToTimestamp(time.Now()),
+	now := time.Now()
+	then := now.Add(10 * time.Minute)
+
+	records := []*storage.BillingMetricsRecord{
+		{Ts: protoconv.ConvertTimeToTimestamp(now),
+			Sr: &storage.BillingMetricsRecord_SecuredResources{},
+		},
+		{Ts: protoconv.ConvertTimeToTimestamp(then),
+			Sr: &storage.BillingMetricsRecord_SecuredResources{
+				Nodes:      5,
+				Millicores: 50,
+			},
+		},
 	}
 
-	// Test get.
-	foundMaximus, exists, err := store.Get(ctx, metric)
+	foundRecords, err := store.Get(ctx, now, then)
 	s.Require().NoError(err)
-	s.False(exists)
-	s.Nil(foundMaximus)
+	s.Nil(foundRecords)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.Require().NoError(store.Upsert(ctx, maximus))
-	foundMaximus, exists, err = store.Get(ctx, metric)
+	s.Require().NoError(store.Insert(ctx, records[0]))
+	s.Require().NoError(store.Insert(ctx, records[1]))
+	foundRecords, err = store.Get(ctx, now, then)
 	s.Require().NoError(err)
-	s.True(exists)
-	s.Equal(maximus, foundMaximus)
+	s.Require().Len(foundRecords, 1)
+	s.Equal(records[0], foundRecords[0])
 
-	foundMaximus, exists, err = store.Get(ctx, metric)
+	foundRecords, err = store.Get(ctx, then, then.Add(1*time.Second))
 	s.Require().NoError(err)
-	s.True(exists)
-	s.Equal(maximus, foundMaximus)
+	s.Require().Len(foundRecords, 1)
+	s.Equal(records[1], foundRecords[0])
 
-	// Test maximus.
-	maximus.Value = 5
-	maximus.Ts = protoconv.ConvertTimeToTimestamp(time.Now())
-
-	s.Require().NoError(store.Upsert(ctx, maximus))
-	foundMaximus, exists, err = store.Get(ctx, metric)
+	foundRecords, err = store.Get(ctx, now, then.Add(1*time.Second))
 	s.Require().NoError(err)
-	s.True(exists)
-	s.Equal(maximus, foundMaximus)
-
-	bumbleBee := &storage.Maximus{
-		Metric: metric,
-		Value:  3,
-		Ts:     protoconv.ConvertTimeToTimestamp(time.Now()),
-	}
-
-	s.NoError(store.Upsert(ctx, bumbleBee))
-	foundMaximus, exists, err = store.Get(ctx, metric)
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(maximus, foundMaximus)
-
-	// Test delete.
-	s.Require().NoError(store.Delete(ctx, metric))
-	foundMaximus, exists, err = store.Get(ctx, metric)
-	s.Require().NoError(err)
-	s.False(exists)
-	s.Nil(foundMaximus)
-
-	s.ErrorIs(store.Delete(withNoAccessCtx, metric), sac.ErrResourceAccessDenied)
+	s.Require().Len(foundRecords, 2)
+	s.Equal(records, foundRecords)
 }

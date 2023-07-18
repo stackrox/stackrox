@@ -3,7 +3,6 @@ package billingmetrics
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	bmstore "github.com/stackrox/rox/central/billingmetrics/store"
@@ -24,11 +23,10 @@ var (
 	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.MaximumValueService/GetMaximum",
+			"/v1.BillingMetricsService/GetMetrics",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.MaximumValueService/PostMaximum",
-			"/v1.MaximumValueService/DeleteMaximum",
+			"/v1.BillingMetricsService/PutMetrics",
 		},
 	})
 )
@@ -46,12 +44,12 @@ func New(datastore bmstore.Store) Service {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterMaximumValueServiceServer(grpcServer, s)
+	v1.RegisterBillingMetricsServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterMaximumValueServiceHandler(ctx, mux, conn)
+	return v1.RegisterBillingMetricsServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -59,31 +57,26 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetMaximumValue returns the publicly available config
-func (s *serviceImpl) GetMaximum(ctx context.Context, m *v1.MaximumValueRequest) (*v1.MaximumValueResponse, error) {
-	maximum, ok, err := s.store.Get(ctx, m.Metric)
+func (s *serviceImpl) GetMetrics(ctx context.Context, req *v1.BillingMetricsRequest) (*v1.BillingMetricsResponse, error) {
+	metrics, err := s.store.Get(ctx, protoconv.ConvertTimestampToTimeOrNow(req.GetFrom()), protoconv.ConvertTimestampToTimeOrNow(req.GetTo()))
 	if err != nil {
-		return nil, fmt.Errorf("cannot get maximum value of %s: %w", m.Metric, err)
+		return nil, fmt.Errorf("cannot get billing metrics: %w", err)
 	}
-	if !ok {
-		return &v1.MaximumValueResponse{Metric: m.Metric, Value: 0, Ts: protoconv.ConvertTimeToTimestamp(time.Now())}, nil
+	rec := make([]*v1.BillingMetricsResponse_BillingMetricsRecord, 0, len(metrics))
+	for _, m := range metrics {
+		rec = append(rec, &v1.BillingMetricsResponse_BillingMetricsRecord{Ts: m.Ts, Metrics: (*v1.SecuredResourcesMetrics)(m.Sr)})
 	}
-	return &v1.MaximumValueResponse{Metric: maximum.Metric, Value: maximum.Value, Ts: maximum.Ts}, nil
+	return &v1.BillingMetricsResponse{Record: rec}, nil
 }
 
-// GetMaximumValue returns the publicly available config
-func (s *serviceImpl) PostMaximum(ctx context.Context, m *v1.MaximumValueUpdateRequest) (*v1.Empty, error) {
-	v := &storage.Maximus{Metric: m.Metric, Value: m.Value, Ts: m.Ts}
-	if err := s.store.Upsert(ctx, v); err != nil {
-		return nil, fmt.Errorf("cannot update maximum value of %s: %w", m.Metric, err)
-	}
-	return &v1.Empty{}, nil
-}
+func (s *serviceImpl) PutMetrics(ctx context.Context, m *v1.BillingMetricsInsertRequest) (*v1.Empty, error) {
+	v := &storage.BillingMetricsRecord{Ts: m.GetTs(), Sr: &storage.BillingMetricsRecord_SecuredResources{
+		Nodes:      m.GetMetrics().GetNodes(),
+		Millicores: m.GetMetrics().GetMillicores(),
+	}}
 
-// DeleteMaximumValue returns the publicly available config
-func (s *serviceImpl) DeleteMaximum(ctx context.Context, m *v1.MaximumValueRequest) (*v1.Empty, error) {
-	if err := s.store.Delete(ctx, m.Metric); err != nil {
-		return nil, fmt.Errorf("cannot delete maximum value of %s: %w", m.Metric, err)
+	if err := s.store.Insert(ctx, v); err != nil {
+		return nil, fmt.Errorf("cannot insert metrics: %w", err)
 	}
 	return &v1.Empty{}, nil
 }
