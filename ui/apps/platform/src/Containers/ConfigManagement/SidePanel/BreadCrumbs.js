@@ -6,10 +6,11 @@ import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
 import { Link, withRouter } from 'react-router-dom';
 
-import BackButton from 'Containers/ConfigManagement/SidePanel/buttons/BackButton';
 import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
+
+import BackButton from './BackButton';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
