@@ -103,8 +103,8 @@
   {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
 {{ end }}
 {{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
-  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'") }}
-  {{ $_ := set $._rox "monitoring.openshift.enabled" false }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
 {{ end }}
 {{ if $._rox.monitoring.openshift.enabled }}
     {{ $_ := set $._rox.central "monitoring" dict }}
