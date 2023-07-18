@@ -4,7 +4,7 @@ import set from 'lodash/set';
 
 import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import { ImageType } from 'types/reportConfigurationService.proto';
+import { ImageType } from 'services/ReportsService.types';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
