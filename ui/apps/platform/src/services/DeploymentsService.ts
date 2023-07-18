@@ -4,7 +4,7 @@ import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsTo
 import { Deployment, ListDeployment } from 'types/deployment.proto';
 import { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
 import { Risk } from 'types/risk.proto';
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import {
     ORCHESTRATOR_COMPONENTS_KEY,
     orchestratorComponentsOption,
@@ -25,7 +25,7 @@ function shouldHideOrchestratorComponents() {
 
 function fillDeploymentSearchQuery(
     searchFilter: SearchFilter,
-    sortOption: Record<string, string>,
+    sortOption: Record<string, string> | ApiSortOption,
     page: number,
     pageSize: number
 ): string {
@@ -33,7 +33,7 @@ function fillDeploymentSearchQuery(
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     const queryObject: Record<
         string,
-        string | Record<string, number | string | Record<string, string>>
+        string | Record<string, number | string | Record<string, string> | ApiSortOption>
     > = {
         pagination: {
             offset,
@@ -56,7 +56,7 @@ function fillDeploymentSearchQuery(
  */
 export function listDeployments(
     searchFilter: SearchFilter,
-    sortOption: Record<string, string>,
+    sortOption: Record<string, string> | ApiSortOption,
     page: number,
     pageSize: number
 ): Promise<ListDeployment[]> {
@@ -76,7 +76,7 @@ export function listDeployments(
  */
 export function fetchDeploymentsWithProcessInfo(
     searchFilter: SearchFilter,
-    sortOption: Record<string, string>,
+    sortOption: Record<string, string> | ApiSortOption,
     page: number,
     pageSize: number
 ): CancellableRequest<ListDeploymentWithProcessInfo[]> {
