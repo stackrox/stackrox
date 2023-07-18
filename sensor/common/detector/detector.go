@@ -388,7 +388,7 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 			}
 
 			// TODO(ROX-17326): Add context to detector message
-			expiringMessage := message.NewExpiring(msg, context.TODO())
+			expiringMessage := message.NewExpiring(context.TODO(), msg)
 
 			select {
 			case <-d.auditStopper.Flow().StopRequested():
@@ -490,7 +490,7 @@ func createAlertResultsMsg(action central.ResourceAction, alertResults *central.
 	}
 
 	// TODO(ROX-17326): Add context to detector messages
-	return message.NewExpiring(msgFromSensor, context.TODO())
+	return message.NewExpiring(context.TODO(), msgFromSensor)
 }
 
 func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {

@@ -16,11 +16,11 @@ type ExpiringMessage struct {
 
 // New creates an ExpiringMessage with msg and context.Background.
 func New(msg *central.MsgFromSensor) *ExpiringMessage {
-	return NewExpiring(msg, context.Background())
+	return NewExpiring(context.Background(), msg)
 }
 
 // NewExpiring creates a message with a specific context.
-func NewExpiring(msg *central.MsgFromSensor, ctx context.Context) *ExpiringMessage {
+func NewExpiring(ctx context.Context, msg *central.MsgFromSensor) *ExpiringMessage {
 	return &ExpiringMessage{
 		MsgFromSensor: msg,
 		Context:       ctx,
