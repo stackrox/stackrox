@@ -4,7 +4,6 @@ import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
@@ -15,6 +14,8 @@ import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { getTooltip } from 'utils/vulnerabilityUtils';
+
+import ViewAllButton from './ViewAllButton';
 
 const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
     query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -113,7 +114,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Image Vulnerabilities"
+            header="Most common image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
