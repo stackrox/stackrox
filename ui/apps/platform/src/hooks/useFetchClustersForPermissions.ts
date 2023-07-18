@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { getClustersForPermissions, ClusterScopeObject } from 'services/RolesService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -9,15 +9,13 @@ type Result = {
     error: string;
 };
 
-function useFetchClustersForPermissions(permissions: string[]): Result {
-    const defaultResultState = useMemo(() => {
-        return {
-            clusters: [],
-            error: '',
-            isLoading: true,
-        };
-    }, []);
+const defaultResultState = {
+    clusters: [],
+    error: '',
+    isLoading: true,
+};
 
+function useFetchClustersForPermissions(permissions: string[]): Result {
     const [result, setResult] = useState<Result>({
         clusters: [],
         error: '',
@@ -48,7 +46,7 @@ function useFetchClustersForPermissions(permissions: string[]): Result {
                     isLoading: false,
                 });
             });
-    }, [defaultResultState, requestedPermissions]);
+    }, [requestedPermissions]);
 
     return result;
 }

@@ -8,7 +8,6 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Simulation } from '../utils/getSimulation';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
-import { useScopeHierarchy } from './useScopeHierarchy';
 
 export type NetworkPolicySimulator =
     | {
@@ -57,6 +56,7 @@ type SetNetworkPolicyModificationAction =
 
 type UseNetworkPolicySimulatorParams = {
     simulation: Simulation;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 const defaultResultState = {
@@ -66,11 +66,13 @@ const defaultResultState = {
     isLoading: true,
 } as NetworkPolicySimulator;
 
-function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorParams): {
+function useNetworkPolicySimulator({
+    simulation,
+    scopeHierarchy,
+}: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
 } {
-    const scopeHierarchy = useScopeHierarchy();
     const [simulator, setSimulator] = useState<NetworkPolicySimulator>(defaultResultState);
 
     useDeepCompareEffect(() => {

@@ -1,24 +1,28 @@
-import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
+import cloneDeep from 'lodash/cloneDeep';
+
 import useURLSearch from 'hooks/useURLSearch';
+import { ClusterScopeObject } from 'services/RolesService';
 import { getScopeHierarchyFromSearch } from '../utils/hierarchyUtils';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+
+const emptyScopeHierarchy = {
+    cluster: {
+        id: '',
+        name: '',
+    },
+    namespaces: [],
+    deployments: [],
+    remainingQuery: {},
+};
 
 /**
  * Returns the current scope hierarchy from the URL search params.
  */
-export function useScopeHierarchy(): NetworkScopeHierarchy {
+export function useScopeHierarchy(availableClusters: ClusterScopeObject[]): NetworkScopeHierarchy {
     const { searchFilter } = useURLSearch();
-    const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
 
     return (
-        getScopeHierarchyFromSearch(searchFilter, clusters) ?? {
-            cluster: {
-                id: '',
-                name: '',
-            },
-            namespaces: [],
-            deployments: [],
-            remainingQuery: {},
-        }
+        getScopeHierarchyFromSearch(searchFilter, availableClusters) ??
+        cloneDeep(emptyScopeHierarchy)
     );
 }
