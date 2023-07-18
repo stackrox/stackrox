@@ -580,7 +580,6 @@ func (suite *ManagerTestSuite) TestDeploymentDelete_WithoutBaseline() {
 	)
 }
 
-
 func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	suite.mustInitManager(
