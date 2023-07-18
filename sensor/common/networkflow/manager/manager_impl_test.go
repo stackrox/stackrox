@@ -82,7 +82,7 @@ type NetworkFlowManagerTestSuite struct {
 	suite.Suite
 }
 
-//region hostConnection.Process tests
+// region hostConnection.Process tests
 
 func (s *NetworkFlowManagerTestSuite) TestAddNothing() {
 	h := hostConnections{}
@@ -198,9 +198,9 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 	s.Len(h.endpoints, 1)
 }
 
-//endregion
+// endregion
 
-//region networkFlowManager tests
+// region networkFlowManager tests
 
 func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 	mockCtrl := gomock.NewController(s.T())
@@ -534,9 +534,9 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	m.done.Wait()
 }
 
-//endregion
+// endregion
 
-//region Helper functions
+// region Helper functions
 
 func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
@@ -710,4 +710,4 @@ func addHostConnection(mgr *networkFlowManager, hostName string, connPair *conne
 	mgr.connectionsByHost[hostName] = h
 }
 
-//endregion
+// endregion
