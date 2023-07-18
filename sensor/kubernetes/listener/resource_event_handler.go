@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -80,24 +79,23 @@ func (k *listenerImpl) handleAllEvents() {
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
-	if features.ComplianceOperatorCheckResults.Enabled() {
-		if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
-			log.Errorf("error finding compliance CRD: %v", err)
-		} else if !ok {
-			log.Info("compliance CRD could not be found")
-		} else {
-			log.Infof("initializing compliance operator informers")
-			crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-			complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResultGVR).Informer()
-			complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
-			profileLister = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Lister()
+	if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
+		log.Errorf("error finding compliance CRD: %v", err)
+	} else if !ok {
+		log.Info("compliance CRD could not be found")
+	} else {
+		log.Infof("initializing compliance operator informers")
+		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
+		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResultGVR).Informer()
+		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
+		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Lister()
 
-			complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
-			complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.RuleGVR).Informer()
-			complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScanGVR).Informer()
-			complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
-		}
+		complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
+		complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.RuleGVR).Informer()
+		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScanGVR).Informer()
+		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
 	}
+
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
@@ -206,14 +204,12 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
-	if features.ComplianceOperatorCheckResults.Enabled() {
-		// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
-		if complianceProfileInformer != nil {
-			handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-		}
-		if complianceTailoredProfileInformer != nil {
-			handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-		}
+	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
+	if complianceProfileInformer != nil {
+		handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	}
+	if complianceTailoredProfileInformer != nil {
+		handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}
 
 	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, resyncingSif, crdSharedInformerFactory, osRouteFactory) {
