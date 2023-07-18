@@ -124,3 +124,11 @@ export function createReportConfiguration(
             return response.data;
         });
 }
+
+export function deleteReportConfiguration(reportId: string): Promise<Record<string, never>> {
+    return axios
+        .delete<Record<string, never>>(`/v2/reports/configurations/${reportId}`)
+        .then((response) => {
+            return response.data;
+        });
+}
