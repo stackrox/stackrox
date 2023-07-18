@@ -111,7 +111,6 @@ ${KUBE_COMMAND} apply -f "$DIR/collector-rbac.yaml"
 echo "Creating collector network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-netpol.yaml"
 if [[ -f "$DIR/collector-pod-security.yaml" ]]; then
-  ${KUBE_COMMAND} apply -f "$DIR/collector-pod-security.yaml"
   if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
     echo "Pod security policies are not supported on this cluster. Skipping..."
   else
