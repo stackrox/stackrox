@@ -106,7 +106,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 	}
 
 	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	// TODO Add context here
+	// TODO(ROX-17157) Add context here
 	message.Context = nil
 	h.resolver.Send(message)
 }

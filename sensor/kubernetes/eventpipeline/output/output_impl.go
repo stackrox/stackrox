@@ -49,6 +49,14 @@ func (q *outputQueueImpl) Stop(_ error) {
 	q.stopped.Store(true)
 }
 
+func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: update,
+		},
+	}
+}
+
 // runOutputQueue reads messages from the inner queue, forwards them to the forwardQueue channel
 // and sends the deployments (if needed) to Detector
 func (q *outputQueueImpl) runOutputQueue() {
@@ -63,17 +71,9 @@ func (q *outputQueueImpl) runOutputQueue() {
 		}
 
 		for _, resourceUpdates := range msg.ForwardMessages {
-			expiringMessage := message.ExpiringMessage{
-				MsgFromSensor: &central.MsgFromSensor{
-					Msg: &central.MsgFromSensor_Event{
-						Event: resourceUpdates,
-					},
-				},
-				Context: msg.Context,
-			}
-
+			expiringMessage := message.NewExpiring(wrapSensorEvent(resourceUpdates), msg.Context)
 			if !expiringMessage.IsExpired() {
-				q.forwardQueue <- &expiringMessage
+				q.forwardQueue <- expiringMessage
 			}
 		}
 
