@@ -1,5 +1,5 @@
 import React from 'react';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
@@ -330,12 +330,14 @@ const StaticConfigurationSection = ({
                         />
                     </div>
                     {!centralEnv?.successfullyFetched && (
-                        <Message type="warn">
-                            Failed to check if Central has kernel support packages available
-                        </Message>
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Failed to check if Central has kernel support packages available"
+                        />
                     )}
                     {showSlimCollectorWarning && (
-                        <Message type="warn">
+                        <Alert variant="warning" isInline title="Kernel support package">
                             <span>
                                 Central doesn’t have the required Kernel support package. Retrieve
                                 it from{' '}
@@ -349,7 +351,7 @@ const StaticConfigurationSection = ({
                                 </a>{' '}
                                 and upload it to Central using roxctl.
                             </span>
-                        </Message>
+                        </Alert>
                     )}
                 </div>
             </div>

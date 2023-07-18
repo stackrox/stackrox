@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
+import { Alert, Bullseye } from '@patternfly/react-core';
 
 import TableHeader from 'Components/TableHeader';
-import MessageCentered from 'Components/MessageCentered';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
@@ -15,7 +15,7 @@ import {
     fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
     fetchDeploymentsCount,
 } from 'services/DeploymentsService';
-import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     filterAllowedSearch,
     convertToRestSearch,
@@ -69,7 +69,7 @@ function RiskTablePanel({
             .then(setCurrentDeployments)
             .catch((error) => {
                 setCurrentDeployments([]);
-                setErrorMessageDeployments(checkForPermissionErrorMessage(error));
+                setErrorMessageDeployments(getAxiosErrorMessage(error));
             });
 
         /*
@@ -108,7 +108,11 @@ function RiskTablePanel({
             </PanelHead>
             <PanelBody>
                 {errorMessageDeployments ? (
-                    <MessageCentered type="error">{errorMessageDeployments}</MessageCentered>
+                    <Bullseye>
+                        <Alert variant="danger" isInline title="Unable to get deployments">
+                            {errorMessageDeployments}
+                        </Alert>
+                    </Bullseye>
                 ) : (
                     <RiskTable
                         currentDeployments={currentDeployments}
