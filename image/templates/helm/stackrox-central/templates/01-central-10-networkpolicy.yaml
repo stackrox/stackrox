@@ -54,9 +54,9 @@ metadata:
     {{- include "srox.annotations" (list . "networkpolicy" "central-monitoring-tls") | nindent 4 }}
 spec:
   ingress:
-  - ports:
-    - port: 9091
-      protocol: TCP
+    - ports:
+      - port: 9091
+        protocol: TCP
   podSelector:
     matchLabels:
       app: central
