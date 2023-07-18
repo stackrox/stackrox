@@ -74,7 +74,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         echo "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
     fi
 
-    deploy_stackrox sensor_chart_version_override sensor_chart_dir_override
+    deploy_stackrox "$sensor_chart_version_override" "$sensor_chart_dir_override"
 
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
     ci_export SENSOR_CHART_DIR_OVERRIDE ""
