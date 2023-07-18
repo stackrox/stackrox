@@ -170,6 +170,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 	}
 	inputBindings := []*storage.K8SRoleBinding{
 		{
+			Id:        uuid.NewV4().String(),
 			RoleId:    role1ID,
 			ClusterId: clusterID,
 			Subjects: []*storage.Subject{
@@ -181,6 +182,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 			ClusterRole: true,
 		},
 		{
+			Id:        uuid.NewV4().String(),
 			RoleId:    role1ID,
 			ClusterId: clusterID,
 			Subjects: []*storage.Subject{

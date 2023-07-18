@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -89,11 +90,12 @@ func convertRoleBindingSearchResult(r search.Result) (string, bool) {
 		roleID      string
 		clusterRole bool
 	)
-	roleIDMatches := r.Matches["k8srolebinding.role_id"]
+	roleIDMatches := r.Matches[schema.RoleBindingsSchema.OptionsMap.MustGet(search.RoleID.String()).GetFieldPath()]
 	if len(roleIDMatches) == 1 {
 		roleID = roleIDMatches[0]
 	}
-	clusterRoleMatches := r.Matches["k8srolebinding.cluster_role"]
+	clusterRoleMatches := r.Matches[schema.RoleBindingsSchema.OptionsMap.
+		MustGet(search.ClusterRole.String()).GetFieldPath()]
 	if len(clusterRoleMatches) == 1 {
 		clusterRole, _ = strconv.ParseBool(clusterRoleMatches[0])
 	}
