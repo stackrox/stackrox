@@ -5,7 +5,7 @@ import set from 'lodash/set';
 import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { ImageType } from 'services/ReportsService.types';
-import { NotifierIntegration } from 'types/notifier.proto';
+import { EmailNotifierIntegration } from 'types/notifier.proto';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
@@ -42,7 +42,7 @@ export type CVEStatus = 'FIXABLE' | 'NOT_FIXABLE';
 export type CVESDiscoveredSince = 'ALL_VULN' | 'SINCE_LAST_REPORT' | 'START_DATE';
 
 export type DeliveryDestination = {
-    notifier: NotifierIntegration | null;
+    notifier: EmailNotifierIntegration | null;
     mailingLists: string[];
 };
 
