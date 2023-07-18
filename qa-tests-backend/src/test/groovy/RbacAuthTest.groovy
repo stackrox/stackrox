@@ -67,9 +67,6 @@ spec:
         basicAuthServiceId = providers.authProvidersList.find { it.type == "basic" }?.id
     }
 
-    def cleanupSpec() {
-    }
-
     def hasReadAccess(String res, Map<String, RoleOuterClass.Access> resource) {
         return resource.get(res) >= RoleOuterClass.Access.READ_ACCESS
     }
@@ -100,30 +97,19 @@ spec:
         return true
     }
 
-    def myPermissions(String token) {
-        BaseService.setUseClientCert(false)
-        BaseService.useApiToken(token)
-
-        try {
-            return RoleService.myPermissions()
-        } finally {
-            useDesiredServiceAuth()
-        }
-    }
-
     @Unroll
     @Tag("BAT")
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"
-        def testRole = RoleService.createRoleWithScopeAndPermissionSet("Automation Role",
+        def testRole = RoleService.createRoleWithScopeAndPermissionSet("Automation Role" + UUID.randomUUID(),
             UNRESTRICTED_SCOPE_ID, resourceAccess)
         assert RoleService.getRole(testRole.name)
         log.info "Created Role:\n${testRole}"
 
         and:
         "Create test API token in that role"
-        GenerateTokenResponse token = ApiTokenService.generateToken("Test Token", testRole.name)
+        GenerateTokenResponse token = ApiTokenService.generateToken("Test Token" + UUID.randomUUID(), testRole.name)
         assert token.token != null
 
         then:
