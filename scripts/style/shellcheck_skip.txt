@@ -57,7 +57,6 @@ scale/signatures/deploy.sh
 scripts/certification/run.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
-scripts/ci/deployment-minder.sh
 scripts/ci/gke.sh
 scripts/ci/jobs/check-generated.sh
 scripts/ci/jobs/check-log-query-data.sh
