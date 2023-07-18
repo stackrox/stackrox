@@ -5,7 +5,6 @@ Common test run patterns
 """
 
 import subprocess
-import sys
 from datetime import datetime
 from clusters import NullCluster
 from pre_tests import NullPreTest
@@ -83,7 +82,6 @@ class ClusterTestSetsRunner:
                 hold = err
 
         if hold is not None:
-            print(f"Exception \"{str(hold)}\" raised in ClusterTestRunner", file=sys.stderr)
             raise hold
 
     def run_test_set(self, test_set):
