@@ -85,29 +85,39 @@ func (u *updaterImpl) run() {
 	ticker := time.NewTicker(u.updateInterval)
 	defer ticker.Stop()
 
+	if responseSent := u.collectInfoAndSendResponse(); !responseSent {
+		return
+	}
+
 	for {
 		select {
 		case <-ticker.C:
-			info := u.getComplianceOperatorInfo()
-			u.complianceOperatorNS = info.GetNamespace()
-
-			msg := &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-					ComplianceOperatorInfo: info,
-				},
-			}
-
-			log.Debugf("Compliance Operator Info: %v", protoutils.NewWrapper(msg.GetComplianceOperatorInfo()))
-
-			select {
-			case u.response <- msg:
-				continue
-			case <-u.stopSig.Done():
+			if responseSent := u.collectInfoAndSendResponse(); !responseSent {
 				return
 			}
 		case <-u.stopSig.Done():
 			return
 		}
+	}
+}
+
+func (u *updaterImpl) collectInfoAndSendResponse() bool {
+	info := u.getComplianceOperatorInfo()
+	u.complianceOperatorNS = info.GetNamespace()
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
+			ComplianceOperatorInfo: info,
+		},
+	}
+
+	log.Debugf("Compliance Operator Info: %v", protoutils.NewWrapper(msg.GetComplianceOperatorInfo()))
+
+	select {
+	case u.response <- msg:
+		return true
+	case <-u.stopSig.Done():
+		return false
 	}
 }
 
