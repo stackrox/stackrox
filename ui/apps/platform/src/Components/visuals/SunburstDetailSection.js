@@ -4,12 +4,6 @@ import * as Icon from 'react-feather';
 import Truncate from 'react-truncate';
 import { Link } from 'react-router-dom';
 
-import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
-
-function formatAsPercent(x) {
-    return `${x}%`;
-}
-
 class SunburstDetailSection extends Component {
     static propTypes = {
         rootData: PropTypes.arrayOf(
@@ -71,7 +65,6 @@ class SunburstDetailSection extends Component {
                         text,
                         link,
                         className,
-                        value,
                         color: graphColor,
                         textColor,
                         labelValue,
@@ -107,13 +100,6 @@ class SunburstDetailSection extends Component {
                                 </span>
                                 {selectedDatum && units !== 'percentage' && (
                                     <span style={{ color: labelColor }}>{labelValue}</span>
-                                )}
-                                {selectedDatum && units === 'percentage' && !labelValue && (
-                                    <HorizontalBarChart
-                                        data={[{ y: '', x: value }]}
-                                        valueFormat={formatAsPercent}
-                                        minimal
-                                    />
                                 )}
                             </div>
                         );

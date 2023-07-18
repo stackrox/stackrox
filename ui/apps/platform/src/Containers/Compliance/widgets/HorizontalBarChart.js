@@ -13,9 +13,7 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'deepmerge';
 
-import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
-
-import BarGradient from './BarGradient';
+import BarGradient from 'Components/visuals/BarGradient';
 
 const minimalMargin = { top: -15, bottom: 0, left: 0, right: 0 };
 
@@ -54,12 +52,6 @@ class HorizontalBarChart extends Component {
         minimal: false,
     };
 
-    constructor(props) {
-        super(props);
-
-        this.state = { hintInfo: null };
-    }
-
     showLabel = (value) => value >= 10;
 
     getLabelData = () =>
@@ -80,16 +72,6 @@ class HorizontalBarChart extends Component {
             val.x -= val.label.length;
             return val;
         });
-
-    onValueMouseOverHandler = (datum, e) => {
-        if (datum.hint) {
-            this.setState({ hintInfo: { data: datum.hint, target: e.event.target } });
-        }
-    };
-
-    onValueMouseOutHandler = () => {
-        this.setState({ hintInfo: null });
-    };
 
     onValueClickHandler = (datum) => {
         if (datum.link) {
@@ -144,7 +126,6 @@ class HorizontalBarChart extends Component {
     render() {
         const { data, tickValues, valueFormat, minimal } = this.props;
         const sortedData = data.sort(sortByYValue);
-        const { hintInfo } = this.state;
 
         // Generate y axis links
         const axisLinks = sortedData.reduce((acc, curr) => {
@@ -256,15 +237,6 @@ class HorizontalBarChart extends Component {
                         <YAxis tickSize={0} top={26} className="text-xs" tickFormat={tickFormat} />
                     )}
                 </FlexibleWidthXYPlot>
-
-                {hintInfo?.target && (
-                    <HoverHint target={hintInfo.target}>
-                        <DetailedTooltipOverlay
-                            title={hintInfo.data.title}
-                            body={hintInfo.data.body}
-                        />
-                    </HoverHint>
-                )}
             </div>
         );
     }

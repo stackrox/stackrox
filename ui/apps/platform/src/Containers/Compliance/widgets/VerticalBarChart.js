@@ -11,7 +11,6 @@ import colors from 'constants/visuals/colors';
 
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
-import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
 
 const sortByXValue = (a, b) => {
     if (a.x < b.x) {
@@ -23,6 +22,8 @@ const sortByXValue = (a, b) => {
     return 0;
 };
 
+// Component state was needed only for deleted HoverHint, but we will not rewrite.
+/* eslint-disable react/prefer-stateless-function */
 class VerticalBarChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -48,12 +49,6 @@ class VerticalBarChart extends Component {
         onValueClick: null,
         legend: true,
     };
-
-    constructor(props) {
-        super(props);
-
-        this.state = { hintInfo: null };
-    }
 
     render() {
         const { colors: colorRange, tickValues, tickFormat, labelLinks, onValueClick } = this.props;
@@ -82,16 +77,6 @@ class VerticalBarChart extends Component {
 
             colorDomain: data.map((datum) => datum.y),
             colorRange,
-            onValueMouseOver: (datum, e) => {
-                if (datum.hint) {
-                    this.setState({
-                        hintInfo: { data: datum.hint, target: e.event.target },
-                    });
-                }
-            },
-            onValueMouseOut: () => {
-                this.setState({ hintInfo: null });
-            },
             onValueClick: (datum) => {
                 if (onValueClick) {
                     onValueClick(datum);
@@ -124,8 +109,6 @@ class VerticalBarChart extends Component {
             return <tspan>{inner}</tspan>;
         }
 
-        const { hintInfo } = this.state;
-
         return (
             <div style={styleProps} {...containerProps}>
                 <FlexibleWidthXYPlot {...plotProps}>
@@ -135,14 +118,6 @@ class VerticalBarChart extends Component {
                     <VerticalBarSeries data={letDataWithColors} {...seriesProps} />
                     <XAxis tickSize={0} tickFormat={formatTicks} />
                 </FlexibleWidthXYPlot>
-                {hintInfo?.target && (
-                    <HoverHint target={hintInfo.target}>
-                        <DetailedTooltipOverlay
-                            title={hintInfo.data.title}
-                            body={hintInfo.data.body}
-                        />
-                    </HoverHint>
-                )}
             </div>
         );
     }

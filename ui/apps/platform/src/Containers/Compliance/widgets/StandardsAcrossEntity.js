@@ -10,12 +10,12 @@ import { standardLabels } from 'messages/standards';
 import URLService from 'utils/URLService';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
-import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
 
 import { entityNounOrdinaryCasePlural } from '../entitiesForCompliance';
+import HorizontalBarChart from './HorizontalBarChart';
 
 function formatAsPercent(x) {
     return `${x}%`;
@@ -58,7 +58,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         if (!data || !data.results || !data.results.results.length) {
             return [];
         }
-        const { complianceStandards } = data;
         const standardsMapping = merge(
             {},
             setStandardsMapping(data, 'results', 'checks'),
@@ -66,9 +65,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         );
 
         const barData = Object.keys(standardsMapping).map((standardId) => {
-            const standard = complianceStandards.find((cs) => cs.id === standardId);
-            const { controls, checks } = standardsMapping[standardId];
-            const { passing: passingControls, total: totalControls } = controls;
+            const { checks } = standardsMapping[standardId];
             const { passing: passingChecks, total: totalChecks } = checks;
             const percentagePassing = Math.round((passingChecks / totalChecks) * 100) || 0;
             const link = URLService.getURL(match, location)
@@ -83,12 +80,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             const dataPoint = {
                 y: standardBaseTypes[standardId] || standardId,
                 x: percentagePassing,
-                hint: {
-                    title: `${standard?.name} Standard - ${percentagePassing}% Passing`,
-                    body: `${totalControls - passingControls} failing controls across all ${
-                        entityNounOrdinaryCasePlural[entityType][type]
-                    }`,
-                },
                 link,
             };
             return dataPoint;

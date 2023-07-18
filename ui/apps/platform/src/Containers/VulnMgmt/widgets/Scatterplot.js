@@ -14,9 +14,8 @@ import {
     ChartLabel,
 } from 'react-vis';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
-import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
 
-import { getHighValue, getLowValue } from '../visual.helpers';
+import { getHighValue, getLowValue } from './Scatterplot.utils';
 
 const Scatterplot = ({
     data,
@@ -34,7 +33,7 @@ const Scatterplot = ({
     legendData,
     history,
 }) => {
-    const { hint, onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
+    const { onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
     const lowX = lowerX !== null ? lowerX : getLowValue(data, 'x', xMultiple);
     const highX = upperX !== null ? upperX : getHighValue(data, 'x', xMultiple, shouldPadX);
@@ -90,15 +89,6 @@ const Scatterplot = ({
                     />
                 )}
             </FlexibleXYPlot>
-            {hint?.target && (
-                <HoverHint target={hint.target}>
-                    <DetailedTooltipOverlay
-                        title={hint.data.title}
-                        body={hint.data.body}
-                        subtitle={hint.data.subtitle}
-                    />
-                </HoverHint>
-            )}
         </>
     );
 };
