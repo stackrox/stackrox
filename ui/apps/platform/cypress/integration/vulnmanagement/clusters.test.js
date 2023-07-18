@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -78,19 +77,11 @@ describe('Vulnerability Management Clusters', () => {
         verifyConditionalCVEs(entitiesKey, 'image-cves', 3, 'imageVulnerabilityCounter');
     });
 
-    it('should display either links for node CVEs or text for No CVEs', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip(); // TODO verify and remove
-        }
-
+    it('should display either links for node CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(entitiesKey, 'node-cves', 4, 'nodeVulnerabilityCounter');
     });
 
-    it('should display either links for cluster CVEs or text for No CVEs', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip(); // TODO verify and remove
-        }
-
+    it('should display either links for cluster CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(entitiesKey, 'cluster-cves', 5, 'clusterVulnerabilityCounter');
     });
 
