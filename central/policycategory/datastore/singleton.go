@@ -4,13 +4,11 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/policycategory/index"
 	"github.com/stackrox/rox/central/policycategory/search"
 	policyCategoryStore "github.com/stackrox/rox/central/policycategory/store"
 	policyCategoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	"github.com/stackrox/rox/pkg/defaults/categories"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -24,18 +22,11 @@ var (
 )
 
 func initialize() {
-	var store policyCategoryStore.Store
-	var indexer index.Indexer
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-	store = policyCategoryPostgres.New(globaldb.GetPostgres())
-	indexer = policyCategoryPostgres.NewIndexer(globaldb.GetPostgres())
-
+	store := policyCategoryPostgres.New(globaldb.GetPostgres())
+	indexer := policyCategoryPostgres.NewIndexer(globaldb.GetPostgres())
 	addDefaults(store)
 	searcher := search.New(store, indexer)
-	ad = New(store, indexer, searcher, policyCategoryEdgeDS.Singleton())
+	ad = New(store, searcher, policyCategoryEdgeDS.Singleton())
 
 }
 

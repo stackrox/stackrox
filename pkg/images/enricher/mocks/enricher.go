@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	enricher "github.com/stackrox/rox/pkg/images/enricher"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockImageEnricher is a mock of ImageEnricher interface.

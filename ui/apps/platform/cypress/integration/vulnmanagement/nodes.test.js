@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -9,18 +8,14 @@ import {
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+    visitVulnerabilityManagementEntityInSidePanel,
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 const entitiesKey = 'nodes';
 
 describe('Vulnerability Management Nodes', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
@@ -109,5 +104,17 @@ describe('Vulnerability Management Nodes', () => {
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfDescendingNumberValuesFromElements);
         });
+    });
+
+    it('should show a message when node scan data is incomplete', () => {
+        const fixturePath = 'nodes/vmNodeOverview.json';
+
+        cy.fixture(fixturePath).then((body) => {
+            const { id } = body.data.result;
+            const staticResponse = { body };
+            visitVulnerabilityManagementEntityInSidePanel(entitiesKey, id, staticResponse);
+        });
+
+        cy.get(selectors.scanDataMessage);
     });
 });

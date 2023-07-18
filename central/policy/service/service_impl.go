@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -59,8 +58,7 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-		user.With(permissions.View(resources.Policy)): {
+		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/GetPolicy",
 			"/v1.PolicyService/ListPolicies",
 			"/v1.PolicyService/ReassessPolicies",
@@ -70,8 +68,7 @@ var (
 			"/v1.PolicyService/PolicyFromSearch",
 			"/v1.PolicyService/GetPolicyMitreVectors",
 		},
-		// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-		user.With(permissions.Modify(resources.Policy)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/PostPolicy",
 			"/v1.PolicyService/PutPolicy",
 			"/v1.PolicyService/PatchPolicy",
@@ -94,8 +91,7 @@ const (
 var (
 	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	partialListPolicyGroups = set.NewStringSet(fieldnames.ImageComponent, fieldnames.DockerfileLine, fieldnames.EnvironmentVariable)
 )
@@ -489,13 +485,10 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			var matched *augmentedobjs.NetworkPoliciesApplied
-			if features.NetworkPolicySystemPolicy.Enabled() {
-				matched, err = s.getNetworkPoliciesForDeployment(ctx, deployment)
-				if err != nil {
-					log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
-					return
-				}
+			matched, err := s.getNetworkPoliciesForDeployment(ctx, deployment)
+			if err != nil {
+				log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
+				return
 			}
 
 			violations, err := compiledPolicy.MatchAgainstDeployment(nil, booleanpolicy.EnhancedDeployment{

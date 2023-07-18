@@ -61,15 +61,30 @@ const headingForEntity = {
     subjects: 'Users and groups', // plural
 };
 
-function tableHeaderNoun(entitiesKey, countString) {
-    if (entitiesKey === 'controls') {
-        return countString === '1' ? 'CIS Control' : 'CIS Controls';
-    }
+function tableHeaderRegExp(entitiesKey) {
+    const singular =
+        entitiesKey === 'controls' ? 'CIS Control' : headingForEntity[entitiesKey].toLowerCase();
+    const plural =
+        entitiesKey === 'controls' ? 'CIS Controls' : headingForEntities[entitiesKey].toLowerCase();
 
-    return countString === '1'
-        ? headingForEntity[entitiesKey].toLowerCase()
-        : headingForEntities[entitiesKey].toLowerCase();
+    // Complexity to exclude 1 for plural.
+    // Double backslash \\d needed for RegExp constructor unlike RegExp literal.
+    return new RegExp(`^(1 ${singular}|(?:0|2|3|4|5|6|7|8|9|[123456789]\\d+) ${plural})$`);
 }
+
+const countNounRegExp = {
+    // clusters has singular link by name
+    controls: /\d+ Controls?$/,
+    deployments: /^\d+ deployments?$/,
+    images: /\d+ images?$/,
+    // namespaces
+    // nodes
+    // policies
+    roles: /^\d+ Roles?$/,
+    secrets: /\d+ secrets?$/,
+    serviceaccounts: /^\d+ Service Accounts?$/,
+    subjects: /^\d+ Users & Groups$/,
+};
 
 // Title of widget is title case but has uppercase style.
 const widgetTitleForEntities = {
@@ -265,8 +280,7 @@ export function clickOnCountWidget(entitiesKey, type) {
     }
 
     if (type === 'entityList') {
-        cy.get(`${selectors.groupedTabs}:contains('${entitiesKey}')`);
-        cy.get(`li.bg-base-100:contains("${entitiesKey}")`);
+        cy.get(`${selectors.groupedTabs}:contains('${headingForEntities[entitiesKey]}')`);
     }
 }
 
@@ -319,9 +333,9 @@ export const clickOnSingleEntityInTable = (entitiesKey1, entitiesKey2) => {
         });
 };
 
-export const hasTabsFor = (entities) => {
-    entities.forEach((entity) => {
-        cy.get(`${selectors.groupedTabs} div:contains("${entity}")`);
+export const hasTabsFor = (entitiesKeys) => {
+    entitiesKeys.forEach((entitiesKey) => {
+        cy.get(`${selectors.groupedTabs} div:contains("${headingForEntities[entitiesKey]}")`);
     });
 };
 
@@ -330,21 +344,19 @@ export const hasRelatedEntityFor = (entity) => {
 };
 
 // Assume at either entity page or entity in side panel.
-function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector) {
+function verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, contextSelector) {
     const listEntity = widgetTitleForEntities[entitiesKey2];
     cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
         .find(selectors.countWidgetValue)
         .invoke('text')
         .then((count) => {
             if (count === '0') {
-                return;
+                // TODO assert that button does not exist?
+                return; // TODO filter entities in test to prevent early return because of zero count?
             }
 
             function clickCountWidget() {
-                cy.get(`${selectors.countWidgets}:contains('${listEntity}')`)
-                    .find('button')
-                    .invoke('attr', 'disabled', false)
-                    .click();
+                cy.get(`${selectors.countWidgets}:contains('${listEntity}') button`).click();
             }
 
             if (
@@ -361,28 +373,31 @@ function entityCountMatchesTableRows(entitiesKey1, entitiesKey2, contextSelector
             }
 
             cy.get(`${contextSelector} .rt-tr-group`);
-            const noun = tableHeaderNoun(entitiesKey2, count);
-            cy.get(`${contextSelector} [data-testid="panel-header"]:contains("${count} ${noun}")`);
+            cy.get(`${contextSelector} [data-testid="panel-header"]`).contains(
+                'div',
+                tableHeaderRegExp(entitiesKey2)
+            );
         });
 }
 
-export function pageEntityCountMatchesTableRows(entitiesKey1, entitiesKey2) {
-    entityCountMatchesTableRows(entitiesKey1, entitiesKey2, '[data-testid="panel"]');
+export function verifyWidgetLinkToTableFromSinglePage(entitiesKey1, entitiesKey2) {
+    visitConfigurationManagementEntityInSidePanel(entitiesKey1);
+    navigateToSingleEntityPage(entitiesKey1);
+    verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, '[data-testid="panel"]');
 }
 
-export function sidePanelEntityCountMatchesTableRows(entitiesKey1, entitiesKey2) {
-    entityCountMatchesTableRows(entitiesKey1, entitiesKey2, '[data-testid="side-panel"]');
+export function verifyWidgetLinkToTableFromSidePanel(entitiesKey1, entitiesKey2) {
+    visitConfigurationManagementEntityInSidePanel(entitiesKey1);
+    verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, '[data-testid="side-panel"]');
 }
 
-export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2, entitiesRegExp2) {
+export function verifyTableLinkToSidePanelTable(entitiesKey1, entitiesKey2) {
     // 1. Visit list page for primary entities.
     visitConfigurationManagementEntities(entitiesKey1);
 
     cy.get('.rt-td')
-        .contains('a', entitiesRegExp2)
+        .contains('a', countNounRegExp[entitiesKey2])
         .then(($a) => {
-            const [, count] = /^(\d+) /.exec($a.text());
-
             // 2. Visit secondary entities side panel.
             const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
             interactAndWaitForResponses(() => {
@@ -394,9 +409,9 @@ export function entityListCountMatchesTableLinkCount(entitiesKey1, entitiesKey2,
                 `[data-testid="side-panel"] [data-testid="breadcrumb-link-text"]:contains("${heading}")`
             );
 
-            const noun = tableHeaderNoun(entitiesKey2, count);
-            cy.get(
-                `[data-testid="side-panel"] [data-testid="panel-header"]:contains("${count} ${noun}")`
+            cy.get('[data-testid="side-panel"] [data-testid="panel-header"]').contains(
+                'div',
+                tableHeaderRegExp(entitiesKey2)
             );
         });
 }

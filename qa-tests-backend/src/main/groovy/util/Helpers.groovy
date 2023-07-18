@@ -15,15 +15,12 @@ import org.spockframework.runtime.SpockAssertionError
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
 @Slf4j
 class Helpers {
-    private static final int MAX_RETRY_ATTEMPTS = 2
-    private static int retryAttempt = 0
-
     static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                log.debug("Caught exception. Retrying in ${pauseSecs}s. " + t)
+                log.debug("Caught exception. Retrying in ${pauseSecs}s (attempt ${i} of ${retries}): " + t)
             }
             sleep pauseSecs * 1000
         }
@@ -50,21 +47,6 @@ class Helpers {
         evaluateWithK8sClientRetry(retries, pauseSecs, closure)
     }
 
-    static boolean determineRetry(Throwable failure) {
-        if (failure instanceof AssumptionViolatedException) {
-            log.debug "Skipping retry for: " + failure
-            return false
-        }
-
-        retryAttempt++
-        def willRetry = retryAttempt <= MAX_RETRY_ATTEMPTS
-        if (willRetry) {
-            log.debug("An exception occurred which will cause a retry: ", failure)
-            log.debug "Test Failed... Attempting Retry #${retryAttempt}"
-        }
-        return willRetry
-    }
-
     static boolean waitForTrue(int retries, int intervalSeconds, Closure closure) {
         Timer t = new Timer(retries, intervalSeconds)
         int attempt = 0
@@ -76,18 +58,6 @@ class Helpers {
             log.debug "Attempt ${attempt} failed, retrying"
         }
         throw new RuntimeException("All ${attempt} attempts failed, could not reach desired state")
-    }
-
-    static void resetRetryAttempts() {
-        retryAttempt = 0
-    }
-
-    static int getAttemptCount() {
-        return retryAttempt + 1
-    }
-
-    static void sleepWithRetryBackoff(int milliseconds) {
-        sleep milliseconds * getAttemptCount()
     }
 
     static boolean containsNoWhitespace(Object ignored, String baseString, String subString) {

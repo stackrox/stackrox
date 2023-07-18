@@ -49,15 +49,15 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 // AlertAndNotify is the main function that implements the AlertManager interface
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
 	// Merge the old and the new alerts.
-	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
+	newAlerts, updatedAlerts, toBeResolvedAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
 		return nil, err
 	}
 
 	// If any of the alerts are for a deployment, detect if the deployment itself is modified
-	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, staleAlerts)
+	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, toBeResolvedAlerts)
 
-	// Mark any old alerts no longer generated as stale, and insert new alerts.
+	// Mark any old alerts no longer generated as resolved, and insert new alerts.
 	err = d.notifyAndUpdateBatch(ctx, newAlerts)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	if err != nil {
 		return nil, err
 	}
-	err = d.markAlertsStale(ctx, staleAlerts)
+	err = d.markAlertsResolved(ctx, toBeResolvedAlerts)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +101,8 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
-// markAlertsStale marks all input alerts stale in the input datastore.
-func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
+// markAlertsResolved marks all input alerts resolved in the input datastore.
+func (d *alertManagerImpl) markAlertsResolved(ctx context.Context, alertsToMark []*storage.Alert) error {
 	if len(alertsToMark) == 0 {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*
 	for _, alert := range alertsToMark {
 		ids = append(ids, alert.GetId())
 	}
-	resolvedAlerts, err := d.alerts.MarkAlertStaleBatch(ctx, ids...)
+	resolvedAlerts, err := d.alerts.MarkAlertsResolvedBatch(ctx, ids...)
 	if err != nil {
 		return err
 	}
@@ -310,7 +310,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	ctx context.Context,
 	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
-) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
+) (newAlerts, updatedAlerts, toBeResolvedAlerts []*storage.Alert, err error) {
 	qb := search.NewQueryBuilder().AddExactMatches(
 		search.ViolationState,
 		storage.ViolationState_ACTIVE.String(),
@@ -356,8 +356,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 	// Find any old alerts no longer being produced.
 	for _, previousAlert := range previousAlerts {
-		if d.shouldMarkAlertStale(previousAlert, incomingAlerts, oldAlertFilters...) {
-			staleAlerts = append(staleAlerts, previousAlert)
+		if d.shouldMarkAlertResolved(previousAlert, incomingAlerts, oldAlertFilters...) {
+			toBeResolvedAlerts = append(toBeResolvedAlerts, previousAlert)
 		}
 
 		if previousAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
@@ -382,7 +382,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	return
 }
 
-func (d *alertManagerImpl) shouldMarkAlertStale(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
+func (d *alertManagerImpl) shouldMarkAlertResolved(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
 	oldAndNew := []*storage.Alert{oldAlert}
 	oldAndNew = append(oldAndNew, incomingAlerts...)
 	// Do not mark any attempted alerts as stale. All attempted alerts must be resolved by users.

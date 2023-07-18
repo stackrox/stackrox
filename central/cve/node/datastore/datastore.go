@@ -6,13 +6,12 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/node/datastore/index"
 	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
@@ -38,10 +37,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
+func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
@@ -58,5 +56,5 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher, concurrency.NewKeyFence())
+	return New(dbstore, searcher, concurrency.NewKeyFence())
 }

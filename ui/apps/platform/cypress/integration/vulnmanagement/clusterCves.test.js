@@ -1,6 +1,5 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -11,18 +10,13 @@ import {
     interactAndWaitForVulnerabilityManagementEntities,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 const entitiesKey = 'cluster-cves';
 
 describe('Vulnerability Management Cluster (Platform) CVEs', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
@@ -96,13 +90,11 @@ describe('Vulnerability Management Cluster (Platform) CVEs', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    // Some tests might fail in local deployment.
-
     it('should display links for clusters', function () {
         if (hasOrchestratorFlavor('openshift')) {
             this.skip();
         }
 
-        verifySecondaryEntities(entitiesKey, 'clusters', 9, /^\d+ clusters?$/);
+        verifySecondaryEntities(entitiesKey, 'clusters', 9);
     });
 });

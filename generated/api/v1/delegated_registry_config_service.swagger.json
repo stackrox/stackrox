@@ -93,7 +93,7 @@
     "DelegatedRegistryConfigDelegatedRegistry": {
       "type": "object",
       "properties": {
-        "registryPath": {
+        "path": {
           "type": "string",
           "title": "Registry + optional path, ie: quay.example.com/prod"
         },
@@ -193,7 +193,7 @@
           "description": "If `enabled for` is NONE registries has no effect. \n \nIf `ALL` registries directs ad-hoc requests to the specified secured clusters if the path matches. \n\nIf `SPECIFIC` registries directs ad-hoc requests to the specified secured clusters just like with `ALL`,\nbut in addition images that match the specified paths will be scanned locally by the secured clusters \n(images from the OCP integrated registry are always scanned locally). Images that do not match a path\nwill be scanned via central services"
         }
       },
-      "title": "DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in \ncentral services or sent to particular secured clusters"
+      "description": "DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in \ncentral services or sent to particular secured clusters."
     }
   }
 }

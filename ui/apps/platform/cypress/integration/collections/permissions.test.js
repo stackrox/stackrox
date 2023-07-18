@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
 import { tryCreateCollection, tryDeleteCollection } from './Collections.helpers';
@@ -10,23 +9,13 @@ describe('Collection permission checks', () => {
 
     const collectionName = 'Permission test collection';
 
-    beforeEach(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
+    before(() => {
+        const rules = [{ fieldName: 'Namespace', values: [{ value: 'stackrox' }], operator: 'OR' }];
+
+        tryCreateCollection(collectionName, 'e2e test description', [], [{ rules }]);
     });
 
-    // Ensure a collection exists in the system for permission tests
-    if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-        before(() => {
-            const rules = [
-                { fieldName: 'Namespace', values: [{ value: 'stackrox' }], operator: 'OR' },
-            ];
-
-            tryCreateCollection(collectionName, 'e2e test description', [], [{ rules }]);
-        });
-        after(() => tryDeleteCollection(collectionName));
-    }
+    after(() => tryDeleteCollection(collectionName));
 
     it('should prevent users with no access from viewing collections', () => {
         // Mock a 'NO_ACCESS' permission response

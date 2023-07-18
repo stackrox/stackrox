@@ -78,7 +78,7 @@ function setup() {
 # check_collector_version(), check_scanner_version() tests
 
 function make() {
-    echo "${tags[$2]}"
+    echo "${tags[$3]}"
 }
 
 @test "spots collector tag is a master commit" {

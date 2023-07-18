@@ -25,9 +25,6 @@ import (
 )
 
 const (
-	grpcTimeout       = 30 * time.Second
-	uploadIdleTimeout = 30 * time.Second
-
 	kernelModulesDirPrefix = "kernel-modules/"
 )
 
@@ -66,7 +63,7 @@ func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPack
 		req.FilesToCheck = append(req.FilesToCheck, probeFileName)
 	}
 
-	ctx, cancel := context.WithTimeout(common.Context(), grpcTimeout)
+	ctx, cancel := context.WithTimeout(common.Context(), cmd.timeout)
 	defer cancel()
 
 	resp, err := probeUploadClient.GetExistingProbes(ctx, req)
@@ -148,7 +145,7 @@ func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManife
 	req.URL.RawQuery = urlParams.Encode()
 
 	cmd.env.Logger().InfofLn("Uploading %d files from support package ...\n", len(manifest.GetFiles()))
-	resp, err := transfer.ViaHTTP(req, httpClient, time.Now(), uploadIdleTimeout)
+	resp, err := transfer.ViaHTTP(req, httpClient, time.Now(), cmd.timeout)
 	if err != nil {
 		return errors.Wrap(err, "HTTP transport error while uploading collector support files")
 	}

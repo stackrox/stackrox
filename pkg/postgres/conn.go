@@ -54,12 +54,11 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pg
 	} else {
 		ct, err = c.PgxPoolConn.Exec(ctx, sql, args...)
 	}
-
 	if err != nil {
 		incQueryErrors(sql, err)
-		return nil, err
+		return nil, toErrox(err)
 	}
-	return ct, err
+	return ct, nil
 }
 
 // Query wraps pgxpool.Conn Query

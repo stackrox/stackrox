@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Button, ButtonVariant, pluralize } from '@patternfly/react-core';
+import { Flex, Button, ButtonVariant, pluralize, Truncate } from '@patternfly/react-core';
 import {
     TableComposable,
     Thead,
@@ -24,7 +24,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import SeverityCountLabels from '../components/SeverityCountLabels';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import { VulnerabilitySeverityLabel } from '../types';
 
 export type DeploymentForCve = {
@@ -139,7 +139,7 @@ function AffectedDeploymentsTable({
                                         component={LinkShim}
                                         href={getEntityPagePath('Deployment', id)}
                                     >
-                                        {name}
+                                        <Truncate position="middle" content={name} />
                                     </Button>{' '}
                                 </Flex>
                             </Td>
@@ -159,7 +159,7 @@ function AffectedDeploymentsTable({
                             </Td>
 
                             <Td modifier="nowrap" dataLabel="First discovered">
-                                <DatePhraseTd date={created} />
+                                <DateDistanceTd date={created} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

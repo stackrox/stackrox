@@ -6,12 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/notifiers"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const testWebhookEnv = "TEAMS_WEBHOOK"

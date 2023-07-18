@@ -8,8 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockClusterManager is a mock of ClusterManager interface.
@@ -218,6 +219,83 @@ func (m *MockNetworkBaselineManager) Walk(ctx context.Context, fn func(*storage.
 func (mr *MockNetworkBaselineManagerMockRecorder) Walk(ctx, fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockNetworkBaselineManager)(nil).Walk), ctx, fn)
+}
+
+// MockDelegatedRegistryConfigManager is a mock of DelegatedRegistryConfigManager interface.
+type MockDelegatedRegistryConfigManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockDelegatedRegistryConfigManagerMockRecorder
+}
+
+// MockDelegatedRegistryConfigManagerMockRecorder is the mock recorder for MockDelegatedRegistryConfigManager.
+type MockDelegatedRegistryConfigManagerMockRecorder struct {
+	mock *MockDelegatedRegistryConfigManager
+}
+
+// NewMockDelegatedRegistryConfigManager creates a new mock instance.
+func NewMockDelegatedRegistryConfigManager(ctrl *gomock.Controller) *MockDelegatedRegistryConfigManager {
+	mock := &MockDelegatedRegistryConfigManager{ctrl: ctrl}
+	mock.recorder = &MockDelegatedRegistryConfigManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockDelegatedRegistryConfigManager) EXPECT() *MockDelegatedRegistryConfigManagerMockRecorder {
+	return m.recorder
+}
+
+// GetConfig mocks base method.
+func (m *MockDelegatedRegistryConfigManager) GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", ctx)
+	ret0, _ := ret[0].(*storage.DelegatedRegistryConfig)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockDelegatedRegistryConfigManagerMockRecorder) GetConfig(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDelegatedRegistryConfigManager)(nil).GetConfig), ctx)
+}
+
+// MockImageIntegrationManager is a mock of ImageIntegrationManager interface.
+type MockImageIntegrationManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockImageIntegrationManagerMockRecorder
+}
+
+// MockImageIntegrationManagerMockRecorder is the mock recorder for MockImageIntegrationManager.
+type MockImageIntegrationManagerMockRecorder struct {
+	mock *MockImageIntegrationManager
+}
+
+// NewMockImageIntegrationManager creates a new mock instance.
+func NewMockImageIntegrationManager(ctrl *gomock.Controller) *MockImageIntegrationManager {
+	mock := &MockImageIntegrationManager{ctrl: ctrl}
+	mock.recorder = &MockImageIntegrationManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockImageIntegrationManager) EXPECT() *MockImageIntegrationManagerMockRecorder {
+	return m.recorder
+}
+
+// GetImageIntegrations mocks base method.
+func (m *MockImageIntegrationManager) GetImageIntegrations(ctx context.Context, integration *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageIntegrations", ctx, integration)
+	ret0, _ := ret[0].([]*storage.ImageIntegration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImageIntegrations indicates an expected call of GetImageIntegrations.
+func (mr *MockImageIntegrationManagerMockRecorder) GetImageIntegrations(ctx, integration interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIntegrations", reflect.TypeOf((*MockImageIntegrationManager)(nil).GetImageIntegrations), ctx, integration)
 }
 
 // MockNetworkEntityManager is a mock of NetworkEntityManager interface.

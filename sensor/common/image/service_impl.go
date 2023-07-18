@@ -6,21 +6,24 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                   = logging.LoggerForModule()
+	errCentralNoReachable = errors.New("central is not reachable")
 )
 
 // Service is an interface to receiving image scan results for the Admission Controller.
@@ -32,22 +35,30 @@ type Service interface {
 	SetClient(conn grpc.ClientConnInterface)
 }
 
+// ServiceComponent aggregates the Image Service with the common.SensorComponent
+type ServiceComponent interface {
+	Service
+	common.SensorComponent
+}
+
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(imageCache expiringcache.Cache, registryStore *registry.Store) Service {
+func NewService(imageCache expiringcache.Cache, registryStore registryStore) ServiceComponent {
 	return &serviceImpl{
 		imageCache:    imageCache,
 		registryStore: registryStore,
 		localScan:     scan.NewLocalScan(registryStore),
+		centralReady:  concurrency.NewSignal(),
 	}
 }
 
 type serviceImpl struct {
 	sensor.UnimplementedImageServiceServer
 
-	centralClient v1.ImageServiceClient
+	centralClient centralClient
 	imageCache    expiringcache.Cache
-	registryStore *registry.Store
-	localScan     *scan.LocalScan
+	registryStore registryStore
+	localScan     localScan
+	centralReady  concurrency.Signal
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -66,16 +77,21 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	log.Debugf("scan request from admission control: %+v", req)
 
+	// Beyond this point we need to be able to reach central
+	if !s.centralReady.IsDone() {
+		return nil, errCentralNoReachable
+	}
+
 	// Note: The Admission Controller does NOT know if the image is cluster-local,
 	// so we determine it here.
 	// If Sensor's registry store has an entry for the given image's registry,
 	// it is considered cluster-local.
 	// This is used to determine that an image is from an OCP internal registry and
 	// should not be sent to central for scanning
-	req.Image.IsClusterLocal = s.registryStore.HasRegistryForImage(req.GetImage().GetName())
+	req.Image.IsClusterLocal = s.registryStore.IsLocal(req.GetImage().GetName())
 
-	// Ask Central to scan the image if the image is not internal and local scanning is not forced
-	if !req.GetImage().GetIsClusterLocal() && !env.ForceLocalImageScanning.BooleanSetting() {
+	// Ask Central to scan the image if the image is neither internal nor local
+	if !req.GetImage().GetIsClusterLocal() {
 		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),
 			CachedOnly: !req.GetScanInline(),
@@ -88,20 +104,13 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	var err error
-	var img *storage.Image
-	if req.GetImage().GetIsClusterLocal() {
-		img, err = s.localScan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
-	} else {
-		// ForceLocalImageScanning must be true
-		img, err = s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetNamespace())
-	}
-
+	img, err := s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, req.GetImage(), req.GetNamespace(), "", false)
 	if err != nil {
 		err = errors.Wrap(err, "scanning image via local scanner")
 		log.Error(err)
 		return nil, err
 	}
+
 	return &sensor.GetImageResponse{
 		Image: img,
 	}, nil
@@ -120,4 +129,31 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
+}
+
+func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		s.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		s.centralReady.Reset()
+	}
+}
+
+func (s *serviceImpl) Start() error {
+	return nil
+}
+
+func (s *serviceImpl) Stop(_ error) {}
+
+func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+	return nil
+}
+
+func (s *serviceImpl) ResponsesC() <-chan *central.MsgFromSensor {
+	return nil
 }

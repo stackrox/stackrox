@@ -12,9 +12,6 @@ import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import PoliciesCountTile from '../Components/PoliciesCountTile';
-import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
 import NodesCountTile from '../Components/NodesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
@@ -24,23 +21,18 @@ import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import ClustersWithMostClusterVulnerabilities from '../widgets/ClustersWithMostClusterVulnerabilities';
 import CvesMenu from './CvesMenu';
 
-const baseEntityMenuTypes = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
-const componentMenuType = [entityTypes.COMPONENT];
-const splitComponentMenuTypes = [entityTypes.NODE_COMPONENT, entityTypes.IMAGE_COMPONENT];
+const entityMenuTypes = [
+    entityTypes.CLUSTER,
+    entityTypes.NAMESPACE,
+    entityTypes.DEPLOYMENT,
+    entityTypes.NODE_COMPONENT,
+    entityTypes.IMAGE_COMPONENT,
+];
 
 const VulnDashboardPage = ({ history }) => {
     const [isExporting, setIsExporting] = useState(false);
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    let entityMenuTypes = [...baseEntityMenuTypes];
-    if (showVmUpdates) {
-        entityMenuTypes = [...baseEntityMenuTypes, ...splitComponentMenuTypes];
-    } else {
-        entityMenuTypes = [...baseEntityMenuTypes, ...componentMenuType];
-    }
 
     const cveFilterButtons = [
         {
@@ -79,13 +71,9 @@ const VulnDashboardPage = ({ history }) => {
             <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
-                    {showVmUpdates && (
-                        <div className="flex mr-2">
-                            <CvesMenu />
-                        </div>
-                    )}
-                    <PoliciesCountTile />
-                    {!showVmUpdates && <CvesCountTile entityType={entityTypes.CVE} />}
+                    <div className="flex mr-2">
+                        <CvesMenu />
+                    </div>
                     <NodesCountTile />
                     <ImagesCountTile />
                     <div className="flex w-32">

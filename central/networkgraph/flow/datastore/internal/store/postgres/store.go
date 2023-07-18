@@ -9,8 +9,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -84,6 +86,16 @@ const (
 	AND a.ClusterId = b.ClusterId
       AND a.Flow_Id <> b.Max_Flow;
 	`
+
+	pruneNetworkFlowsSrcStmt = `DELETE FROM %s child WHERE NOT EXISTS
+		(SELECT 1 from deployments parent WHERE child.Props_SrcEntity_Id = parent.id::text AND parent.clusterid = $1) 
+		AND Props_SrcEntity_Type = 1
+		AND LastSeenTimestamp < $2`
+
+	pruneNetworkFlowsDestStmt = `DELETE FROM %s child WHERE NOT EXISTS
+		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1) 
+		AND Props_DstEntity_Type = 1
+		AND LastSeenTimestamp < $2`
 )
 
 var (
@@ -98,6 +110,10 @@ var (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
+
+	deleteTimeout = env.PostgresDefaultNetworkFlowDeleteTimeout.DurationSetting()
+
+	queryTimeout = env.PostgresDefaultNetworkFlowQueryTimeout.DurationSetting()
 )
 
 // FlowStore stores all of the flows for a single cluster.
@@ -112,17 +128,14 @@ type FlowStore interface {
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	// RemoveFlow Same as Delete except it takes in the object vs the IDs.  Keep an eye on it.
 	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error
-	// RemoveFlowsForDeployment
+	// RemoveFlowsForDeployment remove flows associated with a deployment
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
 
-	// RemoveMatchingFlows We can probably phase out the functions
-	// valueMatchFn checks to see if time difference vs now is greater than orphanWindow i.e. 30 minutes
-	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
-	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
-	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
-
-	// RemoveStaleFlows - remove stale duplicate network flows
+	// RemoveStaleFlows remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
+
+	// RemoveOrphanedFlows remove flows that have been orphaned by deployments
+	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
 }
 
 type flowStoreImpl struct {
@@ -243,8 +256,8 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 	}
 
 	if err := s.copyFromNetworkflow(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 		}
 		return err
 	}
@@ -269,8 +282,8 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	for _, obj := range objs {
 
 		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 			}
 			return err
 		}
@@ -372,11 +385,24 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// To avoid a full scan with an OR delete source and destination flows separately
+	err := s.removeDeploymentFlows(ctx, deleteSrcDeploymentStmt, id)
+	if err != nil {
+		return err
+	}
+
+	return s.removeDeploymentFlows(ctx, deleteDstDeploymentStmt, id)
+}
+
+func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt string, id string) error {
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return err
 	}
 	defer release()
+
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
@@ -384,25 +410,14 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 	}
 
 	// To avoid a full scan with an OR delete source and destination flows separately
-	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, s.clusterID, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+	if _, err := tx.Exec(ctx, deleteStmt, s.clusterID, id); err != nil {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 		}
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, s.clusterID, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit(ctx)
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
@@ -419,6 +434,9 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	var err error
 	// Default to Now as that is when we are reading them
 	lastUpdateTS := types.TimestampNow()
+
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -456,6 +474,9 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 
 	// Default to Now as that is when we are reading them
 	lastUpdateTS := types.TimestampNow()
+
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -526,8 +547,8 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 		_, err := tx.Exec(ctx, deleteStmt, obj.GetSrcEntity().GetType(), obj.GetSrcEntity().GetId(), obj.GetDstEntity().GetType(), obj.GetDstEntity().GetId(), obj.GetDstPort(), obj.GetL4Protocol(), s.clusterID)
 
 		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+				return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
 			}
 			return err
 		}
@@ -548,70 +569,36 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 	})
 }
 
-// RemoveMatchingFlows removes flows from the store that fit the criteria specified in both keyMatchFn AND valueMatchFN
-// keyMatchFn will return true if a flow references a source OR destination deployment that has been deleted
-// valueMatchFn will return true if the lastSeenTimestamp of a flow is more than 30 minutes ago.
-// TODO(ROX-9921) Figure out what to do with the functions.
-func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+// RemoveOrphanedFlows removes flows that have been orphaned
+func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
-	return pgutils.Retry(func() error {
-		return s.retryableRemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn)
-	})
-}
-
-func (s *flowStoreImpl) retryableRemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
-	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// To avoid a full scan with an OR delete source and destination flows separately
+	pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt, s.partitionName)
+	err := s.pruneFlows(ctx, pruneStmt, orphanWindow)
+	if err != nil {
+		return err
+	}
+
+	pruneStmt = fmt.Sprintf(pruneNetworkFlowsDestStmt, s.partitionName)
+	return s.pruneFlows(ctx, pruneStmt, orphanWindow)
+}
+
+func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	// TODO(ROX-9921) Look at refactoring how these predicates work as an overall refactor of flows.
-	// This operation matches if the either the dest or src deployment no longer exists AND then
-	// if the last seen time is outside a time window.  Since we do not yet know what deployments exist
-	// in Postgres we cannot fully do this work in SQL.  Additionally, there may be issues with the synchronization
-	// of when flow is created vs a deployment deleted that may also make that problematic.
-	if keyMatchFn != nil {
-		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
-		rows, err := conn.Query(ctx, partitionWalkStmt)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-		// keyMatchFn is passed in to the readRows method in order to filter down to rows referencing
-		// deleted deployments.
-		deleteFlows, err := s.readRows(rows, keyMatchFn)
-		if err != nil {
-			return err
-		}
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
 
-		for _, flow := range deleteFlows {
-			if valueMatchFn != nil && !valueMatchFn(flow) {
-				continue
-			}
-			// This is a cleanup operation so we can make it slow for now
-			tx, err := conn.Begin(ctx)
-			if err != nil {
-				return err
-			}
-			_, err = tx.Exec(ctx, deleteStmtWithTime, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID, pgutils.NilOrTime(flow.GetLastSeenTimestamp()))
-
-			if err != nil {
-				if err := tx.Rollback(ctx); err != nil {
-					return err
-				}
-				return err
-			}
-
-			if err := tx.Commit(ctx); err != nil {
-				return err
-			}
-		}
+	if _, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
+		return err
 	}
 
 	return nil
@@ -633,8 +620,11 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 
 	// This is purposefully not retried as this is an optimization and not a requirement
 	// It is also currently prone to statement timeouts
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
 	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
 	_, err = conn.Exec(ctx, prune)
+
 	return err
 }
 

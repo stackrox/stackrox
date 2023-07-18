@@ -290,7 +290,7 @@ class WorkflowPDFExportButton extends Component {
                 disabled={this.props.isExporting}
                 dataTestId="download-pdf-button"
                 className={this.props.className}
-                text="DOWNLOAD PAGE AS PDF"
+                text="Download Page as PDF"
                 onClick={this.saveFn}
             />
         );

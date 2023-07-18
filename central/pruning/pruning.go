@@ -29,7 +29,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -38,7 +37,9 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
@@ -50,6 +51,8 @@ const (
 	logImbueWindow     = 24 * 7 * time.Hour
 
 	alertQueryTimeout = 10 * time.Minute
+
+	flowsSemaphoreWeight = 5
 )
 
 var (
@@ -83,7 +86,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store) GarbageCollector {
-	gci := &garbageCollectorImpl{
+	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
 		nodes:           nodes,
@@ -103,11 +106,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		k8sRoleBindings: k8sRoleBindings,
 		logimbueStore:   logimbueStore,
 		stopper:         concurrency.NewStopper(),
+		postgres:        globaldb.GetPostgres(),
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		gci.postgres = globaldb.GetPostgres()
-	}
-	return gci
 }
 
 type garbageCollectorImpl struct {
@@ -156,12 +156,10 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		postgres.PruneActiveComponents(pruningCtx, g.postgres)
-		postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
+	postgres.PruneActiveComponents(pruningCtx, g.postgres)
+	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
-		g.pruneLogImbues()
-	}
+	g.pruneLogImbues()
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
@@ -208,34 +206,45 @@ func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
 }
 
 // Remove pods where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) {
-	var podIDsToRemove []string
-	staleClusterIDsFound := set.NewStringSet()
-	walkFn := func() error {
-		podIDsToRemove = podIDsToRemove[:0]
-		staleClusterIDsFound.Clear()
-		return g.pods.WalkAll(pruningCtx, func(pod *storage.Pod) error {
-			if !clusters.Contains(pod.GetClusterId()) {
-				podIDsToRemove = append(podIDsToRemove, pod.GetId())
-				staleClusterIDsFound.Add(pod.GetClusterId())
-			}
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Errorf("Error walking pods to find orphaned pods: %v", err)
+func (g *garbageCollectorImpl) removeOrphanedPods() {
+	podIDsToRemove, err := postgres.GetOrphanedPodIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned pods: %v", err)
 		return
 	}
+
 	if len(podIDsToRemove) == 0 {
 		log.Info("[Pruning] Found no orphaned pods...")
 		return
 	}
-	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters: %v). Deleting...",
-		len(podIDsToRemove), staleClusterIDsFound.AsSlice())
+	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters). Deleting...",
+		len(podIDsToRemove))
 
 	for _, id := range podIDsToRemove {
 		if err := g.pods.RemovePod(pruningCtx, id); err != nil {
 			log.Errorf("Failed to remove pod with id %s: %v", id, err)
+		}
+	}
+}
+
+// Remove nodes where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedNodes() {
+	nodesToRemove, err := postgres.GetOrphanedNodeIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned nodes: %v", err)
+		return
+	}
+
+	if len(nodesToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned nodes...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned nodes (from formerly deleted clusters). Deleting...",
+		len(nodesToRemove))
+
+	for _, id := range nodesToRemove {
+		if err := g.nodes.DeleteNodes(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove node with id %s: %v", id, err)
 		}
 	}
 }
@@ -293,23 +302,18 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 		return
 	}
 	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
-	podIDs, err := g.pods.GetPodIDs(pruningCtx)
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to fetch pod IDs in pruning"))
-		return
-	}
-	g.removeOrphanedProcesses(deploymentSet, set.NewFrozenStringSet(podIDs...))
+
+	g.markOrphanedAlertsAsResolved()
+	g.removeOrphanedNetworkFlows(clusterIDSet)
+
+	g.removeOrphanedPods()
+	g.removeOrphanedNodes()
+
+	// The deletion of pods can trigger the deletion of indicators.  So in theory there could
+	// be fewer indicators to delete if we process orphaned pods first.
+	g.removeOrphanedProcesses()
 	g.removeOrphanedProcessBaselines(deploymentSet)
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		g.removeOrphanedPLOP()
-	}
-
-	g.markOrphanedAlertsAsResolved(deploymentSet)
-	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
-
-	// TODO: Convert this from ListSearch to using negation search similar to SAs, roles and role bindings below
-	g.removeOrphanedPods(clusterIDSet)
+	g.removeOrphanedPLOP()
 
 	q := clusterIDsToNegationQuery(clusterIDSet)
 	g.removeOrphanedServiceAccounts(q)
@@ -345,33 +349,9 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 	return search.NewBooleanQuery(must, mustNot)
 }
 
-func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
-	var processesToPrune []string
-	now := types.TimestampNow()
-	walkFn := func() error {
-		processesToPrune = processesToPrune[:0]
-		return g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {
-			if pi.GetPodUid() != "" && podIDs.Contains(pi.GetPodUid()) {
-				return nil
-			}
-			if pi.GetPodUid() == "" && deploymentIDs.Contains(pi.GetDeploymentId()) {
-				return nil
-			}
-			if protoutils.Sub(now, pi.GetSignal().GetTime()) < orphanWindow {
-				return nil
-			}
-			processesToPrune = append(processesToPrune, pi.GetId())
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
-		return
-	}
-	log.Infof("[Process pruning] Found %d orphaned processes", len(processesToPrune))
-	if err := g.processes.RemoveProcessIndicators(pruningCtx, processesToPrune); err != nil {
-		log.Error(errors.Wrap(err, "error removing process indicators"))
-	}
+func (g *garbageCollectorImpl) removeOrphanedProcesses() {
+	postgres.PruneOrphanedProcessIndicators(pruningCtx, g.postgres, orphanWindow)
+	log.Infof("[Process pruning] Pruning of orphaned processes complete")
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {
@@ -467,82 +447,65 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	}
 }
 
-func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context, deployments set.FrozenStringSet) ([]string, error) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
-	}
-	now := types.TimestampNow()
-	var alertsToResolve []string
-	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
-		// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
-		// This will only happen when there is data inconsistency
-		if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
-			return nil
-		}
-		if alert.GetState() != storage.ViolationState_ACTIVE {
-			return nil
-		}
-		if deployments.Contains(alert.GetDeployment().GetId()) {
-			return nil
-		}
-		if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
-			return nil
-		}
-		alertsToResolve = append(alertsToResolve, alert.GetId())
-		return nil
-	})
-	return alertsToResolve, err
+func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {
+	return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
 }
 
-func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
-	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx, deployments)
+func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved() {
+	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx)
 	if err != nil {
 		log.Errorf("[Alert pruning] error getting orphaned alert ids: %v", err)
 		return
 	}
 
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
-	if _, err := g.alerts.MarkAlertStaleBatch(pruningCtx, alertsToResolve...); err != nil {
-		log.Error(errors.Wrap(err, "error marking alert as stale"))
+	if _, err := g.alerts.MarkAlertsResolvedBatch(pruningCtx, alertsToResolve...); err != nil {
+		log.Error(errors.Wrap(err, "error marking alert as resolved"))
 	}
 }
 
-func isOrphanedDeployment(deployments set.FrozenStringSet, info *storage.NetworkEntityInfo) bool {
-	return info.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deployments.Contains(info.GetId())
-}
+func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStringSet) {
+	var wg sync.WaitGroup
+	sema := semaphore.NewWeighted(flowsSemaphoreWeight)
 
-func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters set.FrozenStringSet) {
+	orphanTime := time.Now().UTC().Add(-1 * orphanWindow)
+
+	// Each cluster has a separate store thus we can take advantage of doing these deletions concurrently.  If we don't
+	// the entire prune job will be stuck waiting on processing the network flows deletions in cluster sequence.
 	for _, c := range clusters.AsSlice() {
-		store, err := g.networkflows.GetFlowStore(pruningCtx, c)
-		if err != nil {
-			log.Errorf("error getting flow store for cluster %q: %v", c, err)
-			continue
-		} else if store == nil {
-			continue
+		if err := sema.Acquire(pruningCtx, 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return
 		}
 
-		// First remove stale network flows
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
+		log.Debugf("[Network Flow pruning] for cluster %q", c)
+		wg.Add(1)
+		go func(c string) {
+			defer sema.Release(1)
+			defer wg.Done()
+			store, err := g.networkflows.GetFlowStore(pruningCtx, c)
+			if err != nil {
+				log.Errorf("error getting flow store for cluster %q: %v", c, err)
+				return
+			} else if store == nil {
+				return
+			}
+
+			err = store.RemoveOrphanedFlows(pruningCtx, &orphanTime)
+			if err != nil {
+				log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
+			}
+
+			// Second remove stale network flows
 			err = store.RemoveStaleFlows(pruningCtx)
 			if err != nil {
 				log.Errorf("error removing stale flows for cluster %q: %v", c, err)
 			}
-		}
-
-		now := types.TimestampNow()
-
-		keyMatchFn := func(props *storage.NetworkFlowProperties) bool {
-			return isOrphanedDeployment(deployments, props.GetSrcEntity()) ||
-				isOrphanedDeployment(deployments, props.GetDstEntity())
-		}
-		valueMatchFn := func(flow *storage.NetworkFlow) bool {
-			return flow.LastSeenTimestamp != nil && protoutils.Sub(now, flow.LastSeenTimestamp) > orphanWindow
-		}
-		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
-		if err != nil {
-			log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
-		}
+		}(c)
 	}
+	wg.Wait()
+
+	log.Info("[Network Flow pruning] Completed")
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {

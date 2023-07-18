@@ -3,12 +3,10 @@ package service
 import (
 	"context"
 	"math"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alert/mappings"
@@ -16,13 +14,13 @@ import (
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -474,10 +472,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 }
 
 func flagAwareSeverity(i int) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return storage.Severity_name[int32(i)]
-	}
-	return strconv.Itoa(i)
+	return storage.Severity_name[int32(i)]
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {

@@ -1,9 +1,9 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import capitalize from 'lodash/capitalize';
+
 import entityTypes from 'constants/entityTypes';
 import URLService from 'utils/URLService';
-import { resourceLabels } from 'messages/common';
-import capitalize from 'lodash/capitalize';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
@@ -15,6 +15,8 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
+
+import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
 const ResourceCount = ({
     match,
@@ -63,7 +65,7 @@ const ResourceCount = ({
     }
 
     const variables = getVariables();
-    const headerText = `${resourceLabels[entityType]} Count`;
+    const headerText = `${entityNounSentenceCaseSingular[entityType]} Count`;
     const url = getUrl();
 
     if (count || count === 0) {

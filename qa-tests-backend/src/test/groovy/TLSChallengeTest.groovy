@@ -16,15 +16,14 @@ import services.ClusterService
 import util.ApplicationHealth
 import util.Timer
 
-import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.IgnoreIf
 import util.Env
 
-@Retry(count = 1)
-// ROX-14228 skipping tests for 1st release on power & z
-@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class TLSChallengeTest extends BaseSpecification {
     @Shared
     private EnvVar originalCentralEndpoint = new EnvVar()

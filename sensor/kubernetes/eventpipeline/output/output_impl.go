@@ -1,6 +1,8 @@
 package output
 
 import (
+	"sync/atomic"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -16,12 +18,15 @@ type outputQueueImpl struct {
 	innerQueue   chan *component.ResourceEvent
 	forwardQueue chan *central.MsgFromSensor
 	detector     detector.Detector
+	stopped      *atomic.Bool
 }
 
 // Send a ResourceEvent message to the inner queue
 func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
-	q.innerQueue <- msg
-	metrics.IncOutputChannelSize()
+	if !q.stopped.Load() {
+		q.innerQueue <- msg
+		metrics.IncOutputChannelSize()
+	}
 }
 
 // ResponsesC returns the MsgFromSensor channel
@@ -39,6 +44,7 @@ func (q *outputQueueImpl) Start() error {
 func (q *outputQueueImpl) Stop(_ error) {
 	defer close(q.innerQueue)
 	defer close(q.forwardQueue)
+	q.stopped.Store(true)
 }
 
 // runOutputQueue reads messages from the inner queue, forwards them to the forwardQueue channel

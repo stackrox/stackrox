@@ -5,13 +5,13 @@ import {
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
-    entityListCountMatchesTableLinkCount,
     hasCountWidgetsFor,
     hasRelatedEntityFor,
     hasTabsFor,
     navigateToSingleEntityPage,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
+    verifyTableLinkToSidePanelTable,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
@@ -63,60 +63,47 @@ describe('Configuration Management Namespaces', () => {
         hasTabsFor(['deployments', 'secrets', 'images']);
     });
 
-    describe('should have same number in deployments table as in count widget', () => {
+    describe('should go to deployments table from widget link', () => {
         const entitiesKey2 = 'deployments';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    describe('should have same number in secrets table as in count widget', () => {
+    describe('should go to secrets table from widget link', () => {
         const entitiesKey2 = 'secrets';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    describe('should have same number in images table as in count widget', () => {
+    describe('should go to images table from widget link', () => {
         const entitiesKey2 = 'images';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should open the side panel to show the same number of Service Accounts when the Service Accounts link is clicked', () => {
-        entityListCountMatchesTableLinkCount(
-            entitiesKey,
-            'serviceaccounts',
-            /^\d+ Service Accounts?$/
-        );
+    it('should go from table link to serviceaccounts table in side panel', () => {
+        verifyTableLinkToSidePanelTable(entitiesKey, 'serviceaccounts');
     });
 
-    it('should open the side panel to show the same number of Roles when the Roles link is clicked', () => {
-        entityListCountMatchesTableLinkCount(entitiesKey, 'roles', /^\d+ Roles?$/);
+    it('should go from table link to roles table in side panel', () => {
+        verifyTableLinkToSidePanelTable(entitiesKey, 'roles');
     });
 });

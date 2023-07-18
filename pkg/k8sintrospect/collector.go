@@ -183,7 +183,8 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 			}
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
-				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v", err))
+				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v\n", err))
+				logsData = appendDebugError(logsData, err)
 			} else {
 				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
 			}
@@ -208,7 +209,8 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 			}
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
-				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v", err))
+				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v\n", err))
+				logsData = appendDebugError(logsData, err)
 			} else {
 				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
 			}
@@ -220,6 +222,15 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 	}
 
 	return nil
+}
+
+func appendDebugError(logsData []byte, err error) []byte {
+	var serr *k8sErrors.StatusError
+	if errors.As(err, &serr) {
+		f, status := serr.DebugError()
+		logsData = append(logsData, fmt.Sprintf(f, status)...)
+	}
+	return logsData
 }
 
 func (c *collector) recordError(err error) {

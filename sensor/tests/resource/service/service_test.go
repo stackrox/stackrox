@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/tests/resource"
+	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -30,9 +30,9 @@ const (
 )
 
 var (
-	NginxDeployment       = resource.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
-	NginxPod              = resource.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml"}
-	NginxServiceClusterIP = resource.K8sResourceInfo{Kind: "Service", YamlFile: "nginx-service-cluster-ip.yaml"}
+	NginxDeployment       = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
+	NginxPod              = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "nginx-pod.yaml"}
+	NginxServiceClusterIP = helper.K8sResourceInfo{Kind: "Service", YamlFile: "nginx-service-cluster-ip.yaml"}
 )
 
 func checkAlert(alert *storage.Alert, result *central.AlertResults) error {
@@ -45,13 +45,13 @@ func checkAlert(alert *storage.Alert, result *central.AlertResults) error {
 	return errors.Errorf("Alert '%s' was not found", alert.GetPolicy().GetName())
 }
 
-func assertAlertTriggered(alert *storage.Alert) resource.AlertAssertFunc {
+func assertAlertTriggered(alert *storage.Alert) helper.AlertAssertFunc {
 	return func(results *central.AlertResults) error {
 		return checkAlert(alert, results)
 	}
 }
 
-func assertAlertNotTriggered(alert *storage.Alert) resource.AlertAssertFunc {
+func assertAlertNotTriggered(alert *storage.Alert) helper.AlertAssertFunc {
 	return func(results *central.AlertResults) error {
 		if err := checkAlert(alert, results); err != nil {
 			return nil
@@ -100,13 +100,13 @@ func checkPortConfig(deployment *storage.Deployment, ports []*storage.PortConfig
 	return nil
 }
 
-func assertLastDeploymentHasPortExposure(ports []*storage.PortConfig) resource.AssertFunc {
+func assertLastDeploymentHasPortExposure(ports []*storage.PortConfig) helper.AssertFunc {
 	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		return checkPortConfig(deployment, ports)
 	}
 }
 
-func assertLastDeploymentMissingPortExposure(ports []*storage.PortConfig) resource.AssertFunc {
+func assertLastDeploymentMissingPortExposure(ports []*storage.PortConfig) helper.AssertFunc {
 	return func(deployment *storage.Deployment, _ central.ResourceAction) error {
 		if err := checkPortConfig(deployment, ports); err != nil {
 			return nil
@@ -116,7 +116,7 @@ func assertLastDeploymentMissingPortExposure(ports []*storage.PortConfig) resour
 }
 
 type DeploymentExposureSuite struct {
-	testContext *resource.TestContext
+	testContext *helper.TestContext
 	suite.Suite
 }
 
@@ -138,10 +138,9 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	config := resource.CentralConfig{
-		InitialSystemPolicies: policies,
-	}
-	if testContext, err := resource.NewContextWithConfig(s.T(), config); err != nil {
+	customConfig := helper.DefaultCentralConfig()
+	customConfig.InitialSystemPolicies = policies
+	if testContext, err := helper.NewContextWithConfig(s.T(), customConfig); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext
@@ -150,12 +149,12 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 
 func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{
+		helper.WithResources([]helper.K8sResourceInfo{
 			NginxDeployment,
 			NginxServiceClusterIP,
 		}),
-		resource.WithPermutation(),
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		helper.WithPermutation(),
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			testC.LastDeploymentState(nginxDeploymentName,
 				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
@@ -195,12 +194,12 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	cases := []struct {
-		orderedResources []resource.K8sResourceInfo
+		orderedResources []helper.K8sResourceInfo
 		portConfig       []*storage.PortConfig
 		selector         map[string]string
 	}{
 		{
-			orderedResources: []resource.K8sResourceInfo{
+			orderedResources: []helper.K8sResourceInfo{
 				NginxDeployment,
 				{
 					Kind: "Service",
@@ -213,7 +212,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 			},
 		},
 		{
-			orderedResources: []resource.K8sResourceInfo{
+			orderedResources: []helper.K8sResourceInfo{
 				{
 					Kind: "Service",
 					Obj:  &v1.Service{},
@@ -230,8 +229,8 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
 		s.testContext.RunTest(
-			resource.WithResources(c.orderedResources),
-			resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			helper.WithResources(c.orderedResources),
+			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
 				testC.LastDeploymentState(nginxDeploymentName,
 					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
@@ -247,7 +246,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 					fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 				testC.GetFakeCentral().ClearReceivedBuffer()
 			}),
-			resource.WithRetryCallback(func(err error, obj k8s.Object) error {
+			helper.WithRetryCallback(func(err error, obj k8s.Object) error {
 				// Only checking services
 				if _, ok := obj.(*v1.Service); !ok {
 					return nil
@@ -268,12 +267,12 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	cases := []struct {
-		orderedResources []resource.K8sResourceInfo
+		orderedResources []helper.K8sResourceInfo
 		portConfig       []*storage.PortConfig
 		selector         map[string]string
 	}{
 		{
-			orderedResources: []resource.K8sResourceInfo{
+			orderedResources: []helper.K8sResourceInfo{
 				NginxDeployment,
 				{
 					Kind: "Service",
@@ -286,7 +285,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 			},
 		},
 		{
-			orderedResources: []resource.K8sResourceInfo{
+			orderedResources: []helper.K8sResourceInfo{
 				{
 					Kind: "Service",
 					Obj:  &v1.Service{},
@@ -303,8 +302,8 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
 		s.testContext.RunTest(
-			resource.WithResources(c.orderedResources),
-			resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			helper.WithResources(c.orderedResources),
+			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
 				testC.LastDeploymentState(nginxDeploymentName,
 					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
@@ -320,7 +319,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 					fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 				testC.GetFakeCentral().ClearReceivedBuffer()
 			}),
-			resource.WithRetryCallback(func(err error, obj k8s.Object) error {
+			helper.WithRetryCallback(func(err error, obj k8s.Object) error {
 				// Only checking services
 				if _, ok := obj.(*v1.Service); !ok {
 					return nil
@@ -338,10 +337,10 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 
 func (s *DeploymentExposureSuite) Test_NoExposure() {
 	s.testContext.RunTest(
-		resource.WithResources([]resource.K8sResourceInfo{
+		helper.WithResources([]helper.K8sResourceInfo{
 			NginxDeployment,
 		}),
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 			testC.LastDeploymentState(nginxDeploymentName,
 				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
@@ -374,8 +373,8 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	s.testContext.RunTest(
-		resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-			deleteDep, err := testC.ApplyResourceNoObject(context.Background(), resource.DefaultNamespace, NginxDeployment, nil)
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+			deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment, nil)
 			defer utils.IgnoreError(deleteDep)
 			require.NoError(t, err)
 
@@ -384,13 +383,13 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 			sel := map[string]string{
 				"app": "nginx",
 			}
-			nginxServiceNodePort := resource.K8sResourceInfo{
+			nginxServiceNodePort := helper.K8sResourceInfo{
 				Kind: "Service",
 				Obj:  svc,
 			}
 			setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
 
-			deleteService, err := testC.ApplyResourceNoObject(context.Background(), resource.DefaultNamespace, nginxServiceNodePort,
+			deleteService, err := testC.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, nginxServiceNodePort,
 				func(err error, obj k8s.Object) error {
 					// Only checking services
 					if _, ok := obj.(*v1.Service); !ok {
@@ -478,12 +477,12 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	cases := []struct {
-		orderedResources []resource.K8sResourceInfo
+		orderedResources []helper.K8sResourceInfo
 		portConfig       []*storage.PortConfig
 		selector         map[string]string
 	}{
 		{
-			orderedResources: []resource.K8sResourceInfo{
+			orderedResources: []helper.K8sResourceInfo{
 				NginxPod,
 				{
 					Kind: "Service",
@@ -496,7 +495,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 			},
 		},
 		{
-			orderedResources: []resource.K8sResourceInfo{
+			orderedResources: []helper.K8sResourceInfo{
 				{
 					Kind: "Service",
 					Obj:  &v1.Service{},
@@ -513,8 +512,8 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
 		s.testContext.RunTest(
-			resource.WithResources(c.orderedResources),
-			resource.WithTestCase(func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
+			helper.WithResources(c.orderedResources),
+			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
 				testC.LastDeploymentState(nginxPodName,
 					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
@@ -530,7 +529,7 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 					fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 				testC.GetFakeCentral().ClearReceivedBuffer()
 			}),
-			resource.WithRetryCallback(func(err error, obj k8s.Object) error {
+			helper.WithRetryCallback(func(err error, obj k8s.Object) error {
 				// Only checking services
 				if _, ok := obj.(*v1.Service); !ok {
 					return nil
@@ -569,7 +568,7 @@ type portConfigFunc func([]*storage.PortConfig, string, int32)
 func setNodePort(svc *v1.Service, name string, port int32, sel map[string]string) {
 	svc.ObjectMeta = metav1.ObjectMeta{
 		Name:      fmt.Sprintf(name, port),
-		Namespace: resource.DefaultNamespace,
+		Namespace: helper.DefaultNamespace,
 	}
 	svc.Spec = v1.ServiceSpec{
 		Type:     v1.ServiceTypeNodePort,
@@ -590,7 +589,7 @@ func setNodePort(svc *v1.Service, name string, port int32, sel map[string]string
 func setLoadBalancer(svc *v1.Service, name string, port int32, sel map[string]string) {
 	svc.ObjectMeta = metav1.ObjectMeta{
 		Name:      fmt.Sprintf(name, port),
-		Namespace: resource.DefaultNamespace,
+		Namespace: helper.DefaultNamespace,
 	}
 	svc.Spec = v1.ServiceSpec{
 		Type:     v1.ServiceTypeLoadBalancer,
@@ -650,7 +649,7 @@ func setDynamicFields(svc *v1.Service, name string, port int32, sel map[string]s
 	serviceFn(svc, name, port, sel)
 }
 
-func setDynamicFieldsInSlice(resources []resource.K8sResourceInfo, portConfig []*storage.PortConfig, name string, port int32, sel map[string]string, serviceFn serviceFunc, portConfigFn portConfigFunc) {
+func setDynamicFieldsInSlice(resources []helper.K8sResourceInfo, portConfig []*storage.PortConfig, name string, port int32, sel map[string]string, serviceFn serviceFunc, portConfigFn portConfigFunc) {
 	for i := range resources {
 		if resources[i].Kind == "Service" {
 			setDynamicFields(resources[i].Obj.(*v1.Service), name, port, sel, serviceFn)

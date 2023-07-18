@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package datastore
 
@@ -8,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -18,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func BenchmarkImageGetMany(b *testing.B) {

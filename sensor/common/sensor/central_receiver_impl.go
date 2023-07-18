@@ -5,12 +5,14 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 )
 
 type centralReceiverImpl struct {
 	receivers []common.SensorComponent
 	stopper   concurrency.Stopper
+	finished  *sync.WaitGroup
 }
 
 func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
@@ -30,8 +32,10 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		s.finished.Done()
 	}()
 
+	s.finished.Add(1)
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():

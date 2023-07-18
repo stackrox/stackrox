@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package suppress
 
@@ -9,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
 	cveSearcher "github.com/stackrox/rox/central/cve/image/datastore/search"
 	cvePG "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -18,13 +16,14 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 
@@ -66,7 +65,7 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 
 	cveStore := cvePG.New(s.db)
 	cveIndexer := cvePG.NewIndexer(s.db)
-	cveDataStore, err := cveDS.New(cveStore, cveIndexer, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
+	cveDataStore, err := cveDS.New(cveStore, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
 	s.NoError(err)
 	s.cveDataStore = cveDataStore
 

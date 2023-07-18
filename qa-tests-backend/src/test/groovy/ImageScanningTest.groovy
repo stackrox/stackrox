@@ -24,7 +24,6 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
 import util.Env
-import util.Helpers
 import util.Timer
 
 import org.junit.Assume
@@ -42,6 +41,7 @@ class ImageScanningTest extends BaseSpecification {
     static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa/registry-image:0.2"
     static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
     static final private String OCI_IMAGE   = "quay.io/rhacs-eng/qa:oci-manifest"
+    static final private String LIST_IMAGE_OCI_MANIFEST = "quay.io/rhacs-eng/qa:list-image-oci-manifest"
     static final private String AR_IMAGE    = "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
     static final private String CENTOS_IMAGE = "quay.io/rhacs-eng/qa:centos7-base"
     static final private String CENTOS_ECHO_IMAGE = "quay.io/rhacs-eng/qa:centos7-base-echo"
@@ -179,19 +179,10 @@ class ImageScanningTest extends BaseSpecification {
         }
     }
 
-    def cleanupSetupForRetry() {
-        if (Helpers.getAttemptCount() > 1) {
-            cleanup()
-            setup()
-        }
-    }
-
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
     def "Verify Image Registry+Scanner Integrations: #testName"() {
-        cleanupSetupForRetry()
-
         given:
         "Get deployment details used to test integration"
         assert IMAGE_PULL_SECRETS.containsKey(integration)
@@ -381,7 +372,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
-        cleanupSetupForRetry()
 
         when:
         "A registry is required"
@@ -432,6 +422,7 @@ class ImageScanningTest extends BaseSpecification {
         new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE  | ""
         new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE  | ""
         new StackroxScannerIntegration() | "systemd"             | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE    | ""
+        new StackroxScannerIntegration() | "glibc"               | "2.35-0ubuntu3.1"  | 4   | "CVE-2016-20013" | LIST_IMAGE_OCI_MANIFEST | ""
         new ClairScannerIntegration()    | "apt"                 | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE  | ""
         new ClairScannerIntegration()    | "bash"                | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE  | ""
         new ClairV4ScannerIntegration()  | "openssl-libs"        | "1:1.1.1-8.el8"    | 0   | "RHSA-2021:1024" | UBI8_0_IMAGE | ""
@@ -442,7 +433,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
-        cleanupSetupForRetry()
         ImageIntegrationService.addStackroxScannerIntegration()
 
         when:
@@ -498,7 +488,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify image scan exceptions - #scanner.name() - #testAspect"() {
         Assume.assumeTrue(scanner.isTestable())
-        cleanupSetupForRetry()
 
         when:
         "Add scanner"
@@ -521,8 +510,8 @@ class ImageScanningTest extends BaseSpecification {
         "tests are:"
 
         scanner                          | expectedMessage                      | testAspect
-        new ClairScannerIntegration()    | /Failed to get the manifest digest/  | "image does not exist"
-        new StackroxScannerIntegration() | /Failed to get the manifest digest/  | "image does not exist"
+        new ClairScannerIntegration()    | /failed to get the manifest digest/  | "image does not exist"
+        new StackroxScannerIntegration() | /failed to get the manifest digest/  | "image does not exist"
         new ClairScannerIntegration()    | /no matching image registries found/ | "missing required registry"
         new StackroxScannerIntegration() | /no matching image registries found/ | "missing required registry"
 // This is not supported. Scanners get access to previous creds and can pull the images that way.
@@ -537,7 +526,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("Integration")
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
-        cleanupSetupForRetry()
 
         if (coreImageIntegrationId != null && integration == "quay") {
             // For this test we don't want it
@@ -632,8 +620,6 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("Integration")
     def "Image scanning test to check if scan time is not null #image from stackrox"() {
-        cleanupSetupForRetry()
-
         when:
         "Add Stackrox scanner"
         String integrationId = StackroxScannerIntegration.createDefaultIntegration()
@@ -667,8 +653,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def "Validate basic image details across all current images in StackRox"() {
-        cleanupSetupForRetry()
-
         when:
         "get list of all images"
         List<ImageOuterClass.ListImage> images = ImageService.getImages()
@@ -702,8 +686,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def "Validate image deletion does not affect other images"() {
-        cleanupSetupForRetry()
-
         given:
         ImageIntegrationService.addStackroxScannerIntegration()
 
@@ -733,7 +715,6 @@ class ImageScanningTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Quay registry and scanner supports token and/or robot credentials - #testName"() {
-        cleanupSetupForRetry()
         if (coreImageIntegrationId != null) {
             // For this test we don't want it
             // This conflicts with the autogenerated quay integration because they use the same creds

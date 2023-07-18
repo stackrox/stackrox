@@ -30,7 +30,7 @@ jobs:
         branch: update_collector_version
         signoff: false
         delete-branch: true
-        title: Update COLLECTOR_VERSION
+        title: 'chore(collector): Update COLLECTOR_VERSION'
         body: |
           Daily update of COLLECTOR_VERSION to latest master version
         labels: |

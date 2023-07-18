@@ -35,51 +35,33 @@ class NullTest(BaseTest):
 
 
 class UpgradeTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
-    TEST_OUTPUT_DIR = "/tmp/upgrade-test-logs"
-
-    def run(self):
-        print("Executing the Upgrade Test")
-
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [UpgradeTest.TEST_OUTPUT_DIR]
-
-        self.run_with_graceful_kill(
-            ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
-            UpgradeTest.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
-        )
-
-
-class PostgresUpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
     TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
-        print("Executing the Postgres Upgrade Test")
+        print("Executing the Upgrade Test")
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_outputs = [PostgresUpgradeTest.TEST_SENSOR_OUTPUT_DIR, PostgresUpgradeTest.TEST_OUTPUT_DIR]
+            self.test_outputs = [UpgradeTest.TEST_SENSOR_OUTPUT_DIR, UpgradeTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_sensor_run.sh", PostgresUpgradeTest.TEST_SENSOR_OUTPUT_DIR],
-            PostgresUpgradeTest.TEST_TIMEOUT,
+            ["tests/upgrade/postgres_sensor_run.sh", UpgradeTest.TEST_SENSOR_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/legacy_to_postgres_run.sh", PostgresUpgradeTest.TEST_LEGACY_OUTPUT_DIR],
-            PostgresUpgradeTest.TEST_TIMEOUT,
+            ["tests/upgrade/legacy_to_postgres_run.sh", UpgradeTest.TEST_LEGACY_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_run.sh", PostgresUpgradeTest.TEST_OUTPUT_DIR],
-            PostgresUpgradeTest.TEST_TIMEOUT,
+            ["tests/upgrade/postgres_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
@@ -117,6 +99,7 @@ class QaE2eTestPart2(BaseTest):
             ["qa-tests-backend/scripts/run-part-2.sh"], QaE2eTestPart2.TEST_TIMEOUT
         )
 
+
 class QaE2eTestCompatibility(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
@@ -126,6 +109,7 @@ class QaE2eTestCompatibility(BaseTest):
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-compatibility.sh"], QaE2eTestCompatibility.TEST_TIMEOUT
         )
+
 
 class QaE2eDBBackupRestoreTest(BaseTest):
     TEST_TIMEOUT = 30 * 60
@@ -163,6 +147,20 @@ class UIE2eTest(BaseTest):
         )
 
 
+class ComplianceE2eTest(BaseTest):
+    TEST_TIMEOUT = 2 * 60 * 60
+
+    def run(self):
+        print("Executing compliance e2e test")
+
+        self.run_with_graceful_kill(
+            [
+                "tests/e2e/run-compliance-e2e.sh",
+            ],
+            ComplianceE2eTest.TEST_TIMEOUT,
+        )
+
+
 class NonGroovyE2e(BaseTest):
     TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "/tmp/e2e-test-logs"
@@ -179,6 +177,30 @@ class NonGroovyE2e(BaseTest):
             NonGroovyE2e.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
+
+class SensorIntegration(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+    TEST_OUTPUT_DIR = "/tmp/sensor-integration-test-logs"
+
+    def run(self):
+        print("Executing the Sensor Integration Tests")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [SensorIntegration.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/sensor.sh", SensorIntegration.TEST_OUTPUT_DIR],
+            SensorIntegration.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+
+class SensorIntegrationOCP(SensorIntegration):
+    def run(self):
+        print("Skipping the Sensor Integration Tests for OCP")
+
 
 
 class ScaleTest(BaseTest):

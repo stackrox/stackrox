@@ -12,6 +12,6 @@
     display: none;
 }
 
-#workload-cves-table-toolbar .cve-severity-select .pf-c-select__toggle-wrapper {
+#workload-cves-table-toolbar .pf-c-select__toggle-wrapper {
     flex-wrap: nowrap
 }

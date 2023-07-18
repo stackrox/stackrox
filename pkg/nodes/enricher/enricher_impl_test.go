@@ -3,14 +3,13 @@ package enricher
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -115,11 +114,9 @@ func (*fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 		}
 
 		// Data moved from Vulns to Vulnerabilities in Postgres.  So simply add the data here.
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			for _, v := range c.Vulnerabilities {
-				if v.CveBaseInfo.Cve == "CVE-2020-1234" {
-					v.Snoozed = true
-				}
+		for _, v := range c.Vulnerabilities {
+			if v.CveBaseInfo.Cve == "CVE-2020-1234" {
+				v.Snoozed = true
 			}
 		}
 	}
@@ -240,13 +237,9 @@ func TestCVESuppression(t *testing.T) {
 	err := enricherImpl.EnrichNode(node)
 	require.NoError(t, err)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		for _, c := range node.GetScan().GetComponents() {
-			// `vulnerabilities` is the new field.
-			assert.NotNil(t, c.GetVulnerabilities()[0].Snoozed)
-		}
-	} else {
-		assert.True(t, node.Scan.Components[0].Vulns[0].Suppressed)
+	for _, c := range node.GetScan().GetComponents() {
+		// `vulnerabilities` is the new field.
+		assert.NotNil(t, c.GetVulnerabilities()[0].Snoozed)
 	}
 }
 
@@ -267,121 +260,7 @@ func TestZeroIntegrations(t *testing.T) {
 	assert.Equal(t, expectedErrMsg, err.Error())
 }
 
-func TestFillScanStats(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip non postgres store tests")
-		t.SkipNow()
-	}
-
-	cases := []struct {
-		node                 *storage.Node
-		expectedVulns        int32
-		expectedFixableVulns int32
-	}{
-		{
-			node: &storage.Node{
-				Id: fixtureconsts.Node1,
-				Scan: &storage.NodeScan{
-					Components: []*storage.EmbeddedNodeScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedVulns:        1,
-			expectedFixableVulns: 1,
-		},
-		{
-			node: &storage.Node{
-				Id: fixtureconsts.Node1,
-				Scan: &storage.NodeScan{
-					Components: []*storage.EmbeddedNodeScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-2",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedVulns:        2,
-			expectedFixableVulns: 2,
-		},
-		{
-			node: &storage.Node{
-				Id: fixtureconsts.Node1,
-				Scan: &storage.NodeScan{
-					Components: []*storage.EmbeddedNodeScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-2",
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-3",
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedVulns:        3,
-			expectedFixableVulns: 0,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(t.Name(), func(t *testing.T) {
-			FillScanStats(c.node)
-			assert.Equal(t, c.expectedVulns, c.node.GetCves())
-			assert.Equal(t, c.expectedFixableVulns, c.node.GetFixableCves())
-		})
-	}
-}
-
 func TestFillScanStatsWithPostgres(t *testing.T) {
-
 	cases := []struct {
 		node                 *storage.Node
 		expectedVulns        int32

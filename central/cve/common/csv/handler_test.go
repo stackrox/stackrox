@@ -4,11 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/audit"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
@@ -22,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCVEScoping(t *testing.T) {
@@ -39,7 +38,6 @@ type CVEScopingTestSuite struct {
 	imageDataStore      *imageMocks.MockDataStore
 	nodeDataStore       *nodeMocks.MockDataStore
 	componentDataStore  *componentMocks.MockDataStore
-	cveDataStore        *cveMocks.MockDataStore
 	resolver            *resolvers.Resolver
 	handler             *HandlerImpl
 }
@@ -52,7 +50,6 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
 	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
-	suite.cveDataStore = cveMocks.NewMockDataStore(suite.mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	notifierMock.EXPECT().HasEnabledAuditNotifiers().Return(false).AnyTimes()
@@ -64,7 +61,6 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 		ImageDataStore:          suite.imageDataStore,
 		NodeDataStore:           suite.nodeDataStore,
 		ImageComponentDataStore: suite.componentDataStore,
-		CVEDataStore:            suite.cveDataStore,
 		AuditLogger:             audit.New(notifierMock),
 	}
 

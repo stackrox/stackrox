@@ -28,7 +28,7 @@ import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -38,6 +38,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             ...ImageMetadataContext
         }
         imageVulnerabilities(query: $query, pagination: $pagination) {
+            vulnerabilityId: id
             cve
             summary
             images(query: $query) {
@@ -54,6 +55,7 @@ export type DeploymentWithVulnerabilities = {
     id: string;
     images: ImageMetadataContext[];
     imageVulnerabilities: {
+        vulnerabilityId: string;
         cve: string;
         summary: string;
         images: {
@@ -63,25 +65,30 @@ export type DeploymentWithVulnerabilities = {
     }[];
 };
 
+type DeploymentVulnerabilityImageMapping = {
+    imageMetadataContext: ImageMetadataContext;
+    componentVulnerabilities: DeploymentComponentVulnerability[];
+};
+
 function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
+    vulnerabilityId: string;
     cve: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
     discoveredAtImage: Date | null;
     summary: string;
     affectedComponentsText: string;
-    images: {
-        imageMetadataContext: ImageMetadataContext;
-        componentVulnerabilities: DeploymentComponentVulnerability[];
-    }[];
+    images: DeploymentVulnerabilityImageMapping[];
 }[] {
-    const imageMap: Record<string, ImageMetadataContext> = {};
+    // Create a map of image ID to image metadata for easy lookup
+    // We use 'Partial' here because there is no guarantee that the image will be found
+    const imageMap: Partial<Record<string, ImageMetadataContext>> = {};
     deployment.images.forEach((image) => {
         imageMap[image.id] = image;
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { cve, summary, images } = vulnerability;
+        const { vulnerabilityId, cve, summary, images } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
@@ -97,17 +104,26 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
                 ? uniqueComponents.values().next().value
                 : `${uniqueComponents.size} components`;
 
+        const vulnerabilityImages = images
+            .map((img) => ({
+                imageMetadataContext: imageMap[img.imageId],
+                componentVulnerabilities: img.imageComponents,
+            }))
+            // filter out values where the vulnerability->image mapping is missing
+            .filter(
+                (vulnImageMap): vulnImageMap is DeploymentVulnerabilityImageMapping =>
+                    !!vulnImageMap.imageMetadataContext
+            );
+
         return {
+            vulnerabilityId,
             cve,
             severity: highestVulnSeverity,
             isFixable: isAnyVulnFixable,
             discoveredAtImage: oldestDiscoveredVulnDate,
             summary,
             affectedComponentsText,
-            images: images.map((img) => ({
-                imageMetadataContext: imageMap[img.imageId],
-                componentVulnerabilities: img.imageComponents,
-            })),
+            images: vulnerabilityImages,
         };
     });
 }
@@ -133,9 +149,9 @@ function DeploymentVulnerabilitiesTable({
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th>Severity</Th>
+                    <Th>CVE severity</Th>
                     <Th>
-                        CVE Status
+                        CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th>
@@ -148,6 +164,7 @@ function DeploymentVulnerabilitiesTable({
             {vulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
             {vulnerabilities.map((vulnerability, rowIndex) => {
                 const {
+                    vulnerabilityId,
                     cve,
                     severity,
                     summary,
@@ -159,7 +176,7 @@ function DeploymentVulnerabilitiesTable({
                 const isExpanded = expandedRowSet.has(cve);
 
                 return (
-                    <Tbody key={cve} isExpanded={isExpanded}>
+                    <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
                         <Tr>
                             <Td
                                 expand={{
@@ -186,7 +203,7 @@ function DeploymentVulnerabilitiesTable({
                             </Td>
                             <Td dataLabel="Affected components">{affectedComponentsText}</Td>
                             <Td modifier="nowrap" dataLabel="First discovered">
-                                <DatePhraseTd date={discoveredAtImage} />
+                                <DateDistanceTd date={discoveredAtImage} />
                             </Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>

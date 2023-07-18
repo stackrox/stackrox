@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// ClusterInitBundlesTableName specifies the name of the table in postgres.
 	ClusterInitBundlesTableName = "cluster_init_bundles"
 )
 
 // ClusterInitBundles holds the Gorm model for Postgres table `cluster_init_bundles`.
 type ClusterInitBundles struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

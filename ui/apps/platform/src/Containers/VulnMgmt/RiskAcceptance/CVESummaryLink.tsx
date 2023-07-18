@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import entityTypes from 'constants/entityTypes';
 
 type CVESummaryLinkProps = {
@@ -12,9 +11,7 @@ type CVESummaryLinkProps = {
 };
 
 function CVESummaryLink({ cve, id }: CVESummaryLinkProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    const entityType = showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE;
+    const entityType = entityTypes.IMAGE_CVE;
 
     const workflowState = useContext(workflowStateContext);
     const url = workflowState.pushRelatedEntity(entityType, id).toUrl();

@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// NetworkGraphConfigsTableName specifies the name of the table in postgres.
 	NetworkGraphConfigsTableName = "network_graph_configs"
 )
 
 // NetworkGraphConfigs holds the Gorm model for Postgres table `network_graph_configs`.
 type NetworkGraphConfigs struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

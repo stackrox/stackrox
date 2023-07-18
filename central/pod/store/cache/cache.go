@@ -147,11 +147,3 @@ func (c *cacheImpl) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
-
-func (c *cacheImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return c.store.AckKeysIndexed(ctx, keys...)
-}
-
-func (c *cacheImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return c.store.GetKeysToIndex(ctx)
-}

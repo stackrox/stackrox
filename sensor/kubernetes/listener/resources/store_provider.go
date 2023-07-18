@@ -21,6 +21,13 @@ type InMemoryStoreProvider struct {
 	entityStore            *clusterentities.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
+
+	cleanableStores []CleanableStore
+}
+
+// CleanableStore defines a store implementation that has a function for deleting all entries
+type CleanableStore interface {
+	Cleanup()
 }
 
 // InitializeStore creates the store instances
@@ -31,7 +38,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	nodeStore := newNodeStore()
 	entityStore := clusterentities.NewStore()
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
-	return &InMemoryStoreProvider{
+	p := &InMemoryStoreProvider{
 		deploymentStore:        deployStore,
 		podStore:               podStore,
 		serviceStore:           svcStore,
@@ -43,6 +50,28 @@ func InitializeStore() *InMemoryStoreProvider {
 		serviceAccountStore:    newServiceAccountStore(),
 		orchestratorNamespaces: orchestratornamespaces.NewOrchestratorNamespaces(),
 		registryStore:          registry.NewRegistryStore(nil),
+	}
+
+	p.cleanableStores = []CleanableStore{
+		p.deploymentStore,
+		p.podStore,
+		p.serviceStore,
+		p.nodeStore,
+		p.entityStore,
+		p.networkPolicyStore,
+		p.rbacStore,
+		p.serviceAccountStore,
+		p.orchestratorNamespaces,
+		p.registryStore,
+	}
+
+	return p
+}
+
+// CleanupStores deletes all entries from all stores
+func (p *InMemoryStoreProvider) CleanupStores() {
+	for _, cleanable := range p.cleanableStores {
+		cleanable.Cleanup()
 	}
 }
 

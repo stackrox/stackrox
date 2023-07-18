@@ -45,8 +45,10 @@ func getIdxField(s *Schema) Field {
 		SQLType:    "integer",
 		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
-			Ignored:    false,
-			Index:      "btree",
+			Ignored: false,
+			Index: []*PostgresIndexOptions{
+				{IndexType: "btree"},
+			},
 			PrimaryKey: true,
 		},
 	}
@@ -399,11 +401,19 @@ type SearchField struct {
 	Ignored   bool
 }
 
+// PostgresIndexOptions is the parsed representation of the index subpart of the sql tag in the struct field
+type PostgresIndexOptions struct {
+	IndexName     string
+	IndexType     string
+	IndexCategory string
+	IndexPriority string
+}
+
 // PostgresOptions is the parsed representation of the sql tag on the struct field
 type PostgresOptions struct {
 	ID                     bool
 	Ignored                bool
-	Index                  string
+	Index                  []*PostgresIndexOptions
 	PrimaryKey             bool
 	Unique                 bool
 	IgnorePrimaryKey       bool

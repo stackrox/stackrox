@@ -1,11 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { fetchNetworkPolicies } from 'services/NetworkService';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 
-type Result = { isLoading: boolean; networkPolicies: NetworkPolicy[]; error: string | null };
+type Result = {
+    isLoading: boolean;
+    networkPolicies: NetworkPolicy[];
+    // This error array represents errors that occurred while fetching the individual network policies when
+    // the overall request chain succeeded
+    networkPolicyErrors: Error[];
+    // This single error represents a unrecoverable error that occurred after the overall request chain failed
+    error: Error | null;
+};
 
-const defaultResultState = { networkPolicies: [], error: null, isLoading: true };
+const defaultResultState = {
+    networkPolicies: [],
+    networkPolicyErrors: [],
+    error: null,
+    isLoading: true,
+};
 
 /*
  * This hook does an API call to the network policies API to get a list of network policies
@@ -13,20 +27,26 @@ const defaultResultState = { networkPolicies: [], error: null, isLoading: true }
 function useFetchNetworkPolicies(policyIds: string[]): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
 
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         setResult(defaultResultState);
 
         if (policyIds) {
             fetchNetworkPolicies(policyIds)
-                .then((data) => {
+                .then(({ policies, errors }) => {
                     setResult({
-                        networkPolicies: data?.response as NetworkPolicy[],
+                        networkPolicies: policies,
+                        networkPolicyErrors: errors,
                         error: null,
                         isLoading: false,
                     });
                 })
                 .catch((error) => {
-                    setResult({ networkPolicies: [], error, isLoading: false });
+                    setResult({
+                        networkPolicies: [],
+                        networkPolicyErrors: [],
+                        error,
+                        isLoading: false,
+                    });
                 });
         }
 

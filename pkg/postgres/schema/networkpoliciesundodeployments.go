@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// NetworkpoliciesundodeploymentsTableName specifies the name of the table in postgres.
 	NetworkpoliciesundodeploymentsTableName = "networkpoliciesundodeployments"
 )
 
 // Networkpoliciesundodeployments holds the Gorm model for Postgres table `networkpoliciesundodeployments`.
 type Networkpoliciesundodeployments struct {
-	DeploymentId string `gorm:"column:deploymentid;type:uuid;primaryKey"`
+	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

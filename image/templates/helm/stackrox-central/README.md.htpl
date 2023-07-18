@@ -32,6 +32,7 @@ beforehand.
 The basic command for deploying the central services is
 ```sh
 helm install -n stackrox --create-namespace \
+    --set central.persistence.none=true \
     stackrox-central-services stackrox/stackrox-central-services
 ```
 If you have a copy of this chart on your machine, you can also reference the

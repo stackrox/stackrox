@@ -34,6 +34,7 @@ test_e2e() {
     "$ROOT/tests/complianceoperator/create.sh"
 
     deploy_stackrox
+    deploy_optional_e2e_components
 
     rm -f FAIL
 
@@ -55,17 +56,6 @@ test_e2e() {
     make -C tests || touch FAIL
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
-
-    # Give some time for previous tests to finish up
-    wait_for_api
-
-    info "Sensor k8s integration tests"
-    make sensor-integration-test || touch FAIL
-    info "Saving junit XML report"
-    make generate-junit-reports || touch FAIL
-    store_test_results junit-reports reports
-    store_test_results "test-output/test.log" "sensor-integration"
-    [[ ! -f FAIL ]] || die "sensor-integration e2e tests failed"
 
     # Give some time for previous tests to finish up
     wait_for_api
@@ -98,12 +88,12 @@ test_e2e() {
 test_preamble() {
     require_executable "roxctl"
 
-    MAIN_TAG=$(make --quiet tag)
+    MAIN_TAG=$(make --quiet --no-print-directory tag)
     export MAIN_TAG
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    
+
     local registry="quay.io/rhacs-eng"
 
     SCANNER_IMAGE="$registry/scanner:$(cat "$ROOT"/SCANNER_VERSION)"

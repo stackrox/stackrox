@@ -6,17 +6,19 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mitre/datastore"
 	"google.golang.org/grpc"
 )
 
 var (
-	// No permission enforcement since the APIs do not leak any information about RHACS resources,
-	// and that MITRE ATT&CK is a globally available knowledge base. Unlike CVEs, we do not add any extra insights to MITRE data.
+	// While the data served by these endpoints is globally available knowledge,
+	// we limit access to authenticated users only to reduce the surface for DoS
+	// attacks. Note that `ListMitreAttackVectors()`'s response size is around
+	// 1 MB.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		allow.Anonymous(): {
+		user.With(): {
 			"/v1.MitreAttackService/ListMitreAttackVectors",
 			"/v1.MitreAttackService/GetMitreAttackVector",
 		},

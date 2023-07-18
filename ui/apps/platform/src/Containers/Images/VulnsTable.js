@@ -15,14 +15,14 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                         href={ci.original.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-600 font-600 pointer-events-auto"
+                        className="text-primary-600 font-700 pointer-events-auto"
                     >
                         {ci.value}
                     </a>
                     <div className="mt-2">{ci.original.summary}</div>
                 </div>
             ),
-            headerClassName: 'font-600 border-b border-base-300 flex items-end bg-primary-300',
+            headerClassName: 'font-700 border-b border-base-300 flex items-end bg-primary-300',
             className: 'pointer-events-none flex items-center justify-left',
         },
         {
@@ -44,7 +44,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                 return `${cvss} (${ci.original.scoreVersion === 'V2' ? 'v2' : 'v3'})`;
             },
             headerClassName:
-                'font-600 border-b border-base-300 flex items-end justify-end bg-primary-300',
+                'font-700 border-b border-base-300 flex items-end justify-end bg-primary-300',
             className: 'flex items-center justify-end',
         },
     ];
@@ -53,7 +53,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             Header: 'Fixed',
             accessor: 'fixedBy',
             width: 130,
-            headerClassName: 'font-600 border-b border-base-300 flex items-end',
+            headerClassName: 'font-700 border-b border-base-300 flex items-end',
             className: 'pointer-events-none flex items-center justify-end',
             Cell: ({ value }) => (value === '' && !isOSPkg ? 'Unknown' : value),
         });

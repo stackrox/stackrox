@@ -36,6 +36,15 @@ func multiplyDuration(d time.Duration, factor float64) time.Duration {
 	return time.Duration(float64(time.Second) * d.Seconds() * factor)
 }
 
+// NewNodeScanInterval creates node scanning intervals from the parameters
+func NewNodeScanInterval(base time.Duration, deviation float64, initialMax time.Duration) *NodeScanIntervals {
+	return &NodeScanIntervals{
+		base:       base,
+		deviation:  deviation,
+		initialMax: initialMax,
+	}
+}
+
 // NewNodeScanIntervalFromEnv creates node scanning intervals from environment
 // variables.
 func NewNodeScanIntervalFromEnv() NodeScanIntervals {

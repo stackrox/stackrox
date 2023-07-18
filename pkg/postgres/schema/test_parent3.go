@@ -43,13 +43,14 @@ var (
 )
 
 const (
+	// TestParent3TableName specifies the name of the table in postgres.
 	TestParent3TableName = "test_parent3"
 )
 
 // TestParent3 holds the Gorm model for Postgres table `test_parent3`.
 type TestParent3 struct {
-	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
-	ParentId            string           `gorm:"column:parentid;type:varchar"`
+	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
+	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

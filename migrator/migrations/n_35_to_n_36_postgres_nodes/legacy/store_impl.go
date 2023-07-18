@@ -16,10 +16,10 @@ import (
 	nodeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/node"
 	nodeComponentEdgeDackBox "github.com/stackrox/rox/migrator/migrations/dackboxhelpers/nodecomponentedge"
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/set"
 )
 

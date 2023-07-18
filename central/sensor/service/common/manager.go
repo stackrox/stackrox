@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -28,6 +29,16 @@ type ProcessBaselineManager interface {
 // NetworkBaselineManager implements an interface to retrieve network baselines.
 type NetworkBaselineManager interface {
 	Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error
+}
+
+// DelegatedRegistryConfigManager defines an interface to retrieve the delegated registry config.
+type DelegatedRegistryConfigManager interface {
+	GetConfig(ctx context.Context) (*storage.DelegatedRegistryConfig, bool, error)
+}
+
+// ImageIntegrationManager defines an interface to retrieve image integrations.
+type ImageIntegrationManager interface {
+	GetImageIntegrations(ctx context.Context, integration *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error)
 }
 
 // NetworkEntityManager implements an interface to retrieve network entities.

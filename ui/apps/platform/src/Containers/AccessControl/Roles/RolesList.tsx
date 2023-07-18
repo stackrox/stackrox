@@ -49,7 +49,7 @@ function RolesList({
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
     const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(name: string) {
         setNameDeleting(name);

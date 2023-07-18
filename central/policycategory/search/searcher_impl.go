@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/search/sortfields"
@@ -22,8 +21,7 @@ var (
 		Field: search.PolicyCategoryName.String(),
 	}
 
-	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policyCategorySAC = sac.ForResource(resources.Policy)
+	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -90,9 +88,8 @@ func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*st
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, policyCategoryMapping.OptionsMap)
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, policyCategoryMapping.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
 	paginatedSearcher := paginated.Paginated(transformedCategoryNameSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

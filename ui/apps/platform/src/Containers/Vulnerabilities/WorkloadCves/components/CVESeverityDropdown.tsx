@@ -22,7 +22,8 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
     return (
         <Select
             variant="checkbox"
-            aria-label="cve-severity"
+            aria-label="CVE severity filter menu items"
+            toggleAriaLabel="CVE severity filter menu toggle"
             onToggle={onCveSeverityToggle}
             onSelect={onCveSeveritySelect}
             selections={searchFilter.Severity}

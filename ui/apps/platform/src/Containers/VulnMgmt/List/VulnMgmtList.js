@@ -11,7 +11,6 @@ import VulnMgmtListImageComponents from './ImageComponents/VulnMgmtListImageComp
 import VulnMgmtListCves from './Cves/VulnMgmtListCves';
 import VulnMgmtListClusters from './Clusters/VulnMgmtListClusters';
 import VulnMgmtListNamespaces from './Namespaces/VulnMgmtListNamespaces';
-import VulnMgmtListPolicies from './Policies/VulnMgmtListPolicies';
 import VulnMgmtListNodes from './Nodes/VulnMgmtListNodes';
 
 const entityComponentMap = {
@@ -26,7 +25,6 @@ const entityComponentMap = {
     [entityTypes.CLUSTER_CVE]: VulnMgmtListCves,
     [entityTypes.CLUSTER]: VulnMgmtListClusters,
     [entityTypes.NAMESPACE]: VulnMgmtListNamespaces,
-    [entityTypes.POLICY]: VulnMgmtListPolicies,
     [entityTypes.NODE]: VulnMgmtListNodes,
 };
 

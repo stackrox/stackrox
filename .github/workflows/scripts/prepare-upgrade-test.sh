@@ -5,12 +5,6 @@ set -euo pipefail
 PREVIOUS_RELEASE=$1
 RELEASE=$2
 
-GITHUB_REPOSITORY="stackrox/stackrox"
-PREVIOUS_SCANNER_VERSION="$(gh api \
-    -H "Accept: application/vnd.github.v3.raw" \
-    "/repos/${GITHUB_REPOSITORY}/contents/SCANNER_VERSION?ref=${PREVIOUS_RELEASE}"
-)"
-
 CWD="$(pwd)"
 TMP_DIR="$(mktemp -d)"
 
@@ -32,11 +26,9 @@ deploy_central() {
 
     rm -rf bundle-test1
     ./roxctl-"${PREVIOUS_RELEASE}" central generate k8s pvc \
-        --lb-type=lb \
-        --main-image=quay.io/rhacs-eng/main:"${PREVIOUS_RELEASE}" \
-        --central-db-image=quay.io/rhacs-eng/central-db:"${PREVIOUS_RELEASE}" \
-        --scanner-db-image=quay.io/rhacs-eng/scanner-db:"${PREVIOUS_SCANNER_VERSION}" \
-        --scanner-image=quay.io/rhacs-eng/scanner:"${PREVIOUS_SCANNER_VERSION}" \
+        --lb-type lb \
+        --enable-pod-security-policies=false \
+        --image-defaults development_build \
         --output-dir bundle-test1
 
     ./bundle-test1/central/scripts/setup.sh
@@ -89,6 +81,9 @@ deploy_sensor() {
 
     "./artifacts/${CLUSTER_NAME}/connect"
     unzip -d "sensor-${CLUSTER_NAME}" "sensor-${CLUSTER_NAME}.zip"
+
+    rm ./sensor-"${CLUSTER_NAME}"/*-pod-security.yaml
+
     "./sensor-${CLUSTER_NAME}/sensor.sh"
 }
 
@@ -139,7 +134,7 @@ save_credentials_to_cluster
 disable_autoupgrader
 deploy_violations "test1"
 deploy_violations "test2"
-deploy_sensor "test1" "central.stackrox:443" "KERNEL_MODULE"
+deploy_sensor "test1" "central.stackrox:443" "EBPF"
 deploy_sensor "test2" "${CENTRAL_IP}:443" "EBPF"
 create_policy
 trigger_compliance_check

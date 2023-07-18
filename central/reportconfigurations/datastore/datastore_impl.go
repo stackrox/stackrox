@@ -4,24 +4,19 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/reportconfigurations/index"
 	"github.com/stackrox/rox/central/reportconfigurations/search"
 	"github.com/stackrox/rox/central/reportconfigurations/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
-	// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-	reportConfigSAC = sac.ForResource(resources.VulnerabilityReports)
+	reportConfigSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	log = logging.LoggerForModule()
 )
@@ -30,32 +25,6 @@ type dataStoreImpl struct {
 	reportConfigStore store.Store
 
 	searcher search.Searcher
-	indexer  index.Indexer
-}
-
-func (d *dataStoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-	log.Info("[STARTUP] Indexing report configurations")
-
-	var reportConfigs []*storage.ReportConfiguration
-	walkFn := func() error {
-		reportConfigs = reportConfigs[:0]
-		return d.reportConfigStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
-			reportConfigs = append(reportConfigs, reportConfig)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return err
-	}
-	if err := d.indexer.AddReportConfigurations(reportConfigs); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed report configurations")
-	return nil
 }
 
 func (d *dataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -90,9 +59,6 @@ func (d *dataStoreImpl) AddReportConfiguration(ctx context.Context, reportConfig
 	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
 		return "", err
 	}
-	if err := d.indexer.AddReportConfiguration(reportConfig); err != nil {
-		return reportConfig.Id, err
-	}
 	return reportConfig.Id, nil
 }
 
@@ -105,10 +71,7 @@ func (d *dataStoreImpl) UpdateReportConfiguration(ctx context.Context, reportCon
 		return errors.New("report configuration id field must be set")
 	}
 
-	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
-		return err
-	}
-	return d.indexer.AddReportConfiguration(reportConfig)
+	return d.reportConfigStore.Upsert(ctx, reportConfig)
 }
 
 func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string) error {
@@ -118,7 +81,7 @@ func (d *dataStoreImpl) RemoveReportConfiguration(ctx context.Context, id string
 	if err := d.reportConfigStore.Delete(ctx, id); err != nil {
 		return err
 	}
-	return d.indexer.DeleteReportConfiguration(id)
+	return nil
 }
 
 func (d *dataStoreImpl) Walk(ctx context.Context, fn func(reportConfig *storage.ReportConfiguration) error) error {

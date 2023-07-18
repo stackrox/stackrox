@@ -5,7 +5,7 @@ import { gql } from '@apollo/client';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import EmptyTableResults from '../components/EmptyTableResults';
 import { getEntityPagePath } from '../searchUtils';
 
@@ -72,7 +72,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                             <Td>{clusterName}</Td>
                             <Td>{namespace}</Td>
                             <Td>
-                                <DatePhraseTd date={created} />
+                                <DateDistanceTd date={created} />
                             </Td>
                         </Tr>
                     </Tbody>

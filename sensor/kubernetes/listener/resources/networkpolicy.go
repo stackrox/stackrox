@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -34,38 +33,36 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 
 	var reprocessingIds []string
 	events := component.ResourceEvent{}
-	if features.NetworkPolicySystemPolicy.Enabled() {
-		var roxOldNetpol *storage.NetworkPolicy
-		if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
-			roxOldNetpol = networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: oldNp}.ToRoxNetworkPolicy()
-		}
-		sel := h.getSelector(roxNetpol, roxOldNetpol)
-		if action == central.ResourceAction_REMOVE_RESOURCE {
-			h.netpolStore.Delete(roxNetpol.GetId(), roxNetpol.GetNamespace())
-		} else {
-			h.netpolStore.Upsert(roxNetpol)
-		}
+	var roxOldNetpol *storage.NetworkPolicy
+	if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
+		roxOldNetpol = networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: oldNp}.ToRoxNetworkPolicy()
+	}
+	sel := h.getSelector(roxNetpol, roxOldNetpol)
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		h.netpolStore.Delete(roxNetpol.GetId(), roxNetpol.GetNamespace())
+	} else {
+		h.netpolStore.Upsert(roxNetpol)
+	}
 
-		if env.ResyncDisabled.BooleanSetting() {
-			events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel),
-				component.WithForceDetection())
-			events.AddSensorEvent(&central.SensorEvent{
-				Id:     string(np.UID),
-				Action: action,
-				Resource: &central.SensorEvent_NetworkPolicy{
-					NetworkPolicy: roxNetpol,
-				},
-			})
-		} else {
-			reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
-			events.AddSensorEvent(&central.SensorEvent{
-				Id:     string(np.UID),
-				Action: action,
-				Resource: &central.SensorEvent_NetworkPolicy{
-					NetworkPolicy: roxNetpol,
-				},
-			}).AddDeploymentForReprocessing(reprocessingIds...)
-		}
+	if env.ResyncDisabled.BooleanSetting() {
+		events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel),
+			component.WithForceDetection())
+		events.AddSensorEvent(&central.SensorEvent{
+			Id:     string(np.UID),
+			Action: action,
+			Resource: &central.SensorEvent_NetworkPolicy{
+				NetworkPolicy: roxNetpol,
+			},
+		})
+	} else {
+		reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
+		events.AddSensorEvent(&central.SensorEvent{
+			Id:     string(np.UID),
+			Action: action,
+			Resource: &central.SensorEvent_NetworkPolicy{
+				NetworkPolicy: roxNetpol,
+			},
+		}).AddDeploymentForReprocessing(reprocessingIds...)
 	}
 	return &events
 }

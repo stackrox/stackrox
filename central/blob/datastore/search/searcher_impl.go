@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
@@ -55,8 +54,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	searcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
+func formatSearcher(searcher search.Searcher) search.Searcher {
 	paginatedSearcher := paginated.Paginated(searcher)
 	return paginatedSearcher
 }

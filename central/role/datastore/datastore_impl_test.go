@@ -8,43 +8,42 @@ import (
 
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/role/store"
 	PermissionSetPGStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
-	permissionSetStore "github.com/stackrox/rox/central/role/store/permissionset/rocksdb"
 	postgresRolePGStore "github.com/stackrox/rox/central/role/store/role/postgres"
-	roleStore "github.com/stackrox/rox/central/role/store/role/rocksdb"
 	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
-	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestAllDefaultRolesAreCovered(t *testing.T) {
 	// Merge the roles for vuln reporting into the defaults
+	defaultRoles := getDefaultRoles()
 	assert.Len(t, defaultRoles, len(accesscontrol.DefaultRoleNames))
-	for r := range defaultRoles {
-		assert.Truef(t, accesscontrol.DefaultRoleNames.Contains(r), "role %s not found in default role names", r)
+	for _, r := range defaultRoles {
+		assert.Truef(t, accesscontrol.DefaultRoleNames.Contains(r.GetName()), "role %s not found in default role names", r)
 	}
 }
 
-func TestAnalystRoleDoesNotContainAdministration(t *testing.T) {
-	analystRole, found := defaultRoles[accesscontrol.Analyst]
+func TestEachDefaultRoleHasDefaultPermSet(t *testing.T) {
+	for _, role := range getDefaultRoles() {
+		permSet := getDefaultPermissionSet(role.GetName())
+		assert.NotNil(t, permSet)
+		assert.Equal(t, permSet.GetId(), role.GetPermissionSetId())
+	}
+}
+
+func TestAnalystPermSetDoesNotContainAdministration(t *testing.T) {
+	analystPermSet, found := defaultPermissionSets[accesscontrol.Analyst]
 	// Analyst is one of the default roles.
 	assert.True(t, found)
 
-	resourceToAccess := analystRole.resourceWithAccess
+	resourceToAccess := analystPermSet.resourceWithAccess
 	// Contains all resources except one.
 	assert.Len(t, resourceToAccess, len(resources.ListAll())-1)
 	// Does not contain Administration resource.
@@ -72,10 +71,7 @@ type roleDataStoreTestSuite struct {
 	hasWriteCtx            context.Context
 	hasWriteDeclarativeCtx context.Context
 
-	dataStore DataStore
-	boltDB    *bolt.DB
-	rocksie   *rocksdb.RocksDB
-
+	dataStore    DataStore
 	postgresTest *pgtest.TestPostgres
 
 	existingRole                     *storage.Role
@@ -93,13 +89,11 @@ func (s *roleDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-14398 Replace Role with Access
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-14398 Replace Role with Access
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 	s.hasWriteDeclarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx)
 
 	s.initDataStore()
@@ -110,28 +104,12 @@ func (s *roleDataStoreTestSuite) mockGroupGetFiltered(_ context.Context, _ func(
 }
 
 func (s *roleDataStoreTestSuite) initDataStore() {
-	var err error
-	var roleStorage store.RoleStore
-	var permissionSetStorage store.PermissionSetStore
-	var accessScopeStorage store.SimpleAccessScopeStore
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest = pgtest.ForT(s.T())
-		s.Require().NotNil(s.postgresTest)
-		roleStorage = postgresRolePGStore.New(s.postgresTest.DB)
-		permissionSetStorage = PermissionSetPGStore.New(s.postgresTest.DB)
-		accessScopeStorage = postgresSimpleAccessScopeStore.New(s.postgresTest.DB)
-	} else {
-		s.boltDB, err = bolthelper.NewTemp(s.T().Name() + "-bolt.db")
-		s.Require().NoError(err)
-		s.rocksie = rocksdbtest.RocksDBForT(s.T())
+	s.postgresTest = pgtest.ForT(s.T())
+	s.Require().NotNil(s.postgresTest)
 
-		roleStorage, err = roleStore.New(s.rocksie)
-		s.Require().NoError(err)
-		permissionSetStorage, err = permissionSetStore.New(s.rocksie)
-		s.Require().NoError(err)
-		accessScopeStorage, err = simpleAccessScopeStore.New(s.rocksie)
-		s.Require().NoError(err)
-	}
+	roleStorage := postgresRolePGStore.New(s.postgresTest.DB)
+	permissionSetStorage := PermissionSetPGStore.New(s.postgresTest.DB)
+	accessScopeStorage := postgresSimpleAccessScopeStore.New(s.postgresTest.DB)
 
 	s.dataStore = New(roleStorage, permissionSetStorage, accessScopeStorage, s.mockGroupGetFiltered)
 
@@ -158,12 +136,7 @@ func (s *roleDataStoreTestSuite) initDataStore() {
 }
 
 func (s *roleDataStoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(s.rocksie)
-		testutils.TearDownDB(s.boltDB)
-	}
+	s.postgresTest.Close()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -518,11 +491,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, mimicPermissionSet)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing name yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.ErrorIs(err, errox.NotFound, "updating non-existing permission set yields an error")
@@ -547,11 +516,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, mimicPermissionSet)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, updatedGoodPermissionSet)
 	s.NoError(err)
@@ -636,8 +601,9 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 
 func getValidAccessScope(id string, name string) *storage.SimpleAccessScope {
 	return &storage.SimpleAccessScope{
-		Id:   role.EnsureValidAccessScopeID(id),
-		Name: name,
+		Id:    role.EnsureValidAccessScopeID(id),
+		Name:  name,
+		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 }
 
@@ -757,12 +723,14 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	}
 	badScope := getInvalidAccessScope("scope.new", "new invalid scope")
 	mimicScope := &storage.SimpleAccessScope{
-		Id:   goodScope.Id,
-		Name: "existing scope",
+		Id:    goodScope.Id,
+		Name:  "existing scope",
+		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 	cloneScope := &storage.SimpleAccessScope{
-		Id:   s.existingScope.Id,
-		Name: "new existing scope",
+		Id:    s.existingScope.Id,
+		Name:  "new existing scope",
+		Rules: &storage.SimpleAccessScope_Rules{},
 	}
 	updatedDefaultScope := getValidAccessScope("ffffffff-ffff-fff4-f5ff-fffffffffffe",
 		role.AccessScopeExcludeAll.GetName())
@@ -783,11 +751,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, mimicScope)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "adding scope with an existing name yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, goodScope)
 	s.ErrorIs(err, errox.NotFound, "updating non-existing scope yields an error")
@@ -812,11 +776,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, mimicScope)
 	// With postgres the unique constraint catches this.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		assert.ErrorContains(s.T(), err, "violates unique constraint")
-	} else {
-		s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
-	}
+	assert.ErrorContains(s.T(), err, "violates unique constraint")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, updatedGoodScope)
 	s.NoError(err)

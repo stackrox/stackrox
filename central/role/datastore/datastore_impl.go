@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
-	rocksDBStore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
@@ -19,20 +19,15 @@ import (
 )
 
 var (
-	// TODO: ROX-14398 Replace Role with Access
-	roleSAC = sac.ForResource(resources.Role)
+	roleSAC = sac.ForResource(resources.Access)
 
 	log = logging.LoggerForModule()
-
-	// TODO(ROX-14398): Once we use Access for this datastore instead of role, we can reuse the client's context instead.
-	groupReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 )
 
 type dataStoreImpl struct {
-	roleStorage          rocksDBStore.RoleStore
-	permissionSetStorage rocksDBStore.PermissionSetStore
-	accessScopeStorage   rocksDBStore.SimpleAccessScopeStore
+	roleStorage          store.RoleStore
+	permissionSetStorage store.PermissionSetStore
+	accessScopeStorage   store.SimpleAccessScopeStore
 	groupGetFilteredFunc func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
 
 	lock sync.RWMutex
@@ -821,7 +816,7 @@ func (ds *dataStoreImpl) verifyRoleForDeletion(ctx context.Context, name string)
 		return err
 	}
 
-	return ds.verifyNoGroupReferences(groupReadCtx, role)
+	return ds.verifyNoGroupReferences(ctx, role)
 }
 
 // Returns errox.ReferencedByAnotherObject if the given role is referenced by a group.

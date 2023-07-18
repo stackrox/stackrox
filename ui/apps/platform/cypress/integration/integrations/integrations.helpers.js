@@ -1,11 +1,7 @@
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
-import {
-    interactAndWaitForResponses,
-    interceptRequests,
-    waitForResponses,
-} from '../../helpers/request';
+import { interactAndWaitForResponses } from '../../helpers/request';
 import { getTableRowActionButtonByName } from '../../helpers/tableHelpers';
-import { visit } from '../../helpers/visit';
+import { visit, visitWithStaticResponseForCapabilities } from '../../helpers/visit';
 
 import { selectors } from './integrations.selectors';
 
@@ -98,12 +94,6 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return '';
     }
 }
-
-const integrationSourceHashMap = {
-    backups: 'backup-integrations',
-    imageIntegrations: 'image-integrations',
-    notifiers: 'notifier-integrations',
-};
 
 function getIntegrationsEndpointAddressForGET(integrationSource, integrationType) {
     const integrationsEndpointAddress = getIntegrationsEndpointAddress(
@@ -219,29 +209,6 @@ export function assertIntegrationsTable(integrationSource, integrationType) {
 // visit
 
 /**
- * @param {function} interactionCallback
- * @param {'backups' | 'imageIntegrations' | 'notifiers'} integrationSource
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
- */
-export function interactAndVisitIntegrationsDashboardForSource(
-    interactionCallback,
-    integrationSource,
-    staticResponseMap
-) {
-    interceptRequests(routeMatcherMapForIntegrationsDashboard, staticResponseMap);
-
-    interactionCallback();
-
-    cy.location('pathname').should('eq', basePath);
-    cy.location('hash').should('eq', `#${integrationSourceHashMap[integrationSource]}`);
-
-    cy.get(`h1:contains("${integrationsTitle}")`);
-    cy.get(`h2:contains("${integrationSourceTitleMap[integrationSource]}")`).should('be.visible'); // should scroll to anchor
-
-    waitForResponses(routeMatcherMapForIntegrationsDashboard);
-}
-
-/**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitIntegrationsDashboard(staticResponseMap) {
@@ -279,6 +246,43 @@ export function visitIntegrationsTable(integrationSource, integrationType, stati
     );
 
     assertIntegrationsTable(integrationSource, integrationType);
+}
+
+/**
+ * Visit an integrations page with
+ * static response either body or fixture
+ * optional segments for additional path beyond integrations dashboard
+ *
+ * @param {{ body: { [key: string]: 'CapabilityAvailable' | 'CapabilityDisabled' } } | { fixture: string }} staticResponseForCapabilities
+ * @param string [integrationSource]
+ * @param string [integrationType]
+ * @param string [integrationId]
+ * @param {String('view' | 'edit' | 'create')} [integrationAction]
+ */
+export function visitIntegrationsWithStaticResponseForCapabilities(
+    staticResponseForCapabilities,
+    integrationSource,
+    integrationType,
+    integrationId,
+    integrationAction
+) {
+    visitWithStaticResponseForCapabilities(
+        getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
+        staticResponseForCapabilities
+    );
+}
+export function visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+    staticResponseForCapabilities,
+    integrationSource,
+    integrationType,
+    integrationId,
+    integrationAction
+) {
+    visitWithStaticResponseForCapabilities(
+        getIntegrationsPath(integrationSource, integrationType, integrationId, integrationAction),
+        staticResponseForCapabilities
+    );
+    cy.location('pathname').should('eq', basePath);
 }
 
 // interact on dashboard

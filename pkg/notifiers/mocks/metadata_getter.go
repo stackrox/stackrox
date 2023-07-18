@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockMetadataGetter is a mock of MetadataGetter interface.
@@ -47,4 +47,18 @@ func (m *MockMetadataGetter) GetAnnotationValue(arg0 context.Context, arg1 *stor
 func (mr *MockMetadataGetterMockRecorder) GetAnnotationValue(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnnotationValue", reflect.TypeOf((*MockMetadataGetter)(nil).GetAnnotationValue), arg0, arg1, arg2, arg3)
+}
+
+// GetNamespaceLabels mocks base method.
+func (m *MockMetadataGetter) GetNamespaceLabels(arg0 context.Context, arg1 *storage.Alert) map[string]string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNamespaceLabels", arg0, arg1)
+	ret0, _ := ret[0].(map[string]string)
+	return ret0
+}
+
+// GetNamespaceLabels indicates an expected call of GetNamespaceLabels.
+func (mr *MockMetadataGetterMockRecorder) GetNamespaceLabels(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockMetadataGetter)(nil).GetNamespaceLabels), arg0, arg1)
 }

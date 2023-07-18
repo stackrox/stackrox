@@ -1,6 +1,7 @@
 import queryString from 'qs';
 
-import { ReportConfiguration } from 'types/report.proto';
+import { ReportConfiguration as ReportConfigurationV1 } from 'types/report.proto';
+import { ReportConfiguration } from 'types/reportConfigurationService.proto';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ApiSortOption } from 'types/search';
 import axios from './instance';
@@ -16,7 +17,7 @@ export function fetchReports(
     sortOption: ApiSortOption,
     page: number,
     pageSize: number
-): Promise<ReportConfiguration[]> {
+): Promise<ReportConfigurationV1[]> {
     const offset = page * pageSize;
     const searchOptions: RestSearchOption[] = [...options];
     const query = searchOptionsToQuery(searchOptions);
@@ -32,7 +33,7 @@ export function fetchReports(
     }
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<{ reportConfigs: ReportConfiguration[] }>(`${reportConfigurationsUrl}?${params}`)
+        .get<{ reportConfigs: ReportConfigurationV1[] }>(`${reportConfigurationsUrl}?${params}`)
         .then((response) => {
             return response?.data?.reportConfigs ?? [];
         });
@@ -58,22 +59,22 @@ export function fetchReportsCount(options: RestSearchOption[] = []): Promise<num
         });
 }
 
-export function fetchReportById(reportId: string): Promise<ReportConfiguration> {
+export function fetchReportById(reportId: string): Promise<ReportConfigurationV1> {
     return axios
-        .get<{ reportConfig: ReportConfiguration }>(`${reportConfigurationsUrl}/${reportId}`)
+        .get<{ reportConfig: ReportConfigurationV1 }>(`${reportConfigurationsUrl}/${reportId}`)
         .then((response) => {
             return response?.data?.reportConfig ?? {};
         });
 }
 
-export function saveReport(report: ReportConfiguration): Promise<ReportConfiguration> {
+export function saveReport(report: ReportConfigurationV1): Promise<ReportConfigurationV1> {
     const apiPayload = {
         reportConfig: report,
     };
 
     const promise = report.id
-        ? axios.put<ReportConfiguration>(`${reportConfigurationsUrl}/${report.id}`, apiPayload)
-        : axios.post<ReportConfiguration>(reportConfigurationsUrl, apiPayload);
+        ? axios.put<ReportConfigurationV1>(`${reportConfigurationsUrl}/${report.id}`, apiPayload)
+        : axios.post<ReportConfigurationV1>(reportConfigurationsUrl, apiPayload);
 
     return promise.then((response) => {
         return response.data;
@@ -86,4 +87,14 @@ export function deleteReport(reportId: string): Promise<Empty> {
 
 export function runReport(reportId: string): Promise<Empty> {
     return axios.post(`${reportServiceUrl}/${reportId}`);
+}
+
+// The following functions are built around the new VM Reporting Enhancements
+
+export function fetchReportConfigurations(): Promise<ReportConfiguration[]> {
+    return axios
+        .get<{ reportConfigs: ReportConfiguration[] }>('/v2/reports/configurations')
+        .then((response) => {
+            return response?.data?.reportConfigs ?? [];
+        });
 }

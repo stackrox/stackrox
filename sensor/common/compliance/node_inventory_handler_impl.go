@@ -21,8 +21,10 @@ type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
 	toCentral    <-chan *central.MsgFromSensor
 	centralReady concurrency.Signal
-	toCompliance <-chan common.MessageToComplianceWithAddress
-	nodeMatcher  NodeIDMatcher
+	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
+	acksFromCentral chan common.MessageToComplianceWithAddress
+	toCompliance    <-chan common.MessageToComplianceWithAddress
+	nodeMatcher     NodeIDMatcher
 	// lock prevents the race condition between Start() [writer] and ResponsesC() [reader]
 	lock    *sync.Mutex
 	stopper concurrency.Stopper
@@ -57,11 +59,18 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	if c.toCentral != nil || c.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
+	c.acksFromCentral = make(chan common.MessageToComplianceWithAddress)
 	c.toCentral, c.toCompliance = c.run()
 	return nil
 }
 
 func (c *nodeInventoryHandlerImpl) Stop(_ error) {
+	if !c.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = c.stopper.Client().Stopped().Wait()
+			close(c.acksFromCentral)
+		}()
+	}
 	c.stopper.Client().Stop()
 }
 
@@ -70,7 +79,9 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
-		// TODO(ROX-17044): handle node_inventory in offline mode
+		// As Compliance enters a retry loop when it is not receiving an ACK,
+		// there is no need to do anything when entering offline mode
+		c.centralReady.Reset()
 	}
 }
 
@@ -80,6 +91,12 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 		return nil
 	}
 	log.Debugf("Received node-scanning-ACK message: %v", ackMsg)
+	switch ackMsg.GetAction() {
+	case central.NodeInventoryACK_ACK:
+		c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_ACK)
+	case central.NodeInventoryACK_NACK:
+		c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
+	}
 	return nil
 }
 
@@ -102,6 +119,12 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 		select {
 		case <-c.stopper.Flow().StopRequested():
 			return
+		case ackMsg, ok := <-c.acksFromCentral:
+			if !ok {
+				log.Debug("Channel for reading node-scanning-ACK messages (acksFromCentral) is closed")
+			}
+			log.Debugf("Forwarding node-scanning-ACK message from Central to Compliance: %v", ackMsg)
+			toCompliance <- ackMsg
 		case inventory, ok := <-c.inventories:
 			if !ok {
 				c.stopper.Flow().StopWithError(errInputChanClosed)
@@ -109,7 +132,7 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 			}
 			if !c.centralReady.IsDone() {
 				log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
-				c.sendNackToCompliance(toCompliance, inventory)
+				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
 				continue
 			}
 			if inventory == nil {
@@ -117,8 +140,9 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 				break
 			}
 			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
-				log.Warnf("Node unknown to Sensor. Requesting Compliance to resend NodeInventory with ID %q later", inventory.GetNodeId())
-				c.sendNackToCompliance(toCompliance, inventory)
+				log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
+				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
+
 			} else {
 				inventory.NodeId = nodeID
 				metrics.ObserveReceivedNodeInventory(inventory)
@@ -129,20 +153,18 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *cen
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendNackToCompliance(complianceC chan<- common.MessageToComplianceWithAddress, inventory *storage.NodeInventory) {
-	if inventory == nil {
-		return
-	}
+func (c *nodeInventoryHandlerImpl) sendAckToCompliance(complianceC chan<- common.MessageToComplianceWithAddress,
+	nodeName string, action sensor.MsgToCompliance_NodeInventoryACK_Action) {
 	complianceC <- common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
-			Msg: &sensor.MsgToCompliance_Nack{
-				Nack: &sensor.MsgToCompliance_NodeInventoryNack{
-					NodeId: inventory.GetNodeId(),
+			Msg: &sensor.MsgToCompliance_Ack{
+				Ack: &sensor.MsgToCompliance_NodeInventoryACK{
+					Action: action,
 				},
 			},
 		},
-		Hostname:  inventory.GetNodeName(),
-		Broadcast: false,
+		Hostname:  nodeName,
+		Broadcast: nodeName == "",
 	}
 }
 

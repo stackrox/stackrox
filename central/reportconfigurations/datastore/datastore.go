@@ -4,16 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/reportconfigurations/index"
 	"github.com/stackrox/rox/central/reportconfigurations/search"
 	"github.com/stackrox/rox/central/reportconfigurations/store"
 	pgStore "github.com/stackrox/rox/central/reportconfigurations/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -34,20 +30,10 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(reportConfigStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(reportConfigStore store.Store, searcher search.Searcher) (DataStore, error) {
 	d := &dataStoreImpl{
 		reportConfigStore: reportConfigStore,
 		searcher:          searcher,
-		indexer:           indexer,
-	}
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			// TODO: ROX-13888 Replace VulnerabilityReports with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.VulnerabilityReports)))
-	if err := d.buildIndex(ctx); err != nil {
-		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil
 }
@@ -58,5 +44,5 @@ func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(store, indexer)
 
-	return New(store, indexer, searcher)
+	return New(store, searcher)
 }

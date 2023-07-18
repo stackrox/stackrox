@@ -11,6 +11,8 @@ import {
     saveCreatedIntegrationInForm,
     testIntegrationInFormWithStoredCredentials,
     visitIntegrationsTable,
+    visitIntegrationsWithStaticResponseForCapabilities,
+    visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities,
 } from './integrations.helpers';
 import { selectors } from './integrations.selectors';
 
@@ -146,6 +148,33 @@ describe('Backup Integrations', () => {
             saveCreatedIntegrationInForm(integrationSource, integrationType);
 
             deleteIntegrationInTable(integrationSource, integrationType, integrationName);
+        });
+    });
+
+    describe('when cloud backup capability is disabled', () => {
+        it('should not render Image back integrations', () => {
+            visitIntegrationsWithStaticResponseForCapabilities({
+                body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
+            });
+            cy.get('h2:contains("Backup Integrations")').should('not.exist');
+            cy.get('a .pf-c-card__title:contains("Amazon S3")').should('not.exist');
+            cy.get('a .pf-c-card__title:contains("Google Cloud Storage")').should('not.exist');
+
+            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+                {
+                    body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
+                },
+                'backups',
+                's3'
+            );
+
+            visitIntegrationsAndVerifyRedirectWithStaticResponseForCapabilities(
+                {
+                    body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
+                },
+                'backups',
+                'gcs'
+            );
         });
     });
 });

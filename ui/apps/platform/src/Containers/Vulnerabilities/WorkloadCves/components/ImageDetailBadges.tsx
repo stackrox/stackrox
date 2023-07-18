@@ -2,7 +2,7 @@ import React from 'react';
 import { LabelGroup, Label } from '@patternfly/react-core';
 import { gql } from '@apollo/client';
 
-import { getDistanceStrictAsPhrase, getDateTime } from 'utils/dateUtils';
+import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
 
 export type ImageDetails = {
     deploymentCount: number;
@@ -10,7 +10,6 @@ export type ImageDetails = {
     metadata: {
         v1: {
             created: string | null;
-            digest: string;
         } | null;
     } | null;
     dataSource: { name: string } | null;
@@ -24,7 +23,6 @@ export const imageDetailsFragment = gql`
         metadata {
             v1 {
                 created
-                digest
             }
         }
         dataSource {
@@ -45,15 +43,11 @@ function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
 
     return (
         <LabelGroup numLabels={Infinity}>
-            <Label isCompact color={isActive ? 'green' : 'gold'}>
-                {isActive ? 'Active' : 'Inactive'}
-            </Label>
-            {operatingSystem && <Label isCompact>OS: {operatingSystem}</Label>}
-            {created && (
-                <Label isCompact>Age: {getDistanceStrictAsPhrase(created, new Date())}</Label>
-            )}
+            <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
+            {operatingSystem && <Label>OS: {operatingSystem}</Label>}
+            {created && <Label>Age: {getDistanceStrict(created, new Date())}</Label>}
             {scanTime && (
-                <Label isCompact>
+                <Label>
                     Scan time: {getDateTime(scanTime)} by {dataSource?.name ?? 'Unknown Scanner'}
                 </Label>
             )}

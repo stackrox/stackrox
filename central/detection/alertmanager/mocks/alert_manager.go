@@ -6,7 +6,7 @@ package mocks
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	alertmanager "github.com/stackrox/rox/central/detection/alertmanager"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"

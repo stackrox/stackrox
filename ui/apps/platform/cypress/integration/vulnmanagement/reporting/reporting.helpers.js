@@ -1,3 +1,4 @@
+import { hasFeatureFlag } from '../../../helpers/features';
 import { visitFromLeftNavExpandable } from '../../../helpers/nav';
 import {
     getRouteMatcherMapForGraphQL,
@@ -54,11 +55,10 @@ export function interactAndVisitVulnerabilityReporting(interactionCallback, stat
 }
 
 export function visitVulnerabilityReportingFromLeftNav() {
-    visitFromLeftNavExpandable(
-        'Vulnerability Management',
-        'Reporting',
-        routeMatcherMapWithSearchOptions
-    );
+    const oldVulnMgmtNavText = hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')
+        ? 'Vulnerability Management (1.0)'
+        : 'Vulnerability Management';
+    visitFromLeftNavExpandable(oldVulnMgmtNavText, 'Reporting', routeMatcherMapWithSearchOptions);
 
     cy.location('pathname').should('eq', basePath);
     cy.location('search').should('eq', '');
@@ -100,18 +100,6 @@ export const accessScopesAlias = 'simpleaccessscopes';
 export const collectionsAlias = 'collections';
 export const notifiersAlias = 'notifiers';
 
-// TODO This object can be deleted once the ROX_POSTGRES_DATASTORE feature flag is removed
-const routeMatcherMapToCreate = {
-    [accessScopesAlias]: {
-        method: 'GET',
-        url: '/v1/simpleaccessscopes',
-    },
-    [notifiersAlias]: {
-        method: 'GET',
-        url: '/v1/notifiers',
-    },
-};
-
 const routeMatcherMapToCreateWithCollections = {
     [collectionsAlias]: {
         method: 'GET',
@@ -123,22 +111,16 @@ const routeMatcherMapToCreateWithCollections = {
     },
 };
 
-export function visitVulnerabilityReportingToCreate(staticResponseMap, isCollectionsEnabled) {
-    const routeMatcherMap = isCollectionsEnabled
-        ? routeMatcherMapToCreateWithCollections
-        : routeMatcherMapToCreate;
-    visit(`${basePath}?action=create`, routeMatcherMap, staticResponseMap);
+export function visitVulnerabilityReportingToCreate(staticResponseMap) {
+    visit(`${basePath}?action=create`, routeMatcherMapToCreateWithCollections, staticResponseMap);
 }
 
-export function interactAndWaitToCreateReport(
-    interactionCallback,
-    staticResponseMap,
-    isCollectionsEnabled
-) {
-    const routeMatcherMap = isCollectionsEnabled
-        ? routeMatcherMapToCreateWithCollections
-        : routeMatcherMapToCreate;
-    interactAndWaitForResponses(interactionCallback, routeMatcherMap, staticResponseMap);
+export function interactAndWaitToCreateReport(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(
+        interactionCallback,
+        routeMatcherMapToCreateWithCollections,
+        staticResponseMap
+    );
 }
 
 /**

@@ -5,18 +5,17 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	mockIndex "github.com/stackrox/rox/central/processbaseline/index/mocks"
 	mockStore "github.com/stackrox/rox/central/processbaseline/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessBaselineSearch(t *testing.T) {
@@ -56,9 +55,6 @@ func (suite *ProcessBaselineSearchTestSuite) SetupTest() {
 	suite.controller = gomock.NewController(suite.T())
 	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
 	suite.store = mockStore.NewMockStore(suite.controller)
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.store.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
-	}
 	searcher, err := New(suite.store, suite.indexer)
 
 	suite.NoError(err)

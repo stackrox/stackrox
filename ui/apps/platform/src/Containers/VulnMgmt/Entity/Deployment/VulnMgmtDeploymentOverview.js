@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
 import entityTypes from 'constants/entityTypes';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
@@ -11,9 +10,7 @@ import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/Re
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -31,27 +28,22 @@ const emptyDeployment = {
     name: '',
     namespace: '',
     namespaceId: '',
-    policyStatus: '',
     priority: 0,
     vulnCount: 0,
     vulnerabilities: [],
 };
 
 const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyDeployment, ...data };
 
-    const { id, cluster, priority, namespace, namespaceId, policyStatus, labels, annotations } =
-        safeData;
+    const { id, cluster, priority, namespace, namespaceId, labels, annotations } = safeData;
 
     const metadataKeyValuePairs = [];
 
-    if (!entityContext[entityTypes.CLUSTER]) {
+    if (!entityContext[entityTypes.CLUSTER] && cluster?.name && cluster?.id) {
         const clusterLink = workflowState
             .pushRelatedEntity(entityTypes.CLUSTER, cluster.id)
             .toUrl();
@@ -60,7 +52,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
             value: cluster && cluster.name && <Link to={clusterLink}>{cluster.name}</Link>,
         });
     }
-    if (!entityContext[entityTypes.NAMESPACE]) {
+    if (!entityContext[entityTypes.NAMESPACE] && namespace && namespaceId) {
         const namespaceLink = workflowState
             .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
             .toUrl();
@@ -70,42 +62,22 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         });
     }
 
-    const deploymentStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <PolicyStatusIconText isPass={policyStatus === 'pass'} isTextOnly={false} />
-        </React.Fragment>,
-    ];
+    const deploymentStats = [<RiskScore key="risk-score" score={priority} />];
     const currentEntity = { [entityTypes.DEPLOYMENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
-    // need to know if this deployment is scoped to a policy higher up in the hierarchy
-    const policyAncestor = workflowState.getSingleAncestorOfType(entityTypes.POLICY);
-
-    let deploymentFindingsContent = null;
-    if (policyAncestor) {
-        deploymentFindingsContent = (
-            <ViolationsAcrossThisDeployment
-                deploymentID={id}
-                policyID={entityContext[entityTypes.POLICY] || policyAncestor.entityId}
-                message="This deployment has not failed on this policy"
+    const deploymentFindingsContent = (
+        <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
+            <TableWidgetFixableCves
+                workflowState={workflowState}
+                entityContext={entityContext}
+                entityType={entityTypes.DEPLOYMENT}
+                name={safeData?.name}
+                id={safeData?.id}
+                vulnType={entityTypes.IMAGE_CVE}
             />
-        );
-    } else {
-        deploymentFindingsContent = (
-            <div className="flex pdf-page pdf-stretch pdf-new relative rounded mb-4 ml-4 mr-4">
-                <TableWidgetFixableCves
-                    workflowState={workflowState}
-                    entityContext={entityContext}
-                    entityType={entityTypes.DEPLOYMENT}
-                    name={safeData?.name}
-                    id={safeData?.id}
-                    vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
-                />
-            </div>
-        );
-    }
+        </div>
+    );
 
     return (
         <div className="flex h-full">

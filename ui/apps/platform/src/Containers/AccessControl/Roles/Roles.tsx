@@ -41,15 +41,14 @@ import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
 import usePermissions from '../../../hooks/usePermissions';
 import AccessControlNoPermission from '../AccessControlNoPermission';
-import useFeatureFlags from '../../../hooks/useFeatureFlags';
 import { isUserResource } from '../traits';
 
 const entityType = 'ROLE';
 
 function Roles(): ReactElement {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-    const hasReadAccessForPage = hasReadAccess('Role') && hasReadAccess('Access');
-    const hasWriteAccessForPage = hasReadWriteAccess('Role') && hasReadWriteAccess('Access');
+    const hasReadAccessForPage = hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -70,12 +69,7 @@ function Roles(): ReactElement {
     const [accessScopes, setAccessScopes] = useState<AccessScope[]>([]);
     const [alertAccessScopes, setAlertAccessScopes] = useState<ReactElement | null>(null);
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
     function getDefaultAccessScopeID() {
-        if (isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
-            return defaultAccessScopeIds.UnrestrictedPostgres;
-        }
         return defaultAccessScopeIds.Unrestricted;
     }
 

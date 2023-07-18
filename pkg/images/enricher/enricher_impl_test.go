@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
@@ -32,6 +33,9 @@ import (
 var (
 	// emptyCtx used within all tests.
 	emptyCtx = context.Background()
+
+	// errBroken is a generic error.
+	errBroken = errors.New("broken")
 )
 
 func emptyImageGetter(_ context.Context, _ string) (*storage.Image, bool, error) {
@@ -526,7 +530,7 @@ func TestZeroIntegrations(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -556,7 +560,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{Internal: true}, img)
@@ -585,7 +589,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -619,7 +623,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -653,7 +657,7 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
@@ -686,7 +690,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	enricherImpl := New(&fakeCVESuppressor{}, &fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		expiringcache.NewExpiringCache(1*time.Minute),
 		emptyImageGetter,
-		mockReporter, emptySignatureIntegrationGetter)
+		mockReporter, emptySignatureIntegrationGetter, nil)
 
 	img := &storage.Image{
 		Id:    "id",
@@ -1065,4 +1069,131 @@ func fakeSignatureIntegrationGetter(id string, fail bool) SignatureIntegrationGe
 			},
 		}, nil
 	}
+}
+
+func TestDelegateEnrichImage(t *testing.T) {
+	deleEnrichCtx := EnrichmentContext{Delegable: true}
+	e := enricherImpl{
+		cvesSuppressor:   &fakeCVESuppressor{},
+		cvesSuppressorV2: &fakeCVESuppressorV2{},
+		imageGetter:      emptyImageGetter,
+	}
+
+	var dele *delegatorMocks.MockDelegator
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		dele = delegatorMocks.NewMockDelegator(ctrl)
+		e.scanDelegator = dele
+	}
+
+	t.Run("not delegable", func(t *testing.T) {
+		setup(t)
+		enrichCtx := EnrichmentContext{Delegable: false}
+
+		should, err := e.delegateEnrichImage(emptyCtx, enrichCtx, nil)
+		assert.False(t, should)
+		assert.NoError(t, err)
+	})
+
+	t.Run("delegate error", func(t *testing.T) {
+		setup(t)
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("", false, errBroken)
+
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
+		assert.False(t, should)
+		assert.ErrorIs(t, err, errBroken)
+	})
+
+	t.Run("should not delegate", func(t *testing.T) {
+		setup(t)
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("", false, nil)
+
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
+		assert.False(t, should)
+		assert.NoError(t, err)
+	})
+
+	t.Run("error should delegate", func(t *testing.T) {
+		setup(t)
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("", true, errBroken)
+
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
+		assert.True(t, should)
+		assert.ErrorIs(t, err, errBroken)
+	})
+
+	t.Run("delegate enrich success", func(t *testing.T) {
+		setup(t)
+		fakeImage := &storage.Image{}
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
+		dele.EXPECT().DelegateScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeImage, nil)
+
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
+		assert.True(t, should)
+		assert.NoError(t, err)
+	})
+
+	t.Run("delegate enrich error", func(t *testing.T) {
+		setup(t)
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
+		dele.EXPECT().DelegateScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errBroken)
+
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, nil)
+		assert.True(t, should)
+		assert.ErrorIs(t, err, errBroken)
+	})
+
+	t.Run("delegate enrich cached image", func(t *testing.T) {
+		setup(t)
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
+		img := &storage.Image{
+			Id:       "id",
+			Name:     &storage.ImageName{Registry: "reg"},
+			Metadata: &storage.ImageMetadata{},
+			Scan:     &storage.ImageScan{},
+		}
+		e.imageGetter = imageGetterFromImage(img)
+
+		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, img)
+		assert.True(t, should)
+		assert.NoError(t, err)
+	})
+}
+
+func TestEnrichImage_Delegate(t *testing.T) {
+	deleEnrichCtx := EnrichmentContext{Delegable: true}
+	e := enricherImpl{
+		cvesSuppressor:   &fakeCVESuppressor{},
+		cvesSuppressorV2: &fakeCVESuppressorV2{},
+		imageGetter:      emptyImageGetter,
+	}
+
+	var dele *delegatorMocks.MockDelegator
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		dele = delegatorMocks.NewMockDelegator(ctrl)
+		e.scanDelegator = dele
+	}
+
+	t.Run("delegate enrich error", func(t *testing.T) {
+		setup(t)
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("", true, errBroken)
+
+		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, nil)
+		assert.Equal(t, result.ScanResult, ScanNotDone)
+		assert.False(t, result.ImageUpdated)
+		assert.ErrorIs(t, err, errBroken)
+	})
+
+	t.Run("delegate enrich success", func(t *testing.T) {
+		setup(t)
+		fakeImage := &storage.Image{}
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
+		dele.EXPECT().DelegateScanImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeImage, nil)
+
+		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
+		assert.Equal(t, result.ScanResult, ScanSucceeded)
+		assert.True(t, result.ImageUpdated)
+		assert.NoError(t, err)
+	})
 }

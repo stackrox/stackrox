@@ -4,19 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/imageintegration/index"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
-	"github.com/stackrox/rox/central/imageintegration/store/bolt"
 	pgStore "github.com/stackrox/rox/central/imageintegration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"go.etcd.io/bbolt"
 )
 
 var (
@@ -39,26 +34,18 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(imageIntegrationStorage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(imageIntegrationStorage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:           imageIntegrationStorage,
-		indexer:           indexer,
 		formattedSearcher: searcher,
-	}
-
-	ctx := sac.WithAllAccess(context.Background())
-
-	if err := ds.buildIndex(ctx); err != nil {
-		log.Fatal("unable to load search index for image integrations")
 	}
 	return ds
 }
 
 // NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(imageIntegrationStorage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func NewForTestOnly(imageIntegrationStorage store.Store, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:           imageIntegrationStorage,
-		indexer:           indexer,
 		formattedSearcher: searcher,
 	}
 	return ds
@@ -67,15 +54,6 @@ func NewForTestOnly(imageIntegrationStorage store.Store, indexer index.Indexer, 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	store := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	searcher := search.New(store, indexer)
-	return New(store, indexer, searcher), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, boltengine *bbolt.DB, bleveIndex bleve.Index) (DataStore, error) {
-	testStore := bolt.New(boltengine)
-	indexer := index.New(bleveIndex)
-	searcher := search.New(testStore, indexer)
-	return New(testStore, indexer, searcher), nil
+	searcher := search.New(store, pgStore.NewIndexer(pool))
+	return New(store, searcher), nil
 }

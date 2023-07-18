@@ -3,21 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-)
-
-const (
-	batchSize = 1000
 )
 
 var (
@@ -26,41 +18,7 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
-}
-
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-	log.Info("[STARTUP] Indexing rolebindings")
-
-	var bindings []*storage.K8SRoleBinding
-	var count int
-	// Postgres op retries not required. This is related to bleve indexing which is not used in postgres.
-	walkFn := func() error {
-		return d.storage.Walk(ctx, func(binding *storage.K8SRoleBinding) error {
-			bindings = append(bindings, binding)
-			if len(bindings) == batchSize {
-				if err := d.indexer.AddK8SRoleBindings(bindings); err != nil {
-					return err
-				}
-				bindings = bindings[:0]
-			}
-			count++
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return err
-	}
-	if err := d.indexer.AddK8SRoleBindings(bindings); err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Successfully indexed %d rolebindings", count)
-	return nil
 }
 
 func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
@@ -91,10 +49,7 @@ func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(ctx, request); err != nil {
-		return err
-	}
-	return d.indexer.AddK8SRoleBinding(request)
+	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error {
@@ -104,10 +59,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return d.indexer.DeleteK8SRoleBinding(id)
+	return d.storage.Delete(ctx, id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

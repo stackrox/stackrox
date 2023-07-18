@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const (

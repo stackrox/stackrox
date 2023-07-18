@@ -38,6 +38,18 @@ type PolicyBehaviorFormProps = {
     hasActiveViolations: boolean;
 };
 
+function getEventSourceHelperText(eventSource) {
+    if (eventSource === 'DEPLOYMENT_EVENT') {
+        return 'Event sources that include process and network activity, pod exec and pod port forwarding.';
+    }
+
+    if (eventSource === 'AUDIT_LOG_EVENT') {
+        return 'Event sources that match Kubernetes audit log records.';
+    }
+
+    return '';
+}
+
 function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { values, setFieldValue, setValues } = useFormikContext<ClientPolicy>();
     const [lifeCycleChange, setLifeCycleChange] = useState<{
@@ -123,6 +135,8 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         const clearedCriteria = cloneDeep(initialPolicy.policySections);
         setFieldValue('policySections', clearedCriteria, false);
     }
+
+    const eventSourceHelperText = getEventSourceHelperText(values.eventSource);
 
     const responseMethodHelperText = showEnforcement
         ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
@@ -234,6 +248,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         fieldId="policy-event-source"
                         label="Event sources (Runtime lifecycle only)"
                         isRequired={hasRuntime}
+                        helperText={eventSourceHelperText}
                     >
                         <Flex direction={{ default: 'row' }}>
                             <Radio
@@ -383,7 +398,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                     </CardHeader>
                                     <CardBody>
                                         If enabled, executions within a pod that violate this policy
-                                        will result in the pod being killed. Actions taken through
+                                        will result in the pod being deleted. Actions taken through
                                         the API server that violate this policy will be blocked.
                                     </CardBody>
                                 </Card>

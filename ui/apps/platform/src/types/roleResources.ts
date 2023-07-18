@@ -33,11 +33,4 @@ export type ResourceName =
     | 'VulnerabilityManagementRequests'
     | 'WatchedImage'
     | 'WorkflowAdministration'
-    // To-be-deprecated resources.
-    // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
-    | 'Policy'
-    // TODO: ROX-14398 Remove Role
-    | 'Role'
-    // TODO: ROX-13888 Remove Policy, VulnerabilityReports.
-    | 'VulnerabilityReports'
     ;

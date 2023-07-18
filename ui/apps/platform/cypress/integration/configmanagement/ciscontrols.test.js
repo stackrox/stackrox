@@ -3,15 +3,15 @@ import { hasOrchestratorFlavor } from '../../helpers/features';
 import { triggerScan } from '../compliance/Compliance.helpers';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
     clickOnCountWidget,
+    hasCountWidgetsFor,
     hasTabsFor,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
     interactAndWaitForConfigurationManagementScan,
+    navigateToSingleEntityPage,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
     visitConfigurationManagementDashboard,
+    visitConfigurationManagementEntityInSidePanel,
     visitConfigurationManagementEntitiesWithSearch,
 } from './ConfigurationManagement.helpers';
 
@@ -64,18 +64,15 @@ describe('Configuration Management Controls', () => {
         hasTabsFor(['nodes']);
     });
 
-    describe('should have same number in nodes table as in count widget', () => {
+    describe('should go to nodes table from widget link', () => {
         const entitiesKey2 = 'nodes';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 

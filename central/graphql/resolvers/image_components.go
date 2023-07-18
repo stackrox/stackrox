@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -93,9 +92,6 @@ type ImageComponentResolver interface {
 // ImageComponent returns an image component based on an input id (name:version)
 func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return resolver.imageComponentV2(ctx, args)
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -115,11 +111,6 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 // ImageComponents returns image components that match the input query.
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := queryWithImageIDRegexFilter(q.String())
-
-		return resolver.imageComponentsV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -156,11 +147,6 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 // ImageComponentCount returns count of image components that match the input query
 func (resolver *Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponentCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := queryWithImageIDRegexFilter(args.String())
-
-		return resolver.componentCountV2(ctx, RawQuery{Query: &query})
-	}
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -260,11 +246,6 @@ func getImageIDFromScope(contexts ...context.Context) string {
 		}
 	}
 	return ""
-}
-
-func queryWithImageIDRegexFilter(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddRegexes(search.ImageSHA, ".+").Query())
 }
 
 func getImageCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.EmbeddedVulnerability, query *v1.Query) ([]ImageVulnerabilityResolver, error) {
@@ -477,14 +458,6 @@ func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQu
 		return "", nil
 	}
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		edgeID := edges.EdgeID{ParentID: imageID, ChildID: resolver.data.GetId()}.ToString()
-		edge, found, err := resolver.root.ImageComponentEdgeDataStore.Get(resolver.ctx, edgeID)
-		if err != nil || !found {
-			return "", err
-		}
-		return edge.GetLocation(), nil
-	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
@@ -501,7 +474,7 @@ func (resolver *imageComponentResolver) PlottedImageVulnerabilities(ctx context.
 
 func (resolver *imageComponentResolver) TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
-	if resolver.ctx == nil || !env.PostgresDatastoreEnabled.BooleanSetting() {
+	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
 
@@ -521,13 +494,6 @@ func (resolver *imageComponentResolver) TopImageVulnerability(ctx context.Contex
 		)
 	}
 
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		vulnResolver, err := resolver.unwrappedTopVulnQuery(resolver.ctx)
-		if err != nil || vulnResolver == nil {
-			return nil, err
-		}
-		return vulnResolver, nil
-	}
 	return resolver.root.TopImageVulnerability(resolver.imageComponentScopeContext(ctx), RawQuery{})
 }
 

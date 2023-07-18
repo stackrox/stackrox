@@ -2,15 +2,8 @@ package datastore
 
 import (
 	pgStore "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	"github.com/stackrox/rox/central/clustercveedge/index"
 	"github.com/stackrox/rox/central/clustercveedge/search"
-	"github.com/stackrox/rox/central/clustercveedge/store"
-	"github.com/stackrox/rox/central/clustercveedge/store/dackbox"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/globaldb"
-	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -23,23 +16,8 @@ var (
 
 func initialize() {
 	var err error
-	var storage store.Store
-	var indexer index.Indexer
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = pgStore.NewFullStore(globaldb.GetPostgres())
-		indexer = pgStore.NewIndexer(globaldb.GetPostgres())
-		ad, err = New(nil, storage, indexer, search.NewV2(storage, indexer))
-		utils.CrashOnError(err)
-		return
-	}
-
-	storage, err = dackbox.New(globalDackBox.GetGlobalDackBox(), globalDackBox.GetKeyFence())
-	utils.CrashOnError(err)
-
-	searcher := search.New(storage, index.New(globalindex.GetGlobalIndex()), cveIndexer.New(globalindex.GetGlobalIndex()), globalDackBox.GetGlobalDackBox())
-
-	ad, err = New(globalDackBox.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
+	storage := pgStore.New(globaldb.GetPostgres())
+	ad, err = New(storage, search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
 	utils.CrashOnError(err)
 }
 

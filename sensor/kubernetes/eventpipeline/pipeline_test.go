@@ -3,7 +3,6 @@ package eventpipeline
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -14,6 +13,7 @@ import (
 	mockComponent "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type eventPipelineSuite struct {

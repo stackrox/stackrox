@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/x509utils"
 	"go.uber.org/zap"
 )
@@ -39,7 +40,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 		return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs directory %q", additionalCADir))
 	}
 
-	var files []string
+	var filePaths = set.NewStringSet()
 
 	for _, directoryEntry := range directoryEntries {
 
@@ -74,25 +75,24 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 			}
 		}
 
-		if !isValidAdditionalCAFileName(entryName) {
-			log.Info(skipAdditionalCAFileMsg(entryName))
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Warnf("Failed to read additional CA file %q: %s. Skipping", filePath, err)
 			continue
 		}
 
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs cert file %q", filePath))
+		if _, err = x509utils.ConvertPEMToDERs(content); err != nil {
+			log.Warnf("Failed to convert additional CA file %q from PEM to DER format: %s. Skipping", filePath, err)
+			continue
 		}
 
-		_, err = x509utils.ConvertPEMToDERs(content)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Failed to convert additional CA cert file %q from PEM to DER format", filePath))
-		}
+		filePaths.Add(filePath)
 
-		files = append(files, filePath)
 	}
 
-	return files, nil
+	return filePaths.AsSortedSlice(func(i, j string) bool {
+		return strings.Compare(i, j) < 0
+	}), nil
 
 }
 
@@ -250,24 +250,4 @@ func validForAllDNSNames(cert *x509.Certificate, dnsNames ...string) bool {
 		}
 	}
 	return true
-}
-
-var (
-	allowedAdditionalCAExtensionList = []string{".crt", ".pem"}
-	allowedAdditionalCAExtensionMap  = map[string]struct{}{}
-)
-
-func init() {
-	for _, ext := range allowedAdditionalCAExtensionList {
-		allowedAdditionalCAExtensionMap[ext] = struct{}{}
-	}
-}
-
-func skipAdditionalCAFileMsg(fileName string) string {
-	return fmt.Sprintf("skipping additional-ca file %q because it has an invalid extension; allowed file extensions for additional ca certificates are %v", fileName, allowedAdditionalCAExtensionList)
-}
-
-func isValidAdditionalCAFileName(fileName string) bool {
-	_, ok := allowedAdditionalCAExtensionMap[path.Ext(fileName)]
-	return ok
 }

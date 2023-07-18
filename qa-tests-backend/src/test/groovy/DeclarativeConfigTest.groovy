@@ -1,49 +1,55 @@
 import static util.Helpers.withRetry
 
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
+import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.AuthProviderOuterClass.AuthProvider
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 import io.stackrox.proto.storage.GroupOuterClass.Group
-import io.stackrox.proto.storage.IntegrationHealthOuterClass.IntegrationHealth.Status
+import io.stackrox.proto.storage.DeclarativeConfigHealthOuterClass.DeclarativeConfigHealth.Status
+import io.stackrox.proto.storage.DeclarativeConfigHealthOuterClass.DeclarativeConfigHealth.ResourceType
+import io.stackrox.proto.storage.NotifierOuterClass.Notifier
+import io.stackrox.proto.storage.NotifierOuterClass.Splunk
 import io.stackrox.proto.storage.RoleOuterClass.Access
 import io.stackrox.proto.storage.RoleOuterClass.PermissionSet
 import io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope
 import io.stackrox.proto.storage.RoleOuterClass.Role
 import io.stackrox.proto.storage.TraitsOuterClass.Traits
 
-import util.Env
-
 import services.AuthProviderService
 import services.GroupService
-import services.IntegrationHealthService
+import services.DeclarativeConfigHealthService
+import services.NotifierService
 import services.RoleService
 
 import org.junit.Rule
 import org.junit.rules.Timeout
-import spock.lang.IgnoreIf
-import spock.lang.Retry
 import spock.lang.Tag
 
-@Retry(count = 0)
-// TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-@IgnoreIf({ Env.get("ROX_DECLARATIVE_CONFIGURATION", "false") == "false" })
+@Tag("Parallel")
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 
     static final private String CONFIGMAP_NAME = "declarative-configurations"
 
     // The keys are used within the config map to indicate the specific resources.
-    static final private String PERMISSION_SET_KEY = "permission-set"
-    static final private String ACCESS_SCOPE_KEY = "access-scope"
-    static final private String ROLE_KEY = "role"
-    static final private String AUTH_PROVIDER_KEY = "auth-provider"
+    static final private String PERMISSION_SET_KEY = "declarative-config-test--permission-set"
+    static final private String ACCESS_SCOPE_KEY = "declarative-config-test--access-scope"
+    static final private String ROLE_KEY = "declarative-config-test--role"
+    static final private String AUTH_PROVIDER_KEY = "declarative-config-test--auth-provider"
+    static final private String NOTIFIER_KEY = "declarative-config-test--notifier"
 
-    static final private int CREATED_RESOURCES = 6
+    static final private int CREATED_RESOURCES = 7
+
+    static final private int RETRIES = 45
+    static final private int DELETION_RETRIES = 60
+    static final private int PAUSE_SECS = 2
 
     // Values used within testing for permission sets.
     // These include:
@@ -198,13 +204,60 @@ oidc:
   clientID: SOMECLIENTID
 """
 
+    // Values used within testing for notifiers.
+    // These include:
+    //  - a valid splunk notifier YAML (valid == upserting these will work)
+    //  - a valid notifier proto object (based on the values defined in the previous YAML)
+    //  - an invalid splunk notifier YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String VALID_NOTIFIER_YAML = """\
+name: ${NOTIFIER_KEY}
+splunk:
+    token: stackrox-token
+    endpoint: stackrox-endpoint
+    sourceTypes:
+        - key: audit
+          sourceType: stackrox-audit-message
+        - key: alert
+          sourceType: stackrox-alert
+"""
+    static final private VALID_NOTIFIER = Notifier.newBuilder()
+            .setName(NOTIFIER_KEY)
+            .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
+            .setSplunk(Splunk.newBuilder()
+                    .setHttpToken("stackrox-token")
+                    .setHttpEndpoint("stackrox-endpoint")
+                    .putAllSourceTypes(["audit": "stackrox-audit-message", "alert": "stackrox-alert"])
+            ).build()
+
     // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
     Timeout globalTimeout = new Timeout(1200, TimeUnit.SECONDS)
 
+    private ScheduledFuture<?> annotateTaskHandle
+
+    def setup() {
+        // We use this hack to speed up declarative config volume reconciliation.
+        // The reason this works is because kubelet reconciles volume from secret when:
+        // 1) Something about the pod changes
+        // 2) Somewhat around 1 minute passes
+        // Updating value of annotation thus triggers reconciliation of declarative config.
+        annotateTaskHandle = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable() {
+            @Override
+            void run() {
+                try {
+                    def value = String.valueOf(System.currentTimeMillis())
+                    orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", value)
+                } catch (Exception e) {
+                    log.error( "Failed adding annotation to central", e)
+                }
+            }
+        }, 0, 1, TimeUnit.SECONDS)
+    }
+
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+        annotateTaskHandle.cancel(true)
     }
 
     @Tag("BAT")
@@ -214,15 +267,15 @@ oidc:
         createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         then:
-        // Retry this multiple times, with a pause of 60 seconds.
+        // Retry this multiple times.
         // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
-            for (integrationHealth in response.integrationHealthList) {
+            assert response.healthsCount == CREATED_RESOURCES + 1
+            for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
                 assert integrationHealth.getStatus() == Status.HEALTHY
@@ -250,6 +303,9 @@ oidc:
         assert foundGroups == expectedGroups.size() :
                 "expected to find ${expectedGroups.size()} groups, but only found ${foundGroups}"
 
+        def notifier = verifyDeclarativeNotifier(VALID_NOTIFIER)
+        assert notifier
+
         when:
         // Update the config map to contain an invalid permission set YAML.
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY, INVALID_PERMISSION_SET_YAML)
@@ -258,9 +314,9 @@ oidc:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getHealthsList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -279,9 +335,9 @@ oidc:
         // Verify the integration health for the access scope is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getHealthsList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -298,9 +354,9 @@ oidc:
 
         then:
         // Verify the integration health for the role is unhealthy and contains an error message.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -319,9 +375,9 @@ oidc:
         // Verify the integration health for the auth provider is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(AUTH_PROVIDER_KEY)
             }
             assert roleHealth
@@ -343,29 +399,25 @@ oidc:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getIntegrationHealthCount() == 1
-            def configMapHealth = response.getIntegrationHealth(0)
+        withRetry(DELETION_RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
             assert configMapHealth
-            assert configMapHealth.getName().contains("Config Map")
+            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
             assert configMapHealth.getErrorMessage() == ""
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
 
         // The previously created permission set should not exist anymore.
         def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
-                .getPermissionSetsList().find {
-                    it.getName() == VALID_PERMISSION_SET.getName()
-                }
+                .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
         assert permissionSetAfterDeletion == null
 
         // The previously created access scope should not exist anymore.
         def accessScopeAfterDeletion = RoleService.getRoleService()
                 .listSimpleAccessScopes()
-                .getAccessScopesList().find {
-                    it.getName() == VALID_ACCESS_SCOPE.getName()
-                }
+                .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
         assert accessScopeAfterDeletion == null
 
         // The previously created role should not exist anymore.
@@ -387,6 +439,13 @@ oidc:
         assert GroupService.getGroups(
                 GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProvider.getId()).build())
                 .getGroupsCount() == 0
+
+        // The previously created notifier should not exist anymore.
+        def notifierAfterDeletion = NotifierService.getNotifierClient().getNotifiers(
+                NotifierServiceOuterClass.GetNotifiersRequest
+                        .newBuilder().build())
+                .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
+        assert notifierAfterDeletion == null
     }
 
     @Tag("BAT")
@@ -401,14 +460,14 @@ oidc:
                 ], DEFAULT_NAMESPACE)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
+            assert response.healthsCount == CREATED_RESOURCES
 
-            for (integrationHealth in response.getIntegrationHealthList()) {
+            for (integrationHealth in response.getHealthsList()) {
                 // Config map health will be healthy and do not indicate an error.
-                if (integrationHealth.getName().contains("Config Map")) {
+                if (integrationHealth.getResourceType() == ResourceType.CONFIG_MAP) {
                     assert integrationHealth
                     assert integrationHealth.hasLastTimestamp()
                     assert integrationHealth.getErrorMessage() == ""
@@ -422,19 +481,15 @@ oidc:
         }
 
         // No permission set should be created.
-        def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
-                .getPermissionSetsList().find {
-            it.getName() == VALID_PERMISSION_SET.getName()
-        }
-        assert permissionSetAfterDeletion == null
+        def nonExistingPermissionSet = RoleService.getRoleService().listPermissionSets()
+                .getPermissionSetsList().find { it.getName() == VALID_PERMISSION_SET.getName() }
+        assert nonExistingPermissionSet == null
 
         // No access scope should be created.
-        def accessScopeAfterDeletion = RoleService.getRoleService()
+        def nonExistingAccessScope = RoleService.getRoleService()
                 .listSimpleAccessScopes()
-                .getAccessScopesList().find {
-            it.getName() == VALID_ACCESS_SCOPE.getName()
-        }
-        assert accessScopeAfterDeletion == null
+                .getAccessScopesList().find { it.getName() == VALID_ACCESS_SCOPE.getName() }
+        assert nonExistingAccessScope == null
 
         // No role should be created.
         try {
@@ -456,10 +511,10 @@ oidc:
 
         then:
         // Only the config map health status should exist, all others should be removed.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getIntegrationHealthCount() == 1
-            def configMapHealth = response.getIntegrationHealth(0)
+        withRetry(DELETION_RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getName().contains("Config Map")
             assert configMapHealth.getErrorMessage() == ""
@@ -474,15 +529,15 @@ oidc:
         createDefaultSetOfResources(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         then:
-        // Retry this multiple times, with a pause of 60 seconds.
+        // Retry this multiple times.
         // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.integrationHealthCount == CREATED_RESOURCES + 1
-            for (integrationHealth in response.integrationHealthList) {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            // Expect 7 integration health status for the created resources and one for the config map.
+            assert response.healthsCount == CREATED_RESOURCES + 1
+            for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
                 assert integrationHealth.getStatus() == Status.HEALTHY
@@ -496,9 +551,9 @@ oidc:
         // Verify the integration health for the permission set is unhealthy and contains an error message.
         // The errors will be surface after at least three consecutive occurrences, hence we need to retry multiple
         // times here.
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getHealthsList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -516,9 +571,9 @@ oidc:
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY, VALID_PERMISSION_SET_YAML)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def permissionSetHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def permissionSetHealth = response.getHealthsList().find {
                 it.getName().contains(PERMISSION_SET_KEY)
             }
             assert permissionSetHealth
@@ -531,9 +586,9 @@ oidc:
         deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getHealthsList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -551,9 +606,9 @@ oidc:
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ACCESS_SCOPE_KEY, VALID_ACCESS_SCOPE_YAML)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def accessScopeHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def accessScopeHealth = response.getHealthsList().find {
                 it.getName().contains(ACCESS_SCOPE_KEY)
             }
             assert accessScopeHealth
@@ -563,9 +618,13 @@ oidc:
         }
 
         when:
-        def authProvidersResponse = AuthProviderService.getAuthProviders()
-        def authProvider = authProvidersResponse.getAuthProvidersList().find {
-            it.getName() == AUTH_PROVIDER_KEY
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProvidersResponse = AuthProviderService.getAuthProviders()
+            authProvider = authProvidersResponse.getAuthProvidersList().find {
+                it.getName() == AUTH_PROVIDER_KEY
+            }
+            assert authProvider
         }
         def imperativeGroup = Group.newBuilder()
                 .setRoleName(ROLE_KEY)
@@ -585,9 +644,9 @@ oidc:
         deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -605,9 +664,9 @@ oidc:
         updateConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, ROLE_KEY, VALID_ROLE_YAML)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
-            def roleHealth = response.getIntegrationHealthList().find {
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            def roleHealth = response.getHealthsList().find {
                 it.getName().contains(ROLE_KEY)
             }
             assert roleHealth
@@ -620,14 +679,14 @@ oidc:
         deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, AUTH_PROVIDER_KEY)
 
         then:
-        withRetry(5, 60) {
-            def response = IntegrationHealthService.getDeclarativeConfigHealthInfo()
+        withRetry(RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // After auth provider deletion we should be left only with integration health for:
             // - access scope
             // - role
             // - permission set
             // - config map
-            assert response.getIntegrationHealthCount() == 4
+            assert response.getHealthsCount() == 5
         }
 
         when:
@@ -637,6 +696,21 @@ oidc:
         // Verify imperative group referencing declarative auth provider is deleted with it.
         def error = thrown(StatusRuntimeException)
         assert error.getStatus().getCode() == io.grpc.Status.Code.NOT_FOUND
+
+        when:
+        orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+
+        then:
+        // Only the config map health status should exist, all others should be removed.
+        withRetry(DELETION_RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
+            assert configMapHealth
+            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
+            assert configMapHealth.getErrorMessage() == ""
+            assert configMapHealth.getStatus() == Status.HEALTHY
+        }
     }
 
     // Helpers
@@ -650,9 +724,10 @@ oidc:
         orchestrator.createConfigMap(configMapName,
                 [
                         (PERMISSION_SET_KEY): VALID_PERMISSION_SET_YAML,
-                        (ACCESS_SCOPE_KEY): VALID_ACCESS_SCOPE_YAML,
-                        (ROLE_KEY): VALID_ROLE_YAML,
-                        (AUTH_PROVIDER_KEY): VALID_AUTH_PROVIDER_YAML,
+                        (ACCESS_SCOPE_KEY)  : VALID_ACCESS_SCOPE_YAML,
+                        (ROLE_KEY)          : VALID_ROLE_YAML,
+                        (AUTH_PROVIDER_KEY) : VALID_AUTH_PROVIDER_YAML,
+                        (NOTIFIER_KEY)      : VALID_NOTIFIER_YAML,
                 ], namespace)
     }
 
@@ -750,15 +825,18 @@ oidc:
     // shares the same values.
     // The retrieved auth provider from the API will be returned, which will have the ID field populated.
     private AuthProvider verifyDeclarativeAuthProvider(AuthProvider expectedAuthProvider) {
-        def authProviderResponse = AuthProviderService.getAuthProviderService().
-                getAuthProviders(
-                        AuthproviderService.GetAuthProvidersRequest.newBuilder()
-                                .setName(expectedAuthProvider.getName()).build()
-                )
-        assert authProviderResponse.getAuthProvidersCount() == 1 :
-                "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
-                        "got ${authProviderResponse.getAuthProvidersCount()}"
-        def authProvider = authProviderResponse.getAuthProviders(0)
+        def authProvider = null
+        withRetry(RETRIES, PAUSE_SECS) {
+            def authProviderResponse = AuthProviderService.getAuthProviderService().
+                    getAuthProviders(
+                            AuthproviderService.GetAuthProvidersRequest.newBuilder()
+                                    .setName(expectedAuthProvider.getName()).build()
+                    )
+            assert authProviderResponse.getAuthProvidersCount() == 1 :
+                    "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
+                            "got ${authProviderResponse.getAuthProvidersCount()}"
+            authProvider = authProviderResponse.getAuthProviders(0)
+        }
         assert authProvider
         assert authProvider.getName() == expectedAuthProvider.getName()
         assert authProvider.getType() == expectedAuthProvider.getType()
@@ -769,5 +847,23 @@ oidc:
         assert authProvider.getEnabled()
         assert authProvider.getConfigMap() == expectedAuthProvider.getConfigMap()
         return authProvider
+    }
+
+    // verifyDeclarativeNotifier will verify that the expected auth provider exists within the API and
+    // shares the same values.
+    // The retrieved notifier from the API will be returned, which will have the ID field populated.
+    private Notifier verifyDeclarativeNotifier(Notifier expectedNotifier) {
+        def notifier = NotifierService.getNotifierClient().getNotifiers(
+                NotifierServiceOuterClass.GetNotifiersRequest
+                        .newBuilder().build())
+                .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
+        assert notifier
+        assert notifier.getName() == expectedNotifier.getName()
+        assert notifier.getTraits().getOrigin() == expectedNotifier.getTraits().getOrigin()
+        assert notifier.getType() == "splunk"
+        // Skipping the HTTP token since it will be obscured by the API.
+        assert notifier.getSplunk().getHttpEndpoint() == expectedNotifier.getSplunk().getHttpEndpoint()
+        assert notifier.getSplunk().getSourceTypesMap() == expectedNotifier.getSplunk().getSourceTypesMap()
+        return notifier
     }
 }

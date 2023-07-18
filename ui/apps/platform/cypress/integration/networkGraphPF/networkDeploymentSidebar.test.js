@@ -1,22 +1,15 @@
-import { networkGraphSelectors } from './networkGraph.selectors';
-
 import withAuth from '../../helpers/basicAuth';
+
 import {
     visitNetworkGraph,
     checkNetworkGraphEmptyState,
     selectCluster,
     selectNamespace,
     selectDeployment,
-} from '../../helpers/networkGraphPF';
-import { hasFeatureFlag } from '../../helpers/features';
+} from './networkGraph.helpers';
+import { networkGraphSelectors } from './networkGraph.selectors';
 
 describe('Network Graph deployment sidebar', () => {
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_NETWORK_GRAPH_PATTERNFLY')) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     it('should render a graph when cluster and namespace are selected', () => {

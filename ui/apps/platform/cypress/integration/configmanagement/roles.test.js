@@ -1,13 +1,13 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
     hasCountWidgetsFor,
     hasTabsFor,
     hasRelatedEntityFor,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
+    navigateToSingleEntityPage,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'roles';
@@ -39,36 +39,30 @@ describe('Configuration Management Roles', () => {
     it('should have the correct tabs for a single entity view', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
-        hasTabsFor(['users and groups', 'service accounts']);
+        hasTabsFor(['subjects', 'serviceaccounts']);
     });
 
-    describe('should have same number in users and groups table as in count widget', () => {
+    describe('should go to subjects table from widget link', () => {
         const entitiesKey2 = 'subjects';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    describe('should have same number in service accounts table as in count widget', () => {
+    describe('should go to serviceaccounts table from widget link', () => {
         const entitiesKey2 = 'serviceaccounts';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

@@ -12,14 +12,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
 var (
-	sacHelper = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
+	sacHelper         = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
+	defaultSortOption = &v1.QuerySortOption{
+		Field:    search.Cluster.String(),
+		Reversed: false,
+	}
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -31,8 +34,8 @@ func NewV2(storage store.Store, indexer index.Indexer, clusterRanker *ranking.Ra
 	}
 }
 
-func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, clusterRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(unsafeSearcher))
+func formatSearcherV2(searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
+	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(searcher))
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.ClusterPriority, clusterRanker)
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

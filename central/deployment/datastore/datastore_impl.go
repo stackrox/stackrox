@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -19,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -30,12 +28,10 @@ import (
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
-	extensionSAC   = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
 	deploymentStore    deploymentStore.Store
-	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher deploymentSearch.Searcher
 
 	images                 imageDS.DataStore
@@ -52,11 +48,9 @@ type datastoreImpl struct {
 	deploymentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
-
-	ds := &datastoreImpl{
+func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
+	return &datastoreImpl{
 		deploymentStore:        storage,
-		deploymentIndexer:      indexer,
 		deploymentSearcher:     searcher,
 		images:                 images,
 		baselines:              baselines,
@@ -70,7 +64,6 @@ func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Ind
 		nsRanker:         nsRanker,
 		deploymentRanker: deploymentRanker,
 	}
-	return ds
 }
 
 func (ds *datastoreImpl) initializeRanker() {
@@ -212,14 +205,14 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
-// UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
+// UpsertDeployment inserts a deployment into deploymentStore
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
 	return ds.upsertDeployment(ctx, deployment)
 }
 
-// upsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
+// upsertDeployment inserts a deployment into deploymentStore
 func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -229,22 +222,13 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
-			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
-		}
-		return nil
+	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
+		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
-	return ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
-		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
-			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
-		}
-		return nil
-	})
+	return nil
 }
 
-// RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
+// RemoveDeployment removes an alert from the deploymentStore
 func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "RemoveDeployment")
 

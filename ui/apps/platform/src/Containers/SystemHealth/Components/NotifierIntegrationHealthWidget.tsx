@@ -1,21 +1,24 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 
-import { fetchPluginIntegrationsHealth } from 'services/IntegrationHealthService';
+import { fetchNotifierIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
+import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
 
 type WidgetProps = {
     pollingCount: number;
 };
 
 const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElement => {
+    const [isFetching, setIsFetching] = useState(false);
     const [notifiersMerged, setNotifiersMerged] = useState([] as IntegrationMergedItem[]);
-    const [notifiersRequestHasError, setNotifiersRequestHasError] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
-        Promise.all([fetchPluginIntegrationsHealth(), fetchNotifierIntegrations()])
+        setIsFetching(true);
+        Promise.all([fetchNotifierIntegrationsHealth(), fetchNotifierIntegrations()])
             .then(([integrationsHealth, notifiers]) => {
                 setNotifiersMerged(
                     mergeIntegrationResponses(
@@ -24,20 +27,24 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
                         integrationsList.notifiers
                     )
                 );
-                setNotifiersRequestHasError(false);
+                setErrorMessageFetching('');
             })
-            .catch(() => {
+            .catch((error) => {
                 setNotifiersMerged([]);
-                setNotifiersRequestHasError(true);
+                setErrorMessageFetching(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsFetching(false);
             });
     }, [pollingCount]);
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
     return (
         <IntegrationHealthWidgetVisual
-            id="notifier-integrations"
             integrationText="Notifier Integrations"
             integrationsMerged={notifiersMerged}
-            requestHasError={notifiersRequestHasError}
+            errorMessageFetching={errorMessageFetching}
+            isFetchingInitialRequest={isFetchingInitialRequest}
         />
     );
 };

@@ -8,11 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
-	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockIndexer is a mock of Indexer interface.
@@ -38,127 +36,32 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddClusterCVE mocks base method.
-func (m *MockIndexer) AddClusterCVE(cve *storage.ClusterCVE) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusterCVE", cve)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusterCVE indicates an expected call of AddClusterCVE.
-func (mr *MockIndexerMockRecorder) AddClusterCVE(cve interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusterCVE", reflect.TypeOf((*MockIndexer)(nil).AddClusterCVE), cve)
-}
-
-// AddClusterCVEs mocks base method.
-func (m *MockIndexer) AddClusterCVEs(cves []*storage.ClusterCVE) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddClusterCVEs", cves)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddClusterCVEs indicates an expected call of AddClusterCVEs.
-func (mr *MockIndexerMockRecorder) AddClusterCVEs(cves interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddClusterCVEs", reflect.TypeOf((*MockIndexer)(nil).AddClusterCVEs), cves)
-}
-
 // Count mocks base method.
-func (m *MockIndexer) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockIndexer) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, q}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Count", varargs...)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, q}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteClusterCVE mocks base method.
-func (m *MockIndexer) DeleteClusterCVE(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusterCVE", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusterCVE indicates an expected call of DeleteClusterCVE.
-func (mr *MockIndexerMockRecorder) DeleteClusterCVE(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusterCVE", reflect.TypeOf((*MockIndexer)(nil).DeleteClusterCVE), id)
-}
-
-// DeleteClusterCVEs mocks base method.
-func (m *MockIndexer) DeleteClusterCVEs(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteClusterCVEs", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteClusterCVEs indicates an expected call of DeleteClusterCVEs.
-func (mr *MockIndexerMockRecorder) DeleteClusterCVEs(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteClusterCVEs", reflect.TypeOf((*MockIndexer)(nil).DeleteClusterCVEs), ids)
-}
-
-// MarkInitialIndexingComplete mocks base method.
-func (m *MockIndexer) MarkInitialIndexingComplete() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete.
-func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
-}
-
-// NeedsInitialIndexing mocks base method.
-func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing.
-func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), ctx, q)
 }
 
 // Search mocks base method.
-func (m *MockIndexer) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockIndexer) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, q}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Search", varargs...)
+	ret := m.ctrl.Call(m, "Search", ctx, q)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockIndexerMockRecorder) Search(ctx, q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockIndexerMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, q}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), ctx, q)
 }

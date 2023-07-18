@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -24,15 +25,33 @@ type namespaceAndSelector struct {
 func init() {
 	rand.Seed(time.Now().UnixNano())
 
-	benchStore = newDeploymentStore()
+}
 
-	for i := 0; i < 1000; i++ {
-		benchStore.addOrUpdateDeployment(createDeploymentWrap())
+func BenchmarkDeleteAllDeployments(b *testing.B) {
+	for _, numDeployments := range []int{1000, 5000, 10_000, 25_000} {
+		b.Run(fmt.Sprintf("num_deployments: %d", numDeployments), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				benchStore = newDeploymentStore()
+				for i := 0; i < 1000; i++ {
+					benchStore.addOrUpdateDeployment(createDeploymentWrap())
+				}
+				b.StartTimer()
+				benchStore.Cleanup()
+			}
+		})
 	}
 }
 
 func BenchmarkFindDeploymentIDsByLabels(b *testing.B) {
 	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		benchStore = newDeploymentStore()
+		for i := 0; i < 1000; i++ {
+			benchStore.addOrUpdateDeployment(createDeploymentWrap())
+		}
+
+		b.StartTimer()
 		// These should match
 		for j := 0; j < 1000; j++ {
 			nsAndSel := namespaceSelectorPoll[rand.Intn(len(namespaceSelectorPoll))]

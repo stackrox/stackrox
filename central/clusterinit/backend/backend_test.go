@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package backend
 
 import (
@@ -11,11 +13,10 @@ import (
 	"path"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
 	"github.com/stackrox/rox/central/clusterinit/store"
-	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,12 +25,13 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -108,7 +110,7 @@ type clusterInitBackendTestSuite struct {
 	suite.Suite
 	backend      Backend
 	ctx          context.Context
-	rocksDB      *rocksdb.RocksDB
+	db           postgres.DB
 	certProvider *mocks.MockProvider
 	mockCtrl     *gomock.Controller
 	certBundle   clusters.CertBundle
@@ -120,10 +122,12 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	s.Require().NoError(err, "retrieving test data for mocking")
 	s.mockCtrl = gomock.NewController(s.T())
 	m := mocks.NewMockProvider(s.mockCtrl)
-	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
-	rocksdbStore, err := rocksdbStore.New(s.rocksDB)
+
+	s.db = pgtest.ForT(s.T())
+
+	pgStore := pgStore.New(s.db)
 	s.Require().NoError(err)
-	s.backend = newBackend(store.NewStore(rocksdbStore), m)
+	s.backend = newBackend(store.NewStore(pgStore), m)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.certProvider = m
 
@@ -458,5 +462,5 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 }
 
 func (s *clusterInitBackendTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	s.db.Close()
 }

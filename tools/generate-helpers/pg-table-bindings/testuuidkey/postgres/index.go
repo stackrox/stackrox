@@ -7,11 +7,9 @@ import (
 
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -26,40 +24,14 @@ type indexerImpl struct {
 	db postgres.DB
 }
 
-func (b *indexerImpl) Count(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "TestSingleUUIDKeyStruct")
 
 	return pgSearch.RunCountRequest(ctx, v1.SearchCategory(115), q, b.db)
 }
 
-func (b *indexerImpl) Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "TestSingleUUIDKeyStruct")
 
 	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory(115), q, b.db)
-}
-
-//// Stubs for satisfying interfaces
-
-func (b *indexerImpl) AddTestSingleUUIDKeyStruct(deployment *storage.TestSingleUUIDKeyStruct) error {
-	return nil
-}
-
-func (b *indexerImpl) AddTestSingleUUIDKeyStructs(_ []*storage.TestSingleUUIDKeyStruct) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteTestSingleUUIDKeyStruct(id string) error {
-	return nil
-}
-
-func (b *indexerImpl) DeleteTestSingleUUIDKeyStructs(_ []string) error {
-	return nil
-}
-
-func (b *indexerImpl) MarkInitialIndexingComplete() error {
-	return nil
-}
-
-func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
-	return false, nil
 }

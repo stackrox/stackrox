@@ -6,17 +6,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/integrationhealth/store"
 	postgresIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/postgres"
-	rocksdbIntegrationStore "github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -34,21 +29,13 @@ type integrationHealthDatastoreTestSuite struct {
 	hasNoAccessCtx context.Context
 
 	datastore    DataStore
-	rocksie      *rocksdb.RocksDB
 	postgresTest *pgtest.TestPostgres
 }
 
 func (s *integrationHealthDatastoreTestSuite) SetupTest() {
-	var integrationStore store.Store
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest = pgtest.ForT(s.T())
-		s.Require().NotNil(s.postgresTest)
-		integrationStore = postgresIntegrationStore.New(s.postgresTest.DB)
-	} else {
-		s.rocksie = rocksdbtest.RocksDBForT(s.T())
-		integrationStore = rocksdbIntegrationStore.New(s.rocksie)
-	}
+	s.postgresTest = pgtest.ForT(s.T())
+	s.Require().NotNil(s.postgresTest)
+	integrationStore := postgresIntegrationStore.New(s.postgresTest.DB)
 	s.datastore = New(integrationStore)
 
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -68,11 +55,7 @@ func (s *integrationHealthDatastoreTestSuite) SetupTest() {
 }
 
 func (s *integrationHealthDatastoreTestSuite) TearDownTest() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.postgresTest.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(s.rocksie)
-	}
+	s.postgresTest.Close()
 }
 
 func (s *integrationHealthDatastoreTestSuite) TestGetRegistriesAndScanners() {
@@ -132,14 +115,14 @@ func (s *integrationHealthDatastoreTestSuite) TestUpdateIntegrationHealth() {
 
 	// 1. With no access should return no error but should not be added.
 	err := s.datastore.UpsertIntegrationHealth(s.hasNoAccessCtx, integrationHealth)
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err := s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
 
 	// 2. With READ access should return no error but should not be added.
 	err = s.datastore.UpsertIntegrationHealth(s.hasReadCtx, integrationHealth)
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -168,14 +151,14 @@ func (s *integrationHealthDatastoreTestSuite) TestRemoveIntegrationHealth() {
 
 	// 1. With no access should not return an error but integration should still exist.
 	err = s.datastore.RemoveIntegrationHealth(s.hasNoAccessCtx, integrationHealth.GetId())
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 
 	// 2. With READ access should not return an error but integration should still exist.
 	err = s.datastore.RemoveIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
-	s.NoError(err)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, exists, err = s.datastore.GetIntegrationHealth(s.hasReadCtx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)

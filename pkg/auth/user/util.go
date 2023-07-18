@@ -49,7 +49,7 @@ func protoToJSON(message proto.Message) string {
 }
 
 // LogSuccessfulUserLogin logs user attributes in the specified logger instance.
-func LogSuccessfulUserLogin(logger *logging.Logger, user *v1.AuthStatus) {
+func LogSuccessfulUserLogin(logger logging.Logger, user *v1.AuthStatus) {
 	logger.Warnw("User successfully logged in with user attributes", extractUserLogFields(user)...)
 }
 

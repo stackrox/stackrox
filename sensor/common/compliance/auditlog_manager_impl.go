@@ -32,6 +32,7 @@ type auditLogCollectionManagerImpl struct {
 
 	stopSig        concurrency.Signal
 	forceUpdateSig concurrency.Signal
+	centralReady   concurrency.Signal
 
 	updateInterval time.Duration
 
@@ -49,7 +50,14 @@ func (a *auditLogCollectionManagerImpl) Stop(_ error) {
 	a.stopSig.Signal()
 }
 
-func (a *auditLogCollectionManagerImpl) Notify(common.SensorComponentEvent) {}
+func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		a.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		a.centralReady.Reset()
+	}
+}
 
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
@@ -138,8 +146,8 @@ func (a *auditLogCollectionManagerImpl) sendUpdate() {
 }
 
 func (a *auditLogCollectionManagerImpl) shouldSendUpdateToCentral(fileStates map[string]*storage.AuditLogFileState) bool {
-	// No point in updating if the central communication hasn't started or there are no states
-	return a.receivedInitialStateFromCentral.Get() && len(fileStates) > 0
+	// No point in updating if the central communication hasn't started, isn't available, or there are no states
+	return a.receivedInitialStateFromCentral.Get() && a.centralReady.IsDone() && len(fileStates) > 0
 }
 
 // getLatestFileStates returns a copy of the latest state of audit log collection at each compliance node

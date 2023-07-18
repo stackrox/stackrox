@@ -22,7 +22,7 @@ pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
 pkg/docker/types/types_easyjson.go
-pkg/fixtures/dackbox.go
+pkg/fixtures/graph.go
 pkg/fixtures/image.go
 pkg/fixtures/image/files/*
 pkg/mitre/files/mitre.json
@@ -36,7 +36,6 @@ qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
 scale/image/fixtures/scrape.json
-scale/mocksensor/image_names.go
 scripts/ci/lib.sh
 sensor/tests/replay/data/policies.json
 sensor/tests/replay/data/safety-net-alerts-central-out.bin

@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertDeploymentsAreMatched,
     assertDeploymentsAreMatchedExactly,
@@ -15,18 +14,10 @@ describe('Collection deployment matching', () => {
     const sampleCollectionName = 'Stackrox sample deployments';
     const withEmbeddedCollectionName = 'Contains embedded collections';
 
-    beforeEach(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
-
     // Clean up when the test suite exits
     after(() => {
-        if (hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            tryDeleteCollection(withEmbeddedCollectionName);
-            tryDeleteCollection(sampleCollectionName);
-        }
+        tryDeleteCollection(withEmbeddedCollectionName);
+        tryDeleteCollection(sampleCollectionName);
     });
 
     it('should preview deployments matching specified rules', () => {

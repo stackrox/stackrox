@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -102,24 +102,24 @@ func (mr *MockDataStoreMockRecorder) GetAlert(ctx, id interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlert", reflect.TypeOf((*MockDataStore)(nil).GetAlert), ctx, id)
 }
 
-// MarkAlertStaleBatch mocks base method.
-func (m *MockDataStore) MarkAlertStaleBatch(ctx context.Context, id ...string) ([]*storage.Alert, error) {
+// MarkAlertsResolvedBatch mocks base method.
+func (m *MockDataStore) MarkAlertsResolvedBatch(ctx context.Context, id ...string) ([]*storage.Alert, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
 	for _, a := range id {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "MarkAlertStaleBatch", varargs...)
+	ret := m.ctrl.Call(m, "MarkAlertsResolvedBatch", varargs...)
 	ret0, _ := ret[0].([]*storage.Alert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// MarkAlertStaleBatch indicates an expected call of MarkAlertStaleBatch.
-func (mr *MockDataStoreMockRecorder) MarkAlertStaleBatch(ctx interface{}, id ...interface{}) *gomock.Call {
+// MarkAlertsResolvedBatch indicates an expected call of MarkAlertsResolvedBatch.
+func (mr *MockDataStoreMockRecorder) MarkAlertsResolvedBatch(ctx interface{}, id ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, id...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertStaleBatch", reflect.TypeOf((*MockDataStore)(nil).MarkAlertStaleBatch), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertsResolvedBatch", reflect.TypeOf((*MockDataStore)(nil).MarkAlertsResolvedBatch), varargs...)
 }
 
 // Search mocks base method.

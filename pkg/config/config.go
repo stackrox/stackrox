@@ -79,6 +79,7 @@ func (m *Maintenance) validate() error {
 // CentralDB defines the config options to access central-db
 type CentralDB struct {
 	Source       string `yaml:"source"`
+	External     bool   `yaml:"external"`
 	DatabaseName string
 }
 

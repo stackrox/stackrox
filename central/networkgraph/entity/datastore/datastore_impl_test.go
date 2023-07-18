@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -5,10 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	graphConfigMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
 	treeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -17,12 +18,12 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
-	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -46,7 +47,7 @@ type NetworkEntityDataStoreTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	db          *pkgRocksDB.RocksDB
+	db          *pgtest.TestPostgres
 	ds          EntityDataStore
 	graphConfig *graphConfigMocks.MockDataStore
 	store       store.EntityStore
@@ -71,19 +72,13 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.globalWriteAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	var err error
-	suite.db, err = pkgRocksDB.NewTemp(suite.T().Name())
-	if err != nil {
-		suite.FailNowf("failed to create DB: %+v", err.Error())
-	}
-	suite.store, err = rocksdb.New(suite.db)
-	if err != nil {
-		suite.FailNowf("failed to create network entity store: %+v", err.Error())
-	}
+	suite.db = pgtest.ForT(suite.T())
+
+	suite.store = postgres.New(suite.db.DB)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
@@ -96,7 +91,7 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 
 func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
-	rocksdbtest.TearDownRocksDB(suite.db)
+	suite.db.Teardown(suite.T())
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
@@ -320,12 +315,12 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			sac.ClusterScopeKeys(cluster1)))
 	cluster1WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster1)))
 	cluster2WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster2)))
 

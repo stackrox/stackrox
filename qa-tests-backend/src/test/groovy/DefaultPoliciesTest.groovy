@@ -42,7 +42,6 @@ import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
-import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
@@ -272,7 +271,6 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Retry(count = 0)
     @IgnoreIf({ Env.BUILD_TAG == null || !Env.BUILD_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:
@@ -469,42 +467,9 @@ class DefaultPoliciesTest extends BaseSpecification {
              .filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }
              .filter { x -> !WHITELISTED_KUBE_SYSTEM_DEPLOYMENTS_AND_POLICIES.contains(
                  x.deployment.name + ' - ' + x.policy.name) }
-             .filter {
-                     // ROX-5350 - Ignore alerts for deleted policies
-            violation -> Boolean exists = false
-                 try {
-                    Services.getPolicy(violation.policy.id)
-                    exists = true
-                }
-                catch (StatusRuntimeException e) {
-                    log.info "Cannot get the policy associated with the alert: ${e}"
-                    log.info violation.toString()
-                }
-                 exists
-             }.filter { alert ->
-                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes
-                // get triggered by the CI. This happens when the CI scripts use
-                // kubectl to pull resources to save on an earlier test failure.
-                // Ignore this alert iff _all_ violations was by admin,
-                // kube:admin or system:admin using kubectl. Do not ignore for
-                // any other violations. See
-                // https://issues.redhat.com/browse/ROX-10018
-                def noKubectlViolation = true
-                if (alert.policy.getName() == "OpenShift: Kubeadmin Secret Accessed") {
-                    noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
-                        stream().allMatch { v ->
-                            def user = v.getKeyValueAttrs().getAttrsList().find { a ->
-                                a.getKey() == "Username" && (a.getValue() == "admin" ||
-                                                             a.getValue() =~ /(kube|system)\:admin/)
-                            }
-                            def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
-                                a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
-                            }
-                            user != null && ua != null
-                        }
-                }
-                noKubectlViolation
-            }.collect()
+             .filter { x -> ignoreAlertsForDeletedPolicies(x) }
+             .filter { x -> ignoreAlertsByAdminWithKubectl(x) }
+             .collect()
 
         if (nonWhitelistedKubeSystemViolations.size() != 0) {
             nonWhitelistedKubeSystemViolations.forEach {
@@ -523,6 +488,41 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
 
         nonWhitelistedKubeSystemViolations.size() == 0
+    }
+
+    // The OpenShift: Kubeadmin Secret Accessed policy can sometimes
+    // get triggered by the CI. This happens when the CI scripts use
+    // kubectl to pull resources to save on an earlier test failure.
+    // Ignore this alert iff _all_ violations was by admin,
+    // kube:admin or system:admin using kubectl. Do not ignore for
+    // any other violations. See
+    // https://issues.redhat.com/browse/ROX-10018
+    private boolean ignoreAlertsByAdminWithKubectl(ListAlert alert) {
+        if (alert.policy.getName() != "OpenShift: Kubeadmin Secret Accessed") {
+            return true
+        }
+        return !AlertService.getViolation(alert.id).getViolationsList().
+                stream().allMatch { v ->
+            def user = v.getKeyValueAttrs().getAttrsList().find { a ->
+                a.getKey() == "Username" && (a.getValue() == "admin" ||
+                        a.getValue() =~ /(kube|system)\:admin/)
+            }
+            def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
+                a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
+            }
+            user != null && ua != null
+        }
+    }
+
+    // ROX-5350 - Ignore alerts for deleted policies
+    def ignoreAlertsForDeletedPolicies(ListAlert violation) {
+        try {
+            Services.getPolicy(violation.policy.id)
+            return true
+        } catch (StatusRuntimeException e) {
+            log.info("Cannot get the policy associated with the alert ${violation}", e)
+        }
+        return false
     }
 
     def queryForDeployments() {

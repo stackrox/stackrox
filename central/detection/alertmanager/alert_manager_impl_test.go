@@ -9,7 +9,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/detection"
 	runtimeDetectorMocks "github.com/stackrox/rox/central/detection/runtime/mocks"
@@ -26,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -235,10 +235,10 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	suite.NoError(err, "update should succeed")
 }
 
-func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
+func (suite *AlertManagerTestSuite) TestMarksOldAlertsResolved() {
 	alerts := getAlerts()
 
-	suite.alertsMock.EXPECT().MarkAlertStaleBatch(suite.ctx, alerts[0].GetId()).Return([]*storage.Alert{alerts[0]}, nil)
+	suite.alertsMock.EXPECT().MarkAlertsResolvedBatch(suite.ctx, alerts[0].GetId()).Return([]*storage.Alert{alerts[0]}, nil)
 
 	// Unchanged alerts should not be updated.
 
@@ -498,7 +498,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	suite.NoError(err, "update should succeed")
 }
 
-func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsStaleWhenPolicyIsRemoved() {
+func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsResolvedWhenPolicyIsRemoved() {
 	alerts := getResourceAlerts()
 	newAlert := fixtures.GetResourceAlert()
 
@@ -519,7 +519,7 @@ func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsStaleWhenPoli
 	}
 
 	// Verify that the other alerts get marked as stale and that the notifier sends a notification for them
-	suite.alertsMock.EXPECT().MarkAlertStaleBatch(suite.ctx, ids).Return(alerts, nil)
+	suite.alertsMock.EXPECT().MarkAlertsResolvedBatch(suite.ctx, ids).Return(alerts, nil)
 
 	for _, a := range alerts {
 		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), a).Return()

@@ -123,7 +123,7 @@ describe('Notifier Integrations', () => {
 
             // Step 2, check fields for invalid formats
             getInputByLabel('Email server').type('example.');
-            getInputByLabel('Sender').type('scooby@doo', {
+            getInputByLabel('Sender').type('scooby@doo.', {
                 parseSpecialCharSequences: false,
             });
             getInputByLabel('Default recipient')

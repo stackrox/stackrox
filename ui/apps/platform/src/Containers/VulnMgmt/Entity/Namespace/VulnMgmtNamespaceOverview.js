@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
-import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import entityTypes from 'constants/entityTypes';
@@ -10,8 +9,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedImageVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedImageVulnerabilities';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -27,18 +25,11 @@ const emptyNamespace = {
         labels: [],
         id: '',
     },
-    policyStatus: {
-        status: '',
-        failingPolicies: [],
-    },
     vulnCount: 0,
     vulnerabilities: [],
 };
 
 const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -47,14 +38,13 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         ...data,
     };
 
-    const { metadata, policyStatus } = safeData;
+    const { metadata } = safeData;
 
-    if (!metadata || !policyStatus) {
+    if (!metadata) {
         return null;
     }
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
-    const { status } = policyStatus;
     const metadataKeyValuePairs = [];
 
     if (!entityContext[entityTypes.CLUSTER]) {
@@ -65,13 +55,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         });
     }
 
-    const namespaceStats = [
-        <RiskScore key="risk-score" score={priority} />,
-        <React.Fragment key="policy-status">
-            <span className="pb-2">Policy status:</span>
-            <PolicyStatusIconText isPass={status === 'pass'} isTextOnly={false} />
-        </React.Fragment>,
-    ];
+    const namespaceStats = [<RiskScore key="risk-score" score={priority} />];
 
     const currentEntity = { [entityTypes.NAMESPACE]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
@@ -118,7 +102,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                             entityType={entityTypes.NAMESPACE}
                             name={safeData?.metadata?.name}
                             id={safeData?.metadata?.id}
-                            vulnType={showVMUpdates ? entityTypes.IMAGE_CVE : entityTypes.CVE}
+                            vulnType={entityTypes.IMAGE_CVE}
                         />
                     </div>
                 </CollapsibleSection>

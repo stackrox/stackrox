@@ -173,12 +173,13 @@ var (
 	PodLabel = newFieldLabel("Pod Label")
 
 	// ProcessIndicator Search fields
-	ProcessID        = newFieldLabel("Process ID")
-	ProcessExecPath  = newFieldLabel("Process Path")
-	ProcessName      = newFieldLabel("Process Name")
-	ProcessArguments = newFieldLabel("Process Arguments")
-	ProcessAncestor  = newFieldLabel("Process Ancestor")
-	ProcessUID       = newFieldLabel("Process UID")
+	ProcessID           = newFieldLabel("Process ID")
+	ProcessExecPath     = newFieldLabel("Process Path")
+	ProcessName         = newFieldLabel("Process Name")
+	ProcessArguments    = newFieldLabel("Process Arguments")
+	ProcessAncestor     = newFieldLabel("Process Ancestor")
+	ProcessUID          = newFieldLabel("Process UID")
+	ProcessCreationTime = newFieldLabel("Process Creation Time")
 
 	// ProcessListeningOnPort Search fields
 	Closed = newFieldLabel("Closed")
@@ -197,6 +198,8 @@ var (
 
 	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
+
+	ComplianceOperatorVersion = newFieldLabel("Compliance Operator Version")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
@@ -270,8 +273,9 @@ var (
 	DefaultExternalSource = newFieldLabel("Default External Source")
 
 	// Report configurations search fields
-	ReportName = newFieldLabel("Report Name")
-	ReportType = newFieldLabel("Report Type")
+	ReportName     = newFieldLabel("Report Name")
+	ReportType     = newFieldLabel("Report Type")
+	ReportConfigID = newFieldLabel("Report Configuration ID")
 
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
@@ -313,6 +317,13 @@ var (
 	BlobName             = newFieldLabel("Blob Name")
 	BlobLength           = newFieldLabel("Blob Length")
 	BlobModificationTime = newFieldLabel("Blob Modified On")
+
+	// Report Metadata fields
+	ReportState              = newFieldLabel("Report State")
+	ReportQueuedTime         = newFieldLabel("Report Init Time")
+	ReportCompletionTime     = newFieldLabel("Report Completion Time")
+	ReportRequestType        = newFieldLabel("Report Request Type")
+	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

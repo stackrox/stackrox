@@ -8,11 +8,11 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	compliance "github.com/stackrox/rox/central/compliance"
 	datastore "github.com/stackrox/rox/central/compliance/datastore"
 	types "github.com/stackrox/rox/central/compliance/datastore/types"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.

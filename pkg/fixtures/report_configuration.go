@@ -203,8 +203,11 @@ func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 			},
 		},
 		ResourceScope: &v2.ResourceScope{
-			ScopeReference: &v2.ResourceScope_CollectionId{
-				CollectionId: "collection-1",
+			ScopeReference: &v2.ResourceScope_CollectionScope{
+				CollectionScope: &v2.CollectionReference{
+					CollectionId:   "collection-1",
+					CollectionName: "collection-1",
+				},
 			},
 		},
 		Notifiers: []*v2.NotifierConfiguration{
@@ -215,6 +218,7 @@ func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 						MailingLists: []string{"foo@yahoo.com"},
 					},
 				},
+				NotifierName: "email-notifier-yahoo",
 			},
 			{
 				NotifierConfig: &v2.NotifierConfiguration_EmailConfig{
@@ -223,6 +227,7 @@ func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 						MailingLists: []string{"bar@gmail.com"},
 					},
 				},
+				NotifierName: "email-notifier-gmail",
 			},
 		},
 	}

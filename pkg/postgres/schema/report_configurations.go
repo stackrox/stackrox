@@ -28,6 +28,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfiguration", (*storage.ReportConfiguration)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_REPORT_METADATA,
+		}...)
 		RegisterTable(schema, CreateTableReportConfigurationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_CONFIGURATIONS, schema)
 		return schema
@@ -35,15 +38,16 @@ var (
 )
 
 const (
+	// ReportConfigurationsTableName specifies the name of the table in postgres.
 	ReportConfigurationsTableName = "report_configurations"
 )
 
 // ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
 type ReportConfigurations struct {
-	Id                        string                                 `gorm:"column:id;type:varchar;primaryKey"`
+	ID                        string                                 `gorm:"column:id;type:varchar;primaryKey"`
 	Name                      string                                 `gorm:"column:name;type:varchar"`
 	Type                      storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
-	ScopeId                   string                                 `gorm:"column:scopeid;type:varchar"`
-	ResourceScopeCollectionId string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
+	ScopeID                   string                                 `gorm:"column:scopeid;type:varchar"`
+	ResourceScopeCollectionID string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
 	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
 }

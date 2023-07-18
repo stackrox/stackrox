@@ -1,4 +1,4 @@
-import { networkBasePathPF } from 'routePaths';
+import { networkBasePath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 
 type GetURLLinkToDeploymentParams = {
@@ -18,6 +18,6 @@ export function getURLLinkToDeployment({
             Namespace: namespace,
         },
     });
-    const networkGraphLink = `${networkBasePathPF}/deployment/${deploymentId}${queryString}`;
+    const networkGraphLink = `${networkBasePath}/deployment/${deploymentId}${queryString}`;
     return networkGraphLink;
 }

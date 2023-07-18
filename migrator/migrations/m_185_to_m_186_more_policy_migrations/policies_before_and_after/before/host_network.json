@@ -1,0 +1,247 @@
+{
+  "id": "6226d4ad-7619-4a0b-a160-46373cfcee66",
+  "name": "Docker CIS 5.9 and 5.20: Ensure that the host's network namespace is not shared",
+  "description": "When HostNetwork is enabled the container is not placed inside a separate network stack. The container's networking is not containerized when this option is applied. The consequence of this is that the container has full access to the host's network interfaces. It also enables a shared UTS namespace. The UTS namespace provides isolation between two system identifiers: the hostname and the NIS domain name. It is used to set the hostname and the domain which are visible to running processes in that namespace. Processes running within containers do not typically require to know either the hostname or the domain name. The UTS namespace should therefore not be shared with the host.",
+  "rationale": "Selecting this option is potentially dangerous. It allows the container process to open reserved low numbered ports in the way that any other root process can. It also allows the container to access network services such as D-bus on a Docker host. A container process could potentially carry out undesired actions, such as shutting down the host. The container will also share the network namespace with the host, providing full permission for each container to change the hostname of the host. This is not in line with good security practice and should not be permitted.",
+  "remediation": "You should not create a deployment with `hostNetwork: true`",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment gcp-pd-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "gcp-pd-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment gcp-pd-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "gcp-pd-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment machine-approver in namespace openshift-cluster-machine-approver",
+      "deployment": {
+        "name": "machine-approver",
+        "scope": {
+          "namespace": "openshift-cluster-machine-approver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-master in namespace openshift-ovn-kubernetes",
+      "deployment": {
+        "name": "ovnkube-master",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in namespace openshift-ovn-kubernetes",
+      "deployment": {
+        "name": "ovnkube-node",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-cloud-controller-manager-operator in namespace openshift-cloud-controller-manager-operator",
+      "deployment": {
+        "name": "cluster-cloud-controller-manager-operator",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment node-resolver in namespace openshift-dns",
+      "deployment": {
+        "name": "node-resolver",
+        "scope": {
+          "namespace": "openshift-dns"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-ebs-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "aws-ebs-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-ebs-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "aws-ebs-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment azure-disk-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "azure-disk-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment azure-disk-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "azure-disk-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-scheduler namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-scheduler"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-network-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-network-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-multus namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-multus"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-version namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-version"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on node-ca DaemonSet in the openshift-image-registry namespace",
+      "deployment": {
+        "name": "node-ca",
+        "scope": {
+          "namespace": "openshift-image-registry"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-etcd namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-etcd"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-machine-config-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-monitoring namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-machine-api namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-api"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on host network usage within the openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Host Network",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

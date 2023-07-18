@@ -1,4 +1,7 @@
 values:
+  central:
+    persistence:
+      none: true
   ca:
     cert: ""
     key: ""
@@ -67,8 +70,17 @@ tests:
       autoscaling:
         minReplicas: 50
         maxReplicas: 100
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
   expect: |
     .deployments["scanner"].spec.replicas | assertThat(. == 5)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
     .horizontalpodautoscalers["scanner"].spec.minReplicas | assertThat(. == 50)
     .horizontalpodautoscalers["scanner"].spec.maxReplicas | assertThat(. == 100)
 

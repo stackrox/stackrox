@@ -19,6 +19,13 @@ func NewOrchestratorNamespaces() *OrchestratorNamespaces {
 	}
 }
 
+// Cleanup deletes all entries from store
+func (n *OrchestratorNamespaces) Cleanup() {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+	n.nsSet.Clear()
+}
+
 // AddNamespace adds a namespace to the set
 func (n *OrchestratorNamespaces) AddNamespace(ns string) {
 	n.lock.Lock()

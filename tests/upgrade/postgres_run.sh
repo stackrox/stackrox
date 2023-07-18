@@ -11,7 +11,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # also not set to expire
 INITIAL_POSTGRES_TAG="3.74.0-1-gfe924fce30"
 INITIAL_POSTGRES_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
-CURRENT_TAG="$(make --quiet tag)"
+CURRENT_TAG="$(make --quiet --no-print-directory tag)"
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -51,7 +51,7 @@ test_upgrade() {
     # postgres->postgres upgrade
     REPO_FOR_POSTGRES_TIME_TRAVEL="/tmp/rox-postgres-postgres-upgrade-test"
     DEPLOY_DIR="deploy/k8s"
-    QUAY_REPO="rhacs-eng"
+    QUAY_REPO="stackrox-io"
     REGISTRY="quay.io/$QUAY_REPO"
 
     export OUTPUT_FORMAT="helm"
@@ -66,6 +66,7 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
+    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
 
     test_upgrade_paths "$log_output_dir"
@@ -80,8 +81,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    EARLIER_SHA="870568de0830819aae85f255dbdb7e9c19bd74e7"
-    EARLIER_TAG="3.69.x-1-g870568de08"
+    EARLIER_SHA="fe924fce30bbec4dbd37d731ccd505837a2c2575"
+    EARLIER_TAG="3.74.0-1-gfe924fce30"
     FORCE_ROLLBACK_VERSION="$INITIAL_POSTGRES_TAG"
 
     cd "$REPO_FOR_TIME_TRAVEL"
@@ -228,7 +229,10 @@ test_upgrade_paths() {
     wait_for_api
 
     # Cleanup the scaled sensor before smoke tests
-    "${REPO_FOR_TIME_TRAVEL}"/deploy/k8s/sensor-deploy/delete-sensor.sh
+    helm uninstall -n stackrox stackrox-secured-cluster-services
+
+    # Remove scaled Sensor from Central
+    "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name scale-remote
 
     info "Fetching a sensor bundle for cluster 'remote'"
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" version
@@ -281,11 +285,9 @@ helm_upgrade_to_postgres() {
         make cli
         bin/"$TEST_HOST_PLATFORM"/roxctl version
         bin/"$TEST_HOST_PLATFORM"/roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart
-        sed -i 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     else
         make cli
         roxctl helm output central-services --image-defaults opensource --output-dir /tmp/stackrox-central-services-chart --remove
-        sed -i "" 's#quay.io/stackrox-io#quay.io/rhacs-eng#' /tmp/stackrox-central-services-chart/internal/defaults.yaml
     fi
 
     local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
@@ -335,7 +337,6 @@ force_rollback_to_previous_postgres() {
     # an `UNEXPECTED` log instead of crashing central.  However that change is
     # not present in the initial 3.74 version.
     kubectl -n stackrox set env deploy/sensor ROX_PROCESSES_LISTENING_ON_PORT=false
-    kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT=false
 
     kubectl -n stackrox patch configmap/central-config -p "$config_patch"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$FORCE_ROLLBACK_VERSION"
@@ -346,10 +347,19 @@ deploy_scaled_workload() {
     info "Deploying a scaled workload"
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
-    MAIN_IMAGE_TAG="$EARLIER_TAG" \
-    CLUSTER="scale-remote" \
-    ./deploy/k8s/sensor.sh
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output secured-cluster-services --image-defaults opensource --output-dir /tmp/early-stackrox-secured-services-chart --remove
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" central init-bundles generate scale-remote --output /tmp/cluster-init-bundle.yaml
+
+    helm install -n stackrox --create-namespace \
+        stackrox-secured-cluster-services /tmp/early-stackrox-secured-services-chart \
+        -f /tmp/cluster-init-bundle.yaml \
+        --set system.enablePodSecurityPolicies=false \
+        --set clusterName=scale-remote \
+        --set image.main.tag="${INITIAL_POSTGRES_TAG}" \
+        --set image.collector.tag="$(make collector-tag)" \
+        --set centralEndpoint="$API_ENDPOINT"
 
     sensor_wait
 

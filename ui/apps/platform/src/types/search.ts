@@ -1,3 +1,5 @@
+import { AggregateFunc } from './table';
+
 /*
  * Examples of search filter object properties parsed from search query string:
  * 'Lifecycle Stage': 'BUILD' from 's[Lifecycle Stage]=BUILD
@@ -20,6 +22,10 @@ export type SearchEntry = {
 
 export type ApiSortOption = {
     field: string;
+    aggregateBy?: {
+        aggregateFunc: AggregateFunc;
+        distinct?: boolean;
+    };
     reversed: boolean;
 };
 

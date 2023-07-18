@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessPipeline(t *testing.T) {
@@ -23,7 +23,7 @@ func TestProcessPipeline(t *testing.T) {
 	mockStore := clusterentities.NewStore()
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, []int{10, 10, 10}),
+	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector)
 	closeChan := make(chan bool)
 

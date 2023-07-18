@@ -7,11 +7,12 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	types "github.com/gogo/protobuf/types"
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFlowStore is a mock of FlowStore interface.
@@ -112,18 +113,18 @@ func (mr *MockFlowStoreMockRecorder) RemoveFlowsForDeployment(ctx, id interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlowsForDeployment", reflect.TypeOf((*MockFlowStore)(nil).RemoveFlowsForDeployment), ctx, id)
 }
 
-// RemoveMatchingFlows mocks base method.
-func (m *MockFlowStore) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(*storage.NetworkFlowProperties) bool, valueMatchFn func(*storage.NetworkFlow) bool) error {
+// RemoveOrphanedFlows mocks base method.
+func (m *MockFlowStore) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveMatchingFlows", ctx, keyMatchFn, valueMatchFn)
+	ret := m.ctrl.Call(m, "RemoveOrphanedFlows", ctx, orphanWindow)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveMatchingFlows indicates an expected call of RemoveMatchingFlows.
-func (mr *MockFlowStoreMockRecorder) RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn interface{}) *gomock.Call {
+// RemoveOrphanedFlows indicates an expected call of RemoveOrphanedFlows.
+func (mr *MockFlowStoreMockRecorder) RemoveOrphanedFlows(ctx, orphanWindow interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveMatchingFlows), ctx, keyMatchFn, valueMatchFn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrphanedFlows", reflect.TypeOf((*MockFlowStore)(nil).RemoveOrphanedFlows), ctx, orphanWindow)
 }
 
 // RemoveStaleFlows mocks base method.

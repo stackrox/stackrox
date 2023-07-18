@@ -24,16 +24,6 @@ func metricLine(op, name string) *Statement {
 	return Defer().Qual(packagenames.Metrics, "SetIndexOperationDurationTime").Call(Qual("time", "Now").Call(), Qual(packagenames.Ops, op), Lit(name))
 }
 
-func bIndex() *Statement {
-	return Id("b").Dot("index")
-}
-
-func ifErrReturnError(statement *Statement) *Statement {
-	return If(Err().Op(":=").Add(statement), Err().Op("!=").Nil()).Block(
-		Return(Err()),
-	)
-}
-
 // GenerateMappingGoSubPackageWithinCentral generates the go package corresponding to the mapping directory,
 // but stripping out the prefix for central.
 func GenerateMappingGoSubPackageWithinCentral(props GeneratorProperties) string {

@@ -1,30 +1,24 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
 import {
-    getCountAndNounFromImageCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+    visitVulnerabilityManagementEntityInSidePanel,
+    visitVulnerabilityManagementSecondaryEntitiesInSidePanel,
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 const entitiesKey = 'images';
 
 describe('Vulnerability Management Images', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
@@ -115,32 +109,36 @@ describe('Vulnerability Management Images', () => {
         });
     });
 
+    it('should show a message when image scan data is incomplete', () => {
+        const fixturePath = 'images/vmImageOverview.json';
+
+        cy.fixture(fixturePath).then((body) => {
+            const { id } = body.data.result;
+            const staticResponse = { body };
+            visitVulnerabilityManagementEntityInSidePanel(entitiesKey, id, staticResponse);
+        });
+
+        cy.get(selectors.scanDataMessage);
+    });
+
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
     it('should display either links for image CVEs or text for No CVEs', () => {
-        verifyConditionalCVEs(
-            entitiesKey,
-            'image-cves',
-            3,
-            'vulnCounter',
-            getCountAndNounFromImageCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'image-cves', 3, 'vulnCounter');
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 9, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 9);
     });
 
     it('should display links for image-components', () => {
-        verifySecondaryEntities(entitiesKey, 'image-components', 9, /^\d+ image components?$/);
+        verifySecondaryEntities(entitiesKey, 'image-components', 9);
     });
 
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
-        visitVulnerabilityManagementEntities(entitiesKey);
+        visitVulnerabilityManagementSecondaryEntitiesInSidePanel(entitiesKey, 'deployments', 9);
 
-        cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
-        cy.wait(1000);
         cy.get(selectors.backButton).should('exist');
         cy.get(selectors.entityIcon).should('not.exist');
 

@@ -7,12 +7,10 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -25,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func testDeployments() []*storage.Deployment {
@@ -700,9 +699,7 @@ func getTestNodes(nodeCount int) []*storage.Node {
 	nodes := make([]*storage.Node, 0, nodeCount)
 	for i := 0; i < nodeCount; i++ {
 		node := fixtures.GetNodeWithUniqueComponents(100, 5)
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			nodeConverter.MoveNodeVulnsToNewField(node)
-		}
+		nodeConverter.MoveNodeVulnsToNewField(node)
 		id := uuid.NewV4().String()
 		node.Id = id
 		nodes = append(nodes, node)

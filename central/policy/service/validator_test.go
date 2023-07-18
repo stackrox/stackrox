@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,9 +14,9 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPolicyValidator(t *testing.T) {
@@ -917,8 +916,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNoDockerfileLineFrom() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
-	s.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
-
 	validatorWithFlag := newPolicyValidator(s.nStorage)
 
 	cases := map[string]struct {

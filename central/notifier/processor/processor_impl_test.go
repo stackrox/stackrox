@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessor_LoopDoesNothing(t *testing.T) {

@@ -624,10 +624,14 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
 				return func(i, j int) bool {
-					if records[i].FirstDiscoveredInSystem.Equal(records[j].FirstDiscoveredInSystem) {
+					recordI, recordJ := records[i], records[j]
+					if recordJ == nil {
+						recordJ = &imageCVECoreResponse{}
+					}
+					if recordI.FirstDiscoveredInSystem.Equal(*recordJ.FirstDiscoveredInSystem) {
 						return records[i].CVE < records[j].CVE
 					}
-					return records[i].FirstDiscoveredInSystem.Before(records[j].FirstDiscoveredInSystem)
+					return recordI.FirstDiscoveredInSystem.Before(*recordJ.FirstDiscoveredInSystem)
 				}
 			},
 		},
@@ -749,12 +753,13 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 
 				vulnTime, _ := types.TimestampFromProto(vuln.GetFirstSystemOccurrence())
+				vulnTime = vulnTime.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
 					val = &imageCVECoreResponse{
 						CVE:                     vuln.GetCve(),
 						TopCVSS:                 vuln.GetCvss(),
-						FirstDiscoveredInSystem: vulnTime,
+						FirstDiscoveredInSystem: &vulnTime,
 					}
 					cveMap[val.CVE] = val
 				}
@@ -774,7 +779,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
-					val.FirstDiscoveredInSystem = vulnTime
+					val.FirstDiscoveredInSystem = &vulnTime
 				}
 
 				if !seenForImage.Add(val.CVE) {
@@ -842,7 +847,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 	}
 	if options.SkipGetFirstDiscoveredInSystem {
 		for _, entry := range cveMap {
-			entry.FirstDiscoveredInSystem = time.Time{}
+			entry.FirstDiscoveredInSystem = nil
 		}
 	}
 	if less != nil {

@@ -10,8 +10,8 @@ import (
 
 // UnaryServerInterceptor returns a grpc.UnaryServerInterceptor that logs incoming requests
 // and associated tags to "logger".
-func UnaryServerInterceptor(logger *logging.Logger) grpc.UnaryServerInterceptor {
-	return grpc_zap.UnaryServerInterceptor(logger.SugaredLogger.Desugar(), grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel))
+func UnaryServerInterceptor(logger logging.Logger) grpc.UnaryServerInterceptor {
+	return grpc_zap.UnaryServerInterceptor(logger.SugaredLogger().Desugar(), grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel))
 }
 
 // InitGrpcLogger initializes gRPC logger using our logging framework.
@@ -26,7 +26,7 @@ func InitGrpcLogger() {
 }
 
 type zapGrpcLogger struct {
-	logger *logging.Logger
+	logger logging.Logger
 }
 
 func (l *zapGrpcLogger) Info(args ...interface{}) {

@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	pgconn "github.com/jackc/pgconn"
 	pgx "github.com/jackc/pgx/v4"
 	postgres "github.com/stackrox/rox/pkg/postgres"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDB is a mock of DB interface.

@@ -17,10 +17,10 @@ repositories {
 
 def grpcVersion = '1.21.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protocVersion = '3.23.1'
-def protobufVersion = '3.23.1'
+def protocVersion = '3.23.2'
+def protobufVersion = '3.23.4'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.6.2'
+def fabric8Version = '6.7.2'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -60,7 +60,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.19.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.22.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -76,7 +76,7 @@ dependencies {
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.3.0'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.0'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.7'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.8'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -89,7 +89,7 @@ dependencies {
 
     implementation 'io.kubernetes:client-java:18.0.0'
 
-    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.0'
+    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.1'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
@@ -110,7 +110,7 @@ dependencies {
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.2"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.3"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
@@ -119,10 +119,10 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.22")
     }
 
-    implementation 'org.javers:javers-core:7.0.0'
+    implementation 'org.javers:javers-core:7.0.2'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
-    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'commons-codec:commons-codec:1.16.0'
 }
 
 // Apply some base attributes to all the test tasks.
@@ -154,15 +154,30 @@ task testBegin(type: Test) {
     }
 }
 
+task testParallel(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel"
+  }
+}
+
 task testRest(type: Test) {
     useJUnitPlatform {
-        excludeTags "Begin", "Upgrade", "SensorBounce", "SensorBounceNext"
+        excludeTags "Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext"
     }
+}
+
+task testParallelBAT(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel & BAT"
+  }
 }
 
 task testBAT(type: Test) {
     useJUnitPlatform {
         includeTags "BAT"
+        excludeTags "Parallel"
     }
 }
 
@@ -175,6 +190,13 @@ task testSMOKE(type: Test) {
 task testCOMPATIBILITY(type: Test) {
     useJUnitPlatform {
         includeTags "COMPATIBILITY"
+        excludeTags "SensorBounce"
+    }
+}
+
+task testCOMPATIBILITYSensorBounce(type: Test) {
+    useJUnitPlatform {
+        includeTags "COMPATIBILITY & SensorBounce"
     }
 }
 

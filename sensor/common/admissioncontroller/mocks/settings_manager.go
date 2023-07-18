@@ -7,11 +7,11 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSettingsManager is a mock of SettingsManager interface.

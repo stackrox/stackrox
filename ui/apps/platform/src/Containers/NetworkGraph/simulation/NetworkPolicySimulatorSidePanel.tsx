@@ -7,6 +7,7 @@ import {
     Divider,
     Flex,
     FlexItem,
+    Popover,
     Spinner,
     Stack,
     StackItem,
@@ -18,6 +19,7 @@ import {
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
+import { HelpIcon } from '@patternfly/react-icons';
 
 import useTabs from 'hooks/patternfly/useTabs';
 import ViewActiveYAMLs from './ViewActiveYAMLs';
@@ -30,9 +32,9 @@ import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorU
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
+import { useScopeHierarchy } from '../hooks/useScopeHierarchy';
 
 type NetworkPolicySimulatorSidePanelProps = {
-    selectedClusterId: string;
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
 };
@@ -43,10 +45,10 @@ const tabs = {
 };
 
 function NetworkPolicySimulatorSidePanel({
-    selectedClusterId,
     simulator,
     setNetworkPolicyModification,
 }: NetworkPolicySimulatorSidePanelProps) {
+    const scopeHierarchy = useScopeHierarchy();
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });
@@ -98,8 +100,7 @@ function NetworkPolicySimulatorSidePanel({
         setNetworkPolicyModification({
             state: 'GENERATED',
             options: {
-                clusterId: selectedClusterId,
-                searchQuery: '',
+                scopeHierarchy,
                 networkDataSince: '',
                 excludePortsAndProtocols: isExcludingPortsAndProtocols,
             },
@@ -110,7 +111,7 @@ function NetworkPolicySimulatorSidePanel({
         setNetworkPolicyModification({
             state: 'UNDO',
             options: {
-                clusterId: selectedClusterId,
+                clusterId: scopeHierarchy.cluster.id,
             },
         });
     }
@@ -154,7 +155,7 @@ function NetworkPolicySimulatorSidePanel({
                             title={
                                 simulator.error
                                     ? simulator.error
-                                    : 'Policies generated from all network activity'
+                                    : `Policies generated from the baseline for cluster “${scopeHierarchy.cluster.name}”`
                             }
                         />
                     </StackItem>
@@ -173,7 +174,7 @@ function NetworkPolicySimulatorSidePanel({
                 <NotifyYAMLModal
                     isModalOpen={isNotifyModalOpen}
                     setIsModalOpen={setIsNotifyModalOpen}
-                    clusterId={selectedClusterId}
+                    clusterId={scopeHierarchy.cluster.id}
                     modification={simulator.modification}
                 />
             </div>
@@ -227,7 +228,7 @@ function NetworkPolicySimulatorSidePanel({
                 <NotifyYAMLModal
                     isModalOpen={isNotifyModalOpen}
                     setIsModalOpen={setIsNotifyModalOpen}
-                    clusterId={selectedClusterId}
+                    clusterId={scopeHierarchy.cluster.id}
                     modification={simulator.modification}
                 />
             </div>
@@ -278,7 +279,7 @@ function NetworkPolicySimulatorSidePanel({
                 <NotifyYAMLModal
                     isModalOpen={isNotifyModalOpen}
                     setIsModalOpen={setIsNotifyModalOpen}
-                    clusterId={selectedClusterId}
+                    clusterId={scopeHierarchy.cluster.id}
                     modification={simulator.modification}
                 />
             </div>
@@ -291,8 +292,11 @@ function NetworkPolicySimulatorSidePanel({
                 <Flex direction={{ default: 'row' }} className="pf-u-p-lg pf-u-mb-0">
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
-                                Simulate network policy
+                            <Text
+                                component={TextVariants.h2}
+                                className="pf-u-font-size-xl pf-u-mr-xl"
+                            >
+                                Simulate network policy for cluster “{scopeHierarchy.cluster.name}”
                             </Text>
                         </TextContent>
                     </FlexItem>
@@ -328,7 +332,41 @@ function NetworkPolicySimulatorSidePanel({
                                                 component={TextVariants.h2}
                                                 className="pf-u-font-size-lg"
                                             >
-                                                Generate network policies
+                                                Generate network policies based on the baseline
+                                                <Popover
+                                                    showClose={false}
+                                                    bodyContent={
+                                                        <div>
+                                                            <p className="pf-u-mb-sm">
+                                                                A baseline is considered the trusted
+                                                                traffic (incoming and outgoing) for
+                                                                a given entity, like a cluster,
+                                                                namespace, or deployment.
+                                                            </p>
+                                                            <p className="pf-u-mb-sm">
+                                                                It is automatically generated for
+                                                                every deployment, by collecting
+                                                                incoming and outgoing traffic during
+                                                                its first hour of existence.
+                                                            </p>
+                                                            <p>
+                                                                In addition, a user can modify the
+                                                                baseline by adding or removing any
+                                                                active flows that have been observed
+                                                                over a period of time.
+                                                            </p>
+                                                        </div>
+                                                    }
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        aria-label="More info on network baselines"
+                                                        onClick={(e) => e.preventDefault()}
+                                                        className="pf-u-mx-sm pf-u-mt-xs"
+                                                    >
+                                                        <HelpIcon />
+                                                    </button>
+                                                </Popover>
                                             </Text>
                                         </TextContent>
                                     </StackItem>
@@ -336,10 +374,9 @@ function NetworkPolicySimulatorSidePanel({
                                         <TextContent>
                                             <Text component={TextVariants.p}>
                                                 Generate a set of recommended network policies based
-                                                on your environment&apos;s configuration. Select a
-                                                time window for the network connections you would
-                                                like to capture and generate policies on, and then
-                                                apply them directly or share them with your team.
+                                                on your cluster baseline. Cluster baseline is the
+                                                aggregatation of the baselines of the deployments
+                                                that belong to the cluster.
                                             </Text>
                                         </TextContent>
                                     </StackItem>

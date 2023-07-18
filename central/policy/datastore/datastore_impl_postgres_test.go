@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package datastore
 
@@ -7,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/search"
@@ -20,13 +18,13 @@ import (
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 
@@ -78,11 +76,11 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	edgeIndex := edgePostgres.NewIndexer(s.db)
 	edgeSearcher := edgeSearch.New(edgeStorage, edgeIndex)
 
-	s.categoryDS = policyCategoryDS.New(categoryStorage, categoryIndex, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeIndex, edgeSearcher))
+	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
 
 	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	policyIndex := pgStore.NewIndexer(s.db)
-	s.datastore = New(policyStore, policyIndex, search.New(policyStore, policyIndex), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	s.datastore = New(policyStore, search.New(policyStore, policyIndex), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 }
 
@@ -96,7 +94,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Policy, resources.Cluster),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
 	))
 
 	// Add policy.
@@ -147,7 +145,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Policy, resources.Cluster),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
 	))
 	s.mockClusterDS.EXPECT().GetClusters(ctx).Return([]*storage.Cluster{fixtures.GetCluster("cluster-1")}, nil)
 
@@ -179,15 +177,13 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabled() {
-	s.T().Setenv(env.PostgresDatastoreEnabled.EnvVar(), "false")
-
 	// Policy should get upserted with category names stored inside the policy storage proto object
 	// no edges, no separate category objects)
 	policy := fixtures.GetPolicy()
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Policy, resources.Cluster),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
 	))
 
 	// Add policy.
@@ -211,7 +207,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Policy, resources.Cluster),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
 	))
 
 	// Add policy.

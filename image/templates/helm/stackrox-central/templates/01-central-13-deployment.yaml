@@ -37,38 +37,7 @@ spec:
         {{- toYaml ._rox.central.tolerations | nindent 8 }}
       {{- end }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # Central is single-homed, so avoid preemptible nodes.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/gke-preemptible
-                    operator: NotIn
-                    values:
-                    - "true"
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/infra
-                    operator: Exists
-            - weight: 25
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/compute
-                    operator: Exists
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: DoesNotExist
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
+        {{- toYaml ._rox.central.affinity | nindent 8 }}
       serviceAccountName: central
       securityContext:
         fsGroup: 4000
@@ -104,7 +73,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        {{- if ._rox.central.telemetry.enabled }}
+        {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
         {{- if ._rox.central.telemetry.storage.endpoint }}
         - name: ROX_TELEMETRY_ENDPOINT
           value: {{ ._rox.central.telemetry.storage.endpoint | quote }}

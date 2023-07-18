@@ -202,7 +202,10 @@ jobs:
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
-            { "blocks": [
+            {
+              "text": "Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>. See workflow run <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> for details.",
+
+              "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}:
@@ -277,7 +280,10 @@ jobs:
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
-            { "blocks": [
+            {
+              "text": "Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub",
+
+              "blocks": [
 
             { "type": "section", "text": { "type": "mrkdwn", "text":
             ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
@@ -321,13 +327,13 @@ jobs:
     if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-k8s-cluster != 'false'
     runs-on: ubuntu-latest
     steps:
-    - uses: stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: qa-demo
-        name: qa-k8s-${{ needs.variables.outputs.milestone }}
-        args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }},central-db-image=quay.io/rhacs-eng/central-db:${{ needs.variables.outputs.milestone }}
-        lifespan: 48h
+      - uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: qa-demo
+          name: qa-k8s-${{ needs.variables.outputs.milestone }}
+          args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }},central-db-image=quay.io/rhacs-eng/central-db:${{ needs.variables.outputs.milestone }}
+          lifespan: 48h
 
   notify-k8s-cluster:
     name: Notify about K8s cluster creation
@@ -349,6 +355,7 @@ jobs:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
+              "text": "QA Demo cluster is being created. Check #acs-infra-notifications for cluster access.",
               "blocks": [
                 {
                   "type": "section",
@@ -364,7 +371,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":arrow_right: When it is ready in ca. 20 minutes, a notification will be posted in #infra-notifications channel, and the cluster will be accessible at ${{ steps.get_demo_artifacts.outputs.url }} with your @stackrox.com Google account."
+                    "text": ":arrow_right: When it is ready in ca. 20 minutes, a notification will be posted in #acs-infra-notifications channel, and the cluster will be accessible at ${{ steps.get_demo_artifacts.outputs.url }} with your @stackrox.com Google account."
                   }
                 }
               ]
@@ -377,13 +384,13 @@ jobs:
     if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-os4-cluster != 'false'
     runs-on: ubuntu-latest
     steps:
-    - uses: stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: openshift-4-demo
-        name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-        args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }}
-        lifespan: 48h
+      - uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: openshift-4-demo
+          name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
+          args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }}
+          lifespan: 48h
 
   notify-os4-cluster:
     name: Notify about Openshift cluster creation
@@ -405,6 +412,8 @@ jobs:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
+              "text": "Openshift 4 Demo cluster is being created. Check #acs-infra-notifications for cluster access.",
+
               "blocks": [
                 {
                   "type": "section",
@@ -436,14 +445,14 @@ jobs:
       github.event.inputs.create-long-cluster != 'false'
     runs-on: ubuntu-latest
     steps:
-    - uses: stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: gke-long-running-${{ needs.variables.outputs.milestone }}
-        lifespan: 168h
-        args: nodes=5,machine-type=e2-standard-8
-        wait: true
+      - uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: gke-default
+          name: gke-long-running-${{ needs.variables.outputs.milestone }}
+          lifespan: 168h
+          args: nodes=5,machine-type=e2-standard-8
+          wait: true
 
   patch-long-running-cluster:
     name: Patch long-running cluster
@@ -468,11 +477,11 @@ jobs:
         with:
           ref: ${{needs.variables.outputs.milestone}}
           repository: stackrox/stackrox
-      - uses: 'google-github-actions/auth@v1'
+      - uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
         with:
           install_components: "gke-gcloud-auth-plugin"
       - name: Download artifacts
@@ -524,6 +533,8 @@ jobs:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
             {
+              "text": "Long-running cluster created. Setup your local access with `scripts/release-tools/setup-central-access.sh | bash -s -- ${{ steps.launch_central.outputs.cluster_name }}`",
+
               "blocks": [
                 {
                   "type": "section",
@@ -566,7 +577,8 @@ jobs:
         create-os4-cluster,
         create-long-running-cluster,
       ]
-    if: >- # Required as create-*-cluster jobs could be skipped while other jobs could fail.
+    if:
+      >- # Required as create-*-cluster jobs could be skipped while other jobs could fail.
       always() && (
         needs.create-k8s-cluster.result == 'failure' ||
         needs.create-os4-cluster.result == 'failure' ||
@@ -581,7 +593,10 @@ jobs:
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
-            { "blocks": [
+            {
+              "text": "Couldn't create test cluster. Check <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" for details",
+
+              "blocks": [
               { "type": "section", "text": { "type": "mrkdwn", "text":
               ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
 

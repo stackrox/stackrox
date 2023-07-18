@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	probeupload "github.com/stackrox/rox/pkg/probeupload"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockProbeSources is a mock of ProbeSources interface.

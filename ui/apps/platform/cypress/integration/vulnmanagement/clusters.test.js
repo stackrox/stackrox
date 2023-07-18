@@ -1,38 +1,22 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
 import {
-    getCountAndNounFromImageCVEsLinkResults,
-    getCountAndNounFromNodeCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
-
-function getCountAndNounFromClusterCVEsLinkResults([, count]) {
-    return {
-        panelHeaderText: `${count} Platform ${count === '1' ? 'CVE' : 'CVES'}`,
-        relatedEntitiesCount: count,
-        relatedEntitiesNoun: count === '1' ? 'CLUSTER CVE' : 'CLUSTER CVES',
-    };
-}
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'clusters';
 
 describe('Vulnerability Management Clusters', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display all the columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
@@ -45,7 +29,6 @@ describe('Vulnerability Management Clusters', () => {
             'Platform CVEs',
             'K8S Version',
             'Entities',
-            'Policy Status',
             'Latest Violation',
             'Risk Priority',
         ]);
@@ -55,7 +38,7 @@ describe('Vulnerability Management Clusters', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
-        const tdSelector = '.rt-td:nth-child(10)';
+        const tdSelector = '.rt-td:nth-child(9)';
 
         // 0. Initial table state indicates that the column is sorted ascending.
         cy.get(thSelector).should('have.class', '-sort-asc');
@@ -92,13 +75,7 @@ describe('Vulnerability Management Clusters', () => {
     // The one-based index includes checkbox, hidden, invisible.
 
     it('should display either links for image CVEs or text for No CVEs', () => {
-        verifyConditionalCVEs(
-            entitiesKey,
-            'image-cves',
-            3,
-            'imageVulnerabilityCounter',
-            getCountAndNounFromImageCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'image-cves', 3, 'imageVulnerabilityCounter');
     });
 
     it('should display either links for node CVEs or text for No CVEs', function () {
@@ -106,13 +83,7 @@ describe('Vulnerability Management Clusters', () => {
             this.skip(); // TODO verify and remove
         }
 
-        verifyConditionalCVEs(
-            entitiesKey,
-            'node-cves',
-            4,
-            'nodeVulnerabilityCounter',
-            getCountAndNounFromNodeCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'node-cves', 4, 'nodeVulnerabilityCounter');
     });
 
     it('should display either links for cluster CVEs or text for No CVEs', function () {
@@ -120,24 +91,18 @@ describe('Vulnerability Management Clusters', () => {
             this.skip(); // TODO verify and remove
         }
 
-        verifyConditionalCVEs(
-            entitiesKey,
-            'cluster-cves',
-            5,
-            'clusterVulnerabilityCounter',
-            getCountAndNounFromClusterCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'cluster-cves', 5, 'clusterVulnerabilityCounter');
     });
 
     it('should display links for namespaces', () => {
-        verifySecondaryEntities(entitiesKey, 'namespaces', 7, /^\d+ namespaces?$/);
+        verifySecondaryEntities(entitiesKey, 'namespaces', 7);
     });
 
     it('should display links for deployments', () => {
-        verifySecondaryEntities(entitiesKey, 'deployments', 7, /^\d+ deployments?$/);
+        verifySecondaryEntities(entitiesKey, 'deployments', 7);
     });
 
     it('should display links for nodes', () => {
-        verifySecondaryEntities(entitiesKey, 'nodes', 7, /^\d+ nodes?$/);
+        verifySecondaryEntities(entitiesKey, 'nodes', 7);
     });
 });

@@ -1,4 +1,4 @@
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
+import { hasOrchestratorFlavor } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertSortedItems,
@@ -6,24 +6,17 @@ import {
     callbackForPairOfDescendingNumberValuesFromElements,
 } from '../../helpers/sort';
 import {
-    getCountAndNounFromImageCVEsLinkResults,
     hasTableColumnHeadings,
     interactAndWaitForVulnerabilityManagementEntities,
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'deployments';
 
 describe('Vulnerability Management Deployments', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
@@ -33,7 +26,6 @@ describe('Vulnerability Management Deployments', () => {
             'Deployment',
             'Image CVEs',
             'Latest Violation',
-            'Policy Status',
             'Cluster',
             'Namespace',
             'Images',
@@ -45,7 +37,7 @@ describe('Vulnerability Management Deployments', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
-        const tdSelector = '.rt-td:nth-child(9)';
+        const tdSelector = '.rt-td:nth-child(8)';
 
         // 0. Initial table state indicates that the column is sorted ascending.
         cy.get(thSelector).should('have.class', '-sort-asc');
@@ -86,16 +78,10 @@ describe('Vulnerability Management Deployments', () => {
             this.skip(); // TODO verify and remove
         }
 
-        verifyConditionalCVEs(
-            entitiesKey,
-            'image-cves',
-            3,
-            'imageVulnerabilityCounter',
-            getCountAndNounFromImageCVEsLinkResults
-        );
+        verifyConditionalCVEs(entitiesKey, 'image-cves', 3, 'imageVulnerabilityCounter');
     });
 
     it('should display links for images', () => {
-        verifySecondaryEntities(entitiesKey, 'images', 8, /^\d+ images?$/);
+        verifySecondaryEntities(entitiesKey, 'images', 7);
     });
 });

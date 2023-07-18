@@ -17,6 +17,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	c.AddCommand(check.Command(cliEnvironment))
-	flags.AddTimeoutWithDefault(c, 1*time.Minute)
+	// For deployments with unscanned images, the result of the detection service will take longer since scans are
+	// being performed in-line. Hence, need to set the timeout to a more generous value.
+	// In reality, if the image is already scanned and no force flag is given, this shouldn't take longer than the
+	// default timeout.
+	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 	return c
 }

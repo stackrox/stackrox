@@ -10,7 +10,6 @@ import (
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/index"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -38,7 +37,6 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	lock  sync.RWMutex

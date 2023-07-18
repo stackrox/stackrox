@@ -27,8 +27,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	scanTimeout = 6 * time.Minute
+var (
+	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
 type scanResult struct {
@@ -51,6 +51,7 @@ type enricher struct {
 	localScan           *scan.LocalScan
 	imageCache          expiringcache.Cache
 	stopSig             concurrency.Signal
+	regStore            *registry.Store
 }
 
 type cacheValue struct {
@@ -58,6 +59,7 @@ type cacheValue struct {
 	signal    concurrency.Signal
 	image     *storage.Image
 	localScan *scan.LocalScan
+	regStore  *registry.Store
 }
 
 func (c *cacheValue) waitAndGet() *storage.Image {
@@ -90,14 +92,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	var img *storage.Image
-	var err error
-	if req.containerImage.GetIsClusterLocal() {
-		img, err = localScan.EnrichLocalImage(ctx, svc, req.containerImage)
-	} else {
-		// ForceLocalImageScanning must be enabled
-		img, err = localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace)
-	}
+	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "", false)
 
 	return &v1.ScanImageInternalResponse{
 		Image: img,
@@ -149,11 +144,13 @@ outer:
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
 	defer c.signal.Signal()
 
-	// Ask Central to scan the image if the image is not internal and local scanning is not forced
-	// Otherwise, attempt to scan locally.
+	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
 	scanImageFn := scanImage
-	if req.containerImage.GetIsClusterLocal() || env.ForceLocalImageScanning.BooleanSetting() {
+	if c.regStore.IsLocal(req.containerImage.GetName()) {
 		scanImageFn = scanImageLocal
+		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+	} else {
+		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
 	}
 
 	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
@@ -172,13 +169,14 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store) *enricher {
+func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
 		imageCache:          cache,
 		stopSig:             concurrency.NewSignal(),
-		localScan:           scan.NewLocalScan(registryStore),
+		localScan:           localScan,
+		regStore:            registryStore,
 	}
 }
 
@@ -230,6 +228,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	newValue := &cacheValue{
 		signal:    concurrency.NewSignal(),
 		localScan: e.localScan,
+		regStore:  e.regStore,
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {

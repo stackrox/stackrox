@@ -8,12 +8,10 @@ import (
 
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	"github.com/stackrox/rox/central/cve/converter/utils"
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -25,9 +23,6 @@ import (
 
 var (
 	nodeScanOperatingSystem = "Linux"
-
-	dontWaitForIndexing = false
-	waitForIndexing     = true
 )
 
 func TestNodeComponentCVEEdgeDatastoreSAC(t *testing.T) {
@@ -37,36 +32,27 @@ func TestNodeComponentCVEEdgeDatastoreSAC(t *testing.T) {
 type nodeComponentCVEEdgeDatastoreSACTestSuite struct {
 	suite.Suite
 
-	dackboxTestStore dackboxTestUtils.DackboxTestDataStore
-	datastore        DataStore
+	testGraphDatastore graphDBTestUtils.TestGraphDataStore
+	datastore          DataStore
 
 	testContexts map[string]context.Context
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.datastore = GetTestPostgresDataStore(s.T(), pool)
-	} else {
-		rocksengine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		dacky := s.dackboxTestStore.GetDackbox()
-		genericStore, err := componentCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), rocksengine, bleveIndex, dacky)
-		s.Require().NoError(err)
-		s.datastore = nodeComponentCVEEdgeFromGenericStore{genericStore: genericStore}
-	}
+
+	pool := s.testGraphDatastore.GetPostgresPool()
+	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
+
+	err = s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
+	s.Require().NoError(err)
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
-}
-
-func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) cleanNodeToVulnerabilitiesGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph(waitForIndexing))
+	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {
@@ -80,10 +66,7 @@ func getVulnerabilityID(vulnerability *storage.EmbeddedVulnerability, os string)
 func getEdgeID(component *storage.EmbeddedNodeScanComponent, vulnerability *storage.EmbeddedVulnerability, os string) string {
 	componentID := getComponentID(component, os)
 	vulnerabilityID := getVulnerabilityID(vulnerability, os)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
-	}
-	return edges.EdgeID{ParentID: componentID, ChildID: vulnerabilityID}.ToString()
+	return pgSearch.IDFromPks([]string{componentID, vulnerabilityID})
 }
 
 type edgeTestCase struct {
@@ -196,224 +179,184 @@ var (
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetEdgeID := cmp1cve1edge
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.testContexts[c.contextKey]
-			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
-			s.NoError(err)
-			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
-		})
-	}
+	s.run(func(c edgeTestCase) {
+		testCtx := s.testContexts[c.contextKey]
+		exists, err := s.datastore.Exists(testCtx, targetEdgeID)
+		s.NoError(err)
+		s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-4567-0002 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetEdgeID := cmp1cve2edge
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.testContexts[c.contextKey]
-			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
-			s.NoError(err)
-			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
-		})
-	}
+	s.run(func(c edgeTestCase) {
+		testCtx := s.testContexts[c.contextKey]
+		exists, err := s.datastore.Exists(testCtx, targetEdgeID)
+		s.NoError(err)
+		s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test exists for Component3 to CVE-3456-0004 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetEdgeID := cmp3cve4edge
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.testContexts[c.contextKey]
-			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
-			s.NoError(err)
-			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
-		})
-	}
+	s.run(func(c edgeTestCase) {
+		testCtx := s.testContexts[c.contextKey]
+		exists, err := s.datastore.Exists(testCtx, targetEdgeID)
+		s.NoError(err)
+		s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test read for Component1 to CVE-1234-0001 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetEdgeID := cmp1cve1edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	expectedTargetID := getVulnerabilityID(fixtures.GetEmbeddedNodeCVE1234x0001(), nodeScanOperatingSystem)
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.testContexts[c.contextKey]
-			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
-			s.NoError(err)
-			if c.expectedEdgeFound[targetEdgeID] {
-				s.True(exists)
-				s.NotNil(edge)
-				s.Equal(expectedSrcID, edge.GetNodeComponentId())
-				s.Equal(expectedTargetID, edge.GetNodeCveId())
-			} else {
-				s.False(exists)
-				s.Nil(edge)
-			}
-		})
-	}
+	s.run(func(c edgeTestCase) {
+		testCtx := s.testContexts[c.contextKey]
+		edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
+		s.NoError(err)
+		if c.expectedEdgeFound[targetEdgeID] {
+			s.True(exists)
+			s.NotNil(edge)
+			s.Equal(expectedSrcID, edge.GetNodeComponentId())
+			s.Equal(expectedTargetID, edge.GetNodeCveId())
+		} else {
+			s.False(exists)
+			s.Nil(edge)
+		}
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test read for Component1 to CVE-4567-0002 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetEdgeID := cmp1cve2edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	expectedTargetID := getVulnerabilityID(fixtures.GetEmbeddedNodeCVE4567x0002(), nodeScanOperatingSystem)
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.testContexts[c.contextKey]
-			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
-			s.NoError(err)
-			if c.expectedEdgeFound[targetEdgeID] {
-				s.True(exists)
-				s.NotNil(edge)
-				s.Equal(expectedSrcID, edge.GetNodeComponentId())
-				s.Equal(expectedTargetID, edge.GetNodeCveId())
-			} else {
-				s.False(exists)
-				s.Nil(edge)
-			}
-		})
-	}
+	s.run(func(c edgeTestCase) {
+		testCtx := s.testContexts[c.contextKey]
+		edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
+		s.NoError(err)
+		if c.expectedEdgeFound[targetEdgeID] {
+			s.True(exists)
+			s.NotNil(edge)
+			s.Equal(expectedSrcID, edge.GetNodeComponentId())
+			s.Equal(expectedTargetID, edge.GetNodeCveId())
+		} else {
+			s.False(exists)
+			s.Nil(edge)
+		}
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test read for Component3 to CVE-3456-0004 edge
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetEdgeID := cmp3cve4edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1s2x3(), nodeScanOperatingSystem)
 	expectedTargetID := getVulnerabilityID(fixtures.GetEmbeddedNodeCVE3456x0004(), nodeScanOperatingSystem)
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.testContexts[c.contextKey]
-			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
-			s.NoError(err)
-			if c.expectedEdgeFound[targetEdgeID] {
-				s.True(exists)
-				s.NotNil(edge)
-				s.Equal(expectedSrcID, edge.GetNodeComponentId())
-				s.Equal(expectedTargetID, edge.GetNodeCveId())
-			} else {
-				s.False(exists)
-				s.Nil(edge)
-			}
-		})
-	}
+	s.run(func(c edgeTestCase) {
+		testCtx := s.testContexts[c.contextKey]
+		edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
+		s.NoError(err)
+		if c.expectedEdgeFound[targetEdgeID] {
+			s.True(exists)
+			s.NotNil(edge)
+			s.Equal(expectedSrcID, edge.GetNodeComponentId())
+			s.Equal(expectedTargetID, edge.GetNodeCveId())
+		} else {
+			s.False(exists)
+			s.Nil(edge)
+		}
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			expectedCount := 0
-			for _, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedCount++
-				}
+	s.run(func(c edgeTestCase) {
+		expectedCount := 0
+		for _, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedCount++
 			}
-			testCtx := s.testContexts[c.contextKey]
-			count, err := s.datastore.Count(testCtx, search.EmptyQuery())
-			s.NoError(err)
-			s.Equal(expectedCount, count)
-		})
-	}
+		}
+		testCtx := s.testContexts[c.contextKey]
+		count, err := s.datastore.Count(testCtx, search.EmptyQuery())
+		s.NoError(err)
+		s.Equal(expectedCount, count)
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			expectedCount := 0
-			for _, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedCount++
-				}
+	s.run(func(c edgeTestCase) {
+		expectedCount := 0
+		for _, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedCount++
 			}
-			testCtx := s.testContexts[c.contextKey]
-			results, err := s.datastore.Search(testCtx, search.EmptyQuery())
-			s.NoError(err)
-			s.Equal(expectedCount, len(results))
-			for _, r := range results {
-				s.True(c.expectedEdgeFound[r.ID])
-			}
-		})
-	}
+		}
+		testCtx := s.testContexts[c.contextKey]
+		results, err := s.datastore.Search(testCtx, search.EmptyQuery())
+		s.NoError(err)
+		s.Equal(expectedCount, len(results))
+		for _, r := range results {
+			s.True(c.expectedEdgeFound[r.ID])
+		}
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
-			expectedCount := 0
-			for _, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedCount++
-				}
+	s.run(func(c edgeTestCase) {
+		expectedCount := 0
+		for _, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedCount++
 			}
-			testCtx := s.testContexts[c.contextKey]
-			results, err := s.datastore.SearchEdges(testCtx, search.EmptyQuery())
-			s.NoError(err)
-			s.Equal(expectedCount, len(results))
-			for _, r := range results {
-				s.True(c.expectedEdgeFound[r.GetId()])
-			}
-		})
-	}
+		}
+		testCtx := s.testContexts[c.contextKey]
+		results, err := s.datastore.SearchEdges(testCtx, search.EmptyQuery())
+		s.NoError(err)
+		s.Equal(expectedCount, len(results))
+		for _, r := range results {
+			s.True(c.expectedEdgeFound[r.GetId()])
+		}
+	})
 }
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range testCases {
+	s.run(func(c edgeTestCase) {
+		expectedCount := 0
+		for _, visible := range c.expectedEdgeFound {
+			if visible {
+				expectedCount++
+			}
+		}
+		testCtx := s.testContexts[c.contextKey]
+		results, err := s.datastore.SearchRawEdges(testCtx, search.EmptyQuery())
+		s.NoError(err)
+		s.Equal(expectedCount, len(results))
+		for _, r := range results {
+			s.True(c.expectedEdgeFound[r.GetId()])
+		}
+	})
+}
+
+func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) run(f func(c edgeTestCase)) {
+	for i := range testCases {
+		c := testCases[i]
 		s.Run(c.contextKey, func() {
-			expectedCount := 0
-			for _, visible := range c.expectedEdgeFound {
-				if visible {
-					expectedCount++
-				}
-			}
-			testCtx := s.testContexts[c.contextKey]
-			results, err := s.datastore.SearchRawEdges(testCtx, search.EmptyQuery())
-			s.NoError(err)
-			s.Equal(expectedCount, len(results))
-			for _, r := range results {
-				s.True(c.expectedEdgeFound[r.GetId()])
-			}
+			s.T().Parallel()
+			f(c)
 		})
 	}
 }
 
-// Helper type to have identical test code for both rocksdb/dackbox and postgres objects
+// Helper type to have identical test code for postgres objects
 
 type nodeComponentCVEEdgeFromGenericStore struct {
 	genericStore componentCVEEdgeDataStore.DataStore

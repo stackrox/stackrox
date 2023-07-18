@@ -70,10 +70,8 @@ func newExpirationNotifier(store datastore.DataStore) *expirationNotifierImpl {
 }
 
 func (n *expirationNotifierImpl) Start() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
-		go n.runExpirationNotifier()
-	}
+	n.notificationTicker = time.NewTicker(env.APITokenExpirationNotificationInterval.DurationSetting())
+	go n.runExpirationNotifier()
 }
 
 func (n *expirationNotifierImpl) Stop() {
@@ -101,11 +99,6 @@ func (n *expirationNotifierImpl) runExpirationNotifier() {
 }
 
 func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
-	// Only works in Postgres Mode
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
-
 	now := time.Now()
 	aboutToExpireDate := now.Add(env.APITokenExpirationExpirationWindow.DurationSetting())
 	staleNotificationDate := now.Add(-env.APITokenExpirationStaleNotificationAge.DurationSetting())

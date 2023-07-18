@@ -14,7 +14,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -89,32 +88,6 @@ func init() {
 			"subject(name: String!): Subject",
 			"subjectCount(query: String): Int!",
 			"unusedVarSink(query: String): Int",
-		}),
-
-		// deprecated fields
-		schema.AddExtraResolvers("Cluster", []string{
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
-				"@deprecated(reason: \"use 'imageComponents' or 'nodeComponents'\")",
-			"componentCount(query: String): Int!" +
-				"@deprecated(reason: \"use 'imageComponentCount' or 'nodeComponentCount'\")",
-			"vulnCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'imageVulnerabilityCount' or 'nodeVulnerabilityCount'\")",
-			"vulnCounter(query: String): VulnerabilityCounter! " +
-				"@deprecated(reason: \"use 'imageVulnerabilityCounter' or 'nodeVulnerabilityCounter'\")",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
-				"@deprecated(reason: \"use 'imageVulnerabilities' or 'nodeVulnerabilities'\")",
-			"k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]! " +
-				"@deprecated(reason: \"use 'k8sClusterVulnerabilities'\")",
-			"k8sVulnCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'k8sClusterVulnerabilityCount'\")",
-			"istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]! " +
-				"@deprecated(reason: \"use 'istioClusterVulnerabilities'\")",
-			"istioVulnCount(query: String): Int!" +
-				"@deprecated(reason: \"use 'istioClusterVulnerabilityCount'\")",
-			"openShiftVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]! " +
-				"@deprecated(reason: \"use 'openShiftClusterVulnerabilities'\")",
-			"openShiftVulnCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'openShiftClusterVulnerabilityCount'\")",
 		}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
@@ -237,113 +210,42 @@ func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context, args 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
 func (resolver *clusterResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Deployments")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Deployments(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Deployments(resolver.clusterScopeContext(ctx), args)
 }
 
 // DeploymentCount returns count of all deployments in this cluster
 func (resolver *clusterResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "DeploymentCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
-	}
-
 	return resolver.root.DeploymentCount(resolver.clusterScopeContext(ctx), args)
 }
 
 // Nodes returns all nodes on the cluster
 func (resolver *clusterResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Nodes")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Nodes(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Nodes(resolver.clusterScopeContext(ctx), args)
 }
 
 // NodeCount returns count of all nodes on the cluster
 func (resolver *clusterResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.NodeCount(ctx, RawQuery{Query: &query})
-	}
-
 	return resolver.root.NodeCount(resolver.clusterScopeContext(ctx), args)
 }
 
 // Node returns a given node on a cluster
 func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node graphql.ID }) (*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Node")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNodes(ctx); err != nil {
-			return nil, err
-		}
-		return resolver.root.wrapNode(resolver.root.NodeDataStore.GetNode(ctx, string(args.Node)))
-	}
-
 	return resolver.root.Node(resolver.clusterScopeContext(ctx), struct{ graphql.ID }{args.Node})
 }
 
 // Namespaces returns the namespaces in a cluster.
 func (resolver *clusterResolver) Namespaces(ctx context.Context, args PaginatedQuery) ([]*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespaces")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNamespaces(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Namespaces(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Namespaces(resolver.clusterScopeContext(ctx), args)
 }
 
 // Namespace returns a given namespace in a cluster.
 func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Name string }) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Namespace")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{
-			ClusterID: graphql.ID(resolver.data.GetId()),
-			Name:      args.Name,
-		})
-	}
-
 	return resolver.root.NamespaceByClusterIDAndName(resolver.clusterScopeContext(ctx), clusterIDAndNameQuery{
 		ClusterID: graphql.ID(resolver.data.GetId()),
 		Name:      args.Name,
@@ -353,17 +255,6 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 // NamespaceCount returns counts of namespaces on a cluster.
 func (resolver *clusterResolver) NamespaceCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NamespaceCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNamespaces(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.NamespaceCount(ctx, RawQuery{Query: &query})
-	}
-
 	return resolver.root.NamespaceCount(resolver.clusterScopeContext(ctx), args)
 }
 
@@ -572,42 +463,12 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 
 func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Images")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-
 	return resolver.root.Images(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageCount")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-		return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
-	}
-
 	return resolver.root.ImageCount(resolver.clusterScopeContext(ctx), args)
-}
-
-func (resolver *clusterResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Components")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *clusterResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -630,30 +491,6 @@ func (resolver *clusterResolver) NodeComponents(ctx context.Context, args Pagina
 func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponentCount")
 	return resolver.root.NodeComponentCount(resolver.clusterScopeContext(ctx), args)
-}
-
-func (resolver *clusterResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.Vulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *clusterResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.VulnerabilityCount(ctx, RawQuery{Query: &query})
-}
-
-func (resolver *clusterResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCounter")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
 }
 
 // NodeVulnerabilities returns the node vulnerabilities in the cluster.
@@ -759,64 +596,10 @@ func (resolver *clusterResolver) OpenShiftClusterVulnerabilityCount(ctx context.
 	return resolver.root.OpenShiftClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
-func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulns")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.K8sVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *clusterResolver) K8sVulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sVulnCount")
-
-	vulns, err := resolver.K8sVulns(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(vulns)), nil
-}
-
-func (resolver *clusterResolver) OpenShiftVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftVulns")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.OpenShiftVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *clusterResolver) OpenShiftVulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftVulnCount")
-
-	vulns, err := resolver.OpenShiftVulns(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(vulns)), nil
-}
-
-func (resolver *clusterResolver) IstioVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioVulns")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-
-	return resolver.root.IstioVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *clusterResolver) IstioVulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioVulnCount")
-
-	vulns, err := resolver.IstioVulns(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(vulns)), nil
-}
-
 func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Policies")
 
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 
@@ -867,7 +650,7 @@ func (resolver *clusterResolver) getApplicablePolicies(ctx context.Context, q *v
 
 func (resolver *clusterResolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PolicyCount")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return 0, err
 	}
 

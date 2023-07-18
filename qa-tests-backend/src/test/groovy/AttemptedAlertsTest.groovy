@@ -14,7 +14,6 @@ import services.ClusterService
 import util.Env
 
 import spock.lang.IgnoreIf
-import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Tag
@@ -97,7 +96,6 @@ class AttemptedAlertsTest extends BaseSpecification {
         }
     }
 
-    @Retry(count = 0)
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
@@ -171,7 +169,6 @@ class AttemptedAlertsTest extends BaseSpecification {
                 "create enforce; no policy enforce"
     }
 
-    @Retry(count = 0)
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
@@ -247,7 +244,6 @@ class AttemptedAlertsTest extends BaseSpecification {
                 "no update enforce; policy enforce"
     }
 
-    @Retry(count = 0)
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")

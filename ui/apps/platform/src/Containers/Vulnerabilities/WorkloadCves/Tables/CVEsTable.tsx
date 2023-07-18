@@ -19,9 +19,16 @@ import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
-import DatePhraseTd from '../components/DatePhraseTd';
+import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
-import { getScoreVersionsForTopCVSS, sortCveDistroList } from '../sortUtils';
+import {
+    getScoreVersionsForTopCVSS,
+    sortCveDistroList,
+    aggregateByCVSS,
+    aggregateByCreatedTime,
+    aggregateByImageSha,
+} from '../sortUtils';
+import EmptyTableResults from '../components/EmptyTableResults';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -99,7 +106,6 @@ function CVEsTable({
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
-                {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
                     <Th sort={getSortParams('CVE')}>CVE</Th>
@@ -107,19 +113,29 @@ function CVEsTable({
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <TooltipTh tooltip="Highest CVSS score of this CVE across images">
+                    <TooltipTh
+                        sort={getSortParams('CVSS', aggregateByCVSS)}
+                        tooltip="Highest CVSS score of this CVE across images"
+                    >
                         Top CVSS
                     </TooltipTh>
-                    <TooltipTh tooltip="Ratio of total environment affect by this CVE">
+                    <TooltipTh
+                        sort={getSortParams('Image sha', aggregateByImageSha)}
+                        tooltip="Ratio of total images affected by this CVE"
+                    >
                         Affected images
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    <TooltipTh tooltip="Time since this CVE first affected an entity">
+                    <TooltipTh
+                        sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
+                        tooltip="Time since this CVE first affected an entity"
+                    >
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                 </Tr>
             </Thead>
+            {cves.length === 0 && <EmptyTableResults colSpan={6} />}
             {cves.map(
                 (
                     {
@@ -157,7 +173,7 @@ function CVEsTable({
                                         onToggle: () => expandedRowSet.toggle(cve),
                                     }}
                                 />
-                                <Td>
+                                <Td dataLabel="CVE">
                                     <Button
                                         variant={ButtonVariant.link}
                                         isInline
@@ -167,7 +183,7 @@ function CVEsTable({
                                         {cve}
                                     </Button>
                                 </Td>
-                                <Td>
+                                <Td dataLabel="Images by severity">
                                     <SeverityCountLabels
                                         criticalCount={criticalCount}
                                         importantCount={importantCount}
@@ -176,7 +192,7 @@ function CVEsTable({
                                         filteredSeverities={filteredSeverities}
                                     />
                                 </Td>
-                                <Td>
+                                <Td dataLabel="Top CVSS">
                                     <CvssTd
                                         cvss={topCVSS}
                                         scoreVersion={
@@ -186,12 +202,12 @@ function CVEsTable({
                                         }
                                     />
                                 </Td>
-                                <Td>
+                                <Td dataLabel="Affected images">
                                     {/* TODO: fix upon PM feedback */}
                                     {affectedImageCount}/{unfilteredImageCount} affected images
                                 </Td>
-                                <Td>
-                                    <DatePhraseTd date={firstDiscoveredInSystem} />
+                                <Td dataLabel="First discovered">
+                                    <DateDistanceTd date={firstDiscoveredInSystem} />
                                 </Td>
                             </Tr>
                             <Tr isExpanded={isExpanded}>

@@ -1,4 +1,3 @@
-import { normalize } from 'normalizr';
 import qs from 'qs';
 
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
@@ -9,7 +8,6 @@ import {
     ClustersResponse,
 } from 'types/clusterService.proto';
 import axios from './instance';
-import { cluster as clusterSchema } from './schemas';
 import { Empty } from './types';
 
 const clustersUrl = '/v1/clusters';
@@ -25,20 +23,6 @@ export type Cluster = {
     id: string;
     name: string;
 };
-
-// @TODO, We may not need this API function after we migrate to a standalone Clusters page
-//        Check to see if fetchClusters and fletchClustersByArray can be collapsed
-//        into one function
-/**
- * Fetches list of registered clusters.
- */
-// TODO specify return type after we rewrite without normalize
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function fetchClusters() {
-    return axios.get<{ clusters: Cluster[] }>(clustersUrl).then((response) => ({
-        response: normalize(response.data, { clusters: [clusterSchema] }),
-    }));
-}
 
 /**
  * Fetches list of registered clusters.
@@ -148,17 +132,6 @@ export function upgradeClusters(ids = []): Promise<Empty[]> {
 }
 
 /**
- * Fetches cluster by its ID.
- */
-// TODO specify return type after we rewrite without normalize
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function fetchCluster(id: string) {
-    return axios.get(`${clustersUrl}/${id}`).then((response) => ({
-        response: normalize(response.data, { cluster: clusterSchema }),
-    }));
-}
-
-/**
  * Deletes cluster given the cluster ID. Returns an empty object.
  */
 export function deleteCluster(id: string): Promise<Empty> {
@@ -175,15 +148,13 @@ export function deleteClusters(ids: string[] = []): Promise<Empty[]> {
 /**
  * Creates or updates a cluster given the cluster fields.
  */
-// TODO specify return type after we rewrite without normalize
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function saveCluster(cluster: Cluster) {
-    const promise = cluster.id
-        ? axios.put(`${clustersUrl}/${cluster.id}`, cluster)
-        : axios.post(clustersUrl, cluster);
-    return promise.then((response) => ({
-        response: normalize(response.data, { cluster: clusterSchema }),
-    }));
+    if (cluster.id) {
+        return axios
+            .put<ClusterResponse>(`${clustersUrl}/${cluster.id}`, cluster)
+            .then((response) => response.data);
+    }
+    return axios.post<ClusterResponse>(clustersUrl, cluster).then((response) => response.data);
 }
 
 /**

@@ -175,11 +175,3 @@ func (c *cacheImpl) Walk(_ context.Context, fn func(obj *storage.ProcessBaseline
 	}
 	return nil
 }
-
-func (c *cacheImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
-	return c.dbStore.AckKeysIndexed(ctx, keys...)
-}
-
-func (c *cacheImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
-	return c.dbStore.GetKeysToIndex(ctx)
-}

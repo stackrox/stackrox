@@ -91,6 +91,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 		// represents the index of this specific child among the parent's children).
 		for _, parentPrimaryKey := range parentPrimaryKeys {
 			var columnNameInChild string
+			var columnNameInChildForCodeVariables string
 			// If a column in a child table references a column "X" in the parent table, we
 			// name the column in the child "parent_table_name_X".
 			// We keep this name even in the grandchild, and do not continuously add prefixes in front.
@@ -100,11 +101,12 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 			} else {
 				columnNameInChild = parentPrimaryKey.ColumnName
 			}
+			columnNameInChildForCodeVariables = snakeCaseToSingularLowerCamelCase(columnNameInChild)
 			additionalFields = append(additionalFields, Field{
 				Schema: s,
-				Name:   columnNameInChild,
+				Name:   columnNameInChildForCodeVariables,
 				ObjectGetter: ObjectGetter{
-					value:    columnNameInChild,
+					value:    columnNameInChildForCodeVariables,
 					variable: true,
 				},
 				ColumnName: columnNameInChild,
@@ -167,9 +169,40 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 				continue
 			}
 			if strings.Contains(field, "=") {
-				opts.Index = stringutils.GetAfter(field, "=")
+				indexConfig := stringutils.GetAfter(field, "=")
+				if strings.Contains(indexConfig, ":") {
+					indexConfigData := strings.Split(indexConfig, ";")
+					indexOptions := &PostgresIndexOptions{}
+					for _, configElem := range indexConfigData {
+						configKeyValuePair := strings.Split(configElem, ":")
+						if len(configKeyValuePair) < 2 {
+							continue
+						}
+						key := strings.ToLower(configKeyValuePair[0])
+						value := configKeyValuePair[1]
+						switch key {
+						case "name":
+							indexOptions.IndexName = value
+						case "type":
+							indexOptions.IndexType = value
+						case "category":
+							indexOptions.IndexCategory = value
+						case "priority":
+							indexOptions.IndexPriority = value
+						}
+					}
+					opts.Index = append(opts.Index, indexOptions)
+				} else {
+					indexOptions := &PostgresIndexOptions{
+						IndexType: indexConfig,
+					}
+					opts.Index = append(opts.Index, indexOptions)
+				}
 			} else {
-				opts.Index = defaultIndex
+				indexOptions := &PostgresIndexOptions{
+					IndexType: defaultIndex,
+				}
+				opts.Index = append(opts.Index, indexOptions)
 			}
 		case field == "ignore_unique":
 			// if this is an embedded entity that defines a unique constraint, then we want to ignore it as

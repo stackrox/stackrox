@@ -267,6 +267,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			if err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
 			}
+
+			s.regStore.AddClusterLocalRegistryHost(registry)
+
 		} else if saName == "" {
 			// only send integrations to central that do not have the k8s SA annotation
 			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
@@ -286,7 +289,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				}
 			}
 
-			if env.ForceLocalImageScanning.BooleanSetting() {
+			// The secrets captured in this block are used for delegated image scanning.
+			if env.LocalImageScanningEnabled.BooleanSetting() && !env.DelegatedScanningDisabled.BooleanSetting() {
 				// Store registry secrets to enable downstream scanning of all images
 				//
 				// This is only triggered when saName is empty so that we do not overwrite entries inserted

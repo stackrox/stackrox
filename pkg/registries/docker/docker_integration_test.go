@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package docker
 
@@ -17,7 +16,7 @@ func TestGetMetadataIntegration(t *testing.T) {
 				Endpoint: "https://registry.k8s.io",
 			},
 		},
-	})
+	}, false)
 	require.NoError(t, err)
 
 	image := storage.Image{
@@ -39,7 +38,7 @@ func TestOCIImageIndexManifest(t *testing.T) {
 				Endpoint: "https://gcr.io",
 			},
 		},
-	})
+	}, false)
 	require.NoError(t, err)
 
 	image := storage.Image{
@@ -62,7 +61,7 @@ func TestOCIImageIndexManifestWithoutManifestCall(t *testing.T) {
 				Endpoint: "https://gcr.io",
 			},
 		},
-	})
+	}, false)
 	require.NoError(t, err)
 
 	image := storage.Image{

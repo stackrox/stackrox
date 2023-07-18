@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
@@ -30,7 +29,6 @@ var (
 
 type datastoreImpl struct {
 	storage      store.Store
-	indexer      index.Indexer
 	searcher     search.Searcher
 	baselineLock *concurrency.KeyedMutex
 
@@ -84,14 +82,6 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
-	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
-		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(ctx, id)
-		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process process baseline addition")
-		}
-		return id, err
-	}
 	return id, nil
 }
 
@@ -99,23 +89,12 @@ func (ds *datastoreImpl) addProcessBaselineLocked(ctx context.Context, baseline 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return baseline.GetId(), errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
-	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
-		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(ctx, baseline.GetId())
-		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process process baseline addition")
-		}
-		return baseline.GetId(), err
-	}
 	return baseline.GetId(), nil
 }
 
 func (ds *datastoreImpl) removeProcessBaselineByID(ctx context.Context, id string) error {
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
-	if err := ds.indexer.DeleteProcessBaseline(id); err != nil {
-		return errors.Wrap(err, "error removing process baseline from index")
-	}
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return errors.Wrap(err, "error removing process baseline from store")
 	}
@@ -144,7 +123,7 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 	// Delete process baseline results if this is the last process baseline with the given deploymentID
 	deploymentID := key.GetDeploymentId()
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	results, err := ds.indexer.Search(ctx, q)
+	results, err := ds.searcher.Search(ctx, q)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for deployment %s during process baseline deletion", deploymentID)
 	}
@@ -162,7 +141,7 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByDeployment(ctx context.Context,
 	}
 
 	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	results, err := ds.indexer.Search(ctx, query)
+	results, err := ds.searcher.Search(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -256,8 +235,6 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 		return nil, err
 	}
 
-	// no need to index the process baseline here because the only indexed things are
-	// top level fields that are immutable
 	return baseline, nil
 }
 

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,8 +22,10 @@ type FlowStore interface {
 	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error
 
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
-	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 
 	// RemoveStaleFlows - remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
+
+	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments
+	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
 }

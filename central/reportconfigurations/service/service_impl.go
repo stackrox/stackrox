@@ -5,27 +5,25 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/service/common"
 	"github.com/stackrox/rox/central/reports/manager"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 type serviceImpl struct {
 	v1.UnimplementedReportConfigurationServiceServer
 
-	manager           manager.Manager
-	reportConfigStore datastore.DataStore
-	validator         *common.Validator
+	manager             manager.Manager
+	reportConfigStore   datastore.DataStore
+	collectionDatastore collectionDS.DataStore
+	notifierDatastore   notifierDS.DataStore
 }
 
 func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.RawQuery) (*v1.GetReportConfigurationsResponse, error) {
@@ -59,7 +57,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.Resourc
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.PostReportConfigurationRequest) (*v1.PostReportConfigurationResponse, error) {
-	if err := s.validator.ValidateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
+	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return nil, err
 	}
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, request.GetReportConfig())
@@ -78,7 +76,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.P
 }
 
 func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *v1.UpdateReportConfigurationRequest) (*v1.Empty, error) {
-	if err := s.validator.ValidateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
+	if err := s.validateReportConfiguration(ctx, request.GetReportConfig()); err != nil {
 		return &v1.Empty{}, err
 	}
 	if err := s.manager.Upsert(ctx, request.GetReportConfig()); err != nil {

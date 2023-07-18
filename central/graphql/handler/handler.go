@@ -21,7 +21,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	queryTracerEnabled    = env.PostgresDatastoreEnabled.BooleanSetting() && env.PostgresQueryTracer.BooleanSetting()
+	queryTracerEnabled    = env.PostgresQueryTracer.BooleanSetting()
 	graphQLQueryThreshold = env.PostgresQueryTracerGraphQLThreshold.DurationSetting()
 )
 

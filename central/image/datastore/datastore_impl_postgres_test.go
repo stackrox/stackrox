@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package datastore
 
@@ -9,7 +8,6 @@ import (
 	"testing"
 
 	protoTypes "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
@@ -22,8 +20,8 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -33,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 
@@ -74,12 +73,12 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	componentIndexer := imageComponentPostgres.NewIndexer(s.db)
 	componentSearcher := imageComponentSearch.NewV2(componentStorage, componentIndexer)
-	s.componentDataStore = imageComponentDS.New(nil, componentStorage, componentIndexer, componentSearcher, s.mockRisk, ranking.NewRanker())
+	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	cveIndexer := imageCVEPostgres.NewIndexer(s.db)
 	cveSearcher := imageCVESearch.New(cveStorage, cveIndexer)
-	cveDataStore, err := imageCVEDS.New(cveStorage, cveIndexer, cveSearcher, concurrency.NewKeyFence())
+	cveDataStore, err := imageCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
 	s.NoError(err)
 	s.cveDataStore = cveDataStore
 }
@@ -538,4 +537,82 @@ func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage3.Scan.Components = nil
 	testImage3.Priority = 1
 	s.ElementsMatch([]*storage.Image{testImage1, testImage2, testImage3}, storedImages)
+}
+
+func getTestImage(id string) *storage.Image {
+	return &storage.Image{
+		Id: id,
+		Scan: &storage.ImageScan{
+			OperatingSystem: "blah",
+			ScanTime:        protoTypes.TimestampNow(),
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:    "comp1",
+					Version: "ver1",
+					Vulns:   []*storage.EmbeddedVulnerability{},
+				},
+				{
+					Name:    "comp1",
+					Version: "ver2",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:               "cve1",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 10,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+						{
+							Cve:               "cve2",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver3",
+							},
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 1,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+					},
+				},
+				{
+					Name:    "comp2",
+					Version: "ver1",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:               "cve1",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver2",
+							},
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 10,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+						{
+							Cve:               "cve2",
+							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							CvssV3: &storage.CVSSV3{
+								ImpactScore: 1,
+							},
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+						},
+					},
+				},
+			},
+		},
+		RiskScore: 30,
+		Priority:  1,
+	}
+}
+
+func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
+	cloned := image.Clone()
+	cloned.Priority = 1
+	for _, component := range cloned.GetScan().GetComponents() {
+		component.Priority = 1
+	}
+	return cloned
 }

@@ -7,15 +7,14 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
+	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
 	"github.com/stackrox/rox/central/declarativeconfig/types"
-	declarativeCfgUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,7 +25,7 @@ type authProviderUpdater struct {
 	authProviderDS       authproviders.Store
 	authProviderRegistry authproviders.Registry
 	groupDS              groupDataStore.DataStore
-	reporter             integrationhealth.Reporter
+	healthDS             declarativeConfigHealth.DataStore
 	idExtractor          types.IDExtractor
 	nameExtractor        types.NameExtractor
 }
@@ -42,12 +41,12 @@ var (
 )
 
 func newAuthProviderUpdater(authProvidersDS authproviders.Store, registry authproviders.Registry,
-	groupDS groupDataStore.DataStore, reporter integrationhealth.Reporter) ResourceUpdater {
+	groupDS groupDataStore.DataStore, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
 	return &authProviderUpdater{
 		authProviderDS:       authProvidersDS,
 		authProviderRegistry: registry,
 		groupDS:              groupDS,
-		reporter:             reporter,
+		healthDS:             healthDS,
 		idExtractor:          types.UniversalIDExtractor(),
 		nameExtractor:        types.UniversalNameExtractor(),
 	}
@@ -87,14 +86,14 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 			return group.GetProps().GetAuthProviderId() == authProvider.GetId()
 		})
 		if err != nil {
-			authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
+			authProviderDeletionErr, authProviderIDs = u.processDeletionError(ctx, authProviderDeletionErr, err, authProviderIDs, authProvider)
 			continue
 		}
 		var hasErrorDeletingGroups bool
 		for _, group := range referencingGroups {
 			ctxToUse := utils.IfThenElse(declarativeconfig.IsDeclarativeOrigin(group.GetProps()), ctx, deleteImperativeGroupsCtx)
 			if err = u.groupDS.Remove(ctxToUse, group.GetProps(), true); err != nil {
-				authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
+				authProviderDeletionErr, authProviderIDs = u.processDeletionError(ctx, authProviderDeletionErr, err, authProviderIDs, authProvider)
 				hasErrorDeletingGroups = true
 			}
 		}
@@ -104,17 +103,19 @@ func (u *authProviderUpdater) DeleteResources(ctx context.Context, resourceIDsTo
 			continue
 		}
 		if err := u.authProviderRegistry.DeleteProvider(ctx, authProvider.GetId(), true, true); err != nil {
-			authProviderDeletionErr, authProviderIDs = u.processDeletionError(authProviderDeletionErr, err, authProviderIDs, authProvider)
+			authProviderDeletionErr, authProviderIDs = u.processDeletionError(ctx, authProviderDeletionErr, err, authProviderIDs, authProvider)
 		}
 	}
 	return authProviderIDs.AsSlice(), authProviderDeletionErr.ErrorOrNil()
 }
 
-func (u *authProviderUpdater) processDeletionError(authProviderDeletionErr *multierror.Error, err error, authProviderIDs set.Set[string], authProvider *storage.AuthProvider) (*multierror.Error, set.Set[string]) {
+func (u *authProviderUpdater) processDeletionError(ctx context.Context, authProviderDeletionErr *multierror.Error,
+	err error, authProviderIDs set.Set[string], authProvider *storage.AuthProvider) (*multierror.Error, set.Set[string]) {
 	authProviderDeletionErr = multierror.Append(authProviderDeletionErr, err)
 	authProviderIDs.Add(authProvider.GetId())
 
-	u.reporter.UpdateIntegrationHealthAsync(declarativeCfgUtils.IntegrationHealthForProtoMessage(authProvider, "", err,
-		u.idExtractor, u.nameExtractor))
+	if err := u.healthDS.UpdateStatusForDeclarativeConfig(ctx, u.idExtractor(authProvider), err); err != nil {
+		log.Errorf("Failed to update the declarative config health status %q: %v", authProvider.GetId(), err)
+	}
 	return authProviderDeletionErr, authProviderIDs
 }

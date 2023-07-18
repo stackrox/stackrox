@@ -309,7 +309,13 @@ function ImageCvePage() {
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
-                        <WorkloadTableToolbar supportedResourceFilters={imageCveResourceFilters} />
+                        <WorkloadTableToolbar
+                            supportedResourceFilters={imageCveResourceFilters}
+                            autocompleteSearchContext={{
+                                'CVE ID': cveId,
+                            }}
+                            onFilterChange={() => setPage(1)}
+                        />
                     </div>
                     <div className="pf-u-px-lg pf-u-pb-lg">
                         {summaryRequest.error && (
@@ -327,7 +333,7 @@ function ImageCvePage() {
                                 screenreaderText="Loading image cve summary data"
                             />
                         )}
-                        {summaryRequest.data && (
+                        {!summaryRequest.error && summaryRequest.data && (
                             <Grid hasGutter>
                                 <GridItem sm={12} md={6} xl2={4}>
                                     <AffectedImages
@@ -367,7 +373,6 @@ function ImageCvePage() {
                         </SplitItem>
                         <SplitItem>
                             <Pagination
-                                isCompact
                                 itemCount={tableRowCount}
                                 page={page}
                                 perPage={perPage}

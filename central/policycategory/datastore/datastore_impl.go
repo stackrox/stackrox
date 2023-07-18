@@ -6,14 +6,12 @@ import (
 	"strings"
 
 	errorsPkg "github.com/pkg/errors"
-	"github.com/stackrox/rox/central/policycategory/index"
 	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
 	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -25,20 +23,17 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policyCategorySAC = sac.ForResource(resources.Policy)
+	log               = logging.LoggerForModule()
+	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 
 type datastoreImpl struct {
 	storage              store.Store
-	indexer              index.Indexer
 	searcher             search.Searcher
 	policyCategoryEdgeDS datastore.DataStore
 	categoryMutex        sync.Mutex
@@ -118,24 +113,6 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 	return ds.policyCategoryEdgeDS.UpsertMany(ctx, policyCategoryEdges)
 }
 
-func (ds *datastoreImpl) buildIndex() error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	var categories []*storage.PolicyCategory
-	walkFn := func() error {
-		categories = categories[:0]
-		return ds.storage.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
-			categories = append(categories, category)
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		return err
-	}
-	return ds.indexer.AddPolicyCategories(categories)
-}
-
 func (ds *datastoreImpl) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
@@ -209,7 +186,7 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 	return categories, nil
 }
 
-// AddPolicyCategory inserts a policy category into the storage and the indexer
+// AddPolicyCategory inserts a policy category into the storage.
 func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storage.PolicyCategory) (*storage.PolicyCategory, error) {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return nil, err
@@ -232,7 +209,7 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	}
 	ds.categoryNameIDMap[category.GetName()] = category.GetId()
 
-	return category, ds.indexer.AddPolicyCategory(category)
+	return category, nil
 }
 
 // RenamePolicyCategory renames a policy category
@@ -268,11 +245,6 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	delete(ds.categoryNameIDMap, existingCategoryName)
 	ds.categoryNameIDMap[category.GetName()] = category.GetId()
 
-	err = ds.indexer.AddPolicyCategory(category)
-	if err != nil {
-		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
-	}
-
 	return &storage.PolicyCategory{
 		Id:        category.GetId(),
 		Name:      category.GetName(),
@@ -280,7 +252,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	}, nil
 }
 
-// DeletePolicyCategory removes a policy from the storage and the indexer
+// DeletePolicyCategory removes a policy from the storage
 func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) error {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -306,6 +278,5 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 		return err
 	}
 	delete(ds.categoryNameIDMap, category.GetName())
-
-	return ds.indexer.DeletePolicyCategory(id)
+	return nil
 }

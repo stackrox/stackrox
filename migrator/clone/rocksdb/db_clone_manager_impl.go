@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -81,9 +80,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return errors.Errorf("Cannot find database at %s", filepath.Join(d.basePath, CurrentClone))
-	}
 	if currExists && (currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0) {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 		prevClone, prevExists := d.cloneMap[PreviousClone]
@@ -148,7 +144,7 @@ func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
 
 	currClone, currExists := d.cloneMap[CurrentClone]
 	// If our focus is Postgres, and there is no Rocks current, then we can ignore Rocks
-	if !currExists && env.PostgresDatastoreEnabled.BooleanSetting() {
+	if !currExists {
 		log.Warn("cannot find current clone for RocksDB")
 		return "", "", nil
 	}
@@ -261,11 +257,7 @@ func (d *dbCloneManagerImpl) rollbackEnabled() bool {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		// If our focus is Postgres, just log the error and ignore Rocks as that likely means no PVC
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn("cannot find current clone for RocksDB")
-		} else {
-			utils.Should(errors.New("cannot find current clone"))
-		}
+		log.Warn("cannot find current clone for RocksDB")
 
 		return false
 	}
@@ -276,11 +268,7 @@ func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
 	currClone, currExists := d.cloneMap[CurrentClone]
 	if !currExists {
 		// If our focus is Postgres, just log the error and ignore Rocks
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn("cannot find current clone for RocksDB")
-		} else {
-			utils.Should(errors.New("cannot find current clone"))
-		}
+		log.Warn("cannot find current clone for RocksDB")
 
 		return false
 	}

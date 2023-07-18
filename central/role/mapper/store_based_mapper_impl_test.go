@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (

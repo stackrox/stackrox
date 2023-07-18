@@ -9,7 +9,7 @@ import {
     Alert,
 } from '@patternfly/react-core';
 
-import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import useFetchNotifiers from 'hooks/useFetchNotifiers';
 import useTableSelection from 'hooks/useTableSelection';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';

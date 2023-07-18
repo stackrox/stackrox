@@ -31,6 +31,8 @@ const (
 	sensorTLSSecretName           = "sensor-tls"
 	admissionControlTLSSecretName = "admission-control-tls"
 	collectorTLSSecretName        = "collector-tls"
+
+	legacyCollectionKernelModule = "KernelModule"
 )
 
 var (
@@ -223,6 +225,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
+	acv.SetInt32("replicas", admissionControl.Replicas)
 
 	return &acv
 }
@@ -260,6 +263,7 @@ func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translati
 
 	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))
 	cv.AddAllFrom(t.getComplianceContainerValues(perNode.Compliance))
+	cv.AddAllFrom(t.getNodeInventoryContainerValues(perNode.NodeInventory))
 
 	return &cv
 }
@@ -275,12 +279,14 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 		switch *c {
 		case platform.CollectionEBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
-		case platform.CollectionKernelModule:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_KERNEL_MODULE.String())
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		case platform.CollectionCOREBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
+		case legacyCollectionKernelModule:
+			// Kernel module collection has been removed, but for the
+			// purposes of upgrades, we translate it to EBPF
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
 		}
@@ -309,6 +315,17 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 
 	cv := translation.NewValuesBuilder()
 	cv.AddChild("complianceResources", translation.GetResources(compliance.Resources))
+
+	return &cv
+}
+
+func (t Translator) getNodeInventoryContainerValues(nodeInventory *platform.ContainerSpec) *translation.ValuesBuilder {
+	if nodeInventory == nil {
+		return nil
+	}
+
+	cv := translation.NewValuesBuilder()
+	cv.AddChild("nodeScanningResources", translation.GetResources(nodeInventory.Resources))
 
 	return &cv
 }

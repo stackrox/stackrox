@@ -1,21 +1,26 @@
 import React from 'react';
 import { Tooltip } from '@patternfly/react-core';
 
-import { getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getDateTime, getDistanceStrict, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
-export type DatePhraseTdProps = {
+export type DateDistanceTdProps = {
     date: string | number | Date | null | undefined;
+    asPhrase?: boolean;
 };
 
-function DatePhraseTd({ date }: DatePhraseTdProps) {
+function DateDistanceTd({ date, asPhrase = true }: DateDistanceTdProps) {
     if (!date) {
         return null;
     }
     return (
         <Tooltip content={getDateTime(date)}>
-            <span>{getDistanceStrictAsPhrase(date, new Date())}</span>
+            <span>
+                {asPhrase
+                    ? getDistanceStrictAsPhrase(date, new Date())
+                    : getDistanceStrict(date, new Date())}
+            </span>
         </Tooltip>
     );
 }
 
-export default DatePhraseTd;
+export default DateDistanceTd;

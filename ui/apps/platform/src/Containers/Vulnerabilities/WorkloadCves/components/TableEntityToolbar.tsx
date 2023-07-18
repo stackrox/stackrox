@@ -28,7 +28,10 @@ function TableEntityToolbar({
     const { page, perPage, setPage, setPerPage } = pagination;
     return (
         <>
-            <WorkloadTableToolbar defaultFilters={defaultFilters} />
+            <WorkloadTableToolbar
+                defaultFilters={defaultFilters}
+                onFilterChange={() => setPage(1)}
+            />
             <Divider component="div" />
             <Toolbar>
                 <ToolbarContent>
@@ -48,7 +51,6 @@ function TableEntityToolbar({
                     )}
                     <ToolbarItem alignment={{ default: 'alignRight' }} variant="pagination">
                         <Pagination
-                            isCompact
                             itemCount={tableRowCount}
                             page={page}
                             perPage={perPage}

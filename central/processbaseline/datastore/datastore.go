@@ -4,25 +4,21 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
-	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
 
-// DataStore wraps storage, indexer, and searcher for ProcessBaselines.
+// DataStore wraps storage, and searcher for ProcessBaselines.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
@@ -46,11 +42,10 @@ type DataStore interface {
 	ClearProcessBaselines(ctx context.Context, ids []string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(storage store.Store, searcher search.Searcher, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
 	d := &datastoreImpl{
 		storage:                storage,
-		indexer:                indexer,
 		searcher:               searcher,
 		baselineLock:           concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		processBaselineResults: processBaselineResults,
@@ -60,7 +55,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.New(pool)
 	store, err := pgStore.NewWithCache(dbStore)
 	require.NoError(t, err)
@@ -77,27 +72,5 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
-	return New(store, indexer, searcher, resultsStore, indicatorStore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	dbstore, err := rocksdb.New(rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	indexer := index.New(bleveIndex)
-	searcher, err := search.New(dbstore, indexer)
-	if err != nil {
-		return nil, err
-	}
-	resultsStore, err := datastore.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	indicatorStore, err := processIndicatorDatastore.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex)
-	if err != nil {
-		return nil, err
-	}
-	return New(dbstore, indexer, searcher, resultsStore, indicatorStore), nil
+	return New(store, searcher, resultsStore, indicatorStore), nil
 }

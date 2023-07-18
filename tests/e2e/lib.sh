@@ -89,6 +89,7 @@ export_test_environment() {
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
     ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
+    ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
@@ -97,16 +98,14 @@ export_test_environment() {
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_DISABLE_COMPLIANCE_STANDARDS "${ROX_DISABLE_COMPLIANCE_STANDARDS:-true}"
-    ci_export ROX_NETWORK_GRAPH_PATTERNFLY "${ROX_NETWORK_GRAPH_PATTERNFLY:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-false}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
-
-    if [[ -z "${BUILD_TAG:-}" ]]; then
-        # TODO(ROX-16008): Remove this once the declarative config feature flag is enabled by default.
-        ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
-    fi
+    ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
+    ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
+    ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
+    ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -188,8 +187,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
-    customize_envVars+=$'\n      - name: ROX_DECLARATIVE_CONFIGURATION'
-    customize_envVars+=$'\n        value: "'"${ROX_DECLARATIVE_CONFIGURATION:-true}"'"'
+    customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
+    customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
@@ -287,6 +286,11 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
 
+    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
+       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
+       kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
+    fi
+
     # Every E2E test should have ROX_RESYNC_DISABLED="true"
     kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
 }
@@ -305,6 +309,30 @@ export_central_basic_auth_creds() {
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+}
+
+deploy_optional_e2e_components() {
+    info "Installing optional components used in E2E tests"
+
+    if [[ "${INSTALL_COMPLIANCE_OPERATOR:-false}" == "true" ]]; then
+        install_the_compliance_operator
+    else
+        info "Skipping the compliance operator install"
+    fi
+}
+
+install_the_compliance_operator() {
+    info "Installing the compliance operator"
+
+    # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
+
+    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
+    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
+    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
+
+    wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+
+    oc get csv -n openshift-compliance
 }
 
 setup_client_CA_auth_provider() {
@@ -343,15 +371,9 @@ setup_generated_certs_for_test() {
 
 setup_podsecuritypolicies_config() {
     info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
-    local version
-    version=$(kubectl version --output json)
-    local majorVersion
-    majorVersion=$(echo "$version" | jq -r .serverVersion.major)
-    local minorVersion
-    minorVersion=$(echo "$version" | jq -r .serverVersion.minor)
 
-    # PodSecurityPolicy was removed in version 1.25
-    if (( "$majorVersion" >= 1 && "$minorVersion" >= 25 )); then
+    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
         ci_export "POD_SECURITY_POLICIES" "false"
         info "POD_SECURITY_POLICIES set to false"
     else
@@ -472,7 +494,9 @@ check_for_stackrox_OOMs() {
 }
 
 check_for_stackrox_restarts() {
-        if [[ "$#" -ne 1 ]]; then
+    info "Checking for unexplained restarts by stackrox pods"
+
+    if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: check_for_stackrox_restarts <dir>"
     fi
 
@@ -485,12 +509,20 @@ check_for_stackrox_restarts() {
     local previous_logs
     previous_logs=$(ls "$dir"/stackrox/pods/*-previous.log || true)
     if [[ -n "$previous_logs" ]]; then
-        echo >&2 "Previous logs found"
+        info "Pod restarts were found"
+        local check_out=""
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs; then
-            exit 1
+        if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
+            save_junit_failure "Pod Restarts" "Check for unexplained pod restart" "${check_out}"
+            die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
+        info "Restarts were considered benign"
+        echo "${check_out}"
+    else
+        info "No pod restarts were found"
     fi
+
+    save_junit_success "Pod Restarts" "Check for unexplained pod restart"
 }
 
 check_for_errors_in_stackrox_logs() {
@@ -589,7 +621,6 @@ wait_for_api() {
 
     info "Central deployment is ready."
     info "Waiting for Central API endpoint"
-
     API_HOSTNAME=localhost
     API_PORT=8000
     LOAD_BALANCER="${LOAD_BALANCER:-}"

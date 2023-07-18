@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package email
 
@@ -8,13 +7,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const (

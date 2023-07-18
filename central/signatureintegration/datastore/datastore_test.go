@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -5,19 +7,19 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	policyDataStoreMock "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
-	signatureRocksdb "github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
+	"github.com/stackrox/rox/central/signatureintegration/store"
+	"github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSignatureDataStore(t *testing.T) {
@@ -33,8 +35,8 @@ type signatureDataStoreTestSuite struct {
 	noAccessCtx context.Context
 
 	dataStore         DataStore
-	storage           signatureRocksdb.Store
-	rocksie           *rocksdb.RocksDB
+	db                *pgtest.TestPostgres
+	storage           store.SignatureIntegrationStore
 	policyStorageMock *policyDataStoreMock.MockDataStore
 }
 
@@ -49,9 +51,9 @@ func (s *signatureDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Integration)))
 	s.noAccessCtx = sac.WithNoAccess(context.Background())
 
-	s.rocksie = rocksdbtest.RocksDBForT(s.T())
+	s.db = pgtest.ForT(s.T())
 	var err error
-	s.storage, err = signatureRocksdb.New(s.rocksie)
+	s.storage = postgres.New(s.db)
 	s.Require().NoError(err)
 
 	s.policyStorageMock = policyDataStoreMock.NewMockDataStore(gomock.NewController(s.T()))
@@ -265,7 +267,7 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 }
 
 func (s *signatureDataStoreTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksie)
+	s.db.Teardown(s.T())
 }
 
 func TestRemovePoliciesInvisibleToUser(t *testing.T) {

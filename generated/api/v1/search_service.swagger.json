@@ -94,6 +94,9 @@
                 "POLICY_CATEGORY_EDGE",
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
+                "REPORT_METADATA",
+                "REPORT_SNAPSHOT",
+                "COMPLIANCE_INTEGRATIONS",
                 "BLOB"
               ]
             },
@@ -188,6 +191,9 @@
                 "POLICY_CATEGORY_EDGE",
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
+                "REPORT_METADATA",
+                "REPORT_SNAPSHOT",
+                "COMPLIANCE_INTEGRATIONS",
                 "BLOB"
               ]
             },
@@ -276,6 +282,9 @@
                 "POLICY_CATEGORY_EDGE",
                 "PROCESS_LISTENING_ON_PORT",
                 "API_TOKEN",
+                "REPORT_METADATA",
+                "REPORT_SNAPSHOT",
+                "COMPLIANCE_INTEGRATIONS",
                 "BLOB"
               ]
             },
@@ -413,10 +422,13 @@
         "POLICY_CATEGORY_EDGE",
         "PROCESS_LISTENING_ON_PORT",
         "API_TOKEN",
+        "REPORT_METADATA",
+        "REPORT_SNAPSHOT",
+        "COMPLIANCE_INTEGRATIONS",
         "BLOB"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 53"
+      "title": "Next available tag: 56"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

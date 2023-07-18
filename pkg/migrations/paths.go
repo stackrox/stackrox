@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/migrations/internal"
 	"github.com/stackrox/rox/pkg/utils"
@@ -16,10 +15,6 @@ const (
 	Current = "current"
 	// PreviousClone is the symbolic link pointing to the previous databases.
 	PreviousClone = ".previous"
-	// BackupClone is the symbolic link pointing to the previous databases.
-	BackupClone = ".backup"
-	// RestoreClone is the symbolic link pointing to the restored database
-	RestoreClone = ".restore"
 
 	// CurrentDatabase - current database
 	CurrentDatabase = "central_active"
@@ -44,34 +39,22 @@ func CurrentPath() string {
 
 // GetCurrentClone - returns the current clone
 func GetCurrentClone() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return CurrentDatabase
-	}
-	return Current
+	return CurrentDatabase
 }
 
 // GetBackupClone - returns the backup clone
 func GetBackupClone() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return BackupDatabase
-	}
-	return BackupClone
+	return BackupDatabase
 }
 
 // GetPreviousClone - returns the previous clone
 func GetPreviousClone() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return PreviousDatabase
-	}
-	return PreviousClone
+	return PreviousDatabase
 }
 
 // GetRestoreClone - returns the restore clone
 func GetRestoreClone() string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return RestoreDatabase
-	}
-	return RestoreClone
+	return RestoreDatabase
 }
 
 // SafeRemoveDBWithSymbolicLink removes databases in path if it exists, it protects current database and remove only the databases that is not in use.

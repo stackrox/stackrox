@@ -4,15 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestReportConfigurationServicePostgres(t *testing.T) {
@@ -31,15 +30,11 @@ type ReportConfigurationServicePostgresTestSuite struct {
 
 func (s *ReportConfigurationServicePostgresTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres tests")
-		s.T().SkipNow()
-	}
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.collectionDatastore = collectionMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, nil, s.collectionDatastore, s.manager)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.collectionDatastore, s.manager)
 }
 
 func (s *ReportConfigurationServicePostgresTestSuite) TearDownTest() {

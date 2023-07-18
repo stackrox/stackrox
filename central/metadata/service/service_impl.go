@@ -9,20 +9,37 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/metadata/centralcapabilities"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(): {
+			"/v1.MetadataService/GetDatabaseStatus",
+			"/v1.MetadataService/GetDatabaseBackupStatus",
+			"/v1.MetadataService/GetCentralCapabilities",
+		},
+		allow.Anonymous(): {
+			"/v1.MetadataService/GetMetadata",
+			"/v1.MetadataService/TLSChallenge",
+		},
+	})
 )
 
 // Service is the struct that manages the Metadata API
@@ -45,7 +62,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetMetadata returns the metadata for Rox.
@@ -75,10 +92,10 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	sensorChallenge := req.GetChallengeToken()
 	sensorChallengeBytes, err := base64.URLEncoding.DecodeString(sensorChallenge)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "challenge token must be a valid base64 string: %s", err)
+		return nil, errox.InvalidArgs.CausedByf("challenge token must be a valid base64 string: %v", err)
 	}
 	if len(sensorChallengeBytes) != centralsensor.ChallengeTokenLength {
-		return nil, errors.Wrapf(errox.InvalidArgs, "base64 decoded challenge token must be %d bytes long, got %s", centralsensor.ChallengeTokenLength, sensorChallenge)
+		return nil, errox.InvalidArgs.CausedByf("base64 decoded challenge token must be %d bytes long, received challenge %q was %d bytes", centralsensor.ChallengeTokenLength, sensorChallenge, len(sensorChallengeBytes))
 	}
 
 	// Create central challenge token
@@ -147,18 +164,14 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 		DatabaseAvailable: true,
 	}
 
-	dbType := v1.DatabaseStatus_RocksDB
-	var dbVersion string
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		dbType = v1.DatabaseStatus_PostgresDB
-		if err := s.db.Ping(ctx); err != nil {
-			dbStatus.DatabaseAvailable = false
-			log.Warn("central is unable to communicate with the database.")
-			return dbStatus, nil
-		}
-
-		dbVersion = globaldb.GetPostgresVersion(ctx, s.db)
+	dbType := v1.DatabaseStatus_PostgresDB
+	if err := s.db.Ping(ctx); err != nil {
+		dbStatus.DatabaseAvailable = false
+		log.Warn("central is unable to communicate with the database.")
+		return dbStatus, nil
 	}
+
+	dbVersion := globaldb.GetPostgresVersion(ctx, s.db)
 
 	// Only return the database type and version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
@@ -171,10 +184,6 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 
 // GetDatabaseBackupStatus return the database backup status.
 func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) (*v1.DatabaseBackupStatus, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("database backup status check is not supported")
-	}
-
 	sysInfo, found, err := s.systemInfoStore.Get(ctx)
 	if err != nil {
 		return nil, err
@@ -185,4 +194,9 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 	return &v1.DatabaseBackupStatus{
 		BackupInfo: sysInfo.GetBackupInfo(),
 	}, nil
+}
+
+// GetCentralCapabilities returns central services capabilities.
+func (s *serviceImpl) GetCentralCapabilities(_ context.Context, _ *v1.Empty) (*v1.CentralServicesCapabilities, error) {
+	return centralcapabilities.GetCentralCapabilities(), nil
 }

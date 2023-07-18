@@ -1329,16 +1329,6 @@ func (s *violationsTestSuite) TestResponseContentType() {
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 }
 
-func (s *violationsTestSuite) TestViolationsHandlerError() {
-	w := httptest.NewRecorder()
-
-	// context.Background() did not go through our context validation and will not include any global access scope.
-	// We use this to make datastore generate an error which will make the request fail.
-	s.Panics(func() {
-		s.prepare().setContext(context.Background()).setAlerts(s.deployAlert).runRequest(w)
-	})
-}
-
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
 	w := mock.NewFailingResponseWriter(errors.New("mock http write error"))
 	s.PanicsWithError("net/http: abort Handler", func() {

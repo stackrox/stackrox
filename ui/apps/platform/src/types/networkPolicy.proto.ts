@@ -56,3 +56,13 @@ export type IPBlock = {
     cidr: string;
     except: string[];
 };
+
+export type NetworkPolicyReference = {
+    namespace: string;
+    name: string;
+};
+
+export type NetworkPolicyModification = {
+    applyYaml: string;
+    toDelete: NetworkPolicyReference[];
+};

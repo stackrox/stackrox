@@ -14,28 +14,6 @@ import Loader from 'Components/Loader';
 import NumberedList from 'Components/NumberedList';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-
-const MOST_COMMON_VULNERABILITIES = gql`
-    query mostCommonVulnerabilitiesInDeployment(
-        $query: String
-        $scopeQuery: String
-        $vulnPagination: Pagination
-    ) {
-        results: vulnerabilities(query: $query, pagination: $vulnPagination) {
-            id
-            cve
-            cvss
-            scoreVersion
-            imageCount
-            deploymentCount
-            createdAt
-            summary
-            isFixable(query: $scopeQuery)
-            envImpact
-        }
-    }
-`;
 
 const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
     query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -61,14 +39,7 @@ const processData = (data, workflowState) => {
 };
 
 const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVMUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
-    const queryToUse = showVMUpdates
-        ? MOST_COMMON_IMAGE_VULNERABILITIES
-        : MOST_COMMON_VULNERABILITIES;
-
-    const { loading, data = {} } = useQuery(queryToUse, {
+    const { loading, data = {} } = useQuery(MOST_COMMON_IMAGE_VULNERABILITIES, {
         variables: {
             query: queryService.objectToWhereClause({
                 'Deployment ID': deploymentId,
@@ -114,14 +85,10 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
         ])
         .toUrl();
 
-    const header = showVMUpdates
-        ? 'Most Common Image Vulnerabilities'
-        : 'Most Common Vulnerabilities';
-
     return (
         <Widget
             className="h-full pdf-page"
-            header={header}
+            header="Most Common Image Vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}

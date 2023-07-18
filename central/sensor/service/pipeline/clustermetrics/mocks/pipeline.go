@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockMetricsStore is a mock of MetricsStore interface.

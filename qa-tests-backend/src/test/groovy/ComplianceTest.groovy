@@ -1326,15 +1326,14 @@ class ComplianceTest extends BaseSpecification {
         String testRole = RoleService.createRoleWithScopeAndPermissionSet(
                 "Compliance Test Automation Role " + UUID.randomUUID(),
                 remoteStackroxAccessScope.id, [
-                "Access"               : READ_WRITE_ACCESS,
-                "Administration"       : READ_WRITE_ACCESS,
-                "Detection"            : READ_WRITE_ACCESS,
-                "Integration"          : READ_WRITE_ACCESS,
-                "Policy"               : READ_WRITE_ACCESS,
-                "Role"                 : READ_WRITE_ACCESS,
-                "Cluster"              : READ_WRITE_ACCESS,
-                "Compliance"           : READ_WRITE_ACCESS,
-                "Node"                 : READ_WRITE_ACCESS,
+                "Access"                    : READ_WRITE_ACCESS,
+                "Administration"            : READ_WRITE_ACCESS,
+                "Detection"                 : READ_WRITE_ACCESS,
+                "Integration"               : READ_WRITE_ACCESS,
+                "WorkflowAdministration"    : READ_WRITE_ACCESS,
+                "Cluster"                   : READ_WRITE_ACCESS,
+                "Compliance"                : READ_WRITE_ACCESS,
+                "Node"                      : READ_WRITE_ACCESS,
         ]).name
 
         "Enable SAC token and add other cluster"

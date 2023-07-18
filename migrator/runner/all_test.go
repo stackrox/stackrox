@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
@@ -9,16 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAllPackagesAreImported(t *testing.T) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return
-	}
 	migrationDirEntries, err := os.ReadDir("../migrations")
 	require.NoError(t, err, "failed to read migrations directory")
 
@@ -35,11 +32,19 @@ func TestAllPackagesAreImported(t *testing.T) {
 		existingMigrations.Add(baseName)
 	}
 
+	var allImports []*ast.ImportSpec
 	f, err := parser.ParseFile(token.NewFileSet(), "all.go", nil, parser.ImportsOnly)
 	require.NoError(t, err, "failed to parse all.go")
 
+	allImports = append(allImports, f.Imports...)
+
+	f, err = parser.ParseFile(token.NewFileSet(), "all_rocksdb.go", nil, parser.ImportsOnly)
+	require.NoError(t, err, "failed to parse all_rocksdb.go")
+
+	allImports = append(allImports, f.Imports...)
+
 	importedMigrations := set.NewStringSet()
-	for _, imp := range f.Imports {
+	for _, imp := range allImports {
 		pkgName := strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, `"`), `"`)
 		pkgBaseName := path.Base(pkgName)
 		if !isMigrationName(pkgBaseName) {

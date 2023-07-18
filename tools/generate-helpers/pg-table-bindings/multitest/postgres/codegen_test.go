@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package postgres
 
@@ -29,17 +28,17 @@ func TestStore(t *testing.T) {
 	defer pgtest.CloseGormDB(t, gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB)
 
-	multiKey := &storage.TestMultiKeyStruct{
+	multiKey := &storage.TestStruct{
 		Key1: "key1",
 		Key2: "key2",
 	}
-	dep, exists, err := store.Get(ctx, multiKey.GetKey1(), multiKey.GetKey2())
+	dep, exists, err := store.Get(ctx, multiKey.GetKey1())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, dep)
 
 	assert.NoError(t, store.Upsert(ctx, multiKey))
-	dep, exists, err = store.Get(ctx, multiKey.GetKey1(), multiKey.GetKey2())
+	dep, exists, err = store.Get(ctx, multiKey.GetKey1())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, multiKey, dep)

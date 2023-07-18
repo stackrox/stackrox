@@ -25,14 +25,6 @@ const (
 	// SensorCreator is a role that has the minimal privileges required to create a sensor.
 	SensorCreator = "Sensor Creator"
 
-	// VulnerabilityManager is a role that has the necessary privileges required to view and manage system vulnerabilities and its insights.
-	// This includes privileges to:
-	// - view cluster, node, namespace, deployments, images (along with its scan data), and vulnerability requests.
-	// - view and create requests to watch images for vulnerability insights.
-	// - view and request vulnerability deferrals or false positives. This does include permissions to approve vulnerability requests.
-	// - view and create vulnerability reports.
-	VulnerabilityManager = "Vulnerability Manager"
-
 	// VulnMgmtApprover is a role that has the minimal privileges required to approve vulnerability deferrals or false positive requests.
 	VulnMgmtApprover = "Vulnerability Management Approver"
 
@@ -42,15 +34,11 @@ const (
 	// TODO: ROX-14398 Remove default role VulnReporter
 	// VulnReporter is a role that has the minimal privileges required to create and manage vulnerability reporting configurations.
 	VulnReporter = "Vulnerability Report Creator"
-
-	// TODO: ROX-14398 Remove ScopeManager default role
-	// ScopeManager is a role that has the minimal privileges to view and modify scopes for use in access control, vulnerability reporting etc.
-	ScopeManager = "Scope Manager"
 )
 
 var (
 	// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnerabilityManager, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
+	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
 )
 
 // IsDefaultRole will return true if the given role name is a default role.

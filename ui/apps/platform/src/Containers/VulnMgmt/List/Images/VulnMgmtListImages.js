@@ -16,20 +16,16 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
-import {
-    IMAGE_LIST_FRAGMENT,
-    OLD_IMAGE_LIST_FRAGMENT,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import WatchedImagesDialog from './WatchedImagesDialog';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultImageSort = [
     {
@@ -38,9 +34,7 @@ export const defaultImageSort = [
     },
 ];
 
-export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagEnabled) {
-    const isFrontendVMUpdatesEnabled = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-
+export function getCurriedImageTableColumns(watchedImagesTrigger) {
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -58,18 +52,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 sortField: imageSortFields.NAME,
             },
             {
-                Header: isFrontendVMUpdatesEnabled ? 'Image CVEs' : 'CVEs',
-                entityType: isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE,
+                Header: 'Image CVEs',
+                entityType: entityTypes.IMAGE_CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id, scanTime, scanNotes, notes } = original;
 
-                    const newState = workflowState
-                        .pushListItem(id)
-                        .pushList(
-                            isFrontendVMUpdatesEnabled ? entityTypes.IMAGE_CVE : entityTypes.CVE
-                        );
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.IMAGE_CVE);
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -183,13 +173,7 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <ImageTableCountLinks
-                        row={original}
-                        textOnly={pdf}
-                        isFrontendVMUpdatesEnabled={isFrontendVMUpdatesEnabled}
-                    />
-                ),
+                Cell: ({ original, pdf }) => <ImageTableCountLinks row={original} textOnly={pdf} />,
                 accessor: 'entities',
                 sortable: false,
             },
@@ -218,9 +202,7 @@ const VulnMgmtImages = ({
 }) => {
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showVmUpdates = isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE');
-    const fragmentToUse = showVmUpdates ? IMAGE_LIST_FRAGMENT : OLD_IMAGE_LIST_FRAGMENT;
+    const fragmentToUse = IMAGE_LIST_FRAGMENT;
 
     const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);
 
@@ -267,10 +249,7 @@ const VulnMgmtImages = ({
         </PanelButton>
     ) : null;
 
-    const getImageTableColumns = getCurriedImageTableColumns(
-        toggleWatchedImagesDialog,
-        isFeatureFlagEnabled
-    );
+    const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
 
     return (
         <>

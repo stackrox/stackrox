@@ -16,7 +16,7 @@ SILENT ?= @
 # UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -68,7 +68,7 @@ ifeq ($(UNAME_S),Darwin)
 ifeq ($(UNAME_M),arm64)
 	# TODO(ROX-12064) build these images in the CI pipeline
 	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.58-arm64
+	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.59-arm64
 endif
 endif
 
@@ -118,7 +118,7 @@ $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
 $(call go-tool, CONTROLLER_GEN_BIN, sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
-$(call go-tool, MOCKGEN_BIN, github.com/golang/mock/mockgen)
+$(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
 
@@ -351,13 +351,16 @@ build-prep: deps
 .PHONY: cli-build
 cli-build: cli-linux cli-darwin cli-windows
 
-.PHONY: cli
-cli: cli-build
+.PHONY: cli-install
+cli-install:
 	# Workaround a bug on MacOS
 	rm -f $(GOPATH)/bin/roxctl
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)_$(GOARCH)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
+
+.PHONY: cli
+cli: cli-build cli-install
 
 cli-linux: cli_linux-amd64 cli_linux-arm64 cli_linux-ppc64le cli_linux-s390x
 cli-darwin: cli_darwin-amd64 cli_darwin-arm64
@@ -367,7 +370,14 @@ cli_%: build-prep
 	$(eval    w := $(subst -, ,$*))
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
+ifdef SKIP_CLI_BUILD
+	test -f bin/$(os)_$(arch)/roxctl || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+else
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+endif
+
+.PHONY: cli_host-arch
+cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
 
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
@@ -433,7 +443,7 @@ endif
 .PHONY: scale-build
 scale-build: build-prep
 	@echo "+ $@"
-	CGO_ENABLED=0 $(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler scale/chaos
+	CGO_ENABLED=0 $(GOBUILD) scale/profiler scale/chaos
 
 .PHONY: webhookserver-build
 webhookserver-build: build-prep
@@ -496,7 +506,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' '*clone_test.go' 'migrator/migrations/n_*/migration_test.go' 'migrator/migrations/m_16?_*/migration_test.go' 'migrator/migrations/m_17?_*/migration_test.go' '*pruning_test.go' '*reprocessor_test.go' '*enricher_impl_test.go' '*v2/parts_test.go' '*version/ensure_test.go' '*version/store/store_impl_test.go' '*activecomponent/updater/updater_impl_test.go' '*role/service/service_impl_test.go' '*role/validate_test.go' '*search/service/service_impl_test.go' '*deployment/service/service_impl_test.go' '*metadata/service/service_impl_test.go' '*systeminfo/listener/listener_test.go' '*processlisteningonport/datastore/datastore_impl_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -559,24 +569,19 @@ main-image: all-builds
 $(CURDIR)/image/rhel/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
-.PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
-$(CURDIR)/image/rhel/Dockerfile.gen:
-	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-	LABEL_VERSION=$(TAG) \
-	LABEL_RELEASE=$(TAG) \
-	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
-	envsubst '$${ROX_IMAGE_FLAVOR} $${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
-	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
-
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
-                         $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/rhel/Dockerfile.gen
+                         $(CURDIR)/image/rhel/bundle.tar.gz
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
-		--file image/rhel/Dockerfile.gen \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--build-arg LABEL_VERSION=$(TAG) \
+		--build-arg LABEL_RELEASE=$(TAG) \
+		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
@@ -634,8 +639,6 @@ endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bin/linux_$(GOARCH)/mocksensor scale/image/bin/mocksensor
-	cp bin/linux_$(GOARCH)/mockcollector scale/image/bin/mockcollector
 	cp bin/linux_$(GOARCH)/profiler scale/image/bin/profiler
 	cp bin/linux_$(GOARCH)/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
@@ -673,19 +676,12 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
-.PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
-$(CURDIR)/image/postgres/Dockerfile.gen:
-	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-	envsubst '$${ROX_IMAGE_FLAVOR}' \
-	< $(CURDIR)/image/postgres/Dockerfile.envsubst > $(CURDIR)/image/postgres/Dockerfile.gen
-
 .PHONY: central-db-image
-central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz $(CURDIR)/image/postgres/Dockerfile.gen
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
 	docker build \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
-		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-		--file image/postgres/Dockerfile.gen \
+		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
 
@@ -766,7 +762,7 @@ endif
 .PHONY: roxvet
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
-	# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
+	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
 	$(SILENT)go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v 'operator/pkg/clientset')
 
 ##########
@@ -802,3 +798,7 @@ mitre:
 	@echo "+ $@"
 	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/mitre
 	go install ./tools/mitre
+
+.PHONY: bootstrap_migration
+bootstrap_migration:
+	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi

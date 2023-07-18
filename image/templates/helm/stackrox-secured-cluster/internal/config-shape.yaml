@@ -65,6 +65,7 @@ ca:
 sensor:
   imagePullPolicy: null # string
   endpoint: null # string
+  affinity: null # dict
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -89,6 +90,7 @@ admissionControl:
     enforceOnUpdates: null # bool
   imagePullPolicy: null # string
   replicas: null # int
+  affinity: null # dict
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -101,6 +103,7 @@ collector:
   disableTaintTolerations: null # bool
   slimMode: null # bool
   imagePullPolicy: null # string
+  tolerations: null # [dict]
   resources: null # string | dict
   complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
@@ -142,6 +145,9 @@ customize:
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 enableOpenShiftMonitoring: null # bool
+monitoring:
+  openshift:
+    enabled: null # bool
 meta:
   namespaceOverride: null # bool
   useLookup: null # bool

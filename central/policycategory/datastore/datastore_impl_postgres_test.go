@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package datastore
 
@@ -57,12 +56,11 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupTest() {
 	policyCategoryEdgeStorage := policyCategoryEdgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	policyCategoryEdgeIndexer := policyCategoryEdgePostgres.NewIndexer(s.db)
 	policyCategorySearcher := policyCategoryEdgeSearch.New(policyCategoryEdgeStorage, policyCategoryEdgeIndexer)
-	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage, policyCategoryEdgeIndexer, policyCategorySearcher)
+	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage, policyCategorySearcher)
 
 	policyCategoryStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	policyCategoryIndexer := pgStore.NewIndexer(s.db)
-	s.datastore = New(policyCategoryStore, policyCategoryIndexer,
-		policyCategorySearch.New(policyCategoryStore, policyCategoryIndexer), s.edgeDatastore)
+	s.datastore = New(policyCategoryStore, policyCategorySearch.New(policyCategoryStore, policyCategoryIndexer), s.edgeDatastore)
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) TearDownSuite() {
@@ -79,7 +77,7 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Policy),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration),
 	))
 
 	// Add category.

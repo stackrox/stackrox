@@ -47,7 +47,8 @@ function FilterResourceDropdown({
     return (
         <Select
             variant="single"
-            aria-label="resource"
+            toggleAriaLabel="resource filter menu toggle"
+            aria-label="resource filter menu items"
             onToggle={onToggle}
             onSelect={onResourceSelect}
             selections={resource}

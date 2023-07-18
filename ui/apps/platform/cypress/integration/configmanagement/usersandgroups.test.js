@@ -1,14 +1,14 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    visitConfigurationManagementEntityInSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
     clickOnCountWidget,
-    entityListCountMatchesTableLinkCount,
+    hasCountWidgetsFor,
     hasTabsFor,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
+    navigateToSingleEntityPage,
+    verifyTableLinkToSidePanelTable,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
+    visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'subjects';
@@ -20,8 +20,8 @@ describe('Configuration Management Subjects (Users and Groups)', () => {
         visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
-    it('should open the side panel to show the same number of roles when the roles link is clicked', () => {
-        entityListCountMatchesTableLinkCount(entitiesKey, 'roles', /^\d+ Roles?$/);
+    it('should go from table link to roles table in side panel', () => {
+        verifyTableLinkToSidePanelTable(entitiesKey, 'roles');
     });
 
     it('should take you to a subject single when the "navigate away" button is clicked', () => {
@@ -47,18 +47,15 @@ describe('Configuration Management Subjects (Users and Groups)', () => {
         clickOnCountWidget('roles', 'entityList');
     });
 
-    describe('should have same number in roles table as in count widget', () => {
+    describe('should go to roles table from widget link', () => {
         const entitiesKey2 = 'roles';
 
-        it('of page', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            visitConfigurationManagementEntityInSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

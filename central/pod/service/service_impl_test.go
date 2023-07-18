@@ -1,22 +1,23 @@
+//go:build sql_integration
+
 package service
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestAuthz(t *testing.T) {
@@ -72,13 +73,12 @@ func TestGetPods(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			rocksDB := rocksdbtest.RocksDBForT(t)
-			defer rocksDB.Close()
+			pgtestbase := pgtest.ForT(t)
+			require.NotNil(t, pgtestbase)
+			pool := pgtestbase.DB
+			defer pgtestbase.Teardown(t)
 
-			bleveIndex, err := globalindex.MemOnlyIndex()
-			require.NoError(t, err)
-
-			podsDS, err := datastore.NewRocksDB(rocksDB, bleveIndex, mockIndicators, mockFilter)
+			podsDS, err := datastore.NewPostgresDB(pool, mockIndicators, mockFilter)
 			require.NoError(t, err)
 
 			for _, pod := range c.pods {

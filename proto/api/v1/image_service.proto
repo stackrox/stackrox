@@ -68,6 +68,13 @@ message EnrichLocalImageInternalRequest {
     repeated scannerV1.Note     notes            = 6;
     repeated storage.Image.Note image_notes      = 7;
     string                      error            = 8;
+    string                      request_id       = 9;
+    bool                        force            = 10;
+}
+
+message UpdateLocalScanStatusInternalRequest {
+    string request_id = 1;
+    string error      = 2;
 }
 
 message DeleteImagesRequest {
@@ -170,6 +177,11 @@ service ImageService {
     // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
     // includes the image's vulnerabilities as well as the signature verification data.
     rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
+
+    // UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
+    // prevent local enrichment from occurring (such as no scanner, throttled, etc.).
+    rpc UpdateLocalScanStatusInternal (UpdateLocalScanStatusInternalRequest) returns (Empty);
+
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {

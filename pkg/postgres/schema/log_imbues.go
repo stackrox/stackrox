@@ -30,11 +30,12 @@ var (
 )
 
 const (
+	// LogImbuesTableName specifies the name of the table in postgres.
 	LogImbuesTableName = "log_imbues"
 )
 
 // LogImbues holds the Gorm model for Postgres table `log_imbues`.
 type LogImbues struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

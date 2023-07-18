@@ -10,7 +10,7 @@ import (
 
 	request "github.com/aws/aws-sdk-go/aws/request"
 	securityhub "github.com/aws/aws-sdk-go/service/securityhub"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSecurityHubAPI is a mock of SecurityHubAPI interface.
@@ -2049,6 +2049,89 @@ func (mr *MockSecurityHubAPIMockRecorder) GetFindingAggregatorWithContext(arg0, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingAggregatorWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingAggregatorWithContext), varargs...)
+}
+
+// GetFindingHistory mocks base method.
+func (m *MockSecurityHubAPI) GetFindingHistory(arg0 *securityhub.GetFindingHistoryInput) (*securityhub.GetFindingHistoryOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFindingHistory", arg0)
+	ret0, _ := ret[0].(*securityhub.GetFindingHistoryOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFindingHistory indicates an expected call of GetFindingHistory.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingHistory(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingHistory", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingHistory), arg0)
+}
+
+// GetFindingHistoryPages mocks base method.
+func (m *MockSecurityHubAPI) GetFindingHistoryPages(arg0 *securityhub.GetFindingHistoryInput, arg1 func(*securityhub.GetFindingHistoryOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFindingHistoryPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetFindingHistoryPages indicates an expected call of GetFindingHistoryPages.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingHistoryPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingHistoryPages", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingHistoryPages), arg0, arg1)
+}
+
+// GetFindingHistoryPagesWithContext mocks base method.
+func (m *MockSecurityHubAPI) GetFindingHistoryPagesWithContext(arg0 context.Context, arg1 *securityhub.GetFindingHistoryInput, arg2 func(*securityhub.GetFindingHistoryOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetFindingHistoryPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetFindingHistoryPagesWithContext indicates an expected call of GetFindingHistoryPagesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingHistoryPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingHistoryPagesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingHistoryPagesWithContext), varargs...)
+}
+
+// GetFindingHistoryRequest mocks base method.
+func (m *MockSecurityHubAPI) GetFindingHistoryRequest(arg0 *securityhub.GetFindingHistoryInput) (*request.Request, *securityhub.GetFindingHistoryOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFindingHistoryRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.GetFindingHistoryOutput)
+	return ret0, ret1
+}
+
+// GetFindingHistoryRequest indicates an expected call of GetFindingHistoryRequest.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingHistoryRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingHistoryRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingHistoryRequest), arg0)
+}
+
+// GetFindingHistoryWithContext mocks base method.
+func (m *MockSecurityHubAPI) GetFindingHistoryWithContext(arg0 context.Context, arg1 *securityhub.GetFindingHistoryInput, arg2 ...request.Option) (*securityhub.GetFindingHistoryOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetFindingHistoryWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.GetFindingHistoryOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFindingHistoryWithContext indicates an expected call of GetFindingHistoryWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingHistoryWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingHistoryWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingHistoryWithContext), varargs...)
 }
 
 // GetFindings mocks base method.

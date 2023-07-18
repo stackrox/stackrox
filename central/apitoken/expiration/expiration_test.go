@@ -11,7 +11,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	apiTokenDataStore "github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,9 +34,6 @@ type apiTokenExpirationNotifierTestSuite struct {
 }
 
 func (s *apiTokenExpirationNotifierTestSuite) SetupSuite() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Notification of expired API tokens is only supported in Postgres mode.")
-	}
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
@@ -147,12 +143,12 @@ func (s *apiTokenExpirationNotifierTestSuite) TestLogGeneration() {
 	generated2 := now.Add(-(4*time.Hour + 10*time.Minute))
 	expiration2 := now.Add(1*time.Hour - 10*time.Minute)
 	token2 := generateToken(&generated2, &expiration2, false)
-	log2 := generateExpiringTokenLog(token1, now, sliceDuration, sliceName)
+	log2 := generateExpiringTokenLog(token2, now, sliceDuration, sliceName)
 	s.Equal(fmt.Sprintf("API Token %s (ID %s) will expire in less than 1 hour.", token2.GetName(), token2.GetId()), log2)
 
 	generated3 := now.Add(-2 * time.Hour)
 	expiration3 := now.Add(3 * time.Hour)
 	token3 := generateToken(&generated3, &expiration3, false)
-	log3 := generateExpiringTokenLog(token1, now, sliceDuration, sliceName)
+	log3 := generateExpiringTokenLog(token3, now, sliceDuration, sliceName)
 	s.Equal(fmt.Sprintf("API Token %s (ID %s) will expire in less than 3 hours.", token3.GetName(), token3.GetId()), log3)
 }

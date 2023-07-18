@@ -9,14 +9,12 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
-	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -39,7 +37,6 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	risks riskDS.DataStore
@@ -48,11 +45,10 @@ type datastoreImpl struct {
 	nodeComponentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore,
+func newDatastoreImpl(storage store.Store, searcher search.Searcher, risks riskDS.DataStore,
 	nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) *datastoreImpl {
 	ds := &datastoreImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: searcher,
 
 		risks: risks,
@@ -257,12 +253,6 @@ func (ds *datastoreImpl) deleteNodeFromStore(ctx context.Context, ids ...string)
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Exists")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if ok, err := ds.canReadNode(ctx, id); err != nil || !ok {
-			return false, err
-		}
-	}
 	return ds.storage.Exists(ctx, id)
 }
 

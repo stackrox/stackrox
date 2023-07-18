@@ -8,7 +8,6 @@ import (
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/central/policy/store/boltdb"
@@ -16,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
@@ -28,20 +26,17 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-	// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-	policySAC = sac.ForResource(resources.Policy)
+	log                       = logging.LoggerForModule()
+	workflowAdministrationSAC = sac.ForResource(resources.WorkflowAdministration)
 
-	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	workflowAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			// TODO: ROX-13888 Replace Policy with WorkflowAdministration.
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 
 type datastoreImpl struct {
 	storage     store.Store
-	indexer     index.Indexer
 	searcher    search.Searcher
 	policyMutex sync.Mutex
 
@@ -50,19 +45,8 @@ type datastoreImpl struct {
 	categoriesDatastore categoriesDataStore.DataStore
 }
 
-func (ds *datastoreImpl) buildIndex() error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	policies, err := ds.storage.GetAll(policyCtx)
-	if err != nil {
-		return err
-	}
-	return ds.indexer.AddPolicies(policies)
-}
-
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 	return ds.searcher.Search(ctx, q)
@@ -70,7 +54,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 	return ds.searcher.Count(ctx, q)
@@ -87,23 +71,21 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 	if err != nil {
 		return nil, err
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		for _, p := range policies {
-			categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
-			if err != nil {
-				log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
-				continue
-			}
-			for _, c := range categories {
-				p.Categories = append(p.Categories, c.GetName())
-			}
+	for _, p := range policies {
+		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
+		if err != nil {
+			log.Errorf("Failed to find categories associated with policy %s: %q. Error: %v", p.GetId(), p.GetName(), err)
+			continue
+		}
+		for _, c := range categories {
+			p.Categories = append(p.Categories, c.GetName())
 		}
 	}
 	return policies, nil
 }
 
 func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -121,9 +103,6 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 }
 
 func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies []*storage.Policy) error {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
 	for _, p := range policies {
 		categories, err := ds.categoriesDatastore.GetPolicyCategoriesForPolicy(ctx, p.GetId())
 		if err != nil {
@@ -136,7 +115,7 @@ func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies []*stor
 	return nil
 }
 func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, nil, err
 	}
 
@@ -153,7 +132,7 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 }
 
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
@@ -172,7 +151,7 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 
 // GetPolicyByName returns policy with given name.
 func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
@@ -195,7 +174,7 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 
 // AddPolicy inserts a policy into the storage and the indexer
 func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) (string, error) {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
@@ -227,27 +206,22 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	// Stash away the category names, since they need to be erased on storage. But the policy insert must happen first,
 	// to get an ID, to satisfy foreign key constraints when policy category edges are added.
 	policyCategories := policy.GetCategories()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		policy.Categories = []string{}
-	}
+	policy.Categories = []string{}
 	err = ds.storage.Upsert(ctx, policy)
 	if err != nil {
 		return policy.Id, err
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
-		if err != nil {
-			return policy.Id, err
-		}
+	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+	if err != nil {
+		return policy.Id, err
 	}
-
-	return policy.Id, ds.indexer.AddPolicy(policy)
+	return policy.Id, nil
 }
 
 // UpdatePolicy updates a policy from the storage and the indexer
 func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -263,22 +237,17 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	defer ds.policyMutex.Unlock()
 	// if feature flag turned on, check if categories need to be created/new policy category edges need to be created/
 	// existing policy category edges need to be removed?
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
-			return err
-		}
-		policy.Categories = []string{}
-	}
-
-	if err := ds.storage.Upsert(ctx, policy); err != nil {
+	if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
 		return err
 	}
-	return ds.indexer.AddPolicy(policy)
+	policy.Categories = []string{}
+
+	return ds.storage.Upsert(ctx, policy)
 }
 
 // RemovePolicy removes a policy from the storage and the indexer
 func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -291,14 +260,11 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
 }
 
 func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) error {
-	if err := ds.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return ds.indexer.DeletePolicy(id)
+	return ds.storage.Delete(ctx, id)
 }
 
 func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {
-	if ok, err := policySAC.WriteAllowed(ctx); err != nil {
+	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, sac.ErrResourceAccessDenied
@@ -399,28 +365,18 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 		}
 
 		policyCategories := policy.GetCategories()
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			policy.Categories = []string{}
-		}
+		policy.Categories = []string{}
 		err = ds.storage.Upsert(ctx, policy)
 		if err != nil {
 			result.Errors = getImportErrorsFromError(err)
 			return result
 		}
 
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
-			if err != nil {
-				result.Errors = getImportErrorsFromError(err)
-				return result
-			}
+		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+		if err != nil {
+			result.Errors = getImportErrorsFromError(err)
+			return result
 		}
-	}
-
-	err = ds.indexer.AddPolicy(policy)
-	if err != nil {
-		result.Errors = getImportErrorsFromError(err)
-		return result
 	}
 	result.Succeeded = true
 	return result
@@ -456,18 +412,14 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 
 	// This should never create a name violation because we just removed any ID/name conflicts
 	policyCategories := policy.GetCategories()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		policy.Categories = []string{}
-	}
+	policy.Categories = []string{}
 	err := ds.storage.Upsert(ctx, policy)
 	if err != nil {
 		return err
 	}
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
-		if err != nil {
-			return err
-		}
+	err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
+	if err != nil {
+		return err
 	}
 
 	return nil

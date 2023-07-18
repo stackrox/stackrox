@@ -1,3 +1,5 @@
+//go:build amd64
+
 package roxdbv1
 
 import (

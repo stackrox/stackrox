@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"google.golang.org/grpc"
@@ -61,7 +61,7 @@ type Detector interface {
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -70,7 +70,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(cache, serviceAccountStore, registryStore),
+		enricher:            newEnricher(cache, serviceAccountStore, registryStore, localScan),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
@@ -277,6 +277,7 @@ func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 	newValue := &cacheValue{
 		image:     image,
 		localScan: d.enricher.localScan,
+		regStore:  d.enricher.regStore,
 	}
 	d.enricher.imageCache.Add(key, newValue)
 	d.admissionCacheNeedsFlush = true
@@ -418,11 +419,6 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 }
 
 func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment) *augmentedobjs.NetworkPoliciesApplied {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		// If feature flag is disabled we simply don't do the calculation.
-		// It is fine (from the Matcher perspective) to use nil augmented objects
-		return nil
-	}
 	networkPolicies := d.networkPolicyStore.Find(deployment.GetNamespace(), deployment.GetPodLabels())
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(networkPolicies)
 }

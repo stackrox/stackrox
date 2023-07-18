@@ -3,7 +3,7 @@ package graph
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )

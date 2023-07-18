@@ -56,13 +56,15 @@ type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
 
-	clusters            common.ClusterManager
-	networkEntities     common.NetworkEntityManager
-	policies            common.PolicyManager
-	baselines           common.ProcessBaselineManager
-	networkBaselines    common.NetworkBaselineManager
-	manager             hashManager.Manager
-	autoTriggerUpgrades *concurrency.Flag
+	clusters                   common.ClusterManager
+	networkEntities            common.NetworkEntityManager
+	policies                   common.PolicyManager
+	baselines                  common.ProcessBaselineManager
+	networkBaselines           common.NetworkBaselineManager
+	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
+	imageIntegrationMgr        common.ImageIntegrationManager
+	manager                    hashManager.Manager
+	autoTriggerUpgrades        *concurrency.Flag
 }
 
 // NewManager returns a new connection manager
@@ -98,6 +100,8 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	policyManager common.PolicyManager,
 	baselineManager common.ProcessBaselineManager,
 	networkBaselineManager common.NetworkBaselineManager,
+	delegatedRegistryConfigManager common.DelegatedRegistryConfigManager,
+	imageIntegrationMgr common.ImageIntegrationManager,
 	autoTriggerUpgrades *concurrency.Flag,
 ) error {
 	m.clusters = clusterManager
@@ -105,6 +109,8 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	m.policies = policyManager
 	m.baselines = baselineManager
 	m.networkBaselines = networkBaselineManager
+	m.delegatedRegistryConfigMgr = delegatedRegistryConfigManager
+	m.imageIntegrationMgr = imageIntegrationMgr
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -250,6 +256,8 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.policies,
 			m.baselines,
 			m.networkBaselines,
+			m.delegatedRegistryConfigMgr,
+			m.imageIntegrationMgr,
 			m.manager)
 	ctx = withConnection(ctx, conn)
 

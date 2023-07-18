@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package datastore
 
@@ -17,6 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+)
+
+const (
+	fakeClusterID   = "FAKECLUSTERID"
+	mainImage       = "docker.io/stackrox/rox:latest"
+	centralEndpoint = "central.stackrox:443"
 )
 
 func TestClusterDataStoreWithPostgres(t *testing.T) {

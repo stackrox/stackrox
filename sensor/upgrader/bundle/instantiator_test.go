@@ -25,6 +25,10 @@ func (c *contextForTesting) InCertRotationMode() bool {
 	return false
 }
 
+func (c *contextForTesting) IsPodSecurityEnabled() bool {
+	return false
+}
+
 func TestInstantiator_LoadObjectsFromYAML(t *testing.T) {
 	cases := map[string]struct {
 		inputDoc     string

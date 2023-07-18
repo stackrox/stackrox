@@ -4,11 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/set"
@@ -17,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -94,8 +93,6 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	for _, d := range deployments {
 		suite.deploymentStore.addOrUpdateDeployment(d)
 	}
-
-	suite.T().Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *NetworkPolicyDispatcherSuite) TearDownTest() {
@@ -141,10 +138,6 @@ func createSensorEvent(np *networkingV1.NetworkPolicy, action central.ResourceAc
 }
 
 func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		suite.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
-	}
-
 	cases := map[string]struct {
 		netpol              interface{}
 		oldNetpol           interface{}

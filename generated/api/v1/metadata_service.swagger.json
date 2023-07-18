@@ -33,6 +33,28 @@
         ]
       }
     },
+    "/v1/central-capabilities": {
+      "get": {
+        "operationId": "MetadataService_GetCentralCapabilities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CentralServicesCapabilities"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "MetadataService"
+        ]
+      }
+    },
     "/v1/database/status": {
       "get": {
         "operationId": "MetadataService_GetDatabaseStatus",
@@ -79,6 +101,8 @@
     },
     "/v1/tls-challenge": {
       "get": {
+        "summary": "TLSChallenge",
+        "description": "Returns all trusted CAs, i.e., secret/additional-ca and Central's cert\nchain. This is necessary if Central is running behind a load balancer\nwith self-signed certificates. Does not require authentication.",
         "operationId": "MetadataService_TLSChallenge",
         "responses": {
           "200": {
@@ -110,6 +134,15 @@
     }
   },
   "definitions": {
+    "CentralServicesCapabilitiesCapabilityStatus": {
+      "type": "string",
+      "enum": [
+        "CapabilityAvailable",
+        "CapabilityDisabled"
+      ],
+      "default": "CapabilityAvailable",
+      "description": " - CapabilityAvailable: CapabilityAvailable means that UI and APIs should be available for users to use.\nThis does not automatically mean that the functionality is 100% available and any calls to APIs will result\nin successful execution. Rather it means that users should be allowed to leverage the functionality as\nopposed to CapabilityDisabled when functionality should be blocked.\n - CapabilityDisabled: CapabilityDisabled means the corresponding UI should be disabled and attempts to use related APIs\nshould lead to errors."
+    },
     "DatabaseStatusDatabaseType": {
       "type": "string",
       "enum": [
@@ -199,6 +232,24 @@
           "type": "string"
         }
       }
+    },
+    "v1CentralServicesCapabilities": {
+      "type": "object",
+      "properties": {
+        "centralScanningCanUseContainerIamRoleForEcr": {
+          "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
+          "description": "Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central\nServices.\nNote that CapabilityAvailable status does not mean that Scanner container actually has IAM role attached. Such\ncheck isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when\nthe role is not actually there. It's user's responsibility to check the presence of role and integration status\nwhen the corresponding setting is enabled."
+        },
+        "centralCanUseCloudBackupIntegrations": {
+          "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
+          "description": "Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage."
+        },
+        "centralCanDisplayDeclarativeConfigHealth": {
+          "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
+          "description": "Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission\nsets, notifiers) to the user."
+        }
+      },
+      "description": "Provides availability of certain functionality of Central Services in the current configuration.\nThe initial intended use is to disable certain functionality that does not make sense in the Cloud Service context."
     },
     "v1DatabaseBackupStatus": {
       "type": "object",

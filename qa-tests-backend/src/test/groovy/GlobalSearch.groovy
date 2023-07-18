@@ -7,7 +7,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import objects.Deployment
 import util.Env
 
-import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -17,7 +16,7 @@ class GlobalSearch extends BaseSpecification {
 
     static final private DEPLOYMENT = new Deployment()
             .setName("qaglobalsearch")
-            .setImage("busybox")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch-busybox:latest")
             .addPort(22)
             .addLabel("app", "test")
             .setCommand(["sleep", "600"])
@@ -49,7 +48,7 @@ class GlobalSearch extends BaseSpecification {
         if (!foundViolation) {
             def policy = Services.getPolicyByName("Latest tag")
             log.info "'Latest tag' policy:"
-            log.info policy
+            log.info policy.toString()
         }
         assert foundViolation
     }
@@ -102,8 +101,8 @@ class GlobalSearch extends BaseSpecification {
         "Deployment:qaglobalsearch" | [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS] |
                 "qaglobalsearch" | []
 
-        "Image:docker.io/library/busybox:latest" | [SearchServiceOuterClass.SearchCategory.IMAGES] |
-                "docker.io/library/busybox:latest" | []
+        "Image:quay.io/rhacs-eng/qa-multi-arch-busybox:latest" | [SearchServiceOuterClass.SearchCategory.IMAGES] |
+                "quay.io/rhacs-eng/qa-multi-arch-busybox:latest" | []
 
         // This implicitly depends on the policy above triggering on the deployment created during this test.
         "Violation State:ACTIVE+Policy:Latest" | [SearchServiceOuterClass.SearchCategory.ALERTS] | "Latest" | []
@@ -117,14 +116,13 @@ class GlobalSearch extends BaseSpecification {
         // when you don't specify a category.
         "Deployment:qaglobalsearch" | [] | "" | EXPECTED_DEPLOYMENT_CATEGORIES
 
-        "Image:docker.io/library/busybox:latest" | [] | "" | EXPECTED_IMAGE_CATEGORIES
+        "Image:quay.io/rhacs-eng/qa-multi-arch-busybox:latest" | [] | "" | EXPECTED_IMAGE_CATEGORIES
 
         "Subject:system:auth" | [SearchServiceOuterClass.SearchCategory.SUBJECTS] | "system:authenticated" | []
     }
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ !Env.CI_JOB_NAME.contains("postgres") })
     def "Verify Global search on policies (#query, #searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
             String expectedResultPrefix,

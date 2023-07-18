@@ -13,8 +13,9 @@ var (
 
 func newAlertHandler() *alertHandlerImpl {
 	return &alertHandlerImpl{
-		stopSig: concurrency.NewSignal(),
-		output:  make(chan *central.MsgFromSensor),
+		stopSig:      concurrency.NewSignal(),
+		output:       make(chan *central.MsgFromSensor),
+		centralReady: concurrency.NewSignal(),
 	}
 }
 

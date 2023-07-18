@@ -25,7 +25,7 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
     const { version } = useMetadata();
 
     const { overallHealthStatus } = healthStatus;
-    const { Icon, bgColor, fgColor } = healthStatusStyles[overallHealthStatus];
+    const { Icon, fgColor } = healthStatusStyles[overallHealthStatus];
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
 
     const unhealthyClusterDetailAvailable = overallHealthStatus === 'UNHEALTHY';
@@ -54,7 +54,7 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
             <div className={`${isList ? 'mb-1' : ''}`}>
                 <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
                     <div data-testid="clusterStatus" className={`${isList ? 'inline' : ''}`}>
-                        <span className={`${bgColor} ${fgColor}`}>
+                        <span>
                             {unhealthyClusterDetailAvailable ? (
                                 <Popover
                                     aria-label="Unhealthy Collector, with link to troubleshooting"
