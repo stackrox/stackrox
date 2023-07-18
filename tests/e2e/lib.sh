@@ -59,7 +59,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 
     helm_charts=$(helm search repo stackrox-oss -l)
     central_regex="stackrox-oss/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
-    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]*.${sensor_chart_version_override}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
     if  [[ $helm_charts =~ $central_regex ]]; then
         #ci_export MAIN_IMAGE_TAG "${BASH_REMATCH[1]}"
@@ -71,15 +71,12 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ $helm_charts =~ $sensor_regex ]]; then
         sensor_chart_dir_override="stackrox-oss/stackrox-secured-cluster-services"
     else
-        echo "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
+        echo "stackrox-secured-cluster-services helm chart for version ${sensor_chart_version_override} not found in stackrox-oss repo"
     fi
 
     deploy_stackrox "" "$sensor_chart_version_override" "$sensor_chart_dir_override"
 
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
-    ci_export SENSOR_CHART_DIR_OVERRIDE ""
-    ci_export SENSOR_MAIN_IMAGE_TAG_OVERRIDE ""
-    ci_export SENSOR_MAIN_IMAGE_REPO_OVERRIDE ""
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
