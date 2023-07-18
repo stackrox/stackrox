@@ -8,10 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"syscall"
 
 	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 	grpcmetrics "github.com/stackrox/rox/central/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -24,6 +22,7 @@ import (
 	"github.com/stackrox/stackrox/scanner/v4/indexer"
 	"github.com/stackrox/stackrox/scanner/v4/matcher"
 	"github.com/stackrox/stackrox/scanner/v4/version"
+	"golang.org/x/sys/unix"
 )
 
 type Backends struct {
@@ -82,25 +81,9 @@ func main() {
 
 	// Wait for signals.
 	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigC, os.Interrupt, unix.SIGTERM)
 	sig := <-sigC
-	zlog.Warn(ctx).Str("signal", sig.String()).Send()
-}
-
-// initializeLogging Initialize zerolog and Quay's zlog.
-func initializeLogging() error {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-	logger := zerolog.New(os.Stdout).
-		Level(zerolog.DebugLevel).
-		With().
-		Timestamp().
-		Str("host", hostname).
-		Logger()
-	zlog.Set(&logger)
-	return nil
+	zlog.Info(ctx).Str("signal", sig.String()).Send()
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.
@@ -183,16 +166,16 @@ func createBackends(ctx context.Context) (*Backends, error) {
 }
 
 func (b *Backends) Close(ctx context.Context) {
-	if b.Matcher != nil {
-		err := b.Matcher.Close(ctx)
-		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing matcher")
-		}
-	}
 	if b.Indexer != nil {
 		err := b.Indexer.Close(ctx)
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("closing indexer")
+		}
+	}
+	if b.Matcher != nil {
+		err := b.Matcher.Close(ctx)
+		if err != nil {
+			zlog.Error(ctx).Err(err).Msg("closing matcher")
 		}
 	}
 }
