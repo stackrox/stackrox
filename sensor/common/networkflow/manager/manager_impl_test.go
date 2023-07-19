@@ -452,61 +452,114 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 
 func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-	containerID := "container-id"
+	srcID := "src-id"
+	dstID := "dst-id"
 	mockCtrl := gomock.NewController(s.T())
+	hostname := "hostname"
+	containerID := "container-id"
 	m, mockEntity, _, mockDetector := createManager(mockCtrl)
 	states := []struct {
 		notify                      common.SensorComponentEvent
-		connections                 []*connectionHostnamePair
+		connections                 []*HostnameAndConnections
 		expectEntityLookupContainer expectFn
 		expectEntityLookupEndpoint  expectFn
 		expectDetector              expectFn
-		expectedSensorMessage       []*central.MsgFromSensor
+		expectedSensorMessage       *central.MsgFromSensor
 	}{
 		{
 			notify:      common.SensorComponentEventOfflineMode,
-			connections: []*connectionHostnamePair{createConnectionHostnamePair("hostname-1", createConnectionPair())},
+			connections: []*HostnameAndConnections{createHostnameConnections(hostname).withConnectionPair(createConnectionPair())},
 		},
 		{
 			notify: common.SensorComponentEventCentralReachable,
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntity, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: srcID,
 			}, true),
 			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntity, 1, []clusterentities.LookupResult{
 				{
-					Entity:         networkgraph.Entity{ID: containerID},
+					Entity:         networkgraph.Entity{ID: dstID},
 					ContainerPorts: []uint16{80},
 				},
 			}),
-			expectDetector: expectDetectorHelper(mockDetector, 1),
-			expectedSensorMessage: []*central.MsgFromSensor{
-				{
-					Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-						NetworkFlowUpdate: &central.NetworkFlowUpdate{
-							Updated: []*storage.NetworkFlow{
-								{
-									Props: &storage.NetworkFlowProperties{
-										SrcEntity: networkgraph.EntityForDeployment(containerID).ToProto(),
-										DstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
-											Id: containerID,
-										}).ToProto(),
-										DstPort:    80,
-										L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-									},
-								},
-							},
-						},
-					},
-				},
+			expectDetector:        expectDetectorHelper(mockDetector, 1),
+			expectedSensorMessage: createExpectedSensorMessageWithConnections(&expectedEntitiesPair{srcID: srcID, dstID: dstID}),
+		},
+		{
+			notify: common.SensorComponentEventOfflineMode,
+			connections: []*HostnameAndConnections{
+				createHostnameConnections(hostname).withConnectionPair(createConnectionPair().containerID(fmt.Sprintf("%s-1", containerID))),
+				createHostnameConnections(hostname).withConnectionPair(createConnectionPair().containerID(fmt.Sprintf("%s-2", containerID))),
 			},
 		},
+		{
+			notify: common.SensorComponentEventCentralReachable,
+			expectEntityLookupContainer: func() {
+				gomock.InOrder(
+					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-1", srcID)}, true
+					}),
+					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-2", srcID)}, true
+					}),
+				)
+			},
+			expectEntityLookupEndpoint: func() {
+				gomock.InOrder(
+					mockEntity.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+						return []clusterentities.LookupResult{
+							{
+								Entity:         networkgraph.Entity{ID: fmt.Sprintf("%s-1", dstID)},
+								ContainerPorts: []uint16{80},
+							},
+						}
+					}),
+					mockEntity.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+						return []clusterentities.LookupResult{
+							{
+								Entity:         networkgraph.Entity{ID: fmt.Sprintf("%s-2", dstID)},
+								ContainerPorts: []uint16{80},
+							},
+						}
+					}),
+				)
+			},
+			expectDetector: expectDetectorHelper(mockDetector, 2),
+			expectedSensorMessage: createExpectedSensorMessageWithConnections(
+				&expectedEntitiesPair{srcID: fmt.Sprintf("%s-1", srcID), dstID: fmt.Sprintf("%s-1", dstID)},
+				&expectedEntitiesPair{srcID: fmt.Sprintf("%s-2", srcID), dstID: fmt.Sprintf("%s-2", dstID)},
+			),
+		},
+		{
+			notify: common.SensorComponentEventOfflineMode,
+			connections: []*HostnameAndConnections{
+				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now()).containerID(fmt.Sprintf("%s-1", containerID))),
+				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now()).containerID(fmt.Sprintf("%s-2", containerID))),
+			},
+		},
+		{
+			notify: common.SensorComponentEventCentralReachable,
+			expectEntityLookupContainer: func() {
+				gomock.InOrder(
+					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-1", srcID)}, true
+					}),
+					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-2", srcID)}, true
+					}),
+				)
+			},
+			expectedSensorMessage: createExpectedSensorMessageWithEndpoints(
+				fmt.Sprintf("%s-1", srcID),
+				fmt.Sprintf("%s-2", srcID),
+			),
+		},
 	}
-	fakeTicker := make(chan time.Time, 1)
+	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go m.enrichConnections(fakeTicker)
 	for i, state := range states {
 		for _, cnn := range state.connections {
-			addHostConnection(m, cnn.hostname, cnn.conn)
+			addHostConnection(m, cnn)
 		}
 		s.Run(fmt.Sprintf("iteration %d", i), func() {
 			state.expectEntityLookupContainer.runIfSet()
@@ -514,19 +567,27 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			state.expectDetector.runIfSet()
 			m.Notify(state.notify)
 			fakeTicker <- time.Now()
-			if len(state.expectedSensorMessage) > 0 {
+			if state.expectedSensorMessage != nil {
 				select {
 				case <-time.After(10 * time.Second):
-					s.Fail("timeout")
+					s.Fail("timeout waiting for sensor message")
 				case msg, ok := <-m.sensorUpdates:
-					s.Require().True(ok, "channel should not be closed")
+					s.Require().True(ok, "the sensorUpdates channel should not be closed")
 					s.Assert().NotNil(msg)
+					msgFromSensor, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
+					s.Require().True(ok, "the message received is not a NetworkFlowUpdate message")
+					expectedMsg, ok := state.expectedSensorMessage.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
+					s.Require().True(ok, "the message expected is not a NetworkFlowUpdate message")
+					s.Assert().Len(msgFromSensor.NetworkFlowUpdate.GetUpdated(), len(expectedMsg.NetworkFlowUpdate.GetUpdated()))
+					assertSensorMessageConnectionIDs(s, expectedMsg.NetworkFlowUpdate.GetUpdated(), msgFromSensor.NetworkFlowUpdate.GetUpdated())
+					s.Assert().Len(msgFromSensor.NetworkFlowUpdate.GetUpdatedEndpoints(), len(expectedMsg.NetworkFlowUpdate.GetUpdatedEndpoints()))
+					assertSensorMessageEndpointIDs(s, expectedMsg.NetworkFlowUpdate.GetUpdatedEndpoints(), msgFromSensor.NetworkFlowUpdate.GetUpdatedEndpoints())
 				}
 			} else {
 				select {
 				case _, ok := <-m.sensorUpdates:
-					s.Require().True(ok, "channel should not be closed")
-					s.Fail("Should not received a message")
+					s.Require().True(ok, "the sensorUpdates channel should not be closed")
+					s.Fail("should not received message in sensorUpdates channel")
 				case <-time.After(time.Second):
 					break
 				}
@@ -671,6 +732,11 @@ func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
 	}
 }
 
+func (ep *endpointPair) containerID(id string) *endpointPair {
+	ep.endpoint.containerID = id
+	return ep
+}
+
 type containerPair struct {
 	endpoint *containerEndpoint
 	status   *connStatus
@@ -701,31 +767,123 @@ func createContainerPair(firstSeen timestamp.MicroTS) *containerPair {
 	}
 }
 
-type connectionHostnamePair struct {
-	hostname string
-	conn     *connectionPair
+type HostnameAndConnections struct {
+	hostname     string
+	connPair     *connectionPair
+	endpointPair *endpointPair
 }
 
-func createConnectionHostnamePair(hostname string, connPair *connectionPair) *connectionHostnamePair {
-	return &connectionHostnamePair{
+func createHostnameConnections(hostname string) *HostnameAndConnections {
+	return &HostnameAndConnections{
 		hostname: hostname,
-		conn:     connPair,
 	}
 }
 
-func addHostConnection(mgr *networkFlowManager, hostName string, connPair *connectionPair) {
+func (ch *HostnameAndConnections) withConnectionPair(pair *connectionPair) *HostnameAndConnections {
+	ch.connPair = pair
+	return ch
+}
+
+func (ch *HostnameAndConnections) withEndpointPair(pair *endpointPair) *HostnameAndConnections {
+	ch.endpointPair = pair
+	return ch
+}
+
+func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAndConnections) {
 	mgr.connectionsByHostMutex.Lock()
 	defer mgr.connectionsByHostMutex.Unlock()
-	conn := *connPair.conn
-	h, ok := mgr.connectionsByHost[hostName]
+	h, ok := mgr.connectionsByHost[connectionsHostPair.hostname]
 	if !ok {
 		h = &hostConnections{}
 	}
-	if h.connections == nil {
-		h.connections = make(map[connection]*connStatus)
+	if connectionsHostPair.connPair != nil {
+		if h.connections == nil {
+			h.connections = make(map[connection]*connStatus)
+		}
+		conn := *connectionsHostPair.connPair.conn
+		h.connections[conn] = connectionsHostPair.connPair.status
 	}
-	h.connections[conn] = connPair.status
-	mgr.connectionsByHost[hostName] = h
+	if connectionsHostPair.endpointPair != nil {
+		if h.endpoints == nil {
+			h.endpoints = make(map[containerEndpoint]*connStatus)
+		}
+		ep := *connectionsHostPair.endpointPair.endpoint
+		h.endpoints[ep] = connectionsHostPair.endpointPair.status
+	}
+	mgr.connectionsByHost[connectionsHostPair.hostname] = h
+}
+
+type expectedEntitiesPair struct {
+	srcID string
+	dstID string
+}
+
+func createExpectedSensorMessageWithConnections(pairs ...*expectedEntitiesPair) *central.MsgFromSensor {
+	var updates []*storage.NetworkFlow
+	for _, pair := range pairs {
+		updates = append(updates, &storage.NetworkFlow{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  networkgraph.EntityForDeployment(pair.srcID).ToProto(),
+				DstEntity:  networkgraph.EntityFromProto(&storage.NetworkEntityInfo{Id: pair.dstID}).ToProto(),
+				DstPort:    80,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+		})
+	}
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+			NetworkFlowUpdate: &central.NetworkFlowUpdate{
+				Updated: updates,
+			},
+		},
+	}
+}
+
+func createExpectedSensorMessageWithEndpoints(ids ...string) *central.MsgFromSensor {
+	var updates []*storage.NetworkEndpoint
+	for _, id := range ids {
+		updates = append(updates, &storage.NetworkEndpoint{
+			Props: &storage.NetworkEndpointProperties{
+				Entity:     networkgraph.EntityForDeployment(id).ToProto(),
+				Port:       80,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+		})
+	}
+	return &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+			NetworkFlowUpdate: &central.NetworkFlowUpdate{
+				UpdatedEndpoints: updates,
+			},
+		},
+	}
+}
+
+func assertSensorMessageConnectionIDs(s *NetworkFlowManagerTestSuite, expectedUpdates []*storage.NetworkFlow, actualUpdates []*storage.NetworkFlow) {
+	for _, exp := range expectedUpdates {
+		found := false
+		for _, actual := range actualUpdates {
+			if exp.GetProps().GetSrcEntity().GetId() == actual.GetProps().GetSrcEntity().GetId() &&
+				exp.GetProps().GetDstEntity().GetId() == actual.GetProps().GetDstEntity().GetId() {
+				found = true
+				break
+			}
+		}
+		s.Assert().True(found, "expected flow with srcID %s and dstID %s not found", exp.Props.SrcEntity.Id, exp.Props.DstEntity.Id)
+	}
+}
+
+func assertSensorMessageEndpointIDs(s *NetworkFlowManagerTestSuite, expectedUpdates []*storage.NetworkEndpoint, actualUpdates []*storage.NetworkEndpoint) {
+	for _, exp := range expectedUpdates {
+		found := false
+		for _, actual := range actualUpdates {
+			if exp.GetProps().GetEntity().GetId() == actual.GetProps().GetEntity().GetId() {
+				found = true
+				break
+			}
+		}
+		s.Assert().True(found, "expected endpoint  with ID %s not found", exp.GetProps().GetEntity().GetId())
+	}
 }
 
 // endregion
