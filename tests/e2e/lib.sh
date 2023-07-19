@@ -28,7 +28,7 @@ deploy_stackrox() {
     setup_client_TLS_certs "${1:-}"
     record_build_info
 
-    deploy_sensor "$2" "$3"
+    deploy_sensor "${2:-}" "${3:-}"
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
@@ -74,7 +74,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         echo "stackrox-secured-cluster-services helm chart for version ${sensor_chart_version_override} not found in stackrox-oss repo"
     fi
 
-    deploy_stackrox "" "$sensor_chart_version_override" "$sensor_chart_dir_override"
+    deploy_stackrox "" "${sensor_chart_version_override}" "${sensor_chart_dir_override}"
 
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
 }
@@ -225,7 +225,7 @@ deploy_sensor() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/sensor.sh" "$1" "$2"
+        "$ROOT/${DEPLOY_DIR}/sensor.sh" "${1:-}" "${2:-}"
     fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then

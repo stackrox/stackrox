@@ -28,4 +28,4 @@ if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; th
 	export ROX_ADMIN_PASSWORD
 fi
 
-launch_sensor "$K8S_DIR" "$1" "$2"
+launch_sensor "$K8S_DIR" "${1:-}" "${2:-}"
