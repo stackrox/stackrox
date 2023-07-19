@@ -32,9 +32,6 @@ operator/hack/common.sh
 operator/hack/olm-operator-install.sh
 operator/hack/olm-operator-upgrade.sh
 operator/scripts/retry.sh
-qa-tests-backend/local-test-example/step1-setup-macos.sh
-qa-tests-backend/local-test-example/step2-install-acs.sh
-qa-tests-backend/local-test-example/step3-run-qa-tests-backend.sh
 qa-tests-backend/scripts/migrate_protos.sh
 qa-tests-backend/scripts/run-compatibility.sh
 qa-tests-backend/scripts/run-part-1.sh
