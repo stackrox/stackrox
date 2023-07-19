@@ -23,6 +23,7 @@ import (
 type handlerImpl struct {
 	client                 dynamic.Interface
 	complianceOperatorInfo StatusInfo
+	notifiers              []common.Notifier
 
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
@@ -32,17 +33,25 @@ type handlerImpl struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo) common.SensorComponent {
-	return &handlerImpl{
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, notifiers ...common.Notifier) common.SensorComponent {
+	h := &handlerImpl{
 		client:                 client,
 		complianceOperatorInfo: complianceOperatorInfo,
-
-		request:  make(chan *central.ComplianceRequest),
-		response: make(chan *message.ExpiringMessage),
+		notifiers:              notifiers,
+		request:                make(chan *central.ComplianceRequest),
+		response:               make(chan *message.ExpiringMessage),
 
 		disabled:   concurrency.NewSignal(),
 		stopSignal: concurrency.NewSignal(),
 	}
+
+	// Compliance is disabled by default. Central informs Sensor to enable compliance.
+	select {
+	case <-h.stopSignal.Done():
+	default:
+		h.disabled.Signal()
+	}
+	return h
 }
 
 func (m *handlerImpl) Start() error {
@@ -108,17 +117,24 @@ func (m *handlerImpl) run() {
 }
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
+	log.Info("Received enable compliance request")
+
 	m.disabled.Reset()
-	// TODO: [ROX-18096] Start collecting compliance profiles & rules
+	for _, notifier := range m.notifiers {
+		notifier.Notify(common.SensorComponentEventComplianceEnabled)
+	}
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
 func (m *handlerImpl) disableCompliance(request *central.DisableComplianceRequest) bool {
 	// Disabling compliance should not disable compliance operator status monitoring. Users must be informed about
 	// the compliance operator health.
+	log.Info("Received disable compliance request")
 
+	for _, notifier := range m.notifiers {
+		notifier.Notify(common.SensorComponentEventComplianceDisabled)
+	}
 	// TODO: Pause all scans. Currently, the only way a compliance scan can be disabled is by deleting the ScanSettingBinding.
-	// TODO: Drop all custom resource listener events.
 	m.disabled.Signal()
 	return m.composeAndSendDisableComplianceResponse(request.GetId(), nil)
 }

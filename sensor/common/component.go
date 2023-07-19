@@ -18,14 +18,28 @@ const (
 
 	// SensorComponentEventOfflineMode denotes that Sensor-Central connection is broken and sensor should operate in offline mode
 	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
+
+	// SensorComponentEventComplianceEnabled denotes that Sensor has been informed to enable all compliance components.
+	SensorComponentEventComplianceEnabled SensorComponentEvent = "enable-compliance"
+
+	// SensorComponentEventComplianceDisabled denotes that Sensor has been informed to disable all compliance components.
+	SensorComponentEventComplianceDisabled SensorComponentEvent = "disable-compliance"
 )
+
+// Notifier is a sensor component that constitute sensor that can be notified about a sensor event.
+//
+//go:generate mockgen-wrapper
+type Notifier interface {
+	Notify(e SensorComponentEvent)
+}
 
 // SensorComponent is one of the components that constitute sensor. It supports for receiving messages from central,
 // as well as sending messages back to central.
 type SensorComponent interface {
+	Notifier
+
 	Start() error
 	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
-	Notify(e SensorComponentEvent)
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error

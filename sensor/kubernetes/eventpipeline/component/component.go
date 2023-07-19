@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -8,6 +9,7 @@ import (
 type PipelineComponent interface {
 	Start() error
 	Stop(error)
+	common.Notifier
 }
 
 // Resolver component that performs the dependency resolution

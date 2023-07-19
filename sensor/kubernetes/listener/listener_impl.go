@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -29,6 +30,8 @@ type listenerImpl struct {
 	traceWriter        io.Writer
 	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
+	// complianceC is used to communicate compliance sensor events to listener routines.
+	complianceC chan common.SensorComponentEvent
 }
 
 func (k *listenerImpl) Start() error {
@@ -54,6 +57,15 @@ func (k *listenerImpl) Stop(_ error) {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
+}
+
+func (k *listenerImpl) Notify(e common.SensorComponentEvent) {
+	select {
+	case <-k.stopSig.Done():
+		return
+	default:
+		k.complianceC <- e
+	}
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {

@@ -51,6 +51,8 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorScanSettingBindings() Dispatcher
 	ForComplianceOperatorScans() Dispatcher
 	ForComplianceOperatorTailoredProfiles() Dispatcher
+
+	RegisterForComplianceOperatorTailoredProfiles(dispatcher *complianceOperatorDispatchers.TailoredProfileDispatcher)
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -295,4 +297,8 @@ func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorScanDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) RegisterForComplianceOperatorTailoredProfiles(dispatcher *complianceOperatorDispatchers.TailoredProfileDispatcher) {
+	d.complianceOperatorTailoredProfileDispatcher = dispatcher
 }

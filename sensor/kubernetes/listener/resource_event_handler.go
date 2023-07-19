@@ -8,13 +8,17 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/processfilter"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	dispatchersPkg "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -76,32 +80,12 @@ func (k *listenerImpl) handleAllEvents() {
 	// This might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := clusterid.Get()
 
-	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
-	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
-	var profileLister cache.GenericLister
-	if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
-		log.Errorf("error finding compliance CRD: %v", err)
-	} else if !ok {
-		log.Info("compliance CRD could not be found")
-	} else {
-		log.Infof("initializing compliance operator informers")
-		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResultGVR).Informer()
-		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
-		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Lister()
-
-		complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
-		complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.RuleGVR).Informer()
-		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScanGVR).Informer()
-		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
-	}
-
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
 		clusterID,
 		podInformer.Lister(),
-		profileLister,
+		nil,
 		processfilter.Singleton(),
 		k.configHandler,
 		k.credentialsManager,
@@ -149,16 +133,9 @@ func (k *listenerImpl) handleAllEvents() {
 			k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	if crdSharedInformerFactory != nil {
-		log.Info("syncing compliance operator resources")
-		// Handle results, rules, and scan setting bindings first
-		handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-	}
+	handleComplianceResourceEvent(k.client, dispatchers, k.outputQueue, &syncingResources, noDependencyWaitGroup, k.complianceC, stopSignal, &eventLock)
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -204,15 +181,7 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	handle(resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
-	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
-	if complianceProfileInformer != nil {
-		handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	}
-	if complianceTailoredProfileInformer != nil {
-		handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	}
-
-	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, resyncingSif, crdSharedInformerFactory, osRouteFactory) {
+	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, resyncingSif, osRouteFactory) {
 		return
 	}
 
@@ -276,7 +245,7 @@ func handle(
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,
 	eventLock *sync.Mutex,
-) {
+) cache.ResourceEventHandlerRegistration {
 	handlerImpl := &resourceEventHandlerImpl{
 		eventLock:        eventLock,
 		dispatcher:       dispatcher,
@@ -287,7 +256,8 @@ func handle(
 		seenIDs:                    make(map[types.UID]struct{}),
 		missingInitialIDs:          nil,
 	}
-	_, err := informer.AddEventHandler(handlerImpl)
+
+	registration, err := informer.AddEventHandler(handlerImpl)
 	utils.Should(err)
 	if !informer.HasSynced() {
 		err := informer.SetTransform(managedFieldsTransformer)
@@ -305,4 +275,126 @@ func handle(
 		case <-doneChannel:
 		}
 	}()
+	return registration
+}
+
+func removeHandler(informer cache.SharedIndexInformer, registration cache.ResourceEventHandlerRegistration) {
+	if err := informer.RemoveEventHandler(registration); err != nil {
+		utils.Should(err)
+	}
+}
+
+func handleComplianceResourceEvent(
+	client client.Interface,
+	dispatchers resources.DispatcherRegistry,
+	resolver component.Resolver,
+	syncingResources *concurrency.Flag,
+	wg *concurrency.WaitGroup,
+	complianceC <-chan common.SensorComponentEvent,
+	stopSignal *concurrency.Signal,
+	eventLock *sync.Mutex,
+) {
+	go watchComplianceSignals(client, dispatchers, resolver, syncingResources, wg, complianceC, stopSignal, eventLock)
+}
+
+func watchComplianceSignals(
+	client client.Interface,
+	dispatchers resources.DispatcherRegistry,
+	resolver component.Resolver,
+	syncingResources *concurrency.Flag,
+	wg *concurrency.WaitGroup,
+	complianceC <-chan common.SensorComponentEvent,
+	stopSignal *concurrency.Signal,
+	eventLock *sync.Mutex) {
+
+	var (
+		complianceProfileInformer            cache.SharedIndexInformer
+		complianceRuleInformer               cache.SharedIndexInformer
+		complianceTailoredProfileInformer    cache.SharedIndexInformer
+		complianceScanSettingInformer        cache.SharedIndexInformer
+		complianceScanSettingBindingInformer cache.SharedIndexInformer
+		complianceResultInformer             cache.SharedIndexInformer
+		complianceScanInformer               cache.SharedIndexInformer
+
+		complianceProfileRegistration            cache.ResourceEventHandlerRegistration
+		complianceRuleRegistration               cache.ResourceEventHandlerRegistration
+		complianceTailoredProfileRegistration    cache.ResourceEventHandlerRegistration
+		complianceScanSettingRegistration        cache.ResourceEventHandlerRegistration
+		complianceScanSettingBindingRegistration cache.ResourceEventHandlerRegistration
+		complianceScanRegistration               cache.ResourceEventHandlerRegistration
+		complianceResultRegistration             cache.ResourceEventHandlerRegistration
+	)
+
+	addHandlerFunc := func() {
+		if ok, err := complianceCRDExists(client.Kubernetes()); err != nil {
+			log.Errorf("error finding compliance CRD: %v", err)
+			return
+		} else if !ok {
+			log.Info("compliance CRD could not be found")
+			return
+		}
+		log.Infof("initializing compliance operator informers")
+
+		crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(client.Dynamic(), noResyncPeriod)
+
+		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
+		complianceProfileRegistration = handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), resolver, syncingResources, wg, stopSignal, eventLock)
+		profileLister := crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Lister()
+		dispatchers.RegisterForComplianceOperatorTailoredProfiles(dispatchersPkg.NewTailoredProfileDispatcher(profileLister))
+
+		complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.RuleGVR).Informer()
+		complianceRuleRegistration = handle(complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), resolver, syncingResources, wg, stopSignal, eventLock)
+
+		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfileGVR).Informer()
+		complianceTailoredProfileRegistration = handle(complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), resolver, syncingResources, wg, stopSignal, eventLock)
+
+		if features.ComplianceEnhancements.Enabled() {
+			complianceScanSettingInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingGVR).Informer()
+			complianceScanSettingRegistration = handle(complianceScanSettingInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), resolver, syncingResources, wg, stopSignal, eventLock)
+		}
+
+		complianceScanSettingBindingInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()
+		complianceScanSettingBindingRegistration = handle(complianceScanSettingBindingInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), resolver, syncingResources, wg, stopSignal, eventLock)
+
+		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScanGVR).Informer()
+		complianceScanRegistration = handle(complianceScanInformer, dispatchers.ForComplianceOperatorScans(), resolver, syncingResources, wg, stopSignal, eventLock)
+
+		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResultGVR).Informer()
+		complianceResultRegistration = handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), resolver, syncingResources, wg, stopSignal, eventLock)
+	}
+
+	removeHandlerFunc := func() {
+		removeHandler(complianceProfileInformer, complianceProfileRegistration)
+		removeHandler(complianceRuleInformer, complianceRuleRegistration)
+		removeHandler(complianceTailoredProfileInformer, complianceTailoredProfileRegistration)
+		if features.ComplianceEnhancements.Enabled() {
+			removeHandler(complianceScanSettingInformer, complianceScanSettingRegistration)
+		}
+		removeHandler(complianceScanSettingBindingInformer, complianceScanSettingBindingRegistration)
+		removeHandler(complianceScanInformer, complianceScanRegistration)
+		removeHandler(complianceResultInformer, complianceResultRegistration)
+	}
+
+	// If the feature is not enabled, compliance listeners are added by default to
+	// keep parity with legacy behavior of compliance operator integration.
+	if !features.ComplianceEnhancements.Enabled() {
+		addHandlerFunc()
+		return
+	}
+
+	for {
+		select {
+		case <-stopSignal.Done():
+			return
+		case event := <-complianceC:
+			switch event {
+			case common.SensorComponentEventComplianceDisabled:
+				log.Info("Stopping compliance operator resource event listeners...")
+				removeHandlerFunc()
+			case common.SensorComponentEventComplianceEnabled:
+				log.Info("Starting compliance operator resource event listeners...")
+				addHandlerFunc()
+			}
+		}
+	}
 }

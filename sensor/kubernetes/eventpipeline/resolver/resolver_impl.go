@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -22,6 +23,8 @@ type resolverImpl struct {
 	storeProvider store.Provider
 	stopped       *atomic.Bool
 }
+
+func (r *resolverImpl) Notify(_ common.SensorComponentEvent) {}
 
 // Start the resolverImpl component
 func (r *resolverImpl) Start() error {

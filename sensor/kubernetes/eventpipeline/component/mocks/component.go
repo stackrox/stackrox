@@ -7,6 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
+	common "github.com/stackrox/rox/sensor/common"
 	message "github.com/stackrox/rox/sensor/common/message"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	gomock "go.uber.org/mock/gomock"
@@ -33,6 +34,18 @@ func NewMockPipelineComponent(ctrl *gomock.Controller) *MockPipelineComponent {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPipelineComponent) EXPECT() *MockPipelineComponentMockRecorder {
 	return m.recorder
+}
+
+// Notify mocks base method.
+func (m *MockPipelineComponent) Notify(e common.SensorComponentEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Notify", e)
+}
+
+// Notify indicates an expected call of Notify.
+func (mr *MockPipelineComponentMockRecorder) Notify(e interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockPipelineComponent)(nil).Notify), e)
 }
 
 // Start mocks base method.
@@ -82,6 +95,18 @@ func NewMockResolver(ctrl *gomock.Controller) *MockResolver {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockResolver) EXPECT() *MockResolverMockRecorder {
 	return m.recorder
+}
+
+// Notify mocks base method.
+func (m *MockResolver) Notify(e common.SensorComponentEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Notify", e)
+}
+
+// Notify indicates an expected call of Notify.
+func (mr *MockResolverMockRecorder) Notify(e interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockResolver)(nil).Notify), e)
 }
 
 // Send mocks base method.
@@ -143,6 +168,18 @@ func NewMockOutputQueue(ctrl *gomock.Controller) *MockOutputQueue {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOutputQueue) EXPECT() *MockOutputQueueMockRecorder {
 	return m.recorder
+}
+
+// Notify mocks base method.
+func (m *MockOutputQueue) Notify(e common.SensorComponentEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Notify", e)
+}
+
+// Notify indicates an expected call of Notify.
+func (mr *MockOutputQueueMockRecorder) Notify(e interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockOutputQueue)(nil).Notify), e)
 }
 
 // ResponsesC mocks base method.

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	mockDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	mockReprocessor "github.com/stackrox/rox/sensor/common/reprocessor/mocks"
@@ -40,8 +41,9 @@ func (s *eventPipelineSuite) TearDownTest() {
 
 type mockListener struct{}
 
-func (m *mockListener) Start() error { return nil }
-func (m *mockListener) Stop(_ error) {}
+func (m *mockListener) Start() error                         { return nil }
+func (m *mockListener) Stop(_ error)                         {}
+func (m *mockListener) Notify(_ common.SensorComponentEvent) {}
 
 func (s *eventPipelineSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
