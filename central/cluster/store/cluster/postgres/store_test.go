@@ -163,9 +163,9 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(uuid.Nil.String()),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList(uuid.Nil.String()),
 				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
@@ -176,9 +176,9 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetId()),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList(objA.GetId()),
 				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
@@ -189,9 +189,9 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetId()),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList(objA.GetId()),
 				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
@@ -202,9 +202,9 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
@@ -215,10 +215,10 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetId()),
-					sac.NamespaceScopeKeys("unknown ns"),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList(objA.GetId()),
+					sac.NamespaceScopeKeyList("unknown ns"),
 				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
