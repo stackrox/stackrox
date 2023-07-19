@@ -4,18 +4,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 func TestProcessPipeline(t *testing.T) {
-	sensorEvents := make(chan *central.MsgFromSensor)
-	actualEvents := make(chan *central.MsgFromSensor)
+	sensorEvents := make(chan *message.ExpiringMessage)
+	actualEvents := make(chan *message.ExpiringMessage)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -89,7 +89,7 @@ func TestProcessPipeline(t *testing.T) {
 	closeChan <- true
 }
 
-func consumeEnrichedSignals(sensorEvents chan *central.MsgFromSensor, results chan *central.MsgFromSensor, closeChan chan bool) {
+func consumeEnrichedSignals(sensorEvents chan *message.ExpiringMessage, results chan *message.ExpiringMessage, closeChan chan bool) {
 	for {
 		select {
 		case event := <-sensorEvents:

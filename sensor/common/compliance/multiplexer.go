@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var _ common.ComplianceComponent = (*Multiplexer)(nil)
@@ -68,7 +69,7 @@ func (c *Multiplexer) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 // ResponsesC is unimplemented, part of the component interface
-func (c *Multiplexer) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *Multiplexer) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 

@@ -1,6 +1,8 @@
 package component
 
-import "github.com/stackrox/rox/generated/internalapi/central"
+import (
+	"github.com/stackrox/rox/sensor/common/message"
+)
 
 // PipelineComponent components that constitute the eventPipeline
 type PipelineComponent interface {
@@ -22,5 +24,5 @@ type Resolver interface {
 type OutputQueue interface {
 	PipelineComponent
 	Send(event *ResourceEvent)
-	ResponsesC() <-chan *central.MsgFromSensor
+	ResponsesC() <-chan *message.ExpiringMessage
 }
