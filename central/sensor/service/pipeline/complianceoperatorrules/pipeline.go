@@ -3,6 +3,7 @@ package complianceoperatorrules
 import (
 	"context"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/rules/datastore"
@@ -12,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
