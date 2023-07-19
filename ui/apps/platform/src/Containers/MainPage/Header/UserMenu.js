@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import initials from 'initials';
 import {
     Dropdown,
     DropdownItem,
@@ -10,7 +11,6 @@ import {
     DropdownToggle,
     Flex,
 } from '@patternfly/react-core';
-import { Avatar } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
@@ -91,10 +91,9 @@ function UserMenu({ logout, userData }) {
 
     const toggle = (
         <DropdownToggle aria-label="User menu" onToggle={setIsOpen} toggleIndicator={null}>
-            <Avatar
-                name={name}
-                extraClassName="h-10 w-10 flex items-center justify-center leading-none"
-            />
+            <span className="h-10 w-10 flex items-center justify-center leading-none text-xl border border-base-400 rounded-full">
+                {name ? initials(name) : '--'}
+            </span>
         </DropdownToggle>
     );
 
