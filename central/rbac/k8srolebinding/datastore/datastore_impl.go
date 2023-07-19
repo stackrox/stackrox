@@ -2,7 +2,9 @@ package datastore
 
 import (
 	"context"
+	"time"
 
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
 	"github.com/stackrox/rox/central/role/resources"
@@ -63,9 +65,14 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "K8SRoleBinding", "Search")
 	return d.searcher.Search(ctx, q)
 }
 
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
+}
+
+func (d *datastoreImpl) GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
+	return d.storage.GetMany(ctx, ids)
 }
