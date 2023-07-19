@@ -7,7 +7,7 @@ pg_rhel_major=8
 
 arch="$(uname -m)"
 dnf_list_args=()
-if [[ $(uname -m) == "arm64" ]]; then
+if [[ "$arch" == "arm64" ]]; then
   arch="aarch64"
   # Workaround for local Darwin ARM64 builds due to "Error: Failed to download metadata for repo 'pgdg14': repomd.xml GPG signature verification error: Bad GPG signature"
   dnf_list_args=('--nogpgcheck')
