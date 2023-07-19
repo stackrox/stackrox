@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
+	"github.com/stackrox/rox/sensor/common/message"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -550,7 +551,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		policyDetector:    mockDetector,
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
-		sensorUpdates:     make(chan *central.MsgFromSensor),
+		sensorUpdates:     make(chan *message.ExpiringMessage),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
 	}
