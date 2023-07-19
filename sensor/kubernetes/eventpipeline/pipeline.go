@@ -25,12 +25,12 @@ import (
 func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider, queueSize int) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	var depResolver component.Resolver
-	var resourceListener component.PipelineComponent
+	var resourceListener component.ContextListener
 	if env.ResyncDisabled.BooleanSetting() {
 		depResolver = resolver.New(outputQueue, storeProvider, queueSize)
-		resourceListener = listener.New(context.TODO(), client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
+		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 	} else {
-		resourceListener = listener.New(context.TODO(), client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
+		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
 	}
 
 	offlineMode := &atomic.Bool{}

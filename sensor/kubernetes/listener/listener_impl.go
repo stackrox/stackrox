@@ -2,10 +2,12 @@ package listener
 
 import (
 	"context"
+	"errors"
 	"io"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -31,9 +33,21 @@ type listenerImpl struct {
 	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
 	context            context.Context
+	contextMtx         sync.Mutex
+}
+
+func (k *listenerImpl) StartWithContext(ctx context.Context) error {
+	k.contextMtx.Lock()
+	defer k.contextMtx.Unlock()
+	k.context = ctx
+	return k.Start()
 }
 
 func (k *listenerImpl) Start() error {
+	if k.context == nil {
+		return errors.New("cannot start listener without a context")
+	}
+
 	// This happens if the listener is restarting. Then the signal will already have been triggered
 	// when starting a new run of the listener.
 	if k.stopSig.IsDone() {
