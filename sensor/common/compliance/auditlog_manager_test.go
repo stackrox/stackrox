@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/suite"
 )
@@ -90,7 +91,7 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 		forceUpdateSig:          concurrency.NewSignal(),
 		centralReady:            concurrency.NewSignal(),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
-		fileStateUpdates:        make(chan *central.MsgFromSensor),
+		fileStateUpdates:        make(chan *message.ExpiringMessage),
 	}
 }
 

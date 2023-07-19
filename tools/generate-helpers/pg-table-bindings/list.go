@@ -35,6 +35,7 @@ func init() {
 		&storage.ComplianceOperatorRuleV2{}:                     resources.ComplianceOperator,
 		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
 		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
+		&storage.ComplianceOperatorScanSettingV2{}:              resources.ComplianceOperator,
 		&storage.ComplianceRunMetadata{}:                        resources.Compliance,
 		&storage.ComplianceRunResults{}:                         resources.Compliance,
 		&storage.ComponentCVEEdge{}:                             resources.Image,

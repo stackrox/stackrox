@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -117,7 +118,7 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 }
 
 type certificateRequesterFixture struct {
-	sendC                chan *central.MsgFromSensor
+	sendC                chan *message.ExpiringMessage
 	receiveC             chan *central.IssueLocalScannerCertsResponse
 	requester            CertificateRequester
 	interceptedRequestID *atomic.Value
@@ -128,7 +129,7 @@ type certificateRequesterFixture struct {
 // newFixture creates a new test fixture that uses `timeout` as context timeout if `timeout` is
 // not 0, and `testTimeout` otherwise.
 func newFixture(timeout time.Duration) *certificateRequesterFixture {
-	sendC := make(chan *central.MsgFromSensor)
+	sendC := make(chan *message.ExpiringMessage)
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse)
 	requester := NewCertificateRequester(sendC, receiveC)
 	var interceptedRequestID atomic.Value

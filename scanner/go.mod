@@ -8,7 +8,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/quay/claircore v1.5.9
 	github.com/quay/zlog v1.1.4
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.29.1
 	github.com/stackrox/rox v0.0.0
 	google.golang.org/grpc v1.56.2
 )
@@ -134,7 +134,6 @@ require (
 )
 
 replace (
-	github.com/stackrox/rox => ../
 	// The following is a manual copy of replacements done in github.com/stackrox/rox.
 	// Go mod does not recursively apply them, hence the copy.  If you are
 	// here to update, strip all comments and sort alphabetically.
@@ -147,6 +146,7 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.5
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230711131308-08cc94506b32
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20230524131509-aa1a890d9fb7
+	github.com/stackrox/rox => ../
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20230323154701-8854a69ca091

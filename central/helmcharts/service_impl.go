@@ -37,7 +37,7 @@ func (s *service) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
 			Route:         "/api/extensions/helm-charts/",
-			Authorizer:    user.With(),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: http.StripPrefix("/api/extensions/helm-charts", http.HandlerFunc(s.serveChart)),
 			Compression:   false,
 		},

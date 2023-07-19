@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"context"
 	"sort"
 
 	"github.com/gogo/protobuf/types"
@@ -29,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -65,7 +67,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
-		output:                    make(chan *central.MsgFromSensor),
+		output:                    make(chan *message.ExpiringMessage),
 		auditEventsChan:           auditLogEvents,
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
@@ -94,7 +96,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 type detectorImpl struct {
 	unifiedDetector unified.Detector
 
-	output                    chan *central.MsgFromSensor
+	output                    chan *message.ExpiringMessage
 	auditEventsChan           chan *sensor.AuditEvents
 	deploymentAlertOutputChan chan outputResult
 
@@ -306,7 +308,7 @@ func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
-func (d *detectorImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (d *detectorImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return d.output
 }
 
@@ -369,12 +371,8 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
-			select {
-			case <-d.auditStopper.Flow().StopRequested():
-				return
-			case <-d.serializerStopper.Flow().StopRequested():
-				return
-			case d.output <- &central.MsgFromSensor{
+
+			msg := &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_Event{
 					Event: &central.SensorEvent{
 						Action: central.ResourceAction_CREATE_RESOURCE,
@@ -387,7 +385,17 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 						},
 					},
 				},
-			}:
+			}
+
+			// TODO(ROX-17326): Add context to detector message
+			expiringMessage := message.NewExpiring(context.TODO(), msg)
+
+			select {
+			case <-d.auditStopper.Flow().StopRequested():
+				return
+			case <-d.serializerStopper.Flow().StopRequested():
+				return
+			case d.output <- expiringMessage:
 			}
 		}
 	}
@@ -464,8 +472,8 @@ func (d *detectorImpl) ProcessIndicator(pi *storage.ProcessIndicator) {
 	go d.processIndicator(pi)
 }
 
-func createAlertResultsMsg(action central.ResourceAction, alertResults *central.AlertResults) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
+func createAlertResultsMsg(action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
+	msgFromSensor := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id:     alertResults.GetDeploymentId(),
@@ -480,6 +488,9 @@ func createAlertResultsMsg(action central.ResourceAction, alertResults *central.
 			},
 		},
 	}
+
+	// TODO(ROX-17326): Add context to detector messages
+	return message.NewExpiring(context.TODO(), msgFromSensor)
 }
 
 func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
