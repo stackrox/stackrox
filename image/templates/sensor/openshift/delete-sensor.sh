@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-oc -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,deploy,netpol,psp,clusterrole,clusterrolebinding,role,rolebinding -l auto-upgrade.stackrox.io/component=sensor --wait
+oc -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,deploy,netpol,clusterrole,clusterrolebinding,role,rolebinding -l auto-upgrade.stackrox.io/component=sensor --wait
+
+SUPPORTS_PSP=$(oc api-resources | grep "podsecuritypolicies" -c || true)
+
+if [[ "${SUPPORTS_PSP}" -ne 0 ]]; then
+    oc -n stackrox delete psp -l auto-upgrade.stackrox.io/component=sensor --wait
+fi
 
 oc delete scc -l auto-upgrade.stackrox.io/component=sensor --wait
 
-if ! oc get -n stackrox deploy/central > /dev/null; then
+if ! oc get -n stackrox deploy/central > /dev/null 2>&1; then
     oc delete -n stackrox secret stackrox
 fi

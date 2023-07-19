@@ -23,9 +23,7 @@ image/templates/common/port-forward.sh
 image/templates/common/setup-central.sh
 image/templates/common/setup-scanner.sh
 image/templates/common/setup.sh
-image/templates/sensor/kubernetes/delete-sensor.sh
 image/templates/sensor/kubernetes/sensor.sh
-image/templates/sensor/openshift/delete-sensor.sh
 image/templates/sensor/openshift/sensor.sh
 licenses/generate-license-wrapper.sh
 operator/hack/common.sh
