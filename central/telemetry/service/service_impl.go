@@ -26,7 +26,7 @@ var (
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.TelemetryService/ConfigureTelemetry",
 		},
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.TelemetryService/GetConfig",
 		},
 	})
