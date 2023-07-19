@@ -3,8 +3,10 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { Alert, Bullseye } from '@patternfly/react-core';
+import { Bullseye } from '@patternfly/react-core';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
@@ -109,9 +111,14 @@ function RiskTablePanel({
             <PanelBody>
                 {errorMessageDeployments ? (
                     <Bullseye>
-                        <Alert variant="danger" isInline title="Unable to get deployments">
+                        <EmptyStateTemplate
+                            title="Unable to load deployments"
+                            headingLevel="h2"
+                            icon={ExclamationTriangleIcon}
+                            iconClassName="pf-u-warning-color-100"
+                        >
                             {errorMessageDeployments}
-                        </Alert>
+                        </EmptyStateTemplate>
                     </Bullseye>
                 ) : (
                     <RiskTable

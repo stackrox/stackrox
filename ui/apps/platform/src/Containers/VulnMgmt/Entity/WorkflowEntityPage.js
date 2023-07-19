@@ -2,10 +2,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
-import { Alert, Bullseye } from '@patternfly/react-core';
+import { Bullseye } from '@patternfly/react-core';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'utils/queryService';
 
@@ -88,9 +90,14 @@ const WorkflowEntityPage = ({
     if (error) {
         return (
             <Bullseye>
-                <Alert variant="warning" isInline title="Unable to get data">
+                <EmptyStateTemplate
+                    title="Unable to load data"
+                    headingLevel="h3"
+                    icon={ExclamationTriangleIcon}
+                    iconClassName="pf-u-warning-color-100"
+                >
                     {error.message}
-                </Alert>
+                </EmptyStateTemplate>
             </Bullseye>
         );
     }
