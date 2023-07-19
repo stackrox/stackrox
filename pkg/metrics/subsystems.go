@@ -8,6 +8,7 @@ const (
 	CentralSubsystem    Subsystem = "central"
 	SensorSubsystem     Subsystem = "sensor"
 	ComplianceSubsystem Subsystem = "compliance"
+	ScannerSubsystem    Subsystem = "scannerv4"
 )
 
 func (s Subsystem) String() string {
