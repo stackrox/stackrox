@@ -11,6 +11,7 @@ import (
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	common "github.com/stackrox/rox/sensor/common"
+	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )
@@ -114,10 +115,10 @@ func (mr *MockSensorComponentMockRecorder) ProcessMessage(msg interface{}) *gomo
 }
 
 // ResponsesC mocks base method.
-func (m *MockSensorComponent) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockSensorComponent) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 
@@ -231,10 +232,10 @@ func (mr *MockComplianceComponentMockRecorder) ProcessMessage(msg interface{}) *
 }
 
 // ResponsesC mocks base method.
-func (m *MockComplianceComponent) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockComplianceComponent) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 
