@@ -271,7 +271,7 @@
         "decommissionedClusterRetention": {
           "$ref": "#/definitions/storageDecommissionedClusterRetentionConfig"
         },
-        "defaultReportRetentionWindow": {
+        "reportRetentionConfig": {
           "$ref": "#/definitions/storageReportRetentionConfig"
         }
       },
@@ -297,7 +297,7 @@
     "storageReportRetentionConfig": {
       "type": "object",
       "properties": {
-        "retentionDurationDays": {
+        "snapshotRetentionDurationDays": {
           "type": "integer",
           "format": "int32"
         }

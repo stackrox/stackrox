@@ -56,7 +56,7 @@ message DecommissionedClusterRetentionConfig {
 }
 
 message ReportRetentionConfig {
-    int32 retention_duration_days              = 1;
+    int32 snapshot_retention_duration_days              = 1;
 }
 
 // next available tag:7
@@ -69,7 +69,7 @@ message PrivateConfig {
     int32                    image_retention_duration_days                  = 2;
     int32                    expired_vuln_req_retention_duration_days       = 4;
     DecommissionedClusterRetentionConfig decommissioned_cluster_retention   = 5;
-    ReportRetentionConfig             default_report_retention_window       = 6;
+    ReportRetentionConfig             report_retention_config               = 6;
 }
 
 
