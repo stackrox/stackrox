@@ -207,9 +207,9 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		withNoAccessToCluster: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(uuid.Nil.String()),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList(uuid.Nil.String()),
 			)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
@@ -219,14 +219,14 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withAccess: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-		    	{{- if .Obj.IsNamespaceScope }}
+				{{- if .Obj.IsNamespaceScope }}
 				sac.AllowFixedNamespaceLevelScopes(
 				{{- else }}
 				sac.AllowFixedClusterLevelScopes(
 				{{- end }}
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList({{ "objA" | .Obj.GetClusterID }}),
 					{{- if .Obj.IsNamespaceScope }}
 					sac.NamespaceScopeKeys({{ "objA" | .Obj.GetNamespace }}),
 					{{- end }}
@@ -240,9 +240,9 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		withAccessToCluster: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList({{ "objA" | .Obj.GetClusterID }}),
 			)),
 			expectedObjIDs:         []string{ {{ "objA" | .Obj.GetID }} },
 			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA" }} },
@@ -253,9 +253,9 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		withAccessToDifferentCluster: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList("caaaaaaa-bbbb-4011-0000-111111111111"),
 			)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
@@ -266,10 +266,10 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		withAccessToDifferentNs: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
-					sac.NamespaceScopeKeys("unknown ns"),
+					sac.AccessModeScopeKeyList(access),
+					sac.ResourceScopeKeyList(targetResource),
+					sac.ClusterScopeKeyList({{ "objA" | .Obj.GetClusterID }}),
+					sac.NamespaceScopeKeyList("unknown ns"),
 			)),
 			{{- if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
 			expectedObjIDs:         []string{ {{ "objA" | .Obj.GetID }} },
