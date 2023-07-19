@@ -333,8 +333,24 @@ function launch_central {
         helm lint "$unzip_dir/chart" -n stackrox
         helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
       fi
-      helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
+
+      local helm_chart="$unzip_dir/chart"
+
+      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
+        helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
+      fi
+
+      if [[ -n "${CENTRAL_CHART_VERSION_OVERRIDE}" ]]; then
+        helm_args+=(
+         --version="${CENTRAL_CHART_VERSION_OVERRIDE}"
+        )
+      fi
+
+      set -x
+      helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
+      set +x
+
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         $unzip_dir/central/scripts/setup.sh
@@ -453,6 +469,8 @@ function launch_central {
 
 function launch_sensor {
     local k8s_dir="$1"
+    local sensor_chart_version_override="$2"
+    local sensor_chart_dir_override="$3"
     local common_dir="${k8s_dir}/../common"
 
     local extra_config=()
@@ -482,7 +500,7 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
+    if [[ -n "$COLLECTOR_IMAGE_REPO" && ${DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS:-false} != "true" ]]; then
         extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
         extra_json_config+=", \"collectorImage\": \"${COLLECTOR_IMAGE_REPO}\""
         extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
@@ -533,8 +551,6 @@ function launch_sensor {
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
-        --set "image.main.repository=${MAIN_IMAGE_REPO}"
-        --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
         --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
       )
@@ -574,12 +590,30 @@ function launch_sensor {
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
+
       if [[ "$sensor_namespace" != "stackrox" ]]; then
         kubectl create namespace "$sensor_namespace" &>/dev/null || true
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
-      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
+
+
+      local helm_chart="$k8s_dir/sensor-deploy/chart"
+
+      if [[ -n "${sensor_chart_dir_override}" ]]; then
+        helm_chart="${sensor_chart_dir_override}"
+      fi
+
+      if [[ -n "${sensor_chart_version_override}" ]]; then
+        helm_args+=(
+          --version="${sensor_chart_version_override}"
+        )
+      fi
+
+      set -x
+      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
+      set +x
+
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }

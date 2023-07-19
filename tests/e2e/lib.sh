@@ -28,7 +28,7 @@ deploy_stackrox() {
     setup_client_TLS_certs "${1:-}"
     record_build_info
 
-    deploy_sensor
+    deploy_sensor "${2:-}" "${3:-}"
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
@@ -43,42 +43,40 @@ deploy_stackrox() {
 }
 
 # shellcheck disable=SC2120
-deploy_stackrox_with_custom_sensor() {
-    if [[ "$#" -ne 1 ]]; then
-        die "expected sensor chart version as parameter in deploy_stackrox_with_custom_sensor"
+deploy_stackrox_with_custom_central_and_sensor_versions() {
+    if [[ "$#" -ne 2 ]]; then
+        die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
-    target_version="$1"
-    setup_podsecuritypolicies_config
+    ci_export CENTRAL_CHART_VERSION_OVERRIDE "$1"
+    sensor_chart_version_override="$2"
+    ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
+    ci_export OUTPUT_FORMAT "helm"
+    ci_export DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS "true"
+    unset COLLECTOR_IMAGE_REPO
 
-    deploy_central
+    helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
+    helm repo update
 
-    export_central_basic_auth_creds
-    wait_for_api
-    setup_client_TLS_certs "${2:-}"
-    record_build_info
+    helm_charts=$(helm search repo stackrox-oss -l)
+    central_regex="stackrox-oss/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+    sensor_regex="stackrox-oss/stackrox-secured-cluster-services[ \t]*.${sensor_chart_version_override}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
-    # generate init bundle
-    password_file="$ROOT/deploy/$ORCHESTRATOR_FLAVOR/central-deploy/password"
-    if [ ! -f "$password_file" ]; then
-        die "password file $password_file not found after deploying central"
+    if  [[ $helm_charts =~ $central_regex ]]; then
+        #ci_export MAIN_IMAGE_TAG "${BASH_REMATCH[1]}"
+        ci_export CENTRAL_CHART_DIR_OVERRIDE "stackrox-oss/stackrox-central-services"
+    else
+        echo "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in stackrox-oss repo"
     fi
-    kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-        --password "$(cat "$password_file")" \
-      central init-bundles generate stackrox-init-bundle --output - 1> stackrox-init-bundle.yaml
 
-    deploy_sensor_from_helm_charts "$target_version" ./stackrox-init-bundle.yaml
+    if [[ $helm_charts =~ $sensor_regex ]]; then
+        sensor_chart_dir_override="stackrox-oss/stackrox-secured-cluster-services"
+    else
+        echo "stackrox-secured-cluster-services helm chart for version ${sensor_chart_version_override} not found in stackrox-oss repo"
+    fi
 
-    echo "Sensor deployed. Waiting for sensor to be up"
-    sensor_wait
+    deploy_stackrox "" "${sensor_chart_version_override}" "${sensor_chart_dir_override}"
 
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
-
-    sensor_wait
-
-    wait_for_collectors_to_be_operational
-
-    touch "${STATE_DEPLOYED}"
+    ci_export CENTRAL_CHART_DIR_OVERRIDE ""
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -205,28 +203,6 @@ deploy_central_via_operator() {
     wait_for_object_to_appear stackrox deploy/central 300
 }
 
-deploy_sensor_from_helm_charts() {
-    if [[ "$#" -ne 2 ]]; then
-        die "deploy_sensor_from_helm_charts should receive a helm chart version and an init bundle\nusage: deploy_sensor_from_helm_charts <Chart version> <path to init bundle>"
-    fi
-
-    chart_version="$1"
-    init_bundle="$2"
-
-    info "Deploying secured cluster (v$chart_version) from Helm Charts (init bundle $init_bundle)"
-
-    helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
-    helm repo update
-
-    helm search repo stackrox-oss -l
-
-    helm install -n stackrox stackrox-secured-cluster-services \
-        stackrox-oss/stackrox-secured-cluster-services \
-        -f "$init_bundle" \
-        --set clusterName="remote" \
-        --version "$chart_version"
-}
-
 deploy_sensor() {
     info "Deploying sensor"
 
@@ -249,7 +225,7 @@ deploy_sensor() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/sensor.sh"
+        "$ROOT/${DEPLOY_DIR}/sensor.sh" "${1:-}" "${2:-}"
     fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
