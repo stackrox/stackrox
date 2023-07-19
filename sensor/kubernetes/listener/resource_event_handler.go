@@ -133,7 +133,7 @@ func (k *listenerImpl) handleAllEvents() {
 			k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	handleComplianceResourceEvent(k.client, dispatchers, k.outputQueue, &syncingResources, noDependencyWaitGroup, k.complianceC, stopSignal, &eventLock)
+	handleComplianceResourceEvents(k.client, dispatchers, k.outputQueue, &syncingResources, noDependencyWaitGroup, k.complianceC, stopSignal, &eventLock)
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory) {
 		return
@@ -284,7 +284,7 @@ func removeHandler(informer cache.SharedIndexInformer, registration cache.Resour
 	}
 }
 
-func handleComplianceResourceEvent(
+func handleComplianceResourceEvents(
 	client client.Interface,
 	dispatchers resources.DispatcherRegistry,
 	resolver component.Resolver,
@@ -336,6 +336,9 @@ func watchComplianceSignals(
 		log.Infof("initializing compliance operator informers")
 
 		crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(client.Dynamic(), noResyncPeriod)
+		if !startAndWait(stopSignal, wg, crdSharedInformerFactory) {
+			return
+		}
 
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
 		complianceProfileRegistration = handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), resolver, syncingResources, wg, stopSignal, eventLock)
@@ -350,7 +353,7 @@ func watchComplianceSignals(
 
 		if features.ComplianceEnhancements.Enabled() {
 			complianceScanSettingInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingGVR).Informer()
-			complianceScanSettingRegistration = handle(complianceScanSettingInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), resolver, syncingResources, wg, stopSignal, eventLock)
+			complianceScanSettingRegistration = handle(complianceScanSettingInformer, dispatchers.ForComplianceOperatorScanSettings(), resolver, syncingResources, wg, stopSignal, eventLock)
 		}
 
 		complianceScanSettingBindingInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBindingGVR).Informer()

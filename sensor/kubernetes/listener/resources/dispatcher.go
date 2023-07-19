@@ -48,6 +48,7 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
 	ForComplianceOperatorRules() Dispatcher
+	ForComplianceOperatorScanSettings() Dispatcher
 	ForComplianceOperatorScanSettingBindings() Dispatcher
 	ForComplianceOperatorScans() Dispatcher
 	ForComplianceOperatorTailoredProfiles() Dispatcher
@@ -97,6 +98,7 @@ func NewDispatcherRegistry(
 		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
 		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
 		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
+		complianceOperatorScanSettingDispatcher:         complianceOperatorDispatchers.NewScanSettingDispatcher(),
 		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
 		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
 		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(profileLister),
@@ -119,7 +121,8 @@ type registryImpl struct {
 
 	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
 	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
-	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
+	complianceOperatorScanSettingDispatcher         *complianceOperatorDispatchers.ScanSetting
+	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBinding
 	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
 	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
 	complianceOperatorTailoredProfileDispatcher     *complianceOperatorDispatchers.TailoredProfileDispatcher
@@ -289,6 +292,10 @@ func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorRules() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorRulesDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForComplianceOperatorScanSettings() Dispatcher {
+	return wrapDispatcher(d.complianceOperatorScanSettingDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
