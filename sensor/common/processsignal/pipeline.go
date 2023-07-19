@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
@@ -19,7 +20,7 @@ var (
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {
 	clusterEntities    *clusterentities.Store
-	indicators         chan *central.MsgFromSensor
+	indicators         chan *message.ExpiringMessage
 	enrichedIndicators chan *storage.ProcessIndicator
 	enricher           *enricher
 	processFilter      filter.Filter
@@ -27,7 +28,7 @@ type Pipeline struct {
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *central.MsgFromSensor, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
+func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 	p := &Pipeline{
 		clusterEntities:    clusterEntities,
@@ -77,7 +78,7 @@ func (p *Pipeline) sendIndicatorEvent() {
 		}
 		p.detector.ProcessIndicator(indicator)
 
-		p.indicators <- &central.MsgFromSensor{Msg: &central.MsgFromSensor_Event{Event: &central.SensorEvent{
+		p.indicators <- message.New(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Event{Event: &central.SensorEvent{
 			Id:     indicator.GetId(),
 			Action: central.ResourceAction_CREATE_RESOURCE,
 			Resource: &central.SensorEvent_ProcessIndicator{
@@ -85,6 +86,6 @@ func (p *Pipeline) sendIndicatorEvent() {
 			},
 		},
 		},
-		}
+		})
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	appsv1 "k8s.io/api/apps/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +39,7 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 	return &updaterImpl{
 		client:         client,
 		updateInterval: updateInterval,
-		response:       make(chan *central.MsgFromSensor),
+		response:       make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 	}
 }
@@ -46,7 +47,7 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 type updaterImpl struct {
 	client               kubernetes.Interface
 	updateInterval       time.Duration
-	response             chan *central.MsgFromSensor
+	response             chan *message.ExpiringMessage
 	stopSig              concurrency.Signal
 	complianceOperatorNS string
 }
@@ -73,7 +74,7 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.response
 }
 
@@ -114,7 +115,7 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 	log.Debugf("Compliance Operator Info: %v", protoutils.NewWrapper(msg.GetComplianceOperatorInfo()))
 
 	select {
-	case u.response <- msg:
+	case u.response <- message.New(msg):
 		return true
 	case <-u.stopSig.Done():
 		return false

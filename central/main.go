@@ -632,7 +632,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/cli/download/",
-			Authorizer:    user.With(),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: cli.Handler(),
 			Compression:   true,
 		},
@@ -644,7 +644,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/graphql",
-			Authorizer:    user.With(), // graphql enforces permissions internally
+			Authorizer:    user.Authenticated(), // graphql enforces permissions internally
 			ServerHandler: graphqlHandler.Handler(),
 			Compression:   true,
 		},
@@ -698,7 +698,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/logimbue",
-			Authorizer:    user.With(),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
 			EnableAudit:   true,

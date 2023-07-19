@@ -1,8 +1,6 @@
-// @TODO: Colocate types from API calls with the function that made the API call
+import { VulnerabilitySeverity } from '../types/cve.proto';
 
-import { VulnerabilitySeverity } from './cve.proto';
-
-export type ReportType = 'VULNERABILITY';
+// Report configuration types
 
 export type ReportConfiguration = {
     id: string;
@@ -14,6 +12,8 @@ export type ReportConfiguration = {
     schedule: Schedule;
     resourceScope: ResourceScope;
 };
+
+export type ReportType = 'VULNERABILITY';
 
 export type VulnerabilityReportFiltersBase = {
     fixability: Fixability;
@@ -40,13 +40,8 @@ export type NotifierConfiguration = {
     emailConfig: {
         notifierId: string;
         mailingLists: string[];
-    }[];
+    };
     notifierName: string;
-};
-
-export type EmailNotifierConfiguration = {
-    notifierId: string;
-    mailingLists: string[];
 };
 
 type ScheduleBase = {
@@ -90,3 +85,19 @@ export type ResourceScope = {
         collectionName: string;
     };
 };
+
+// Report status types
+
+export type ReportStatus = {
+    runState: RunState;
+    completedAt: string; // google.protobuf.Timestamp
+    errorMsg: string;
+    reportRequestType: ReportRequestType;
+    reportNotificationMethod: ReportNotificationMethod;
+};
+
+export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
+
+export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
+
+export type ReportNotificationMethod = 'UNSET' | 'EMAIL' | 'DOWNLOAD';

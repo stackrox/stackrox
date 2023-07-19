@@ -13,6 +13,7 @@ import (
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -53,7 +54,7 @@ func newLocalScannerTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *local
 		componentGetter: &componentGetterMock{},
 		k8sClient:       getFakeK8sClient(k8sClientConfig),
 	}
-	msgToCentralC := make(chan *central.MsgFromSensor)
+	msgToCentralC := make(chan *message.ExpiringMessage)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	fixture.tlsIssuer = &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
@@ -360,7 +361,7 @@ func (s *localScannerTLSIssueIntegrationTests) getCertificate(serviceType storag
 }
 
 func (s *localScannerTLSIssueIntegrationTests) waitForRequest(ctx context.Context, tlsIssuer common.SensorComponent) *central.IssueLocalScannerCertsRequest {
-	var request *central.MsgFromSensor
+	var request *message.ExpiringMessage
 	select {
 	case request = <-tlsIssuer.ResponsesC():
 	case <-ctx.Done():

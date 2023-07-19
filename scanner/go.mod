@@ -8,7 +8,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/quay/claircore v1.5.9
 	github.com/quay/zlog v1.1.4
-	github.com/rs/zerolog v1.29.0
+	github.com/rs/zerolog v1.29.1
 	github.com/stackrox/rox v0.0.0
 	google.golang.org/grpc v1.56.2
 )
@@ -91,7 +91,7 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
+	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
@@ -144,7 +144,7 @@ replace (
 	github.com/mikefarah/yaml/v2 => gopkg.in/yaml.v2 v2.4.0
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.5
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230627074417-5d4fc78ff0ea
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230711131308-08cc94506b32
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20230524131509-aa1a890d9fb7
 	github.com/stackrox/rox => ../
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063

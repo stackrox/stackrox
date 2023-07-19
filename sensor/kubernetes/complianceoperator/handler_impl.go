@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,7 +24,7 @@ type handlerImpl struct {
 	client                 dynamic.Interface
 	complianceOperatorInfo StatusInfo
 
-	response chan *central.MsgFromSensor
+	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
 
 	disabled   concurrency.Signal
@@ -37,7 +38,7 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		complianceOperatorInfo: complianceOperatorInfo,
 
 		request:  make(chan *central.ComplianceRequest),
-		response: make(chan *central.MsgFromSensor),
+		response: make(chan *message.ExpiringMessage),
 
 		disabled:   concurrency.NewSignal(),
 		stopSignal: concurrency.NewSignal(),
@@ -77,7 +78,7 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 }
 
-func (m *handlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.response
 }
 
@@ -360,11 +361,11 @@ func (m *handlerImpl) composeAndSendDeleteResponse(requestID string, resource st
 
 func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) bool {
 	select {
-	case m.response <- &central.MsgFromSensor{
+	case m.response <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ComplianceResponse{
 			ComplianceResponse: response,
 		},
-	}:
+	}):
 		return true
 	case <-m.stopSignal.Done():
 		return false

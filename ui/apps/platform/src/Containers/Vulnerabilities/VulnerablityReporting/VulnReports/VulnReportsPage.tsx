@@ -8,75 +8,34 @@ import {
     Button,
     Card,
     CardBody,
+    Bullseye,
+    Spinner,
+    EmptyState,
+    EmptyStateIcon,
+    EmptyStateBody,
+    EmptyStateVariant,
+    Text,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link } from 'react-router-dom';
+import { ExclamationCircleIcon, FileIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration } from 'types/reportConfigurationService.proto';
-import { ReportStatus } from 'types/report.proto';
-import { Report } from 'Containers/Vulnerabilities/VulnerablityReporting/types';
+import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
+import { vulnerabilityReportsPath } from 'routePaths';
 
 import PageTitle from 'Components/PageTitle';
-import { vulnerabilityReportsPath } from 'routePaths';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
 
-const reportConfigurations: ReportConfiguration[] = [
-    {
-        id: '1',
-        name: 'bob-report-1',
-        description: '',
-        type: 'VULNERABILITY',
-        vulnReportFilters: {
-            fixability: 'FIXABLE',
-            severities: ['CRITICAL_VULNERABILITY_SEVERITY', 'IMPORTANT_VULNERABILITY_SEVERITY'],
-            imageTypes: ['DEPLOYED', 'WATCHED'],
-            allVuln: true,
-        },
-        notifiers: [
-            {
-                emailConfig: [
-                    {
-                        notifierId: 'notifier-1',
-                        mailingLists: ['bob@example.com', 'alice@example.com'],
-                    },
-                ],
-                notifierName: 'notifier-1',
-            },
-        ],
-        resourceScope: {
-            collectionScope: {
-                collectionId: 'collection-1',
-                collectionName: 'bob-collection-1',
-            },
-        },
-        schedule: {
-            intervalType: 'WEEKLY',
-            hour: 10,
-            minute: 0,
-            daysOfWeek: {
-                days: [0, 1, 2, 3, 4, 5, 6],
-            },
-        },
-    },
-];
-
-const reportStatus: ReportStatus = {
-    runState: 'SUCCESS',
-    runTime: '2023-06-20T10:59:46.383433891Z',
-    errorMsg: '',
-    reportMethod: 'ON_DEMAND',
-    reportNotificationMethod: 'DOWNLOAD',
-};
-
-const reportLastRunStatus: ReportStatus = {
-    runState: 'FAILURE',
-    runTime: '2023-06-20T10:59:46.383433891Z',
-    errorMsg: 'Failed to generate download, please try again',
-    reportMethod: 'ON_DEMAND',
-    reportNotificationMethod: 'DOWNLOAD',
+const CreateReportsButton = () => {
+    return (
+        <Link to={`${vulnerabilityReportsPath}?action=create`}>
+            <Button variant="primary">Create report</Button>
+        </Link>
+    );
 };
 
 function VulnReportsPage() {
@@ -92,13 +51,8 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const reports = reportConfigurations.map((reportConfiguration): Report => {
-        return {
-            ...reportConfiguration,
-            reportStatus,
-            reportLastRunStatus,
-        };
-    });
+    const { reports, isLoading, error } = useFetchReports();
+
     return (
         <>
             <PageTitle title="Vulnerability reporting" />
@@ -115,71 +69,123 @@ function VulnReportsPage() {
                                 <Title headingLevel="h1">Vulnerability reporting</Title>
                             </FlexItem>
                             <FlexItem>
-                                Configure reports, define report scopes, and assign distribution
-                                lists to report on vulnerabilities across the organization.
+                                Configure reports, define report scopes, and assign delivery
+                                destinations to report on vulnerabilities across the organization.
                             </FlexItem>
                         </Flex>
                     </FlexItem>
-                    <FlexItem>
-                        {canCreateReports && (
-                            <Link to={`${vulnerabilityReportsPath}?action=create`}>
-                                <Button variant="primary" onClick={() => {}}>
-                                    Create report
-                                </Button>
-                            </Link>
-                        )}
-                    </FlexItem>
+                    {reports.length > 0 && canCreateReports && (
+                        <FlexItem>
+                            <CreateReportsButton />
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody className="pf-u-p-0">
-                            <TableComposable borders={false}>
-                                <Thead noWrap>
-                                    <Tr>
-                                        <Th>Report</Th>
-                                        <HelpIconTh tooltip="A set of user-configured rules for selecting deployments as part of the report scope">
-                                            Collection
-                                        </HelpIconTh>
-                                        <Th>Last run status</Th>
-                                        <HelpIconTh tooltip="The report that was last run by a schedule or an on-demand action including 'send report now' and 'generate a downloadable report'">
-                                            Last run
-                                        </HelpIconTh>
-                                    </Tr>
-                                </Thead>
-                                {reports.map((report) => {
-                                    return (
-                                        <Tbody
-                                            key={report.id}
-                                            style={{
-                                                borderBottom:
-                                                    '1px solid var(--pf-c-table--BorderColor)',
-                                            }}
-                                        >
+                            {isLoading && (
+                                <div className="pf-u-p-md">
+                                    <Bullseye>
+                                        <Spinner isSVG />
+                                    </Bullseye>
+                                </div>
+                            )}
+                            {error && (
+                                <EmptyState variant={EmptyStateVariant.small}>
+                                    <EmptyStateIcon
+                                        icon={ExclamationCircleIcon}
+                                        className="pf-u-danger-color-100"
+                                    />
+                                    <Title headingLevel="h2" size="lg">
+                                        Unable to get vulnerability reports
+                                    </Title>
+                                    <EmptyStateBody>{error}</EmptyStateBody>
+                                </EmptyState>
+                            )}
+                            {!isLoading && !error && (
+                                <TableComposable borders={false}>
+                                    <Thead noWrap>
+                                        <Tr>
+                                            <Th>Report</Th>
+                                            <HelpIconTh tooltip="A set of user-configured rules for selecting deployments as part of the report scope">
+                                                Collection
+                                            </HelpIconTh>
+                                            <Th>Last run status</Th>
+                                            <HelpIconTh tooltip="The report that was last run by a schedule or an on-demand action including 'send report now' and 'generate a downloadable report'">
+                                                Last run
+                                            </HelpIconTh>
+                                        </Tr>
+                                    </Thead>
+                                    {reports.length === 0 && (
+                                        <Tbody>
                                             <Tr>
-                                                <Td>{report.name}</Td>
-                                                <Td>
-                                                    {
-                                                        report.resourceScope.collectionScope
-                                                            .collectionName
-                                                    }
-                                                </Td>
-                                                <Td>
-                                                    <LastRunStatusState
-                                                        reportStatus={report.reportLastRunStatus}
-                                                    />
-                                                </Td>
-                                                <Td>
-                                                    <LastRunState
-                                                        reportStatus={report.reportStatus}
-                                                    />
+                                                <Td colSpan={4}>
+                                                    <Bullseye>
+                                                        <EmptyStateTemplate
+                                                            title="No vulnerability reports yet"
+                                                            headingLevel="h2"
+                                                            icon={FileIcon}
+                                                        >
+                                                            {canCreateReports && (
+                                                                <Flex
+                                                                    direction={{
+                                                                        default: 'column',
+                                                                    }}
+                                                                >
+                                                                    <FlexItem>
+                                                                        <Text>
+                                                                            To get started, create a
+                                                                            report
+                                                                        </Text>
+                                                                    </FlexItem>
+                                                                    <FlexItem>
+                                                                        <CreateReportsButton />
+                                                                    </FlexItem>
+                                                                </Flex>
+                                                            )}
+                                                        </EmptyStateTemplate>
+                                                    </Bullseye>
                                                 </Td>
                                             </Tr>
                                         </Tbody>
-                                    );
-                                })}
-                            </TableComposable>
+                                    )}
+                                    {reports.map((report) => {
+                                        return (
+                                            <Tbody
+                                                key={report.id}
+                                                style={{
+                                                    borderBottom:
+                                                        '1px solid var(--pf-c-table--BorderColor)',
+                                                }}
+                                            >
+                                                <Tr>
+                                                    <Td>{report.name}</Td>
+                                                    <Td>
+                                                        {
+                                                            report.resourceScope.collectionScope
+                                                                .collectionName
+                                                        }
+                                                    </Td>
+                                                    <Td>
+                                                        <LastRunStatusState
+                                                            reportStatus={
+                                                                report.reportLastRunStatus
+                                                            }
+                                                        />
+                                                    </Td>
+                                                    <Td>
+                                                        <LastRunState
+                                                            reportStatus={report.reportStatus}
+                                                        />
+                                                    </Td>
+                                                </Tr>
+                                            </Tbody>
+                                        );
+                                    })}
+                                </TableComposable>
+                            )}
                         </CardBody>
                     </Card>
                 </PageSection>

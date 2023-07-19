@@ -1,7 +1,7 @@
 import React, { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { ReportStatus } from 'types/report.proto';
+import { ReportStatus } from 'services/ReportsService.types';
 
 import LastRunStatusState from './LastRunStatusState';
 
@@ -9,9 +9,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for a successful email', async () => {
         const reportStatus: ReportStatus = {
             runState: 'SUCCESS',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'EMAIL',
         };
 
@@ -26,9 +26,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for a successful download', async () => {
         const reportStatus: ReportStatus = {
             runState: 'SUCCESS',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
 
@@ -43,9 +43,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for a generic success', async () => {
         const reportStatus: ReportStatus = {
             runState: 'SUCCESS',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'UNSET',
         };
 
@@ -60,9 +60,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for an error when emailing', async () => {
         const reportStatus: ReportStatus = {
             runState: 'FAILURE',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'EMAIL',
         };
 
@@ -77,9 +77,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for an error when preparing a download', async () => {
         const reportStatus: ReportStatus = {
             runState: 'FAILURE',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
 
@@ -94,9 +94,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for a generic error', async () => {
         const reportStatus: ReportStatus = {
             runState: 'FAILURE',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'UNSET',
         };
 
@@ -111,9 +111,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for waiting for a report', async () => {
         const reportStatus: ReportStatus = {
             runState: 'WAITING',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
 
@@ -129,9 +129,9 @@ describe('LastRunStatusState', () => {
     test('should show the correct rendered output for preparing a report', async () => {
         const reportStatus: ReportStatus = {
             runState: 'PREPARING',
-            runTime: '2023-06-20T10:59:46.383433891Z',
+            completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
-            reportMethod: 'ON_DEMAND',
+            reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
 

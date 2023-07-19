@@ -19,7 +19,27 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { NamespaceScopeObject } from 'services/RolesService';
 import { NamespaceIcon } from '../common/NetworkGraphIcons';
-import { getDeploymentLookupMap, getDeploymentsAllowedByNamespaces } from '../utils/hierarchyUtils';
+
+export function getDeploymentLookupMap(
+    deploymentsByNamespace: NamespaceWithDeployments[]
+): Record<string, string[]> {
+    return deploymentsByNamespace.reduce<Record<string, string[]>>((acc, ns) => {
+        const deployments = ns.deployments.map((deployment) => deployment.name);
+        return { ...acc, [ns.metadata.name]: deployments };
+    }, {});
+}
+
+export function getDeploymentsAllowedByNamespaces(
+    deploymentLookupMap: Record<string, string[]>,
+    namespaceSelection: string[]
+) {
+    const newDeploymentLookup = Object.fromEntries(
+        Object.entries(deploymentLookupMap).filter(([key]) => namespaceSelection.includes(key))
+    );
+    const allowedDeployments = Object.values(newDeploymentLookup).flat(1);
+
+    return allowedDeployments;
+}
 
 type NamespaceSelectorProps = {
     namespaces?: NamespaceScopeObject[];
