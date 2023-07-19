@@ -205,10 +205,11 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 	mockCtrl := gomock.NewController(s.T())
 	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl)
-	containerID := "id"
+	srcID := "src-id"
+	dstID := "dst-id"
 	cases := map[string]struct {
 		connPair                    *connectionPair
-		enrichConnections           map[networkConnIndicator]timestamp.MicroTS
+		enrichedConnections         map[networkConnIndicator]timestamp.MicroTS
 		expectEntityLookupContainer expectFn
 		expectEntityLookupEndpoint  expectFn
 		expectExternalLookup        expectFn
@@ -216,18 +217,18 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		expectedConnection          *connection
 		expectedStatus              *connStatus
 	}{
-		"Rotten connection": {
-			connPair:                    createConnectionPair(true, true, false, timestamp.Now().Add(-maxContainerResolutionWaitPeriod*2)),
+		"Rotten connection should return rotten status": {
+			connPair:                    createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
 			expectedStatus: &connStatus{
 				rotten: true,
 			},
 		},
-		"Incoming External connection no external sources hit": {
-			connPair:          createConnectionPair(true, true, false, timestamp.Now()),
-			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		"Incoming external connection with unsuccessful lookup should return internet entity": {
+			connPair:            createConnectionPair().incoming().external(),
+			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: dstID,
 			}, true),
 			expectExternalLookup: expectExternalLookupHelper(mockExternalSrc, 1, nil),
 			expectedStatus: &connStatus{
@@ -237,17 +238,17 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 				dstPort:   80,
 				protocol:  net.TCP.ToProtobuf(),
 				srcEntity: networkgraph.InternetEntity(),
-				dstEntity: networkgraph.EntityForDeployment(containerID),
+				dstEntity: networkgraph.EntityForDeployment(dstID),
 			},
 		},
-		"Outgoing External external sources hit": {
-			connPair:          createConnectionPair(false, true, false, timestamp.Now()),
-			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		"Outgoing external connection with successful external lookup should return the correct id": {
+			connPair:            createConnectionPair().external(),
+			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: srcID,
 			}, true),
 			expectExternalLookup: expectExternalLookupHelper(mockExternalSrc, 1, &storage.NetworkEntityInfo{
-				Id: containerID,
+				Id: dstID,
 			}),
 			expectedStatus: &connStatus{
 				used: true,
@@ -256,21 +257,21 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 				dstPort:  80,
 				protocol: net.TCP.ToProtobuf(),
 				dstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
-					Id: containerID,
+					Id: dstID,
 				}),
-				srcEntity: networkgraph.EntityForDeployment(containerID),
+				srcEntity: networkgraph.EntityForDeployment(srcID),
 			},
 		},
-		"Incoming": {
-			connPair:          createConnectionPair(true, false, false, timestamp.Now()),
-			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		"Incoming connection with successful lookup should not return a networkConnIndicator": {
+			connPair:            createConnectionPair().incoming(),
+			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: srcID,
 			}, true),
 			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, []clusterentities.LookupResult{
 				{
 					Entity: networkgraph.Entity{
-						ID: containerID,
+						ID: dstID,
 					},
 				},
 			}),
@@ -278,35 +279,35 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 				used: true,
 			},
 		},
-		"Incoming fresh connection with valid address": {
-			connPair:          createConnectionPair(true, false, false, timestamp.Now()),
-			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		"Incoming fresh connection with valid address should not return anything": {
+			connPair:            createConnectionPair().incoming(),
+			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: dstID,
 			}, true),
 			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, nil),
 			expectedStatus:             &connStatus{},
 		},
-		"Incoming fresh connection with invalid address": {
-			connPair:          createConnectionPair(true, false, true, timestamp.Now()),
-			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		"Incoming fresh connection with invalid address should not return anything": {
+			connPair:            createConnectionPair().incoming().invalidAddress(),
+			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: dstID,
 			}, true),
 			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, nil),
 			expectExternalLookup:       expectExternalLookupHelper(mockExternalSrc, 1, nil),
 			expectedStatus:             &connStatus{},
 		},
-		"Outgoing": {
-			connPair:          createConnectionPair(false, false, false, timestamp.Now()),
-			enrichConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+		"Outgoing connection with successful internal lookup should return the correct id": {
+			connPair:            createConnectionPair(),
+			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: srcID,
 			}, true),
 			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, []clusterentities.LookupResult{
 				{
 					Entity: networkgraph.Entity{
-						ID: containerID,
+						ID: dstID,
 					},
 					ContainerPorts: []uint16{
 						80,
@@ -320,9 +321,9 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 				dstPort:  80,
 				protocol: net.TCP.ToProtobuf(),
 				dstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
-					Id: containerID,
+					Id: dstID,
 				}),
-				srcEntity: networkgraph.EntityForDeployment(containerID),
+				srcEntity: networkgraph.EntityForDeployment(srcID),
 			},
 		},
 	}
@@ -331,14 +332,14 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 			tCase.expectEntityLookupContainer.runIfSet()
 			tCase.expectEntityLookupEndpoint.runIfSet()
 			tCase.expectExternalLookup.runIfSet()
-			m.enrichConnection(tCase.connPair.conn, tCase.connPair.status, tCase.enrichConnections)
+			m.enrichConnection(tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
 			s.Assert().Equal(tCase.expectedStatus.used, tCase.connPair.status.used)
 			s.Assert().Equal(tCase.expectedStatus.rotten, tCase.connPair.status.rotten)
 			if tCase.expectedIndicator != nil {
-				_, ok := tCase.enrichConnections[*tCase.expectedIndicator]
+				_, ok := tCase.enrichedConnections[*tCase.expectedIndicator]
 				s.Assert().True(ok)
 			} else {
-				s.Assert().Len(tCase.enrichConnections, 0)
+				s.Assert().Len(tCase.enrichedConnections, 0)
 			}
 		})
 	}
@@ -347,15 +348,15 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 	mockCtrl := gomock.NewController(s.T())
 	m, mockEntityStore, _, _ := createManager(mockCtrl)
-	containerID := "id"
+	id := "id"
 	cases := map[string]struct {
 		endpointPair                *endpointPair
-		enrichConnections           map[containerEndpointIndicator]timestamp.MicroTS
+		enrichedConnections         map[containerEndpointIndicator]timestamp.MicroTS
 		expectEntityLookupContainer expectFn
 		expectedStatus              *connStatus
 		expectedEndpoint            *containerEndpointIndicator
 	}{
-		"Rotten connection": {
+		"Rotten connection should return rotten status": {
 			endpointPair:                createEndpointPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
 			expectedStatus: &connStatus{
@@ -363,15 +364,15 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 				used:   true,
 			},
 		},
-		"Endpoint": {
-			endpointPair:      createEndpointPair(timestamp.Now()),
-			enrichConnections: make(map[containerEndpointIndicator]timestamp.MicroTS),
+		"Container endpoint should return an containerEndpointIndicator with the correct id": {
+			endpointPair:        createEndpointPair(timestamp.Now()),
+			enrichedConnections: make(map[containerEndpointIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: containerID,
+				DeploymentID: id,
 			}, true),
 			expectedStatus: &connStatus{used: true},
 			expectedEndpoint: &containerEndpointIndicator{
-				entity:   networkgraph.EntityForDeployment(containerID),
+				entity:   networkgraph.EntityForDeployment(id),
 				port:     80,
 				protocol: net.TCP.ToProtobuf(),
 			},
@@ -380,11 +381,11 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 	for name, tCase := range cases {
 		s.Run(name, func() {
 			tCase.expectEntityLookupContainer.runIfSet()
-			m.enrichContainerEndpoint(tCase.endpointPair.endpoint, tCase.endpointPair.status, tCase.enrichConnections)
+			m.enrichContainerEndpoint(tCase.endpointPair.endpoint, tCase.endpointPair.status, tCase.enrichedConnections)
 			s.Assert().Equal(tCase.expectedStatus.rotten, tCase.endpointPair.status.rotten)
 			s.Assert().Equal(tCase.expectedStatus.used, tCase.endpointPair.status.used)
 			if tCase.expectedEndpoint != nil {
-				_, ok := tCase.enrichConnections[*tCase.expectedEndpoint]
+				_, ok := tCase.enrichedConnections[*tCase.expectedEndpoint]
 				s.Assert().True(ok)
 			}
 		})
@@ -394,15 +395,16 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichContainerEndpoint() {
 func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 	mockCtrl := gomock.NewController(s.T())
 	m, mockEntityStore, _, _ := createManager(mockCtrl)
-	containerID := "id"
+	deploymentID := "deployment-id"
+	podID := "pod-id"
 	cases := map[string]struct {
 		containerPair               *containerPair
-		enrichConnections           map[processListeningIndicator]timestamp.MicroTS
+		enrichedConnections         map[processListeningIndicator]timestamp.MicroTS
 		expectEntityLookupContainer expectFn
 		expectedStatus              *connStatus
 		expectedListeningIndicator  *processListeningIndicator
 	}{
-		"Rotten connection": {
+		"Rotten connection should return rotten status": {
 			containerPair:               createContainerPair(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
 			expectedStatus: &connStatus{
@@ -410,22 +412,22 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 				usedProcess: true,
 			},
 		},
-		"Container Endpoint": {
-			containerPair:     createContainerPair(timestamp.Now()),
-			enrichConnections: make(map[processListeningIndicator]timestamp.MicroTS),
+		"Container endpoint should return a processListeningIndicator with the correct id": {
+			containerPair:       createContainerPair(timestamp.Now()),
+			enrichedConnections: make(map[processListeningIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID:  containerID,
+				DeploymentID:  deploymentID,
 				ContainerName: "container-name",
-				PodID:         containerID,
+				PodID:         podID,
 			}, true),
 			expectedStatus: &connStatus{
 				usedProcess: true,
 			},
 			expectedListeningIndicator: &processListeningIndicator{
 				key: processUniqueKey{
-					podID:         containerID,
+					podID:         podID,
 					containerName: "container-name",
-					deploymentID:  containerID,
+					deploymentID:  deploymentID,
 					process:       defaultProcessKey(),
 				},
 				port:     80,
@@ -436,11 +438,11 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichProcessListening() {
 	for name, tCase := range cases {
 		s.Run(name, func() {
 			tCase.expectEntityLookupContainer.runIfSet()
-			m.enrichProcessListening(tCase.containerPair.endpoint, tCase.containerPair.status, tCase.enrichConnections)
+			m.enrichProcessListening(tCase.containerPair.endpoint, tCase.containerPair.status, tCase.enrichedConnections)
 			s.Assert().Equal(tCase.expectedStatus.rotten, tCase.containerPair.status.rotten)
 			s.Assert().Equal(tCase.expectedStatus.usedProcess, tCase.containerPair.status.usedProcess)
 			if tCase.expectedListeningIndicator != nil {
-				_, ok := tCase.enrichConnections[*tCase.expectedListeningIndicator]
+				_, ok := tCase.enrichedConnections[*tCase.expectedListeningIndicator]
 				s.Assert().True(ok)
 			}
 		})
@@ -462,7 +464,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	}{
 		{
 			notify:      common.SensorComponentEventOfflineMode,
-			connections: []*connectionHostnamePair{createConnectionHostnamePair("hostname-1", createConnectionPair(false, false, false, timestamp.Now()))},
+			connections: []*connectionHostnamePair{createConnectionHostnamePair("hostname-1", createConnectionPair())},
 		},
 		{
 			notify: common.SensorComponentEventCentralReachable,
@@ -598,36 +600,51 @@ type connectionPair struct {
 	status *connStatus
 }
 
-func createConnectionPair(incoming bool, external bool, invalid bool, firstSeen timestamp.MicroTS) *connectionPair {
-	address := externalIPv4Addr
-	if !external {
-		address = net.ParseIP("8.8.8.8")
-	}
-	if invalid {
-		address = net.ParseIP("invalid")
-	}
-	ret := &connectionPair{
+func createConnectionPair() *connectionPair {
+	return &connectionPair{
 		conn: &connection{
 			containerID: "container-id",
-			incoming:    incoming,
+			incoming:    false,
 			remote: net.NumericEndpoint{
 				IPAndPort: net.NetworkPeerID{
-					Address: address,
+					Address: net.ParseIP("0.0.0.0"),
 					Port:    80,
 				},
 				L4Proto: net.TCP,
 			},
 		},
 		status: &connStatus{
-			firstSeen: firstSeen,
+			firstSeen: timestamp.Now(),
 		},
 	}
-	if incoming {
-		ret.conn.local = net.NetworkPeerID{
-			Port: 80,
-		}
+}
+
+func (c *connectionPair) containerID(id string) *connectionPair {
+	c.conn.containerID = id
+	return c
+}
+
+func (c *connectionPair) incoming() *connectionPair {
+	c.conn.incoming = true
+	c.conn.local = net.NetworkPeerID{
+		Port: 80,
 	}
-	return ret
+	return c
+}
+
+func (c *connectionPair) external() *connectionPair {
+	c.conn.remote.IPAndPort.Address = externalIPv4Addr
+	return c
+}
+
+func (c *connectionPair) invalidAddress() *connectionPair {
+	c.conn.remote.IPAndPort.Address = net.ParseIP("invalid")
+	return c
+}
+
+func (c *connectionPair) firstSeen(firstSeen timestamp.MicroTS) *connectionPair {
+	c.status.firstSeen = firstSeen
+	return c
 }
 
 type endpointPair struct {
