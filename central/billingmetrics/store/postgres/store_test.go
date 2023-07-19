@@ -40,7 +40,7 @@ func (s *BillingMetricsStoreSuite) TestStore() {
 
 	store := s.store
 
-	now := time.Now()
+	now := time.Now().Add(-time.Hour)
 	from := timeToTimestamp(now)
 	to := timeToTimestamp(now.Add(10 * time.Minute))
 	three := timeToTimestamp(now.Add(11 * time.Minute))
@@ -74,6 +74,11 @@ func (s *BillingMetricsStoreSuite) TestStore() {
 	s.Equal(records[1], foundRecords[0])
 
 	foundRecords, err = store.Get(ctx, from, three)
+	s.Require().NoError(err)
+	s.Require().Len(foundRecords, 2)
+	s.Equal(records, foundRecords)
+
+	foundRecords, err = store.Get(ctx, nil, nil)
 	s.Require().NoError(err)
 	s.Require().Len(foundRecords, 2)
 	s.Equal(records, foundRecords)

@@ -114,6 +114,13 @@ func (s *storeImpl) retryableGet(ctx context.Context, from, to *types.Timestamp)
 	}
 	defer release()
 
+	if from == nil {
+		from = &types.Timestamp{}
+	}
+	if to == nil {
+		to = timeToTimestamp(time.Now())
+	}
+
 	rows, err := conn.Query(ctx, getStmt, timestampToStoreInUTC(from), timestampToStoreInUTC(to))
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
