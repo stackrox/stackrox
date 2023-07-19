@@ -14,6 +14,7 @@ import (
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	net "github.com/stackrox/rox/pkg/net"
 	common "github.com/stackrox/rox/sensor/common"
+	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -146,10 +147,10 @@ func (mr *MockHandlerMockRecorder) ProcessMessage(msg interface{}) *gomock.Call 
 }
 
 // ResponsesC mocks base method.
-func (m *MockHandler) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 
