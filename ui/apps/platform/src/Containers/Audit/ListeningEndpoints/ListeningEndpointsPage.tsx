@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Bullseye,
     Button,
     Divider,
     PageSection,
     Pagination,
+    SearchInput,
     Spinner,
     Text,
     Title,
@@ -19,6 +20,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
+import useURLSearch from 'hooks/useURLSearch';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 
@@ -30,7 +32,22 @@ const sortOptions = {
 function ListeningEndpointsPage() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
-    const { data, error, loading } = useDeploymentListeningEndpoints(sortOption, page, perPage);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const [searchValue, setSearchValue] = useState(() => {
+        const filter = searchFilter.Deployment;
+        return Array.isArray(filter) ? filter.join(',') : filter;
+    });
+
+    const { data, error, loading } = useDeploymentListeningEndpoints(
+        searchFilter,
+        sortOption,
+        page,
+        perPage
+    );
+
+    function onSearchInputChange(_event, value) {
+        setSearchValue(value);
+    }
 
     return (
         <>
@@ -42,6 +59,19 @@ function ListeningEndpointsPage() {
             <PageSection isFilled className="pf-u-display-flex pf-u-flex-direction-column">
                 <Toolbar>
                     <ToolbarContent>
+                        <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
+                            <SearchInput
+                                aria-label="Search by deployment"
+                                placeholder="Search by deployment"
+                                value={searchValue}
+                                onChange={onSearchInputChange}
+                                onSearch={() => setSearchFilter({ Deployment: searchValue })}
+                                onClear={() => {
+                                    setSearchValue('');
+                                    setSearchFilter({});
+                                }}
+                            />
+                        </ToolbarItem>
                         <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                             <Pagination
                                 toggleTemplate={({ firstIndex, lastIndex }) => (
@@ -90,7 +120,9 @@ function ListeningEndpointsPage() {
                                         <Button
                                             variant="link"
                                             onClick={() => {
-                                                /* TODO */
+                                                setPage(1);
+                                                setSearchValue('');
+                                                setSearchFilter({});
                                             }}
                                         >
                                             Clear search
