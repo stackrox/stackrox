@@ -275,7 +275,7 @@
           "$ref": "#/definitions/storageReportRetentionConfig"
         }
       },
-      "title": "next available tag: 6"
+      "title": "next available tag: 7"
     },
     "storagePublicConfig": {
       "type": "object",

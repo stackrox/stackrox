@@ -551,7 +551,7 @@ func (m *ReportRetentionConfig) Clone() *ReportRetentionConfig {
 	return cloned
 }
 
-// next available tag: 6
+// next available tag: 7
 type PrivateConfig struct {
 	// Types that are valid to be assigned to AlertRetention:
 	//	*PrivateConfig_DEPRECATEDAlertRetentionDurationDays

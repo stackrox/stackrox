@@ -59,7 +59,7 @@ message ReportRetentionConfig {
     int32 retention_duration_days              = 1;
 }
 
-// next available tag: 6
+// next available tag: 7
 message PrivateConfig {
     oneof alert_retention {
         // will be deprecated after migration is ready
