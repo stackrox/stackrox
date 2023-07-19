@@ -60,6 +60,42 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 				},
 			},
 		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "get-replicasets-role",
+			ClusterId: clusterID,
+			Rules: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"replicasets",
+					},
+				},
+			},
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "get-statefulsets-role",
+			ClusterId: clusterID,
+			Rules: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"statefulsets",
+					},
+				},
+			},
+		},
 	}
 	testBindings := []*storage.K8SRoleBinding{
 		{
@@ -90,6 +126,33 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 			ClusterRole: false,
 			Namespace:   "namespace",
 		},
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    testRoles[2].GetId(),
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+					Name:      "subject",
+					Namespace: "namespace",
+				},
+			},
+			ClusterRole: true,
+			Namespace:   "namespace",
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    testRoles[3].GetId(),
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+					Name:      "subject",
+					Namespace: "namespace",
+				},
+			},
+			ClusterRole: true,
+		},
 	}
 
 	inputSubject := &storage.Subject{
@@ -100,7 +163,7 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 	expectedResult := []*storage.PolicyRule{
 		{
 			Verbs:     []string{"get"},
-			Resources: []string{"deployments", "pods"},
+			Resources: []string{"deployments", "pods", "replicasets"},
 			ApiGroups: []string{""},
 		},
 	}
