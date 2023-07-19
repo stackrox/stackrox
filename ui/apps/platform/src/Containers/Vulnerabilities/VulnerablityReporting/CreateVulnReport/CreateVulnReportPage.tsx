@@ -22,7 +22,8 @@ import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReportin
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm';
-import ReportReviewForm from '../forms/ReportReviewForm';
+import DeliveryDestinationsForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/DeliveryDestinationsForm';
+import ReportReviewForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportReviewForm';
 import useCreateReport from '../api/useCreateReport';
 
 const wizardStepNames = [
@@ -112,7 +113,15 @@ function VulnReportsPage() {
                                 />
                             ),
                         },
-                        { name: wizardStepNames[1], component: <p /> },
+                        {
+                            name: wizardStepNames[1],
+                            component: (
+                                <DeliveryDestinationsForm
+                                    formValues={formValues}
+                                    setFormFieldValue={setFormFieldValue}
+                                />
+                            ),
+                        },
                         {
                             name: wizardStepNames[2],
                             component: <ReportReviewForm formValues={formValues} />,
