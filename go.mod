@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/containeranalysis v0.10.1
 	cloud.google.com/go/storage v1.31.0
 	github.com/BurntSushi/toml v1.3.2
+	github.com/ComplianceAsCode/compliance-operator v1.1.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
@@ -143,8 +144,6 @@ require (
 	sigs.k8s.io/e2e-framework v0.2.0
 	sigs.k8s.io/yaml v1.3.0
 )
-
-require github.com/ComplianceAsCode/compliance-operator v1.1.0
 
 require (
 	cloud.google.com/go v0.110.2 // indirect
