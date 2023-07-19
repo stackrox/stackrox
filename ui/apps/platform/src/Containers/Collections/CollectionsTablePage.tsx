@@ -16,7 +16,7 @@ import {
 import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { collectionsBasePath } from 'routePaths';
-import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
+import useRestQuery from 'hooks/useRestQuery';
 import {
     Collection,
     deleteCollection,
