@@ -48,24 +48,29 @@ subjects:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: sensor-monitor
-  namespace: {{ .Release.Namespace }}
+  name: "sensor-monitor-{{ .Release.Name }}-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
   labels:
-    {{- include "srox.labels" (list . "servicemonitor" "sensor-monitor") | nindent 4 }}
+    {{- include "srox.labels" (list . "servicemonitor" (print "sensor-monitor-" .Release.Name "-" .Release.Namespace )) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "servicemonitor" "sensor-monitor") | nindent 4 }}
+    {{- include "srox.annotations" (list . "servicemonitor" (print "sensor-monitor-" .Release.Name "-" .Release.Namespace )) | nindent 4 }}
 spec:
   endpoints:
   - interval: 30s
-    port: monitoring
-    scheme: http
     path: metrics
+    port: monitoring-tls
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "sensor.{{ .Release.Namespace }}.svc"
   selector:
     matchLabels:
       app.kubernetes.io/component: sensor
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+    - "{{ .Release.Namespace }}"
 
 ---
 
@@ -89,6 +94,26 @@ spec:
       app.kubernetes.io/component: collector
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+      - "{{ .Release.Namespace }}"
 
-{{- end }}
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-sensor-auth-reader
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "rhacs-sensor-auth-reader") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "rhacs-sensor-auth-reader") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: "{{ .Release.Namespace }}"
+
+{{- end -}}

@@ -48,7 +48,7 @@ subjects:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: central-monitor-{{ .Release.Name }}-{{ .Release.Namespace }}
+  name: "central-monitor-{{ .Release.Name }}-{{ .Release.Namespace }}"
   namespace: openshift-monitoring
   labels:
     {{- include "srox.labels" (list . "servicemonitor" (print "central-monitor-" .Release.Name "-" .Release.Namespace )) | nindent 4 }}
@@ -57,14 +57,39 @@ metadata:
 spec:
   endpoints:
   - interval: 30s
-    port: monitoring
-    scheme: http
     path: metrics
+    port: monitoring-tls
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "central.{{ .Release.Namespace }}.svc"
   selector:
     matchLabels:
       app.kubernetes.io/component: central
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+      - "{{ .Release.Namespace }}"
 
-{{- end }}
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-central-auth-reader
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "rhacs-central-auth-reader") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "rhacs-central-auth-reader") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: "{{ .Release.Namespace }}"
+
+{{- end -}}

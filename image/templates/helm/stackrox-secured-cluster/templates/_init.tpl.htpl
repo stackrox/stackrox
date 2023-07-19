@@ -87,41 +87,12 @@
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
-    {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
-    {{ $_ := set $._rox "monitoring" dict }}
-    {{ $_ := set $._rox.monitoring "openshift" dict }}
-    {{ $_ := set $._rox.monitoring.openshift "enabled" true }}
+  {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
 {{ end }}
-{{ if $._rox.monitoring.openshift.enabled }}
-  {{ if (ne $._rox.env.openshift 4) }}
-    {{ include "srox.fail" "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
-  {{ end }}
-  
-  {{/* Override monitoring exposure when openshift monitoring is desired */}}
-  {{ if not $._rox.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'exposeMonitoring' is false but 'monitoring.openshift.enabled' is true.") }}
-    {{ include "srox.warn" (list . "'exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox "exposeMonitoring" true }}
-  {{ end }}
-  
-  {{ if not $._rox.sensor.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'sensor.exposeMonitoring' is false but 'monitoring.openshift.enabled' is true.") }}
-    {{ include "srox.warn" (list . "'sensor.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.sensor "exposeMonitoring" true }}
-  {{ end }}
-  
-  {{ if not $._rox.collector.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'collector.exposeMonitoring' is false but 'monitoring.openshift.enabled' is true.") }}
-    {{ include "srox.warn" (list . "'collector.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.collector "exposeMonitoring" true }}
-  {{ end }}
-  
-  {{ if not $._rox.admissionControl.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'admissionControl.exposeMonitoring' is false but 'monitoring.openshift.enabled' is true.") }}
-    {{ include "srox.warn" (list . "'admissionControl.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.admissionControl "exposeMonitoring" true }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
+{{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
 {{ end }}
 
 [<- if .AutoSensePodSecurityPolicies >]
