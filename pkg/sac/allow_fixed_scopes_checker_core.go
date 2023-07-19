@@ -3,6 +3,7 @@ package sac
 import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -74,14 +75,21 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 }
 
 func (c *allowedFixedScopesCheckerCore) Allowed() bool {
+	resourceScope := resources.GetScopeForResource(permissions.Resource(c.targetResource))
 	switch c.checkerLevel {
 	case GlobalScopeKind:
 		return c.allowsGlobalAccess()
 	case AccessModeScopeKind:
 		return c.allowsAccessModeLevelAccess()
 	case ResourceScopeKind:
+		if resourceScope == permissions.GlobalScope {
+			return true
+		}
 		return c.allowsResourceLevelAccess()
 	case ClusterScopeKind:
+		if resourceScope == permissions.ClusterScope || resourceScope == permissions.GlobalScope {
+			return true
+		}
 		return c.allowsClusterLevelAccess()
 	case NamespaceScopeKind:
 		return true
