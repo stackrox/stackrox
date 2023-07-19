@@ -24,26 +24,26 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type BillingMetricsRecord struct {
-	Ts                   *types.Timestamp                       `protobuf:"bytes,1,opt,name=ts,proto3" json:"ts,omitempty" sql:"pk"`
-	Sr                   *BillingMetricsRecord_SecuredResources `protobuf:"bytes,2,opt,name=sr,proto3" json:"sr,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
-	XXX_unrecognized     []byte                                 `json:"-"`
-	XXX_sizecache        int32                                  `json:"-"`
+type BillingMetrics struct {
+	Ts                   *types.Timestamp                 `protobuf:"bytes,1,opt,name=ts,proto3" json:"ts,omitempty" sql:"pk"`
+	Sr                   *BillingMetrics_SecuredResources `protobuf:"bytes,2,opt,name=sr,proto3" json:"sr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
 }
 
-func (m *BillingMetricsRecord) Reset()         { *m = BillingMetricsRecord{} }
-func (m *BillingMetricsRecord) String() string { return proto.CompactTextString(m) }
-func (*BillingMetricsRecord) ProtoMessage()    {}
-func (*BillingMetricsRecord) Descriptor() ([]byte, []int) {
+func (m *BillingMetrics) Reset()         { *m = BillingMetrics{} }
+func (m *BillingMetrics) String() string { return proto.CompactTextString(m) }
+func (*BillingMetrics) ProtoMessage()    {}
+func (*BillingMetrics) Descriptor() ([]byte, []int) {
 	return fileDescriptor_338da3bb08fef41d, []int{0}
 }
-func (m *BillingMetricsRecord) XXX_Unmarshal(b []byte) error {
+func (m *BillingMetrics) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BillingMetricsRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BillingMetrics) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_BillingMetricsRecord.Marshal(b, m, deterministic)
+		return xxx_messageInfo_BillingMetrics.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -53,40 +53,40 @@ func (m *BillingMetricsRecord) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *BillingMetricsRecord) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BillingMetricsRecord.Merge(m, src)
+func (m *BillingMetrics) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BillingMetrics.Merge(m, src)
 }
-func (m *BillingMetricsRecord) XXX_Size() int {
+func (m *BillingMetrics) XXX_Size() int {
 	return m.Size()
 }
-func (m *BillingMetricsRecord) XXX_DiscardUnknown() {
-	xxx_messageInfo_BillingMetricsRecord.DiscardUnknown(m)
+func (m *BillingMetrics) XXX_DiscardUnknown() {
+	xxx_messageInfo_BillingMetrics.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_BillingMetricsRecord proto.InternalMessageInfo
+var xxx_messageInfo_BillingMetrics proto.InternalMessageInfo
 
-func (m *BillingMetricsRecord) GetTs() *types.Timestamp {
+func (m *BillingMetrics) GetTs() *types.Timestamp {
 	if m != nil {
 		return m.Ts
 	}
 	return nil
 }
 
-func (m *BillingMetricsRecord) GetSr() *BillingMetricsRecord_SecuredResources {
+func (m *BillingMetrics) GetSr() *BillingMetrics_SecuredResources {
 	if m != nil {
 		return m.Sr
 	}
 	return nil
 }
 
-func (m *BillingMetricsRecord) MessageClone() proto.Message {
+func (m *BillingMetrics) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *BillingMetricsRecord) Clone() *BillingMetricsRecord {
+func (m *BillingMetrics) Clone() *BillingMetrics {
 	if m == nil {
 		return nil
 	}
-	cloned := new(BillingMetricsRecord)
+	cloned := new(BillingMetrics)
 	*cloned = *m
 
 	cloned.Ts = m.Ts.Clone()
@@ -94,7 +94,7 @@ func (m *BillingMetricsRecord) Clone() *BillingMetricsRecord {
 	return cloned
 }
 
-type BillingMetricsRecord_SecuredResources struct {
+type BillingMetrics_SecuredResources struct {
 	Nodes                int32    `protobuf:"varint,1,opt,name=nodes,proto3" json:"nodes,omitempty"`
 	Millicores           int32    `protobuf:"varint,2,opt,name=millicores,proto3" json:"millicores,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -102,18 +102,18 @@ type BillingMetricsRecord_SecuredResources struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *BillingMetricsRecord_SecuredResources) Reset()         { *m = BillingMetricsRecord_SecuredResources{} }
-func (m *BillingMetricsRecord_SecuredResources) String() string { return proto.CompactTextString(m) }
-func (*BillingMetricsRecord_SecuredResources) ProtoMessage()    {}
-func (*BillingMetricsRecord_SecuredResources) Descriptor() ([]byte, []int) {
+func (m *BillingMetrics_SecuredResources) Reset()         { *m = BillingMetrics_SecuredResources{} }
+func (m *BillingMetrics_SecuredResources) String() string { return proto.CompactTextString(m) }
+func (*BillingMetrics_SecuredResources) ProtoMessage()    {}
+func (*BillingMetrics_SecuredResources) Descriptor() ([]byte, []int) {
 	return fileDescriptor_338da3bb08fef41d, []int{0, 0}
 }
-func (m *BillingMetricsRecord_SecuredResources) XXX_Unmarshal(b []byte) error {
+func (m *BillingMetrics_SecuredResources) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *BillingMetricsRecord_SecuredResources) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BillingMetrics_SecuredResources) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_BillingMetricsRecord_SecuredResources.Marshal(b, m, deterministic)
+		return xxx_messageInfo_BillingMetrics_SecuredResources.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -123,74 +123,73 @@ func (m *BillingMetricsRecord_SecuredResources) XXX_Marshal(b []byte, determinis
 		return b[:n], nil
 	}
 }
-func (m *BillingMetricsRecord_SecuredResources) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BillingMetricsRecord_SecuredResources.Merge(m, src)
+func (m *BillingMetrics_SecuredResources) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BillingMetrics_SecuredResources.Merge(m, src)
 }
-func (m *BillingMetricsRecord_SecuredResources) XXX_Size() int {
+func (m *BillingMetrics_SecuredResources) XXX_Size() int {
 	return m.Size()
 }
-func (m *BillingMetricsRecord_SecuredResources) XXX_DiscardUnknown() {
-	xxx_messageInfo_BillingMetricsRecord_SecuredResources.DiscardUnknown(m)
+func (m *BillingMetrics_SecuredResources) XXX_DiscardUnknown() {
+	xxx_messageInfo_BillingMetrics_SecuredResources.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_BillingMetricsRecord_SecuredResources proto.InternalMessageInfo
+var xxx_messageInfo_BillingMetrics_SecuredResources proto.InternalMessageInfo
 
-func (m *BillingMetricsRecord_SecuredResources) GetNodes() int32 {
+func (m *BillingMetrics_SecuredResources) GetNodes() int32 {
 	if m != nil {
 		return m.Nodes
 	}
 	return 0
 }
 
-func (m *BillingMetricsRecord_SecuredResources) GetMillicores() int32 {
+func (m *BillingMetrics_SecuredResources) GetMillicores() int32 {
 	if m != nil {
 		return m.Millicores
 	}
 	return 0
 }
 
-func (m *BillingMetricsRecord_SecuredResources) MessageClone() proto.Message {
+func (m *BillingMetrics_SecuredResources) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *BillingMetricsRecord_SecuredResources) Clone() *BillingMetricsRecord_SecuredResources {
+func (m *BillingMetrics_SecuredResources) Clone() *BillingMetrics_SecuredResources {
 	if m == nil {
 		return nil
 	}
-	cloned := new(BillingMetricsRecord_SecuredResources)
+	cloned := new(BillingMetrics_SecuredResources)
 	*cloned = *m
 
 	return cloned
 }
 
 func init() {
-	proto.RegisterType((*BillingMetricsRecord)(nil), "storage.BillingMetricsRecord")
-	proto.RegisterType((*BillingMetricsRecord_SecuredResources)(nil), "storage.BillingMetricsRecord.SecuredResources")
+	proto.RegisterType((*BillingMetrics)(nil), "storage.BillingMetrics")
+	proto.RegisterType((*BillingMetrics_SecuredResources)(nil), "storage.BillingMetrics.SecuredResources")
 }
 
 func init() { proto.RegisterFile("storage/billing_metrics.proto", fileDescriptor_338da3bb08fef41d) }
 
 var fileDescriptor_338da3bb08fef41d = []byte{
-	// 262 bytes of a gzipped FileDescriptorProto
+	// 253 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2d, 0x2e, 0xc9, 0x2f,
 	0x4a, 0x4c, 0x4f, 0xd5, 0x4f, 0xca, 0xcc, 0xc9, 0xc9, 0xcc, 0x4b, 0x8f, 0xcf, 0x4d, 0x2d, 0x29,
 	0xca, 0x4c, 0x2e, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x87, 0x4a, 0x4b, 0x89, 0xa4,
 	0xe7, 0xa7, 0xe7, 0x83, 0xc5, 0xf4, 0x41, 0x2c, 0x88, 0xb4, 0x94, 0x7c, 0x7a, 0x7e, 0x7e, 0x7a,
 	0x4e, 0xaa, 0x3e, 0x98, 0x97, 0x54, 0x9a, 0xa6, 0x5f, 0x92, 0x99, 0x9b, 0x5a, 0x5c, 0x92, 0x98,
-	0x5b, 0x00, 0x51, 0xa0, 0x74, 0x8b, 0x91, 0x4b, 0xc4, 0x09, 0x62, 0xb2, 0x2f, 0xc4, 0xe0, 0xa0,
-	0xd4, 0xe4, 0xfc, 0xa2, 0x14, 0x21, 0x0b, 0x2e, 0xa6, 0x92, 0x62, 0x09, 0x46, 0x05, 0x46, 0x0d,
-	0x6e, 0x23, 0x29, 0x3d, 0x88, 0x31, 0x7a, 0x30, 0x63, 0xf4, 0x42, 0x60, 0xc6, 0x38, 0xf1, 0x7c,
-	0xba, 0x27, 0xcf, 0x51, 0x5c, 0x98, 0x63, 0xa5, 0x54, 0x90, 0xad, 0x14, 0xc4, 0x54, 0x52, 0x2c,
-	0x64, 0xc7, 0xc5, 0x54, 0x5c, 0x24, 0xc1, 0x04, 0xd6, 0xa9, 0xa7, 0x07, 0x75, 0x9f, 0x1e, 0x36,
-	0x4b, 0xf4, 0x82, 0x53, 0x93, 0x4b, 0x8b, 0x52, 0x53, 0x82, 0x52, 0x8b, 0xf3, 0x4b, 0x8b, 0x92,
-	0x53, 0x8b, 0x83, 0x98, 0x8a, 0x8b, 0xa4, 0x3c, 0xb8, 0x04, 0xd0, 0xc5, 0x85, 0x44, 0xb8, 0x58,
-	0xf3, 0xf2, 0x53, 0x52, 0x21, 0x0e, 0x62, 0x0d, 0x82, 0x70, 0x84, 0xe4, 0xb8, 0xb8, 0x72, 0x41,
-	0xc6, 0x26, 0xe7, 0x17, 0xa5, 0x16, 0x83, 0x6d, 0x64, 0x0d, 0x42, 0x12, 0x71, 0x92, 0x3c, 0xf1,
-	0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x67, 0x3c, 0x96, 0x63, 0x88,
-	0x82, 0x05, 0x57, 0x12, 0x1b, 0xd8, 0x2b, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x1f, 0x1e,
-	0x6c, 0x1c, 0x5f, 0x01, 0x00, 0x00,
+	0x5b, 0x00, 0x51, 0xa0, 0x74, 0x8e, 0x91, 0x8b, 0xcf, 0x09, 0x62, 0xb2, 0x2f, 0xc4, 0x60, 0x21,
+	0x0b, 0x2e, 0xa6, 0x92, 0x62, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x6e, 0x23, 0x29, 0x3d, 0x88, 0x01,
+	0x7a, 0x30, 0x03, 0xf4, 0x42, 0x60, 0x06, 0x38, 0xf1, 0x7c, 0xba, 0x27, 0xcf, 0x51, 0x5c, 0x98,
+	0x63, 0xa5, 0x54, 0x90, 0xad, 0x14, 0xc4, 0x54, 0x02, 0xd6, 0x59, 0x5c, 0x24, 0xc1, 0x04, 0xd6,
+	0xa9, 0xa1, 0x07, 0x75, 0x99, 0x1e, 0xaa, 0xf1, 0x7a, 0xc1, 0xa9, 0xc9, 0xa5, 0x45, 0xa9, 0x29,
+	0x41, 0xa9, 0xc5, 0xf9, 0xa5, 0x45, 0xc9, 0xa9, 0xc5, 0x41, 0x4c, 0xc5, 0x45, 0x52, 0x1e, 0x5c,
+	0x02, 0xe8, 0xe2, 0x42, 0x22, 0x5c, 0xac, 0x79, 0xf9, 0x29, 0xa9, 0x10, 0xa7, 0xb0, 0x06, 0x41,
+	0x38, 0x42, 0x72, 0x5c, 0x5c, 0xb9, 0x20, 0x03, 0x93, 0xf3, 0x8b, 0x52, 0x8b, 0xc1, 0x76, 0xb1,
+	0x06, 0x21, 0x89, 0x38, 0x49, 0x9e, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83, 0x47,
+	0x72, 0x8c, 0x33, 0x1e, 0xcb, 0x31, 0x44, 0xc1, 0x82, 0x28, 0x89, 0x0d, 0xec, 0x09, 0x63, 0x40,
+	0x00, 0x00, 0x00, 0xff, 0xff, 0x26, 0x96, 0xee, 0x55, 0x53, 0x01, 0x00, 0x00,
 }
 
-func (m *BillingMetricsRecord) Marshal() (dAtA []byte, err error) {
+func (m *BillingMetrics) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -200,12 +199,12 @@ func (m *BillingMetricsRecord) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *BillingMetricsRecord) MarshalTo(dAtA []byte) (int, error) {
+func (m *BillingMetrics) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *BillingMetricsRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *BillingMetrics) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -241,7 +240,7 @@ func (m *BillingMetricsRecord) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *BillingMetricsRecord_SecuredResources) Marshal() (dAtA []byte, err error) {
+func (m *BillingMetrics_SecuredResources) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -251,12 +250,12 @@ func (m *BillingMetricsRecord_SecuredResources) Marshal() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *BillingMetricsRecord_SecuredResources) MarshalTo(dAtA []byte) (int, error) {
+func (m *BillingMetrics_SecuredResources) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *BillingMetricsRecord_SecuredResources) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *BillingMetrics_SecuredResources) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -289,7 +288,7 @@ func encodeVarintBillingMetrics(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *BillingMetricsRecord) Size() (n int) {
+func (m *BillingMetrics) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -309,7 +308,7 @@ func (m *BillingMetricsRecord) Size() (n int) {
 	return n
 }
 
-func (m *BillingMetricsRecord_SecuredResources) Size() (n int) {
+func (m *BillingMetrics_SecuredResources) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -333,7 +332,7 @@ func sovBillingMetrics(x uint64) (n int) {
 func sozBillingMetrics(x uint64) (n int) {
 	return sovBillingMetrics(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *BillingMetricsRecord) Unmarshal(dAtA []byte) error {
+func (m *BillingMetrics) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -356,10 +355,10 @@ func (m *BillingMetricsRecord) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BillingMetricsRecord: wiretype end group for non-group")
+			return fmt.Errorf("proto: BillingMetrics: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BillingMetricsRecord: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BillingMetrics: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -428,7 +427,7 @@ func (m *BillingMetricsRecord) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Sr == nil {
-				m.Sr = &BillingMetricsRecord_SecuredResources{}
+				m.Sr = &BillingMetrics_SecuredResources{}
 			}
 			if err := m.Sr.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -456,7 +455,7 @@ func (m *BillingMetricsRecord) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *BillingMetricsRecord_SecuredResources) Unmarshal(dAtA []byte) error {
+func (m *BillingMetrics_SecuredResources) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {

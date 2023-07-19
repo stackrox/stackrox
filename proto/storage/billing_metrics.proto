@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "storage";
 
-message BillingMetricsRecord {
+message BillingMetrics {
     message SecuredResources {
         int32 nodes = 1;
         int32 millicores = 2;

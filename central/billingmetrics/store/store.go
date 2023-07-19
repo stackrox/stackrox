@@ -2,8 +2,8 @@ package store
 
 import (
 	"context"
-	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -11,6 +11,6 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error)
-	Insert(ctx context.Context, rec *storage.BillingMetricsRecord) error
+	Get(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error)
+	Insert(ctx context.Context, rec *storage.BillingMetrics) error
 }

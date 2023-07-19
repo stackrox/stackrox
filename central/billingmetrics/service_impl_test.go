@@ -7,6 +7,7 @@ import (
 
 	mockstore "github.com/stackrox/rox/central/billingmetrics/store/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -25,6 +26,10 @@ type billingMetricsSvcSuite struct {
 	ctx   context.Context
 }
 
+func TestService(t *testing.T) {
+	suite.Run(t, new(billingMetricsSvcSuite))
+}
+
 var _ suite.SetupTestSuite = (*billingMetricsSvcSuite)(nil)
 
 func (s *billingMetricsSvcSuite) SetupTest() {
@@ -34,24 +39,84 @@ func (s *billingMetricsSvcSuite) SetupTest() {
 }
 
 func (s *billingMetricsSvcSuite) TestGetMetrics() {
-	exp := &v1.BillingMetricsResponse{Record: []*v1.BillingMetricsResponse_BillingMetricsRecord{{
-		Ts:      protoconv.ConvertTimeToTimestamp(time.Time{}),
-		Metrics: &v1.SecuredResourcesMetrics{},
-	}}}
-	req := &v1.BillingMetricsRequest{
-		From: protoconv.ConvertTimeToTimestamp(time.Time{}),
-		To:   protoconv.ConvertTimeToTimestamp(time.Time{})}
+	now := time.Now()
+	ts := protoconv.ConvertTimeToTimestamp(now)
+	ts1 := protoconv.ConvertTimeToTimestamp(now.Add(1 * time.Hour))
+	ts2 := protoconv.ConvertTimeToTimestamp(now.Add(2 * time.Hour))
 
-	s.store.EXPECT().Get(s.ctx, nil, nil).Times(1).Return(exp, nil)
+	stored := []storage.BillingMetrics{{
+		Ts: ts,
+		Sr: &storage.BillingMetrics_SecuredResources{
+			Nodes:      5,
+			Millicores: 2,
+		},
+	}, {
+		Ts: ts1,
+		Sr: &storage.BillingMetrics_SecuredResources{
+			Nodes:      1,
+			Millicores: 100,
+		},
+	}}
+
+	exp := &v1.BillingMetricsResponse{Record: []*v1.BillingMetricsResponse_BillingMetricsRecord{{
+		Ts: ts,
+		Metrics: &v1.SecuredResourcesMetrics{
+			Nodes:      5,
+			Millicores: 2,
+		},
+	}, {
+		Ts: ts1,
+		Metrics: &v1.SecuredResourcesMetrics{
+			Nodes:      1,
+			Millicores: 100,
+		},
+	}}}
+
+	req := &v1.BillingMetricsRequest{
+		From: ts,
+		To:   ts2}
+
+	s.store.EXPECT().Get(s.ctx, gomock.AssignableToTypeOf(ts), gomock.AssignableToTypeOf(ts2)).Times(1).Return(stored, nil)
 	svc := New(s.store)
 	res, err := svc.GetMetrics(s.ctx, req)
 	s.Require().NoError(err)
 	s.Equal(exp, res)
+}
 
-	s.store.EXPECT().Get(s.ctx, nil, nil).Times(1).Return(nil, nil)
-	res, err = svc.GetMetrics(s.ctx, req)
+func (s *billingMetricsSvcSuite) TestGetMax() {
+	now := time.Now()
+	ts := protoconv.ConvertTimeToTimestamp(now)
+	ts1 := protoconv.ConvertTimeToTimestamp(now.Add(1 * time.Hour))
+	ts2 := protoconv.ConvertTimeToTimestamp(now.Add(2 * time.Hour))
+
+	stored := []storage.BillingMetrics{{
+		Ts: ts,
+		Sr: &storage.BillingMetrics_SecuredResources{
+			Nodes:      5,
+			Millicores: 2,
+		},
+	}, {
+		Ts: ts1,
+		Sr: &storage.BillingMetrics_SecuredResources{
+			Nodes:      1,
+			Millicores: 100,
+		},
+	}}
+
+	exp := &v1.BillingMetricsMaxResponse{
+		NodesTs:      ts,
+		Nodes:        5,
+		MillicoresTs: ts1,
+		Millicores:   100,
+	}
+
+	req := &v1.BillingMetricsRequest{From: ts, To: ts2}
+
+	s.store.EXPECT().Get(s.ctx, gomock.AssignableToTypeOf(ts), gomock.AssignableToTypeOf(ts2)).Times(1).Return(stored, nil)
+	svc := New(s.store)
+	res, err := svc.GetMax(s.ctx, req)
 	s.Require().NoError(err)
-	s.Nil(res)
+	s.Equal(exp, res)
 }
 
 func (s *billingMetricsSvcSuite) TestPutMetrics() {
@@ -59,9 +124,10 @@ func (s *billingMetricsSvcSuite) TestPutMetrics() {
 		Ts:      protoconv.ConvertTimeToTimestamp(time.Time{}),
 		Metrics: &v1.SecuredResourcesMetrics{Nodes: 5, Millicores: 50},
 	}
-	s.store.EXPECT().Insert(s.ctx, req).Times(1).Return(nil, nil)
+	rec := &storage.BillingMetrics{}
+	s.store.EXPECT().Insert(s.ctx, gomock.AssignableToTypeOf(rec)).Times(1).Return(nil)
 	svc := New(s.store)
-	res, err := svc.PutMetrics(s.ctx, req)
+	empty, err := svc.PutMetrics(s.ctx, req)
 	s.Require().NoError(err)
-	s.Nil(res)
+	s.Equal(&v1.Empty{}, empty)
 }

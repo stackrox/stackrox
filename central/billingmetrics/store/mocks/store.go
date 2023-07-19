@@ -7,8 +7,8 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
+	types "github.com/gogo/protobuf/types"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -37,10 +37,10 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error) {
+func (m *MockStore) Get(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, from, to)
-	ret0, _ := ret[0].([]storage.BillingMetricsRecord)
+	ret0, _ := ret[0].([]storage.BillingMetrics)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -52,7 +52,7 @@ func (mr *MockStoreMockRecorder) Get(ctx, from, to interface{}) *gomock.Call {
 }
 
 // Insert mocks base method.
-func (m *MockStore) Insert(ctx context.Context, rec *storage.BillingMetricsRecord) error {
+func (m *MockStore) Insert(ctx context.Context, rec *storage.BillingMetrics) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Insert", ctx, rec)
 	ret0, _ := ret[0].(error)

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	// CreateTableBillingMetricsStmt holds the create statement for table `billingmetrics`.
+	// CreateTableBillingMetricsStmt holds the create statement for table `billing_metrics`.
 	CreateTableBillingMetricsStmt = &postgres.CreateStmts{
 		GormModel: (*BillingMetrics)(nil),
 		Children:  []*postgres.CreateStmts{},
@@ -20,11 +20,11 @@ var (
 
 	// BillingMetricsSchema is the go schema for table `billingmetrics`.
 	BillingMetricsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("billingmetrics")
+		schema := GetSchemaForTable("billing_metrics")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.BillingMetricsRecord)(nil)), "billingmetrics")
+		schema = walker.Walk(reflect.TypeOf((*storage.BillingMetrics)(nil)), "billing_metrics")
 		RegisterTable(schema, CreateTableBillingMetricsStmt)
 		return schema
 	}()
@@ -32,10 +32,10 @@ var (
 
 const (
 	// BillingMetricsTableName specifies the name of the table in postgres.
-	BillingMetricsTableName = "billingmetrics"
+	BillingMetricsTableName = "billing_metrics"
 )
 
-// BillingMetrics holds the Gorm model for Postgres table `billingmetrics`.
+// BillingMetrics holds the Gorm model for Postgres table `billing_metrics`.
 type BillingMetrics struct {
 	Ts         time.Time `gorm:"column:ts;type:timestamp;primaryKey"`
 	Serialized []byte    `gorm:"column:serialized;type:bytea"`

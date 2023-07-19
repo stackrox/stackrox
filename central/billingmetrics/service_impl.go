@@ -1,8 +1,12 @@
 package billingmetrics
 
 import (
+	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	bmstore "github.com/stackrox/rox/central/billingmetrics/store"
@@ -17,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -24,6 +29,8 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
 			"/v1.BillingMetricsService/GetMetrics",
+			"/v1.BillingMetricsService/GetMax",
+			"/v1.BillingMetricsService/GetCSV",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.BillingMetricsService/PutMetrics",
@@ -58,7 +65,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetMetrics(ctx context.Context, req *v1.BillingMetricsRequest) (*v1.BillingMetricsResponse, error) {
-	metrics, err := s.store.Get(ctx, protoconv.ConvertTimestampToTimeOrNow(req.GetFrom()), protoconv.ConvertTimestampToTimeOrNow(req.GetTo()))
+	metrics, err := s.store.Get(ctx, req.GetFrom(), req.GetTo())
 	if err != nil {
 		return nil, fmt.Errorf("cannot get billing metrics: %w", err)
 	}
@@ -69,8 +76,70 @@ func (s *serviceImpl) GetMetrics(ctx context.Context, req *v1.BillingMetricsRequ
 	return &v1.BillingMetricsResponse{Record: rec}, nil
 }
 
+func writeCSV(metrics []storage.BillingMetrics, wio io.Writer) error {
+	w := csv.NewWriter(wio)
+	record := []string{"UTC Timestamp", "Nodes", "Millicores"}
+	if err := w.Write(record); err != nil {
+		return err
+	}
+	for _, m := range metrics {
+		record[0] = protoconv.ConvertTimestampToTimeOrNow(m.Ts).UTC().Format(time.RFC3339)
+		record[1] = fmt.Sprint(m.Sr.GetNodes())
+		record[2] = fmt.Sprint(m.Sr.GetMillicores())
+		if err := w.Write(record); err != nil {
+			return err
+		}
+	}
+	w.Flush()
+	return w.Error()
+}
+
+type serverWriter struct {
+	v1.BillingMetricsService_GetCSVServer
+}
+
+func (sw *serverWriter) Write(data []byte) (int, error) {
+	res := &v1.BillingMetricsCSVResponse{Chunk: data}
+	err := sw.Send(res)
+	return 0, err
+}
+
+func (s *serviceImpl) GetCSV(req *v1.BillingMetricsRequest, srv v1.BillingMetricsService_GetCSVServer) error {
+	metrics, err := s.store.Get(srv.Context(), req.GetFrom(), req.GetTo())
+	if err != nil {
+		return fmt.Errorf("cannot get billing metrics as CSV: %w", err)
+	}
+	md := metadata.New(map[string]string{"Content-Type": "text/csv"})
+	if err := srv.SetHeader(md); err != nil {
+		return err
+	}
+	if err := writeCSV(metrics, bufio.NewWriterSize(&serverWriter{srv}, 4096)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *serviceImpl) GetMax(ctx context.Context, req *v1.BillingMetricsRequest) (*v1.BillingMetricsMaxResponse, error) {
+	metrics, err := s.store.Get(ctx, req.GetFrom(), req.GetTo())
+	if err != nil {
+		return nil, fmt.Errorf("cannot get billing metrics: %w", err)
+	}
+	max := &v1.BillingMetricsMaxResponse{}
+	for _, m := range metrics {
+		if n := m.GetSr().GetNodes(); n >= max.Nodes {
+			max.Nodes = n
+			max.NodesTs = m.GetTs()
+		}
+		if ms := m.GetSr().GetMillicores(); ms >= max.Millicores {
+			max.Millicores = ms
+			max.MillicoresTs = m.GetTs()
+		}
+	}
+	return max, nil
+}
+
 func (s *serviceImpl) PutMetrics(ctx context.Context, m *v1.BillingMetricsInsertRequest) (*v1.Empty, error) {
-	v := &storage.BillingMetricsRecord{Ts: m.GetTs(), Sr: &storage.BillingMetricsRecord_SecuredResources{
+	v := &storage.BillingMetrics{Ts: m.GetTs(), Sr: &storage.BillingMetrics_SecuredResources{
 		Nodes:      m.GetMetrics().GetNodes(),
 		Millicores: m.GetMetrics().GetMillicores(),
 	}}

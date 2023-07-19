@@ -23,6 +23,7 @@ message BillingMetricsInsertRequest {
   SecuredResourcesMetrics metrics = 2;
 }
 
+
 message BillingMetricsResponse {
   message BillingMetricsRecord {
     google.protobuf.Timestamp ts = 1;
@@ -31,9 +32,26 @@ message BillingMetricsResponse {
   repeated BillingMetricsRecord record = 1;
 }
 
+message BillingMetricsCSVResponse {
+  bytes chunk = 1;
+}
+
+message BillingMetricsMaxResponse {
+  google.protobuf.Timestamp nodes_ts = 1;
+  int32 nodes = 2;
+  google.protobuf.Timestamp millicores_ts = 3;
+  int32 millicores = 4;
+}
+
 service BillingMetricsService {
   rpc GetMetrics(BillingMetricsRequest) returns (BillingMetricsResponse) {
     option (google.api.http) = {get: "/v1/billing"};
+  }
+  rpc GetCSV(BillingMetricsRequest) returns (stream BillingMetricsCSVResponse) {
+    option (google.api.http) = {get: "/v1/billing/csv"};
+  }
+  rpc GetMax(BillingMetricsRequest) returns (BillingMetricsMaxResponse) {
+    option (google.api.http) = {get: "/v1/billing/max"};
   }
   rpc PutMetrics(BillingMetricsInsertRequest) returns (Empty) {
     option (google.api.http) = {

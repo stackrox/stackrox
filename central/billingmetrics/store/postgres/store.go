@@ -4,8 +4,10 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,16 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
-	baseTable = "billingmetrics"
+	baseTable = "billing_metrics"
 
-	getStmt    = "SELECT ts, value FROM billingmetrics WHERE ts >= $1 AND ts < $2"
-	insertStmt = "INSERT INTO billingmetrics(ts, value) VALUES ($1, $2)"
+	getStmt    = "SELECT ts, serialized FROM billing_metrics WHERE ts >= $1 AND ts < $2"
+	insertStmt = "INSERT INTO billing_metrics(ts, serialized) VALUES ($1, $2)"
 )
 
 var (
@@ -32,10 +33,10 @@ var (
 	targetResource = resources.Administration
 )
 
-// Store is the interface to interact with the storage for storage.BillingMetricsRecordl.
+// Store is the interface to interact with the storage for storage.BillingMetrics.
 type Store interface {
-	Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error)
-	Insert(ctx context.Context, rec *storage.BillingMetricsRecord) error
+	Get(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error)
+	Insert(ctx context.Context, rec *storage.BillingMetrics) error
 }
 
 type storeImpl struct {
@@ -59,24 +60,23 @@ func checkScope(ctx context.Context, am storage.Access) error {
 }
 
 // Upsert saves the current state of an object in storage.
-func (s *storeImpl) Insert(ctx context.Context, obj *storage.BillingMetricsRecord) error {
+func (s *storeImpl) Insert(ctx context.Context, obj *storage.BillingMetrics) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Add, "BillingMetrics")
 
 	if err := checkScope(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
 
-	if obj.Ts == nil {
-		obj.Ts = protoconv.ConvertTimeToTimestamp(time.Now())
-	}
-
-	return pgutils.Retry(func() error {
+	if err := pgutils.Retry(func() error {
 		return s.retryableInsert(ctx, obj)
-	})
+	}); err != nil {
+		return fmt.Errorf("cannot insert metrics: %w", err)
+	}
+	return nil
 }
 
-func (s *storeImpl) retryableInsert(ctx context.Context, rec *storage.BillingMetricsRecord) error {
-	serialized, err := rec.Marshal()
+func (s *storeImpl) retryableInsert(ctx context.Context, rec *storage.BillingMetrics) error {
+	serialized, err := rec.GetSr().Marshal()
 	if err != nil {
 		return err
 	}
@@ -86,51 +86,52 @@ func (s *storeImpl) retryableInsert(ctx context.Context, rec *storage.BillingMet
 		return err
 	}
 	defer release()
-
-	if _, err := conn.Exec(ctx, insertStmt, rec.Ts, serialized); err != nil {
-		return err
-	}
-	return nil
+	_, err = conn.Exec(ctx, insertStmt, timestampToStoreInUTC(rec.GetTs()), serialized)
+	return err
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error) {
+func (s *storeImpl) Get(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "BillingMetrics")
 
 	if err := checkScope(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, nil
 	}
 
-	return pgutils.Retry2(func() ([]storage.BillingMetricsRecord, error) {
+	if r, err := pgutils.Retry2(func() ([]storage.BillingMetrics, error) {
 		return s.retryableGet(ctx, from, to)
-	})
+	}); err != nil {
+		return nil, fmt.Errorf("cannot get metrics from db: %w", err)
+	} else {
+		return r, nil
+	}
 }
 
-func (s *storeImpl) retryableGet(ctx context.Context, from, to time.Time) ([]storage.BillingMetricsRecord, error) {
+func (s *storeImpl) retryableGet(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "BillingMetrics")
 	if err != nil {
 		return nil, err
 	}
 	defer release()
 
-	rows, err := conn.Query(ctx, getStmt, from, to)
+	rows, err := conn.Query(ctx, getStmt, timestampToStoreInUTC(from), timestampToStoreInUTC(to))
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 
-	result := []storage.BillingMetricsRecord{}
+	result := []storage.BillingMetrics{}
 	for rows.Next() {
 		var ts *time.Time
 		var obj []byte
 		if err := rows.Scan(&ts, &obj); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
-		var value storage.BillingMetricsRecord_SecuredResources
+		var value storage.BillingMetrics_SecuredResources
 		if err := value.Unmarshal(obj); err != nil {
 			return nil, err
 		}
-		result = append(result, storage.BillingMetricsRecord{
-			Ts: protoconv.ConvertTimeToTimestamp(*ts),
+		result = append(result, storage.BillingMetrics{
+			Ts: localTimestampFromStore(ts),
 			Sr: &value,
 		})
 	}
@@ -142,7 +143,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("cannot acquire connection for %s %s: %w", op.String(), typ, err)
 	}
 	return conn, conn.Release, nil
 }

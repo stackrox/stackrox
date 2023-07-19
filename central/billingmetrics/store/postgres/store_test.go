@@ -11,7 +11,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,38 +41,68 @@ func (s *BillingMetricsStoreSuite) TestStore() {
 	store := s.store
 
 	now := time.Now()
-	then := now.Add(10 * time.Minute)
+	from := timeToTimestamp(now)
+	to := timeToTimestamp(now.Add(10 * time.Minute))
+	three := timeToTimestamp(now.Add(11 * time.Minute))
 
-	records := []*storage.BillingMetricsRecord{
-		{Ts: protoconv.ConvertTimeToTimestamp(now),
-			Sr: &storage.BillingMetricsRecord_SecuredResources{},
+	records := []storage.BillingMetrics{
+		{Ts: from,
+			Sr: &storage.BillingMetrics_SecuredResources{},
 		},
-		{Ts: protoconv.ConvertTimeToTimestamp(then),
-			Sr: &storage.BillingMetricsRecord_SecuredResources{
+		{Ts: to,
+			Sr: &storage.BillingMetrics_SecuredResources{
 				Nodes:      5,
 				Millicores: 50,
 			},
 		},
 	}
 
-	foundRecords, err := store.Get(ctx, now, then)
+	foundRecords, err := store.Get(ctx, from, to)
 	s.Require().NoError(err)
-	s.Nil(foundRecords)
+	s.Empty(foundRecords)
 
-	s.Require().NoError(store.Insert(ctx, records[0]))
-	s.Require().NoError(store.Insert(ctx, records[1]))
-	foundRecords, err = store.Get(ctx, now, then)
+	s.Require().NoError(store.Insert(ctx, &records[0]))
+	s.Require().NoError(store.Insert(ctx, &records[1]))
+	foundRecords, err = store.Get(ctx, from, to)
 	s.Require().NoError(err)
 	s.Require().Len(foundRecords, 1)
 	s.Equal(records[0], foundRecords[0])
 
-	foundRecords, err = store.Get(ctx, then, then.Add(1*time.Second))
+	foundRecords, err = store.Get(ctx, to, three)
 	s.Require().NoError(err)
 	s.Require().Len(foundRecords, 1)
 	s.Equal(records[1], foundRecords[0])
 
-	foundRecords, err = store.Get(ctx, now, then.Add(1*time.Second))
+	foundRecords, err = store.Get(ctx, from, three)
 	s.Require().NoError(err)
 	s.Require().Len(foundRecords, 2)
 	s.Equal(records, foundRecords)
+}
+
+func (s *BillingMetricsStoreSuite) TestGet() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
+
+	now := time.Now()
+	from := timeToTimestamp(now)
+	to := timeToTimestamp(now.Add(10 * time.Minute))
+
+	records := []storage.BillingMetrics{
+		{Ts: from,
+			Sr: &storage.BillingMetrics_SecuredResources{},
+		},
+		{Ts: to,
+			Sr: &storage.BillingMetrics_SecuredResources{
+				Nodes:      5,
+				Millicores: 50,
+			},
+		},
+	}
+
+	s.Require().NoError(store.Insert(ctx, &records[0]))
+	foundRecords, err := store.Get(ctx, from, to)
+	s.Require().NoError(err)
+	s.Require().Len(foundRecords, 1)
+	s.Equal(records[0], foundRecords[0])
 }
