@@ -162,10 +162,10 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(access),
-					sac.ResourceScopeKeyList(targetResource),
-					sac.ClusterScopeKeyList(uuid.Nil.String()),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
@@ -175,10 +175,10 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(access),
-					sac.ResourceScopeKeyList(targetResource),
-					sac.ClusterScopeKeyList(objA.GetRunMetadata().GetClusterId()),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
 				)),
 			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
 			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
@@ -188,10 +188,10 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(access),
-					sac.ResourceScopeKeyList(targetResource),
-					sac.ClusterScopeKeyList(objA.GetRunMetadata().GetClusterId()),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
 				)),
 			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
 			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
@@ -201,10 +201,10 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(access),
-					sac.ResourceScopeKeyList(targetResource),
-					sac.ClusterScopeKeyList("caaaaaaa-bbbb-4011-0000-111111111111"),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
@@ -214,11 +214,11 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		},
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(access),
-					sac.ResourceScopeKeyList(targetResource),
-					sac.ClusterScopeKeyList(objA.GetRunMetadata().GetClusterId()),
-					sac.NamespaceScopeKeyList("unknown ns"),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
+					sac.NamespaceScopeKeys("unknown ns"),
 				)),
 			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
 			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},

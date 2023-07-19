@@ -214,50 +214,50 @@ func GenericClusterSACGetTestCases(baseContext context.Context, _ *testing.T, va
 	return map[string]ClusterSACCrudTestCase{
 		"(full) read-only can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...))),
 			ExpectedFound: true,
 		},
 		"full read-write can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...))),
 			ExpectedFound: true,
 		},
 		"full read-write on wrong cluster cannot get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(wrongClusterID))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(wrongClusterID))),
 			ExpectedFound: false,
 		},
 		"read-write on wrong cluster and partial namespace access cannot get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(wrongClusterID),
-					sac.NamespaceScopeKeyList("someNamespace"))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(wrongClusterID),
+					sac.NamespaceScopeKeys("someNamespace"))),
 			ExpectedFound: false,
 		},
 		"full read-write on right cluster can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(validClusterID))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(validClusterID))),
 			ExpectedFound: true,
 		},
 		"read-write on the right cluster and partial namespace access can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(validClusterID),
-					sac.NamespaceScopeKeyList("someNamespace"))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(validClusterID),
+					sac.NamespaceScopeKeys("someNamespace"))),
 			ExpectedFound: true,
 		},
 	}
@@ -275,55 +275,55 @@ func GenericClusterSACWriteTestCases(baseContext context.Context, _ *testing.T, 
 	return map[string]ClusterSACCrudTestCase{
 		"(full) read-only cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write can " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...))),
 			ExpectError:   false,
 			ExpectedError: nil,
 		},
 		"full read-write on wrong cluster cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(wrongClusterID))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(wrongClusterID))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on wrong cluster and partial namespace access cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(wrongClusterID),
-					sac.NamespaceScopeKeyList("someNamespace"))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(wrongClusterID),
+					sac.NamespaceScopeKeys("someNamespace"))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write on right cluster can " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(validClusterID))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(validClusterID))),
 			ExpectError:   false,
 			ExpectedError: nil,
 		},
 		"read-write on the right cluster and partial namespace access can " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(validClusterID),
-					sac.NamespaceScopeKeyList("someNamespace"))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(validClusterID),
+					sac.NamespaceScopeKeys("someNamespace"))),
 			ExpectError:   false,
 			ExpectedError: nil,
 		},
@@ -505,55 +505,55 @@ func GenericGlobalClusterSACWriteTestCases(baseContext context.Context, _ *testi
 	return map[string]ClusterSACCrudTestCase{
 		"(full) read-only cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write can " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...))),
 			ExpectError:   false,
 			ExpectedError: nil,
 		},
 		"full read-write on wrong cluster cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(wrongClusterID))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(wrongClusterID))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on wrong cluster and partial namespace access cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(wrongClusterID),
-					sac.NamespaceScopeKeyList("someNamespace"))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(wrongClusterID),
+					sac.NamespaceScopeKeys("someNamespace"))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write on right cluster cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(validClusterID))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(validClusterID))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on the right cluster and partial namespace access cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
-					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeyList(resourceHandles...),
-					sac.ClusterScopeKeyList(validClusterID),
-					sac.NamespaceScopeKeyList("someNamespace"))),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeys(resourceHandles...),
+					sac.ClusterScopeKeys(validClusterID),
+					sac.NamespaceScopeKeys("someNamespace"))),
 			ExpectError:   true,
 			ExpectedError: sac.ErrResourceAccessDenied,
 		},
