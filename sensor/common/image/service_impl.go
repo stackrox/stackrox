@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
 )
@@ -154,6 +155,6 @@ func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (s *serviceImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }

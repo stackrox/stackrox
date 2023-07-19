@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +39,7 @@ type updaterImpl struct {
 	client     client.Interface
 	kubeClient kubernetes.Interface
 
-	updates chan *central.MsgFromSensor
+	updates chan *message.ExpiringMessage
 	stopSig concurrency.Signal
 }
 
@@ -61,17 +62,17 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
 }
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 	select {
-	case u.updates <- &central.MsgFromSensor{
+	case u.updates <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterStatusUpdate{
 			ClusterStatusUpdate: msg,
 		},
-	}:
+	}):
 		return true
 	case <-u.stopSig.Done():
 		return false
@@ -260,7 +261,7 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 	return &updaterImpl{
 		client:     client,
 		kubeClient: client.Kubernetes(),
-		updates:    make(chan *central.MsgFromSensor),
+		updates:    make(chan *message.ExpiringMessage),
 		stopSig:    concurrency.NewSignal(),
 	}
 }

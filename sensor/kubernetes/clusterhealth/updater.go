@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -39,7 +40,7 @@ var (
 
 type updaterImpl struct {
 	client         kubernetes.Interface
-	updates        chan *central.MsgFromSensor
+	updates        chan *message.ExpiringMessage
 	stopSig        concurrency.Signal
 	updateInterval time.Duration
 	namespace      string
@@ -64,7 +65,7 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
 }
 
@@ -79,7 +80,7 @@ func (u *updaterImpl) run() {
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
 			scannerHealthInfo := u.getLocalScannerInfo()
 			select {
-			case u.updates <- &central.MsgFromSensor{
+			case u.updates <- message.New(&central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
 						CollectorHealthInfo:        collectorHealthInfo,
@@ -87,7 +88,7 @@ func (u *updaterImpl) run() {
 						ScannerHealthInfo:          scannerHealthInfo,
 					},
 				},
-			}:
+			}):
 				continue
 			case <-u.stopSig.Done():
 				return
@@ -227,7 +228,7 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 	}
 	return &updaterImpl{
 		client:         client,
-		updates:        make(chan *central.MsgFromSensor),
+		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,
 		namespace:      getSensorNamespace(),

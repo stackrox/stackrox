@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	mockDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/message"
 	mockReprocessor "github.com/stackrox/rox/sensor/common/reprocessor/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	mockComponent "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
@@ -49,7 +50,7 @@ func (s *eventPipelineSuite) SetupTest() {
 	s.detector = mockDetector.NewMockDetector(s.mockCtrl)
 	s.reprocessor = mockReprocessor.NewMockHandler(s.mockCtrl)
 	s.pipeline = &eventPipeline{
-		eventsC:     make(chan *central.MsgFromSensor),
+		eventsC:     make(chan *message.ExpiringMessage),
 		stopSig:     concurrency.NewSignal(),
 		output:      mockComponent.NewMockOutputQueue(s.mockCtrl),
 		resolver:    s.resolver,

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	mocks2 "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
@@ -58,7 +59,8 @@ func makeExpectedMap(expectedIDs ...*hasAnID) *map[types.UID]struct{} {
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHandlerImpl, obj *hasAnID, expectedMap *map[types.UID]struct{}) {
-	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
+	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE).
+		Return(&component.ResourceEvent{})
 	suite.resolver.EXPECT().Send(gomock.Any())
 	handler.OnAdd(obj)
 	suite.Equal(*expectedMap, handler.seenIDs)
@@ -169,7 +171,8 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 	handler.PopulateInitialObjects([]interface{}{testMsgOne, testMsgTwo})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
-	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE)
+	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE).
+		Return(&component.ResourceEvent{})
 	suite.resolver.EXPECT().Send(gomock.Any())
 	handler.OnAdd(testMsgTwo)
 	suite.assertFinished(handler)

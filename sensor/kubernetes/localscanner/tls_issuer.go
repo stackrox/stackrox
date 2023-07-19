@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -48,7 +49,7 @@ func NewLocalScannerTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	msgToCentralC := make(chan *central.MsgFromSensor)
+	msgToCentralC := make(chan *message.ExpiringMessage)
 	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
@@ -67,7 +68,7 @@ type localScannerTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	msgToCentralC                chan *central.MsgFromSensor
+	msgToCentralC                chan *message.ExpiringMessage
 	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
@@ -145,7 +146,7 @@ func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapabil
 
 // ResponsesC is called "responses" because for other SensorComponent it is central that
 // initiates the interaction. However, here it is sensor which sends a request to central.
-func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return i.msgToCentralC
 }
 

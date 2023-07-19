@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
 	"k8s.io/client-go/kubernetes"
@@ -36,7 +37,7 @@ var (
 )
 
 type commandHandler struct {
-	responsesC      chan *central.MsgFromSensor
+	responsesC      chan *message.ExpiringMessage
 	clusterGatherer *gatherers.ClusterGatherer
 
 	stopSig concurrency.ErrorSignal
@@ -52,7 +53,7 @@ func NewCommandHandler(client kubernetes.Interface, provider store.Provider) com
 
 func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider) *commandHandler {
 	return &commandHandler{
-		responsesC:            make(chan *central.MsgFromSensor),
+		responsesC:            make(chan *message.ExpiringMessage),
 		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, provider.Deployments()),
 		stopSig:               concurrency.NewErrorSignal(),
 		pendingContextCancels: make(map[string]context.CancelFunc),
@@ -127,14 +128,14 @@ func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *centr
 		},
 	}
 	select {
-	case h.responsesC <- msg:
+	case h.responsesC <- message.New(msg):
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	}
 }
 
-func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *commandHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.responsesC
 }
 
