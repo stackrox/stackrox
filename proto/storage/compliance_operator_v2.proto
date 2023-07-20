@@ -116,7 +116,7 @@ message ComplianceOperatorCheckResultV2 {
     map<string, string> labels = 9;
     map<string, string> annotations = 10;
     google.protobuf.Timestamp     created_time = 11;
-    string standard = 12 [(gogoproto.moretags) = 'search:"Standard,hidden,store"'];
+    string standard = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
     string control = 13;
     string scan_id = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
 }
