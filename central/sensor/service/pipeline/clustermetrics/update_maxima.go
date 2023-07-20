@@ -3,6 +3,7 @@ package clustermetrics
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type BillingMetrics struct {
@@ -22,13 +23,17 @@ func updateMaxima(clusterID string, cm *central.ClusterMetrics) {
 
 // CutMetrics resets the metrics and returns the collected values since last
 // invocation.
-func CutMetrics() BillingMetrics {
-	var newMetrics BillingMetrics
-	for _, v := range nodesMap.Reset() {
-		newMetrics.TotalNodes += v
+func CutMetrics(ids set.StringSet) *BillingMetrics {
+	var m BillingMetrics
+	for id, v := range nodesMap.Reset() {
+		if ids.Contains(id) {
+			m.TotalNodes += v
+		}
 	}
-	for _, v := range millicoresMap.Reset() {
-		newMetrics.TotalMilliCores += v
+	for id, v := range millicoresMap.Reset() {
+		if ids.Contains(id) {
+			m.TotalMilliCores += v
+		}
 	}
-	return newMetrics
+	return &m
 }
