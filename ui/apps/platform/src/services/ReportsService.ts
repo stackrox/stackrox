@@ -124,3 +124,9 @@ export function createReportConfiguration(
             return response.data;
         });
 }
+
+export function deleteReportConfiguration(reportId: string): Promise<Empty> {
+    return axios.delete<Empty>(`/v2/reports/configurations/${reportId}`).then((response) => {
+        return response.data;
+    });
+}
