@@ -14,10 +14,12 @@ import (
 // "allow all".
 //
 // A ScopeCheckerCore is expected to have the following behaviours:
+//
 // - when dealing with access to globally scoped resources, Allowed and EffectiveAccessScope
 // should be all-or-nothing at resource level independently of scopes. This means either
 // Allowed is true and EffectiveAccessScope gives unrestricted scope, or Allowed is false
 // and EffectiveAccessScope gives a deny-all scope.
+//
 // - when dealing with access to cluster scoped resources, Allowed should return true
 // for a given cluster if the underlying scope allows access to at least a namespace
 // in the cluster.
