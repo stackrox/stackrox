@@ -6,6 +6,7 @@ import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { ImageType, IntervalType } from 'services/ReportsService.types';
 import { EmailNotifierIntegration } from 'types/notifier.proto';
+import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
@@ -19,8 +20,8 @@ export type ReportFormValues = {
     deliveryDestinations: DeliveryDestination[];
     schedule: {
         intervalType: IntervalType | null;
-        daysOfWeek: string[];
-        daysOfMonth: string[];
+        daysOfWeek: DayOfWeek[];
+        daysOfMonth: DayOfMonth[];
     };
 };
 
