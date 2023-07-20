@@ -274,7 +274,7 @@ splunk:
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
             // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.healthsCount == CREATED_RESOURCES + 1
+            assert response.healthsCount == CREATED_RESOURCES + 2
             for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
