@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+import weak "google/api/annotations.proto";
+import "api/v2/common.proto";
+import "api/v2/search_query.proto";
+
+package v2;
+
+// Next Tag: 12
+message ComplianceRule {
+    string              name         = 1;
+    string              version      = 2;
+    string              rule_version = 3;
+    string              rule_type    = 4;
+    string              severity     = 5;
+    string              standard     = 6;
+    string              control      = 7;
+    string              title        = 8;
+    string              description  = 9;
+    string              rationale    = 10;
+    string              fixes        = 11;
+}
+
+// Next Tag: 10
+message ComplianceProfile {
+    string                        id              = 1;
+    string                        name            = 2;
+    string                        version         = 3;
+    string                        profile_version = 4;
+    repeated string               product_type    = 5;
+    string                        standard        = 6;
+    string                        description     = 7;
+    repeated ComplianceRule       rules           = 8;
+    string                        product         = 9;
+}
+
+message ComplianceProfileClusterRequest {
+    string cluster_id = 1;
+}
+
+message ListComplianceProfilesResponse {
+    repeated ComplianceProfile profiles = 1;
+}
+
+service ComplianceProfileService {
+    // ListComplianceProfiles lists all the compliance profiles for the secured clusters
+    rpc ListComplianceProfiles (Empty) returns (ListComplianceProfilesResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/profiles"
+        };
+    }
+
+    // ListComplianceProfilesByCluster lists all the compliance profiles for the secured clusters
+    rpc ListComplianceProfilesByCluster (ComplianceProfileClusterRequest) returns (ListComplianceProfilesResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/profiles/{cluster_id}"
+        };
+    }
+
+    // GetComplianceProfile retrieves the specified compliance profile
+    rpc GetComplianceProfile (ResourceByID) returns (ListComplianceProfilesResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/profiles/{id}"
+        };
+    }
+
+    // GetComplianceProfiles returns profiles matching given query
+    rpc GetComplianceProfiles (RawQuery) returns (ListComplianceProfilesResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/profiles"
+        };
+    }
+}
