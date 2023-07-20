@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package v2
+package reportgenerator
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -19,6 +18,7 @@ import (
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestEnhancedReporting(t *testing.T) {
@@ -40,7 +41,7 @@ type EnhancedReportingTestSuite struct {
 
 	ctx             context.Context
 	testDB          *pgtest.TestPostgres
-	reportScheduler *scheduler
+	reportGenerator *reportGeneratorImpl
 	resolver        *resolvers.Resolver
 	schema          *graphql.Schema
 
@@ -57,7 +58,11 @@ type vulnReportData struct {
 }
 
 func (s *EnhancedReportingTestSuite) SetupSuite() {
-
+	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
+		s.T().SkipNow()
+	}
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
@@ -79,7 +84,7 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
-	s.reportScheduler = newSchedulerImpl(nil, nil, nil, nil,
+	s.reportGenerator = newReportGeneratorImpl(nil, nil, nil,
 		s.resolver.DeploymentDataStore, s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
 		nil, nil, s.schema)
 }
@@ -234,7 +239,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			s.NoError(err)
 
 			reportConfig := testReportConfig(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes)
-			deployedImgResults, watchedImgResults, err := s.reportScheduler.getReportData(ctx, reportConfig, tc.collection, nil)
+			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(ctx, reportConfig, tc.collection, nil)
 			s.NoError(err)
 			reportData := extractVulnReportData(deployedImgResults, watchedImgResults)
 			s.ElementsMatch(tc.expected.deploymentNames, reportData.deploymentNames)
