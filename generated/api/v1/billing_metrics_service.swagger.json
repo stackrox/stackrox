@@ -47,36 +47,6 @@
         "tags": [
           "BillingMetricsService"
         ]
-      },
-      "put": {
-        "operationId": "BillingMetricsService_PutMetrics",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1BillingMetricsInsertRequest"
-            }
-          }
-        ],
-        "tags": [
-          "BillingMetricsService"
-        ]
       }
     },
     "/v1/billing/csv": {
@@ -248,18 +218,6 @@
         }
       }
     },
-    "v1BillingMetricsInsertRequest": {
-      "type": "object",
-      "properties": {
-        "ts": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "metrics": {
-          "$ref": "#/definitions/v1SecuredResourcesMetrics"
-        }
-      }
-    },
     "v1BillingMetricsMaxResponse": {
       "type": "object",
       "properties": {
@@ -291,9 +249,6 @@
           }
         }
       }
-    },
-    "v1Empty": {
-      "type": "object"
     },
     "v1SecuredResourcesMetrics": {
       "type": "object",

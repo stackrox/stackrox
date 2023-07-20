@@ -118,16 +118,3 @@ func (s *billingMetricsSvcSuite) TestGetMax() {
 	s.Require().NoError(err)
 	s.Equal(exp, res)
 }
-
-func (s *billingMetricsSvcSuite) TestPutMetrics() {
-	req := &v1.BillingMetricsInsertRequest{
-		Ts:      protoconv.ConvertTimeToTimestamp(time.Time{}),
-		Metrics: &v1.SecuredResourcesMetrics{Nodes: 5, Millicores: 50},
-	}
-	rec := &storage.BillingMetrics{}
-	s.store.EXPECT().Insert(s.ctx, gomock.AssignableToTypeOf(rec)).Times(1).Return(nil)
-	svc := New(s.store)
-	empty, err := svc.PutMetrics(s.ctx, req)
-	s.Require().NoError(err)
-	s.Equal(&v1.Empty{}, empty)
-}

@@ -137,15 +137,3 @@ func (s *serviceImpl) GetMax(ctx context.Context, req *v1.BillingMetricsRequest)
 	}
 	return max, nil
 }
-
-func (s *serviceImpl) PutMetrics(ctx context.Context, m *v1.BillingMetricsInsertRequest) (*v1.Empty, error) {
-	v := &storage.BillingMetrics{Ts: m.GetTs(), Sr: &storage.BillingMetrics_SecuredResources{
-		Nodes:      m.GetMetrics().GetNodes(),
-		Millicores: m.GetMetrics().GetMillicores(),
-	}}
-
-	if err := s.store.Insert(ctx, v); err != nil {
-		return nil, fmt.Errorf("cannot insert metrics: %w", err)
-	}
-	return &v1.Empty{}, nil
-}

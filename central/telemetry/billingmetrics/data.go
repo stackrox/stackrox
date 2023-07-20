@@ -5,11 +5,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	bmetrics "github.com/stackrox/rox/central/billingmetrics"
+	bmetrics "github.com/stackrox/rox/central/billingmetrics/store"
 	cluStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -60,9 +59,9 @@ func getClusterIDs() (set.StringSet, error) {
 func checkIn(metrics clustermetrics.BillingMetrics) error {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), metricsWriter)
 
-	_, err := bmetrics.Singleton().PutMetrics(ctx, &v1.BillingMetricsInsertRequest{
+	err := bmetrics.Singleton().Insert(ctx, &storage.BillingMetrics{
 		Ts: protoconv.ConvertTimeToTimestamp(time.Now()),
-		Metrics: &v1.SecuredResourcesMetrics{
+		Sr: &storage.BillingMetrics_SecuredResources{
 			Nodes:      int32(metrics.TotalNodes),
 			Millicores: int32(metrics.TotalMilliCores)},
 	})

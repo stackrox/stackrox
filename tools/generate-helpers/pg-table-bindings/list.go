@@ -19,6 +19,7 @@ func init() {
 	for s, r := range map[proto.Message]permissions.ResourceHandle{
 		&storage.ActiveComponent{}:                              resources.Deployment,
 		&storage.AuthProvider{}:                                 resources.Access,
+		&storage.BillingMetrics{}:                               resources.Administration,
 		&storage.Blob{}:                                         resources.Administration,
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,
 		&storage.ClusterCVE{}:                                   resources.Cluster,

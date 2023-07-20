@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package v1;
 
-import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -17,12 +16,6 @@ message SecuredResourcesMetrics {
   int32 nodes = 1;
   int32 millicores = 2;
 }
-
-message BillingMetricsInsertRequest {
-  google.protobuf.Timestamp ts = 1;
-  SecuredResourcesMetrics metrics = 2;
-}
-
 
 message BillingMetricsResponse {
   message BillingMetricsRecord {
@@ -52,11 +45,5 @@ service BillingMetricsService {
   }
   rpc GetMax(BillingMetricsRequest) returns (BillingMetricsMaxResponse) {
     option (google.api.http) = {get: "/v1/billing/max"};
-  }
-  rpc PutMetrics(BillingMetricsInsertRequest) returns (Empty) {
-    option (google.api.http) = {
-      put: "/v1/billing"
-      body: "*"
-    };
   }
 }

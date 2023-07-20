@@ -1,8 +1,7 @@
 package billingmetrics
 
 import (
-	bmstore "github.com/stackrox/rox/central/billingmetrics/store/postgres"
-	"github.com/stackrox/rox/central/globaldb"
+	store "github.com/stackrox/rox/central/billingmetrics/store"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,7 +13,7 @@ var (
 // Singleton returns the API token singleton.
 func Singleton() Service {
 	once.Do(func() {
-		svc = New(bmstore.New(globaldb.GetPostgres()))
+		svc = New(store.Singleton())
 	})
 	return svc
 }
