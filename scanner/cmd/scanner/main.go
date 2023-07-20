@@ -19,8 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/stackrox/scanner/v4/indexer"
+	"github.com/stackrox/stackrox/scanner/v4/internal/version"
 	"github.com/stackrox/stackrox/scanner/v4/matcher"
-	"github.com/stackrox/stackrox/scanner/v4/version"
 )
 
 type Backends struct {
