@@ -99,6 +99,14 @@ export function fetchReportConfigurations(): Promise<ReportConfiguration[]> {
         });
 }
 
+export function fetchReportConfiguration(reportId: string): Promise<ReportConfiguration> {
+    return axios
+        .get<ReportConfiguration>(`/v2/reports/configurations/${reportId}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
 export function fetchReportStatus(id: string): Promise<ReportStatus | null> {
     return axios
         .get<{ status: ReportStatus | null }>(`/v2/reports/status/${id}`)
@@ -120,6 +128,17 @@ export function createReportConfiguration(
 ): Promise<ReportConfiguration> {
     return axios
         .post<ReportConfiguration>('/v2/reports/configurations', report)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function updateReportConfiguration(
+    reportId: string,
+    report: ReportConfiguration
+): Promise<ReportConfiguration> {
+    return axios
+        .put<ReportConfiguration>(`/v2/reports/configurations/${reportId}`, report)
         .then((response) => {
             return response.data;
         });

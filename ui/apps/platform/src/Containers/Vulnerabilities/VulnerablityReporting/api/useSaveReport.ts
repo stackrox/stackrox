@@ -1,60 +1,63 @@
 import { useCallback, useState } from 'react';
 
-import { createReportConfiguration } from 'services/ReportsService';
+import { updateReportConfiguration } from 'services/ReportsService';
 import { ReportConfiguration } from 'services/ReportsService.types';
 import { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
 type Result = {
     data: ReportConfiguration | null;
-    isLoading: boolean;
-    error: string | null;
+    isSaving: boolean;
+    saveError: string | null;
 };
 
 type CreateReportResult = {
-    createReport: (formValues: ReportFormValues) => void;
+    saveReport: (reportId: string, formValues: ReportFormValues) => void;
 } & Result;
 
 const defaultResult = {
     data: null,
-    isLoading: false,
-    error: null,
+    isSaving: false,
+    saveError: null,
 };
 
-function useCreateReport(): CreateReportResult {
+function useSaveReport(): CreateReportResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
-    const createReport = useCallback((formValues: ReportFormValues) => {
+    const saveReport = useCallback((reportId: string, formValues: ReportFormValues) => {
         setResult({
             data: null,
-            isLoading: true,
-            error: null,
+            isSaving: true,
+            saveError: null,
         });
 
-        const reportConfiguration = getReportConfigurationFromFormValues(formValues);
+        const reportConfiguration = getReportConfigurationFromFormValues({
+            ...formValues,
+            reportId,
+        });
 
         // send API call
-        createReportConfiguration(reportConfiguration)
+        updateReportConfiguration(reportId, reportConfiguration)
             .then((response) => {
                 setResult({
                     data: response,
-                    isLoading: false,
-                    error: null,
+                    isSaving: false,
+                    saveError: null,
                 });
             })
             .catch((err) => {
                 setResult({
                     data: null,
-                    isLoading: false,
-                    error: err.response.data.message,
+                    isSaving: false,
+                    saveError: err.response.data.message,
                 });
             });
     }, []);
 
     return {
         ...result,
-        createReport,
+        saveReport,
     };
 }
 
-export default useCreateReport;
+export default useSaveReport;

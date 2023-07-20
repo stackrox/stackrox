@@ -20,12 +20,12 @@ import {
     AlertVariant,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link } from 'react-router-dom';
+import { Link, generatePath } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon } from '@patternfly/react-icons';
 
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
@@ -186,12 +186,16 @@ function VulnReportsPage() {
                                         </Tbody>
                                     )}
                                     {reports.map((report) => {
+                                        const editVulnReportURL = `${
+                                            generatePath(vulnerabilityReportPath, {
+                                                reportId: report.id,
+                                            }) as string
+                                        }?action=edit`;
                                         const rowActions = [
                                             {
-                                                title: 'Edit report',
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                },
+                                                title: (
+                                                    <Link to={editVulnReportURL}>Edit report</Link>
+                                                ),
                                             },
                                             {
                                                 isSeparator: true,
