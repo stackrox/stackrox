@@ -162,7 +162,7 @@ func (s *ProcessIndicatorsStoreSuite) getTestData(access storage.Access) (*stora
 		},
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
@@ -175,7 +175,7 @@ func (s *ProcessIndicatorsStoreSuite) getTestData(access storage.Access) (*stora
 		},
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedNamespaceLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
@@ -189,7 +189,7 @@ func (s *ProcessIndicatorsStoreSuite) getTestData(access storage.Access) (*stora
 		},
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
@@ -202,7 +202,7 @@ func (s *ProcessIndicatorsStoreSuite) getTestData(access storage.Access) (*stora
 		},
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedClusterLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
@@ -215,7 +215,7 @@ func (s *ProcessIndicatorsStoreSuite) getTestData(access storage.Access) (*stora
 		},
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
+				sac.AllowFixedNamespaceLevelScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
