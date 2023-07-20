@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -67,12 +68,10 @@ func (s *storeImpl) Insert(ctx context.Context, obj *storage.BillingMetrics) err
 		return err
 	}
 
-	if err := pgutils.Retry(func() error {
+	err := pgutils.Retry(func() error {
 		return s.retryableInsert(ctx, obj)
-	}); err != nil {
-		return fmt.Errorf("cannot insert metrics: %w", err)
-	}
-	return nil
+	})
+	return errors.Wrap(err, "cannot insert metrics")
 }
 
 func (s *storeImpl) retryableInsert(ctx context.Context, rec *storage.BillingMetrics) error {
@@ -98,22 +97,6 @@ func (s *storeImpl) Get(ctx context.Context, from, to *types.Timestamp) ([]stora
 		return nil, nil
 	}
 
-	if r, err := pgutils.Retry2(func() ([]storage.BillingMetrics, error) {
-		return s.retryableGet(ctx, from, to)
-	}); err != nil {
-		return nil, fmt.Errorf("cannot get metrics from db: %w", err)
-	} else {
-		return r, nil
-	}
-}
-
-func (s *storeImpl) retryableGet(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "BillingMetrics")
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-
 	if from == nil {
 		from = &types.Timestamp{}
 	}
@@ -121,7 +104,22 @@ func (s *storeImpl) retryableGet(ctx context.Context, from, to *types.Timestamp)
 		to = timeToTimestamp(time.Now())
 	}
 
-	rows, err := conn.Query(ctx, getStmt, timestampToStoreInUTC(from), timestampToStoreInUTC(to))
+	futc, tutc := timestampToStoreInUTC(from), timestampToStoreInUTC(to)
+
+	r, err := pgutils.Retry2(func() ([]storage.BillingMetrics, error) {
+		return s.retryableGet(ctx, &futc, &tutc)
+	})
+	return r, errors.Wrap(err, "cannot get metrics from db")
+}
+
+func (s *storeImpl) retryableGet(ctx context.Context, from, to *time.Time) ([]storage.BillingMetrics, error) {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "BillingMetrics")
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getStmt, from, to)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
