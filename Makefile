@@ -591,26 +591,26 @@ docker-build-roxctl-image:
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
-	cp bin/linux_$(GOARCH)/central image/bin/central
+	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 ifdef CI
-	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
-	cp bin/linux_ppc64le/roxctl image/bin/roxctl-linux-ppc64le
-	cp bin/linux_s390x/roxctl image/bin/roxctl-linux-s390x
-	cp bin/darwin_amd64/roxctl image/bin/roxctl-darwin-amd64
-	cp bin/windows_amd64/roxctl.exe image/bin/roxctl-windows-amd64.exe
+	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
+	cp bin/linux_ppc64le/roxctl image/rhel/bin/roxctl-linux-ppc64le
+	cp bin/linux_s390x/roxctl image/rhel/bin/roxctl-linux-s390x
+	cp bin/darwin_amd64/roxctl image/rhel/bin/roxctl-darwin-amd64
+	cp bin/windows_amd64/roxctl.exe image/rhel/bin/roxctl-windows-amd64.exe
 else
 ifneq ($(HOST_OS),linux)
-	cp bin/linux_$(GOARCH)/roxctl image/bin/roxctl-linux-$(GOARCH)
+	cp bin/linux_$(GOARCH)/roxctl image/rhel/bin/roxctl-linux-$(GOARCH)
 endif
-	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
+	cp bin/$(HOST_OS)_amd64/roxctl image/rhel/bin/roxctl-$(HOST_OS)-amd64
 endif
-	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/bin/sensor-upgrader
-	cp bin/linux_$(GOARCH)/admission-control image/bin/admission-control
-	cp bin/linux_$(GOARCH)/collection        image/bin/compliance
+	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
+	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
+	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
+	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
+	cp bin/linux_$(GOARCH)/collection        image/rhel/bin/compliance
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
-	find image/bin -not -path "*/.*" -type f -exec chmod +x {} \;
+	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
 
 .PHONY: copy-binaries-to-image-dir
@@ -625,9 +625,9 @@ endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bin/linux_$(GOARCH)/profiler scale/image/bin/profiler
-	cp bin/linux_$(GOARCH)/chaos scale/image/bin/chaos
-	chmod +w scale/image/bin/*
+	cp bin/linux_$(GOARCH)/profiler scale/image/rhel/bin/profiler
+	cp bin/linux_$(GOARCH)/chaos scale/image/rhel/bin/chaos
+	chmod +w scale/image/rhel/bin/*
 	docker build \
 		-t stackrox/scale:$(TAG) \
 		-t quay.io/rhacs-eng/scale:$(TAG) \
@@ -678,7 +678,7 @@ clean: clean-image
 .PHONY: clean-image
 clean-image:
 	@echo "+ $@"
-	git clean -xf image/bin
+	git clean -xf image/bin image/rhel/bin
 	git clean -xdf image/ui image/rhel/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
