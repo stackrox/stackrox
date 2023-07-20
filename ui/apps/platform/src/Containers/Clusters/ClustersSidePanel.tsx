@@ -154,7 +154,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                                     setMessageState({
                                         variant: 'warning',
                                         title: 'Helm-managed cluster',
-                                        text: 'This is an Helm-managed cluster. The settings of Helm-managed clusters cannot be changed here, please ask your DevOps team to change the settings by updating the Helm values.',
+                                        text: 'This is a Helm-managed cluster. The settings of Helm-managed clusters cannot be changed here, please ask your DevOps team to change the settings by updating the Helm values.',
                                     });
                                     break;
                                 case 'MANAGER_TYPE_KUBERNETES_OPERATOR':
