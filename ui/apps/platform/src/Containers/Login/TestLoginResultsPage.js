@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import upperFirst from 'lodash/upperFirst';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 
@@ -13,17 +13,15 @@ function closeThisWindow() {
 
 function getMessage(response) {
     const messageClass = 'flex flex-col items-left w-full';
-    const headingClass = 'font-700 mb-2';
 
     if (response?.error || !response?.userAttributes || !response?.roles) {
         const body = (
             <div className={messageClass}>
-                <h1 className={headingClass}>Authentication error</h1>
                 <p> {upperFirst(response?.error) || 'An unrecognized error occurred.'}</p>
                 {response?.error_description && <p>{response.error_description}</p>}
             </div>
         );
-        return { messageBody: body, messageType: 'error' };
+        return { messageBody: body, variant: 'danger', title: 'Authentication error' };
     }
 
     const displayAttributes = response.userAttributes.map((curr) => {
@@ -66,22 +64,17 @@ function getMessage(response) {
     if (displayRoles.length === 0) {
         const body = (
             <div className={messageClass}>
-                <h1 className={headingClass}>
-                    WARNING: Under the current configuration, the user would not be assigned any
-                    roles and therefore would be unable to log in.
-                </h1>
+                <p>
+                    Under the current configuration, the user would not be assigned any roles and
+                    therefore would be unable to log in.
+                </p>
                 <>{content}</>
             </div>
         );
-        return { messageBody: body, messageType: 'warn' };
+        return { messageBody: body, messageType: 'warning', title: 'WARNING' };
     }
-    const body = (
-        <div className={messageClass}>
-            <h1 className={headingClass}>Authentication successful</h1>
-            <>{content}</>
-        </div>
-    );
-    return { messageBody: body, messageType: 'success' };
+    const body = <div className={messageClass}>{content}</div>;
+    return { messageBody: body, messageType: 'success', title: 'Authentication successful' };
 }
 
 function TestLoginResultsPage({ authProviderTestResults }) {
@@ -89,14 +82,16 @@ function TestLoginResultsPage({ authProviderTestResults }) {
         closeThisWindow();
     }
 
-    const { messageBody, messageType } = getMessage(authProviderTestResults);
+    const { messageBody, variant, title } = getMessage(authProviderTestResults);
 
     return (
         <>
             <div className="flex flex-col items-center justify-center h-full theme-light">
                 <div className="flex flex-col items-center pf-u-background-color-100 w-4/5 relative">
                     <div className="p-4 w-full">
-                        <Message type={messageType}>{messageBody}</Message>
+                        <Alert variant={variant} isInline title={title}>
+                            {messageBody}
+                        </Alert>
                     </div>
                     <div className="flex flex-col items-center border-t border-base-400 p-4 w-full">
                         <p className="mb-4">

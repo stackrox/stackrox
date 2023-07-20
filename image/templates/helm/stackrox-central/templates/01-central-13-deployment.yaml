@@ -105,6 +105,10 @@ spec:
             fieldRef:
               fieldPath: metadata.labels['rhacs.redhat.com/tenant']
         {{- end }}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog
@@ -147,6 +151,11 @@ spec:
           mountPath: /run/secrets/stackrox.io/db-password
         - name: central-external-db-volume
           mountPath: /etc/ext-db
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
+        {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -216,6 +225,12 @@ spec:
           optional: true
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
+      {{- if ._rox.monitoring.openshift.enabled }}
+      - name: monitoring-tls
+        secret:
+          secretName: central-monitoring-tls
+          optional: true
+      {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}
         {{- $extraMount.source | toYaml | nindent 8 }}
