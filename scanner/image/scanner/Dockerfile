@@ -1,14 +1,4 @@
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
-ARG BASE_TAG=8.8
-
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
-
-COPY bundle.tar.gz /
-WORKDIR /bundle
-RUN microdnf -y install tar gzip && tar -zxf /bundle.tar.gz
-
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS base
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 LABEL name="scanner" \
       vendor="StackRox" \
@@ -19,8 +9,8 @@ LABEL name="scanner" \
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
 COPY scripts /
-COPY --from=extracted_bundle /bundle/scanner ./
-COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY bin/scanner ./
+COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 
 RUN microdnf -y upgrade && \
     microdnf -y clean all && \

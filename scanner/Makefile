@@ -83,22 +83,14 @@ else
 	docker run $(IMAGE_BUILD_FLAGS) $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) $(BUILD_CMD)
 endif
 
-.PHONY: $(CURDIR)/image/scanner/bundle.tar.gz
-$(CURDIR)/image/scanner/bundle.tar.gz:
-	$(CURDIR)/image/scanner/create-bundle.sh $(CURDIR)/image/scanner $(CURDIR)/image/scanner
-
-.PHONY: $(CURDIR)/image/db/bundle.tar.gz
-$(CURDIR)/image/db/bundle.tar.gz:
-	$(CURDIR)/image/db/create-bundle.sh $(CURDIR)/image/db $(CURDIR)/image/db
-
 .PHONY: scanner-image
-scanner-image: scanner-build ossls-notice $(CURDIR)/image/scanner/bundle.tar.gz
+scanner-image: scanner-build ossls-notice
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner:$(TAG)"
 	$(SILENT)docker build -t scanner:$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
-db-image: $(CURDIR)/image/db/bundle.tar.gz
+db-image:
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner-db:$(TAG)"
 	$(SILENT)docker build -t scanner-db:$(TAG) --build-arg POSTGRESQL_ARCH=${ARCH} -f image/db/Dockerfile image/db
