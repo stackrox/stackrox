@@ -657,4 +657,43 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	m.done.Wait()
 }
 
+func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
+	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
+	mockCtrl := gomock.NewController(s.T())
+	hostname := "hostname"
+	containerID := "container-id"
+	m, mockEntity, _, mockDetector := createManager(mockCtrl)
+	fakeTicker := make(chan time.Time)
+	defer close(fakeTicker)
+	go m.enrichConnections(fakeTicker)
+	mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+		return clusterentities.ContainerMetadata{
+			DeploymentID: containerID,
+		}, true
+	})
+	mockEntity.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+		return []clusterentities.LookupResult{
+			{
+				Entity:         networkgraph.Entity{ID: containerID},
+				ContainerPorts: []uint16{80},
+			},
+		}
+	})
+	mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any(), gomock.Any()).Times(1)
+	addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(createConnectionPair()))
+	m.Notify(common.SensorComponentEventCentralReachable)
+	fakeTicker <- time.Now()
+	select {
+	case <-time.After(10 * time.Second):
+		s.Fail("timeout waiting for sensor message")
+	case msg, ok := <-m.sensorUpdates:
+		s.Require().True(ok, "the sensorUpdates channel should not be closed")
+		m.Notify(common.SensorComponentEventOfflineMode)
+		m.Notify(common.SensorComponentEventCentralReachable)
+		s.Assert().True(msg.IsExpired(), "the message should be expired")
+	}
+	m.Stop(nil)
+	m.done.Wait()
+}
+
 // endregion
