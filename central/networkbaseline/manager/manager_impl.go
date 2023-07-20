@@ -341,8 +341,8 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 		return nil
 	}
 
-	// If baseline for deleting deploynment exists, than we should look at all entries in the baseline
-	// in order to the delete this entry from other baselines.
+	// If baseline for deleting deploynment exists, then we should look at all entries in its baseline
+	// in order to the delete its reference from peer baselines.
 	if deletingBaseline != nil {
 		modifiedDeployments := set.NewStringSet()
 		for peer := range deletingBaseline.BaselinePeers {
