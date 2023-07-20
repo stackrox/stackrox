@@ -26,7 +26,7 @@ const (
 	SensorComponentEventComplianceDisabled SensorComponentEvent = "disable-compliance"
 )
 
-// Notifier is a sensor component that constitute sensor that can be notified about a sensor event.
+// Notifier is a sensor component that can be notified about a sensor event.
 //
 //go:generate mockgen-wrapper
 type Notifier interface {
