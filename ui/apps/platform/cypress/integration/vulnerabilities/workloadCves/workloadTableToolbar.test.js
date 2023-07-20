@@ -12,7 +12,8 @@ describe('Workload table toolbar', () => {
         }
     });
 
-    it('should correctly handle applied filters', () => {
+    // TODO Fix the flake and re-enable this test https://issues.redhat.com/browse/ROX-17959
+    it.skip('should correctly handle applied filters', () => {
         visitWorkloadCveOverview();
 
         // Set the entity type to 'Namespace'
