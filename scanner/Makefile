@@ -40,7 +40,7 @@ else
 endif
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH}
-BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/stackrox/scanner/v4/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd
+BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/stackrox/scanner/v4/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd/scanner
 
 comma:= ,
 empty:=
