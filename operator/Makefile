@@ -198,7 +198,7 @@ manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: parent-proto-generate controller-gen mapkubeapis ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./apis/...
@@ -293,7 +293,7 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen test smuggled-status-sh mapkubeapis ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
 		-f $< \

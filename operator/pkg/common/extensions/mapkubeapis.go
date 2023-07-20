@@ -12,6 +12,7 @@ import (
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/config/mapkubeapis"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,19 +20,30 @@ import (
 
 // AddMapKubeAPIsExtensionIfMapFileExists conditionally adds the extension to opts if the map file exists
 func AddMapKubeAPIsExtensionIfMapFileExists(opts []pkgReconciler.Option) []pkgReconciler.Option {
-	mapFile := os.Getenv("MAPKUBEAPIS_MAPFILE")
-	if mapFile == "" {
-		mapFile = filepath.Join("config", "mapkubeapis", "Map.yaml")
-	}
-	if _, err := os.Stat(mapFile); err != nil {
-		ctrl.Log.Info("mapkubeapis map file does not exist, the extension will NOT be added", "path", mapFile)
+	mapFile, err := resolveMapFile()
+	if err != nil {
+		ctrl.Log.Error(err, "mapkubeapis map file does not exist, the extension will NOT be added")
 		return opts
 	}
+	ctrl.Log.Info("mapkubeapis extension enabled", "mapFile", mapFile)
+
 	config := MapKubeAPIsExtensionConfig{
 		MapFile: mapFile,
 	}
 	extension := MapKubeAPIsExtension(config)
 	return append(opts, pkgReconciler.WithPreExtension(extension))
+}
+
+func resolveMapFile() (string, error) {
+	mapFile := os.Getenv("MAPKUBEAPIS_MAPFILE")
+	if mapFile == "" {
+		mapFile = filepath.Join("config", "mapkubeapis", "Map.yaml")
+	}
+	if _, err := os.Stat(mapFile); err == nil {
+		return mapFile, nil
+	}
+
+	return mapkubeapis.CreateTempMapFile()
 }
 
 // MapKubeAPIsExtensionConfig extension configuration
