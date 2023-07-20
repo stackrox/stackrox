@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -230,6 +231,10 @@ type networkFlowManager struct {
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
 
+	ctxMutex    sync.Mutex
+	cancelCtx   func()
+	pipelineCtx context.Context
+
 	enricherTicker *time.Ticker
 
 	publicIPs *publicIPsManager
@@ -259,6 +264,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
+		m.resetContext()
 		m.resetLastSentState()
 		m.centralReady.Signal()
 		m.enricherTicker.Reset(tickerTime)
@@ -272,11 +278,26 @@ func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
 }
 
+func (m *networkFlowManager) resetContext() {
+	m.ctxMutex.Lock()
+	defer m.ctxMutex.Unlock()
+	if m.cancelCtx != nil {
+		m.cancelCtx()
+	}
+	m.pipelineCtx, m.cancelCtx = context.WithCancel(context.Background())
+}
+
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
+	var msgToSend *message.ExpiringMessage
+	func() {
+		m.ctxMutex.Lock()
+		defer m.ctxMutex.Unlock()
+		msgToSend = message.NewExpiring(m.pipelineCtx, msg)
+	}()
 	select {
 	case <-m.done.Done():
 		return false
-	case m.sensorUpdates <- message.New(msg):
+	case m.sensorUpdates <- msgToSend:
 		return true
 	}
 }
@@ -338,9 +359,13 @@ func (m *networkFlowManager) enrichAndSend() {
 	}
 
 	// Before sending, run the flows through policies asynchronously
-	for _, flow := range updatedConns {
-		m.policyDetector.ProcessNetworkFlow(flow)
-	}
+	func() {
+		m.ctxMutex.Lock()
+		defer m.ctxMutex.Unlock()
+		for _, flow := range updatedConns {
+			m.policyDetector.ProcessNetworkFlow(m.pipelineCtx, flow)
+		}
+	}()
 
 	log.Debugf("Flow update : %v", protoToSend)
 	if m.sendToCentral(&central.MsgFromSensor{
