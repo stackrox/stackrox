@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// BillingMetrics are the metrics we collect and show to the customers to help
+// them report their usage.
 type BillingMetrics struct {
 	TotalNodes      int64
 	TotalMilliCores int64

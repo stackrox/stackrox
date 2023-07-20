@@ -1,6 +1,6 @@
 package maputil
 
-import "sync"
+import "github.com/stackrox/rox/pkg/sync"
 
 type cmpmap[K comparable, V any, C func(a, b V) bool] struct {
 	data map[K]V
