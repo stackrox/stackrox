@@ -41,7 +41,7 @@ ENV PATH="/stackrox:$PATH" \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
-COPY scripts /stackrox/
+COPY static-bin /stackrox/
 COPY --from=extracted_bundle /bundle/assets/ /assets/
 COPY --from=extracted_bundle /bundle/stackrox/ /stackrox/
 COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/

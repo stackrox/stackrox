@@ -27,23 +27,6 @@ mkdir -p "${bundle_root}"/{assets/downloads/cli,stackrox/bin,ui,usr/local/bin}
 chmod -R 755 "${bundle_root}"
 
 # =============================================================================
-# Copy scripts to image build context directory
-
-# Add scripts a be included in the Dockerfile here. These scripts are copied to
-# the /stackrox directory in the container image.
-
-mkdir -p "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/central-entrypoint.sh"               "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/entrypoint-wrapper.sh"    "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/import-additional-cas"    "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/db-functions"             "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/move-to-current"          "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/restore-all-dir-contents" "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/save-dir-contents"        "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/start-central.sh"         "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/debug"                    "${OUTPUT_DIR}/scripts"
-
-# =============================================================================
 # Copy binaries and data files into bundle
 
 # Add binaries and data files to be included in the Dockerfile here. This
