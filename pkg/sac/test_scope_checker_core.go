@@ -127,12 +127,12 @@ func (c *testScopeCheckerCore) Allowed() bool {
 		return false
 	}
 	targetResource := permissions.Resource(resourceKey.String())
-	if resources.GetScopeForResource(targetResource) == permissions.GlobalScope {
-		return true
-	}
 	resourceScope := c.scope[accessMode][targetResource]
 	if resourceScope == nil {
 		return false
+	}
+	if resources.GetScopeForResource(targetResource) == permissions.GlobalScope {
+		return true
 	}
 	if resourceScope.Included {
 		return true

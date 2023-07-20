@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	. "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -175,15 +176,25 @@ func TestAllowFixedScopes(t *testing.T) {
 }
 
 func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
-	resA := permissions.ResourceMetadata{
-		Resource: permissions.Resource("resourceA"),
-		ReplacingResource: &permissions.ResourceMetadata{
+	resA := resources.RegisterDeprecatedResourceMetadataForTest(
+		t,
+		"resourceA",
+		permissions.NamespaceScope,
+		permissions.ResourceMetadata{
 			Resource: permissions.Resource("resourceC"),
+			Scope:    permissions.NamespaceScope,
 		},
-	}
-	resB := permissions.ResourceMetadata{
-		Resource: permissions.Resource("resourceB"),
-	}
+	)
+	resB := resources.RegisterResourceMetadataForTest(
+		t,
+		"resourceB",
+		permissions.GlobalScope,
+	)
+	resD := resources.RegisterResourceMetadataForTest(
+		t,
+		"resourceD",
+		permissions.ClusterScope,
+	)
 	cluster1 := "cluster1"
 	namespaceA := "namespaceA"
 	namespaceB := "namespaceB"
@@ -212,6 +223,25 @@ func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 	readResourceACluster1NamespacesABScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA),
+		ClusterScopeKeys(cluster1),
+		NamespaceScopeKeys(namespaceA, namespaceB))
+
+	readResourceDScope := AllowFixedScopes(
+		AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		ResourceScopeKeys(resD))
+
+	readWriteResourceDScope := AllowFixedScopes(
+		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		ResourceScopeKeys(resD))
+
+	readResourceDCluster1Scope := AllowFixedScopes(
+		AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		ResourceScopeKeys(resD),
+		ClusterScopeKeys(cluster1))
+
+	readResourceDCluster1NamespacesABScope := AllowFixedScopes(
+		AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		ResourceScopeKeys(resD),
 		ClusterScopeKeys(cluster1),
 		NamespaceScopeKeys(namespaceA, namespaceB))
 
@@ -367,6 +397,116 @@ func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 		{
 			name:           "EAS for read resource cluster namespaces fixed scope is denied for other resources",
 			checker:        readResourceACluster1NamespacesABScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resB.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for empty fixed scope is Unrestricted for any resource and access (case read D)",
+			checker:        emptyAllowedScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for empty fixed scope is Unrestricted for any resource and access (case write D)",
+			checker:        emptyAllowedScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read fixed scope is Unrestricted for read on any resource (case read D)",
+			checker:        readAllAllowedScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read fixed scope is Denied for write on any resource (case write D)",
+			checker:        readAllAllowedScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read-write fixed scope is Unrestricted for any resource and access (case read D)",
+			checker:        readWriteAllAllowedScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read-write fixed scope is Unrestricted for any resource and access (case write D)",
+			checker:        readWriteAllAllowedScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read resource fixed scope (cluster) is Unrestricted for read on the resource (case read D)",
+			checker:        readResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read resource fixed scope (cluster) is denied for write on the resource (case write D)",
+			checker:        readResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read resource fixed scope (cluster) is denied for read on other resource (case read B)",
+			checker:        readResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resB.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read resource fixed scope (cluster) is denied for write on other resource (case write B)",
+			checker:        readResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resB.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read-write resource fixed scope (cluster) is Unrestricted for read on the resource (case read D)",
+			checker:        readWriteResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read-write resource fixed scope (cluster) is Unrestricted for write on the resource (case write D)",
+			checker:        readWriteResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read-write resource fixed scope (cluster) is denied for read on other resource (case read B)",
+			checker:        readWriteResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resB.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read-write resource fixed scope (cluster) is denied for write on other resource (case write B)",
+			checker:        readWriteResourceDScope,
+			targetResource: resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resB.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read resource cluster fixed scope (cluster) is cluster scope for read on the resource",
+			checker:        readResourceDCluster1Scope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope:  effectiveaccessscope.FromClustersAndNamespacesMap([]string{cluster1}, nil),
+		},
+		{
+			name:           "EAS for read resource cluster fixed scope (cluster) is denied for other resources",
+			checker:        readResourceDCluster1Scope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resB.GetResource()),
+			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:           "EAS for read resource cluster namespaces fixed scope (cluster) is cluster namespaces scope for read on the resource",
+			checker:        readResourceDCluster1NamespacesABScope,
+			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resD.GetResource()),
+			expectedScope: effectiveaccessscope.FromClustersAndNamespacesMap(nil, map[string][]string{
+				cluster1: {namespaceA, namespaceB},
+			}),
+		},
+		{
+			name:           "EAS for read resource cluster namespaces fixed scope (cluster) is denied for other resources",
+			checker:        readResourceDCluster1NamespacesABScope,
 			targetResource: resourceWithAccess(storage.Access_READ_ACCESS, resB.GetResource()),
 			expectedScope:  effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
