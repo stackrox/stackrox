@@ -3,9 +3,11 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
+import { Bullseye } from '@patternfly/react-core';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
-import MessageCentered from 'Components/MessageCentered';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
@@ -15,7 +17,7 @@ import {
     fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
     fetchDeploymentsCount,
 } from 'services/DeploymentsService';
-import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     filterAllowedSearch,
     convertToRestSearch,
@@ -69,7 +71,7 @@ function RiskTablePanel({
             .then(setCurrentDeployments)
             .catch((error) => {
                 setCurrentDeployments([]);
-                setErrorMessageDeployments(checkForPermissionErrorMessage(error));
+                setErrorMessageDeployments(getAxiosErrorMessage(error));
             });
 
         /*
@@ -108,7 +110,16 @@ function RiskTablePanel({
             </PanelHead>
             <PanelBody>
                 {errorMessageDeployments ? (
-                    <MessageCentered type="error">{errorMessageDeployments}</MessageCentered>
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="Unable to load deployments"
+                            headingLevel="h2"
+                            icon={ExclamationTriangleIcon}
+                            iconClassName="pf-u-warning-color-100"
+                        >
+                            {errorMessageDeployments}
+                        </EmptyStateTemplate>
+                    </Bullseye>
                 ) : (
                     <RiskTable
                         currentDeployments={currentDeployments}

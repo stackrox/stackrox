@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import Loader from 'Components/Loader';
 import fixableVulnTypeContext from 'Containers/VulnMgmt/fixableVulnTypeContext';
@@ -145,9 +145,9 @@ const TableWidgetFixableCves = ({
                 </div>
             )}
             {cvesError && (
-                <Message type="error">
-                    {cvesError.message || 'Error retrieving fixable CVEs'}
-                </Message>
+                <Alert variant="warning" isInline title="Error retrieving fixable CVEs">
+                    {cvesError.message}
+                </Alert>
             )}
             {!cvesLoading && !cvesError && (
                 <TableWidget

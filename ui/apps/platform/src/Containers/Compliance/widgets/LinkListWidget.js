@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
@@ -57,7 +57,11 @@ const LinkListWidget = ({
             if (loading) {
                 contents = <Loader />;
             } else if (error) {
-                contents = <Message type="error">An error occurred loading this data</Message>;
+                contents = (
+                    <Alert variant="warning" isInline title="Unable to get aggregated results">
+                        {error}
+                    </Alert>
+                );
             } else if (data) {
                 const items = processData(data);
                 headline = getHeadline(items);
