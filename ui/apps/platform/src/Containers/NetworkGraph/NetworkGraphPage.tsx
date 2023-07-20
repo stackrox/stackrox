@@ -61,6 +61,8 @@ const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 // This is a query param used to add policy data in the response for the network graph data
 const INCLUDE_POLICIES = true;
 
+const clusterPermissions = ['NetworkGraph', 'Deployment'];
+
 function NetworkGraphPage() {
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
@@ -87,7 +89,8 @@ function NetworkGraphPage() {
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
-    const scopeHierarchy = useScopeHierarchy();
+    const { clusters } = useFetchClustersForPermissions(clusterPermissions);
+    const scopeHierarchy = useScopeHierarchy(clusters);
     const {
         cluster: clusterFromUrl,
         namespaces: namespacesFromUrl,
@@ -104,8 +107,6 @@ function NetworkGraphPage() {
     }
 
     const hasClusterNamespaceSelected = clusterFromUrl.name !== '' && namespacesFromUrl.length > 0;
-
-    const { clusters } = useFetchClustersForPermissions(['NetworkGraph', 'Deployment']);
 
     // if no cluster is selected, and there is only one cluster available, automatically select it
     if (clusters.length === 1 && clusterFromUrl.name === '') {
@@ -357,6 +358,7 @@ function NetworkGraphPage() {
                             displayOptions={displayOptions}
                             simulation={simulation}
                             clusterDeploymentCount={deploymentCount || 0}
+                            scopeHierarchy={scopeHierarchy}
                         />
                     )}
                 {isLoading && (

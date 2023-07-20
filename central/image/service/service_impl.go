@@ -56,7 +56,7 @@ var (
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
-		or.SensorOrAuthorizer(idcheck.AdmissionControlOnly()): {
+		or.SensorOr(idcheck.AdmissionControlOnly()): {
 			"/v1.ImageService/ScanImageInternal",
 		},
 		idcheck.SensorsOnly(): {

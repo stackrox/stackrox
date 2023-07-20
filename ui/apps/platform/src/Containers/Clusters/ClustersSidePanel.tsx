@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Button } from '@patternfly/react-core';
+import { Alert, Button } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
-import { Message } from '@stackrox/ui-components';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
@@ -20,6 +19,7 @@ import {
 } from 'services/ClustersService';
 import { Cluster } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
 
 import ClusterEditForm from './ClusterEditForm';
@@ -48,9 +48,15 @@ const validate = (values) => {
 
 type WizardStep = 'FORM' | 'DEPLOYMENT';
 
+type SubmissionError = {
+    title: string;
+    text: string;
+};
+
 type MessageState = {
-    type: 'warn' | 'error';
-    message: JSX.Element | string;
+    variant: 'warning' | 'danger';
+    title: string;
+    text: string;
 };
 
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
@@ -70,12 +76,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const [isBlocked, setIsBlocked] = useState(false);
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState<number | null>(null);
-    const [submissionError, setSubmissionError] = useState('');
+    const [submissionError, setSubmissionError] = useState<SubmissionError | null>(null);
     const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
     function unselectCluster() {
-        setSubmissionError('');
+        setSubmissionError(null);
         setSelectedClusterId('');
         setSelectedCluster(defaultCluster);
         setMessageState(null);
@@ -103,6 +109,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         kernelSupportAvailable,
                     } = clusterDefaults;
 
+                    // TODO add catch block to include error message as a property of the object.
                     setCentralEnv({
                         kernelSupportAvailable,
                         successfullyFetched: true,
@@ -145,39 +152,16 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             switch (managerType(cluster)) {
                                 case 'MANAGER_TYPE_HELM_CHART':
                                     setMessageState({
-                                        type: 'warn',
-                                        message: (
-                                            <>
-                                                <h3 className="font-700 mb-2">
-                                                    Helm-managed cluster
-                                                </h3>
-                                                <p>
-                                                    This is an Helm-managed cluster. The settings of
-                                                    Helm-managed clusters cannot be changed here,
-                                                    please ask your DevOps team to change the
-                                                    settings by updating the Helm values.
-                                                </p>
-                                            </>
-                                        ),
+                                        variant: 'warning',
+                                        title: 'Helm-managed cluster',
+                                        text: 'This is a Helm-managed cluster. The settings of Helm-managed clusters cannot be changed here, please ask your DevOps team to change the settings by updating the Helm values.',
                                     });
                                     break;
                                 case 'MANAGER_TYPE_KUBERNETES_OPERATOR':
                                     setMessageState({
-                                        type: 'warn',
-                                        message: (
-                                            <>
-                                                <h3 className="font-700 mb-2">
-                                                    Operator-managed cluster
-                                                </h3>
-                                                <p>
-                                                    This is an operator-managed cluster. The
-                                                    settings of operator-managed clusters cannot be
-                                                    changed here and must instead be changed by
-                                                    updating its SecuredCluster custom resource
-                                                    (CR).
-                                                </p>
-                                            </>
-                                        ),
+                                        variant: 'warning',
+                                        title: 'Operator-managed cluster',
+                                        text: 'This is an operator-managed cluster. The settings of operator-managed clusters cannot be changed here and must instead be changed by updating its SecuredCluster custom resource (CR).',
                                     });
                                     break;
                                 default:
@@ -185,11 +169,11 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             }
                         }
                     })
-                    .catch(() => {
+                    .catch((error) => {
                         setMessageState({
-                            type: 'error',
-                            message:
-                                'There was an error retrieving the configuration for the cluster.',
+                            variant: 'danger',
+                            title: 'error retrieving the configuration for the cluster',
+                            text: getAxiosErrorMessage(error),
                         });
                         setIsBlocked(true);
                     })
@@ -248,7 +232,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     function onNext() {
         if (wizardStep === 'FORM') {
             setMessageState(null);
-            setSubmissionError('');
+            setSubmissionError(null);
             saveCluster(selectedCluster)
                 .then((clusterResponse) => {
                     analyticsTrack(CLUSTER_CREATED);
@@ -264,9 +248,10 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     }
                 })
                 .catch((error) => {
-                    setSubmissionError(
-                        error?.response?.data?.message || 'An unknown error has occurred.'
-                    );
+                    setSubmissionError({
+                        title: 'Unable to save changes',
+                        text: getAxiosErrorMessage(error),
+                    });
                 });
         } else {
             unselectCluster();
@@ -278,15 +263,15 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     }
 
     function onDownload() {
-        setSubmissionError('');
+        setSubmissionError(null);
         setIsDownloadingBundle(true);
         if (selectedCluster?.id) {
             downloadClusterYaml(selectedCluster.id, createUpgraderSA)
                 .catch((error) => {
-                    setSubmissionError(
-                        error?.response?.data?.message ||
-                            'We could not download the configuration files.'
-                    );
+                    setSubmissionError({
+                        title: 'Unable to download file',
+                        text: getAxiosErrorMessage(error),
+                    });
                 })
                 .finally(() => {
                     setIsDownloadingBundle(false);
@@ -336,13 +321,21 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 <PanelBody>
                     {!!messageState && (
                         <div className="m-4">
-                            <Message type={messageState.type}>{messageState.message}</Message>
+                            <Alert
+                                variant={messageState.variant}
+                                isInline
+                                title={messageState.title}
+                            >
+                                {messageState.text}
+                            </Alert>
                         </div>
                     )}
-                    {submissionError && submissionError.length > 0 && (
+                    {submissionError && (
                         <div className="w-full">
                             <div className="mb-4 mx-4">
-                                <Message type="error">{submissionError}</Message>
+                                <Alert type="danger" isInline title={submissionError.title}>
+                                    {submissionError.text}
+                                </Alert>
                             </div>
                         </div>
                     )}

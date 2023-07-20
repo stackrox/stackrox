@@ -96,7 +96,8 @@
                 "API_TOKEN",
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
-                "COMPLIANCE_INTEGRATIONS"
+                "COMPLIANCE_INTEGRATIONS",
+                "COMPLIANCE_SCAN_SETTINGS"
               ]
             },
             "collectionFormat": "multi"
@@ -192,7 +193,8 @@
                 "API_TOKEN",
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
-                "COMPLIANCE_INTEGRATIONS"
+                "COMPLIANCE_INTEGRATIONS",
+                "COMPLIANCE_SCAN_SETTINGS"
               ]
             },
             "collectionFormat": "multi"
@@ -282,7 +284,8 @@
                 "API_TOKEN",
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
-                "COMPLIANCE_INTEGRATIONS"
+                "COMPLIANCE_INTEGRATIONS",
+                "COMPLIANCE_SCAN_SETTINGS"
               ]
             },
             "collectionFormat": "multi"
@@ -421,7 +424,8 @@
         "API_TOKEN",
         "REPORT_METADATA",
         "REPORT_SNAPSHOT",
-        "COMPLIANCE_INTEGRATIONS"
+        "COMPLIANCE_INTEGRATIONS",
+        "COMPLIANCE_SCAN_SETTINGS"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 55"

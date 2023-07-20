@@ -80,6 +80,11 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Specify a secret that contains the administrator password in
           the "password" data item. If omitted, the operator will auto-generate a
           password and store it in the "password" item in the "central-htpasswd" secret.
@@ -372,6 +377,30 @@ spec:
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+      - description: Resource API version.
+        displayName: API Version
+        path: overlays[0].apiVersion
+      - description: Resource kind.
+        displayName: Kind
+        path: overlays[0].kind
+      - description: Name of resource.
+        displayName: Name
+        path: overlays[0].name
+      - description: List of patches to apply to resource.
+        displayName: Patches
+        path: overlays[0].patches
+      - description: Path of the form a.[key1:value1].b.[:value2] Where [key1:value1]
+          is a selector for a key-value pair to identify a list element and [:value]
+          is a value selector to identify a list element in a leaf list. All path
+          intermediate nodes must exist.
+        displayName: Path
+        path: overlays[0].patches[0].path
+      - description: Value to add, delete or replace. For add, the path should be
+          a new leaf. For delete, value should be unset. For replace, path should
+          reference an existing node. All values are strings but are converted into
+          appropriate type based on schema.
+        displayName: Value
+        path: overlays[0].patches[0].value
       - description: If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here (not recommended). By default, the scanner
           is enabled. If you do so, all the settings in this section will have no
@@ -538,6 +567,11 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Set this to 'true' to enable preventive policy enforcement for
           object creations.
         displayName: Listen On Creates
@@ -610,6 +644,30 @@ spec:
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+      - description: Resource API version.
+        displayName: API Version
+        path: overlays[0].apiVersion
+      - description: Resource kind.
+        displayName: Kind
+        path: overlays[0].kind
+      - description: Name of resource.
+        displayName: Name
+        path: overlays[0].name
+      - description: List of patches to apply to resource.
+        displayName: Patches
+        path: overlays[0].patches
+      - description: Path of the form a.[key1:value1].b.[:value2] Where [key1:value1]
+          is a selector for a key-value pair to identify a list element and [:value]
+          is a value selector to identify a list element in a leaf list. All path
+          intermediate nodes must exist.
+        displayName: Path
+        path: overlays[0].patches[0].path
+      - description: Value to add, delete or replace. For add, the path should be
+          a new leaf. For delete, value should be unset. For replace, path should
+          reference an existing node. All values are strings but are converted into
+          appropriate type based on schema.
+        displayName: Value
+        path: overlays[0].patches[0].value
       - description: Settings for the Collector container, which is responsible for
           collecting process and networking activity at the host level.
         displayName: Collector Settings

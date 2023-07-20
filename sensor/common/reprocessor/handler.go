@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -96,6 +97,6 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 	return nil
 }
 
-func (h *handlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }

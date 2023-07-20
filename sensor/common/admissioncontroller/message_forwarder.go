@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 // AdmCtrlMsgForwarder returns a wrapper that intercepts messages from sensor components and forwards
@@ -21,7 +22,7 @@ func NewAdmCtrlMsgForwarder(admCtrlMgr SettingsManager, components ...common.Sen
 		components: components,
 
 		stopper:  concurrency.NewStopper(),
-		centralC: make(chan *central.MsgFromSensor),
+		centralC: make(chan *message.ExpiringMessage),
 	}
 }
 
@@ -29,7 +30,7 @@ type admCtrlMsgForwarderImpl struct {
 	admCtrlMgr SettingsManager
 	components []common.SensorComponent
 
-	centralC chan *central.MsgFromSensor
+	centralC chan *message.ExpiringMessage
 
 	stopper concurrency.Stopper
 }
@@ -74,7 +75,7 @@ func (h *admCtrlMsgForwarderImpl) ProcessMessage(msg *central.MsgToSensor) error
 	return errorList.ToError()
 }
 
-func (h *admCtrlMsgForwarderImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *admCtrlMsgForwarderImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.centralC
 }
 
@@ -86,7 +87,7 @@ func (h *admCtrlMsgForwarderImpl) run() {
 	}
 }
 
-func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *central.MsgFromSensor) {
+func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *message.ExpiringMessage) {
 	defer h.stopper.Flow().ReportStopped()
 	for {
 		select {

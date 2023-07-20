@@ -13,6 +13,7 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -52,11 +53,17 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
 	if err := s.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
 	protoReportConfig := convertV2ReportConfigurationToProto(request)
+	protoReportConfig.Creator = slimUser
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
 		return nil, err

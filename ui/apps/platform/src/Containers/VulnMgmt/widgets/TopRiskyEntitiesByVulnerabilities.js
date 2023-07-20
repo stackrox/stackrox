@@ -7,7 +7,6 @@ import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
 import Scatterplot from 'Components/visuals/Scatterplot';
 import HoverHintListItem from 'Components/visuals/HoverHintListItem';
@@ -22,6 +21,8 @@ import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entityPriorityField } from '../VulnMgmt.constants';
 import { entityNounOrdinaryCasePlural } from '../entitiesForVulnerabilityManagement';
+
+import ViewAllButton from './ViewAllButton';
 
 // Beware, policy instead of vulnerability severities because of getSeverityByCvss function!
 
@@ -179,7 +180,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
     const entityOptions = riskEntityTypes.map((entityType) => ({
-        label: `Top risky ${entityNounOrdinaryCasePlural[entityType]} by CVE count & CVSS score`,
+        label: `Top risky ${entityNounOrdinaryCasePlural[entityType]} by CVE count and CVSS score`,
         value: entityType,
     }));
     function onChange(datum) {

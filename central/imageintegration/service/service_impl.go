@@ -35,7 +35,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		or.SensorOrAuthorizer(user.With(permissions.View(resources.Integration))): {
+		or.SensorOr(user.With(permissions.View(resources.Integration))): {
 			"/v1.ImageIntegrationService/GetImageIntegration",
 			"/v1.ImageIntegrationService/GetImageIntegrations",
 		},

@@ -348,7 +348,7 @@ func testReportConfig(collectionID string, fixability storage.VulnerabilityRepor
 	return config
 }
 
-func extractVulnReportData(results []common.Result) *vulnReportData {
+func extractVulnReportData(results []common.DeployedImagesResult) *vulnReportData {
 	deploymentNames := make([]string, 0)
 	imageNames := make([]string, 0)
 	componentNames := make([]string, 0)

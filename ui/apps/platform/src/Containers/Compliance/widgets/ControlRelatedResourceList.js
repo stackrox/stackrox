@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import LinkListWidget from 'Components/LinkListWidget';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
@@ -11,6 +10,7 @@ import { withRouter, Link } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
 
 import { entityNounOrdinaryCase } from '../entitiesForCompliance';
+import LinkListWidget from './LinkListWidget';
 
 const ControlRelatedEntitiesList = ({
     match,

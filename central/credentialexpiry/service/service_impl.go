@@ -26,7 +26,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.CredentialExpiryService/GetCertExpiry",
 		},
 	})

@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
 import {
     assertSortedItems,
     callbackForPairOfAscendingNumberValuesFromElements,
@@ -115,11 +114,7 @@ describe('Vulnerability Management Image Components', () => {
     // Argument 3 in verify functions is index of column which has the links.
     // The one-based index includes checkbox, hidden, invisible.
 
-    it('should display either links for image CVEs or text for No CVEs', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip(); // TODO verify and remove
-        }
-
+    it('should display either links for image CVEs or text for No CVEs', () => {
         verifyConditionalCVEs(entitiesKey, 'image-cves', 4, 'vulnCounter');
     });
 

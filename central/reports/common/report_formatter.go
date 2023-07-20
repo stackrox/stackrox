@@ -68,16 +68,21 @@ type Deployment struct {
 	Images         []*Image         `json:"images,omitempty"`
 }
 
-// Result is the query results of running a single cvefields query and scope query combination
-type Result struct {
+// DeployedImagesResult contains results of running a single cvefields query and scope query combination on deployments graphQL schema
+type DeployedImagesResult struct {
 	Deployments []*Deployment `json:"deployments,omitempty"`
+}
+
+// WatchedImagesResult contains results of running a single cvefields query and scope query combination on images graphQL schema
+type WatchedImagesResult struct {
+	Images []*Image `json:"images,omitempty"`
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
 // a flag if the report is empty or not
-func Format(results []Result) (*bytes.Buffer, error) {
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult) (*bytes.Buffer, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
-	for _, r := range results {
+	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
 				for _, c := range i.getComponents() {
@@ -100,6 +105,32 @@ func Format(results []Result) (*bytes.Buffer, error) {
 							v.Link,
 						})
 					}
+				}
+			}
+		}
+	}
+
+	for _, r := range watchedImagesResults {
+		for _, i := range r.Images {
+			for _, c := range i.getComponents() {
+				for _, v := range c.getVulnerabilities() {
+					discoveredTs := "Not Available"
+					if v.DiscoveredAtImage != nil {
+						discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
+					}
+					csvWriter.AddValue(csv.Value{
+						"",
+						"",
+						"",
+						i.Name.FullName,
+						c.Name,
+						v.Cve,
+						strconv.FormatBool(v.IsFixable),
+						v.FixedByVersion,
+						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+						discoveredTs,
+						v.Link,
+					})
 				}
 			}
 		}

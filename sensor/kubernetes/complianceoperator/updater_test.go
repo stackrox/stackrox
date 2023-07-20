@@ -62,7 +62,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 
 	s.createCO(ds)
 
-	actual := s.getInfo(1)
+	actual := s.getInfo(1, 1*time.Millisecond)
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
@@ -74,7 +74,7 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 	ds := buildComplianceOperator(defaultNS)
 	s.createCO(ds)
 
-	actual := s.getInfo(3)
+	actual := s.getInfo(3, 1*time.Millisecond)
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
@@ -83,13 +83,26 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 }
 
 func (s *UpdaterTestSuite) TestNotFound() {
-	actual := s.getInfo(1)
+	actual := s.getInfo(1, 1*time.Millisecond)
 	s.assertEqual(expectedInfo{error: "deployment compliance-operator not found in any namespace"}, actual)
 }
 
-func (s *UpdaterTestSuite) getInfo(times int) *central.ComplianceOperatorInfo {
+func (s *UpdaterTestSuite) TestDelayedTicker() {
+	ds := buildComplianceOperator(defaultNS)
+
+	s.createCO(ds)
+
+	actual := s.getInfo(1, 1*time.Minute)
+	// Compliance operator found, CRDs not found.
+	s.assertEqual(expectedInfo{
+		"v1.0.0", defaultNS, 1, 1,
+		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
+	}, actual)
+}
+
+func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *central.ComplianceOperatorInfo {
 	timer := time.NewTimer(responseTimeout)
-	updater := NewInfoUpdater(s.client, 1*time.Millisecond)
+	updater := NewInfoUpdater(s.client, updateInterval)
 
 	err := updater.Start()
 	s.Require().NoError(err)
