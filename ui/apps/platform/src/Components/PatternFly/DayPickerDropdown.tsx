@@ -15,7 +15,7 @@ export type DayPickerDropdownProps = {
     intervalType: IntervalType | null;
 };
 
-export const daysOfWeekMap: Record<string, string> = {
+export const daysOfWeekMap = {
     '0': 'Sunday',
     '1': 'Monday',
     '2': 'Tuesday',
@@ -23,12 +23,12 @@ export const daysOfWeekMap: Record<string, string> = {
     '4': 'Thursday',
     '5': 'Friday',
     '6': 'Saturday',
-};
+} as const;
 
-export const daysOfMonthMap: Record<string, string> = {
+export const daysOfMonthMap = {
     '1': 'The first of the month',
     '15': 'The middle of the month',
-};
+} as const;
 
 function DayPickerDropdown({
     label,

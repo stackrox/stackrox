@@ -173,8 +173,8 @@ function DeliveryDestinationsForm({
                                         }
                                         value={
                                             formValues.schedule.intervalType === 'WEEKLY'
-                                                ? formValues?.schedule?.daysOfWeek || []
-                                                : formValues?.schedule?.daysOfMonth || []
+                                                ? formValues.schedule.daysOfWeek || []
+                                                : formValues.schedule.daysOfMonth || []
                                         }
                                         handleSelect={onScheduledDaysChange}
                                         intervalType={formValues.schedule.intervalType}

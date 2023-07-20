@@ -68,9 +68,7 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
     const deliveryDestinations =
         formValues.deliveryDestinations.length !== 0 ? (
             formValues.deliveryDestinations.map((deliveryDestination) => (
-                <li key={deliveryDestination?.notifier?.id}>
-                    {deliveryDestination?.notifier?.name}
-                </li>
+                <li key={deliveryDestination.notifier?.id}>{deliveryDestination.notifier?.name}</li>
             ))
         ) : (
             <li>None</li>
