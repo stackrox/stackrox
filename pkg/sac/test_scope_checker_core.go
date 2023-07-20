@@ -67,6 +67,9 @@ func (c *testScopeCheckerCore) EffectiveAccessScope(resource permissions.Resourc
 	if resourceCore == nil {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
+	if resources.GetScopeForResource(resource.Resource.GetResource()) == permissions.GlobalScope {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
 	if !resourceCore.Included && len(resourceCore.Clusters) == 0 {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
@@ -124,6 +127,9 @@ func (c *testScopeCheckerCore) Allowed() bool {
 		return false
 	}
 	targetResource := permissions.Resource(resourceKey.String())
+	if resources.GetScopeForResource(targetResource) == permissions.GlobalScope {
+		return true
+	}
 	resourceScope := c.scope[accessMode][targetResource]
 	if resourceScope == nil {
 		return false
