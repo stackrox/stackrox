@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package scheduler
+package reportgenerator
 
 import (
 	"context"
@@ -16,7 +16,9 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -30,20 +32,21 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestReportingWithCollections(t *testing.T) {
-	suite.Run(t, new(ReportingWithCollectionsTestSuite))
+func TestEnhancedReporting(t *testing.T) {
+	suite.Run(t, new(EnhancedReportingTestSuite))
 }
 
-type ReportingWithCollectionsTestSuite struct {
+type EnhancedReportingTestSuite struct {
 	suite.Suite
 
 	ctx             context.Context
 	testDB          *pgtest.TestPostgres
-	reportScheduler *scheduler
+	reportGenerator *reportGeneratorImpl
 	resolver        *resolvers.Resolver
 	schema          *graphql.Schema
 
 	collectionDatastore     collectionDS.DataStore
+	watchedImageDatastore   watchedImageDS.DataStore
 	collectionQueryResolver collectionDS.QueryResolver
 }
 
@@ -54,8 +57,12 @@ type vulnReportData struct {
 	cveNames        []string
 }
 
-func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
-
+func (s *EnhancedReportingTestSuite) SetupSuite() {
+	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
+		s.T().SkipNow()
+	}
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
@@ -75,16 +82,18 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore, index))
 	s.NoError(err)
 
-	s.reportScheduler = newSchedulerImpl(nil, nil, nil, nil,
-		s.resolver.DeploymentDataStore, s.collectionDatastore, nil, s.collectionQueryResolver,
+	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+
+	s.reportGenerator = newReportGeneratorImpl(nil, nil, nil,
+		s.resolver.DeploymentDataStore, s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
 		nil, nil, s.schema)
 }
 
-func (s *ReportingWithCollectionsTestSuite) TearDownSuite() {
+func (s *EnhancedReportingTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
+func (s *EnhancedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)
 	s.truncateTable(postgresSchema.ImageComponentsTableName)
@@ -92,7 +101,7 @@ func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.CollectionsTableName)
 }
 
-func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
+func (s *EnhancedReportingTestSuite) TestGetReportData() {
 	ctx := resolvers.SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	clusters := []string{"c1", "c2"}
 	namespaces := []string{"ns1", "ns2"}
@@ -100,11 +109,16 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 	s.upsertManyImages(images)
 	s.upsertManyDeployments(deployments)
 
+	watchedImages := testWatchedImages(2)
+	s.upsertManyImages(watchedImages)
+	s.upsertManyWatchedImages(watchedImages)
+
 	testCases := []struct {
 		name       string
 		collection *storage.ResourceCollection
 		fixability storage.VulnerabilityReportFilters_Fixability
 		severities []storage.VulnerabilitySeverity
+		imageTypes []storage.VulnerabilityReportFilters_ImageType
 		expected   *vulnReportData
 	}{
 		{
@@ -117,6 +131,7 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 			},
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
 				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img"},
@@ -136,6 +151,7 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 			severities: []storage.VulnerabilitySeverity{
 				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 			},
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
 				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img"},
@@ -158,6 +174,7 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 			},
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
 			expected: &vulnReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
 				imageNames:      []string{"c1_ns1_dep0_img"},
@@ -167,37 +184,93 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 				},
 			},
 		},
+		{
+			name:       "Include all deployments + watched images; CVEs with both fixabilities and all severities",
+			collection: testCollection("col4", "", "", ""),
+			fixability: storage.VulnerabilityReportFilters_BOTH,
+			severities: []storage.VulnerabilitySeverity{
+				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+			},
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
+				storage.VulnerabilityReportFilters_DEPLOYED,
+				storage.VulnerabilityReportFilters_WATCHED,
+			},
+			expected: &vulnReportData{
+				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0", "", ""},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				componentNames: []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp",
+					"w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns2_dep0_img_comp", "CVE-nonFixable_low-c2_ns2_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp", "CVE-nonFixable_low-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp", "CVE-nonFixable_low-w1_img_comp",
+				},
+			},
+		},
+		{
+			name:       "Include watched images only; Fixable CVEs with CRITICAL severity",
+			collection: testCollection("col5", "", "", ""),
+			fixability: storage.VulnerabilityReportFilters_FIXABLE,
+			severities: []storage.VulnerabilitySeverity{
+				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+			},
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_WATCHED},
+			expected: &vulnReportData{
+				deploymentNames: []string{"", ""},
+				imageNames:      []string{"w0_img", "w1_img"},
+				componentNames:  []string{"w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
+				},
+			},
+		},
 	}
 
-	for _, c := range testCases {
-		err := s.collectionDatastore.AddCollection(s.ctx, c.collection)
-		s.NoError(err)
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			err := s.collectionDatastore.AddCollection(s.ctx, tc.collection)
+			s.NoError(err)
 
-		reportConfig := testReportConfig(c.collection.GetId(), c.fixability, c.severities)
-		results, err := s.reportScheduler.getReportData(ctx, reportConfig)
-		s.NoError(err)
-		reportData := extractVulnReportData(results)
-		s.ElementsMatch(c.expected.deploymentNames, reportData.deploymentNames)
-		s.ElementsMatch(c.expected.imageNames, reportData.imageNames)
-		s.ElementsMatch(c.expected.componentNames, reportData.componentNames)
-		s.ElementsMatch(c.expected.cveNames, reportData.cveNames)
+			reportConfig := testReportConfig(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes)
+			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(ctx, reportConfig, tc.collection, nil)
+			s.NoError(err)
+			reportData := extractVulnReportData(deployedImgResults, watchedImgResults)
+			s.ElementsMatch(tc.expected.deploymentNames, reportData.deploymentNames)
+			s.ElementsMatch(tc.expected.imageNames, reportData.imageNames)
+			s.ElementsMatch(tc.expected.componentNames, reportData.componentNames)
+			s.ElementsMatch(tc.expected.cveNames, reportData.cveNames)
+		})
 	}
 }
 
-func (s *ReportingWithCollectionsTestSuite) truncateTable(name string) {
+func (s *EnhancedReportingTestSuite) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)
 	s.NoError(err)
 }
 
-func (s *ReportingWithCollectionsTestSuite) upsertManyImages(images []*storage.Image) {
+func (s *EnhancedReportingTestSuite) upsertManyImages(images []*storage.Image) {
 	for _, img := range images {
 		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
 		s.NoError(err)
 	}
 }
 
-func (s *ReportingWithCollectionsTestSuite) upsertManyDeployments(deployments []*storage.Deployment) {
+func (s *EnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
+	for _, img := range images {
+		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.Name.FullName)
+		s.NoError(err)
+	}
+}
+
+func (s *EnhancedReportingTestSuite) upsertManyDeployments(deployments []*storage.Deployment) {
 	for _, dep := range deployments {
 		err := s.resolver.DeploymentDataStore.UpsertDeployment(s.ctx, dep)
 		s.NoError(err)
@@ -239,12 +312,22 @@ func testDeployment(deploymentName, cluster, namespace string, image *storage.Im
 	}
 }
 
-func testImage(deployment string) *storage.Image {
+func testWatchedImages(numImages int) []*storage.Image {
+	images := make([]*storage.Image, 0, numImages)
+	for i := 0; i < numImages; i++ {
+		imgNamePrefix := fmt.Sprintf("w%d", i)
+		image := testImage(imgNamePrefix)
+		images = append(images, image)
+	}
+	return images
+}
+
+func testImage(prefix string) *storage.Image {
 	t, err := ptypes.TimestampProto(time.Unix(0, 1000))
 	utils.CrashOnError(err)
 	return &storage.Image{
-		Id:   fmt.Sprintf("%s_img", deployment),
-		Name: &storage.ImageName{FullName: fmt.Sprintf("%s_img", deployment)},
+		Id:   fmt.Sprintf("%s_img", prefix),
+		Name: &storage.ImageName{FullName: fmt.Sprintf("%s_img", prefix)},
 		SetComponents: &storage.Image_Components{
 			Components: 1,
 		},
@@ -255,11 +338,11 @@ func testImage(deployment string) *storage.Image {
 			ScanTime: t,
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
-					Name:    fmt.Sprintf("%s_img_comp", deployment),
+					Name:    fmt.Sprintf("%s_img_comp", prefix),
 					Version: "1.0",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve: fmt.Sprintf("CVE-fixable_critical-%s_img_comp", deployment),
+							Cve: fmt.Sprintf("CVE-fixable_critical-%s_img_comp", prefix),
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "1.1",
 							},
@@ -267,7 +350,7 @@ func testImage(deployment string) *storage.Image {
 							Link:     "link",
 						},
 						{
-							Cve:      fmt.Sprintf("CVE-nonFixable_low-%s_img_comp", deployment),
+							Cve:      fmt.Sprintf("CVE-nonFixable_low-%s_img_comp", prefix),
 							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							Link:     "link",
 						},
@@ -334,27 +417,34 @@ func testCollection(collectionName, cluster, namespace, deployment string) *stor
 	return collection
 }
 
-func testReportConfig(collectionID string, fixability storage.VulnerabilityReportFilters_Fixability,
-	severities []storage.VulnerabilitySeverity) *storage.ReportConfiguration {
-	config := fixtures.GetValidReportConfiguration()
+func testReportConfig(collectionID string, fixability storage.VulnerabilityReportFilters_Fixability, severities []storage.VulnerabilitySeverity,
+	imageTypes []storage.VulnerabilityReportFilters_ImageType) *storage.ReportConfiguration {
+	config := fixtures.GetValidReportConfigWithMultipleNotifiers()
 	config.Filter = &storage.ReportConfiguration_VulnReportFilters{
 		VulnReportFilters: &storage.VulnerabilityReportFilters{
-			Fixability:      fixability,
-			SinceLastReport: false,
-			Severities:      severities,
+			Fixability: fixability,
+			Severities: severities,
+			ImageTypes: imageTypes,
+			CvesSince: &storage.VulnerabilityReportFilters_AllVuln{
+				AllVuln: true,
+			},
 		},
 	}
-	config.ScopeId = collectionID
+	config.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: collectionID,
+		},
+	}
 	return config
 }
 
-func extractVulnReportData(results []common.DeployedImagesResult) *vulnReportData {
+func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, watchedImgResults []common.WatchedImagesResult) *vulnReportData {
 	deploymentNames := make([]string, 0)
 	imageNames := make([]string, 0)
 	componentNames := make([]string, 0)
 	cveNames := make([]string, 0)
 
-	for _, res := range results {
+	for _, res := range deployedImgResults {
 		for _, dep := range res.Deployments {
 			deploymentNames = append(deploymentNames, dep.DeploymentName)
 			for _, img := range dep.Images {
@@ -364,6 +454,18 @@ func extractVulnReportData(results []common.DeployedImagesResult) *vulnReportDat
 					for _, cve := range comp.ImageVulnerabilities {
 						cveNames = append(cveNames, cve.Cve)
 					}
+				}
+			}
+		}
+	}
+	for _, res := range watchedImgResults {
+		for _, img := range res.Images {
+			deploymentNames = append(deploymentNames, "")
+			imageNames = append(imageNames, img.Name.FullName)
+			for _, comp := range img.ImageComponents {
+				componentNames = append(componentNames, comp.Name)
+				for _, cve := range comp.ImageVulnerabilities {
+					cveNames = append(cveNames, cve.Cve)
 				}
 			}
 		}
