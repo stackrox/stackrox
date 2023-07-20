@@ -468,9 +468,9 @@ ifeq (, $(MAPKUBEAPIS_SOURCE_DIR))
 	MAPKUBEAPIS_SOURCE_DIR = $(shell cd $(PROJECT_DIR)/..; go mod download github.com/helm/helm-mapkubeapis; go list -m -f '{{ .Dir }}' github.com/helm/helm-mapkubeapis)
 endif
 
-config/mapkubeapis/Map.yaml: $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml
-	$(SILENT)mkdir -p $(PROJECT_DIR)/config/mapkubeapis
+pkg/config/mapkubeapis/Map.yaml: $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml
+	$(SILENT)mkdir -p $(PROJECT_DIR)/pkg/config/mapkubeapis
 	$(SILENT)cp -pf $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml $(PROJECT_DIR)/$@
 
 .PHONY: mapkubeapis
-mapkubeapis: config/mapkubeapis/Map.yaml
+mapkubeapis: pkg/config/mapkubeapis/Map.yaml

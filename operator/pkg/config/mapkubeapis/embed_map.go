@@ -20,8 +20,8 @@ var (
 	once sync.Once
 )
 
-// GetOrCreateTempMapFile creates a temporary map file from the embedded FS if not exists. Returns the path to a created or already existing temporary file.
-func GetOrCreateTempMapFile() string {
+// GetMapFilePath creates a temporary map file from the embedded FS if not exists. Returns the path to a created or already existing temporary file.
+func GetMapFilePath() string {
 	once.Do(func() {
 		tempFile, err := createTempMapFile()
 		utils.Should(err)
