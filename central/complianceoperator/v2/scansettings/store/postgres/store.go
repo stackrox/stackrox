@@ -133,7 +133,7 @@ func insertIntoComplianceOperatorScanSettingV2(ctx context.Context, batch *pgx.B
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingV2Profiles(_ context.Context, batch *pgx.Batch, obj *storage.Profile, complianceOperatorScanSettingV2ScanName string, idx int) error {
+func insertIntoComplianceOperatorScanSettingV2Profiles(_ context.Context, batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanSettingV2ScanName string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -148,7 +148,7 @@ func insertIntoComplianceOperatorScanSettingV2Profiles(_ context.Context, batch 
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingV2Clusters(_ context.Context, batch *pgx.Batch, obj *storage.ClusterScanStatus, complianceOperatorScanSettingV2ScanName string, idx int) error {
+func insertIntoComplianceOperatorScanSettingV2Clusters(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2_ClusterScanStatus, complianceOperatorScanSettingV2ScanName string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -229,7 +229,7 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 	return nil
 }
 
-func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ScanName string, objs ...*storage.Profile) error {
+func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ScanName string, objs ...*storage.ProfileShim) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -266,7 +266,7 @@ func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSe
 	return nil
 }
 
-func copyFromComplianceOperatorScanSettingV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ScanName string, objs ...*storage.ClusterScanStatus) error {
+func copyFromComplianceOperatorScanSettingV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ScanName string, objs ...*storage.ComplianceOperatorScanSettingV2_ClusterScanStatus) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

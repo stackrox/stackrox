@@ -126,7 +126,7 @@ func insertIntoComplianceOperatorScanV2(ctx context.Context, batch *pgx.Batch, o
 	return nil
 }
 
-func insertIntoComplianceOperatorScanV2Profiles(_ context.Context, batch *pgx.Batch, obj *storage.Profile, complianceOperatorScanV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanV2Profiles(_ context.Context, batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -206,7 +206,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 	return nil
 }
 
-func copyFromComplianceOperatorScanV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanV2ID string, objs ...*storage.Profile) error {
+func copyFromComplianceOperatorScanV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanV2ID string, objs ...*storage.ProfileShim) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

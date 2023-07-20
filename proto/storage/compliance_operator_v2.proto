@@ -24,13 +24,8 @@ enum ScanType {
     PLATFORM_SCAN = 2;
 }
 
-message Profile {
+message ProfileShim {
     string                    profile_id               = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
-}
-
-message ClusterScanStatus {
-    string                    cluster_id = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
-    repeated string           errors = 2;
 }
 
 // Next Tag: 13
@@ -75,7 +70,14 @@ message ComplianceOperatorScanSettingV2 {
     bool                          one_time_scan = 4;
     map<string, string>           labels = 5;
     map<string, string>           annotations = 6;
-    repeated Profile              profiles = 7;
+    repeated ProfileShim          profiles = 7;
+
+    // Cluster and an error if necessary to handle cases where the scan setting is
+    // unable to be applied to a cluster for whatever reason.
+    message ClusterScanStatus {
+        string                    cluster_id = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+        repeated string           errors = 2;
+    }
     repeated ClusterScanStatus    clusters = 8;
     repeated NodeRole             node_roles = 9;
     // Will be configurable via env var
@@ -108,7 +110,7 @@ message ComplianceOperatorCheckResultV2 {
     string              check_name = 3;
     string              cluster_id = 4 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     CheckStatus         status = 5  [(gogoproto.moretags) = 'search:"Compliance Check Status,hidden,store"'];
-    string              severity     = 6 [(gogoproto.moretags) = 'search:"Compliance Operator Severity,hidden,store"'];
+    string              severity     = 6 [(gogoproto.moretags) = 'search:"Compliance Rule Severity,hidden,store"'];
     string              description = 7;
     string              instructions = 8;
     map<string, string> labels = 9;
@@ -129,10 +131,10 @@ message ScanStatus {
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
     string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string              scan_name        = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Scan Name,hidden,store" sql:"index=category:unique;name:scan_unique_indicator"'];
+    string              scan_name        = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden,store" sql:"fk(ComplianceOperatorScanSettingV2:scan_name),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
     string                    cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator"'];
     repeated string           errors = 4;
-    repeated Profile              profile                 = 5;
+    repeated ProfileShim      profile                 = 5;
     map<string, string> labels      = 6;
     map<string, string> annotations = 7;
     ScanType            scan_type   = 8;
