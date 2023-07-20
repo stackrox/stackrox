@@ -281,10 +281,8 @@ function VulnReportsPage() {
                             key="confirm"
                             variant="danger"
                             isLoading={isDeleting}
-                            onClick={() => {
-                                // eslint-disable-next-line no-void
-                                void deleteReport(reportIdToDelete);
-                            }}
+                            isDisabled={isDeleting}
+                            onClick={() => deleteReport(reportIdToDelete)}
                         >
                             Delete
                         </Button>,
