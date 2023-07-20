@@ -10,8 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/pointers"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
@@ -113,15 +111,4 @@ func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConf
 		return errors.New("no name provided for the scan")
 	}
 	return nil
-}
-
-func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
-	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return &unstructured.Unstructured{
-		Object: unstructuredObj,
-	}, nil
 }

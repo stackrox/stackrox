@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -45,12 +47,14 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		stopSignal: concurrency.NewSignal(),
 	}
 
-	// Compliance is disabled by default. Central informs Sensor to enable compliance.
-	select {
-	case <-h.stopSignal.Done():
-	default:
-		h.disabled.Signal()
-	}
+	// TODO: When the Central side pipelines are complete, disable compliance by default.
+	//  Central informs Sensor to enable compliance. For now keep it enabled to avoid any breakage
+	//  in CI for compliance operator tests.
+	// select {
+	// case <-h.stopSignal.Done():
+	//default:
+	//	h.disabled.Signal()
+	//}
 	return h
 }
 
@@ -58,6 +62,10 @@ func (m *handlerImpl) Start() error {
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil
 	}
+	// TODO: When the Central side pipelines are complete, disable compliance by default.
+	//  Central informs Sensor to enable compliance. For now keep it enabled to avoid any breakage
+	//  in CI for compliance operator tests.
+	m.enableCompliance(&central.EnableComplianceRequest{Id: uuid.NewV4().String()})
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
 	return nil
@@ -175,7 +183,7 @@ func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *centr
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+	scanSettingBinding, err := k8sutil.RuntimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -197,12 +205,12 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request))
+	scanSetting, err := k8sutil.RuntimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+	scanSettingBinding, err := k8sutil.RuntimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -251,7 +259,7 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	}
 	complianceScan.Annotations[rescanAnnotation] = ""
 
-	obj, err = runtimeObjToUnstructured(&complianceScan)
+	obj, err = k8sutil.RuntimeObjToUnstructured(&complianceScan)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}

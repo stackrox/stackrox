@@ -16,9 +16,10 @@ var (
 // GroupVersionKind required for compliance operator custom resources.
 var (
 	ProfileGVK               = registerGVK("Profile")
+	TailoredProfileGVK       = registerGVK("TailoredProfile")
 	RuleGVK                  = registerGVK("Rule")
 	ScanSettingGVK           = registerGVK("ScanSetting")
-	ScanSettingBindingGVK    = registerGVK("ScanSetting")
+	ScanSettingBindingGVK    = registerGVK("ScanSettingBinding")
 	ComplianceSuiteGVK       = registerGVK("ComplianceSuite")
 	ComplianceScanGVK        = registerGVK("ComplianceScan")
 	ComplianceCheckResultGVK = registerGVK("ComplianceCheckResult")

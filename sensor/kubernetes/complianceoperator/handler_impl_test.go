@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -284,7 +285,7 @@ func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
 			Namespace: "ns",
 		},
 	}
-	obj, err := runtimeObjToUnstructured(complianceScan)
+	obj, err := k8sutil.RuntimeObjToUnstructured(complianceScan)
 	s.Require().NoError(err)
 	_, err = s.client.Resource(complianceoperator.ComplianceScanGVR).Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
 	s.Require().NoError(err)

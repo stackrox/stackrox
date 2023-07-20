@@ -279,6 +279,9 @@ func handle(
 }
 
 func removeHandler(informer cache.SharedIndexInformer, registration cache.ResourceEventHandlerRegistration) {
+	if informer == nil {
+		return
+	}
 	if err := informer.RemoveEventHandler(registration); err != nil {
 		utils.Should(err)
 	}
@@ -336,9 +339,6 @@ func watchComplianceSignals(
 		log.Infof("initializing compliance operator informers")
 
 		crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(client.Dynamic(), noResyncPeriod)
-		if !startAndWait(stopSignal, wg, crdSharedInformerFactory) {
-			return
-		}
 
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.ProfileGVR).Informer()
 		complianceProfileRegistration = handle(complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), resolver, syncingResources, wg, stopSignal, eventLock)
@@ -364,6 +364,11 @@ func watchComplianceSignals(
 
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResultGVR).Informer()
 		complianceResultRegistration = handle(complianceResultInformer, dispatchers.ForComplianceOperatorResults(), resolver, syncingResources, wg, stopSignal, eventLock)
+
+		if !startAndWait(stopSignal, wg, crdSharedInformerFactory) {
+			return
+		}
+		log.Info("Successfully synced compliance operator custom resources")
 	}
 
 	removeHandlerFunc := func() {
