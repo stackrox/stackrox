@@ -47,13 +47,13 @@ message VulnerabilityReportFilters {
         WATCHED  = 1;
     }
 
-    Fixability                        fixability              = 1;
-    repeated VulnerabilitySeverity    severities              = 2;
-    repeated ImageType                image_types             = 3;
+    Fixability                        fixability                        = 1;
+    repeated VulnerabilitySeverity    severities                        = 2;
+    repeated ImageType                image_types                       = 3;
     oneof cves_since {
-        bool                          all_vuln                = 4;
-        bool                          last_successful_report  = 5;
-        google.protobuf.Timestamp     start_date              = 6;
+        bool                          all_vuln                          = 4;
+        bool                          since_last_sent_scheduled_report  = 5;
+        google.protobuf.Timestamp     since_start_date                  = 6;
     }
 }
 
