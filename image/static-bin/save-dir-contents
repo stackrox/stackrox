@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Note: Any changes here should be considered for scanner/image/scanner/scripts/save-dir-contents.
+# Note: This is also used for the Scanner image defined in scanner/image.
 
 if [ $# -lt 1 ]; then
 	echo >&2 "Usage: $0 <dirs...>"

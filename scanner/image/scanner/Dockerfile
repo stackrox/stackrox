@@ -8,8 +8,8 @@ LABEL name="scanner" \
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
-COPY scripts /
-COPY bin/scanner ./
+COPY ../../../image/static-bin/import-additional-cas ../../../image/static-bin/restore-all-dir-contents ../../../image/static-bin/save-dir-contents /
+COPY bin/scanner /
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 
 RUN microdnf -y upgrade && \

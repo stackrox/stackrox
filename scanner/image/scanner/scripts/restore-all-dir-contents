@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-# Note: Any changes here should be considered for image/static-bin/restore-all-dir-contents.
-
-[ -d /.init-dirs ] || exit 0
-
-cp -rfP /.init-dirs/* /

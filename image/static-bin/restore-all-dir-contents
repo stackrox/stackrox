@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Note: Any changes here should be considered for scanner/image/scanner/scripts/restore-all-dir-contents.
+# Note: This is also used for the Scanner image defined in scanner/image.
 
 [ -d /.init-dirs ] || exit 0
 

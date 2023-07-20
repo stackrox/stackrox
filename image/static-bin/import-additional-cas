@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Note: Any changes here should be considered for scanner/image/scanner/scripts/import-additional-cas.
+# Note: This is also used for the Scanner image defined in scanner/image.
 
 # The function copies everything that could be found under the path provided in
 # the first argument, ignoring files starting with '..' which are created by
