@@ -11,7 +11,7 @@ var (
 	once sync.Once
 )
 
-// Singleton returns the API token singleton.
+// Singleton returns the billing metrics store singleton.
 func Singleton() Store {
 	once.Do(func() {
 		s = bmstore.New(globaldb.GetPostgres())

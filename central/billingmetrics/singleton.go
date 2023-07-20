@@ -10,7 +10,7 @@ var (
 	once sync.Once
 )
 
-// Singleton returns the API token singleton.
+// Singleton returns the billing metrics service singleton.
 func Singleton() Service {
 	once.Do(func() {
 		svc = New(store.Singleton())
