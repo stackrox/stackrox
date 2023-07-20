@@ -22,6 +22,7 @@ type ReportGenerator interface {
 	ProcessReportRequest(req *ReportRequest)
 }
 
+// New will create a new instance of the ReportGenerator
 func New(reportConfigDatastore reportConfigDS.DataStore,
 	reportMetadataStore reportMetadataDS.DataStore,
 	reportSnapshotStore reportSnapshotDS.DataStore,

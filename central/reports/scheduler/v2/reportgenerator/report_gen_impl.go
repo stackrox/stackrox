@@ -128,9 +128,9 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		return errors.Wrap(err, "error formatting the report email text")
 	}
 
-	if req.ReportMetadata.ReportStatus.ReportNotificationMethod == storage.ReportStatus_DOWNLOAD {
-		// TODO(ROX-18564) : Store downloadable report in blob storage
-	} else {
+	// TODO(ROX-18564) : Store downloadable report in blob storage
+
+	if req.ReportMetadata.ReportStatus.ReportNotificationMethod == storage.ReportStatus_EMAIL {
 		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 		for _, notifierConfig := range req.ReportConfig.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(req.Ctx, notifierConfig.GetEmailConfig().GetNotifierId())

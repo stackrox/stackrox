@@ -25,6 +25,7 @@ func initialize() {
 	)
 }
 
+// Singleton will return a singleton instance of the v2 report scheduler
 func Singleton() Scheduler {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil

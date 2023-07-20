@@ -41,7 +41,7 @@ type Scheduler interface {
 	RemoveReportSchedule(reportConfigID string)
 	SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error)
 	CancelReportRequest(ctx context.Context, reportID string) error
-	Start() error
+	Start()
 	Stop()
 }
 
@@ -121,20 +121,21 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportMeta
 
 /* Concurrency and scheduling functions */
 
-// Start scheduler.
-func (s *scheduler) Start() error {
+// Start scheduler. A scheduler instance can only call Start once. It cannot be re-started once stopped.
+// This func will log errors if the scheduler fails to start.
+func (s *scheduler) Start() {
 	if s.isStopped.Load() {
-		return errors.New("Scheduler already stopped. It cannot be re-started once stopped.")
+		log.Error("Scheduler already stopped. It cannot be re-started once stopped.")
+		return
 	}
 	swapped := s.isStarted.CompareAndSwap(false, true)
 	if !swapped {
 		log.Error("Scheduler already running")
-		return nil
+		return
 	}
 	s.queuePendingReports(scheduledCtx)
 	s.queueScheduledReports(scheduledCtx)
 	go s.runReports()
-	return nil
 }
 
 // Stop scheduler
@@ -375,7 +376,7 @@ func (s *scheduler) queueScheduledReports(ctx context.Context) {
 		ProtoQuery()
 	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(ctx, query)
 	if err != nil {
-		log.Error("Error finding scheduled reports: %s", err)
+		log.Errorf("Error finding scheduled reports: %s", err)
 	}
 	for _, rc := range reportConfigs {
 		if rc.GetSchedule() != nil {
