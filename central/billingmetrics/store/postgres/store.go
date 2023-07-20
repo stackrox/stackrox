@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	baseTable = "billing_metrics"
+	baseTable = pkgSchema.BillingMetricsTableName
 
-	getStmt    = "SELECT ts, serialized FROM billing_metrics WHERE ts >= $1 AND ts < $2"
-	insertStmt = "INSERT INTO billing_metrics(ts, serialized) VALUES ($1, $2)"
+	getStmt    = "SELECT ts, serialized FROM " + baseTable + " WHERE ts >= $1 AND ts < $2"
+	insertStmt = "INSERT INTO " + baseTable + "(ts, serialized) VALUES ($1, $2)"
 )
 
 var (
@@ -157,5 +157,5 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS billingmetrics CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+baseTable+" CASCADE")
 }
