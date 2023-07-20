@@ -70,6 +70,7 @@ func (k *listenerImpl) Stop(_ error) {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
+	k.storeProvider.CleanupStores()
 }
 
 func clusterOperatorCRDExists(client client.Interface) (bool, error) {

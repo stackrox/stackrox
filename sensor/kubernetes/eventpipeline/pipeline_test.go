@@ -108,7 +108,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.outputQueue.EXPECT().Start().Times(1)
 	s.resolver.EXPECT().Start().Times(1)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).AnyTimes()
-		s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
+	s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
 
 	s.pipeline.Start()
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)

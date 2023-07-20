@@ -51,6 +51,9 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 }
 
 func (k *listenerImpl) handleAllEvents() {
+	k.contextMtx.Lock()
+	defer k.contextMtx.Unlock()
+
 	// TODO(ROX-14194): remove resyncingSif once all resources are adapted
 	var resyncingSif informers.SharedInformerFactory
 	if env.ResyncDisabled.BooleanSetting() {

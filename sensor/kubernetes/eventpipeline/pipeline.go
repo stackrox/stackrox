@@ -1,7 +1,6 @@
 package eventpipeline
 
 import (
-	"context"
 	"io"
 	"sync/atomic"
 	"time"
