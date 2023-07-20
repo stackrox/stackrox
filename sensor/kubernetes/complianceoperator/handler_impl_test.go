@@ -56,7 +56,10 @@ func (s *ManagerTestSuite) SetupTest() {
 	s.notifier = notifierMocks.NewMockNotifier(gomock.NewController(s.T()))
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	s.requestHandler = newTestRequestHandler(s.client, s.statusInfo, s.notifier)
+
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceEnabled)
 	s.Require().NoError(s.requestHandler.Start())
+	<-s.requestHandler.ResponsesC()
 }
 
 func (s *ManagerTestSuite) TearDownSuite() {

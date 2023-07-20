@@ -62,12 +62,14 @@ func (m *handlerImpl) Start() error {
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil
 	}
+
+	// TODO: create default scan setting for ad-hoc scan
+	go m.run()
+
 	// TODO: When the Central side pipelines are complete, disable compliance by default.
 	//  Central informs Sensor to enable compliance. For now keep it enabled to avoid any breakage
 	//  in CI for compliance operator tests.
-	m.enableCompliance(&central.EnableComplianceRequest{Id: uuid.NewV4().String()})
-	// TODO: create default scan setting for ad-hoc scan
-	go m.run()
+	go m.enableCompliance(&central.EnableComplianceRequest{Id: uuid.NewV4().String()})
 	return nil
 }
 
