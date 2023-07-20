@@ -110,7 +110,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.listener.EXPECT().StartWithContext(gomock.Any()).AnyTimes()
 	s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
 
-	s.pipeline.Start()
+	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
 
 	testCases := [][]func(){
@@ -155,7 +155,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 	s.listener.EXPECT().StartWithContext(gomock.Any()).Times(2)
 	s.listener.EXPECT().Stop(gomock.Any()).Times(1)
 
-	s.pipeline.Start()
+	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
 
 	outputC <- message.NewExpiring(s.pipeline.context, nil)
