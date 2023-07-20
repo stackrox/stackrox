@@ -192,7 +192,7 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 
 func BenchmarkGetBindingsAndRoles(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
+		sac.AllowFixedResourceLevelScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.K8sRole, resources.K8sRoleBinding, resources.K8sSubject)))
 

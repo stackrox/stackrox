@@ -227,20 +227,20 @@ func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 		ClusterScopeKeys(cluster1),
 		NamespaceScopeKeys(namespaceA, namespaceB))
 
-	readResourceDScope := AllowFixedScopes(
+	readResourceDScope := AllowFixedResourceLevelScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resD))
 
-	readWriteResourceDScope := AllowFixedScopes(
+	readWriteResourceDScope := AllowFixedResourceLevelScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		ResourceScopeKeys(resD))
 
-	readResourceDCluster1Scope := AllowFixedScopes(
+	readResourceDCluster1Scope := AllowFixedClusterLevelScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resD),
 		ClusterScopeKeys(cluster1))
 
-	readResourceDCluster1NamespacesABScope := AllowFixedScopes(
+	readResourceDCluster1NamespacesABScope := AllowFixedNamespaceLevelScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resD),
 		ClusterScopeKeys(cluster1),
