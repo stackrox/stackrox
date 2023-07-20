@@ -54,9 +54,9 @@ func (suite *ReportServiceTestSuite) TestGetReportStatus() {
 		Id: "test_report",
 	}
 	s := serviceImpl{metadataDatastore: suite.reportDS}
-	repStatus, err := s.GetReportStatus(ctx, &id)
+	repStatusResponse, err := s.GetReportStatus(ctx, &id)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), repStatus.GetErrorMsg(), status.GetErrorMsg())
+	assert.Equal(suite.T(), repStatusResponse.Status.GetErrorMsg(), status.GetErrorMsg())
 
 }
 

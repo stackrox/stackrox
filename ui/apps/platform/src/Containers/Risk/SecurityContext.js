@@ -1,7 +1,8 @@
 import React from 'react';
 
-import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
+
+import KeyValuePairs from './KeyValuePairs';
 
 const containerSecurityContextMap = {
     privileged: { label: 'Privileged' },

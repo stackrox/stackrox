@@ -32,15 +32,6 @@ func NewPostgres(basePath string, forceVersion string, adminConfig *postgres.Con
 	}
 }
 
-// New - returns a new ready-to-use manager.
-func New(basePath string, forceVersion string) DBCloneManager {
-	return &dbCloneManagerImpl{
-		forceRollbackVersion: forceVersion,
-		basePath:             basePath,
-		dbmRocks:             rocksdb.New(basePath, forceVersion),
-	}
-}
-
 // Scan - checks the persistent data of central and gather the clone information
 // from the supported databases.
 func (d *dbCloneManagerImpl) Scan() error {

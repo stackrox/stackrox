@@ -33,6 +33,7 @@ import {
     namespaceBadgeColor,
     namespaceBadgeText,
 } from './common/NetworkGraphIcons';
+import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 export type Models = {
     activeModel: CustomModel;
@@ -276,6 +277,7 @@ type NetworkGraphContainerProps = {
     displayOptions: DisplayOption[];
     simulation: Simulation;
     clusterDeploymentCount: number;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 // the order of model modification is as follows:
@@ -292,6 +294,7 @@ function NetworkGraphContainer({
     displayOptions,
     simulation,
     clusterDeploymentCount,
+    scopeHierarchy,
 }: NetworkGraphContainerProps) {
     // these are the unfiltered, unmodified data models
     const { activeModel, extraneousModel } = models;
@@ -356,6 +359,7 @@ function NetworkGraphContainer({
             simulation={simulation}
             selectedNode={selectedNode}
             edgeState={edgeState}
+            scopeHierarchy={scopeHierarchy}
         />
     );
 }

@@ -54,7 +54,7 @@ var (
 			"/v1.DetectionService/DetectBuildTime",
 			"/v1.DetectionService/DetectDeployTimeFromYAML",
 		},
-		or.SensorOrAuthorizer(user.With(permissions.Modify(resources.Detection))): {
+		or.SensorOr(user.With(permissions.Modify(resources.Detection))): {
 			"/v1.DetectionService/DetectDeployTime",
 		},
 	})

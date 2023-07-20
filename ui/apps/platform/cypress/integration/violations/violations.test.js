@@ -57,7 +57,6 @@ describe('Violations', () => {
         visitViolationsWithFixture('alerts/alerts.json');
         visitViolationFromTableWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(selectors.details.page);
         cy.get(selectors.details.title).should('have.text', 'Misuse of iptables');
         cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" deployment');
     });
@@ -126,7 +125,7 @@ describe('Violations', () => {
 
         cy.get(selectors.deployment.overview);
         cy.get(selectors.deployment.containerConfiguration);
-        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+        cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
         );
         cy.get(selectors.deployment.securityContext);
@@ -139,7 +138,7 @@ describe('Violations', () => {
 
         cy.get(selectors.deployment.containerConfiguration);
         // TODO need more positive and negative assertions to contrast deployments in this and the previous test.
-        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+        cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
         );
     });

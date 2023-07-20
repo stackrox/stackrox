@@ -22,7 +22,7 @@ function verifyVulnerabilityManagementDashboardApplicationAndInfrastructure(
 }
 
 function getViewAllSelectorForWidget(widgetHeading) {
-    return `${selectors.getWidget(widgetHeading)} a:contains("View All")`;
+    return `${selectors.getWidget(widgetHeading)} a:contains("View all")`;
 }
 
 function selectTopRiskyOption(optionText) {
@@ -73,7 +73,7 @@ describe('Vulnerability Management Dashboard', () => {
         cy.get('[data-testid="panel"]').contains('[data-testid="panel-header"]', /^\d+ images?/);
     });
 
-    it('should properly navigate to the clusters list', () => {
+    it('should navigate to the clusters list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'clusters';
@@ -85,7 +85,7 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should properly navigate to the namespaces list', () => {
+    it('should navigate to the namespaces list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'namespaces';
@@ -97,7 +97,7 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('should properly navigate to the deployments list', () => {
+    it('should navigate to the deployments list', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'deployments';
@@ -133,11 +133,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
+    it('should go to images list from View all link of Top riskiest images', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const widgetHeading = 'Top Riskiest Images';
+        const widgetHeading = 'Top riskiest images';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
@@ -149,11 +149,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('clicking the "Recently Detected Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+    it('should go to image-cves list from View all link of Recently detected image vulnerabilities', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'image-cves';
-        const widgetHeading = 'Recently Detected Image Vulnerabilities';
+        const widgetHeading = 'Recently detected image vulnerabilities';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
@@ -162,11 +162,11 @@ describe('Vulnerability Management Dashboard', () => {
         cy.location('search').should('eq', '?sort[0][id]=CVE%20Created%20Time&sort[0][desc]=true');
     });
 
-    it('clicking the "Most Common Image Vulnerabilities" widget\'s "View All" button should take you to the CVEs list', () => {
+    it('should to to image-cves list from View all link of Most common image vulnerabilities', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'image-cves';
-        const widgetHeading = 'Most Common Image Vulnerabilities';
+        const widgetHeading = 'Most common image vulnerabilities';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
@@ -178,11 +178,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('clicking the "Clusters With Most Orchestrator & Istio Vulnerabilities" widget\'s "View All" button should take you to the clusters list', () => {
+    it('should go to clusters list from View all link of Clusters with most orchestrator and Istio vulnerabilities', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'clusters';
-        const widgetHeading = 'Clusters With Most Orchestrator & Istio Vulnerabilities';
+        const widgetHeading = 'Clusters with most orchestrator and Istio vulnerabilities';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
@@ -191,22 +191,22 @@ describe('Vulnerability Management Dashboard', () => {
         cy.location('search').should('eq', '');
     });
 
-    it('clicking the "Top risky deployments by CVE count & CVSS score" widget\'s "View All" button should take you to the deployments list', () => {
+    it('should to to deployments list from View all link of Top risky deployments by CVE count and CVSS score', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'deployments';
-        const widgetHeading = 'Top risky deployments by CVE count & CVSS score';
+        const widgetHeading = 'Top risky deployments by CVE count and CVSS score';
 
         interactAndWaitForVulnerabilityManagementEntities(() => {
             cy.get(getViewAllSelectorForWidget(widgetHeading)).click();
         }, entitiesKey);
     });
 
-    it('clicking the "Top risky namespaces by CVE count & CVSS score" widget\'s "View All" button should take you to the namespaces list', () => {
+    it('should go to namespaces list from View all link of Top risky namespaces by CVE count and CVSS score', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'namespaces';
-        const widgetHeading = 'Top risky namespaces by CVE count & CVSS score';
+        const widgetHeading = 'Top risky namespaces by CVE count and CVSS score';
 
         selectTopRiskyOption(widgetHeading);
         interactAndWaitForVulnerabilityManagementEntities(() => {
@@ -214,11 +214,11 @@ describe('Vulnerability Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the images list', () => {
+    it('should go to images list from View all link of Top risky images by CVE count and CVSS score', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const widgetHeading = 'Top risky images by CVE count & CVSS score';
+        const widgetHeading = 'Top risky images by CVE count and CVSS score';
 
         selectTopRiskyOption(widgetHeading);
         interactAndWaitForVulnerabilityManagementEntities(() => {
@@ -226,11 +226,11 @@ describe('Vulnerability Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the nodes list', () => {
+    it('should go to nodes list from View all link of Top risky images by CVE count and CVSS score', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'nodes';
-        const widgetHeading = 'Top risky nodes by CVE count & CVSS score';
+        const widgetHeading = 'Top risky nodes by CVE count and CVSS score';
 
         selectTopRiskyOption(widgetHeading);
         interactAndWaitForVulnerabilityManagementEntities(() => {

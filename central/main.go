@@ -258,15 +258,17 @@ func main() {
 		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
-	// Need to remove the backup clone and set the current version
-	sourceMap, config, err := pgconfig.GetPostgresConfig()
-	if err != nil {
-		log.Errorf("Unable to get Postgres DB config: %v", err)
-	}
+	if !pgconfig.IsExternalDatabase() {
+		// Need to remove the backup clone and set the current version
+		sourceMap, config, err := pgconfig.GetPostgresConfig()
+		if err != nil {
+			log.Errorf("Unable to get Postgres DB config: %v", err)
+		}
 
-	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-	if err != nil {
-		log.Errorf("Failed to remove backup DB: %v", err)
+		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+		if err != nil {
+			log.Errorf("Failed to remove backup DB: %v", err)
+		}
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
@@ -618,7 +620,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		uiRoute(),
 		{
 			Route:         "/api/extensions/clusters/zip",
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
+			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
@@ -737,7 +739,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/extensions/clusters/helm-config.yaml",
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
+			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
 			Compression:   true,
 		},
@@ -756,7 +758,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		routes.CustomRoute{
 			Route: scannerDefinitionsRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				or.SensorOrAuthorizer(
+				or.SensorOr(
 					or.ScannerOr(
 						user.With(permissions.View(resources.Administration)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),

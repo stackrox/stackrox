@@ -107,14 +107,13 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
         <Flex
             direction={{ default: 'column' }}
             flex={{ default: 'flex_1' }}
-            data-testid="deployment-details"
+            aria-label="Deployment details"
         >
             {!relatedDeployment && relatedDeploymentFetchError && (
                 <Alert
                     variant="warning"
                     isInline
                     title="There was an error fetching the deployment details. This deployment may no longer exist."
-                    data-testid="deployment-snapshot-warning"
                 >
                     {getAxiosErrorMessage(relatedDeploymentFetchError)}
                 </Alert>
@@ -128,7 +127,7 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                         <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
-                        <Card isFlat data-testid="deployment-overview">
+                        <Card isFlat aria-label="Deployment overview">
                             <CardBody>
                                 {relatedDeployment && (
                                     <DeploymentOverview deployment={relatedDeployment} />
@@ -143,7 +142,7 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                         <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
-                        <Card isFlat data-testid="port-configuration">
+                        <Card isFlat aria-label="Port configuration">
                             <CardBody>
                                 {relatedDeploymentPorts.length > 0
                                     ? formatDeploymentPorts(relatedDeploymentPorts).map(

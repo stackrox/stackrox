@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicy, NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Simulation } from '../utils/getSimulation';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
-import { useScopeHierarchy } from './useScopeHierarchy';
 
 export type NetworkPolicySimulator =
     | {
@@ -29,7 +29,7 @@ type SetNetworkPolicyModificationAction =
     | {
           state: 'ACTIVE';
           options: {
-              clusterId: string;
+              scopeHierarchy: NetworkScopeHierarchy;
           };
       }
     | {
@@ -56,6 +56,7 @@ type SetNetworkPolicyModificationAction =
 
 type UseNetworkPolicySimulatorParams = {
     simulation: Simulation;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 const defaultResultState = {
@@ -65,19 +66,21 @@ const defaultResultState = {
     isLoading: true,
 } as NetworkPolicySimulator;
 
-function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorParams): {
+function useNetworkPolicySimulator({
+    simulation,
+    scopeHierarchy,
+}: UseNetworkPolicySimulatorParams): {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
 } {
-    const scopeHierarchy = useScopeHierarchy();
     const [simulator, setSimulator] = useState<NetworkPolicySimulator>(defaultResultState);
 
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         setNetworkPolicyModification({
             state: 'ACTIVE',
-            options: { clusterId: scopeHierarchy.cluster.id },
+            options: { scopeHierarchy },
         });
-    }, [scopeHierarchy.cluster.id, simulation.isOn]);
+    }, [scopeHierarchy, simulation.isOn]);
 
     function setNetworkPolicyModification(action: SetNetworkPolicyModificationAction): void {
         const { state, options } = action;
@@ -98,10 +101,16 @@ function useNetworkPolicySimulator({ simulation }: UseNetworkPolicySimulatorPara
         }
         switch (state) {
             case 'ACTIVE':
-                // @TODO: Add the network search query as a second argument
                 networkService
-                    .fetchNetworkPoliciesByClusterId(options.clusterId)
-                    .then((data: NetworkPolicy[]) => {
+                    .fetchNetworkPoliciesByClusterId(
+                        options.scopeHierarchy.cluster.id,
+                        getRequestQueryStringForSearchFilter({
+                            Namespace: options.scopeHierarchy.namespaces,
+                            Deployment: options.scopeHierarchy.deployments,
+                            ...options.scopeHierarchy.remainingQuery,
+                        })
+                    )
+                    .then((data) => {
                         setSimulator({
                             state,
                             networkPolicies: data,

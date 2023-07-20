@@ -7,7 +7,6 @@ import set from 'lodash/set';
 import uniqBy from 'lodash/uniqBy';
 import { Message } from '@stackrox/ui-components';
 
-import CustomDialogue from 'Components/CustomDialogue';
 import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
 import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -16,6 +15,8 @@ import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { truncate } from 'utils/textUtils';
 import { splitCvesByType } from 'utils/vulnerabilityUtils';
+
+import CustomDialogue from '../../Components/CustomDialogue';
 
 import CveToPolicyShortForm, { emptyPolicy } from './CveToPolicyShortForm';
 
@@ -272,10 +273,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
     return (
         <CustomDialogue
             className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
-            title="Add To Policy"
-            text=""
+            title="Add to policy"
             onConfirm={cvesToDisplay.length > 0 ? addToPolicy : null}
-            confirmText="Save Policy"
+            confirmText="Save policy"
             confirmDisabled={Boolean(
                 messageObj ||
                     policy.name.length < 6 ||
