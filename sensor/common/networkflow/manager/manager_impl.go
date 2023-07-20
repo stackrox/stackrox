@@ -620,7 +620,9 @@ func (m *networkFlowManager) currentEnrichedProcesses() map[processListeningIndi
 	return enrichedProcesses
 }
 
-func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutest *sync.RWMutex) []*storage.NetworkFlow {
+func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
+	previousMutex.RLock()
+	defer previousMutex.RUnlock()
 	var updates []*storage.NetworkFlow
 
 	for conn, currTS := range current {
@@ -630,8 +632,6 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 		}
 	}
 
-	previousMutest.RLock()
-	defer previousMutest.RUnlock()
 	for conn, prevTS := range previous {
 		if _, ok := current[conn]; !ok {
 			updates = append(updates, conn.toProto(prevTS))
