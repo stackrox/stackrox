@@ -144,6 +144,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorScanSettingBi
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorScanSettingBindings", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorScanSettingBindings))
 }
 
+// ForComplianceOperatorScanSettings mocks base method.
+func (m *MockDispatcherRegistry) ForComplianceOperatorScanSettings() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForComplianceOperatorScanSettings")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForComplianceOperatorScanSettings indicates an expected call of ForComplianceOperatorScanSettings.
+func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorScanSettings() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorScanSettings", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorScanSettings))
+}
+
 // ForComplianceOperatorScans mocks base method.
 func (m *MockDispatcherRegistry) ForComplianceOperatorScans() resources.Dispatcher {
 	m.ctrl.T.Helper()
