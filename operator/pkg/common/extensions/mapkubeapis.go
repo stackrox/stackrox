@@ -20,9 +20,9 @@ import (
 
 // AddMapKubeAPIsExtensionIfMapFileExists conditionally adds the extension to opts if the map file exists
 func AddMapKubeAPIsExtensionIfMapFileExists(opts []pkgReconciler.Option) []pkgReconciler.Option {
-	mapFile, err := resolveMapFile()
-	if err != nil {
-		ctrl.Log.Error(err, "mapkubeapis map file does not exist, the extension will NOT be added")
+	mapFile := resolveMapFile()
+	if mapFile == "" {
+		ctrl.Log.Info("mapkubeapis map file does not exist, the extension will NOT be added")
 		return opts
 	}
 	ctrl.Log.Info("mapkubeapis extension enabled", "mapFile", mapFile)
@@ -34,16 +34,15 @@ func AddMapKubeAPIsExtensionIfMapFileExists(opts []pkgReconciler.Option) []pkgRe
 	return append(opts, pkgReconciler.WithPreExtension(extension))
 }
 
-func resolveMapFile() (string, error) {
+func resolveMapFile() string {
 	mapFile := os.Getenv("MAPKUBEAPIS_MAPFILE")
 	if mapFile == "" {
 		mapFile = filepath.Join("config", "mapkubeapis", "Map.yaml")
 	}
 	if _, err := os.Stat(mapFile); err == nil {
-		return mapFile, nil
+		return mapFile
 	}
-
-	return mapkubeapis.CreateTempMapFile()
+	return mapkubeapis.GetOrCreateTempMapFile()
 }
 
 // MapKubeAPIsExtensionConfig extension configuration
