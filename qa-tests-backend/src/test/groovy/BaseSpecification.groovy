@@ -287,6 +287,7 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
+        // These .puts() have to be repeated here or else the key is cleared.
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testcase: ${name.getMethodName()}")
