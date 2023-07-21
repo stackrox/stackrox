@@ -114,12 +114,13 @@ func (s *NamespacesStoreSuite) TestStore() {
 }
 
 const (
-	withAllAccess           = "AllAccess"
-	withNoAccess            = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
-	withAccess              = "Access"
-	withAccessToCluster     = "AccessToCluster"
-	withNoAccessToCluster   = "NoAccessToCluster"
+	withAllAccess                = "AllAccess"
+	withNoAccess                 = "NoAccess"
+	withAccess                   = "Access"
+	withAccessToCluster          = "AccessToCluster"
+	withNoAccessToCluster        = "NoAccessToCluster"
+	withAccessToDifferentCluster = "AccessToDifferentCluster"
+	withAccessToDifferentNs      = "AccessToDifferentNs"
 )
 
 var (
@@ -165,23 +166,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
-				),
-			),
-			expectedObjIDs:         []string{},
-			expectedIdentifiers:    []string{},
-			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.NamespaceMetadata{},
-			expectedWriteError:     sac.ErrResourceAccessDenied,
-		},
-		withAccessToDifferentNs: {
-			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetClusterId()),
-					sac.NamespaceScopeKeys("unknown ns"),
-				),
-			),
+				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
@@ -195,8 +180,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys(objA.GetName()),
-				),
-			),
+				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
@@ -209,13 +193,39 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
-				),
-			),
+				)),
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NamespaceMetadata{objA},
 			expectedWriteError:     nil,
+		},
+		withAccessToDifferentCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NamespaceMetadata{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccessToDifferentNs: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+					sac.NamespaceScopeKeys("unknown ns"),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NamespaceMetadata{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 	}
 
@@ -296,6 +306,9 @@ func (s *NamespacesStoreSuite) TestSACExists() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			exists, err := s.store.Exists(testCase.context, objA.GetId())
 			assert.NoError(t, err)
+
+			exists, err := s.store.Exists(testCase.context, objA.GetId())
+			assert.NoError(t, err)
 			// Assumption from the test case structure: objA is always in the visible list
 			// in the first position.
 			expectedFound := len(testCase.expectedObjects) > 0
@@ -328,6 +341,7 @@ func (s *NamespacesStoreSuite) TestSACGet() {
 
 func (s *NamespacesStoreSuite) TestSACDelete() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
@@ -386,37 +400,4 @@ func (s *NamespacesStoreSuite) TestSACGetMany() {
 		assert.Nil(t, actual)
 		assert.Nil(t, missingIndices)
 	})
-}
-
-func getSACContexts(obj *storage.NamespaceMetadata, access storage.Access) map[string]context.Context {
-	return map[string]context.Context{
-		withAllAccess: sac.WithAllAccess(context.Background()),
-		withNoAccess:  sac.WithNoAccess(context.Background()),
-		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetClusterId()),
-				sac.NamespaceScopeKeys("unknown ns"),
-			)),
-		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetClusterId()),
-				sac.NamespaceScopeKeys(obj.GetName()),
-			)),
-		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetClusterId()),
-			)),
-		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(uuid.Nil.String()),
-			)),
-	}
 }

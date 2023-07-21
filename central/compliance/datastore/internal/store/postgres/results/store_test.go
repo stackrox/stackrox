@@ -114,12 +114,13 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 }
 
 const (
-	withAllAccess           = "AllAccess"
-	withNoAccess            = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
-	withAccess              = "Access"
-	withAccessToCluster     = "AccessToCluster"
-	withNoAccessToCluster   = "NoAccessToCluster"
+	withAllAccess                = "AllAccess"
+	withNoAccess                 = "NoAccess"
+	withAccess                   = "Access"
+	withAccessToCluster          = "AccessToCluster"
+	withNoAccessToCluster        = "NoAccessToCluster"
+	withAccessToDifferentCluster = "AccessToDifferentCluster"
+	withAccessToDifferentNs      = "AccessToDifferentNs"
 )
 
 var (
@@ -165,8 +166,46 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
-				),
-			),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunResults{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccess: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
+				)),
+			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
+			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunResults{objA},
+			expectedWriteError:     nil,
+		},
+		withAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
+				)),
+			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
+			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunResults{objA},
+			expectedWriteError:     nil,
+		},
+		withAccessToDifferentCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
@@ -180,41 +219,12 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
-				),
-			),
+				)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ComplianceRunResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
-		},
-		withAccess: {
-			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
-				),
-			),
-			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
-			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
-			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.ComplianceRunResults{objA},
-			expectedWriteError:     nil,
-		},
-		withAccessToCluster: {
-			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
-				),
-			),
-			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
-			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
-			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.ComplianceRunResults{objA},
-			expectedWriteError:     nil,
 		},
 	}
 
@@ -295,6 +305,9 @@ func (s *ComplianceRunResultsStoreSuite) TestSACExists() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			exists, err := s.store.Exists(testCase.context, objA.GetRunMetadata().GetRunId())
 			assert.NoError(t, err)
+
+			exists, err := s.store.Exists(testCase.context, objA.GetRunMetadata().GetRunId())
+			assert.NoError(t, err)
 			// Assumption from the test case structure: objA is always in the visible list
 			// in the first position.
 			expectedFound := len(testCase.expectedObjects) > 0
@@ -327,6 +340,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGet() {
 
 func (s *ComplianceRunResultsStoreSuite) TestSACDelete() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
@@ -385,36 +399,4 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGetMany() {
 		assert.Nil(t, actual)
 		assert.Nil(t, missingIndices)
 	})
-}
-
-func getSACContexts(obj *storage.ComplianceRunResults, access storage.Access) map[string]context.Context {
-	return map[string]context.Context{
-		withAllAccess: sac.WithAllAccess(context.Background()),
-		withNoAccess:  sac.WithNoAccess(context.Background()),
-		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetRunMetadata().GetClusterId()),
-				sac.NamespaceScopeKeys("unknown ns"),
-			)),
-		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetRunMetadata().GetClusterId()),
-			)),
-		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetRunMetadata().GetClusterId()),
-			)),
-		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(uuid.Nil.String()),
-			)),
-	}
 }
