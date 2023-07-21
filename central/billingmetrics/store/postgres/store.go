@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -32,6 +33,7 @@ var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.BillingMetricsSchema
 	targetResource = resources.Administration
+	zeroTime       = time.Unix(0, 0).UTC()
 )
 
 // Store is the interface to interact with the storage for storage.BillingMetrics.
@@ -85,34 +87,28 @@ func (s *storeImpl) retryableInsert(ctx context.Context, rec *storage.BillingMet
 		return err
 	}
 	defer release()
-	_, err = conn.Exec(ctx, insertStmt, timestampToStoreInUTC(rec.GetTs()), serialized)
+	_, err = conn.Exec(ctx, insertStmt, protoconv.ConvertTimestampToTimeOrNow(rec.GetTs()), serialized)
 	return err
 }
 
 // Get returns the object, if it exists from the store.
-func (s *storeImpl) Get(ctx context.Context, from, to *types.Timestamp) ([]storage.BillingMetrics, error) {
+func (s *storeImpl) Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) ([]storage.BillingMetrics, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "BillingMetrics")
 
 	if err := checkScope(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, nil
 	}
 
-	if from == nil {
-		from = &types.Timestamp{}
-	}
-	if to == nil {
-		to = timeToTimestamp(time.Now())
-	}
-
-	futc, tutc := timestampToStoreInUTC(from), timestampToStoreInUTC(to)
+	f := protoconv.ConvertTimestampToTimeOrDefault(from, zeroTime)
+	t := protoconv.ConvertTimestampToTimeOrNow(to)
 
 	r, err := pgutils.Retry2(func() ([]storage.BillingMetrics, error) {
-		return s.retryableGet(ctx, &futc, &tutc)
+		return s.retryableGet(ctx, &f, &t)
 	})
 	return r, errors.Wrap(err, "cannot get metrics from db")
 }
 
-func (s *storeImpl) retryableGet(ctx context.Context, from, to *time.Time) ([]storage.BillingMetrics, error) {
+func (s *storeImpl) retryableGet(ctx context.Context, from *time.Time, to *time.Time) ([]storage.BillingMetrics, error) {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "BillingMetrics")
 	if err != nil {
 		return nil, err
@@ -136,7 +132,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, from, to *time.Time) ([]st
 			return nil, err
 		}
 		result = append(result, storage.BillingMetrics{
-			Ts: localTimestampFromStore(ts),
+			Ts: protoconv.ConvertTimeToTimestamp(*ts),
 			Sr: &value,
 		})
 	}

@@ -3,23 +3,17 @@ package billingmetrics
 import (
 	"bufio"
 	"context"
-	"encoding/csv"
 	"fmt"
-	"io"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	bmstore "github.com/stackrox/rox/central/billingmetrics/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -27,18 +21,16 @@ import (
 var (
 	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		allow.Anonymous(): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.BillingMetricsService/GetMetrics",
 			"/v1.BillingMetricsService/GetMax",
 			"/v1.BillingMetricsService/GetCSV",
-		},
-		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.BillingMetricsService/PutMetrics",
-		},
-	})
+		}})
 )
 
 type serviceImpl struct {
+	v1.UnimplementedBillingMetricsServiceServer
+
 	store bmstore.Store
 }
 
@@ -76,32 +68,13 @@ func (s *serviceImpl) GetMetrics(ctx context.Context, req *v1.BillingMetricsRequ
 	return &v1.BillingMetricsResponse{Record: rec}, nil
 }
 
-func writeCSV(metrics []storage.BillingMetrics, wio io.Writer) error {
-	w := csv.NewWriter(wio)
-	record := []string{"UTC Timestamp", "Nodes", "Millicores"}
-	if err := w.Write(record); err != nil {
-		return err
-	}
-	for _, m := range metrics {
-		record[0] = protoconv.ConvertTimestampToTimeOrNow(m.Ts).UTC().Format(time.RFC3339)
-		record[1] = fmt.Sprint(m.Sr.GetNodes())
-		record[2] = fmt.Sprint(m.Sr.GetMillicores())
-		if err := w.Write(record); err != nil {
-			return err
-		}
-	}
-	w.Flush()
-	return w.Error()
-}
-
 type serverWriter struct {
 	v1.BillingMetricsService_GetCSVServer
 }
 
+// Write implements the io.Writer interface.
 func (sw *serverWriter) Write(data []byte) (int, error) {
-	res := &v1.BillingMetricsCSVResponse{Chunk: data}
-	err := sw.Send(res)
-	return 0, err
+	return len(data), sw.Send(&v1.BillingMetricsCSVResponse{Chunk: data})
 }
 
 func (s *serviceImpl) GetCSV(req *v1.BillingMetricsRequest, srv v1.BillingMetricsService_GetCSVServer) error {

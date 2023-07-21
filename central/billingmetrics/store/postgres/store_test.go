@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -40,10 +41,10 @@ func (s *BillingMetricsStoreSuite) TestStore() {
 
 	store := s.store
 
-	now := time.Now().Add(-time.Hour)
-	from := timeToTimestamp(now)
-	to := timeToTimestamp(now.Add(10 * time.Minute))
-	three := timeToTimestamp(now.Add(11 * time.Minute))
+	now := time.Now().Add(-time.Hour).UTC().Truncate(time.Microsecond)
+	from := protoconv.ConvertTimeToTimestamp(now)
+	to := protoconv.ConvertTimeToTimestamp(now.Add(10 * time.Minute))
+	three := protoconv.ConvertTimeToTimestamp(now.Add(11 * time.Minute))
 
 	records := []storage.BillingMetrics{
 		{Ts: from,
@@ -89,9 +90,9 @@ func (s *BillingMetricsStoreSuite) TestGet() {
 
 	store := s.store
 
-	now := time.Now()
-	from := timeToTimestamp(now)
-	to := timeToTimestamp(now.Add(10 * time.Minute))
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	from := protoconv.ConvertTimeToTimestamp(now)
+	to := protoconv.ConvertTimeToTimestamp(now.Add(10 * time.Minute))
 
 	records := []storage.BillingMetrics{
 		{Ts: from,

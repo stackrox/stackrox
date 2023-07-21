@@ -8,11 +8,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const period = 1 * time.Hour
+const period = 1 * time.Minute
 
 var (
-	stop concurrency.Signal
 	log  = logging.LoggerForModule()
+	stop = concurrency.NewSignal()
 )
 
 func gather() {
@@ -21,6 +21,7 @@ func gather() {
 		log.Debug("Failed to get cluster IDs for billing metrics snapshot: ", err)
 		return
 	}
+	log.Debugf("Cutting billing metrics for %d clusters: %v", len(ids), ids)
 	newMetrics := clustermetrics.CutMetrics(ids)
 	// Store the average values to smooth short (< 2 periods) peaks and drops.
 	if err := checkIn(average(previousMetrics, newMetrics)); err != nil {
@@ -38,6 +39,7 @@ func run() {
 		case <-ticker.C:
 			gather()
 		case <-stop.Done():
+			log.Debug("Billing metrics reporting stopped")
 			stop.Reset()
 			return
 		}
