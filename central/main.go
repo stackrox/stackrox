@@ -67,7 +67,6 @@ import (
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	groupService "github.com/stackrox/rox/central/group/service"
-	"github.com/stackrox/rox/central/grpc/metrics"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -172,6 +171,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
+	gRPCMetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -283,7 +283,7 @@ func main() {
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
-		privateServer := private.NewHTTPServer(metrics.HTTPSingleton())
+		privateServer := private.NewHTTPServer(gRPCMetrics.HTTPSingleton())
 		privateServer.AddRoutes(privateRoutes())
 		privateServer.RunForever()
 	}
@@ -508,8 +508,8 @@ func startGRPCServer() {
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 		Auditor:            audit.New(processor.Singleton()),
-		GRPCMetrics:        metrics.GRPCSingleton(),
-		HTTPMetrics:        metrics.HTTPSingleton(),
+		GRPCMetrics:        gRPCMetrics.GRPCSingleton(),
+		HTTPMetrics:        gRPCMetrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
 	}
 

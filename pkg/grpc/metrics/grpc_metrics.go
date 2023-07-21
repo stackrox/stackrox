@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
@@ -15,9 +16,22 @@ type GRPCMetrics interface {
 	GetMetrics() (map[string]map[codes.Code]int64, map[string]map[string]int64)
 }
 
+var (
+	grpcInit    sync.Once
+	grpcMetrics GRPCMetrics
+)
+
 // NewGRPCMetrics returns a new GRPCMetrics object
 func NewGRPCMetrics() GRPCMetrics {
 	return &grpcMetricsImpl{
 		allMetrics: make(map[string]*perPathGRPCMetrics),
 	}
+}
+
+// GRPCSingleton returns a singleton of GRPCMetrics.
+func GRPCSingleton() GRPCMetrics {
+	grpcInit.Do(func() {
+		grpcMetrics = NewGRPCMetrics()
+	})
+	return grpcMetrics
 }

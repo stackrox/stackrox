@@ -12,10 +12,10 @@ import (
 
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/central/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/stackrox/scanner/v4/indexer"
