@@ -18,12 +18,19 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptySt
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 
+const sortOptions = {
+    sortFields: ['Deployment', 'Namespace', 'Cluster'],
+    defaultSortOption: { field: 'Deployment', direction: 'asc' } as const,
+};
+
 function ListeningEndpointsPage() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
-    const { data, error, loading } = useDeploymentListeningEndpoints(page, perPage);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
+    const { data, error, loading } = useDeploymentListeningEndpoints(sortOption, page, perPage);
 
     return (
         <>
@@ -91,7 +98,10 @@ function ListeningEndpointsPage() {
                                     </EmptyStateTemplate>
                                 </Bullseye>
                             ) : (
-                                <ListeningEndpointsTable deployments={data} />
+                                <ListeningEndpointsTable
+                                    deployments={data}
+                                    getSortParams={getSortParams}
+                                />
                             )}
                         </>
                     )}
