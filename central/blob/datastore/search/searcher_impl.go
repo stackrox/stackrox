@@ -5,10 +5,16 @@ import (
 
 	"github.com/stackrox/rox/central/blob/datastore/index"
 	"github.com/stackrox/rox/central/blob/datastore/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+)
+
+var (
+	sacHelper = sac.ForResource(resources.Administration).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {
@@ -18,11 +24,7 @@ type searcherImpl struct {
 }
 
 func (s *searcherImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
-	var (
-		results []search.Result
-		err     error
-	)
-	results, err = s.indexer.Search(ctx, q)
+	results, err := s.indexer.Search(ctx, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -30,12 +32,8 @@ func (s *searcherImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, er
 	return ids, nil
 }
 
-func (s *searcherImpl) SearchBlobsWithoutData(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
-	ids, err := s.SearchIDs(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	blobs, _, err := s.storage.GetManyBlobMetadata(ctx, ids)
+func (s *searcherImpl) SearchBlobMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	blobs, err := s.storage.GetMetadataByQuery(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +53,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	paginatedSearcher := paginated.Paginated(searcher)
-	return paginatedSearcher
+	safeSearcher := sacHelper.FilteredSearcher(searcher)
+	scopedSafeSearcher := postgres.WithScoping(safeSearcher)
+	return scopedSafeSearcher
 }

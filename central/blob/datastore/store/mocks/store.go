@@ -9,6 +9,7 @@ import (
 	io "io"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -82,9 +83,9 @@ func (mr *MockStoreMockRecorder) GetIDs(ctx interface{}) *gomock.Call {
 }
 
 // GetManyBlobMetadata mocks base method.
-func (m *MockStore) GetManyBlobMetadata(ctx context.Context, identifiers []string) ([]*storage.Blob, []int, error) {
+func (m *MockStore) GetManyBlobMetadata(ctx context.Context, ids []string) ([]*storage.Blob, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetManyBlobMetadata", ctx, identifiers)
+	ret := m.ctrl.Call(m, "GetManyBlobMetadata", ctx, ids)
 	ret0, _ := ret[0].([]*storage.Blob)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
@@ -92,9 +93,9 @@ func (m *MockStore) GetManyBlobMetadata(ctx context.Context, identifiers []strin
 }
 
 // GetManyBlobMetadata indicates an expected call of GetManyBlobMetadata.
-func (mr *MockStoreMockRecorder) GetManyBlobMetadata(ctx, identifiers interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetManyBlobMetadata(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyBlobMetadata", reflect.TypeOf((*MockStore)(nil).GetManyBlobMetadata), ctx, identifiers)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyBlobMetadata", reflect.TypeOf((*MockStore)(nil).GetManyBlobMetadata), ctx, ids)
 }
 
 // GetMetadata mocks base method.
@@ -111,6 +112,21 @@ func (m *MockStore) GetMetadata(ctx context.Context, name string) (*storage.Blob
 func (mr *MockStoreMockRecorder) GetMetadata(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetadata", reflect.TypeOf((*MockStore)(nil).GetMetadata), ctx, name)
+}
+
+// GetMetadataByQuery mocks base method.
+func (m *MockStore) GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMetadataByQuery", ctx, query)
+	ret0, _ := ret[0].([]*storage.Blob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMetadataByQuery indicates an expected call of GetMetadataByQuery.
+func (mr *MockStoreMockRecorder) GetMetadataByQuery(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetadataByQuery", reflect.TypeOf((*MockStore)(nil).GetMetadataByQuery), ctx, query)
 }
 
 // Upsert mocks base method.

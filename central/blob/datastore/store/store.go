@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -26,7 +27,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
-	GetManyBlobMetadata(ctx context.Context, identifiers []string) ([]*storage.Blob, []int, error)
+	GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error)
+	GetManyBlobMetadata(ctx context.Context, ids []string) ([]*storage.Blob, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 }
@@ -220,9 +222,14 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return s.store.GetIDs(ctx)
 }
 
+// GetMetadataByQuery get a list of Blobs by query.
+func (s *storeImpl) GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error) {
+	return s.store.GetByQuery(ctx, query)
+}
+
 // GetManyBlobMetadata reads many blobs without data
-func (s *storeImpl) GetManyBlobMetadata(ctx context.Context, identifiers []string) ([]*storage.Blob, []int, error) {
-	return s.store.GetMany(ctx, identifiers)
+func (s *storeImpl) GetManyBlobMetadata(ctx context.Context, ids []string) ([]*storage.Blob, []int, error) {
+	return s.store.GetMany(ctx, ids)
 }
 
 // GetMetadata all blob names
