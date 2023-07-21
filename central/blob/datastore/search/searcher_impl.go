@@ -5,16 +5,10 @@ import (
 
 	"github.com/stackrox/rox/central/blob/datastore/index"
 	"github.com/stackrox/rox/central/blob/datastore/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
-)
-
-var (
-	sacHelper = sac.ForResource(resources.Administration).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {
@@ -53,7 +47,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	safeSearcher := sacHelper.FilteredSearcher(searcher)
-	scopedSafeSearcher := postgres.WithScoping(safeSearcher)
+	// TODO(cdu): Add Administrator scope filter searcher
+	scopedSafeSearcher := postgres.WithScoping(searcher)
 	return scopedSafeSearcher
 }
