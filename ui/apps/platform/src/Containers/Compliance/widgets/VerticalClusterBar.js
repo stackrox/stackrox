@@ -15,7 +15,6 @@ import merge from 'deepmerge';
 
 import { standardBaseTypes } from 'constants/entityTypes';
 import colors from 'constants/visuals/colors';
-import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
 
 class VerticalClusterBar extends Component {
     static propTypes = {
@@ -41,12 +40,6 @@ class VerticalClusterBar extends Component {
         tickFormat: (x) => `${x}%`,
         labelLinks: {},
     };
-
-    constructor(props) {
-        super(props);
-
-        this.state = { hintInfo: null };
-    }
 
     getLegendData = () => {
         const { data, colors: colorRange } = this.props;
@@ -80,14 +73,6 @@ class VerticalClusterBar extends Component {
                 width: '10px',
                 ry: '2px',
                 cursor: 'pointer',
-            },
-            onValueMouseOver: (datum, e) => {
-                this.setState({
-                    hintInfo: { data: datum.hint, target: e.event.target },
-                });
-            },
-            onValueMouseOut: () => {
-                this.setState({ hintInfo: null });
             },
             onValueClick: (datum) => {
                 if (datum.link) {
@@ -144,8 +129,6 @@ class VerticalClusterBar extends Component {
                 );
             });
 
-        const { hintInfo } = this.state;
-
         return (
             <div {...containerProps} data-testid={id}>
                 <div className="flex flex-col h-full">
@@ -168,14 +151,6 @@ class VerticalClusterBar extends Component {
                             className="horizontal-bar-legend"
                         />
                     </div>
-                    {hintInfo?.target && (
-                        <HoverHint target={hintInfo.target}>
-                            <DetailedTooltipOverlay
-                                title={hintInfo.data.title}
-                                body={hintInfo.data.body}
-                            />
-                        </HoverHint>
-                    )}
                 </div>
             </div>
         );

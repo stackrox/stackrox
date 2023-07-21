@@ -1,4 +1,4 @@
-import { getHighValue, getLowValue } from './visual.helpers';
+import { getHighValue, getLowValue } from './Scatterplot.utils';
 
 describe('visuals.helpers', () => {
     describe('getHighValue', () => {

@@ -13,7 +13,6 @@ import {
     ChartLabel,
 } from 'react-vis';
 import BarGradient from 'Components/visuals/BarGradient';
-import { HoverHint, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
 
 const NUM_TICKS = 3;
@@ -27,7 +26,7 @@ function getFormattedData(data) {
 }
 
 function getLabelData(data) {
-    return data.map(({ y, url, hint }) => ({
+    return data.map(({ y, url }) => ({
         x: 0,
         y,
         label: y,
@@ -35,12 +34,11 @@ function getLabelData(data) {
         yOffset: -13,
         xOffset: 10,
         style: { fill: 'var(--primary-800)', cursor: 'pointer' },
-        hint,
     }));
 }
 
 const LabeledBarGraph = ({ data, title, history }) => {
-    const { hint, onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
+    const { onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
     const upperBoundX = max([...data.map((datum) => datum.x)]);
     const formattedData = getFormattedData(data);
@@ -91,15 +89,6 @@ const LabeledBarGraph = ({ data, title, history }) => {
                     onValueClick={onValueClickHandler}
                 />
             </FlexibleXYPlot>
-            {hint?.target && (
-                <HoverHint target={hint.target}>
-                    <DetailedTooltipOverlay
-                        title={hint.data.title}
-                        body={hint.data.body}
-                        footer={hint.data.footer}
-                    />
-                </HoverHint>
-            )}
         </>
     );
 };
