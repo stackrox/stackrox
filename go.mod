@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/containeranalysis v0.10.1
 	cloud.google.com/go/storage v1.31.0
 	github.com/BurntSushi/toml v1.3.2
-	github.com/ComplianceAsCode/compliance-operator v1.1.0
+	github.com/ComplianceAsCode/compliance-operator v1.2.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
@@ -16,7 +16,7 @@ require (
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.6.3
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.44.257
+	github.com/aws/aws-sdk-go v1.44.289
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.4
 	github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
@@ -164,7 +164,7 @@ require (
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/beevik/etree v1.1.1-0.20200718192613-4a2f8b9d084c // indirect
+	github.com/beevik/etree v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
