@@ -5,11 +5,11 @@ import (
 
 	errorsPkg "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policy/index"
-	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	"github.com/stackrox/rox/central/policy/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,7 +39,7 @@ func (ds *searcherImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*
 	return policies, err
 }
 
-// Search retrieves SearchResults from the indexer and storage
+// SearchPolicies retrieves SearchResults from the indexer and storage
 func (ds *searcherImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	policies, results, err := ds.searchPolicies(ctx, q)
 	if err != nil {
@@ -104,7 +104,7 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, policyMapping.OptionsMap)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PoliciesSchema.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
 	return paginated.WithDefaultSortOption(transformedCategoryNameSearcher, defaultSortOption)
 }
