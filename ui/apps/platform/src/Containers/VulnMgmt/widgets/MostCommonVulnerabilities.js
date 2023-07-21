@@ -6,14 +6,14 @@ import sortBy from 'lodash/sortBy';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
-import { getTooltip } from 'utils/vulnerabilityUtils';
+
+import LabeledBarGraph from './LabeledBarGraph';
 
 import ViewAllButton from './ViewAllButton';
 
@@ -40,7 +40,6 @@ const processData = (data, workflowState) => {
     return results.map((vuln) => {
         const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
         const url = workflowState.pushRelatedEntity(entityTypes.IMAGE_CVE, id).toUrl();
-        const tooltip = getTooltip(vuln);
 
         return {
             x: deploymentCount,
@@ -48,7 +47,6 @@ const processData = (data, workflowState) => {
                 isFixable ? ' / Fixable' : ''
             }`,
             url,
-            hint: tooltip,
         };
     });
 };
