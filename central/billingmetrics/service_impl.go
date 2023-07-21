@@ -1,7 +1,6 @@
 package billingmetrics
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -24,7 +22,6 @@ var (
 		user.With(permissions.View(resources.Administration)): {
 			"/v1.BillingMetricsService/GetMetrics",
 			"/v1.BillingMetricsService/GetMax",
-			"/v1.BillingMetricsService/GetCSV",
 		}})
 )
 
@@ -66,30 +63,6 @@ func (s *serviceImpl) GetMetrics(ctx context.Context, req *v1.BillingMetricsRequ
 		rec = append(rec, &v1.BillingMetricsResponse_BillingMetricsRecord{Ts: m.Ts, Metrics: (*v1.SecuredResourcesMetrics)(m.Sr)})
 	}
 	return &v1.BillingMetricsResponse{Record: rec}, nil
-}
-
-type serverWriter struct {
-	v1.BillingMetricsService_GetCSVServer
-}
-
-// Write implements the io.Writer interface.
-func (sw *serverWriter) Write(data []byte) (int, error) {
-	return len(data), sw.Send(&v1.BillingMetricsCSVResponse{Chunk: data})
-}
-
-func (s *serviceImpl) GetCSV(req *v1.BillingMetricsRequest, srv v1.BillingMetricsService_GetCSVServer) error {
-	metrics, err := s.store.Get(srv.Context(), req.GetFrom(), req.GetTo())
-	if err != nil {
-		return fmt.Errorf("cannot get billing metrics as CSV: %w", err)
-	}
-	md := metadata.New(map[string]string{"Content-Type": "text/csv"})
-	if err := srv.SetHeader(md); err != nil {
-		return err
-	}
-	if err := writeCSV(metrics, bufio.NewWriterSize(&serverWriter{srv}, 4096)); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *serviceImpl) GetMax(ctx context.Context, req *v1.BillingMetricsRequest) (*v1.BillingMetricsMaxResponse, error) {

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const period = 1 * time.Minute
+const period = 1 * time.Hour
 
 var (
 	log  = logging.LoggerForModule()
