@@ -31,9 +31,8 @@ message ReportStatus {
     }
 
     enum NotificationMethod {
-        UNSET = 0;
-        EMAIL = 1;
-        DOWNLOAD = 2;
+        EMAIL = 0;
+        DOWNLOAD = 1;
     }
 
     enum RunMethod {

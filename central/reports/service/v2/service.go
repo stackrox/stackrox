@@ -3,6 +3,7 @@ package v2
 import (
 	"context"
 
+	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -20,12 +21,14 @@ type Service interface {
 }
 
 // New returns a new instance of the service.
-func New(metadataDatastore metadataDS.DataStore, snapshotDatastore snapshotDS.DataStore, scheduler schedulerV2.Scheduler) Service {
+func New(metadataDatastore metadataDS.DataStore, reportConfigStore reportConfigDS.DataStore,
+	snapshotDatastore snapshotDS.DataStore, scheduler schedulerV2.Scheduler) Service {
 	if !features.VulnMgmtReportingEnhancements.Enabled() {
 		return nil
 	}
 	return &serviceImpl{
 		metadataDatastore: metadataDatastore,
+		reportConfigStore: reportConfigStore,
 		snapshotDatastore: snapshotDatastore,
 		scheduler:         scheduler,
 	}

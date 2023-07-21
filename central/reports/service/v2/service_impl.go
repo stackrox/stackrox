@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -31,12 +33,17 @@ var (
 			"/v2.ReportService/GetLastReportStatusConfigID",
 			"/v2.ReportService/GetReportHistory",
 		},
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+			"/v2.ReportService/RunReport",
+			"/v2.ReportService/CancelReport",
+		},
 	})
 )
 
 type serviceImpl struct {
 	apiV2.UnimplementedReportServiceServer
 	metadataDatastore metadataDS.DataStore
+	reportConfigStore reportConfigDS.DataStore
 	snapshotDatastore snapshotDS.DataStore
 	scheduler         schedulerV2.Scheduler
 }
@@ -70,7 +77,6 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
-
 }
 
 func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatusResponse, error) {
@@ -114,4 +120,26 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		ReportSnapshots: snapshots,
 	}
 	return &res, nil
+}
+
+func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest) (*apiV2.RunReportResponse, error) {
+	if req.GetReportConfigId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
+	}
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+	_, found, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetReportConfigId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error finding report configuration %s", req.GetReportConfigId())
+	}
+	if !found {
+		return nil, errors.Errorf("Report configuration id not found %s", req.GetReportConfigId())
+	}
+	return nil, nil
+}
+
+func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
+	return nil, nil
 }

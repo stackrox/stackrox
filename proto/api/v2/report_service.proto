@@ -65,21 +65,30 @@ message ReportStatus {
         SCHEDULED = 1;
     }
 
-    enum NotificationMethod {
-        UNSET    = 0;
-        EMAIL    = 1;
-        DOWNLOAD = 2;
-    }
-
-    RunState                   run_state                  = 1;
-    google.protobuf.Timestamp  completed_at               = 2;
-    string                     error_msg                  = 3;
-    ReportMethod               report_request_type        = 4;
+    RunState                   run_state       = 1;
+    google.protobuf.Timestamp  completed_at        = 2;
+    string                     error_msg       = 3;
+    ReportMethod               report_request_type   = 4;
     NotificationMethod         report_notification_method = 5;
 }
 
+enum NotificationMethod {
+    EMAIL = 0;
+    DOWNLOAD = 1;
+}
+
+message RunReportRequest {
+    string             report_config_id           = 1;
+    NotificationMethod report_notification_method = 2;
+}
+
+message RunReportResponse {
+    string report_config_id = 1;
+    string report_id        = 2;
+}
+
 service ReportService {
-    // GetReportStatus returns report status
+    // GetReportStatus returns report status for the given report id
     rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
             get: "/v2/reports/status/{id}"
@@ -99,4 +108,17 @@ service ReportService {
         };
     }
 
+    // Triggers a new report generation if it meets the criteria discussed in Concurrency section.
+    rpc RunReport(RunReportRequest) returns (RunReportResponse) {
+        option (google.api.http) = {
+            post: "/v2/reports/run"
+        };
+    }
+
+    // Cancels a queued report job for the given report id. If the job is not active, it is a noop.
+    rpc CancelReport(ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v2/reports/cancel/{id}"
+        };
+    }
 }

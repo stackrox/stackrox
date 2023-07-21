@@ -56,7 +56,7 @@ func (suite *ReportServiceTestSuite) TestGetReportStatus() {
 	id := apiV2.ResourceByID{
 		Id: "test_report",
 	}
-	s := serviceImpl{metadataDatastore: suite.reportDS}
+	s := New(suite.reportDS, nil, nil, nil)
 	repStatusResponse, err := s.GetReportStatus(ctx, &id)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), repStatusResponse.Status.GetErrorMsg(), status.GetErrorMsg())
