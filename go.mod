@@ -410,12 +410,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-// WARNING
-// =======
-//
-// The `scanner/go.mod` consumes this go.mod. When modifying replacements, make
-// sure to sync all changes with scanner/go.mod.
-//
 // HOW TO BUMP
 // ===========
 //
