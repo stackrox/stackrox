@@ -110,8 +110,9 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	if err != nil {
 		return nil, fmt.Errorf("identity extractor: %w", err)
 	}
+
 	// Create gRPC API service and debug routes.
-	var customRoutes []routes.CustomRoute
+	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 	for path, handler := range routes.DebugRoutes {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         path,
@@ -140,9 +141,9 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 			},
 		},
 	})
+
 	// Create and register API services.
 	var srvs []grpc.APIService
-
 	if backends.Indexer != nil {
 		s, err := indexer.NewIndexerService(backends.Indexer)
 		if err != nil {
