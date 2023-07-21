@@ -84,7 +84,7 @@ func main() {
 
 	// Wait for signals.
 	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, os.Interrupt, unix.SIGTERM)
+	signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
 	sig := <-sigC
 	zlog.Info(ctx).Str("signal", sig.String()).Send()
 }
