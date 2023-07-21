@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	storeMocks "github.com/stackrox/rox/central/apitoken/datastore/internal/store/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
