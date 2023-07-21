@@ -32,7 +32,6 @@ func (s *BillingMetricsStoreSuite) SetupTest() {
 }
 
 func (s *BillingMetricsStoreSuite) TearDownTest() {
-	Destroy(context.Background(), s.testDB)
 	s.testDB.Teardown(s.T())
 }
 

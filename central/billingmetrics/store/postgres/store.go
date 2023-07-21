@@ -148,10 +148,3 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 	}
 	return conn, conn.Release, nil
 }
-
-// Used for Testing
-
-// Destroy drops the tables associated with the target object type.
-func Destroy(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+baseTable+" CASCADE")
-}

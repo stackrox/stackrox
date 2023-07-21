@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -23,7 +22,6 @@ type billingMetricsSvcSuite struct {
 	suite.Suite
 
 	store *mockstore.MockStore
-	ctx   context.Context
 }
 
 func TestService(t *testing.T) {
@@ -35,7 +33,6 @@ var _ suite.SetupTestSuite = (*billingMetricsSvcSuite)(nil)
 func (s *billingMetricsSvcSuite) SetupTest() {
 	mockCtrl := gomock.NewController(s.T())
 	s.store = mockstore.NewMockStore(mockCtrl)
-	s.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (s *billingMetricsSvcSuite) TestGetMetrics() {
@@ -76,9 +73,9 @@ func (s *billingMetricsSvcSuite) TestGetMetrics() {
 		From: ts,
 		To:   ts2}
 
-	s.store.EXPECT().Get(s.ctx, gomock.AssignableToTypeOf(ts), gomock.AssignableToTypeOf(ts2)).Times(1).Return(stored, nil)
+	s.store.EXPECT().Get(context.Background(), gomock.AssignableToTypeOf(ts), gomock.AssignableToTypeOf(ts2)).Times(1).Return(stored, nil)
 	svc := New(s.store)
-	res, err := svc.GetMetrics(s.ctx, req)
+	res, err := svc.GetMetrics(context.Background(), req)
 	s.Require().NoError(err)
 	s.Equal(exp, res)
 }
@@ -112,9 +109,9 @@ func (s *billingMetricsSvcSuite) TestGetMax() {
 
 	req := &v1.BillingMetricsRequest{From: ts, To: ts2}
 
-	s.store.EXPECT().Get(s.ctx, gomock.AssignableToTypeOf(ts), gomock.AssignableToTypeOf(ts2)).Times(1).Return(stored, nil)
+	s.store.EXPECT().Get(context.Background(), gomock.AssignableToTypeOf(ts), gomock.AssignableToTypeOf(ts2)).Times(1).Return(stored, nil)
 	svc := New(s.store)
-	res, err := svc.GetMax(s.ctx, req)
+	res, err := svc.GetMax(context.Background(), req)
 	s.Require().NoError(err)
 	s.Equal(exp, res)
 }
