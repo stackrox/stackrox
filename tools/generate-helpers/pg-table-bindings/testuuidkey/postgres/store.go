@@ -87,7 +87,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestSingleUUIDKeyStructs(_ context.Context, batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
+func insertIntoTestSingleUUIDKeyStructs(batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

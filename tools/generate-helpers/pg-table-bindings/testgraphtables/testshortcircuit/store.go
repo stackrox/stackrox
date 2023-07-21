@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestShortCircuits(_ context.Context, batch *pgx.Batch, obj *storage.TestShortCircuit) error {
+func insertIntoTestShortCircuits(batch *pgx.Batch, obj *storage.TestShortCircuit) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

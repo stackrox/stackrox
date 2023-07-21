@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoClusterCves(_ context.Context, batch *pgx.Batch, obj *storage.ClusterCVE) error {
+func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

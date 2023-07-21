@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoAlerts(_ context.Context, batch *pgx.Batch, obj *storage.Alert) error {
+func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestG2GrandChild1(_ context.Context, batch *pgx.Batch, obj *storage.TestG2GrandChild1) error {
+func insertIntoTestG2GrandChild1(batch *pgx.Batch, obj *storage.TestG2GrandChild1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

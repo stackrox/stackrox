@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNotifiers(_ context.Context, batch *pgx.Batch, obj *storage.Notifier) error {
+func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.TestStruct) error {
+func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -118,7 +118,7 @@ func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	var query string
 
 	for childIndex, child := range obj.GetNested() {
-		if err := insertIntoTestStructsNesteds(ctx, batch, child, obj.GetKey1(), childIndex); err != nil {
+		if err := insertIntoTestStructsNesteds(batch, child, obj.GetKey1(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -128,7 +128,7 @@ func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	return nil
 }
 
-func insertIntoTestStructsNesteds(_ context.Context, batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
+func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

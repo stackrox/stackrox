@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
+func insertIntoRoleBindings(batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -133,7 +133,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetSubjects() {
-		if err := insertIntoRoleBindingsSubjects(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoRoleBindingsSubjects(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -143,7 +143,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	return nil
 }
 
-func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
+func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

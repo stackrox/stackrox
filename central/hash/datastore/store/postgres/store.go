@@ -84,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoHashes(_ context.Context, batch *pgx.Batch, obj *storage.Hash) error {
+func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

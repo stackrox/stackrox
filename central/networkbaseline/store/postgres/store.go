@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoNetworkBaselines(_ context.Context, batch *pgx.Batch, obj *storage.NetworkBaseline) error {
+func insertIntoNetworkBaselines(batch *pgx.Batch, obj *storage.NetworkBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

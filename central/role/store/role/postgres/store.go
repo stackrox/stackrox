@@ -84,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoRoles(_ context.Context, batch *pgx.Batch, obj *storage.Role) error {
+func insertIntoRoles(batch *pgx.Batch, obj *storage.Role) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

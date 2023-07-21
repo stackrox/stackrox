@@ -84,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceConfigs(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceConfig) error {
+func insertIntoComplianceConfigs(batch *pgx.Batch, obj *storage.ComplianceConfig) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

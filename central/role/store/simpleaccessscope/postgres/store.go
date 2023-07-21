@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoSimpleAccessScopes(_ context.Context, batch *pgx.Batch, obj *storage.SimpleAccessScope) error {
+func insertIntoSimpleAccessScopes(batch *pgx.Batch, obj *storage.SimpleAccessScope) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

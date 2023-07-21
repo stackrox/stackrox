@@ -87,7 +87,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorScanV2(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanV2) error {
+func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanV2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -108,7 +108,7 @@ func insertIntoComplianceOperatorScanV2(ctx context.Context, batch *pgx.Batch, o
 	var query string
 
 	for childIndex, child := range obj.GetProfile() {
-		if err := insertIntoComplianceOperatorScanV2Profiles(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoComplianceOperatorScanV2Profiles(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -118,7 +118,7 @@ func insertIntoComplianceOperatorScanV2(ctx context.Context, batch *pgx.Batch, o
 	return nil
 }
 
-func insertIntoComplianceOperatorScanV2Profiles(_ context.Context, batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanV2Profiles(batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secret) error {
+func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -130,7 +130,7 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	var query string
 
 	for childIndex, child := range obj.GetFiles() {
-		if err := insertIntoSecretsFiles(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -140,7 +140,7 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	return nil
 }
 
-func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
+func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -156,7 +156,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secretID, idx, childIndex); err != nil {
+		if err := insertIntoSecretsFilesRegistries(batch, child, secretID, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -166,7 +166,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(_ context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
+func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
