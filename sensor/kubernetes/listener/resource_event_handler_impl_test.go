@@ -17,6 +17,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+type contextKey int
+
+const (
+	ctxKeyTest contextKey = iota
+)
+
 func TestResourceEventHandlerImpl(t *testing.T) {
 	suite.Run(t, new(ResourceEventHandlerImplTestSuite))
 }
@@ -112,7 +118,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToSyncSet() {
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) TestContextIsPassed() {
-	ctx := context.WithValue(context.Background(), "test", "abc")
+	ctx := context.WithValue(context.Background(), ctxKeyTest, "abc")
 	handler := suite.newHandlerImplWithContext(ctx)
 
 	obj := randomID()
@@ -225,7 +231,7 @@ func matchContextValue(value string) gomock.Matcher {
 	return &contextMatcher{value}
 }
 
-type contextMatcher struct{
+type contextMatcher struct {
 	value string
 }
 
@@ -235,7 +241,7 @@ func (m *contextMatcher) Matches(x interface{}) bool {
 	if !ok {
 		return false
 	}
-	return event.Context.Value("test") == m.value
+	return event.Context.Value(ctxKeyTest) == m.value
 }
 
 // String implements gomock.Matcher
@@ -244,4 +250,3 @@ func (m *contextMatcher) String() string {
 }
 
 var _ gomock.Matcher = &contextMatcher{}
-

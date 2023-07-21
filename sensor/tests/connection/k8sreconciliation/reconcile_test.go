@@ -34,7 +34,6 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	c, err := helper.NewContext(t)
 	require.NoError(t, err)
 
-	
 	// Timeline of the events in this test:
 	// 1) Create deployment Nginx1
 	// 2) Create deployment Nginx2
@@ -56,9 +55,12 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 
 		testContext.WaitForSyncEvent(2 * time.Minute)
 		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
+		require.NoError(t, err)
 		deleteDeployment2, err := c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment2, nil)
+		require.NoError(t, err)
 
-		_, _ = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NetpolBlockEgress, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NetpolBlockEgress, nil)
+		require.NoError(t, err)
 
 		testContext.StopCentralGRPC()
 
