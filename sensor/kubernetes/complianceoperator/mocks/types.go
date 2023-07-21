@@ -10,6 +10,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
+	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -128,10 +129,10 @@ func (mr *MockInfoUpdaterMockRecorder) ProcessMessage(msg interface{}) *gomock.C
 }
 
 // ResponsesC mocks base method.
-func (m *MockInfoUpdater) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockInfoUpdater) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 

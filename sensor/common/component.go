@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 )
 
@@ -28,7 +29,7 @@ type SensorComponent interface {
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error
-	ResponsesC() <-chan *central.MsgFromSensor
+	ResponsesC() <-chan *message.ExpiringMessage
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

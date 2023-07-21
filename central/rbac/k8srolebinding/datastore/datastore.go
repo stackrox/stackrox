@@ -23,6 +23,7 @@ type DataStore interface {
 	SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error)
 
 	GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error)
+	GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error)
 	UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error
 	RemoveRoleBinding(ctx context.Context, id string) error
 }
@@ -37,7 +38,7 @@ func New(k8sRoleBindingStore store.Store, searcher search.Searcher) (DataStore, 
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)

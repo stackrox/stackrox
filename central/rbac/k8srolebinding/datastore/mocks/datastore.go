@@ -52,6 +52,22 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// GetManyRoleBindings mocks base method.
+func (m *MockDataStore) GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyRoleBindings", ctx, ids)
+	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetManyRoleBindings indicates an expected call of GetManyRoleBindings.
+func (mr *MockDataStoreMockRecorder) GetManyRoleBindings(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyRoleBindings", reflect.TypeOf((*MockDataStore)(nil).GetManyRoleBindings), ctx, ids)
+}
+
 // GetRoleBinding mocks base method.
 func (m *MockDataStore) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
 	m.ctrl.T.Helper()

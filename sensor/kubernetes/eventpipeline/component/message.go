@@ -1,6 +1,8 @@
 package component
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
@@ -52,11 +54,14 @@ type ResourceEvent struct {
 
 	// DeploymentReferences returns a list of deployment references generated from a Kubernetes Event
 	DeploymentReferences []DeploymentReference
+
+	// Context contains a context that determines if the message is still valid.
+	Context context.Context
 }
 
 // NewEvent creates a resource event with preset sensor event messages.
 func NewEvent(msg ...*central.SensorEvent) *ResourceEvent {
-	return &ResourceEvent{ForwardMessages: msg}
+	return &ResourceEvent{ForwardMessages: msg, Context: context.Background()}
 }
 
 // AddSensorEvent appends central sensor events to be bundled with this resource event.

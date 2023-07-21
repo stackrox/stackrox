@@ -9,7 +9,6 @@ import (
 
 	postgresGroupStore "github.com/stackrox/rox/central/group/datastore/internal/store/postgres"
 	roleDatastoreMocks "github.com/stackrox/rox/central/role/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/errox"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )

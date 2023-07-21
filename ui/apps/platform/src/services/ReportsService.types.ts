@@ -40,13 +40,8 @@ export type NotifierConfiguration = {
     emailConfig: {
         notifierId: string;
         mailingLists: string[];
-    }[];
+    };
     notifierName: string;
-};
-
-export type EmailNotifierConfiguration = {
-    notifierId: string;
-    mailingLists: string[];
 };
 
 type ScheduleBase = {

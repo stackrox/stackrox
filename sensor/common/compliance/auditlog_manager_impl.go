@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 const (
@@ -28,7 +29,7 @@ type auditLogCollectionManagerImpl struct {
 	eligibleComplianceNodes         map[string]sensor.ComplianceService_CommunicateServer
 
 	auditEventMsgs   chan *sensor.MsgFromCompliance
-	fileStateUpdates chan *central.MsgFromSensor
+	fileStateUpdates chan *message.ExpiringMessage
 
 	stopSig        concurrency.Signal
 	forceUpdateSig concurrency.Signal
@@ -71,7 +72,7 @@ func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) e
 	return nil
 }
 
-func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return a.fileStateUpdates
 }
 
@@ -163,14 +164,14 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 	return nodeStates
 }
 
-func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
+func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
+	return message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
 			},
 		},
-	}
+	})
 }
 
 // AddEligibleComplianceNode adds the specified node and it's connection to the list of nodes whose audit log collection lifecycle will be managed

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 )
 
@@ -36,7 +37,7 @@ type serviceImpl struct {
 	sensorAPI.UnimplementedSignalServiceServer
 
 	queue      chan *v1.Signal
-	indicators chan *central.MsgFromSensor
+	indicators chan *message.ExpiringMessage
 
 	processPipeline Pipeline
 }
@@ -57,7 +58,7 @@ func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (s *serviceImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return s.indicators
 }
 
@@ -66,7 +67,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	sensorAPI.RegisterSignalServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for signal service
 	return nil

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
@@ -37,10 +38,21 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		string(clusterScopedResource.Resource): storage.Access_READ_WRITE_ACCESS,
 	}).AnyTimes()
 
+	// There is a slight difference between idWithNoPermissions and
+	// idWithEmptyPermissions in the way what Permissions() returns.
+	// There is an assumption that identity implementations use nil when no
+	// Roles are associated with the identity and empty map when Role(s) has
+	// no permissions.
+
 	idWithNoPermissions := mocks.NewMockIdentity(gomock.NewController(t))
 	ctxWithNoPermissions := authn.ContextWithIdentity(context.Background(), idWithNoPermissions, t)
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
+
+	idWithEmptyPermissions := mocks.NewMockIdentity(gomock.NewController(t))
+	ctxWithEmptyPermissions := authn.ContextWithIdentity(context.Background(), idWithEmptyPermissions, t)
+	idWithEmptyPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
+	idWithEmptyPermissions.EXPECT().Permissions().Return(map[string]storage.Access{}).AnyTimes()
 
 	tests := []struct {
 		name                string
@@ -59,6 +71,16 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: ctx,
+		},
+		{
+			name:                "authenticated with no permissions => no error",
+			requiredPermissions: []permissions.ResourceWithAccess{},
+			ctx:                 ctxWithEmptyPermissions,
+		},
+		{
+			name:                "authenticated with no permissions and deny all scope => no error",
+			requiredPermissions: []permissions.ResourceWithAccess{},
+			ctx:                 sac.WithNoAccess(ctxWithEmptyPermissions),
 		},
 		{
 			name: "built-in scoped authz check permissions not sufficient permissions",
@@ -99,6 +121,17 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			p := With(tt.requiredPermissions...)
 			err := p.Authorized(tt.ctx, "not used")
 			assert.ErrorIs(t, err, tt.err)
+
+			// Once authentication is successful, Authenticated authorizer shall
+			// not return errox.NotAuthorized in contrast to With authorizer;
+			// otherwise the two should behave the same.
+			a := Authenticated()
+			err2 := a.Authorized(tt.ctx, "not used")
+			if errors.Is(err, errox.NotAuthorized) {
+				assert.ErrorIs(t, err2, nil)
+			} else {
+				assert.ErrorIs(t, err2, tt.err)
+			}
 		})
 	}
 }

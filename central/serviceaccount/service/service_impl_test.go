@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -197,19 +198,47 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		Return([]*storage.NamespaceMetadata{namespaceMetadata}, nil)
 
 	clusterScopeQuery := search.NewQueryBuilder().
+		AddBoolsHighlighted(search.ClusterRole, true).
+		AddStringsHighlighted(search.RoleID, search.WildcardString).
 		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.Namespace, "").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, true).ProtoQuery()
-	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).AnyTimes().
-		Return([]*storage.K8SRoleBinding{clusterRoleBinding}, nil)
+		ProtoQuery()
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), clusterScopeQuery).AnyTimes().
+		Return([]search.Result{
+			{
+				ID: clusterRoleBinding.GetId(),
+				Matches: map[string][]string{
+					"k8srolebinding.role_id":      {clusterRoleBinding.GetRoleId()},
+					"k8srolebinding.cluster_role": {strconv.FormatBool(clusterRoleBinding.GetClusterRole())},
+				},
+			},
+		}, nil)
 
 	namespaceScopeQuery := search.NewQueryBuilder().
+		AddStringsHighlighted(search.RoleID, search.WildcardString).
+		AddBoolsHighlighted(search.ClusterRole, true).
+		AddBoolsHighlighted(search.ClusterRole, false).
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).ProtoQuery()
-	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).AnyTimes().
-		Return([]*storage.K8SRoleBinding{rolebinding}, nil)
+		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
+		ProtoQuery()
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), namespaceScopeQuery).AnyTimes().
+		Return([]search.Result{
+			{
+				ID: rolebinding.GetId(),
+				Matches: map[string][]string{
+					"k8srolebinding.role_id":      {rolebinding.GetRoleId()},
+					"k8srolebinding.cluster_role": {strconv.FormatBool(rolebinding.GetClusterRole())},
+				},
+			},
+		}, nil)
+
+	suite.mockBindingStore.EXPECT().GetManyRoleBindings(gomock.Any(), []string{"binding1"}).AnyTimes().Return(
+		[]*storage.K8SRoleBinding{rolebinding}, nil, nil)
+	suite.mockBindingStore.EXPECT().GetManyRoleBindings(gomock.Any(), []string{"binding2"}).AnyTimes().Return(
+		[]*storage.K8SRoleBinding{clusterRoleBinding}, nil, nil)
 
 }

@@ -11,7 +11,6 @@ import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/binenc"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 const (

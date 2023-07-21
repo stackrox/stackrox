@@ -41,6 +41,7 @@
         "graphql": "^15.5.0",
         "history": "^4.9.0",
         "html2canvas": "1.0.0-rc.7",
+        "initials": "^3.1.2",
         "js-base64": "^3.7.2",
         "jspdf": "^2.3.1",
         "jspdf-autotable": "^3.5.14",

@@ -24,8 +24,6 @@ ci_job="$1"
 shift
 ci_export CI_JOB_NAME "$ci_job"
 
-gate_job "$ci_job"
-
 case "$ci_job" in
     gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
     eks-qa-e2e-tests|osd*qa-e2e-tests|gke*sensor-integration-tests)

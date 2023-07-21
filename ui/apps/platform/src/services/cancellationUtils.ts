@@ -7,6 +7,17 @@ export type CancellableRequest<T> = {
     cancel: () => void;
 };
 
+export function isCancellableRequest<T>(
+    maybeRequest: unknown
+): maybeRequest is CancellableRequest<T> {
+    return (
+        typeof maybeRequest === 'object' &&
+        maybeRequest !== null &&
+        'cancel' in maybeRequest &&
+        'request' in maybeRequest
+    );
+}
+
 /**
  * A subclass of Error used to signal that a Promise rejected due to cancellation.
  * This can be used to more easily separate the behavior of a cancelled

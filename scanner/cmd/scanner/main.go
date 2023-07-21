@@ -78,15 +78,13 @@ func main() {
 		os.Exit(1)
 	}
 	grpcSrv.Start()
+	defer grpcSrv.Stop()
 
 	// Wait for signals.
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigC
 	zlog.Warn(ctx).Str("signal", sig.String()).Send()
-
-	// TODO: Stop the gRPC server gracefully: Don't accept new connections and block
-	//       until all the pending RPCs are finished.
 }
 
 // initializeLogging Initialize zerolog and Quay's zlog.

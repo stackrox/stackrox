@@ -108,6 +108,9 @@ func (ReportStatus_RunMethod) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_c33fca74a5c9ce7e, []int{1, 2}
 }
 
+// ReportMetadata stores details associated with a report job requested for a ReportConfiguration.
+// ReportMetadata also stores the status of the report. There can be many ReportMetadatas for a given ReportConfiguration,
+// one for each requested report.
 type ReportMetadata struct {
 	ReportId       string `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,type(uuid)"`
 	ReportConfigId string `protobuf:"bytes,2,opt,name=report_config_id,json=reportConfigId,proto3" json:"report_config_id,omitempty" search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"`

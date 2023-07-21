@@ -69,11 +69,10 @@ func (w *ConfigMapWatcher) run(ctx concurrency.Waitable, namespace string, name 
 }
 
 func (w *ConfigMapWatcher) startWatcher(ctx concurrency.Waitable, namespace string, name string) {
-	watchCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(concurrency.AsContext(ctx), timeout)
-	defer cancel()
 	watcher, err := w.k8sClient.CoreV1().ConfigMaps(namespace).Watch(
-		watchCtx,
-		metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}))
+		concurrency.AsContext(ctx),
+		metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}),
+	)
 	if err != nil {
 		log.Errorw(fmt.Sprintf("Unable to start watching config map %s/%s", name, namespace), zap.Error(err))
 		return
