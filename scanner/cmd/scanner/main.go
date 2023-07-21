@@ -12,11 +12,11 @@ import (
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	grpcmetrics "github.com/stackrox/rox/central/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -128,8 +128,8 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	grpcSrv := grpc.NewAPI(grpc.Config{
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
-		GRPCMetrics:        grpcmetrics.GRPCSingleton(),
-		HTTPMetrics:        grpcmetrics.HTTPSingleton(),
+		GRPCMetrics:        grpcmetrics.NewGRPCMetrics(),
+		HTTPMetrics:        grpcmetrics.NewHTTPMetrics(),
 		Endpoints: []*grpc.EndpointConfig{
 			{
 				ListenEndpoint: ":8443",
