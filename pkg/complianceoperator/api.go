@@ -70,6 +70,7 @@ func GetRequiredResources() []APIResource {
 	return requiredAPIResources
 }
 
+// APIResource provides a wrapper around v1.APIResource.
 type APIResource struct {
 	v1.APIResource
 }
