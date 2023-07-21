@@ -6,6 +6,7 @@ import { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService'
 import { l4ProtocolLabels } from 'constants/networkFlow';
 import { ListDeployment } from 'types/deployment.proto';
 import useSet from 'hooks/useSet';
+import { GetSortParams } from 'hooks/useURLSort';
 
 function EmbeddedTable({
     deploymentId,
@@ -44,18 +45,21 @@ function EmbeddedTable({
 
 export type ListeningEndpointsTableProps = {
     deployments: (ListDeployment & { listeningEndpoints: ProcessListeningOnPort[] })[];
+    getSortParams: GetSortParams;
 };
 
-function ListeningEndpointsTable({ deployments }: ListeningEndpointsTableProps) {
+function ListeningEndpointsTable({ deployments, getSortParams }: ListeningEndpointsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
         <TableComposable variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    <Th width={30}>Deployment</Th>
-                    <Th>Namespace</Th>
-                    <Th>Cluster</Th>
+                    <Th width={30} sort={getSortParams('Deployment')}>
+                        Deployment
+                    </Th>
+                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
+                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
                 </Tr>
             </Thead>
             {deployments.map(({ id, name, namespace, cluster, listeningEndpoints }, rowIndex) => {
