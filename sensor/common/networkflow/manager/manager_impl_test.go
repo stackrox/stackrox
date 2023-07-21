@@ -454,6 +454,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	containerID := "container-id"
 	m, mockEntity, _, mockDetector := createManager(mockCtrl)
 	states := []struct {
+		testName                    string
 		notify                      common.SensorComponentEvent
 		connections                 []*HostnameAndConnections
 		expectEntityLookupContainer expectFn
@@ -462,11 +463,13 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 		expectedSensorMessage       *central.MsgFromSensor
 	}{
 		{
+			testName:    "In offline mode we should not send any messages upon receiving a connection",
 			notify:      common.SensorComponentEventOfflineMode,
 			connections: []*HostnameAndConnections{createHostnameConnections(hostname).withConnectionPair(createConnectionPair())},
 		},
 		{
-			notify: common.SensorComponentEventCentralReachable,
+			testName: "In online mode we should enrich and send the previously received connection",
+			notify:   common.SensorComponentEventCentralReachable,
 			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntity, 1, clusterentities.ContainerMetadata{
 				DeploymentID: srcID,
 			}, true),
@@ -480,14 +483,16 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			expectedSensorMessage: createExpectedSensorMessageWithConnections(&expectedEntitiesPair{srcID: srcID, dstID: dstID}),
 		},
 		{
-			notify: common.SensorComponentEventOfflineMode,
+			testName: "In offline mode we should not send any messages upon receiving multiple connections",
+			notify:   common.SensorComponentEventOfflineMode,
 			connections: []*HostnameAndConnections{
 				createHostnameConnections(hostname).withConnectionPair(createConnectionPair().containerID(fmt.Sprintf("%s-1", containerID))),
 				createHostnameConnections(hostname).withConnectionPair(createConnectionPair().containerID(fmt.Sprintf("%s-2", containerID))),
 			},
 		},
 		{
-			notify: common.SensorComponentEventCentralReachable,
+			testName: "In online mode we should enrich and send the previously received connections",
+			notify:   common.SensorComponentEventCentralReachable,
 			expectEntityLookupContainer: func() {
 				gomock.InOrder(
 					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
@@ -525,14 +530,16 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			),
 		},
 		{
-			notify: common.SensorComponentEventOfflineMode,
+			testName: "In offline mode we should not send any messages upon receiving multiple endpoints",
+			notify:   common.SensorComponentEventOfflineMode,
 			connections: []*HostnameAndConnections{
 				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now()).containerID(fmt.Sprintf("%s-1", containerID))),
 				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now()).containerID(fmt.Sprintf("%s-2", containerID))),
 			},
 		},
 		{
-			notify: common.SensorComponentEventCentralReachable,
+			testName: "In online mode we should enrich and send the previously received endpoints",
+			notify:   common.SensorComponentEventCentralReachable,
 			expectEntityLookupContainer: func() {
 				gomock.InOrder(
 					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
@@ -552,11 +559,11 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go m.enrichConnections(fakeTicker)
-	for i, state := range states {
+	for _, state := range states {
 		for _, cnn := range state.connections {
 			addHostConnection(m, cnn)
 		}
-		s.Run(fmt.Sprintf("iteration %d", i), func() {
+		s.Run(state.testName, func() {
 			state.expectEntityLookupContainer.runIfSet()
 			state.expectEntityLookupEndpoint.runIfSet()
 			state.expectDetector.runIfSet()
