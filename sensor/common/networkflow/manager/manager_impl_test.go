@@ -214,8 +214,12 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		expectedStatus              *connStatus
 	}{
 		"Rotten connection should return rotten status": {
-			connPair:                    createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{}, false),
+			connPair: createConnectionPair().incoming().external().firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)),
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{}, false
+				})
+			},
 			expectedStatus: &connStatus{
 				rotten: true,
 			},
@@ -223,10 +227,18 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		"Incoming external connection with unsuccessful lookup should return internet entity": {
 			connPair:            createConnectionPair().incoming().external(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: dstID,
-			}, true),
-			expectExternalLookup: expectExternalLookupHelper(mockExternalSrc, 1, nil),
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{
+						DeploymentID: dstID,
+					}, true
+				})
+			},
+			expectExternalLookup: func() {
+				mockExternalSrc.EXPECT().LookupByNetwork(gomock.Any()).Times(1).DoAndReturn(func(_ any) *storage.NetworkEntityInfo {
+					return nil
+				})
+			},
 			expectedStatus: &connStatus{
 				used: true,
 			},
@@ -240,12 +252,21 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		"Outgoing external connection with successful external lookup should return the correct id": {
 			connPair:            createConnectionPair().external(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: srcID,
-			}, true),
-			expectExternalLookup: expectExternalLookupHelper(mockExternalSrc, 1, &storage.NetworkEntityInfo{
-				Id: dstID,
-			}),
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{
+						DeploymentID: srcID,
+					}, true
+				})
+			},
+			expectExternalLookup: func() {
+				mockExternalSrc.EXPECT().LookupByNetwork(gomock.Any()).Times(1).DoAndReturn(func(_ any) *storage.NetworkEntityInfo {
+					return &storage.NetworkEntityInfo{
+						Id: dstID,
+					}
+				})
+
+			},
 			expectedStatus: &connStatus{
 				used: true,
 			},
@@ -261,16 +282,24 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		"Incoming connection with successful lookup should not return a networkConnIndicator": {
 			connPair:            createConnectionPair().incoming(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: srcID,
-			}, true),
-			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, []clusterentities.LookupResult{
-				{
-					Entity: networkgraph.Entity{
-						ID: dstID,
-					},
-				},
-			}),
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{
+						DeploymentID: srcID,
+					}, true
+				})
+			},
+			expectEntityLookupEndpoint: func() {
+				mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+					return []clusterentities.LookupResult{
+						{
+							Entity: networkgraph.Entity{
+								ID: dstID,
+							},
+						},
+					}
+				})
+			},
 			expectedStatus: &connStatus{
 				used: true,
 			},
@@ -278,38 +307,66 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 		"Incoming fresh connection with valid address should not return anything": {
 			connPair:            createConnectionPair().incoming(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: dstID,
-			}, true),
-			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, nil),
-			expectedStatus:             &connStatus{},
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{
+						DeploymentID: dstID,
+					}, true
+				})
+			},
+			expectEntityLookupEndpoint: func() {
+				mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+					return nil
+				})
+			},
+			expectedStatus: &connStatus{},
 		},
 		"Incoming fresh connection with invalid address should not return anything": {
 			connPair:            createConnectionPair().incoming().invalidAddress(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: dstID,
-			}, true),
-			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, nil),
-			expectExternalLookup:       expectExternalLookupHelper(mockExternalSrc, 1, nil),
-			expectedStatus:             &connStatus{},
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{
+						DeploymentID: dstID,
+					}, true
+				})
+			},
+			expectEntityLookupEndpoint: func() {
+				mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+					return nil
+				})
+			},
+			expectExternalLookup: func() {
+				mockExternalSrc.EXPECT().LookupByNetwork(gomock.Any()).Times(1).DoAndReturn(func(_ any) *storage.NetworkEntityInfo {
+					return nil
+				})
+			},
+			expectedStatus: &connStatus{},
 		},
 		"Outgoing connection with successful internal lookup should return the correct id": {
 			connPair:            createConnectionPair(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntityStore, 1, clusterentities.ContainerMetadata{
-				DeploymentID: srcID,
-			}, true),
-			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntityStore, 1, []clusterentities.LookupResult{
-				{
-					Entity: networkgraph.Entity{
-						ID: dstID,
-					},
-					ContainerPorts: []uint16{
-						80,
-					},
-				},
-			}),
+			expectEntityLookupContainer: func() {
+				mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
+					return clusterentities.ContainerMetadata{
+						DeploymentID: srcID,
+					}, true
+				})
+			},
+			expectEntityLookupEndpoint: func() {
+				mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
+					return []clusterentities.LookupResult{
+						{
+							Entity: networkgraph.Entity{
+								ID: dstID,
+							},
+							ContainerPorts: []uint16{
+								80,
+							},
+						},
+					}
+				})
+			},
 			expectedStatus: &connStatus{
 				used: true,
 			},
