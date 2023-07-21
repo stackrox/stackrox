@@ -10,13 +10,31 @@ import "storage/user.proto";
 
 package storage;
 
+// Represents the role of the node within the cluster
+enum NodeRole {
+    INFRA = 0;
+    WORKER = 1;
+    MASTER = 2;
+}
+
+// Represents the scan type whether a node or platform scan.
+enum ScanType {
+    UNSET_SCAN_TYPE = 0;
+    NODE_SCAN = 1;
+    PLATFORM_SCAN = 2;
+}
+
+message ProfileShim {
+    string                    profile_id               = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
+}
+
 // Next Tag: 13
 message ComplianceOperatorProfileV2 {
     string              id              = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              profile_id      = 2;
     string              name            = 3 [(gogoproto.moretags) = 'search:"Compliance Profile Name,hidden,store" sql:"index=category:unique;name:rule_unique_indicator"'];
     string              version         = 4 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden,store" sql:"index=category:unique;name:rule_unique_indicator"'];
-    string              profile_version = 5 [(gogoproto.moretags) = 'search:"Compliance Profile Version,hidden,store"'];
+    string              profile_version = 5;
     repeated string     product_type    = 6 [(gogoproto.moretags) = 'search:"Compliance Operator Profile Product Type,hidden,store"'];
     string              standard        = 7 [(gogoproto.moretags) = 'search:"Compliance Operator Profile Standard,hidden,store"'];
     map<string, string> labels          = 8;
@@ -46,33 +64,82 @@ message ComplianceOperatorRuleV2 {
 
 // Next Tag: 15
 message ComplianceOperatorScanSettingV2 {
-    enum NodeRole {
-        INFRA = 0;
-        WORKER = 1;
-        MASTER = 2;
-    }
-
-    string                        name                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    bool                          auto_apply_remediations  = 2;
+    string                        scan_name = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    bool                          auto_apply_remediations = 2;
     bool                          auto_update_remediations = 3;
-    bool                          one_time_scan            = 4;
-    map<string, string>           labels                   = 5;
-    map<string, string>           annotations              = 6;
-    message Profile {
-        string                    profile_id               = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
-    }
-    repeated Profile              profiles                 = 7;
+    bool                          one_time_scan = 4;
+    map<string, string>           labels = 5;
+    map<string, string>           annotations = 6;
+    repeated ProfileShim          profiles = 7;
+
+    // Cluster and an error if necessary to handle cases where the scan setting is
+    // unable to be applied to a cluster for whatever reason.
     message ClusterScanStatus {
-        string                    cluster_id               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
-        repeated string           errors                   = 2;
+        string                    cluster_id = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+        repeated string           errors = 2;
     }
-    repeated ClusterScanStatus    clusters                 = 8;
-    repeated NodeRole             node_roles               = 9;
-    bool                          strict_node_scan         = 10;
+    repeated ClusterScanStatus    clusters = 8;
+    repeated NodeRole             node_roles = 9;
+    // Will be configurable via env var
+    bool                          strict_node_scan = 10;
     // Starting point for schedule will probably have to build upon it
-    storage.Schedule              schedule                 = 11;
-    google.protobuf.Timestamp     created_time             = 12;
-    google.protobuf.Timestamp     last_updated_time        = 13;
+    storage.Schedule              schedule = 11;
+    google.protobuf.Timestamp     created_time = 12;
+    google.protobuf.Timestamp     last_updated_time = 13;
     // Most recent user to update the scan settings
-    SlimUser                      created_by               = 14;
+    SlimUser                      created_by = 14;
+}
+
+// Next Tag: 15
+// This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
+// while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
+// as the rules can change without impacting the historical result.
+message ComplianceOperatorCheckResultV2 {
+    enum CheckStatus {
+        UNSET = 0;
+        PASS = 1;
+        FAIL = 2;
+        ERROR = 3;
+        INFO = 4;
+        MANUAL = 5;
+        NOT_APPLICABLE = 6;
+        INCONSISTENT = 7;
+    }
+    string              id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string              check_id = 2;
+    string              check_name = 3;
+    string              cluster_id = 4 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    CheckStatus         status = 5  [(gogoproto.moretags) = 'search:"Compliance Check Status,hidden,store"'];
+    string              severity     = 6 [(gogoproto.moretags) = 'search:"Compliance Rule Severity,hidden,store"'];
+    string              description = 7;
+    string              instructions = 8;
+    map<string, string> labels = 9;
+    map<string, string> annotations = 10;
+    google.protobuf.Timestamp     created_time = 11;
+    string standard = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
+    string control = 13;
+    string scan_id = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
+}
+
+message ScanStatus {
+    string phase = 1;
+    string result = 2;
+    repeated string warnings = 3;
+}
+
+// Next Tag: 13
+// Scan object per cluster
+message ComplianceOperatorScanV2 {
+    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string              scan_name        = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden,store" sql:"fk(ComplianceOperatorScanSettingV2:scan_name),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
+    string                    cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator"'];
+    repeated string           errors = 4;
+    repeated ProfileShim      profile                 = 5;
+    map<string, string> labels      = 6;
+    map<string, string> annotations = 7;
+    ScanType            scan_type   = 8;
+    NodeRole            node_selector = 9;
+    ScanStatus          status = 10;
+    google.protobuf.Timestamp     created_time             = 11;
+    google.protobuf.Timestamp     last_executed_time        = 12;
 }
