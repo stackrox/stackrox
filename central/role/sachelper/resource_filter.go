@@ -1,8 +1,8 @@
 package sachelper
 
 import (
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 

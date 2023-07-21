@@ -11,7 +11,6 @@ import (
 	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 

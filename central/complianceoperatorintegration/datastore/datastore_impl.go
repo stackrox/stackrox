@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperatorintegration/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )

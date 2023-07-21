@@ -8,10 +8,10 @@ import (
 	indexMocks "github.com/stackrox/rox/central/policycategory/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/policycategory/store/mocks"
 	policyCategoryEdgeDSMocks "github.com/stackrox/rox/central/policycategoryedge/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
