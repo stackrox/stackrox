@@ -228,27 +228,14 @@ func (s *ComplianceRunResultsStoreSuite) TestSACUpsertMany() {
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACCount() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           2,
-		withNoAccess:            0,
-		withNoAccessToCluster:   0,
-		withAccessToDifferentNs: 0,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			count, err := s.store.Count(ctxs[name])
+			expectedCount := len(testCase.expectedObjects)
+			count, err := s.store.Count(testCase.context)
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
