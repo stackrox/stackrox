@@ -64,12 +64,8 @@ UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-ifeq ($(UNAME_S),Darwin)
-ifeq ($(UNAME_M),arm64)
-	# TODO(ROX-12064) build these images in the CI pipeline
-	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.59-arm64
-endif
+ifneq ($(UNAME_M),x86_64)
+	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
 endif
 
 TARGET_ARCH := "amd64"
@@ -560,14 +556,12 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
 main-image: all-builds
 	make docker-build-main-image
 
-$(CURDIR)/image/rhel/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image $(CURDIR)/image/rhel
-
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir central-db-image $(CURDIR)/image/rhel/bundle.tar.gz
+docker-build-main-image: copy-binaries-to-image-dir central-db-image
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
+		--build-arg DEBUG_BUILD="$(DEBUG_BUILD)" \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \

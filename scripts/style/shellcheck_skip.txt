@@ -14,7 +14,6 @@ dev-tools/enable-hotreload.sh
 dev-tools/roxctl.sh
 image/assets/docker-auth.sh
 image/postgres/scripts/docker-entrypoint.sh
-image/rhel/create-bundle.sh
 image/rhel/static-bin/central-entrypoint.sh
 image/rhel/static-bin/start-central.sh
 image/templates/common/ca-setup.sh

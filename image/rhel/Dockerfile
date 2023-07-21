@@ -1,12 +1,15 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
+ARG RPMS_BASE_IMAGE=ubi8
 ARG BASE_TAG=8.6
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${BASE_TAG} AS downloads
 
-COPY bundle.tar.gz /
-WORKDIR /bundle
-RUN microdnf install tar gzip && tar -zxf /bundle.tar.gz
+ARG DEBUG_BUILD=no
+
+WORKDIR /
+COPY download.sh /download.sh
+RUN /download.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
 
@@ -54,14 +57,13 @@ COPY bin/roxctl*            /assets/downloads/cli/
 COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 COPY ui /ui
 
-COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
-COPY --from=extracted_bundle /bundle/postgres-libs.rpm /tmp/
-COPY --from=extracted_bundle /bundle/postgres.rpm /tmp/
-COPY --from=extracted_bundle /bundle/go/ /go/
+COPY --from=downloads /output/rpms/ /tmp/
+COPY --from=downloads /output/go/ /go/
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 
+RUN if [[ "$(uname -m)" == "x86_64" ]]; then rpm -i /tmp/snappy.rpm && rm /tmp/snappy.rpm; fi
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
     ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
@@ -70,12 +72,11 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
-    rpm -i /tmp/snappy.rpm && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
     microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs lz4 bzip2 util-linux && \
     microdnf clean all && \
-    rm /tmp/snappy.rpm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
+    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     # TODO(ROX-13934): Potentially add *RPM* to this list again
     rpm -e --nodeps $(rpm -qa curl '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
