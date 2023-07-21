@@ -198,7 +198,7 @@ manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: parent-proto-generate controller-gen mapkubeapis ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
 	go fmt ./apis/...
@@ -218,7 +218,7 @@ ENVTEST_K8S_VERSION = 1.25
 test: manifests generate fmt vet  ## Run go unit tests
 	go test $(shell go list ./... | grep -v '^github.com/stackrox/rox/operator/tests') -coverprofile cover.out
 
-test-integration: manifests generate envtest mapkubeapis ## Run go integration tests
+test-integration: manifests generate envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./tests/...
 
 .PHONY: validate-crs
@@ -460,17 +460,3 @@ docker-push-bundle: ## Push docker image with the bundle.
 .PHONY: docker-push-index
 docker-push-index: ## Push docker image with the index.
 	docker push "$(INDEX_IMG)"
-
-##@ Mapkubeapis
-
-MAPKUBEAPIS_SOURCE_DIR = $(shell cd $(PROJECT_DIR)/..; go list -m -f '{{ .Dir }}' github.com/helm/helm-mapkubeapis)
-ifeq (, $(MAPKUBEAPIS_SOURCE_DIR))
-	MAPKUBEAPIS_SOURCE_DIR = $(shell cd $(PROJECT_DIR)/..; go mod download github.com/helm/helm-mapkubeapis; go list -m -f '{{ .Dir }}' github.com/helm/helm-mapkubeapis)
-endif
-
-pkg/config/mapkubeapis/Map.yaml: $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml
-	$(SILENT)mkdir -p $(PROJECT_DIR)/pkg/config/mapkubeapis
-	$(SILENT)cp -pf $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml $(PROJECT_DIR)/$@
-
-.PHONY: mapkubeapis
-mapkubeapis: pkg/config/mapkubeapis/Map.yaml
