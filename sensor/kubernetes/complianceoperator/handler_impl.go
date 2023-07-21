@@ -164,7 +164,7 @@ func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *centr
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
+	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	}
@@ -191,13 +191,13 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns).Create(m.ctx(), scanSetting, v1.CreateOptions{})
+	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSetting, v1.CreateOptions{})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
+	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	}
@@ -216,7 +216,7 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 
 	// Conventionally, compliance scan can be rerun by applying an annotation to ComplianceScan CR. Note that the CRs
 	// created from a scan configuration have the same name as scan configuration.
-	resI := m.client.Resource(complianceoperator.ComplianceScanGVR).Namespace(ns)
+	resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
 	obj, err := resI.Get(m.ctx(), request.GetScanName(), v1.GetOptions{})
 	if err != nil || obj == nil {
 		err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, request.GetScanName())
@@ -267,13 +267,13 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 			return m.composeAndSendDeleteResponse(request.GetId(), "", errors.New("Compliance operator not known"))
 		}
 		deletePolicy := v1.DeletePropagationForeground
-		scanSettingBindingResourceI := m.client.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(ns)
+		scanSettingBindingResourceI := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
 		err := scanSettingBindingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
 			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettingbindings/%s", request.GetName()), err)
 		}
 
-		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSettingGVR).Namespace(ns)
+		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
 		err = scanSettingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
 			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettings/%s", request.GetName()), err)

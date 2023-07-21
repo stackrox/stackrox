@@ -267,7 +267,7 @@ func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
 	// create
 	complianceScan := &v1alpha1.ComplianceScan{
 		TypeMeta: v1.TypeMeta{
-			Kind:       complianceoperator.ScanSettingGVK.Kind,
+			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -277,7 +277,8 @@ func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
 	}
 	obj, err := runtimeObjToUnstructured(complianceScan)
 	s.Require().NoError(err)
-	_, err = s.client.Resource(complianceoperator.ComplianceScanGVR).Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
+	_, err = s.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).
+		Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
 	s.Require().NoError(err)
 
 	// rerun
