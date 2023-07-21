@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 	bmetrics "github.com/stackrox/rox/central/billingmetrics/store"
 	cluStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 )
 
