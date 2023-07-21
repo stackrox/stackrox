@@ -482,11 +482,10 @@ func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout tim
 func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
-	lastErr := errors.New("no deployment found")
 	for {
 		select {
 		case <-timer.C:
-			c.t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			c.t.Errorf("timeout reached waiting for state: (%s): no deployment found", message)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -496,7 +495,10 @@ func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assert
 			if deployment != nil {
 				// Always return when deployment is found. As soon as deployment != nil it should be the deployment
 				// that matches assertion. If it isn't, the test should fail immediately. There's no point in waiting.
-				lastErr = assertion(deployment, action)
+				err := assertion(deployment, action)
+				if err != nil {
+					c.t.Errorf("first deployment found didn't meet expected state: %s", err)
+				}
 				return
 			}
 		}
