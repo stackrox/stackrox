@@ -37,7 +37,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *migrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), frozenSchema.CreateTableAPITokensStmt)
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), frozenSchema.CreateTableGroupsStmt)

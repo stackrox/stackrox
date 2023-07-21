@@ -387,7 +387,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *reportConfigsMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	s.reportConfigStore = reportConfigurationPostgres.New(s.db.DB)
 	s.accessScopeStore = accessScopePostgres.New(s.db.DB)
 	s.collectionStore = collectionPostgres.New(s.db.DB)

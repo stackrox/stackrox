@@ -93,7 +93,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.postgresDB = pghelper.ForT(s.T(), true)
+	s.postgresDB = pghelper.ForT(s.T(), false)
 	s.gormDB = s.postgresDB.GetGormDB()
 	pgutils.CreateTableFromModel(s.ctx, s.gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
 }
