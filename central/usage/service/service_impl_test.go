@@ -5,9 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/role"
 	mockstore "github.com/stackrox/rox/central/usage/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	testid "github.com/stackrox/rox/pkg/grpc/authn/test"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
@@ -97,4 +101,34 @@ func (s *usageSvcSuite) TestGetCurrentUsage() {
 	res, err := svc.GetMaxUsage(context.Background(), req)
 	s.Require().NoError(err)
 	s.Equal(exp, res)
+}
+
+func (s *usageSvcSuite) TestAuth() {
+	var err error
+
+	goodID := testid.NewTestIdentity("test", s.T())
+	goodID.AddRole("Administration", storage.Access_READ_ACCESS, role.AccessScopeIncludeAll)
+
+	badID := testid.NewTestIdentity("test", s.T())
+	badID.AddRole("Cluster", storage.Access_READ_ACCESS, role.AccessScopeIncludeAll)
+
+	svc := New(s.store)
+
+	ctx := authn.ContextWithIdentity(context.Background(), goodID, s.T())
+	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetCurrentUsage")
+	s.NoError(err)
+
+	ctx = authn.ContextWithIdentity(context.Background(), badID, s.T())
+	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetCurrentUsage")
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	ctx = authn.ContextWithIdentity(context.Background(), goodID, s.T())
+	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetMaxUsage")
+	s.NoError(err)
+
+	ctx = authn.ContextWithIdentity(context.Background(), badID, s.T())
+	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetMaxUsage")
+	s.Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
