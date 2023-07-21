@@ -1,14 +1,33 @@
 import React from 'react';
 import noop from 'lodash/noop';
-import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarChip } from '@patternfly/react-core';
+import { Toolbar, ToolbarGroup, ToolbarContent, Flex } from '@patternfly/react-core';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
-import { DefaultFilters } from '../types';
-import { Resource } from './FilterResourceDropdown';
+import { Globe } from 'react-feather';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
 import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
-import FilterChips from './FilterChips';
+
+import './WorkloadTableToolbar.css';
+
+type FilterChipProps = {
+    isGlobal?: boolean;
+    name: string;
+};
+
+function FilterChip({ isGlobal, name }: FilterChipProps) {
+    if (isGlobal) {
+        return (
+            <Flex alignItems={{ default: 'alignItemsCenter' }} flexWrap={{ default: 'nowrap' }}>
+                <Globe height="15px" />
+                {name}
+            </Flex>
+        );
+    }
+    return <Flex>{name}</Flex>;
+}
 
 const emptyDefaultFilters = {
     Severity: [],
@@ -56,24 +75,6 @@ function WorkloadTableToolbar({
         }
     }
 
-    function onDelete(category: FilterType | Resource, chip: ToolbarChip | string) {
-        const newSearchFilter = { ...searchFilter };
-        const newResourceFilter = searchFilter[category] as string[];
-        const chipKey = typeof chip === 'string' ? chip : chip.key;
-        newSearchFilter[category] = newResourceFilter.filter((fil: string) => fil !== chipKey);
-        onChangeSearchFilter(newSearchFilter);
-    }
-
-    function onDeleteGroup(category: FilterType | Resource) {
-        const newSearchFilter = { ...searchFilter };
-        delete newSearchFilter[category];
-        onChangeSearchFilter(newSearchFilter);
-    }
-
-    function onDeleteAll() {
-        onChangeSearchFilter({});
-    }
-
     return (
         <Toolbar id="workload-cves-table-toolbar">
             <ToolbarContent>
@@ -81,7 +82,6 @@ function WorkloadTableToolbar({
                     searchFilter={searchFilter}
                     setSearchFilter={setSearchFilter}
                     supportedResourceFilters={supportedResourceFilters}
-                    onDeleteGroup={onDeleteGroup}
                     autocompleteSearchContext={autocompleteSearchContext}
                 />
                 <ToolbarGroup>
@@ -89,12 +89,42 @@ function WorkloadTableToolbar({
                     {/* CVEStatusDropdown is disabled until fixability filters are fixed */}
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-u-w-100">
-                    <FilterChips
-                        defaultFilters={defaultFilters}
-                        searchFilter={searchFilter}
-                        onDeleteGroup={onDeleteGroup}
-                        onDelete={onDelete}
-                        onDeleteAll={onDeleteAll}
+                    <SearchFilterChips
+                        onFilterChange={onFilterChange}
+                        filterChipGroupDescriptors={[
+                            {
+                                displayName: 'Deployment',
+                                searchFilterName: 'DEPLOYMENT',
+                            },
+                            {
+                                displayName: 'CVE',
+                                searchFilterName: 'CVE',
+                            },
+                            {
+                                displayName: 'Image',
+                                searchFilterName: 'IMAGE',
+                            },
+                            {
+                                displayName: 'Namespace',
+                                searchFilterName: 'NAMESPACE',
+                            },
+                            {
+                                displayName: 'Cluster',
+                                searchFilterName: 'CLUSTER',
+                            },
+                            {
+                                displayName: 'Severity',
+                                searchFilterName: 'Severity',
+                                render: (filter: string) => (
+                                    <FilterChip
+                                        isGlobal={defaultFilters.Severity?.includes(
+                                            filter as VulnerabilitySeverityLabel
+                                        )}
+                                        name={filter}
+                                    />
+                                ),
+                            },
+                        ]}
                     />
                 </ToolbarGroup>
             </ToolbarContent>
