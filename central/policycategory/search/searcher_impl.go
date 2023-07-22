@@ -91,8 +91,7 @@ func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*st
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, policyCategoryMapping.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
-	paginatedSearcher := paginated.Paginated(transformedCategoryNameSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return paginated.WithDefaultSortOption(transformedCategoryNameSearcher, defaultSortOption)
 }
 
 // convertCategory returns proto search result from a category object and the internal search result
