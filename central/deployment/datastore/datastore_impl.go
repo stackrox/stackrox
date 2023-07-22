@@ -222,8 +222,8 @@ func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
 	return true
 }
 
-func (ds *datastoreImpl) mergeJobs(ctx context.Context, deployment *storage.Deployment) error {
-	if deployment.GetType() != kubernetes.CronJob && deployment.GetType() != kubernetes.Job {
+func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.Deployment) error {
+	if deployment.GetType() != kubernetes.CronJob {
 		return nil
 	}
 	if allImagesAreSpecifiedByDigest(deployment) {
@@ -269,7 +269,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	// Deployments that run intermittently and do not have images that are referenced by digest
 	// should maintain the digest of the last used image
-	if err := ds.mergeJobs(ctx, deployment); err != nil {
+	if err := ds.mergeCronJobs(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 	}
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
