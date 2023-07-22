@@ -12,10 +12,13 @@ import (
 
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/central/grpc/metrics"
+	grpcmetrics "github.com/stackrox/rox/central/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/stackrox/scanner/v4/indexer"
@@ -52,6 +55,12 @@ func main() {
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
+
+	// Initialize metrics and metrics server.
+	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())
+	metricsSrv.RunForever()
+	defer metricsSrv.Stop(ctx)
+	metrics.GatherThrottleMetricsForever(metrics.ScannerSubsystem.String())
 
 	// Create backends.
 	backends, err := createBackends(ctx)
@@ -101,12 +110,22 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	if err != nil {
 		return nil, fmt.Errorf("identity extractor: %w", err)
 	}
-	// Create gRPC API service.
+
+	// Create gRPC API service and debug routes.
+	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
+	for path, handler := range routes.DebugRoutes {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         path,
+			Authorizer:    allow.Anonymous(),
+			ServerHandler: handler,
+			Compression:   true,
+		})
+	}
 	grpcSrv := grpc.NewAPI(grpc.Config{
-		CustomRoutes:       nil,
+		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
-		GRPCMetrics:        metrics.GRPCSingleton(),
-		HTTPMetrics:        metrics.HTTPSingleton(),
+		GRPCMetrics:        grpcmetrics.GRPCSingleton(),
+		HTTPMetrics:        grpcmetrics.HTTPSingleton(),
 		Endpoints: []*grpc.EndpointConfig{
 			{
 				ListenEndpoint: ":8443",
@@ -114,11 +133,17 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 				ServeGRPC:      true,
 				ServeHTTP:      false,
 			},
+			{
+				ListenEndpoint: ":9095",
+				TLS:            verifier.NonCA{},
+				ServeGRPC:      false,
+				ServeHTTP:      true,
+			},
 		},
 	})
+
 	// Create and register API services.
 	var srvs []grpc.APIService
-
 	if backends.Indexer != nil {
 		s, err := indexer.NewIndexerService(backends.Indexer)
 		if err != nil {

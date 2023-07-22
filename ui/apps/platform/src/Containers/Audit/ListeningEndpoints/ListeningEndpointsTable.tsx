@@ -19,12 +19,12 @@ function EmbeddedTable({
         <TableComposable isNested>
             <Thead noWrap>
                 <Tr>
-                    <Th>Program name</Th>
-                    <Th>PID</Th>
-                    <Th>Port</Th>
-                    <Th>Protocol</Th>
-                    <Th>Pod ID</Th>
-                    <Th>Container name</Th>
+                    <Th width={20}>Program name</Th>
+                    <Th width={10}>PID</Th>
+                    <Th width={10}>Port</Th>
+                    <Th width={10}>Protocol</Th>
+                    <Th width={30}>Pod ID</Th>
+                    <Th width={20}>Container name</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -54,12 +54,16 @@ function ListeningEndpointsTable({ deployments, getSortParams }: ListeningEndpoi
         <TableComposable variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
+                    <Td width={10}>{/* Header for expanded column */}</Td>
                     <Th width={30} sort={getSortParams('Deployment')}>
                         Deployment
                     </Th>
-                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
+                    <Th width={30} sort={getSortParams('Namespace')}>
+                        Namespace
+                    </Th>
+                    <Th width={30} sort={getSortParams('Cluster')}>
+                        Cluster
+                    </Th>
                 </Tr>
             </Thead>
             {deployments.map(({ id, name, namespace, cluster, listeningEndpoints }, rowIndex) => {

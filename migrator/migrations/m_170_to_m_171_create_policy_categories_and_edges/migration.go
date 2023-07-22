@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -141,22 +142,31 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 	// read all policies, create policy id -> category ids edge map for each policy
 	err = policyStore.Walk(ctx, func(p *storage.Policy) error {
 		policyToCategoryIDsMap[p.Id] = make([]string, 0)
+		categorySet := set.NewStringSet()
 		for _, c := range p.Categories {
-			if categoryNameToIDMap[strings.Title(c)] != "" {
+			if strings.TrimSpace(c) == "" {
+				continue
+			}
+			categoryName := strings.Title(c)
+			// Ensure there are no duplicate categories for the same policy
+			if !categorySet.Add(categoryName) {
+				continue
+			}
+			if categoryID, exists := categoryNameToIDMap[categoryName]; exists {
 				// category exists
-				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], categoryNameToIDMap[c])
+				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], categoryID)
 			} else {
 				// category does not exist, has to be a non default category
 				id := uuid.NewV4().String()
 				if err := categoriesStore.Upsert(ctx, &storage.PolicyCategory{
 					Id:        id,
-					Name:      strings.Title(c),
+					Name:      categoryName,
 					IsDefault: false,
 				}); err != nil {
 					return err
 				}
 				policyToCategoryIDsMap[p.Id] = append(policyToCategoryIDsMap[p.Id], id)
-				categoryNameToIDMap[strings.Title(c)] = id
+				categoryNameToIDMap[categoryName] = id
 			}
 		}
 		// policies will be upserted without category info
