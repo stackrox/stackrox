@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/services"
 	"github.com/stackrox/rox/scanner/version"
 	"golang.org/x/sys/unix"
 )
@@ -32,9 +33,9 @@ import (
 // may use depending on the mode in which it is running.
 type Backends struct {
 	// Indexer is the indexing engine.
-	Indexer *indexer.Indexer
+	Indexer indexer.Indexer
 	// Matcher is the vulnerability matching engine.
-	Matcher *matcher.Matcher
+	Matcher matcher.Matcher
 }
 
 func main() {
@@ -153,18 +154,10 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	// Create and register API services.
 	var srvs []grpc.APIService
 	if backends.Indexer != nil {
-		s, err := indexer.NewIndexerService(backends.Indexer)
-		if err != nil {
-			return nil, fmt.Errorf("indexer service: %w", err)
-		}
-		srvs = append(srvs, s)
+		srvs = append(srvs, services.NewIndexerService(backends.Indexer))
 	}
 	if backends.Matcher != nil {
-		s, err := matcher.NewMatcherService(backends.Matcher)
-		if err != nil {
-			return nil, fmt.Errorf("matcher service: %w", err)
-		}
-		srvs = append(srvs, s)
+		srvs = append(srvs, services.NewMatcherService(backends.Matcher))
 	}
 	grpcSrv.Register(srvs...)
 
