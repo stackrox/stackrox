@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/sha512"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -28,6 +30,11 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 	}
 
+	if len(flag.Args()) < 1 {
+		log.Fatalf("Missing <image-url>")
+	}
+
+	imageURL := flag.Args()[0]
 	ctx := context.Background()
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
@@ -43,8 +50,12 @@ func main() {
 	c := v4.NewIndexerClient(conn)
 
 	resp, err := c.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
-		HashId:          "",
-		ResourceLocator: nil,
+		HashId: fmt.Sprintf("/v4/containerimage/%x", sha512.Sum512([]byte(imageURL))),
+		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{ContainerImage: &v4.ContainerImageLocator{
+			Url:      imageURL,
+			Username: "",
+			Password: "",
+		}},
 	})
 	log.Printf("Reply: %v (%v)", resp, err)
 	defer utils.IgnoreError(conn.Close)

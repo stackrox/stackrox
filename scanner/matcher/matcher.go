@@ -13,12 +13,16 @@ import (
 )
 
 // Matcher represents a vulnerability matcher.
-type Matcher struct {
+type Matcher interface {
+	Close(ctx context.Context) error
+}
+
+type matcherImpl struct {
 	matcher *libvuln.Libvuln
 }
 
 // NewMatcher creates a new matcher.
-func NewMatcher(ctx context.Context) (*Matcher, error) {
+func NewMatcher(ctx context.Context) (Matcher, error) {
 	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libvuln")
 	if err != nil {
 		return nil, errors.Wrap(err, "connecting to postgres for matcher")
@@ -48,12 +52,12 @@ func NewMatcher(ctx context.Context) (*Matcher, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "creating libvuln")
 	}
-	return &Matcher{
+	return &matcherImpl{
 		matcher: matcher,
 	}, nil
 }
 
 // Close closes the matcher.
-func (i *Matcher) Close(ctx context.Context) error {
+func (i *matcherImpl) Close(ctx context.Context) error {
 	return i.matcher.Close(ctx)
 }
