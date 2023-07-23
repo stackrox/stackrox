@@ -29,8 +29,8 @@ const (
 	DefaultExpiredVulnReqRetention = 90
 	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
 	DefaultDecommissionedClusterRetentionDays = 0
-	// DefaultReportSnapshotRetentionWindow number of days to retain reports
-	DefaultReportSnapshotRetentionWindow = 7
+	// DefaultReportHistoryRetentionWindow number of days to retain reports
+	DefaultReportHistoryRetentionWindow = 7
 )
 
 var (
@@ -84,7 +84,7 @@ func initialize() {
 
 	if privateConfig.GetReportRetentionConfig() == nil {
 		privateConfig.ReportRetentionConfig = &storage.ReportRetentionConfig{
-			SnapshotRetentionDurationDays: DefaultReportSnapshotRetentionWindow,
+			HistoryRetentionDurationDays: DefaultReportHistoryRetentionWindow,
 		}
 		needsUpsert = true
 	}

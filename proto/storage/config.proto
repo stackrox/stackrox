@@ -56,7 +56,7 @@ message DecommissionedClusterRetentionConfig {
 }
 
 message ReportRetentionConfig {
-    int32 snapshot_retention_duration_days              = 1;
+    int32 history_retention_duration_days       = 1;
 }
 
 // next available tag:7

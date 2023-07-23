@@ -297,7 +297,7 @@
     "storageReportRetentionConfig": {
       "type": "object",
       "properties": {
-        "snapshotRetentionDurationDays": {
+        "historyRetentionDurationDays": {
           "type": "integer",
           "format": "int32"
         }
