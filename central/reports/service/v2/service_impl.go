@@ -67,14 +67,14 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatusResponse, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.New("Empty request or id")
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
 	}
 	rep, found, err := s.metadataDatastore.Get(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Errorf("Report not found for id %s", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Report not found for id %s", req.GetId())
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
@@ -82,7 +82,7 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 
 func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatusResponse, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.New("Empty request or report config id")
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report config id")
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
 		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
