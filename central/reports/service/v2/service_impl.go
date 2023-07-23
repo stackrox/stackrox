@@ -8,6 +8,7 @@ import (
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
+	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -124,22 +125,57 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 
 func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest) (*apiV2.RunReportResponse, error) {
 	if req.GetReportConfigId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
+		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
 	}
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
-	_, found, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetReportConfigId())
+	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetReportConfigId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", req.GetReportConfigId())
 	}
 	if !found {
-		return nil, errors.Errorf("Report configuration id not found %s", req.GetReportConfigId())
+		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", req.GetReportConfigId())
 	}
-	return nil, nil
+	reportReq := &reportGen.ReportRequest{
+		ReportConfig: config,
+		ReportMetadata: &storage.ReportMetadata{
+			ReportConfigId: req.GetReportConfigId(),
+			Requester:      slimUser,
+			ReportStatus: &storage.ReportStatus{
+				RunState:          storage.ReportStatus_WAITING,
+				ReportRequestType: storage.ReportStatus_ON_DEMAND,
+			},
+		},
+	}
+	if req.GetReportNotificationMethod() == apiV2.NotificationMethod_EMAIL {
+		reportReq.ReportMetadata.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
+	} else {
+		reportReq.ReportMetadata.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+		// Scope the downloadable reports to the access scope of user demanding the report
+		reportReq.Ctx = ctx
+	}
+	reportID, err := s.scheduler.SubmitReportRequest(reportReq, false)
+	if err != nil {
+		return nil, err
+	}
+	return &apiV2.RunReportResponse{
+		ReportConfigId: req.GetReportConfigId(),
+		ReportId:       reportID,
+	}, nil
 }
 
-func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
-	return nil, nil
+func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.CancelReportResponse, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Report ID is empty")
+	}
+	cancelled, reason, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return &apiV2.CancelReportResponse{
+		Cancelled:      cancelled,
+		FailureMessage: reason,
+	}, nil
 }

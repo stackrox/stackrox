@@ -3,6 +3,7 @@ package v2
 import (
 	"container/list"
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
@@ -40,7 +43,7 @@ type Scheduler interface {
 	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
 	RemoveReportSchedule(reportConfigID string)
 	SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error)
-	CancelReportRequest(ctx context.Context, reportID string) error
+	CancelReportRequest(ctx context.Context, reportID string) (bool, string, error)
 	Start()
 	Stop()
 }
@@ -244,31 +247,40 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 
 // CancelReportRequest cancels a report that is still waiting in queue.
 // If the report is already being prepared or has completed execution, it cannot be cancelled.
-func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) error {
+func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, string, error) {
 	metadata, found, err := s.reportMetadataStore.Get(ctx, reportID)
 	if err != nil {
-		return errors.Errorf("Error finding report ID '%s': %s", reportID, err)
+		return false, "", errors.Errorf("Error finding report ID '%s': %s", reportID, err)
 	}
 	if !found {
-		return errors.Errorf("Report ID '%s' not found", reportID)
+		return false, "", errors.Errorf("Report ID '%s' does not exist", reportID)
+	}
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return false, "", errors.New("Could not determine user identity from provided context")
+	}
+	if slimUser.GetId() != metadata.GetRequester().GetId() {
+		return false, "", errors.Wrapf(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
 	}
 	if metadata.ReportStatus.RunState == storage.ReportStatus_SUCCESS ||
 		metadata.ReportStatus.RunState == storage.ReportStatus_FAILURE {
-		return nil
+		return false, fmt.Sprintf("Cannot cancel. Report ID '%s' has already completed execution.", reportID), nil
 	}
 
-	if !s.tryRemoveReportFromQueue(reportID) {
-		return errors.Errorf("Cannot cancel. Report ID '%s' is already being prepared", reportID)
+	removed := s.tryRemoveFromRequestQueue(reportID)
+	if !removed {
+		return false, fmt.Sprintf("Cannot cancel. Report ID '%s' is currently being prepared.", reportID), err
 	}
 	err = s.reportMetadataStore.DeleteReportMetadata(ctx, reportID)
 	if err != nil {
-		return errors.Errorf("Error deleting report ID '%s' from storage", reportID)
+		return false, "", errors.Errorf("Error deleting report ID '%s' from storage", reportID)
 	}
 
-	return nil
+	return true, "", nil
 }
 
-func (s *scheduler) tryRemoveReportFromQueue(reportID string) bool {
+// Returns true if the request was successfully removed from the ReportRequests queue
+func (s *scheduler) tryRemoveFromRequestQueue(reportID string) bool {
 	s.schedulerLock.Lock()
 	defer s.schedulerLock.Unlock()
 
@@ -297,9 +309,6 @@ func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubm
 	}
 	request.Collection = collection
 
-	if request.ReportMetadata == nil || request.ReportMetadata.ReportStatus == nil {
-		return "", errors.New("Inva")
-	}
 	request.ReportMetadata.ReportStatus.RunState = storage.ReportStatus_WAITING
 	request.ReportMetadata.ReportStatus.QueuedAt = types.TimestampNow()
 	request.ReportMetadata.ReportId, err = s.validateAndPersistMetadata(request.Ctx, request.ReportMetadata, reSubmission)
@@ -423,7 +432,7 @@ func (s *scheduler) validateAndPersistMetadata(ctx context.Context, metadata *st
 			return "", err
 		}
 		if userHasAnotherReport {
-			return "", errors.Errorf("User already has a report running for config ID '%s'", metadata.GetReportConfigId())
+			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'", metadata.GetReportConfigId())
 		}
 	}
 

@@ -39,7 +39,7 @@ message ReportSnapshot {
         VulnerabilityReportFilters  vuln_report_filters   = 5;
     }
     CollectionSnapshot         collection_snapshot        = 6;
-    ReportSchedule                   schedule                   = 7;
+    ReportSchedule             schedule                   = 7;
     ReportStatus               report_status              = 8;
     repeated NotifierSnapshot notifiers                   = 9;
     SlimUser                  user                        = 10;
@@ -87,6 +87,14 @@ message RunReportResponse {
     string report_id        = 2;
 }
 
+message CancelReportResponse {
+    // cancelled is true when report is successfully cancelled
+    bool   cancelled       = 1;
+    // failure_message is set when the report cannot be cancelled due to a reason which is not an error like
+    // report already being prepared or completed execution.
+    string failure_message = 2;
+}
+
 service ReportService {
     // GetReportStatus returns report status for the given report id
     rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
@@ -108,7 +116,8 @@ service ReportService {
         };
     }
 
-    // Triggers a new report generation if it meets the criteria discussed in Concurrency section.
+    // Submits a new report generation request if the user requesting this report does not have another waiting or preparing
+    // report for the same report configuration.
     rpc RunReport(RunReportRequest) returns (RunReportResponse) {
         option (google.api.http) = {
             post: "/v2/reports/run"
@@ -116,7 +125,8 @@ service ReportService {
     }
 
     // Cancels a queued report job for the given report id. If the job is not active, it is a noop.
-    rpc CancelReport(ResourceByID) returns (Empty) {
+    // If a report is already being prepared, it won't be cancelled.
+    rpc CancelReport(ResourceByID) returns (CancelReportResponse) {
         option (google.api.http) = {
             post: "/v2/reports/cancel/{id}"
         };

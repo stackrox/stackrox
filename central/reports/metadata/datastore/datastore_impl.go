@@ -105,7 +105,7 @@ func (ds *datastoreImpl) AddReportMetadata(ctx context.Context, report *storage.
 		return "", err
 	}
 	if report.ReportId != "" {
-		return "", errors.New("new report metadata must not have a preset `id`")
+		return "", errors.New("New report metadata must not have a preset `id`")
 	}
 	report.ReportId = uuid.NewV4().String()
 	if err := ds.storage.Upsert(ctx, report); err != nil {
