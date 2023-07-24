@@ -97,6 +97,9 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
+                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN",
+                "COMPLIANCE_CHECK_RESULTS",
                 "BLOB"
               ]
             },
@@ -194,6 +197,9 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
+                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN",
+                "COMPLIANCE_CHECK_RESULTS",
                 "BLOB"
               ]
             },
@@ -285,6 +291,9 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
+                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN",
+                "COMPLIANCE_CHECK_RESULTS",
                 "BLOB"
               ]
             },
@@ -425,10 +434,13 @@
         "REPORT_METADATA",
         "REPORT_SNAPSHOT",
         "COMPLIANCE_INTEGRATIONS",
+        "COMPLIANCE_SCAN_SETTINGS",
+        "COMPLIANCE_SCAN",
+        "COMPLIANCE_CHECK_RESULTS",
         "BLOB"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 56"
+      "title": "Next available tag: 59"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

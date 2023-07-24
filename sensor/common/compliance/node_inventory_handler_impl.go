@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
-	toCentral    <-chan *central.MsgFromSensor
+	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
 	acksFromCentral chan common.MessageToComplianceWithAddress
@@ -39,7 +40,7 @@ func (c *nodeInventoryHandlerImpl) Capabilities() []centralsensor.SensorCapabili
 }
 
 // ResponsesC returns a channel with messages to Central. It must be called after Start() for the channel to be not nil
-func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *nodeInventoryHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.toCentral == nil {
@@ -102,8 +103,8 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 
 // run handles the messages from Compliance and forwards them to Central
 // This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
-func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan common.MessageToComplianceWithAddress) {
-	toCentral := make(chan *central.MsgFromSensor)
+func (c *nodeInventoryHandlerImpl) run() (<-chan *message.ExpiringMessage, <-chan common.MessageToComplianceWithAddress) {
+	toCentral := make(chan *message.ExpiringMessage)
 	toCompliance := make(chan common.MessageToComplianceWithAddress)
 
 	go c.nodeInventoryHandlingLoop(toCentral, toCompliance)
@@ -111,7 +112,7 @@ func (c *nodeInventoryHandlerImpl) run() (<-chan *central.MsgFromSensor, <-chan 
 	return toCentral, toCompliance
 }
 
-func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *central.MsgFromSensor, toCompliance chan common.MessageToComplianceWithAddress) {
+func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *message.ExpiringMessage, toCompliance chan common.MessageToComplianceWithAddress) {
 	defer c.stopper.Flow().ReportStopped()
 	defer close(toCentral)
 	defer close(toCompliance)
@@ -168,13 +169,13 @@ func (c *nodeInventoryHandlerImpl) sendAckToCompliance(complianceC chan<- common
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *central.MsgFromSensor, inventory *storage.NodeInventory) {
+func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.ExpiringMessage, inventory *storage.NodeInventory) {
 	if inventory == nil {
 		return
 	}
 	select {
 	case <-c.stopper.Flow().StopRequested():
-	case toC <- &central.MsgFromSensor{
+	case toC <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id:     inventory.GetNodeId(),
@@ -184,6 +185,6 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *central.MsgFrom
 				},
 			},
 		},
-	}:
+	}):
 	}
 }

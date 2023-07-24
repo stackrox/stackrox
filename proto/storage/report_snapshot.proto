@@ -11,6 +11,8 @@ import "storage/schedule.proto";
 
 package storage;
 
+// ReportSnapshot stores the snapshot of a completed report job. It stores a projection of ReportConfiguration, collection,
+// vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
 message ReportSnapshot {
     enum ReportType {
         VULNERABILITY = 0;

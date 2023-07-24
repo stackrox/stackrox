@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -126,7 +127,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
-	indicators := make(chan *central.MsgFromSensor)
+	indicators := make(chan *message.ExpiringMessage)
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
 	networkFlowManager :=

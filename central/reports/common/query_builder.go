@@ -9,6 +9,7 @@ import (
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -21,25 +22,20 @@ type ReportQuery struct {
 }
 
 type queryBuilder struct {
-	clusters                []*storage.Cluster
-	namespaces              []*storage.NamespaceMetadata
 	vulnFilters             *storage.VulnerabilityReportFilters
 	collection              *storage.ResourceCollection
 	collectionQueryResolver collectionDataStore.QueryResolver
-	lastSuccessfulRunTime   time.Time
+	dataStartTime           time.Time
 }
 
 // NewVulnReportQueryBuilder builds a query builder to build scope and cve filtering queries for vuln reporting
-func NewVulnReportQueryBuilder(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata,
-	collection *storage.ResourceCollection, vulnFilters *storage.VulnerabilityReportFilters,
-	collectionQueryRes collectionDataStore.QueryResolver, lastSuccessfulRunTime time.Time) *queryBuilder {
+func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilters *storage.VulnerabilityReportFilters,
+	collectionQueryRes collectionDataStore.QueryResolver, dataStartTime time.Time) *queryBuilder {
 	return &queryBuilder{
-		clusters:                clusters,
-		namespaces:              namespaces,
 		vulnFilters:             vulnFilters,
 		collection:              collection,
 		collectionQueryResolver: collectionQueryRes,
-		lastSuccessfulRunTime:   lastSuccessfulRunTime,
+		dataStartTime:           dataStartTime,
 	}
 }
 
@@ -54,8 +50,8 @@ func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
 		return nil, err
 	}
 	return &ReportQuery{
-		cveQuery,
-		deploymentsQuery,
+		CveFieldsQuery:   cveQuery,
+		DeploymentsQuery: deploymentsQuery,
 	}, nil
 }
 
@@ -80,10 +76,18 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 		conjuncts = append(conjuncts, search.NewQueryBuilder().AddExactMatches(search.Severity, severities...).Query())
 	}
 
-	if vulnReportFilters.SinceLastReport {
-		reportLastSuccessfulRunTs := fmt.Sprintf(">=%s", q.lastSuccessfulRunTime.Format("01/02/2006 3:04:05 PM MST"))
-		tsQ := search.NewQueryBuilder().AddStrings(search.FirstImageOccurrenceTimestamp, reportLastSuccessfulRunTs).Query()
+	if filterVulnsByFirstOccurrenceTime(vulnReportFilters) {
+		startTimeStr := fmt.Sprintf(">=%s", q.dataStartTime.Format("01/02/2006 3:04:05 PM MST"))
+		tsQ := search.NewQueryBuilder().AddStrings(search.FirstImageOccurrenceTimestamp, startTimeStr).Query()
 		conjuncts = append(conjuncts, tsQ)
 	}
+
 	return strings.Join(conjuncts, "+"), nil
+}
+
+func filterVulnsByFirstOccurrenceTime(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		return vulnReportFilters.SinceLastReport
+	}
+	return vulnReportFilters.GetSinceLastSentScheduledReport() || vulnReportFilters.GetSinceStartDate() != nil
 }

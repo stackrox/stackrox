@@ -160,7 +160,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 	// Remove a rule from the profile and verify it's gone from the results
-	ruleClient := dynamicClientGenerator.Resource(complianceoperator.RuleGVR).Namespace(namespace)
+	ruleClient := dynamicClientGenerator.Resource(complianceoperator.Rule.GroupVersionResource()).Namespace(namespace)
 	rule, err := ruleClient.Get(context.Background(), envVarRule, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -201,7 +201,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Delete a scansettingbinding
-	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(namespace)
+	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(namespace)
 	ssb, err := ssbClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -233,7 +233,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.ProfileGVR).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(namespace)
 	profile, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -265,7 +265,7 @@ func TestUpdateProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.ProfileGVR).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(namespace)
 	profileObj, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 

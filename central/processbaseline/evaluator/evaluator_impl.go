@@ -8,10 +8,10 @@ import (
 	baselinesStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	baselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	indicatorsStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )

@@ -109,7 +109,10 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			case <-ctx.Done():
 				return
 			case _, ok := <-c.umh.RetryCommand():
-				if ok && c.cache != nil {
+				if c.cache == nil {
+					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
+					t.Reset(time.Second)
+				} else if ok {
 					nodeInventoriesC <- c.cache
 				}
 			case <-t.C:

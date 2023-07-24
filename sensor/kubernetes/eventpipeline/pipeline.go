@@ -5,12 +5,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -35,7 +35,7 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 
-	pipelineResponses := make(chan *central.MsgFromSensor)
+	pipelineResponses := make(chan *message.ExpiringMessage)
 	return &eventPipeline{
 		eventsC:     pipelineResponses,
 		stopSig:     concurrency.NewSignal(),

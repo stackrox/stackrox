@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -30,7 +31,7 @@ type ClusterMetrics interface {
 // New returns a new cluster metrics Sensor component.
 func New(k8sClient kubernetes.Interface) ClusterMetrics {
 	return &clusterMetricsImpl{
-		output:          make(chan *central.MsgFromSensor),
+		output:          make(chan *message.ExpiringMessage),
 		stopper:         concurrency.NewStopper(),
 		pollingInterval: defaultInterval,
 		pollingTimeout:  defaultTimeout,
@@ -39,7 +40,7 @@ func New(k8sClient kubernetes.Interface) ClusterMetrics {
 }
 
 type clusterMetricsImpl struct {
-	output          chan *central.MsgFromSensor
+	output          chan *message.ExpiringMessage
 	stopper         concurrency.Stopper
 	pollingInterval time.Duration
 	pollingTimeout  time.Duration
@@ -66,7 +67,7 @@ func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (cm *clusterMetricsImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (cm *clusterMetricsImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return cm.output
 }
 
@@ -83,11 +84,11 @@ func (cm *clusterMetricsImpl) Poll() {
 				return
 			case <-ticker.C:
 				if metrics, err := cm.collectMetrics(); err == nil {
-					cm.output <- &central.MsgFromSensor{
+					cm.output <- message.New(&central.MsgFromSensor{
 						Msg: &central.MsgFromSensor_ClusterMetrics{
 							ClusterMetrics: metrics,
 						},
-					}
+					})
 				} else {
 					log.Errorf("Collection of cluster metrics failed: %v", err.Error())
 				}

@@ -11,3 +11,17 @@ export const cvesDiscoveredSinceLabelMap: Record<CVESDiscoveredSince, string> = 
     SINCE_LAST_REPORT: 'Last successful scheduled run report',
     START_DATE: 'Custom start date',
 };
+
+export const commaSeparateWithAnd = (arr: string[]) => {
+    if (arr.length === 0) {
+        return '';
+    }
+    if (arr.length === 1) {
+        return arr[0];
+    }
+    const last = arr.pop();
+    if (!last) {
+        return arr.join(', ');
+    }
+    return `${arr.join(', ')} and ${last}`;
+};

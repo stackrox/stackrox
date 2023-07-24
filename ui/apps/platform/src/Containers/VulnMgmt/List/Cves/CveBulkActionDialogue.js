@@ -5,7 +5,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 import uniqBy from 'lodash/uniqBy';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
@@ -13,6 +13,7 @@ import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.
 import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { truncate } from 'utils/textUtils';
 import { splitCvesByType } from 'utils/vulnerabilityUtils';
 
@@ -235,7 +236,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
 
         addToFunc(policy)
             .then(() => {
-                setMessageObj({ type: 'success', message: 'Policy successfully saved' });
+                setMessageObj({ variant: 'success', title: 'Policy successfully saved' });
 
                 // close the dialog after giving the user a little time to process the success message
                 dialogueRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -243,8 +244,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
             })
             .catch((error) => {
                 setMessageObj({
-                    type: 'error',
-                    message: `Policy could not be saved. Please try again. (${error})`,
+                    variant: 'danger',
+                    title: 'Policy could not be saved. Please try again.',
+                    text: getAxiosErrorMessage(error),
                 });
 
                 // hide the error message after giving the user time to read it
@@ -290,7 +292,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
                 ) : (
                     <>
                         {messageObj && (
-                            <Message type={messageObj.type}>{messageObj.message}</Message>
+                            <Alert variant={messageObj.variant} isInline title={messageObj.title}>
+                                {messageObj.text}
+                            </Alert>
                         )}
                         <CveToPolicyShortForm
                             policy={policy}

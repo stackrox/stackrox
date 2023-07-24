@@ -22,6 +22,7 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 
 import { getDate } from 'utils/dateUtils';
 import {
+    commaSeparateWithAnd,
     cvesDiscoveredSinceLabelMap,
     imageTypeLabelMap,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
@@ -29,6 +30,7 @@ import { fixabilityLabels } from 'constants/reportConstants';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 
+import { daysOfMonthMap, daysOfWeekMap } from 'Components/PatternFly/DayPickerDropdown';
 import exampleReportsCSVData from '../exampleReportsCSVData';
 
 export type ReportReviewFormParams = {
@@ -62,6 +64,43 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
         ) : (
             <li>None</li>
         );
+
+    const deliveryDestinations =
+        formValues.deliveryDestinations.length !== 0 ? (
+            formValues.deliveryDestinations.map((deliveryDestination) => (
+                <li key={deliveryDestination.notifier?.id}>{deliveryDestination.notifier?.name}</li>
+            ))
+        ) : (
+            <li>None</li>
+        );
+
+    const mailingLists =
+        formValues.deliveryDestinations.length !== 0 ? (
+            formValues.deliveryDestinations.map((deliveryDestination) => {
+                const emails = deliveryDestination?.mailingLists.join(', ');
+                return <li key={emails}>{emails}</li>;
+            })
+        ) : (
+            <li>None</li>
+        );
+
+    let days = '';
+    if (formValues.schedule.intervalType === 'WEEKLY') {
+        const daysArr = formValues.schedule.daysOfWeek.map((day) => daysOfWeekMap[day]);
+        days = commaSeparateWithAnd(daysArr);
+    } else {
+        const daysArr = formValues.schedule.daysOfMonth.map((day) =>
+            daysOfMonthMap[day].toLowerCase()
+        );
+        days = commaSeparateWithAnd(daysArr);
+    }
+    const interval = formValues.schedule.intervalType === 'WEEKLY' ? 'week' : 'month';
+    const scheduleDetailsText = (
+        <span>
+            Report is scheduled to be sent on <strong>{days}</strong> every{' '}
+            <strong>{interval}</strong>
+        </span>
+    );
 
     return (
         <>
@@ -157,13 +196,13 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Email notifier</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    Email integration 1
+                                    <ul>{deliveryDestinations}</ul>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Destribution list</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    sara@example.com
+                                    <ul>{mailingLists}</ul>
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                         </DescriptionList>
@@ -176,9 +215,7 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
                     </FlexItem>
                     <FlexItem flex={{ default: 'flexNone' }}>
                         <TextContent>
-                            <Text component={TextVariants.p}>
-                                Report is scheduled to be sent on Monday every week
-                            </Text>
+                            <Text component={TextVariants.p}>{scheduleDetailsText}</Text>
                         </TextContent>
                     </FlexItem>
                 </Flex>

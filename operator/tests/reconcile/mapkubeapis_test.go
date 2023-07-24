@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const mapFile = "../../config/mapkubeapis/Map.yaml"
+const mapFile = "../../pkg/config/mapkubeapis/Map.yaml"
 
 var (
 	pspTemplate = `apiVersion: policy/v1beta1

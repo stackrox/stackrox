@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import useRestQuery from 'Containers/Dashboard/hooks/useRestQuery';
+import useRestQuery from 'hooks/useRestQuery';
 import {
     Collection,
     getCollection,

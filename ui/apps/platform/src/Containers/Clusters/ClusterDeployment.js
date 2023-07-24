@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button } from '@patternfly/react-core';
+import { Alert, Button } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
-import { Message } from '@stackrox/ui-components';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import ToggleSwitch from 'Components/ToggleSwitch';
@@ -20,23 +19,24 @@ const ClusterDeploymentPage = ({
     toggleSA,
     managerType,
 }) => {
-    let managerTypeMsg =
-        'Dynamic configurations are automatically applied. If you edited static configurations or you need to redeploy, download a new bundle.';
+    let managerTypeTitle = 'Dynamic configurations are automatically applied';
+    let managerTypeText =
+        'If you edited static configurations or you need to redeploy, download a new bundle.';
     if (managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR') {
-        managerTypeMsg =
-            'Cluster labels have been saved. (All other cluster settings are managed by the Kubernetes operator.)';
+        managerTypeTitle = 'Cluster labels have been saved';
+        managerTypeText = 'All other cluster settings are managed by the Kubernetes operator.';
     }
     if (managerType === 'MANAGER_TYPE_HELM_CHART') {
-        managerTypeMsg =
-            'Cluster labels have been saved. (All other cluster settings are managed by the Helm chart.)';
+        managerTypeTitle = 'Cluster labels have been saved';
+        managerTypeText = 'All other cluster settings are managed by the Helm chart.';
     }
     return (
         <div className="md:max-w-sm">
             <div className="md:pr-4">
                 {editing && clusterCheckedIn && (
-                    <div className="w-full pb-3">
-                        <Message>{managerTypeMsg}</Message>
-                    </div>
+                    <Alert variant="info" isInline title={managerTypeTitle}>
+                        {managerTypeText}
+                    </Alert>
                 )}
                 {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
                     <div className={baseClass}>

@@ -52,16 +52,23 @@ func (c *clusterPermissionEvaluator) RolesForSubject(ctx context.Context, subjec
 
 func (c *clusterPermissionEvaluator) getBindingsAndRoles(ctx context.Context, subject *storage.Subject) ([]*storage.K8SRoleBinding, []*storage.K8SRole) {
 	q := search.NewQueryBuilder().
+		AddBoolsHighlighted(search.ClusterRole, true).
+		AddStringsHighlighted(search.RoleID, search.WildcardString).
 		AddExactMatches(search.ClusterID, c.clusterID).
-		AddBools(search.ClusterRole, true).
+		AddExactMatches(search.Namespace, "").
 		AddExactMatches(search.SubjectName, subject.GetName()).
 		AddExactMatches(search.SubjectKind, subject.GetKind().String()).
 		ProtoQuery()
-	clusterRoleBindings, err := c.bindingsStore.SearchRawRoleBindings(ctx, q)
+	clusterRoleBindingSearchResults, err := c.bindingsStore.Search(ctx, q)
 	if err != nil {
-		log.Errorf("error searching for clusterrolebindings: %v", err)
+		log.Errorf("Error searching for cluster role bindings: %v", err)
 		return nil, nil
 	}
-	roles := getRolesForRoleBindings(ctx, c.roleStore, clusterRoleBindings, c.clusterID, "")
-	return clusterRoleBindings, roles
+	roles := getRolesForRoleBindings(ctx, c.roleStore, clusterRoleBindingSearchResults, c.clusterID, "")
+	bindings, _, err := c.bindingsStore.GetManyRoleBindings(ctx, search.ResultsToIDs(clusterRoleBindingSearchResults))
+	if err != nil {
+		log.Errorf("Error retrieving cluster role bindings: %v", err)
+		return nil, nil
+	}
+	return bindings, roles
 }

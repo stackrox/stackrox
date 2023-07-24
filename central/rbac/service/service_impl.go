@@ -7,14 +7,14 @@ import (
 	"github.com/pkg/errors"
 	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	bindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
@@ -125,7 +125,7 @@ func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (
 	// Keep only binding specific fields in the query.
 	bindingQuery := &v1.RawQuery{
 		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
-			_, isBindingField := bindingOptions.OptionsMap.Get(field)
+			_, isBindingField := schema.RoleBindingsSchema.OptionsMap.Get(field)
 			return isBindingField
 		}),
 	}

@@ -8,13 +8,13 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
@@ -107,10 +107,11 @@ func insertIntoReportConfigurations(_ context.Context, batch *pgx.Batch, obj *st
 		obj.GetType(),
 		obj.GetScopeId(),
 		obj.GetResourceScope().GetCollectionId(),
+		obj.GetCreator().GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, ResourceScope_CollectionId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, ResourceScope_CollectionId = EXCLUDED.ResourceScope_CollectionId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, ResourceScope_CollectionId, Creator_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, ResourceScope_CollectionId = EXCLUDED.ResourceScope_CollectionId, Creator_Name = EXCLUDED.Creator_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -129,6 +130,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 		"type",
 		"scopeid",
 		"resourcescope_collectionid",
+		"creator_name",
 		"serialized",
 	}
 
@@ -149,6 +151,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetType(),
 			obj.GetScopeId(),
 			obj.GetResourceScope().GetCollectionId(),
+			obj.GetCreator().GetName(),
 			serialized,
 		})
 

@@ -4,6 +4,7 @@ import { createReportConfiguration } from 'services/ReportsService';
 import {
     Fixability,
     ReportConfiguration,
+    Schedule,
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
@@ -35,18 +36,18 @@ function useCreateReport(): CreateReportResult {
             error: null,
         });
 
-        const { reportParameters } = formValues;
+        const { reportParameters, deliveryDestinations, schedule: formSchedule } = formValues;
 
         // transform form values to values to be sent through API
         const fixability: Fixability =
             reportParameters.cveStatus.length > 1 ? 'BOTH' : reportParameters.cveStatus[0];
+
         const vulnReportFiltersBase: VulnerabilityReportFiltersBase = {
             fixability,
             severities: reportParameters.cveSeverities,
             imageTypes: reportParameters.imageType,
         };
         let vulnReportFilters: VulnerabilityReportFilters;
-
         if (reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
             vulnReportFilters = {
                 ...vulnReportFiltersBase,
@@ -67,6 +68,37 @@ function useCreateReport(): CreateReportResult {
             };
         }
 
+        const notifiers = deliveryDestinations.map((deliveryDestination) => {
+            return {
+                emailConfig: {
+                    notifierId: deliveryDestination.notifier?.id || '',
+                    mailingLists: deliveryDestination.mailingLists,
+                },
+                notifierName: '',
+            };
+        });
+
+        let schedule: Schedule;
+        if (formSchedule.intervalType === 'WEEKLY') {
+            schedule = {
+                intervalType: 'WEEKLY',
+                hour: 0,
+                minute: 0,
+                daysOfWeek: {
+                    days: formSchedule.daysOfWeek.map((day) => Number(day)),
+                },
+            };
+        } else {
+            schedule = {
+                intervalType: 'MONTHLY',
+                hour: 0,
+                minute: 0,
+                daysOfMonth: {
+                    days: formSchedule.daysOfMonth.map((day) => Number(day)),
+                },
+            };
+        }
+
         const reportData: ReportConfiguration = {
             id: '',
             name: reportParameters.reportName,
@@ -79,16 +111,8 @@ function useCreateReport(): CreateReportResult {
                     collectionName: reportParameters.reportScope?.name || '',
                 },
             },
-            // @TODO: Replace hardcoded values when we do notifiers and schedule
-            notifiers: [],
-            schedule: {
-                intervalType: 'WEEKLY',
-                hour: 0,
-                minute: 0,
-                daysOfWeek: {
-                    days: [3],
-                },
-            },
+            notifiers,
+            schedule,
         };
 
         // send API call
