@@ -11,7 +11,7 @@ var (
 	groupVersion = compv1alpha1.SchemeGroupVersion
 
 	// List of required compliance operator CRDs.
-	requiredAPIResources = make([]APIResource, 0)
+	requiredAPIResources []APIResource
 )
 
 // APIResources for compliance operator resources.
