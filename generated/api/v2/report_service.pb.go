@@ -890,7 +890,8 @@ func (m *RunReportResponse) Clone() *RunReportResponse {
 type CancelReportResponse struct {
 	// cancelled is true when report is successfully cancelled
 	Cancelled bool `protobuf:"varint,1,opt,name=cancelled,proto3" json:"cancelled,omitempty"`
-	// failure_message is set when the report cannot be cancelled because the report is already being prepared or completed execution.
+	// failure_message is set when the report cannot be cancelled due to a reason which is not an error like
+	// report already being prepared or completed execution.
 	FailureMessage       string   `protobuf:"bytes,2,opt,name=failure_message,json=failureMessage,proto3" json:"failure_message,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
