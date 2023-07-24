@@ -270,9 +270,12 @@
         },
         "decommissionedClusterRetention": {
           "$ref": "#/definitions/storageDecommissionedClusterRetentionConfig"
+        },
+        "reportRetentionConfig": {
+          "$ref": "#/definitions/storageReportRetentionConfig"
         }
       },
-      "title": "next available tag: 6"
+      "title": "next available tag:7"
     },
     "storagePublicConfig": {
       "type": "object",
@@ -288,6 +291,15 @@
         },
         "telemetry": {
           "$ref": "#/definitions/storageTelemetryConfiguration"
+        }
+      }
+    },
+    "storageReportRetentionConfig": {
+      "type": "object",
+      "properties": {
+        "historyRetentionDurationDays": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
