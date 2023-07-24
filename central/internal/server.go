@@ -7,6 +7,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // HTTPServer is a HTTP server to serve functionality available only within the cluster.
@@ -49,7 +50,12 @@ func (s *HTTPServer) RunForever() {
 }
 
 func runForever(server *http.Server) {
-	err := server.ListenAndServe()
+	// The reason we reuse mTLS certificate here is
+	// we only use TLS certificate here for encryption and thus
+	// do not care about which identity this certificate presents.
+	// Alternative solution discussed included issuing separate certificate for this endpoint
+	// which we decided not to pursue due to much bigger complexity.
+	err := server.ListenAndServeTLS(mtls.CertFilePath(), mtls.KeyFilePath())
 	// The HTTP server should never terminate.
 	log.Panicf("Unexpected termination of private HTTP server: %v", err)
 }
