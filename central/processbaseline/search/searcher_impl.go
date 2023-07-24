@@ -3,14 +3,12 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
@@ -19,17 +17,11 @@ var (
 
 type searcherImpl struct {
 	storage           store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
 
 func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
-	var (
-		results []search.Result
-		err     error
-	)
-	results, err = deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(s.indexer).Search(ctx, q)
-
+	results, err := s.formattedSearcher.Search(ctx, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -54,9 +46,6 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher) // Make the
-	// UnsafeSearcher safe.
-
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
-	return paginatedSearcher
+	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher)
+	return filteredSearcher
 }

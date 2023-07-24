@@ -113,40 +113,117 @@ func (s *NetworkpoliciesStoreSuite) TestStore() {
 	s.Equal(0, networkPolicyCount)
 }
 
-func (s *NetworkpoliciesStoreSuite) TestSACUpsert() {
-	obj := &storage.NetworkPolicy{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+const (
+	withAllAccess           = "AllAccess"
+	withNoAccess            = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess              = "Access"
+	withAccessToCluster     = "AccessToCluster"
+	withNoAccessToCluster   = "NoAccessToCluster"
+)
 
-	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedErr := range map[string]error{
-		withAllAccess:           nil,
-		withNoAccess:            sac.ErrResourceAccessDenied,
-		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
-		withAccess:              nil,
-		withAccessToCluster:     nil,
-	} {
+var (
+	withAllAccessCtx = sac.WithAllAccess(context.Background())
+)
+
+type testCase struct {
+	context                context.Context
+	expectedIDs            []string
+	expectedIdentifiers    []string
+	expectedMissingIndices []int
+	expectedObjects        []*storage.NetworkPolicy
+	expectedWriteError     error
+}
+
+func (s *NetworkpoliciesStoreSuite) getTestData(access storage.Access) (*storage.NetworkPolicy, *storage.NetworkPolicy, map[string]testCase) {
+	objA := &storage.NetworkPolicy{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.NetworkPolicy{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	testCases := map[string]testCase{
+		withAllAccess: {
+			context:                sac.WithAllAccess(context.Background()),
+			expectedMissingIndices: []int{},
+			expectedObjects:        []*storage.NetworkPolicy{objA, objB},
+			expectedWriteError:     nil,
+		},
+		withNoAccess: {
+			context:                sac.WithNoAccess(context.Background()),
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NetworkPolicy{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withNoAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(uuid.Nil.String()),
+				),
+			),
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NetworkPolicy{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccessToDifferentNs: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+					sac.NamespaceScopeKeys("unknown ns"),
+				),
+			),
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NetworkPolicy{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccess: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+					sac.NamespaceScopeKeys(objA.GetNamespace()),
+				),
+			),
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.NetworkPolicy{objA},
+			expectedWriteError:     nil,
+		},
+		withAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+				),
+			),
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.NetworkPolicy{objA},
+			expectedWriteError:     nil,
+		},
+	}
+
+	return objA, objB, testCases
+}
+
+func (s *NetworkpoliciesStoreSuite) TestSACUpsert() {
+	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
+			assert.ErrorIs(t, s.store.Upsert(testCase.context, obj), testCase.expectedWriteError)
 		})
 	}
 }
 
 func (s *NetworkpoliciesStoreSuite) TestSACUpsertMany() {
-	obj := &storage.NetworkPolicy{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
-	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedErr := range map[string]error{
-		withAllAccess:           nil,
-		withNoAccess:            sac.ErrResourceAccessDenied,
-		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
-		withAccess:              nil,
-		withAccessToCluster:     nil,
-	} {
+	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.NetworkPolicy{obj}), expectedErr)
+			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.NetworkPolicy{obj}), testCase.expectedWriteError)
 		})
 	}
 }
@@ -362,33 +439,16 @@ func (s *NetworkpoliciesStoreSuite) TestSACDeleteMany() {
 }
 
 func (s *NetworkpoliciesStoreSuite) TestSACGetMany() {
-	objA := &storage.NetworkPolicy{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.NetworkPolicy{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]struct {
-		elems          []*storage.NetworkPolicy
-		missingIndices []int
-	}{
-		withAllAccess:           {elems: []*storage.NetworkPolicy{objA, objB}, missingIndices: []int{}},
-		withNoAccess:            {elems: []*storage.NetworkPolicy{}, missingIndices: []int{0, 1}},
-		withNoAccessToCluster:   {elems: []*storage.NetworkPolicy{}, missingIndices: []int{0, 1}},
-		withAccessToDifferentNs: {elems: []*storage.NetworkPolicy{}, missingIndices: []int{0, 1}},
-		withAccess:              {elems: []*storage.NetworkPolicy{objA}, missingIndices: []int{1}},
-		withAccessToCluster:     {elems: []*storage.NetworkPolicy{objA}, missingIndices: []int{1}},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetId(), objB.GetId()})
+			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetId(), objB.GetId()})
 			assert.NoError(t, err)
-			assert.Equal(t, expected.elems, actual)
-			assert.Equal(t, expected.missingIndices, missingIndices)
+			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}
 
@@ -399,15 +459,6 @@ func (s *NetworkpoliciesStoreSuite) TestSACGetMany() {
 		assert.Nil(t, missingIndices)
 	})
 }
-
-const (
-	withAllAccess           = "AllAccess"
-	withNoAccess            = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
-	withAccess              = "Access"
-	withAccessToCluster     = "AccessToCluster"
-	withNoAccessToCluster   = "NoAccessToCluster"
-)
 
 func getSACContexts(obj *storage.NetworkPolicy, access storage.Access) map[string]context.Context {
 	return map[string]context.Context{

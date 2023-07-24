@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Bullseye,
     Button,
     Divider,
     PageSection,
     Pagination,
+    SearchInput,
     Spinner,
     Text,
     Title,
@@ -18,12 +19,35 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptySt
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
+import useURLSearch from 'hooks/useURLSearch';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
 
+const sortOptions = {
+    sortFields: ['Deployment', 'Namespace', 'Cluster'],
+    defaultSortOption: { field: 'Deployment', direction: 'asc' } as const,
+};
+
 function ListeningEndpointsPage() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
-    const { data, error, loading } = useDeploymentListeningEndpoints(page, perPage);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const [searchValue, setSearchValue] = useState(() => {
+        const filter = searchFilter.Deployment;
+        return Array.isArray(filter) ? filter.join(',') : filter;
+    });
+
+    const { data, error, loading } = useDeploymentListeningEndpoints(
+        searchFilter,
+        sortOption,
+        page,
+        perPage
+    );
+
+    function onSearchInputChange(_event, value) {
+        setSearchValue(value);
+    }
 
     return (
         <>
@@ -35,6 +59,19 @@ function ListeningEndpointsPage() {
             <PageSection isFilled className="pf-u-display-flex pf-u-flex-direction-column">
                 <Toolbar>
                     <ToolbarContent>
+                        <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
+                            <SearchInput
+                                aria-label="Search by deployment"
+                                placeholder="Search by deployment"
+                                value={searchValue}
+                                onChange={onSearchInputChange}
+                                onSearch={() => setSearchFilter({ Deployment: searchValue })}
+                                onClear={() => {
+                                    setSearchValue('');
+                                    setSearchFilter({});
+                                }}
+                            />
+                        </ToolbarItem>
                         <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                             <Pagination
                                 toggleTemplate={({ firstIndex, lastIndex }) => (
@@ -83,7 +120,9 @@ function ListeningEndpointsPage() {
                                         <Button
                                             variant="link"
                                             onClick={() => {
-                                                /* TODO */
+                                                setPage(1);
+                                                setSearchValue('');
+                                                setSearchFilter({});
                                             }}
                                         >
                                             Clear search
@@ -91,7 +130,10 @@ function ListeningEndpointsPage() {
                                     </EmptyStateTemplate>
                                 </Bullseye>
                             ) : (
-                                <ListeningEndpointsTable deployments={data} />
+                                <ListeningEndpointsTable
+                                    deployments={data}
+                                    getSortParams={getSortParams}
+                                />
                             )}
                         </>
                     )}

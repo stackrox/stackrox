@@ -52,22 +52,15 @@ type ScheduleBase = {
 
 export type Schedule =
     | (ScheduleBase & {
-          weekly: WeeklyInterval;
-      })
-    | (ScheduleBase & {
           daysOfWeek: DaysOfWeek;
       })
     | (ScheduleBase & {
           daysOfMonth: DaysOfMonth;
       });
 
-export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export type IntervalType = 'WEEKLY' | 'MONTHLY';
 
 export type Interval = DaysOfWeek | DaysOfMonth;
-
-export type WeeklyInterval = {
-    day: number; // int32
-};
 
 // Sunday = 0, Monday = 1, .... Saturday =  6
 export type DaysOfWeek = {

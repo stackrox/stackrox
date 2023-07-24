@@ -97,7 +97,9 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
-                "COMPLIANCE_SCAN_SETTINGS"
+                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN",
+                "COMPLIANCE_CHECK_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -194,7 +196,9 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
-                "COMPLIANCE_SCAN_SETTINGS"
+                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN",
+                "COMPLIANCE_CHECK_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -285,7 +289,9 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
-                "COMPLIANCE_SCAN_SETTINGS"
+                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN",
+                "COMPLIANCE_CHECK_RESULTS"
               ]
             },
             "collectionFormat": "multi"
@@ -425,10 +431,12 @@
         "REPORT_METADATA",
         "REPORT_SNAPSHOT",
         "COMPLIANCE_INTEGRATIONS",
-        "COMPLIANCE_SCAN_SETTINGS"
+        "COMPLIANCE_SCAN_SETTINGS",
+        "COMPLIANCE_SCAN",
+        "COMPLIANCE_CHECK_RESULTS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 55"
+      "title": "Next available tag: 58"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

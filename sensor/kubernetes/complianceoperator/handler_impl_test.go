@@ -24,11 +24,11 @@ type expectedResponse struct {
 	errSubstr string
 }
 
-func TestManager(t *testing.T) {
-	suite.Run(t, new(ManagerTestSuite))
+func TestHandler(t *testing.T) {
+	suite.Run(t, new(HandlerTestSuite))
 }
 
-type ManagerTestSuite struct {
+type HandlerTestSuite struct {
 	suite.Suite
 
 	client         *fake.FakeDynamicClient
@@ -36,7 +36,7 @@ type ManagerTestSuite struct {
 	statusInfo     *mocks.MockStatusInfo
 }
 
-func (s *ManagerTestSuite) SetupSuite() {
+func (s *HandlerTestSuite) SetupSuite() {
 	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 
 	if !features.ComplianceEnhancements.Enabled() {
@@ -45,18 +45,18 @@ func (s *ManagerTestSuite) SetupSuite() {
 	}
 }
 
-func (s *ManagerTestSuite) SetupTest() {
+func (s *HandlerTestSuite) SetupTest() {
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo)
 	s.Require().NoError(s.requestHandler.Start())
 }
 
-func (s *ManagerTestSuite) TearDownSuite() {
+func (s *HandlerTestSuite) TearDownSuite() {
 	s.requestHandler.Stop(nil)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyOneTimeScanSuccess() {
+func (s *HandlerTestSuite) TestProcessApplyOneTimeScanSuccess() {
 	msg := getTestOneTimeScanRequestMsg("ad-hoc", "ocp4-cis")
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -67,7 +67,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanSuccess() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyOneTimeScanInvalid() {
+func (s *HandlerTestSuite) TestProcessApplyOneTimeScanInvalid() {
 	msg := getTestOneTimeScanRequestMsg("ad-hoc")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -78,7 +78,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanInvalid() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyOneTimeScanComplianceDisabled() {
+func (s *HandlerTestSuite) TestProcessApplyOneTimeScanComplianceDisabled() {
 	msg := getDisableComplianceMsg()
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
@@ -95,7 +95,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanComplianceDisabled() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyOneTimeScanOperatorNSUnknown() {
+func (s *HandlerTestSuite) TestProcessApplyOneTimeScanOperatorNSUnknown() {
 	msg := getTestOneTimeScanRequestMsg("ad-hoc", "ocp4-cis")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -107,7 +107,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanOperatorNSUnknown() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyOneTimeScanAlreadyExists() {
+func (s *HandlerTestSuite) TestProcessApplyOneTimeScanAlreadyExists() {
 	msg := getTestOneTimeScanRequestMsg("ad-hoc", "ocp4-cis")
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -129,7 +129,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanAlreadyExists() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyScheduledScanSuccess() {
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanSuccess() {
 	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -140,7 +140,7 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanSuccess() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyScheduledScanInvalid() {
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanInvalid() {
 	msg := getTestScheduledScanRequestMsg("error", "error")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -151,7 +151,7 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanInvalid() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyScheduledScanComplianceDisabled() {
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanComplianceDisabled() {
 	msg := getDisableComplianceMsg()
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
@@ -168,7 +168,7 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanComplianceDisabled() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyScheduledScanOperatorNSUnknown() {
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanOperatorNSUnknown() {
 	msg := getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -180,7 +180,7 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanOperatorNSUnknown() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessApplyScheduledScanAlreadyExists() {
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanAlreadyExists() {
 	msg := getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -202,7 +202,7 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanAlreadyExists() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessDeleteScanConfigSuccess() {
+func (s *HandlerTestSuite) TestProcessDeleteScanConfigSuccess() {
 	// create
 	msg := getTestScheduledScanRequestMsg("midnight", "0 0 * * *", "ocp4-cis")
 	expected := expectedResponse{
@@ -224,7 +224,7 @@ func (s *ManagerTestSuite) TestProcessDeleteScanConfigSuccess() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessDeleteScanConfigDefaultConfig() {
+func (s *HandlerTestSuite) TestProcessDeleteScanConfigDefaultConfig() {
 	msg := getTestDeleteScanConfigMsg(defaultScanSettingName)
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetDeleteScanConfig().GetId(),
@@ -235,7 +235,7 @@ func (s *ManagerTestSuite) TestProcessDeleteScanConfigDefaultConfig() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessDeleteScanConfigDisabled() {
+func (s *HandlerTestSuite) TestProcessDeleteScanConfigDisabled() {
 	msg := getDisableComplianceMsg()
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
@@ -252,7 +252,7 @@ func (s *ManagerTestSuite) TestProcessDeleteScanConfigDisabled() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessDeleteScanConfigNotFound() {
+func (s *HandlerTestSuite) TestProcessDeleteScanConfigNotFound() {
 	msg := getTestDeleteScanConfigMsg("midnight")
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDeleteScanConfig().GetId(),
@@ -263,11 +263,11 @@ func (s *ManagerTestSuite) TestProcessDeleteScanConfigNotFound() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
+func (s *HandlerTestSuite) TestProcessRerunScanSuccess() {
 	// create
 	complianceScan := &v1alpha1.ComplianceScan{
 		TypeMeta: v1.TypeMeta{
-			Kind:       complianceoperator.ScanSettingGVK.Kind,
+			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -277,7 +277,8 @@ func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
 	}
 	obj, err := runtimeObjToUnstructured(complianceScan)
 	s.Require().NoError(err)
-	_, err = s.client.Resource(complianceoperator.ComplianceScanGVR).Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
+	_, err = s.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).
+		Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
 	s.Require().NoError(err)
 
 	// rerun
@@ -291,7 +292,7 @@ func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) TestProcessRerunScanNotFound() {
+func (s *HandlerTestSuite) TestProcessRerunScanNotFound() {
 	msg := getTestRerunScanMsg("midnight")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
@@ -303,7 +304,7 @@ func (s *ManagerTestSuite) TestProcessRerunScanNotFound() {
 	s.assert(expected, actual)
 }
 
-func (s *ManagerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
+func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
 
@@ -320,7 +321,7 @@ func (s *ManagerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 	return ret
 }
 
-func (s *ManagerTestSuite) assert(expected expectedResponse, actual *central.ComplianceResponse) {
+func (s *HandlerTestSuite) assert(expected expectedResponse, actual *central.ComplianceResponse) {
 	var actualID, actualErr string
 	switch r := actual.GetResponse().(type) {
 	case *central.ComplianceResponse_EnableComplianceResponse_:

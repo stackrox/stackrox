@@ -56,21 +56,6 @@ updates:
         update-types: ["version-update:semver-patch"]
 
   - package-ecosystem: 'gomod'
-    directory: '/scanner/'
-    schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 3
-    labels:
-    - "area/scanner"
-    - "auto-merge"
-    - "dependencies"
-    reviewers:
-    - "stackrox/scanner"
-    commit-message:
-      include: scope
-      prefix: chore
-
-  - package-ecosystem: 'gomod'
     directory: '/tools/linters/'
     schedule:
       interval: 'weekly'

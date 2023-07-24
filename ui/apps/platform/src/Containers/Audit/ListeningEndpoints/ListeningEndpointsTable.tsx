@@ -6,6 +6,7 @@ import { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService'
 import { l4ProtocolLabels } from 'constants/networkFlow';
 import { ListDeployment } from 'types/deployment.proto';
 import useSet from 'hooks/useSet';
+import { GetSortParams } from 'hooks/useURLSort';
 
 function EmbeddedTable({
     deploymentId,
@@ -18,12 +19,12 @@ function EmbeddedTable({
         <TableComposable isNested>
             <Thead noWrap>
                 <Tr>
-                    <Th>Program name</Th>
-                    <Th>PID</Th>
-                    <Th>Port</Th>
-                    <Th>Protocol</Th>
-                    <Th>Pod ID</Th>
-                    <Th>Container name</Th>
+                    <Th width={20}>Program name</Th>
+                    <Th width={10}>PID</Th>
+                    <Th width={10}>Port</Th>
+                    <Th width={10}>Protocol</Th>
+                    <Th width={30}>Pod ID</Th>
+                    <Th width={20}>Container name</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -44,18 +45,25 @@ function EmbeddedTable({
 
 export type ListeningEndpointsTableProps = {
     deployments: (ListDeployment & { listeningEndpoints: ProcessListeningOnPort[] })[];
+    getSortParams: GetSortParams;
 };
 
-function ListeningEndpointsTable({ deployments }: ListeningEndpointsTableProps) {
+function ListeningEndpointsTable({ deployments, getSortParams }: ListeningEndpointsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
         <TableComposable variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th>{/* Header for expanded column */}</Th>
-                    <Th width={30}>Deployment</Th>
-                    <Th>Namespace</Th>
-                    <Th>Cluster</Th>
+                    <Td width={10}>{/* Header for expanded column */}</Td>
+                    <Th width={30} sort={getSortParams('Deployment')}>
+                        Deployment
+                    </Th>
+                    <Th width={30} sort={getSortParams('Namespace')}>
+                        Namespace
+                    </Th>
+                    <Th width={30} sort={getSortParams('Cluster')}>
+                        Cluster
+                    </Th>
                 </Tr>
             </Thead>
             {deployments.map(({ id, name, namespace, cluster, listeningEndpoints }, rowIndex) => {

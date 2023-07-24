@@ -4,27 +4,36 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	golog "log"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"syscall"
 
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/central/grpc/metrics"
+	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/stackrox/scanner/v4/indexer"
-	"github.com/stackrox/stackrox/scanner/v4/internal/version"
-	"github.com/stackrox/stackrox/scanner/v4/matcher"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/internal/version"
+	"github.com/stackrox/rox/scanner/matcher"
+	"golang.org/x/sys/unix"
 )
 
+// Backends holds the potential engines the scanner
+// may use depending on the mode in which it is running.
 type Backends struct {
+	// Indexer is the indexing engine.
 	Indexer *indexer.Indexer
+	// Matcher is the vulnerability matching engine.
 	Matcher *matcher.Matcher
 }
 
@@ -35,10 +44,10 @@ func main() {
 
 	// If certs was specified, configure the identity environment.
 	if *certsPath != "" {
-		os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsPath, mtls.CACertFileName))
-		os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsPath, mtls.CAKeyFileName))
-		os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName))
-		os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName))
+		utils.CrashOnError(os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsPath, mtls.CACertFileName)))
+		utils.CrashOnError(os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsPath, mtls.CAKeyFileName)))
+		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName)))
+		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 	}
 
 	// Create cancellable context.
@@ -48,10 +57,16 @@ func main() {
 	// Initialize logging and setup context.
 	err := initializeLogging()
 	if err != nil {
-		log.Fatalf("failed to initialize logging: %v", err)
+		golog.Fatalf("failed to initialize logging: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
+
+	// Initialize metrics and metrics server.
+	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())
+	metricsSrv.RunForever()
+	defer metricsSrv.Stop(ctx)
+	metrics.GatherThrottleMetricsForever(metrics.ScannerSubsystem.String())
 
 	// Create backends.
 	backends, err := createBackends(ctx)
@@ -73,9 +88,9 @@ func main() {
 
 	// Wait for signals.
 	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
 	sig := <-sigC
-	zlog.Warn(ctx).Str("signal", sig.String()).Send()
+	zlog.Info(ctx).Str("signal", sig.String()).Send()
 }
 
 // initializeLogging Initialize zerolog and Quay's zlog.
@@ -91,6 +106,8 @@ func initializeLogging() error {
 		Str("host", hostname).
 		Logger()
 	zlog.Set(&logger)
+	// Disable the default zerolog logger.
+	log.Logger = zerolog.Nop()
 	return nil
 }
 
@@ -101,12 +118,22 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	if err != nil {
 		return nil, fmt.Errorf("identity extractor: %w", err)
 	}
-	// Create gRPC API service.
+
+	// Create gRPC API service and debug routes.
+	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
+	for path, handler := range routes.DebugRoutes {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         path,
+			Authorizer:    allow.Anonymous(),
+			ServerHandler: handler,
+			Compression:   true,
+		})
+	}
 	grpcSrv := grpc.NewAPI(grpc.Config{
-		CustomRoutes:       nil,
+		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
-		GRPCMetrics:        metrics.GRPCSingleton(),
-		HTTPMetrics:        metrics.HTTPSingleton(),
+		GRPCMetrics:        grpcmetrics.NewGRPCMetrics(),
+		HTTPMetrics:        grpcmetrics.NewHTTPMetrics(),
 		Endpoints: []*grpc.EndpointConfig{
 			{
 				ListenEndpoint: ":8443",
@@ -114,11 +141,17 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 				ServeGRPC:      true,
 				ServeHTTP:      false,
 			},
+			{
+				ListenEndpoint: ":9095",
+				TLS:            verifier.NonCA{},
+				ServeGRPC:      false,
+				ServeHTTP:      true,
+			},
 		},
 	})
+
 	// Create and register API services.
 	var srvs []grpc.APIService
-
 	if backends.Indexer != nil {
 		s, err := indexer.NewIndexerService(backends.Indexer)
 		if err != nil {
@@ -157,6 +190,7 @@ func createBackends(ctx context.Context) (*Backends, error) {
 	}, nil
 }
 
+// Close closes all the backends used by the scanner.
 func (b *Backends) Close(ctx context.Context) {
 	if b.Matcher != nil {
 		err := b.Matcher.Close(ctx)
