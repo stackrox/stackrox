@@ -260,7 +260,7 @@ func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (b
 		return false, "", errors.New("Could not determine user identity from provided context")
 	}
 	if slimUser.GetId() != metadata.GetRequester().GetId() {
-		return false, "", errors.Wrapf(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
+		return false, "", errors.Wrap(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
 	}
 	if metadata.ReportStatus.RunState == storage.ReportStatus_SUCCESS ||
 		metadata.ReportStatus.RunState == storage.ReportStatus_FAILURE {
