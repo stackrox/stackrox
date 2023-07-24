@@ -41,6 +41,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
 
       - name: Update vulnerabilities
+        continue-on-error: true #if one of the version fail to update the vulns, we still want to update for the other versions
         run: |
           DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
           FILE_NAME=$(basename "$DOWNLOAD_URL")
@@ -49,7 +50,7 @@ jobs:
           cd unzipped-dir/stackrox-*
           if [ ! -d "scanner" ]; then
             echo "Scanner directory not found. Terminating current matrix step."
-            exit 0
+            exit 1
           fi
           
           cd scanner
@@ -57,6 +58,9 @@ jobs:
           gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/"
         
   send-notification:
+    needs:
+      - read-versions
+      - upload-vulnerabilities
     runs-on: ubuntu-latest
     if: failure()
     steps:
