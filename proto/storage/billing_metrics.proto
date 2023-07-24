@@ -10,7 +10,7 @@ option go_package = "storage";
 message BillingMetrics {
     message SecuredResources {
         int32 nodes = 1;
-        int32 millicores = 2;
+        int32 cores = 2;
     }
 
     google.protobuf.Timestamp ts = 1 [(gogoproto.moretags) = 'sql:"pk"'];

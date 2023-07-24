@@ -51,8 +51,8 @@ func (s *BillingMetricsStoreSuite) TestStore() {
 		},
 		{Ts: to,
 			Sr: &storage.BillingMetrics_SecuredResources{
-				Nodes:      5,
-				Millicores: 50,
+				Nodes: 5,
+				Cores: 50,
 			},
 		},
 	}
@@ -99,8 +99,8 @@ func (s *BillingMetricsStoreSuite) TestGet() {
 		},
 		{Ts: to,
 			Sr: &storage.BillingMetrics_SecuredResources{
-				Nodes:      5,
-				Millicores: 50,
+				Nodes: 5,
+				Cores: 50,
 			},
 		},
 	}
