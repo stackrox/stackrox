@@ -4,17 +4,18 @@ import { gql, useQuery } from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
-import { getTooltip } from 'utils/vulnerabilityUtils';
+
+import LabeledBarGraph from './LabeledBarGraph';
+
+import ViewAllButton from './ViewAllButton';
 
 const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
     query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -39,7 +40,6 @@ const processData = (data, workflowState) => {
     return results.map((vuln) => {
         const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
         const url = workflowState.pushRelatedEntity(entityTypes.IMAGE_CVE, id).toUrl();
-        const tooltip = getTooltip(vuln);
 
         return {
             x: deploymentCount,
@@ -47,7 +47,6 @@ const processData = (data, workflowState) => {
                 isFixable ? ' / Fixable' : ''
             }`,
             url,
-            hint: tooltip,
         };
     });
 };
@@ -113,7 +112,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Image Vulnerabilities"
+            header="Most common image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}

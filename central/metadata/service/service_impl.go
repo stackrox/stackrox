@@ -31,7 +31,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.MetadataService/GetDatabaseStatus",
 			"/v1.MetadataService/GetDatabaseBackupStatus",
 			"/v1.MetadataService/GetCentralCapabilities",
@@ -39,7 +39,7 @@ var (
 		// When this endpoint was public, Sensor relied on it to check Central's
 		// availability. While Sensor might not do so today, we need to ensure
 		// backward compatibility with older Sensors.
-		or.SensorOrAuthorizer(user.With()): {
+		or.SensorOr(user.Authenticated()): {
 			"/v1.MetadataService/GetMetadata",
 		},
 		allow.Anonymous(): {

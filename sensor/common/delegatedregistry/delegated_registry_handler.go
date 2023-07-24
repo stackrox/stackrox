@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
@@ -76,7 +77,7 @@ func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
-func (d *delegatedRegistryImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (d *delegatedRegistryImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 

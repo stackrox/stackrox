@@ -1,18 +1,24 @@
 package reconciler
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/operator-framework/helm-operator-plugins/pkg/client"
 	"github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/operator/pkg/overlays"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"helm.sh/helm/v3/pkg/kube"
+	"helm.sh/helm/v3/pkg/postrender"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,6 +71,24 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		}
 	}
 
+	logger := ctrl.Log.WithName("controllers").WithName(gvk.Kind)
+
+	actionConfigGetter, err := client.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), logger)
+	if err != nil {
+		return fmt.Errorf("creating action config getter: %w", err)
+	}
+
+	var opts = []client.ActionClientGetterOption{
+		client.AppendPostRenderers(func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+			return overlays.NewOverlayPostRenderer(obj, obj.GetNamespace())
+		}),
+	}
+
+	actionClientGetter, err := client.NewActionClientGetter(actionConfigGetter, opts...)
+	if err != nil {
+		return errors.Wrap(err, "unable to create action client getter")
+	}
+
 	reconcilerOpts := []reconciler.Option{
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
@@ -74,7 +98,8 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.WithMaxReleaseHistory(maxReleaseHistorySize),
 		reconciler.WithMarkFailedAfter(markReleaseFailedAfter),
 		reconciler.SkipPrimaryGVKSchemeRegistration(true),
-		reconciler.WithLog(ctrl.Log.WithName("controllers").WithName(gvk.Kind)),
+		reconciler.WithLog(logger),
+		reconciler.WithActionClientGetter(actionClientGetter),
 	}
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 

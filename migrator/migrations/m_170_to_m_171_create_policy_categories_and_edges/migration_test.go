@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -34,7 +35,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *categoriesMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	s.policyStore = policyPostgresStore.New(s.db.DB)
 	s.categoryStore = policyCategoryPostgresStore.New(s.db.DB)
 	s.edgeStore = policyCategoryEdgePostgresStore.New(s.db.DB)
@@ -50,9 +51,14 @@ func (s *categoriesMigrationTestSuite) TearDownTest() {
 func (s *categoriesMigrationTestSuite) TestMigration() {
 	ctx := sac.WithAllAccess(context.Background())
 	testPolicy := fixtures.GetPolicy()
-	testPolicy.Categories = []string{"Test Category"}
-
+	testPolicy.Categories = []string{"Test Category", "test category", "", "Anomalous Activity"}
 	require.NoError(s.T(), s.policyStore.Upsert(ctx, testPolicy))
+
+	testPolicy2 := fixtures.GetPolicy()
+	testPolicy2.Id = uuid.NewV4().String()
+	testPolicy2.Name = "testpolicy2"
+	testPolicy2.Categories = []string{"Test Category", "test category", "", "net new category", "Net new category"}
+	s.Require().NoError(s.policyStore.Upsert(ctx, testPolicy2))
 
 	dbs := &types.Databases{
 		PostgresDB: s.db.DB,
@@ -61,7 +67,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 
 	s.NoError(migration.Run(dbs))
 
-	q := search.NewQueryBuilder().AddExactMatches(search.PolicyCategoryName, testPolicy.GetCategories()[0]).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.PolicyCategoryName, testPolicy.Categories[0]).ProtoQuery()
 	categoriesAfterMigration, err := s.categoryStore.GetByQuery(ctx, q)
 	s.NoError(err)
 	s.Len(categoriesAfterMigration, 1)
@@ -69,5 +75,5 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 
 	edges, err := s.edgeStore.GetAll(ctx)
 	s.NoError(err)
-	s.Len(edges, 1)
+	s.Len(edges, 4)
 }

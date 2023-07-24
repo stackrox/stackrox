@@ -1,10 +1,11 @@
 import React, { ReactElement } from 'react';
-import { ReportStatus } from 'types/report.proto';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
+import { ReportStatus } from 'services/ReportsService.types';
+
 export type LastRunStatusStateProps = {
-    reportStatus: ReportStatus;
+    reportStatus: ReportStatus | null;
 };
 
 const errorColor = 'var(--pf-global--danger-color--100)';
@@ -17,37 +18,40 @@ function LastRunStatusState({ reportStatus }: LastRunStatusStateProps): ReactEle
     let statusIcon: ReactElement | null = null;
     let statusText = '-';
 
-    if (reportStatus.runState === 'SUCCESS') {
+    if (reportStatus?.runState === 'SUCCESS') {
         statusIcon = <CheckCircleIcon color={successColor} title="Report run was successful" />;
     }
-    if (reportStatus.runState === 'FAILURE') {
+    if (reportStatus?.runState === 'FAILURE') {
         statusIcon = (
-            <Tooltip content={reportStatus.errorMsg || genericMsg}>
+            <Tooltip content={reportStatus?.errorMsg || genericMsg}>
                 <ExclamationCircleIcon color={errorColor} title="Report run was unsuccessful" />
             </Tooltip>
         );
     }
 
-    if (reportStatus.runState === 'SUCCESS' && reportStatus.reportNotificationMethod === 'EMAIL') {
+    if (
+        reportStatus?.runState === 'SUCCESS' &&
+        reportStatus?.reportNotificationMethod === 'EMAIL'
+    ) {
         statusText = 'Emailed';
     } else if (
-        reportStatus.runState === 'SUCCESS' &&
-        reportStatus.reportNotificationMethod === 'DOWNLOAD'
+        reportStatus?.runState === 'SUCCESS' &&
+        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
     ) {
         statusText = 'Download prepared';
     } else if (
-        reportStatus.runState === 'FAILURE' &&
-        reportStatus.reportNotificationMethod === 'EMAIL'
+        reportStatus?.runState === 'FAILURE' &&
+        reportStatus?.reportNotificationMethod === 'EMAIL'
     ) {
         statusText = 'Email attempted';
     } else if (
-        reportStatus.runState === 'FAILURE' &&
-        reportStatus.reportNotificationMethod === 'DOWNLOAD'
+        reportStatus?.runState === 'FAILURE' &&
+        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
     ) {
         statusText = 'Failed to generate download';
-    } else if (reportStatus.runState === 'SUCCESS') {
+    } else if (reportStatus?.runState === 'SUCCESS') {
         statusText = 'Success';
-    } else if (reportStatus.runState === 'FAILURE') {
+    } else if (reportStatus?.runState === 'FAILURE') {
         statusText = 'Error';
     }
 

@@ -32,11 +32,12 @@ import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorU
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
-import { useScopeHierarchy } from '../hooks/useScopeHierarchy';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 type NetworkPolicySimulatorSidePanelProps = {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 const tabs = {
@@ -47,8 +48,8 @@ const tabs = {
 function NetworkPolicySimulatorSidePanel({
     simulator,
     setNetworkPolicyModification,
+    scopeHierarchy,
 }: NetworkPolicySimulatorSidePanelProps) {
-    const scopeHierarchy = useScopeHierarchy();
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
     });

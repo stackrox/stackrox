@@ -6,7 +6,7 @@ import {
     ReportConfiguration,
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
-} from 'types/reportConfigurationService.proto';
+} from 'services/ReportsService.types';
 import { ReportFormValues } from '../forms/useReportFormValues';
 
 type Result = {
@@ -35,18 +35,18 @@ function useCreateReport(): CreateReportResult {
             error: null,
         });
 
-        const { reportParameters } = formValues;
+        const { reportParameters, deliveryDestinations } = formValues;
 
         // transform form values to values to be sent through API
         const fixability: Fixability =
             reportParameters.cveStatus.length > 1 ? 'BOTH' : reportParameters.cveStatus[0];
+
         const vulnReportFiltersBase: VulnerabilityReportFiltersBase = {
             fixability,
             severities: reportParameters.cveSeverities,
             imageTypes: reportParameters.imageType,
         };
         let vulnReportFilters: VulnerabilityReportFilters;
-
         if (reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
             vulnReportFilters = {
                 ...vulnReportFiltersBase,
@@ -67,6 +67,16 @@ function useCreateReport(): CreateReportResult {
             };
         }
 
+        const notifiers = deliveryDestinations.map((deliveryDestination) => {
+            return {
+                emailConfig: {
+                    notifierId: deliveryDestination.notifier?.id || '',
+                    mailingLists: deliveryDestination.mailingLists,
+                },
+                notifierName: '',
+            };
+        });
+
         const reportData: ReportConfiguration = {
             id: '',
             name: reportParameters.reportName,
@@ -79,8 +89,8 @@ function useCreateReport(): CreateReportResult {
                     collectionName: reportParameters.reportScope?.name || '',
                 },
             },
-            // @TODO: Replace hardcoded values when we do notifiers and schedule
-            notifiers: [],
+            notifiers,
+            // @TODO: Replace hardcoded values when we do schedule
             schedule: {
                 intervalType: 'WEEKLY',
                 hour: 0,

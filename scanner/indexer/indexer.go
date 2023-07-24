@@ -61,3 +61,7 @@ func NewIndexer(ctx context.Context) (*Indexer, error) {
 		indexer: indexer,
 	}, nil
 }
+
+func (i *Indexer) Close(ctx context.Context) error {
+	return i.indexer.Close(ctx)
+}

@@ -108,6 +108,15 @@ spec:
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+      - description: Resource API version.
+        displayName: API Version
+        path: overlays[0].apiVersion
+      - description: Path of the form a.[key1:value1].b.[:value2] Where [key1:value1]
+          is a selector for a key-value pair to identify a list element and [:value]
+          is a value selector to identify a list element in a leaf list. All path
+          intermediate nodes must exist.
+        displayName: Path
+        path: overlays[0].patches[0].path
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
@@ -183,6 +192,15 @@ spec:
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
+      - description: Resource kind.
+        displayName: Kind
+        path: overlays[0].kind
+      - description: Value to add, delete or replace. For add, the path should be
+          a new leaf. For delete, value should be unset. For replace, path should
+          reference an existing node. All values are strings but are converted into
+          appropriate type based on schema.
+        displayName: Value
+        path: overlays[0].patches[0].value
       - description: Settings for the Scanner component, which is responsible for
           vulnerability scanning of container images.
         displayName: Scanner Component Settings
@@ -237,6 +255,9 @@ spec:
       - description: Settings related to outgoing network traffic.
         displayName: Egress
         path: egress
+      - description: Name of resource.
+        displayName: Name
+        path: overlays[0].name
       - displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
@@ -252,6 +273,9 @@ spec:
           compatible format.
         displayName: Monitoring
         path: central.monitoring
+      - description: List of patches to apply to resource.
+        displayName: Patches
+        path: overlays[0].patches
       - displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
@@ -297,6 +321,11 @@ spec:
       - description: Configures resources within Central in a declarative manner.
         displayName: Declarative Configuration
         path: central.declarativeConfiguration
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Stores persistent data on a directory on the host. This is not
@@ -501,6 +530,15 @@ spec:
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+      - description: Resource API version.
+        displayName: API Version
+        path: overlays[0].apiVersion
+      - description: Path of the form a.[key1:value1].b.[:value2] Where [key1:value1]
+          is a selector for a key-value pair to identify a list element and [:value]
+          is a value selector to identify a list element in a leaf list. All path
+          intermediate nodes must exist.
+        displayName: Path
+        path: overlays[0].patches[0].path
       - description: Settings for the Collector container, which is responsible for
           collecting process and networking activity at the host level.
         displayName: Collector Settings
@@ -539,6 +577,15 @@ spec:
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
+      - description: Resource kind.
+        displayName: Kind
+        path: overlays[0].kind
+      - description: Value to add, delete or replace. For add, the path should be
+          a new leaf. For delete, value should be unset. For replace, path should
+          reference an existing node. All values are strings but are converted into
+          appropriate type based on schema.
+        displayName: Value
+        path: overlays[0].patches[0].value
       - description: The image flavor to use for collector. "Regular" images are bigger
           in size, but contain probes for most kernels. If you use the "Slim" image
           flavor, you must ensure that your Central instance is connected to the internet,
@@ -564,6 +611,9 @@ spec:
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
+      - description: Name of resource.
+        displayName: Name
+        path: overlays[0].name
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
@@ -587,6 +637,9 @@ spec:
           during a deployments admission review.
         displayName: Contact Image Scanners
         path: admissionControl.contactImageScanners
+      - description: List of patches to apply to resource.
+        displayName: Patches
+        path: overlays[0].patches
       - description: To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security will run services on every node in the
           cluster, including tainted nodes by default. If you do not want this behavior,
@@ -641,6 +694,11 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.

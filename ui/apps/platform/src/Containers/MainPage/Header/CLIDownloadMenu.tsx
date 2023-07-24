@@ -77,13 +77,8 @@ function CLIDownloadMenu({ addToast, removeToast }: CLIDownloadMenuProps): React
         setIsCLIMenuOpen(!isCLIMenuOpen);
     }
 
-    // The className prop overrides `font-weight: 600` for button in ui-components.css file.
     const CLIDownloadIcon = (
-        <Flex
-            alignItems={{ default: 'alignItemsCenter' }}
-            spaceItems={{ default: 'spaceItemsSm' }}
-            className="pf-u-font-weight-normal"
-        >
+        <Flex alignItems={{ default: 'alignItemsCenter' }} spaceItems={{ default: 'spaceItemsSm' }}>
             <FlexItem>
                 <DownloadIcon alt="" />
             </FlexItem>

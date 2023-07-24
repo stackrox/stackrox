@@ -1,4 +1,4 @@
-import { ImageType } from 'types/reportConfigurationService.proto';
+import { ImageType } from 'services/ReportsService.types';
 import { CVESDiscoveredSince } from './forms/useReportFormValues';
 
 export const imageTypeLabelMap: Record<ImageType, string> = {

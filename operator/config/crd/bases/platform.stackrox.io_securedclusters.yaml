@@ -384,6 +384,61 @@ spec:
                       interfere with other workloads.
                     type: boolean
                 type: object
+              overlays:
+                description: Overlays
+                items:
+                  description: "K8sObjectOverlay is an overlay that applies a set
+                    of patches to a resource. It targets a resource by its API version,
+                    kind, and name, and applies a list of patches to this resource.
+                    \n # Examples \n ## Adding an annotation to a resource \n apiVersion:
+                    v1 kind: ServiceAccount name: central patches: - path: metadata.annotations.eks\\.amazonaws\\.com/role-arn
+                    value: \"\\\"arn:aws:iam:1234:role\\\"\" \n ## Adding an environment
+                    variable to a deployment \n apiVersion: apps/v1 kind: Deployment
+                    name: central patches: - path: spec.template.spec.containers[name:central].env[-1]
+                    value: | name: MY_ENV_VAR value: value \n ## Adding an ingress
+                    to a network policy \n apiVersion: networking.k8s.io/v1 kind:
+                    NetworkPolicy name: allow-ext-to-central patches: - path: spec.ingress[-1]
+                    value: | ports: - port: 999 protocol: TCP \n ## Changing the value
+                    of a configMap \n apiVersion: v1 kind: ConfigMap name: central-endpoints
+                    patches: - path: data value: | endpoints.yaml: | disableDefault:
+                    false \n ## Adding a container to a deployment \n apiVersion:
+                    apps/v1 kind: Deployment name: central patches: - path: spec.template.spec.containers[-1]
+                    value: | name: nginx image: nginx ports: - containerPort: 8000
+                    name: http protocol: TCP"
+                  properties:
+                    apiVersion:
+                      description: Resource API version.
+                      type: string
+                    kind:
+                      description: Resource kind.
+                      type: string
+                    name:
+                      description: Name of resource.
+                      type: string
+                    patches:
+                      description: List of patches to apply to resource.
+                      items:
+                        description: K8sObjectOverlayPatch defines a patch to apply
+                          to a resource.
+                        properties:
+                          path:
+                            description: Path of the form a.[key1:value1].b.[:value2]
+                              Where [key1:value1] is a selector for a key-value pair
+                              to identify a list element and [:value] is a value selector
+                              to identify a list element in a leaf list. All path
+                              intermediate nodes must exist.
+                            type: string
+                          value:
+                            description: Value to add, delete or replace. For add,
+                              the path should be a new leaf. For delete, value should
+                              be unset. For replace, path should reference an existing
+                              node. All values are strings but are converted into
+                              appropriate type based on schema.
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                type: array
               perNode:
                 description: Settings for the components running on each node in the
                   cluster (Collector and Compliance).

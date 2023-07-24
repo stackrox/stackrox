@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-kubectl -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,deploy,netpol,psp,clusterrole,clusterrolebinding,role,rolebinding -l auto-upgrade.stackrox.io/component=sensor --wait
+kubectl -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,deploy,netpol,clusterrole,clusterrolebinding,role,rolebinding -l auto-upgrade.stackrox.io/component=sensor --wait
 
-if ! kubectl get -n stackrox deploy/central; then
+SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
+
+if [[ "${SUPPORTS_PSP}" -ne 0 ]]; then
+    kubectl -n stackrox delete psp -l auto-upgrade.stackrox.io/component=sensor --wait
+fi
+
+if ! kubectl get -n stackrox deploy/central 2>&1; then
     kubectl delete -n stackrox secret stackrox
 fi

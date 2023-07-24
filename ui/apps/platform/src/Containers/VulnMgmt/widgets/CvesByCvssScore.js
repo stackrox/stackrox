@@ -6,13 +6,14 @@ import queryService from 'utils/queryService';
 
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import ViewAllButton from 'Components/ViewAllButton';
 import Sunburst from 'Components/visuals/Sunburst';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { vulnSeverityIconColors } from 'constants/visuals/colors';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
+
+import ViewAllButton from './ViewAllButton';
 
 const IMAGE_CVES_QUERY = gql`
     query getImageCvesByCVSS($query: String, $scopeQuery: String) {
@@ -149,7 +150,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
     }
 
     return (
-        <Widget className="h-full pdf-page" header="CVEs by CVSS Score" headerComponents={header}>
+        <Widget className="h-full pdf-page" header="CVEs by CVSS score" headerComponents={header}>
             {content}
         </Widget>
     );

@@ -223,6 +223,20 @@ create_cluster() {
     fi
 
     date -u +"%Y-%m-%dT%H:%M:%SZ" > /tmp/GKE_CLUSTER_CREATED_TIMESTAMP
+
+    add_a_maintenance_exclusion
+}
+
+add_a_maintenance_exclusion() {
+    from_now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    plus_five_epoch=$(($(date -u '+%s') + 5*3600))
+    plus_five="$(date -u --date=@${plus_five_epoch} +"%Y-%m-%dT%H:%M:%SZ")"
+
+    gcloud container clusters update "${CLUSTER_NAME}" \
+        --add-maintenance-exclusion-name leave-these-clusters-alone \
+        --add-maintenance-exclusion-start "${from_now}" \
+        --add-maintenance-exclusion-end "${plus_five}" \
+        --add-maintenance-exclusion-scope no_upgrades
 }
 
 wait_for_cluster() {

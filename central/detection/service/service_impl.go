@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -37,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
@@ -54,7 +54,7 @@ var (
 			"/v1.DetectionService/DetectBuildTime",
 			"/v1.DetectionService/DetectDeployTimeFromYAML",
 		},
-		or.SensorOrAuthorizer(user.With(permissions.Modify(resources.Detection))): {
+		or.SensorOr(user.With(permissions.Modify(resources.Detection))): {
 			"/v1.DetectionService/DetectDeployTime",
 		},
 	})

@@ -1,7 +1,6 @@
-import { ReportConfiguration } from 'types/reportConfigurationService.proto';
-import { ReportStatus } from 'types/report.proto';
+import { ReportConfiguration, ReportStatus } from 'services/ReportsService.types';
 
 export type Report = ReportConfiguration & {
-    reportStatus: ReportStatus;
-    reportLastRunStatus: ReportStatus;
+    reportStatus: ReportStatus | null;
+    reportLastRunStatus: ReportStatus | null;
 };

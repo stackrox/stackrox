@@ -10,6 +10,7 @@ import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
+import common.Constants
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
@@ -30,7 +31,7 @@ import spock.lang.Tag
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
+    Timeout globalTimeout = new Timeout(1000 + Constants.TEST_FEATURE_TIMEOUT_PAD, TimeUnit.SECONDS)
 
     private static final String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")

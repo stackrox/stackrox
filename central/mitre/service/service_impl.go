@@ -18,7 +18,7 @@ var (
 	// attacks. Note that `ListMitreAttackVectors()`'s response size is around
 	// 1 MB.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.MitreAttackService/ListMitreAttackVectors",
 			"/v1.MitreAttackService/GetMitreAttackVector",
 		},

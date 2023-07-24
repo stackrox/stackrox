@@ -36,7 +36,7 @@ func New(k8sRoleStore store.Store, searcher search.Searcher) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	searcher := search.New(dbstore, pgStore.NewIndexer(pool))
 	return New(dbstore, searcher)

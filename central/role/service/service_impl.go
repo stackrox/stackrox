@@ -10,7 +10,6 @@ import (
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
@@ -52,7 +52,7 @@ var (
 			"/v1.RoleService/PutSimpleAccessScope",
 			"/v1.RoleService/DeleteSimpleAccessScope",
 		},
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.RoleService/GetClustersForPermissions",
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},

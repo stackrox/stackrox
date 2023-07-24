@@ -1,11 +1,8 @@
 import React, { ReactElement, useState, useEffect } from 'react';
 import { Formik, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { ClipLoader } from 'react-spinners';
-import { XCircle } from 'react-feather';
-import { Button, CondensedAlertButton, Message } from '@stackrox/ui-components';
+import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
 
-import CustomDialogue from 'Components/CustomDialogue';
 import {
     labelClassName,
     sublabelClassName,
@@ -14,6 +11,9 @@ import {
 } from 'constants/form.constants';
 import { getWatchedImages, watchImage, unwatchImage } from 'services/imageService';
 import { WatchedImage } from 'types/image.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import CustomDialogue from '../../Components/CustomDialogue';
 
 type WatchedImagesDialogProps = {
     closeDialog: () => void;
@@ -21,7 +21,9 @@ type WatchedImagesDialogProps = {
 
 const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactElement => {
     const [currentWatchedImages, setCurrentWatchedImages] = useState<WatchedImage[]>([]);
+    const [successTitle, setSuccessTitle] = useState('');
     const [successMessage, setSuccessMessage] = useState<ReactElement | string>('');
+    const [errorTitle, setErrorTitle] = useState('');
     const [errorMessage, setErrorMessage] = useState<ReactElement | string>('');
 
     function refreshWatchList() {
@@ -30,10 +32,8 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                 setCurrentWatchedImages(images);
             })
             .catch((error) => {
-                setErrorMessage(
-                    error?.message ||
-                        'An error occurred retrieving the current list of watched images'
-                );
+                setErrorTitle('Unable to retrieve the current list of watched images');
+                setErrorMessage(getAxiosErrorMessage(error));
             });
     }
 
@@ -42,34 +42,30 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
     }, []);
 
     function addToWatch(values, { setSubmitting }) {
+        setSuccessTitle('');
         setSuccessMessage('');
+        setErrorTitle('');
         setErrorMessage('');
         watchImage(values.imageTag)
             .then((normalizedName) => {
+                setSuccessTitle('Image added');
                 setSuccessMessage(
-                    <div>
-                        <strong>{normalizedName}</strong>
+                    <>
+                        <div>{normalizedName}</div>
                         {normalizedName !== values.imageTag && (
-                            <>
-                                {` (normalized form of `}
-                                <strong>{values.imageTag}</strong>)
-                            </>
-                        )}{' '}
-                        has been added to the list of images to be scanned.
-                    </div>
+                            <div>{` (normalized form of ${values.imageTag as string})`}</div>
+                        )}
+                    </>
                 );
                 refreshWatchList();
             })
             .catch((error) => {
+                setErrorTitle('Unable to process image name');
                 setErrorMessage(
-                    <div>
-                        <p className="mb-2">
-                            The image name you submitted, <strong>{values.imageTag}</strong> could
-                            not be processed.
-                        </p>
-                        <p className="mb-1">The server response with the following message.</p>
-                        <blockquote className="p-4 border-l-4 quote">{error.message}</blockquote>
-                    </div>
+                    <>
+                        <p className="mb-2">{values.imageTag}</p>
+                        <p>{getAxiosErrorMessage(error)}</p>
+                    </>
                 );
             })
             .finally(() => {
@@ -79,26 +75,19 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
 
     function getRemoveFromWatch(imageName) {
         return function removeFromWatch() {
+            setSuccessTitle('');
             setSuccessMessage('');
+            setErrorTitle('');
             setErrorMessage('');
             unwatchImage(imageName)
                 .then(() => {
-                    setSuccessMessage(
-                        <p>
-                            <strong>{imageName}</strong> is no longer being watched.
-                        </p>
-                    );
+                    setSuccessTitle('Removed watch for image');
+                    setSuccessMessage(imageName);
                     refreshWatchList();
                 })
                 .catch((error) => {
-                    setErrorMessage(
-                        <div>
-                            <p className="mb-1">Could not remove the image from the watch list.</p>
-                            <blockquote className="p-4 border-l-4 quote">
-                                {error?.message || 'Unknown error'}
-                            </blockquote>
-                        </div>
-                    );
+                    setErrorTitle('Unable to remove watch for image');
+                    setErrorMessage(getAxiosErrorMessage(error));
                 });
         };
     }
@@ -108,35 +97,41 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
             return a.name.localeCompare(b.name);
         })
         .map((image) => (
-            <li className="flex border-b last:border-0 border-base-300 justify-between py-2">
-                <span>{image.name}</span>
-                <CondensedAlertButton type="button" onClick={getRemoveFromWatch(image.name)}>
-                    <XCircle className="h-3 w-3 mr-1" />
-                    Remove watch
-                </CondensedAlertButton>
+            <li className="flex border-b last:border-0 border-base-300 py-2">
+                <Flex
+                    className="pf-u-w-100"
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    flexWrap={{ default: 'nowrap' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                >
+                    <FlexItem>{image.name}</FlexItem>
+                    <FlexItem>
+                        <Button variant="danger" isSmall onClick={getRemoveFromWatch(image.name)}>
+                            Remove watch
+                        </Button>
+                    </FlexItem>
+                </Flex>
             </li>
         ));
 
     return (
         <CustomDialogue
-            className="w-3/4 md:w-1/2 lg:w-1/3"
-            title="Manage Watched Images"
-            text=""
-            cancelText="Return to Image List"
+            className="w-1/2 xxl:w-1/3"
+            title="Manage watched images"
+            cancelText="Close"
             onCancel={closeDialog}
         >
-            <div className="border-b border-base-300 ">
+            <div className="px-4">
                 <Formik
                     initialValues={{ imageTag: '' }}
                     validationSchema={Yup.object({
                         imageTag: Yup.string().required('Required'),
                     })}
                     onSubmit={addToWatch}
-                    // }}
                 >
                     {({ getFieldProps, errors, touched, handleSubmit, isSubmitting }) => (
                         <form
-                            className="flex flex-col leading-normal p-4 text-base-600 w-full"
+                            className="flex flex-col leading-normal pb-4 text-base-600 w-full"
                             onSubmit={handleSubmit}
                         >
                             <p className="mb-2">
@@ -144,64 +139,62 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                                 to be scanned even if no deployments use it.
                             </p>
                             <div className={wrapperMarginClassName}>
-                                <label htmlFor="name" className={labelClassName}>
-                                    <span>Image Name</span>
+                                <label htmlFor="imageTag" className={labelClassName}>
+                                    <span>Image name</span>
                                     <br />
                                     <span className={sublabelClassName}>
                                         The fully-qualified image name, beginning with the registry,
                                         and ending with the tag
                                     </span>
                                 </label>
-                                <div data-testid="input-wrapper">
-                                    <input
-                                        type="text"
-                                        id="imageTag"
-                                        {...getFieldProps('imageTag')}
-                                        className={inputTextClassName}
-                                    />
-                                </div>
+                                <input
+                                    type="text"
+                                    id="imageTag"
+                                    {...getFieldProps('imageTag')}
+                                    className={inputTextClassName}
+                                />
                                 {touched.imageTag && errors.imageTag ? (
                                     <div className="bg-alert-300 p-2 text-alert-800 text-xs rounded-b border-alert-400 border-b border-l border-r flex flex-col">
                                         <ErrorMessage name="imageTag" />
                                     </div>
                                 ) : null}
                             </div>
-                            <div className="flex flex-row items-center justify-between">
-                                <Button colorType="success" type="submit" isDisabled={isSubmitting}>
-                                    {isSubmitting && (
-                                        <span className="pr-2">
-                                            <ClipLoader loading size="16" color="currentColor" />
-                                        </span>
-                                    )}
-                                    <span>
-                                        {isSubmitting
-                                            ? 'Adding image—this may take some time...'
-                                            : 'Add Image'}
-                                    </span>
+                            <div className="flex flex-row">
+                                <Button
+                                    variant="primary"
+                                    type="submit"
+                                    isDisabled={isSubmitting}
+                                    isLoading={isSubmitting}
+                                >
+                                    Add image
                                 </Button>
                             </div>
                         </form>
                     )}
                 </Formik>
                 {!!successMessage && (
-                    <div className="px-4 py-2">
-                        <Message type="success">{successMessage}</Message>
+                    <div className="pb-4">
+                        <Alert isInline variant="success" component="h3" title={successTitle}>
+                            {successMessage}
+                        </Alert>
                     </div>
                 )}
                 {!!errorMessage && (
-                    <div className="px-4 py-2">
-                        <Message type="error">{errorMessage}</Message>
+                    <div className="pb-4">
+                        <Alert isInline variant="danger" component="h3" title={errorTitle}>
+                            {errorMessage}
+                        </Alert>
                     </div>
                 )}
                 <div
-                    className="flex flex-col leading-normal p-4 text-base-600 w-full overflow-y-auto"
+                    className="flex flex-col leading-normal text-base-600 w-full overflow-y-auto"
                     style={{ maxHeight: '200px' }}
                 >
-                    <h3 className="font-700 mb-2">Images Currently Being Watched</h3>
+                    <h3 className="font-700 my-2">Images currently being watched</h3>
                     {currentWatchedImages.length > 0 ? (
                         <ol>{imageList}</ol>
                     ) : (
-                        <p className="text-center py-2">No images are currently being watched.</p>
+                        <p>No images are currently being watched.</p>
                     )}
                 </div>
             </div>

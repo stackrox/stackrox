@@ -49,3 +49,7 @@ func NewMatcher(ctx context.Context) (*Matcher, error) {
 		matcher: matcher,
 	}, nil
 }
+
+func (i *Matcher) Close(ctx context.Context) error {
+	return i.matcher.Close(ctx)
+}

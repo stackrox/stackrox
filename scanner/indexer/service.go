@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,6 +36,12 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 	v4.RegisterIndexerServer(grpcServer, s)
+}
+
+// AuthFuncOverride specifies the auth criteria for this API.
+func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	// TODO: Setup permissions for indexer.
+	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.

@@ -9,11 +9,12 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import NumberedList from 'Components/NumberedList';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
+
+import ViewAllButton from './ViewAllButton';
 
 const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
     query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -88,7 +89,7 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Image Vulnerabilities"
+            header="Most common image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}

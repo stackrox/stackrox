@@ -4,7 +4,8 @@ import set from 'lodash/set';
 
 import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import { ImageType } from 'types/reportConfigurationService.proto';
+import { ImageType } from 'services/ReportsService.types';
+import { EmailNotifierIntegration } from 'types/notifier.proto';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
@@ -15,11 +16,15 @@ export type ReportFormValuesResult = {
 
 export type ReportFormValues = {
     reportParameters: ReportParametersFormValues;
+    deliveryDestinations: DeliveryDestination[];
 };
 
 export type SetReportFormValues = Dispatch<SetStateAction<ReportFormValues>>;
 
-export type SetReportFormFieldValue = (fieldName: string, value: string | string[]) => void;
+export type SetReportFormFieldValue = (
+    fieldName: string,
+    value: string | string[] | DeliveryDestination[]
+) => void;
 
 export type ReportParametersFormValues = {
     reportName: string;
@@ -36,6 +41,11 @@ export type CVEStatus = 'FIXABLE' | 'NOT_FIXABLE';
 
 export type CVESDiscoveredSince = 'ALL_VULN' | 'SINCE_LAST_REPORT' | 'START_DATE';
 
+export type DeliveryDestination = {
+    notifier: EmailNotifierIntegration | null;
+    mailingLists: string[];
+};
+
 export const defaultReportFormValues: ReportFormValues = {
     reportParameters: {
         reportName: '',
@@ -47,12 +57,16 @@ export const defaultReportFormValues: ReportFormValues = {
         cvesDiscoveredStartDate: undefined,
         reportScope: null,
     },
+    deliveryDestinations: [],
 };
 
 function useReportFormValues(): ReportFormValuesResult {
     const [formValues, setFormValues] = useState<ReportFormValues>(defaultReportFormValues);
 
-    function setFormFieldValue(fieldName: string, value: string | string[]) {
+    function setFormFieldValue(
+        fieldName: string,
+        value: string | string[] | DeliveryDestination[]
+    ) {
         setFormValues((prevValues) => {
             const newValues = cloneDeep(prevValues);
             set(newValues, fieldName, value);

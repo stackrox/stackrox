@@ -89,7 +89,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                 className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={deploymentStats}
-                                title="Details & Metadata"
+                                title="Details and metadata"
                                 labels={labels}
                                 annotations={annotations}
                             />
