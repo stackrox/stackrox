@@ -26,6 +26,7 @@ import {
     vulnerabilitiesWorkloadCvesPath,
     networkBasePath,
     vulnerabilityReportsPath,
+    listeningEndpointsBasePath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -85,6 +86,8 @@ function NavigationSidebar({
 
     const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportsPath];
 
+    const networkSectionPaths = [networkBasePath, listeningEndpointsBasePath];
+
     const Navigation = (
         <Nav id="nav-primary-simple">
             <NavList id="nav-list-simple">
@@ -93,11 +96,25 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
-                <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePath)}
-                    path={networkBasePath}
-                    title="Network Graph"
-                />
+                <NavExpandable
+                    id="Network"
+                    title="Network"
+                    isActive={networkSectionPaths.some((path) => location.pathname.includes(path))}
+                    isExpanded={networkSectionPaths.some((path) =>
+                        location.pathname.includes(path)
+                    )}
+                >
+                    <LeftNavItem
+                        isActive={location.pathname.includes(networkBasePath)}
+                        path={networkBasePath}
+                        title={basePathToLabelMap[networkBasePath]}
+                    />
+                    <LeftNavItem
+                        isActive={location.pathname.includes(listeningEndpointsBasePath)}
+                        path={listeningEndpointsBasePath}
+                        title={basePathToLabelMap[listeningEndpointsBasePath]}
+                    />
+                </NavExpandable>
                 <LeftNavItem
                     isActive={location.pathname.includes(violationsBasePath)}
                     path={violationsBasePath}
