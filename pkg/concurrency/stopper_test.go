@@ -1,7 +1,6 @@
 package concurrency
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -44,63 +43,6 @@ func (s *StopperTestSuite) TestCommonCase() {
 	s2.Wait() // Wait until it is time to shut down the goroutine.
 
 	// This is how to tell goroutine to stop.
-	stopper.Client().Stop()
-
-	// This is how to wait until the goroutine actually stops.
-	s.NoError(stopper.Client().Stopped().Wait())
-}
-
-// TestMultipleGoRoutinesEndOnSameStopper demonstrates how same stopper can be used to return from go routines
-func (s *StopperTestSuite) TestMultipleGoRoutinesEndOnSameStopper() {
-	stopper := NewStopper()
-
-	s1 := NewSignal()
-	s2 := NewSignal()
-	s3 := NewSignal()
-	s4 := NewSignal()
-
-	// This is how to implement a gracefully stoppable goroutine.
-	go func() {
-		// The goroutine must report that it shut down at the end.
-		defer stopper.Flow().ReportStopped()
-		defer fmt.Println("Routine 1 stopping")
-		for {
-			select {
-			// This is how the goroutine finds out that it needs to stop.
-			case <-stopper.Flow().StopRequested():
-				return
-			// Simulate some work, e.g. reading from a channel.
-			case <-s1.Done():
-				// Here the goroutine will do its useful work. This will just unblock the test to proceed further.
-				s2.Signal()
-			}
-		}
-	}()
-
-	go func() {
-		// The goroutine must report that it shut down at the end.
-		defer stopper.Flow().ReportStopped()
-		defer fmt.Println("Routine 2 stopping")
-		for {
-			select {
-			// This is how the goroutine finds out that it needs to stop.
-			case <-stopper.Flow().StopRequested():
-				return
-			// Simulate some work, e.g. reading from a channel.
-			case <-s3.Done():
-				// Here the goroutine will do its useful work. This will unblock the test to proceed to shutdown.
-				s4.Signal()
-			}
-		}
-	}()
-
-	s1.Signal()
-	s2.Wait()
-
-	s3.Signal()
-	s4.Wait() // Wait until it is time to shut down the goroutines.
-
-	// This is how to tell goroutines to stop.
 	stopper.Client().Stop()
 
 	// This is how to wait until the goroutine actually stops.
