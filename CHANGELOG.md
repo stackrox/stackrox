@@ -10,7 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 - Telemetry collection enabled by default for self-managed installations. Opt-out is available on bundle generation, or at any time via the System Configuration UI.
-- A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central. When set to `true` will disable registry repo list usage when matching integrations to image registries.
+- A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central. When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
 
 ### Removed Features
 
