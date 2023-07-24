@@ -32,7 +32,6 @@ func Export(ctx context.Context, outputDir string) error {
 	}
 
 	appendUpdaterSet(manual.UpdaterSet(ctx, nil))
-
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
