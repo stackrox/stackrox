@@ -24,13 +24,13 @@ func NewIndexerService(indexer *Indexer) (*indexerService, error) {
 }
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateIndexReport not implemented")
+	return nil, status.Error(codes.Unimplemented, "method CreateIndexReport not implemented")
 }
 func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetIndexReport not implemented")
+	return nil, status.Error(codes.Unimplemented, "method GetIndexReport not implemented")
 }
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
+	return nil, status.Error(codes.Unimplemented, "method HasIndexReport not implemented")
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
