@@ -20,7 +20,6 @@
         "@patternfly/react-table": "4.112.39",
         "@patternfly/react-topology": "4.93.5",
         "@patternfly/react-user-feedback": "^1.1.2",
-        "@stackrox/ui-components": "*",
         "axios": "^0.25.0",
         "classnames": "^2.3.2",
         "computed-style-to-inline-style": "^3.0.0",
@@ -91,7 +90,6 @@
         "reselect": "^4.1.2",
         "store": "^2.0.12",
         "styled-components": "^5.3.1",
-        "tippy.js": "^6.3.7",
         "use-deep-compare-effect": "^1.8.1",
         "yup": "^1.2.0"
     },

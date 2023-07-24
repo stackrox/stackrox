@@ -42,8 +42,7 @@ func (s *searcherImpl) Count(ctx context.Context, query *v1.Query) (int, error) 
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	paginatedSearcher := paginated.Paginated(searcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(searcher, defaultSortOption)
 	return defaultSortedSearcher
 }
 
