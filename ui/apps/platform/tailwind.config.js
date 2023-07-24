@@ -20,4 +20,5 @@ module.exports = {
             '6xl': '2.5rem', // 40px
         },
     },
+    purge: ['./src/**/*.{js,ts,tsx}'],
 };
