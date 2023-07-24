@@ -9,18 +9,18 @@ import (
 // BillingMetrics are the metrics we collect and show to the customers to help
 // them report their usage.
 type BillingMetrics struct {
-	TotalNodes      int64
-	TotalMilliCores int64
+	TotalNodes int64
+	TotalCores int64
 }
 
 var (
-	nodesMap      = maputil.NewMaxMap[string, int64]()
-	millicoresMap = maputil.NewMaxMap[string, int64]()
+	nodesMap = maputil.NewMaxMap[string, int64]()
+	coresMap = maputil.NewMaxMap[string, int64]()
 )
 
 func updateMaxima(clusterID string, cm *central.ClusterMetrics) {
 	nodesMap.Add(clusterID, cm.GetNodeCount())
-	millicoresMap.Add(clusterID, cm.GetCpuCapacity())
+	coresMap.Add(clusterID, cm.GetCpuCapacity())
 }
 
 // CutMetrics resets the metrics and returns the collected values since last
@@ -32,9 +32,9 @@ func CutMetrics(ids set.StringSet) *BillingMetrics {
 			m.TotalNodes += v
 		}
 	}
-	for id, v := range millicoresMap.Reset() {
+	for id, v := range coresMap.Reset() {
 		if ids.Contains(id) {
-			m.TotalMilliCores += v
+			m.TotalCores += v
 		}
 	}
 	return &m
