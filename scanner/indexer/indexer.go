@@ -26,6 +26,7 @@ import (
 //go:generate mockgen-wrapper
 type Indexer interface {
 	IndexContainerImage(context.Context, claircore.Digest, string, ...Option) (*claircore.IndexReport, error)
+	GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error)
 	Close(context.Context) error
 }
 
@@ -176,6 +177,11 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 	}
 	utils.IgnoreError(res.Body.Close)
 	return res.Request, nil
+}
+
+// GetIndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
+func (i *indexerImpl) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
+	return i.indexer.IndexReport(ctx, manifestDigest)
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
