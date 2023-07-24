@@ -18,28 +18,50 @@ type ContextProvider interface {
 var _ ContextProvider = (*contextProviderImpl)(nil)
 
 func NewContextProvider() ContextProvider {
-	return &contextProviderImpl{}
+	return &contextProviderImpl{
+		centralReachable: concurrency.NewSignal(),
+		stopper:          concurrency.NewStopper(),
+	}
 }
 
 type contextProviderImpl struct {
-	centralReachable concurrency.Signal
-	sensorContext    context.Context
 	cancelContextFn  func()
+	sensorContext    context.Context
+	centralReachable concurrency.Signal
+	stopper          concurrency.Stopper
 }
 
 // GetContext returns the sensor context. This call will block until central is reachable.
 // This blocking in behavior is needed to ensure unset or old contexts are not passed to other component.
 func (c *contextProviderImpl) GetContext() context.Context {
-	return nil
+	select {
+	case <-c.centralReachable.Done():
+		return c.sensorContext
+	case <-c.stopper.Flow().StopRequested():
+		return nil
+	}
 }
 
 func (c *contextProviderImpl) Start() error {
 	return nil
 }
 
-func (c *contextProviderImpl) Stop(_ error) {}
+func (c *contextProviderImpl) Stop(_ error) {
+	c.stopper.Client().Stop()
+}
 
-func (c *contextProviderImpl) Notify(_ common.SensorComponentEvent) {}
+func (c *contextProviderImpl) Notify(event common.SensorComponentEvent) {
+	switch event {
+	case common.SensorComponentEventCentralReachable:
+		c.sensorContext, c.cancelContextFn = context.WithCancel(context.Background())
+		c.centralReachable.Signal()
+		break
+	case common.SensorComponentEventOfflineMode:
+		c.centralReachable.Reset()
+		c.cancelContextFn()
+		break
+	}
+}
 
 func (c *contextProviderImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
