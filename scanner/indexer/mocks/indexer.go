@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	claircore "github.com/quay/claircore"
-	indexer "github.com/stackrox/stackrox/scanner/v4/indexer"
+	indexer "github.com/stackrox/rox/scanner/indexer"
 	gomock "go.uber.org/mock/gomock"
 )
 
