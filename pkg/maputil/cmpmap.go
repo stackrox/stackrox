@@ -2,9 +2,9 @@ package maputil
 
 import "github.com/stackrox/rox/pkg/sync"
 
-type cmpmap[K comparable, V any, C func(a, b V) bool] struct {
+type cmpmap[K comparable, V any] struct {
 	data map[K]V
-	cmp  C
+	cmp  func(a, b V) bool
 	mux  sync.RWMutex
 }
 
@@ -12,9 +12,12 @@ type cmpmap[K comparable, V any, C func(a, b V) bool] struct {
 // cmp predicate returns true when provided with the existing and new values.
 // Example:
 //
-//	NewCmpMap[string](Max[int])
-func NewCmpMap[K comparable, V any, Cmp func(a, b V) bool](cmp Cmp) *cmpmap[K, V, Cmp] {
-	return &cmpmap[K, V, Cmp]{cmp: cmp}
+//	m := NewCmpMap[string](Max[int])
+//	m.Add("a", 10)
+//	m.Add("a", 5)
+//	v, ok := m.Get("a") // 10
+func NewCmpMap[K comparable, V any](cmp func(a, b V) bool) *cmpmap[K, V] {
+	return &cmpmap[K, V]{cmp: cmp}
 }
 
 type orderable interface {
@@ -28,12 +31,12 @@ func Max[V orderable](a, b V) bool {
 }
 
 // NewMaxMap is a shortcut to create a comparing map[string]int64.
-func NewMaxMap[K comparable, V orderable]() *cmpmap[K, V, func(a, b V) bool] {
+func NewMaxMap[K comparable, V orderable]() *cmpmap[K, V] {
 	return NewCmpMap[K](Max[V])
 }
 
 // Reset cleans the map and returns the previously stored one.
-func (m *cmpmap[K, V, _]) Reset() map[K]V {
+func (m *cmpmap[K, V]) Reset() map[K]V {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	prev := m.data
@@ -42,7 +45,7 @@ func (m *cmpmap[K, V, _]) Reset() map[K]V {
 }
 
 // Get returns the stored value by key.
-func (m *cmpmap[K, V, _]) Get(k K) (V, bool) {
+func (m *cmpmap[K, V]) Get(k K) (V, bool) {
 	m.mux.RLock()
 	defer m.mux.RUnlock()
 	v, ok := m.data[k]
@@ -51,7 +54,7 @@ func (m *cmpmap[K, V, _]) Get(k K) (V, bool) {
 
 // Add inserts the value v to the map at the key k, or updates the value if the
 // comparison predicate returns true.
-func (m *cmpmap[K, V, C]) Add(k K, v V) {
+func (m *cmpmap[K, V]) Add(k K, v V) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if existing, ok := m.data[k]; ok {
