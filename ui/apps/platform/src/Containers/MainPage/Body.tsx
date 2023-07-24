@@ -34,13 +34,14 @@ import {
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
-import asyncComponent from 'Components/AsyncComponent';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
+
+import asyncComponent from './AsyncComponent';
 
 function NotFoundPage(): ReactElement {
     return (
