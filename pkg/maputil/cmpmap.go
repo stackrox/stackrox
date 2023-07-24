@@ -25,7 +25,7 @@ type orderable interface {
 }
 
 // Max returns true if b is greater than a. May be used as a predicate to a
-// comparing map to hold maximum values of the keys.
+// comparing map to hold maximum values.
 func Max[V orderable](a, b V) bool {
 	return a < b
 }

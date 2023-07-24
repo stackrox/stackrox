@@ -20,7 +20,9 @@ func TestMaximap_Get(t *testing.T) {
 
 func TestMaximap_Add(t *testing.T) {
 	m := NewMaxMap[string, int]()
-	m.Add("a", 1)
+
+	m.Add("a", -1)
+	assert.Equal(t, -1, m.data["a"])
 
 	m.Add("a", 5)
 	assert.Equal(t, 5, m.data["a"])
