@@ -137,20 +137,22 @@ type testCase struct {
 
 func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*storage.ComplianceRunMetadata, *storage.ComplianceRunMetadata, map[string]testCase) {
 	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{},
+			expectedObjects:        []*storage.ComplianceRunMetadata{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunMetadata{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withNoAccessToCluster: {
@@ -161,7 +163,8 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunMetadata{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccessToDifferentNs: {
@@ -173,7 +176,8 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunMetadata{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccess: {
@@ -184,7 +188,8 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunMetadata{objA},
 			expectedWriteError:     nil,
 		},
 		withAccessToCluster: {
@@ -195,7 +200,8 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunMetadata{objA},
 			expectedWriteError:     nil,
 		},
 	}
@@ -432,33 +438,16 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACDeleteMany() {
 }
 
 func (s *ComplianceRunMetadataStoreSuite) TestSACGetMany() {
-	objA := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ComplianceRunMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]struct {
-		elems          []*storage.ComplianceRunMetadata
-		missingIndices []int
-	}{
-		withAllAccess:           {elems: []*storage.ComplianceRunMetadata{objA, objB}, missingIndices: []int{}},
-		withNoAccess:            {elems: []*storage.ComplianceRunMetadata{}, missingIndices: []int{0, 1}},
-		withNoAccessToCluster:   {elems: []*storage.ComplianceRunMetadata{}, missingIndices: []int{0, 1}},
-		withAccessToDifferentNs: {elems: []*storage.ComplianceRunMetadata{}, missingIndices: []int{0, 1}},
-		withAccess:              {elems: []*storage.ComplianceRunMetadata{objA}, missingIndices: []int{1}},
-		withAccessToCluster:     {elems: []*storage.ComplianceRunMetadata{objA}, missingIndices: []int{1}},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetRunId(), objB.GetRunId()})
+			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetRunId(), objB.GetRunId()})
 			assert.NoError(t, err)
-			assert.Equal(t, expected.elems, actual)
-			assert.Equal(t, expected.missingIndices, missingIndices)
+			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}
 

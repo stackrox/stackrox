@@ -137,20 +137,22 @@ type testCase struct {
 
 func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*storage.ProcessBaselineResults, *storage.ProcessBaselineResults, map[string]testCase) {
 	objA := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{},
+			expectedObjects:        []*storage.ProcessBaselineResults{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ProcessBaselineResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withNoAccessToCluster: {
@@ -161,7 +163,8 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ProcessBaselineResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccessToDifferentNs: {
@@ -173,7 +176,8 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ProcessBaselineResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccess: {
@@ -185,7 +189,8 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ProcessBaselineResults{objA},
 			expectedWriteError:     nil,
 		},
 		withAccessToCluster: {
@@ -196,7 +201,8 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedMissingIndices: nil,
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ProcessBaselineResults{objA},
 			expectedWriteError:     nil,
 		},
 	}
@@ -433,33 +439,16 @@ func (s *ProcessBaselineResultsStoreSuite) TestSACDeleteMany() {
 }
 
 func (s *ProcessBaselineResultsStoreSuite) TestSACGetMany() {
-	objA := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]struct {
-		elems          []*storage.ProcessBaselineResults
-		missingIndices []int
-	}{
-		withAllAccess:           {elems: []*storage.ProcessBaselineResults{objA, objB}, missingIndices: []int{}},
-		withNoAccess:            {elems: []*storage.ProcessBaselineResults{}, missingIndices: []int{0, 1}},
-		withNoAccessToCluster:   {elems: []*storage.ProcessBaselineResults{}, missingIndices: []int{0, 1}},
-		withAccessToDifferentNs: {elems: []*storage.ProcessBaselineResults{}, missingIndices: []int{0, 1}},
-		withAccess:              {elems: []*storage.ProcessBaselineResults{objA}, missingIndices: []int{1}},
-		withAccessToCluster:     {elems: []*storage.ProcessBaselineResults{objA}, missingIndices: []int{1}},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetDeploymentId(), objB.GetDeploymentId()})
+			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetDeploymentId(), objB.GetDeploymentId()})
 			assert.NoError(t, err)
-			assert.Equal(t, expected.elems, actual)
-			assert.Equal(t, expected.missingIndices, missingIndices)
+			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}
 
