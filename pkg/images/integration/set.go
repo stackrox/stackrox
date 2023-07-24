@@ -2,7 +2,6 @@ package integration
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
@@ -25,14 +24,9 @@ type Set interface {
 
 // NewSet returns a new Set instance.
 func NewSet(reporter integrationhealth.Reporter) Set {
-	registryFactory := registries.NewFactory(registries.FactoryOptions{})
-	if env.DisableRegistryRepoList.BooleanSetting() {
-		registryFactory = registries.NewFactory(registries.FactoryOptions{
-			CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
-		})
-
-		log.Info("Registry repo lists are disabled")
-	}
+	registryFactory := registries.NewFactory(registries.FactoryOptions{
+		CreatorFuncsWithoutRepoList: registries.AllCreatorFuncsWithoutRepoList,
+	})
 
 	registrySet := registries.NewSet(registryFactory)
 

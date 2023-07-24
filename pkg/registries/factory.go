@@ -2,6 +2,7 @@ package registries
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
 	artifactRegistryFactory "github.com/stackrox/rox/pkg/registries/artifactregistry"
 	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
@@ -55,10 +56,12 @@ var AllCreatorFuncsWithoutRepoList = []CreatorWrapper{
 	ibmFactory.CreatorWithoutRepoList,
 }
 
-// NewFactory creates a new scanner factory.
+// NewFactory creates a new registries factory.
 func NewFactory(opts FactoryOptions) Factory {
 	reg := &factoryImpl{
-		creators: make(map[string]Creator),
+		creators:                make(map[string]Creator),
+		creatorsWithoutRepoList: make(map[string]Creator),
+		disableRepoListForAll:   env.DisableRegistryRepoList.BooleanSetting(),
 	}
 
 	creatorFuncs := AllCreatorFuncs
@@ -69,7 +72,11 @@ func NewFactory(opts FactoryOptions) Factory {
 	for _, creatorFunc := range creatorFuncs {
 		typ, creator := creatorFunc()
 		reg.creators[typ] = creator
+	}
 
+	for _, creatorFunc := range opts.CreatorFuncsWithoutRepoList {
+		typ, creator := creatorFunc()
+		reg.creatorsWithoutRepoList[typ] = creator
 	}
 
 	return reg
