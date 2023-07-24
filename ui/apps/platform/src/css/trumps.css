@@ -10,10 +10,6 @@
   color: var(--base-600);
 }
 
-#main-page-container > div > :not(.pf-c-page__main-section) button {
-    font-weight: inherit; /* override font-weight: 600 in ui-components.css file */
-}
-
 /* Universal selector increases specificity of these override style rules */
 
 * .theme-dark {
@@ -76,9 +72,10 @@
     border-color: var(--pf-c-form-control--disabled--BorderColor) !important;
 }
 
-/* Override classic opacity: 0.5 for disabled buttons so they match disabled input elements. */
-.pf-c-page__main-section button:disabled {
-    opacity: inherit;
+/* Replace override for PatternFly with rule from ui-components.css file for classic disabled buttons. */
+:not(.pf-c-page__main-section) button:disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 /* SimpleListItem in policy categories: specify color instead of depending on opacity. */
@@ -152,10 +149,6 @@
 /* override width of thead checkbox so that it's not cut off when table is empty */
 .pf-c-table thead tr > .pf-c-table__check {
     min-width: 44px;
-}
-
-button.pf-c-tree-view__node {
-    font-weight: inherit; /* override 600 from ui-components */
 }
 
 /* Global Search modal */
