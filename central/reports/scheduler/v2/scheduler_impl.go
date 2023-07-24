@@ -243,7 +243,7 @@ func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (b
 		return false, "", errors.Errorf("Error finding report ID '%s': %s", reportID, err)
 	}
 	if !found {
-		return false, "", errors.Errorf("Report ID '%s' does not exist", reportID)
+		return false, "", errors.Wrapf(errox.NotFound, "Report ID '%s' does not exist", reportID)
 	}
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {

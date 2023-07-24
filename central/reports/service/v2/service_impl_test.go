@@ -4,13 +4,18 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	reportConfigDSMocks "github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
 	metadataDSMocks "github.com/stackrox/rox/central/reports/metadata/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
+	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +36,7 @@ type ReportServiceTestSuite struct {
 	reportConfigStore   *reportConfigDSMocks.MockDataStore
 	reportSnapshotStore *reportSnapshotDSMocks.MockDataStore
 	scheduler           *schedulerMocks.MockScheduler
+	service             Service
 }
 
 func (suite *ReportServiceTestSuite) SetupSuite() {
@@ -46,7 +52,9 @@ func (suite *ReportServiceTestSuite) SetupSuite() {
 	suite.reportConfigStore = reportConfigDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.reportSnapshotStore = reportSnapshotDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.scheduler = schedulerMocks.NewMockScheduler(suite.mockCtrl)
+	suite.service = New(suite.reportMetadataStore, suite.reportConfigStore, suite.reportSnapshotStore, suite.scheduler)
 }
+
 func (suite *ReportServiceTestSuite) TestGetReportStatus() {
 	status := &storage.ReportStatus{
 		ErrorMsg: "Error msg",
@@ -61,11 +69,9 @@ func (suite *ReportServiceTestSuite) TestGetReportStatus() {
 	id := apiV2.ResourceByID{
 		Id: "test_report",
 	}
-	s := New(suite.reportMetadataStore, nil, nil, nil)
-	repStatusResponse, err := s.GetReportStatus(suite.ctx, &id)
+	repStatusResponse, err := suite.service.GetReportStatus(suite.ctx, &id)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), repStatusResponse.Status.GetErrorMsg(), status.GetErrorMsg())
-
 }
 
 func (suite *ReportServiceTestSuite) TestGetReportHistory() {
@@ -80,14 +86,13 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 	}
 
 	suite.reportSnapshotStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
-	s := serviceImpl{snapshotDatastore: suite.reportSnapshotStore}
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		ReportConfigId:   "test_report_config",
 		ReportParamQuery: emptyQuery,
 	}
 
-	res, err := s.GetReportHistory(suite.ctx, req)
+	res, err := suite.service.GetReportHistory(suite.ctx, req)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), res.ReportSnapshots[0].GetId(), "test_report")
 	assert.Equal(suite.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
@@ -97,7 +102,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 		ReportParamQuery: emptyQuery,
 	}
 
-	_, err = s.GetReportHistory(suite.ctx, req)
+	_, err = suite.service.GetReportHistory(suite.ctx, req)
 	assert.Error(suite.T(), err)
 
 	query := &apiV2.RawQuery{Query: "Report Name:test_report"}
@@ -106,7 +111,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 		ReportParamQuery: query,
 	}
 
-	res, err = s.GetReportHistory(suite.ctx, req)
+	res, err = suite.service.GetReportHistory(suite.ctx, req)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), res.ReportSnapshots[0].GetId(), "test_report")
 	assert.Equal(suite.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
@@ -129,12 +134,205 @@ func (suite *ReportServiceTestSuite) TestAuthz() {
 	testutils.AssertAuthzWorks(suite.T(), &s)
 }
 
-//func (suite *ReportServiceTestSuite) TestRunReport() {
-//	cases := []struct{
-//		desc string
-//		req *apiV2.RunReportRequest
-//		ctx context.Context
-//		isError bool
-//		resp *apiV2.RunReportResponse
-//	}
-//}
+func (suite *ReportServiceTestSuite) TestRunReport() {
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+
+	user := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	userContext := authn.ContextWithIdentity(suite.ctx, mockID, suite.T())
+
+	testCases := []struct {
+		desc    string
+		req     *apiV2.RunReportRequest
+		ctx     context.Context
+		mockGen func()
+		isError bool
+		resp    *apiV2.RunReportResponse
+	}{
+		{
+			desc: "Report config ID empty",
+			req: &apiV2.RunReportRequest{
+				ReportConfigId:           "",
+				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
+			},
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "User info not present in context",
+			req: &apiV2.RunReportRequest{
+				ReportConfigId:           reportConfig.Id,
+				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
+			},
+			ctx:     suite.ctx,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Report config not found",
+			req: &apiV2.RunReportRequest{
+				ReportConfigId:           reportConfig.Id,
+				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportConfigStore.EXPECT().GetReportConfiguration(userContext, reportConfig.Id).
+					Return(nil, false, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful submission; Notification method email",
+			req: &apiV2.RunReportRequest{
+				ReportConfigId:           reportConfig.Id,
+				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportConfigStore.EXPECT().GetReportConfiguration(userContext, reportConfig.Id).
+					Return(reportConfig, true, nil).Times(1)
+				reportReq := getReportRequest(user, reportConfig, storage.ReportStatus_EMAIL)
+				suite.scheduler.EXPECT().SubmitReportRequest(reportReq, false).
+					Return("reportID", nil).Times(1)
+			},
+			isError: false,
+			resp: &apiV2.RunReportResponse{
+				ReportConfigId: reportConfig.Id,
+				ReportId:       "reportID",
+			},
+		},
+		{
+			desc: "Successful submission; Notification method download",
+			req: &apiV2.RunReportRequest{
+				ReportConfigId:           reportConfig.Id,
+				ReportNotificationMethod: apiV2.NotificationMethod_DOWNLOAD,
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportConfigStore.EXPECT().GetReportConfiguration(userContext, reportConfig.Id).
+					Return(reportConfig, true, nil).Times(1)
+				reportReq := getReportRequest(user, reportConfig, storage.ReportStatus_DOWNLOAD)
+				reportReq.Ctx = userContext
+				suite.scheduler.EXPECT().SubmitReportRequest(reportReq, false).
+					Return("reportID", nil).Times(1)
+			},
+			isError: false,
+			resp: &apiV2.RunReportResponse{
+				ReportConfigId: reportConfig.Id,
+				ReportId:       "reportID",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			tc.mockGen()
+			response, err := suite.service.RunReport(tc.ctx, tc.req)
+			if tc.isError {
+				suite.Error(err)
+			} else {
+				suite.NoError(err)
+				suite.Equal(tc.resp, response)
+			}
+		})
+	}
+}
+
+func (suite *ReportServiceTestSuite) TestCancelReport() {
+	testCases := []struct {
+		desc    string
+		req     *apiV2.ResourceByID
+		mockGen func()
+		isError bool
+		resp    *apiV2.CancelReportResponse
+	}{
+		{
+			desc: "Empty Report ID",
+			req: &apiV2.ResourceByID{
+				Id: "",
+			},
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Scheduler error while cancelling request",
+			req: &apiV2.ResourceByID{
+				Id: "reportID",
+			},
+			mockGen: func() {
+				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
+					Return(false, "", errors.New("Could not determine user identity from provided context")).
+					Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Scheduler couldn't cancel request due to a non-error reason",
+			req: &apiV2.ResourceByID{
+				Id: "reportID",
+			},
+			mockGen: func() {
+				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
+					Return(false, "Cannot cancel. Report ID 'reportID' has already completed execution.", nil).
+					Times(1)
+			},
+			isError: false,
+			resp: &apiV2.CancelReportResponse{
+				Cancelled:      false,
+				FailureMessage: "Cannot cancel. Report ID 'reportID' has already completed execution.",
+			},
+		},
+		{
+			desc: "Request cancelled",
+			req: &apiV2.ResourceByID{
+				Id: "reportID",
+			},
+			mockGen: func() {
+				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
+					Return(true, "", nil).
+					Times(1)
+			},
+			isError: false,
+			resp: &apiV2.CancelReportResponse{
+				Cancelled:      true,
+				FailureMessage: "",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			tc.mockGen()
+			response, err := suite.service.CancelReport(suite.ctx, tc.req)
+			if tc.isError {
+				suite.Error(err)
+			} else {
+				suite.NoError(err)
+				suite.Equal(tc.resp, response)
+			}
+		})
+	}
+}
+
+func getReportRequest(user *storage.SlimUser, config *storage.ReportConfiguration,
+	notificationMethod storage.ReportStatus_NotificationMethod) *reportGen.ReportRequest {
+	return &reportGen.ReportRequest{
+		ReportConfig: config,
+		ReportMetadata: &storage.ReportMetadata{
+			ReportConfigId: config.Id,
+			Requester:      user,
+			ReportStatus: &storage.ReportStatus{
+				RunState:                 storage.ReportStatus_WAITING,
+				ReportRequestType:        storage.ReportStatus_ON_DEMAND,
+				ReportNotificationMethod: notificationMethod,
+			},
+		},
+	}
+}
