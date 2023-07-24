@@ -4,26 +4,28 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	golog "log"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"syscall"
 
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	grpcmetrics "github.com/stackrox/rox/central/grpc/metrics"
+	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/stackrox/scanner/v4/indexer"
 	"github.com/stackrox/stackrox/scanner/v4/matcher"
 	"github.com/stackrox/stackrox/scanner/v4/version"
+	"golang.org/x/sys/unix"
 )
 
 type Backends struct {
@@ -38,10 +40,10 @@ func main() {
 
 	// If certs was specified, configure the identity environment.
 	if *certsPath != "" {
-		os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsPath, mtls.CACertFileName))
-		os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsPath, mtls.CAKeyFileName))
-		os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName))
-		os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName))
+		utils.CrashOnError(os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsPath, mtls.CACertFileName)))
+		utils.CrashOnError(os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsPath, mtls.CAKeyFileName)))
+		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName)))
+		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 	}
 
 	// Create cancellable context.
@@ -51,7 +53,7 @@ func main() {
 	// Initialize logging and setup context.
 	err := initializeLogging()
 	if err != nil {
-		log.Fatalf("failed to initialize logging: %v", err)
+		golog.Fatalf("failed to initialize logging: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
@@ -82,9 +84,9 @@ func main() {
 
 	// Wait for signals.
 	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
 	sig := <-sigC
-	zlog.Warn(ctx).Str("signal", sig.String()).Send()
+	zlog.Info(ctx).Str("signal", sig.String()).Send()
 }
 
 // initializeLogging Initialize zerolog and Quay's zlog.
@@ -100,6 +102,8 @@ func initializeLogging() error {
 		Str("host", hostname).
 		Logger()
 	zlog.Set(&logger)
+	// Disable the default zerolog logger.
+	log.Logger = zerolog.Nop()
 	return nil
 }
 
@@ -124,8 +128,8 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 	grpcSrv := grpc.NewAPI(grpc.Config{
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
-		GRPCMetrics:        grpcmetrics.GRPCSingleton(),
-		HTTPMetrics:        grpcmetrics.HTTPSingleton(),
+		GRPCMetrics:        grpcmetrics.NewGRPCMetrics(),
+		HTTPMetrics:        grpcmetrics.NewHTTPMetrics(),
 		Endpoints: []*grpc.EndpointConfig{
 			{
 				ListenEndpoint: ":8443",
