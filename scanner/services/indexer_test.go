@@ -7,7 +7,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/stackrox/scanner/v4/indexer/mocks"
+	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
