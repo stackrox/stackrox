@@ -136,7 +136,7 @@ function DelegateScanningPage() {
         updateDelegatedRegistryConfig(delegatedRegistryConfig)
             .then(() => {
                 const newSuccessObj: AlertObj = {
-                    type: AlertVariant.danger,
+                    type: AlertVariant.success,
                     title: 'Delegated scanning configuration saved successfully',
                     body: <></>,
                 };

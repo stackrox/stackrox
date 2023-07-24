@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 
 import { getInputByLabel } from '../../helpers/formHelpers';
 
-import { visitDelegateScanning } from './Clusters.helpers';
+import { visitDelegateScanning, saveDelegatedRegistryConfig } from './Clusters.helpers';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
 describe('Delegate Image Scanning', () => {
@@ -55,5 +55,12 @@ describe('Delegate Image Scanning', () => {
 
                 cy.get('.cluster-select').should('have.text', firstClusterName);
             });
+
+        // save the configuration
+        saveDelegatedRegistryConfig();
+
+        cy.get(
+            '.pf-c-alert.pf-m-success .pf-c-alert__title:contains("Delegated scanning configuration saved successfully")'
+        );
     });
 });
