@@ -47,5 +47,5 @@ func main() {
 		ResourceLocator: nil,
 	})
 	log.Printf("Reply: %v (%v)", resp, err)
-	defer conn.Close()
+	defer utils.IgnoreError(conn.Close)
 }
