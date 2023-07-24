@@ -35,10 +35,10 @@ func average(metrics ...*clustermetrics.BillingMetrics) clustermetrics.BillingMe
 	}
 	for _, m := range metrics {
 		a.TotalNodes += m.TotalNodes
-		a.TotalMilliCores += m.TotalMilliCores
+		a.TotalCores += m.TotalCores
 	}
 	a.TotalNodes /= n
-	a.TotalMilliCores /= n
+	a.TotalCores /= n
 	return a
 }
 
@@ -62,8 +62,8 @@ func checkIn(metrics clustermetrics.BillingMetrics) error {
 	err := bmetrics.Singleton().Insert(ctx, &storage.BillingMetrics{
 		Ts: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Sr: &storage.BillingMetrics_SecuredResources{
-			Nodes:      int32(metrics.TotalNodes),
-			Millicores: int32(metrics.TotalMilliCores)},
+			Nodes: int32(metrics.TotalNodes),
+			Cores: int32(metrics.TotalCores)},
 	})
 	return errors.Wrap(err, "billing metrics datastore failure")
 }
