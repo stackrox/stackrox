@@ -20,6 +20,7 @@ import (
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	bmService "github.com/stackrox/rox/central/billingmetrics"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	"github.com/stackrox/rox/central/cli"
@@ -133,6 +134,7 @@ import (
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
+	bmetrics "github.com/stackrox/rox/central/telemetry/billingmetrics"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -333,6 +335,8 @@ func startServices() {
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
 
+	bmetrics.Schedule()
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -345,6 +349,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
+		bmService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -742,6 +747,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/clusters/helm-config.yaml",
 			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/billing/csv",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: bmService.CSVHandler(),
 			Compression:   true,
 		},
 	}

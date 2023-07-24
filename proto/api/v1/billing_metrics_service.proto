@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "v1";
+
+message BillingMetricsRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+}
+
+message SecuredResourcesMetrics {
+  int32 nodes = 1;
+  int32 millicores = 2;
+}
+
+message BillingMetricsResponse {
+  message BillingMetricsRecord {
+    google.protobuf.Timestamp ts = 1;
+    SecuredResourcesMetrics metrics = 2;
+  }
+  repeated BillingMetricsRecord record = 1;
+}
+
+message BillingMetricsMaxResponse {
+  google.protobuf.Timestamp nodes_ts = 1;
+  int32 nodes = 2;
+  google.protobuf.Timestamp millicores_ts = 3;
+  int32 millicores = 4;
+}
+
+service BillingMetricsService {
+  rpc GetMetrics(BillingMetricsRequest) returns (BillingMetricsResponse) {
+    option (google.api.http) = {get: "/v1/billing"};
+  }
+  rpc GetMax(BillingMetricsRequest) returns (BillingMetricsMaxResponse) {
+    option (google.api.http) = {get: "/v1/billing/max"};
+  }
+}

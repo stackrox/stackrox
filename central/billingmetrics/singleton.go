@@ -1,0 +1,19 @@
+package billingmetrics
+
+import (
+	store "github.com/stackrox/rox/central/billingmetrics/store"
+	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	svc  Service
+	once sync.Once
+)
+
+// Singleton returns the billing metrics service singleton.
+func Singleton() Service {
+	once.Do(func() {
+		svc = New(store.Singleton())
+	})
+	return svc
+}
