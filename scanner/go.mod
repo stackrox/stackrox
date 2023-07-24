@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
-	github.com/quay/claircore v1.5.10
+	github.com/quay/claircore v1.5.11
 	github.com/quay/zlog v1.1.4
 	github.com/rs/zerolog v1.29.1
 	github.com/stackrox/rox v0.0.0
