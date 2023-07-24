@@ -111,6 +111,10 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 		if p.offlineMode.CompareAndSwap(false, true) {
 			p.listener.Stop(errors.New("gRPC connection stopped"))
 		}
+	case common.SensorComponentEventComplianceEnabled:
+		p.listener.Notify(common.SensorComponentEventComplianceEnabled)
+	case common.SensorComponentEventComplianceDisabled:
+		p.listener.Notify(common.SensorComponentEventComplianceDisabled)
 	}
 }
 

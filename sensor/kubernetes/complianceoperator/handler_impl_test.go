@@ -8,14 +8,19 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
+	notifierMocks "github.com/stackrox/rox/sensor/common/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 )
 
@@ -32,6 +37,7 @@ type ManagerTestSuite struct {
 	suite.Suite
 
 	client         *fake.FakeDynamicClient
+	notifier       *notifierMocks.MockNotifier
 	requestHandler common.SensorComponent
 	statusInfo     *mocks.MockStatusInfo
 }
@@ -47,9 +53,13 @@ func (s *ManagerTestSuite) SetupSuite() {
 
 func (s *ManagerTestSuite) SetupTest() {
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
+	s.notifier = notifierMocks.NewMockNotifier(gomock.NewController(s.T()))
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
-	s.requestHandler = NewRequestHandler(s.client, s.statusInfo)
+	s.requestHandler = newTestRequestHandler(s.client, s.statusInfo, s.notifier)
+
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceEnabled)
 	s.Require().NoError(s.requestHandler.Start())
+	<-s.requestHandler.ResponsesC()
 }
 
 func (s *ManagerTestSuite) TearDownSuite() {
@@ -83,6 +93,7 @@ func (s *ManagerTestSuite) TestProcessApplyOneTimeScanComplianceDisabled() {
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
 	}
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceDisabled)
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 
@@ -156,6 +167,7 @@ func (s *ManagerTestSuite) TestProcessApplyScheduledScanComplianceDisabled() {
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
 	}
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceDisabled)
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 
@@ -240,6 +252,7 @@ func (s *ManagerTestSuite) TestProcessDeleteScanConfigDisabled() {
 	expected := expectedResponse{
 		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
 	}
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceDisabled)
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 
@@ -275,7 +288,7 @@ func (s *ManagerTestSuite) TestProcessRerunScanSuccess() {
 			Namespace: "ns",
 		},
 	}
-	obj, err := runtimeObjToUnstructured(complianceScan)
+	obj, err := k8sutil.RuntimeObjToUnstructured(complianceScan)
 	s.Require().NoError(err)
 	_, err = s.client.Resource(complianceoperator.ComplianceScanGVR).Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
 	s.Require().NoError(err)
@@ -300,6 +313,26 @@ func (s *ManagerTestSuite) TestProcessRerunScanNotFound() {
 
 	s.statusInfo.EXPECT().GetNamespace().Return("ns")
 	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *ManagerTestSuite) TestEnableDisableCompliance() {
+	msg := getTestEnableComplianceMsg()
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetEnableCompliance().GetId(),
+	}
+
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceEnabled)
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	msg = getTestDisableComplianceMsg()
+	expected = expectedResponse{
+		id: msg.GetComplianceRequest().GetDisableCompliance().GetId(),
+	}
+
+	s.notifier.EXPECT().Notify(common.SensorComponentEventComplianceDisabled)
+	actual = s.sendMessage(1, msg)
 	s.assert(expected, actual)
 }
 
@@ -438,4 +471,48 @@ func getTestRerunScanMsg(name string) *central.MsgToSensor {
 			},
 		},
 	}
+}
+
+func getTestEnableComplianceMsg() *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_EnableCompliance{
+					EnableCompliance: &central.EnableComplianceRequest{
+						Id: uuid.NewV4().String(),
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestDisableComplianceMsg() *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_DisableCompliance{
+					DisableCompliance: &central.DisableComplianceRequest{
+						Id: uuid.NewV4().String(),
+					},
+				},
+			},
+		},
+	}
+}
+
+// Test Handler has compliance enabled by default to make testing easier.
+func newTestRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, notifiers ...common.Notifier) common.SensorComponent {
+	h := &handlerImpl{
+		client:                 client,
+		complianceOperatorInfo: complianceOperatorInfo,
+		notifiers:              notifiers,
+		request:                make(chan *central.ComplianceRequest),
+		response:               make(chan *message.ExpiringMessage),
+
+		disabled:   concurrency.NewSignal(),
+		stopSignal: concurrency.NewSignal(),
+	}
+
+	return h
 }

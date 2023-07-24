@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
@@ -92,4 +93,16 @@ func SetAnnotation(object *unstructured.Unstructured, key, value string) {
 	}
 	anns[key] = value
 	object.SetAnnotations(anns)
+}
+
+// RuntimeObjToUnstructured converts a kubernetes runtime object to Unstructured object.
+func RuntimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &unstructured.Unstructured{
+		Object: unstructuredObj,
+	}, nil
 }

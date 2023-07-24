@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -22,6 +23,8 @@ type outputQueueImpl struct {
 	detector     detector.Detector
 	stopped      *atomic.Bool
 }
+
+func (q *outputQueueImpl) Notify(_ common.SensorComponentEvent) {}
 
 // Send a ResourceEvent message to the inner queue
 func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {

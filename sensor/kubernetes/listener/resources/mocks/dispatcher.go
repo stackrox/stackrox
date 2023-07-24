@@ -10,6 +10,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	dispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -141,6 +142,20 @@ func (m *MockDispatcherRegistry) ForComplianceOperatorScanSettingBindings() reso
 func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorScanSettingBindings() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorScanSettingBindings", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorScanSettingBindings))
+}
+
+// ForComplianceOperatorScanSettings mocks base method.
+func (m *MockDispatcherRegistry) ForComplianceOperatorScanSettings() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForComplianceOperatorScanSettings")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForComplianceOperatorScanSettings indicates an expected call of ForComplianceOperatorScanSettings.
+func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorScanSettings() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorScanSettings", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorScanSettings))
 }
 
 // ForComplianceOperatorScans mocks base method.
@@ -309,4 +324,16 @@ func (m *MockDispatcherRegistry) ForServices() resources.Dispatcher {
 func (mr *MockDispatcherRegistryMockRecorder) ForServices() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForServices", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForServices))
+}
+
+// RegisterForComplianceOperatorTailoredProfiles mocks base method.
+func (m *MockDispatcherRegistry) RegisterForComplianceOperatorTailoredProfiles(dispatcher *dispatchers.TailoredProfileDispatcher) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterForComplianceOperatorTailoredProfiles", dispatcher)
+}
+
+// RegisterForComplianceOperatorTailoredProfiles indicates an expected call of RegisterForComplianceOperatorTailoredProfiles.
+func (mr *MockDispatcherRegistryMockRecorder) RegisterForComplianceOperatorTailoredProfiles(dispatcher interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterForComplianceOperatorTailoredProfiles", reflect.TypeOf((*MockDispatcherRegistry)(nil).RegisterForComplianceOperatorTailoredProfiles), dispatcher)
 }

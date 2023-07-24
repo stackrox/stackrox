@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -20,10 +21,19 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.InMemoryStoreProvider) component.PipelineComponent {
+func New(
+	client client.Interface,
+	configHandler config.Handler,
+	nodeName string,
+	resyncPeriod time.Duration,
+	traceWriter io.Writer,
+	queue component.Resolver,
+	storeProvider *resources.InMemoryStoreProvider,
+) component.PipelineComponent {
 	k := &listenerImpl{
 		client:             client,
 		stopSig:            concurrency.NewSignal(),
+		complianceC:        make(chan common.SensorComponentEvent),
 		configHandler:      configHandler,
 		credentialsManager: createCredentialsManager(client, nodeName),
 		resyncPeriod:       resyncPeriod,

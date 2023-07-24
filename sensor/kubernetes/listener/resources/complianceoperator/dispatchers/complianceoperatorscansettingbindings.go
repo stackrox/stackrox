@@ -9,18 +9,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ScanSettingBindings handles compliance operator scan setting bindings
-type ScanSettingBindings struct {
+// ScanSettingBinding handles compliance operator scan setting binding.
+type ScanSettingBinding struct {
 }
 
-// NewScanSettingBindingsDispatcher creates and returns a new scan setting binding dispatcher
-func NewScanSettingBindingsDispatcher() *ScanSettingBindings {
-	return &ScanSettingBindings{}
+// NewScanSettingBindingsDispatcher creates and returns a new scan setting binding dispatcher.
+func NewScanSettingBindingsDispatcher() *ScanSettingBinding {
+	return &ScanSettingBinding{}
 }
 
-// ProcessEvent processes a scan setting binding event
-func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	var scanSettingBindings v1alpha1.ScanSettingBinding
+// ProcessEvent processes a scan setting binding event.
+func (c *ScanSettingBinding) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+	var scanSettingBinding v1alpha1.ScanSettingBinding
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -28,19 +28,19 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 		return nil
 	}
 
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &scanSettingBindings); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &scanSettingBinding); err != nil {
 		log.Errorf("error converting unstructured to compliance scan setting binding result: %v", err)
 		return nil
 	}
 
-	profiles := make([]*storage.ComplianceOperatorScanSettingBinding_Profile, 0, len(scanSettingBindings.Profiles))
-	for _, p := range scanSettingBindings.Profiles {
+	profiles := make([]*storage.ComplianceOperatorScanSettingBinding_Profile, 0, len(scanSettingBinding.Profiles))
+	for _, p := range scanSettingBinding.Profiles {
 		profiles = append(profiles, &storage.ComplianceOperatorScanSettingBinding_Profile{
 			Name: p.Name,
 		})
 	}
 
-	id := string(scanSettingBindings.UID)
+	id := string(scanSettingBinding.UID)
 	events := []*central.SensorEvent{
 		{
 			Id:     id,
@@ -48,9 +48,9 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 			Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{
 				ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{
 					Id:          id,
-					Name:        scanSettingBindings.Name,
-					Labels:      scanSettingBindings.Labels,
-					Annotations: scanSettingBindings.Annotations,
+					Name:        scanSettingBinding.Name,
+					Labels:      scanSettingBinding.Labels,
+					Annotations: scanSettingBinding.Annotations,
 					Profiles:    profiles,
 				},
 			},

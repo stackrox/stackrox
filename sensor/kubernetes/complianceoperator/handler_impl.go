@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -23,6 +25,7 @@ import (
 type handlerImpl struct {
 	client                 dynamic.Interface
 	complianceOperatorInfo StatusInfo
+	notifiers              []common.Notifier
 
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
@@ -32,25 +35,41 @@ type handlerImpl struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo) common.SensorComponent {
-	return &handlerImpl{
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, notifiers ...common.Notifier) common.SensorComponent {
+	h := &handlerImpl{
 		client:                 client,
 		complianceOperatorInfo: complianceOperatorInfo,
-
-		request:  make(chan *central.ComplianceRequest),
-		response: make(chan *message.ExpiringMessage),
+		notifiers:              notifiers,
+		request:                make(chan *central.ComplianceRequest),
+		response:               make(chan *message.ExpiringMessage),
 
 		disabled:   concurrency.NewSignal(),
 		stopSignal: concurrency.NewSignal(),
 	}
+
+	// TODO: When the Central side pipelines are complete, disable compliance by default.
+	//  Central informs Sensor to enable compliance. For now keep it enabled to avoid any breakage
+	//  in CI for compliance operator tests.
+	// select {
+	// case <-h.stopSignal.Done():
+	//default:
+	//	h.disabled.Signal()
+	//}
+	return h
 }
 
 func (m *handlerImpl) Start() error {
 	if !features.ComplianceEnhancements.Enabled() {
 		return nil
 	}
+
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
+
+	// TODO: When the Central side pipelines are complete, disable compliance by default.
+	//  Central informs Sensor to enable compliance. For now keep it enabled to avoid any breakage
+	//  in CI for compliance operator tests.
+	go m.enableCompliance(&central.EnableComplianceRequest{Id: uuid.NewV4().String()})
 	return nil
 }
 
@@ -108,17 +127,24 @@ func (m *handlerImpl) run() {
 }
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
+	log.Info("Received enable compliance request")
+
 	m.disabled.Reset()
-	// TODO: [ROX-18096] Start collecting compliance profiles & rules
+	for _, notifier := range m.notifiers {
+		notifier.Notify(common.SensorComponentEventComplianceEnabled)
+	}
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
 func (m *handlerImpl) disableCompliance(request *central.DisableComplianceRequest) bool {
 	// Disabling compliance should not disable compliance operator status monitoring. Users must be informed about
 	// the compliance operator health.
+	log.Info("Received disable compliance request")
 
+	for _, notifier := range m.notifiers {
+		notifier.Notify(common.SensorComponentEventComplianceDisabled)
+	}
 	// TODO: Pause all scans. Currently, the only way a compliance scan can be disabled is by deleting the ScanSettingBinding.
-	// TODO: Drop all custom resource listener events.
 	m.disabled.Signal()
 	return m.composeAndSendDisableComplianceResponse(request.GetId(), nil)
 }
@@ -159,7 +185,7 @@ func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *centr
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+	scanSettingBinding, err := k8sutil.RuntimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -181,12 +207,12 @@ func (m *handlerImpl) processScheduledScanRequest(requestID string, request *cen
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	scanSetting, err := runtimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request))
+	scanSetting, err := k8sutil.RuntimeObjToUnstructured(convertCentralRequestToScanSetting(ns, request))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
+	scanSettingBinding, err := k8sutil.RuntimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
@@ -235,7 +261,7 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	}
 	complianceScan.Annotations[rescanAnnotation] = ""
 
-	obj, err = runtimeObjToUnstructured(&complianceScan)
+	obj, err = k8sutil.RuntimeObjToUnstructured(&complianceScan)
 	if err != nil {
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
