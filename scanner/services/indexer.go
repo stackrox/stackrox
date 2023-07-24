@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	"github.com/stackrox/stackrox/scanner/v4/indexer"
+	"github.com/stackrox/rox/scanner/indexer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
