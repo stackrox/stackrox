@@ -76,9 +76,9 @@ func (s *serviceImpl) GetMax(ctx context.Context, req *v1.BillingMetricsRequest)
 			max.Nodes = n
 			max.NodesTs = m.GetTs()
 		}
-		if ms := m.GetSr().GetMillicores(); ms >= max.Millicores {
-			max.Millicores = ms
-			max.MillicoresTs = m.GetTs()
+		if ms := m.GetSr().GetCores(); ms >= max.Cores {
+			max.Cores = ms
+			max.CoresTs = m.GetTs()
 		}
 	}
 	return max, nil

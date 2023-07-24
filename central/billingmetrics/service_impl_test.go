@@ -44,28 +44,28 @@ func (s *billingMetricsSvcSuite) TestGetMetrics() {
 	stored := []storage.BillingMetrics{{
 		Ts: ts,
 		Sr: &storage.BillingMetrics_SecuredResources{
-			Nodes:      5,
-			Millicores: 2,
+			Nodes: 5,
+			Cores: 2,
 		},
 	}, {
 		Ts: ts1,
 		Sr: &storage.BillingMetrics_SecuredResources{
-			Nodes:      1,
-			Millicores: 100,
+			Nodes: 1,
+			Cores: 100,
 		},
 	}}
 
 	exp := &v1.BillingMetricsResponse{Record: []*v1.BillingMetricsResponse_BillingMetricsRecord{{
 		Ts: ts,
 		Metrics: &v1.SecuredResourcesMetrics{
-			Nodes:      5,
-			Millicores: 2,
+			Nodes: 5,
+			Cores: 2,
 		},
 	}, {
 		Ts: ts1,
 		Metrics: &v1.SecuredResourcesMetrics{
-			Nodes:      1,
-			Millicores: 100,
+			Nodes: 1,
+			Cores: 100,
 		},
 	}}}
 
@@ -89,22 +89,22 @@ func (s *billingMetricsSvcSuite) TestGetMax() {
 	stored := []storage.BillingMetrics{{
 		Ts: ts,
 		Sr: &storage.BillingMetrics_SecuredResources{
-			Nodes:      5,
-			Millicores: 2,
+			Nodes: 5,
+			Cores: 2,
 		},
 	}, {
 		Ts: ts1,
 		Sr: &storage.BillingMetrics_SecuredResources{
-			Nodes:      1,
-			Millicores: 100,
+			Nodes: 1,
+			Cores: 100,
 		},
 	}}
 
 	exp := &v1.BillingMetricsMaxResponse{
-		NodesTs:      ts,
-		Nodes:        5,
-		MillicoresTs: ts1,
-		Millicores:   100,
+		NodesTs: ts,
+		Nodes:   5,
+		CoresTs: ts1,
+		Cores:   100,
 	}
 
 	req := &v1.BillingMetricsRequest{From: ts, To: ts2}

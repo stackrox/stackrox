@@ -148,11 +148,11 @@
           "type": "integer",
           "format": "int32"
         },
-        "millicoresTs": {
+        "coresTs": {
           "type": "string",
           "format": "date-time"
         },
-        "millicores": {
+        "cores": {
           "type": "integer",
           "format": "int32"
         }
@@ -176,7 +176,7 @@
           "type": "integer",
           "format": "int32"
         },
-        "millicores": {
+        "cores": {
           "type": "integer",
           "format": "int32"
         }
