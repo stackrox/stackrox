@@ -440,9 +440,6 @@ func (s *scheduler) validateAndPersistMetadata(ctx context.Context, metadata *st
 }
 
 func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID string, userID string) (bool, error) {
-	s.dbLock.Lock()
-	defer s.dbLock.Unlock()
-
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, configID).
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
