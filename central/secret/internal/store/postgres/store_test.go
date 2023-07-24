@@ -113,40 +113,111 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.Equal(0, secretCount)
 }
 
-func (s *SecretsStoreSuite) TestSACUpsert() {
-	obj := &storage.Secret{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+const (
+	withAllAccess           = "AllAccess"
+	withNoAccess            = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess              = "Access"
+	withAccessToCluster     = "AccessToCluster"
+	withNoAccessToCluster   = "NoAccessToCluster"
+)
 
-	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedErr := range map[string]error{
-		withAllAccess:           nil,
-		withNoAccess:            sac.ErrResourceAccessDenied,
-		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
-		withAccess:              nil,
-		withAccessToCluster:     nil,
-	} {
+var (
+	withAllAccessCtx = sac.WithAllAccess(context.Background())
+)
+
+type testCase struct {
+	context                context.Context
+	expectedIDs            []string
+	expectedIdentifiers    []string
+	expectedMissingIndices []int
+	expectedObjects        []*storage.Secret
+	expectedWriteError     error
+}
+
+func (s *SecretsStoreSuite) getTestData(access storage.Access) (*storage.Secret, *storage.Secret, map[string]testCase) {
+	objA := &storage.Secret{}
+	s.NoError(testutils.FullInit(objA, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Secret{}
+	s.NoError(testutils.FullInit(objB, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	testCases := map[string]testCase{
+		withAllAccess: {
+			context:                sac.WithAllAccess(context.Background()),
+			expectedMissingIndices: nil,
+			expectedWriteError:     nil,
+		},
+		withNoAccess: {
+			context:                sac.WithNoAccess(context.Background()),
+			expectedMissingIndices: nil,
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withNoAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(uuid.Nil.String()),
+				),
+			),
+			expectedMissingIndices: nil,
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccessToDifferentNs: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+					sac.NamespaceScopeKeys("unknown ns"),
+				),
+			),
+			expectedMissingIndices: nil,
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccess: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+					sac.NamespaceScopeKeys(objA.GetNamespace()),
+				),
+			),
+			expectedMissingIndices: nil,
+			expectedWriteError:     nil,
+		},
+		withAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+				),
+			),
+			expectedMissingIndices: nil,
+			expectedWriteError:     nil,
+		},
+	}
+
+	return objA, objB, testCases
+}
+
+func (s *SecretsStoreSuite) TestSACUpsert() {
+	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
+			assert.ErrorIs(t, s.store.Upsert(testCase.context, obj), testCase.expectedWriteError)
 		})
 	}
 }
 
 func (s *SecretsStoreSuite) TestSACUpsertMany() {
-	obj := &storage.Secret{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
-	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedErr := range map[string]error{
-		withAllAccess:           nil,
-		withNoAccess:            sac.ErrResourceAccessDenied,
-		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
-		withAccess:              nil,
-		withAccessToCluster:     nil,
-	} {
+	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.Secret{obj}), expectedErr)
+			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.Secret{obj}), testCase.expectedWriteError)
 		})
 	}
 }
@@ -399,15 +470,6 @@ func (s *SecretsStoreSuite) TestSACGetMany() {
 		assert.Nil(t, missingIndices)
 	})
 }
-
-const (
-	withAllAccess           = "AllAccess"
-	withNoAccess            = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
-	withAccess              = "Access"
-	withAccessToCluster     = "AccessToCluster"
-	withNoAccessToCluster   = "NoAccessToCluster"
-)
 
 func getSACContexts(obj *storage.Secret, access storage.Access) map[string]context.Context {
 	return map[string]context.Context{
