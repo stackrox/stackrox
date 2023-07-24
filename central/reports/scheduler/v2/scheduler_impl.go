@@ -38,16 +38,6 @@ var (
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
-// Scheduler maintains the schedules for reports
-type Scheduler interface {
-	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
-	RemoveReportSchedule(reportConfigID string)
-	SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error)
-	CancelReportRequest(ctx context.Context, reportID string) (bool, string, error)
-	Start()
-	Stop()
-}
-
 type scheduler struct {
 	// Used to map reportConfigs to their cron jobs. This is only used for scheduled reports, On-demand reports are directly added to reportsQueue
 	reportConfigToEntryIDs map[string]cron.EntryID

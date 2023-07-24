@@ -121,6 +121,7 @@ service ReportService {
     rpc RunReport(RunReportRequest) returns (RunReportResponse) {
         option (google.api.http) = {
             post: "/v2/reports/run"
+            body: "*"
         };
     }
 
@@ -128,7 +129,7 @@ service ReportService {
     // If a report is already being prepared, it won't be cancelled.
     rpc CancelReport(ResourceByID) returns (CancelReportResponse) {
         option (google.api.http) = {
-            post: "/v2/reports/cancel/{id}"
+            delete: "/v2/reports/cancel/{id}"
         };
     }
 }
