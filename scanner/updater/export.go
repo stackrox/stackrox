@@ -33,8 +33,7 @@ func Export(ctx context.Context, outputDir string) error {
 
 	appendUpdaterSet(manual.UpdaterSet(ctx, nil))
 
-	// create temp folder
-	err := os.Mkdir(outputDir, 0700)
+	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
 	}
