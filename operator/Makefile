@@ -221,7 +221,7 @@ ENVTEST_K8S_VERSION = 1.25
 test: manifests generate fmt vet  ## Run go unit tests
 	go test $(shell go list ./... | grep -v '^github.com/stackrox/rox/operator/tests') -coverprofile cover.out
 
-test-integration: manifests generate envtest mapkubeapis ## Run go integration tests
+test-integration: manifests generate envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./tests/...
 
 .PHONY: validate-crs
@@ -296,7 +296,7 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen test smuggled-status-sh mapkubeapis ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen test smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
 		-t ${IMG} \
 		-f $< \
@@ -464,17 +464,3 @@ docker-push-bundle: ## Push docker image with the bundle.
 .PHONY: docker-push-index
 docker-push-index: ## Push docker image with the index.
 	docker push "$(INDEX_IMG)"
-
-##@ Mapkubeapis
-
-MAPKUBEAPIS_SOURCE_DIR = $(shell cd $(PROJECT_DIR)/..; go list -m -f '{{ .Dir }}' github.com/helm/helm-mapkubeapis)
-ifeq (, $(MAPKUBEAPIS_SOURCE_DIR))
-	MAPKUBEAPIS_SOURCE_DIR = $(shell cd $(PROJECT_DIR)/..; go mod download github.com/helm/helm-mapkubeapis; go list -m -f '{{ .Dir }}' github.com/helm/helm-mapkubeapis)
-endif
-
-config/mapkubeapis/Map.yaml: $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml
-	$(SILENT)mkdir -p $(PROJECT_DIR)/config/mapkubeapis
-	$(SILENT)cp -pf $(MAPKUBEAPIS_SOURCE_DIR)/config/Map.yaml $(PROJECT_DIR)/$@
-
-.PHONY: mapkubeapis
-mapkubeapis: config/mapkubeapis/Map.yaml
