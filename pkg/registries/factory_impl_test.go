@@ -67,12 +67,12 @@ type FakeReg struct {
 
 var _ types.Registry = (*FakeReg)(nil)
 
-func (*FakeReg) Config() *types.Config                                         { return nil }
-func (*FakeReg) HTTPClient() *http.Client                                      { return nil }
-func (*FakeReg) Match(image *storage.ImageName) bool                           { return false }
-func (*FakeReg) Metadata(image *storage.Image) (*storage.ImageMetadata, error) { return nil, nil }
-func (f *FakeReg) Name() string                                                { return f.name }
-func (*FakeReg) Test() error                                                   { return nil }
+func (*FakeReg) Config() *types.Config                                     { return nil }
+func (*FakeReg) HTTPClient() *http.Client                                  { return nil }
+func (*FakeReg) Match(_ *storage.ImageName) bool                           { return false }
+func (*FakeReg) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) { return nil, nil }
+func (f *FakeReg) Name() string                                            { return f.name }
+func (*FakeReg) Test() error                                               { return nil }
 
 func creatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return RegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
