@@ -32,6 +32,7 @@ var (
 		"pkg",
 		"roxctl",
 		"scale",
+		"scanner",
 		"sensor/admission-control",
 		"sensor/common",
 		"sensor/debugger",

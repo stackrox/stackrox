@@ -22,9 +22,9 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/stackrox/scanner/v4/indexer"
-	"github.com/stackrox/stackrox/scanner/v4/matcher"
-	"github.com/stackrox/stackrox/scanner/v4/version"
+	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/version"
 	"golang.org/x/sys/unix"
 )
 
