@@ -1,8 +1,11 @@
 package metrics
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -182,6 +185,11 @@ var (
 		Name:      "pipeline_panics",
 		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
 	}, []string{"resource"})
+	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_connected",
+	}, []string{"ClusterID", "reconnect"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -229,6 +237,10 @@ func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 	}
 	resource = stringutils.GetAfterLast(resource, "_")
 	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
+}
+
+func IncrementSensorConnect(cluserID string, reconnect bool) {
+	sensorConnectedCounter.With(prometheus.Labels{"ClusterID": cluserID, "reconnect": fmt.Sprintf("%s", reconnect)}).Inc()
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation

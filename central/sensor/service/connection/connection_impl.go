@@ -597,6 +597,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
+	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetReconnect())
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()
 }

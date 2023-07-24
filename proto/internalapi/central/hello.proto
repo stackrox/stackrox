@@ -24,6 +24,9 @@ message SensorHello {
 
   // Policy version sensor understands. If unset, central will try to guess it.
   string policy_version = 4;
+
+  // Reconnect signfies that connecting sensor is reconnecting after connection was interrupted
+  bool reconnect = 6;
 }
 
 message CentralHello {
