@@ -58,11 +58,9 @@ func (c *contextProviderImpl) Notify(event common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		c.sensorContext, c.cancelContextFn = context.WithCancel(context.Background())
 		c.centralReachable.Signal()
-		break
 	case common.SensorComponentEventOfflineMode:
 		c.centralReachable.Reset()
 		c.cancelContextFn()
-		break
 	}
 }
 
