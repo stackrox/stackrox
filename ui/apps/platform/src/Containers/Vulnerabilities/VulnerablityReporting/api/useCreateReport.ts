@@ -4,6 +4,7 @@ import { createReportConfiguration } from 'services/ReportsService';
 import {
     Fixability,
     ReportConfiguration,
+    Schedule,
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
@@ -35,7 +36,7 @@ function useCreateReport(): CreateReportResult {
             error: null,
         });
 
-        const { reportParameters, deliveryDestinations } = formValues;
+        const { reportParameters, deliveryDestinations, schedule: formSchedule } = formValues;
 
         // transform form values to values to be sent through API
         const fixability: Fixability =
@@ -77,6 +78,27 @@ function useCreateReport(): CreateReportResult {
             };
         });
 
+        let schedule: Schedule;
+        if (formSchedule.intervalType === 'WEEKLY') {
+            schedule = {
+                intervalType: 'WEEKLY',
+                hour: 0,
+                minute: 0,
+                daysOfWeek: {
+                    days: formSchedule.daysOfWeek.map((day) => Number(day)),
+                },
+            };
+        } else {
+            schedule = {
+                intervalType: 'MONTHLY',
+                hour: 0,
+                minute: 0,
+                daysOfMonth: {
+                    days: formSchedule.daysOfMonth.map((day) => Number(day)),
+                },
+            };
+        }
+
         const reportData: ReportConfiguration = {
             id: '',
             name: reportParameters.reportName,
@@ -90,15 +112,7 @@ function useCreateReport(): CreateReportResult {
                 },
             },
             notifiers,
-            // @TODO: Replace hardcoded values when we do schedule
-            schedule: {
-                intervalType: 'WEEKLY',
-                hour: 0,
-                minute: 0,
-                daysOfWeek: {
-                    days: [3],
-                },
-            },
+            schedule,
         };
 
         // send API call

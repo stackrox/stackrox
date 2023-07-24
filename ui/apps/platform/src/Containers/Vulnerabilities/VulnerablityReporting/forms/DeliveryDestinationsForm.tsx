@@ -20,6 +20,8 @@ import {
 } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import usePermissions from 'hooks/usePermissions';
 
+import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
+import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import NotifierSelection from './NotifierSelection';
 
 export type DeliveryDestinationsFormParams = {
@@ -48,6 +50,16 @@ function DeliveryDestinationsForm({
             return index !== i;
         });
         setFormFieldValue('deliveryDestinations', newDeliveryDestinations);
+    }
+
+    function onScheduledRepeatChange(_id, selection) {
+        setFormFieldValue('schedule.intervalType', selection);
+        setFormFieldValue('schedule.daysOfWeek', []);
+        setFormFieldValue('schedule.daysOfMonth', []);
+    }
+
+    function onScheduledDaysChange(id, selection) {
+        setFormFieldValue(id, selection);
     }
 
     return (
@@ -139,7 +151,38 @@ function DeliveryDestinationsForm({
                         <FlexItem>
                             Configure or setup a schedule to share reports on a recurring basis.
                         </FlexItem>
-                        <FlexItem flex={{ default: 'flexNone' }} />
+                        <FlexItem flex={{ default: 'flexNone' }}>
+                            <Flex direction={{ default: 'row' }}>
+                                <FlexItem>
+                                    <RepeatScheduleDropdown
+                                        label="Repeat every"
+                                        isRequired
+                                        fieldId="schedule.intervalType"
+                                        value={formValues.schedule.intervalType || ''}
+                                        handleSelect={onScheduledRepeatChange}
+                                    />
+                                </FlexItem>
+                                <FlexItem>
+                                    <DayPickerDropdown
+                                        label="On day(s)"
+                                        isRequired
+                                        fieldId={
+                                            formValues.schedule.intervalType === 'WEEKLY'
+                                                ? 'schedule.daysOfWeek'
+                                                : 'schedule.daysOfMonth'
+                                        }
+                                        value={
+                                            formValues.schedule.intervalType === 'WEEKLY'
+                                                ? formValues.schedule.daysOfWeek || []
+                                                : formValues.schedule.daysOfMonth || []
+                                        }
+                                        handleSelect={onScheduledDaysChange}
+                                        intervalType={formValues.schedule.intervalType}
+                                        isEditable={formValues.schedule.intervalType !== null}
+                                    />
+                                </FlexItem>
+                            </Flex>
+                        </FlexItem>
                     </Flex>
                 </Form>
             </PageSection>

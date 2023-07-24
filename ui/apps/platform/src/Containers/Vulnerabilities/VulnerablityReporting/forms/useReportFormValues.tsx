@@ -4,8 +4,9 @@ import set from 'lodash/set';
 
 import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import { ImageType } from 'services/ReportsService.types';
+import { ImageType, IntervalType } from 'services/ReportsService.types';
 import { EmailNotifierIntegration } from 'types/notifier.proto';
+import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
@@ -17,6 +18,11 @@ export type ReportFormValuesResult = {
 export type ReportFormValues = {
     reportParameters: ReportParametersFormValues;
     deliveryDestinations: DeliveryDestination[];
+    schedule: {
+        intervalType: IntervalType | null;
+        daysOfWeek: DayOfWeek[];
+        daysOfMonth: DayOfMonth[];
+    };
 };
 
 export type SetReportFormValues = Dispatch<SetStateAction<ReportFormValues>>;
@@ -58,6 +64,11 @@ export const defaultReportFormValues: ReportFormValues = {
         reportScope: null,
     },
     deliveryDestinations: [],
+    schedule: {
+        intervalType: null,
+        daysOfWeek: [],
+        daysOfMonth: [],
+    },
 };
 
 function useReportFormValues(): ReportFormValuesResult {
