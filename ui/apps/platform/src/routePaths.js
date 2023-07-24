@@ -42,6 +42,7 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
+export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const collectionsBasePath = `${mainPath}/collections`;
@@ -166,6 +167,7 @@ export const basePathToLabelMap = {
     [networkBasePath]: 'Network Graph (2.0)',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
+    [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
