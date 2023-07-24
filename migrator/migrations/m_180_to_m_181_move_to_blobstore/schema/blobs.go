@@ -4,7 +4,6 @@ package schema
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -32,8 +31,6 @@ const (
 
 // Blobs holds the Gorm model for Postgres table `blobs`.
 type Blobs struct {
-	Name         string     `gorm:"column:name;type:varchar;primaryKey"`
-	Length       int64      `gorm:"column:length;type:bigint"`
-	ModifiedTime *time.Time `gorm:"column:modifiedtime;type:timestamp"`
-	Serialized   []byte     `gorm:"column:serialized;type:bytea"`
+	Name       string `gorm:"column:name;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

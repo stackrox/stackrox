@@ -4,7 +4,6 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 // ConvertBlobFromProto converts a `*storage.Blob` to Gorm model
@@ -14,10 +13,8 @@ func ConvertBlobFromProto(obj *storage.Blob) (*Blobs, error) {
 		return nil, err
 	}
 	model := &Blobs{
-		Name:         obj.GetName(),
-		Length:       obj.GetLength(),
-		ModifiedTime: pgutils.NilOrTime(obj.GetModifiedTime()),
-		Serialized:   serialized,
+		Name:       obj.GetName(),
+		Serialized: serialized,
 	}
 	return model, nil
 }
