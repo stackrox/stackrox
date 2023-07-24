@@ -143,7 +143,7 @@ type serviceImpl struct {
 	notifierDataStore    notifierDS.DataStore
 }
 
-// InternalDiagnosticsHandler returns handler to be served on "Cluster-internal" port.
+// InternalDiagnosticsHandler returns handler to be served on "cluster-internal" port.
 // Cluster-internal port is not exposed via k8s Service and only accessible to callers with k8s/Openshift cluster access.
 // This handler shouldn't be exposed to other callers as it has no authorization and can elevate customer permissions.
 func (s *serviceImpl) InternalDiagnosticsHandler() http.HandlerFunc {
