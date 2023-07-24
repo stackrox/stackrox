@@ -12,10 +12,12 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 const workerQueueSize = 16
@@ -26,6 +28,8 @@ var (
 )
 
 type sensorEventHandler struct {
+	cluster       *storage.Cluster
+	sensorVersion string
 	// workerQueues are keyed by central.SensorEvent type names.
 	workerQueues      map[string]*workerQueue
 	workerQueuesMutex sync.RWMutex
@@ -38,8 +42,11 @@ type sensorEventHandler struct {
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper) *sensorEventHandler {
+func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper) *sensorEventHandler {
 	return &sensorEventHandler{
+		cluster:       cluster,
+		sensorVersion: sensorVersion,
+
 		workerQueues:      make(map[string]*workerQueue),
 		reconciliationMap: reconciliation.NewStoreMap(),
 
@@ -84,6 +91,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			// NodeInventory because the two should not dedupe between themselves.
 			msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
 		default:
+			if evt.Event.GetResource() == nil {
+				log.Errorf("Received unknown event from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
+				return
+			}
 			// Default worker type is the event type.
 			workerType = reflectutils.Type(evt.Event.Resource)
 			if !s.reconciliationMap.IsClosed() {
