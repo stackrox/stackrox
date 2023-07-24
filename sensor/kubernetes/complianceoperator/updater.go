@@ -229,9 +229,9 @@ func checkRequiredComplianceCRDsExist(resourceList *metav1.APIResourceList) erro
 	}
 
 	errorList := errorhelpers.NewErrorList("checking for CRDs required for compliance")
-	for _, requiredGVK := range complianceoperator.GetAllRequiredGVKs() {
-		if detectedKinds.Contains(requiredGVK.Kind) {
-			errorList.AddError(errors.Errorf("required GroupVersionKind %q not found", requiredGVK.String()))
+	for _, requiredResource := range complianceoperator.GetRequiredResources() {
+		if detectedKinds.Contains(requiredResource.Kind) {
+			errorList.AddError(errors.Errorf("required GroupVersionKind %q not found", requiredResource.GroupVersionKind().String()))
 		}
 	}
 	return errorList.ToError()
