@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
+// ContextProvider Sensor component that provides a common context.
+// This context will be cancelled and reset if Sensor enters Offline mode.
 type ContextProvider interface {
 	common.SensorComponent
 	GetContext() context.Context
@@ -17,6 +19,7 @@ type ContextProvider interface {
 
 var _ ContextProvider = (*contextProviderImpl)(nil)
 
+// NewContextProvider Initializes a new ContextProvider
 func NewContextProvider() ContextProvider {
 	return &contextProviderImpl{
 		centralReachable: concurrency.NewSignal(),
