@@ -17,7 +17,7 @@ var (
 
 func writeCSV(metrics []storage.BillingMetrics, wio io.Writer) error {
 	w := csv.NewWriter(wio)
-	record := []string{"UTC Timestamp", "Nodes", "Cores"}
+	record := []string{"Timestamp", "Nodes", "Cores"}
 	if err := w.Write(record); err != nil {
 		return errors.Wrap(err, "failed to write CSV header")
 	}
