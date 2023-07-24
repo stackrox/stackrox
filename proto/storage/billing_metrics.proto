@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package storage;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "storage";
+
+message BillingMetrics {
+    message SecuredResources {
+        int32 nodes = 1;
+        int32 millicores = 2;
+    }
+
+    google.protobuf.Timestamp ts = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    SecuredResources sr = 2;
+}
