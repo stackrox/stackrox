@@ -13,7 +13,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
@@ -27,6 +27,7 @@ type indexerService struct {
 	indexer indexer.Indexer
 }
 
+// NewIndexerService creates a new indexer service.
 func NewIndexerService(indexer indexer.Indexer) *indexerService {
 	return &indexerService{
 		indexer: indexer,
@@ -95,18 +96,18 @@ func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 		return errox.InvalidArgs.New("invalid resource locator for container image")
 	}
 	// Validate container image URL.
-	imageUrl := req.GetContainerImage().GetUrl()
-	if imageUrl == "" {
+	imgURL := req.GetContainerImage().GetUrl()
+	if imgURL == "" {
 		return errox.InvalidArgs.New("missing image URL")
 	}
-	u, err := url.Parse(imageUrl)
+	u, err := url.Parse(imgURL)
 	if err != nil {
-		return errox.InvalidArgs.Newf("invalid image URL: %q", imageUrl).CausedBy(err)
+		return errox.InvalidArgs.Newf("invalid image URL: %q", imgURL).CausedBy(err)
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return errox.InvalidArgs.New("image URL does not start with http:// or https://")
 	}
-	imageRef := strings.TrimPrefix(imageUrl, u.Scheme+"://")
+	imageRef := strings.TrimPrefix(imgURL, u.Scheme+"://")
 	_, err = name.ParseReference(imageRef, name.StrictValidation)
 	if err != nil {
 		return errox.InvalidArgs.CausedBy(err)
@@ -114,11 +115,11 @@ func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	return nil
 }
 
-func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetIndexReport not implemented")
+func (s *indexerService) GetIndexReport(_ context.Context, _ *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIndexReport not implemented")
 }
-func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
+func (s *indexerService) HasIndexReport(_ context.Context, _ *v4.HasIndexReportRequest) (*types.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method HasIndexReport not implemented")
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -133,7 +134,7 @@ func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName st
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
-func (s *indexerService) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *indexerService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// Currently we do not set up gRPC gateway for the matcher.
 	return nil
 }

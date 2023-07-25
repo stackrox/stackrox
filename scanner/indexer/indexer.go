@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -10,9 +11,8 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
@@ -22,6 +22,7 @@ import (
 )
 
 // Indexer represents an image indexer.
+//
 //go:generate mockgen-wrapper
 type Indexer interface {
 	IndexContainerImage(context.Context, claircore.Digest, string, ...Option) (*claircore.IndexReport, error)
@@ -37,15 +38,15 @@ func NewIndexer(ctx context.Context) (Indexer, error) {
 	// TODO: Update the conn string to something configurable.
 	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libindex")
 	if err != nil {
-		return nil, errors.Wrap(err, "connecting to postgres for indexer")
+		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
 	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
-		return nil, errors.Wrap(err, "initializing postgres indexer store")
+		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating indexer postgres locker")
+		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
 
 	// TODO: Update the HTTP client.
@@ -53,7 +54,7 @@ func NewIndexer(ctx context.Context) (Indexer, error) {
 	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
 	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
-		return nil, errors.Wrap(err, "creating indexer root directory")
+		return nil, fmt.Errorf("creating indexer root directory: %w", err)
 	}
 	defer utils.IgnoreError(func() error {
 		if err != nil {
@@ -72,7 +73,7 @@ func NewIndexer(ctx context.Context) (Indexer, error) {
 
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating libindex")
+		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
 
 	return &indexerImpl{
@@ -99,82 +100,101 @@ func (i *indexerImpl) IndexContainerImage(
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing image URL: %w", err)
 	}
-	imgDigest, imgLayers, err := getContainerImageLayers(ctx, o, imgRef)
+	imgLayers, err := getContainerImageLayers(ctx, o, imgRef)
 	if err != nil {
-		return nil, err
-	}
-	imgRepo := imgRef.Context()
-	registryURL := url.URL{
-		Scheme: imgRepo.Scheme(),
-		Host:   imgRepo.RegistryStr(),
+		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
 	httpClient := http.Client{Timeout: time.Duration(1) * time.Minute}
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
 	zlog.Info(ctx).
-		Str("image_digest", imgDigest).
-		Str("registry", imgRepo.RegistryStr()).
+		Str("image_reference", imgRef.String()).
+		Str("registry", imgRef.Context().RegistryStr()).
 		Int("layers_count", len(imgLayers)).
-		Msg("retrieving layers to populate manifest")
-	for _, l := range imgLayers {
-		d, err := l.Digest()
+		Msg("retrieving layers to populate container image manifest")
+	for _, layer := range imgLayers {
+		ccDigest, layerDigest, err := getLayerDigests(layer)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("getting layer digests: %w", err)
 		}
-		ccd, err := claircore.ParseDigest(d.String())
+		// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
+		layerReq, err := getLayerRequest(&httpClient, imgRef, layerDigest)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
+				layerDigest.String(), err)
 		}
-		imgPath := strings.TrimPrefix(imgRepo.RepositoryStr(), imgRepo.RegistryStr())
-		u, err := registryURL.Parse(path.Join("/", "v2", imgPath, "blobs", d.String()))
-		if err != nil {
-			return nil, err
-		}
-		req, err := http.NewRequest("GET", u.String(), nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Add("Range", "bytes=0-0")
-		res, err := httpClient.Do(req)
-		if err != nil {
-			return nil, err
-		}
-		utils.IgnoreError(res.Body.Close)
-		res.Request.Header.Del("User-Agent")
-		res.Request.Header.Del("Range")
+		layerReq.Header.Del("User-Agent")
+		layerReq.Header.Del("Range")
 		manifest.Layers = append(manifest.Layers, &claircore.Layer{
-			Hash:    ccd,
-			URI:     res.Request.URL.String(),
-			Headers: res.Request.Header,
+			Hash:    ccDigest,
+			URI:     layerReq.URL.String(),
+			Headers: layerReq.Header,
 		})
 	}
 	return i.indexer.Index(ctx, manifest)
 }
 
+// getLayerDigests returns the clairclore and containerregistry digests for the layer.
+func getLayerDigests(layer v1.Layer) (ccd claircore.Digest, ld v1.Hash, err error) {
+	ld, err = layer.Digest()
+	if err != nil {
+		return ccd, ld, err
+	}
+	ccd, err = claircore.ParseDigest(ld.String())
+	if err != nil {
+		return ccd, ld, err
+	}
+	return ccd, ld, err
+}
+
+// getLayerRequest sends a partial request to retrieve the layer from the
+// registry and return the request object containing relevant information to
+// populate a container image manifest.
+func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest v1.Hash) (*http.Request, error) {
+	imgRepo := imgRef.Context()
+	registryURL := url.URL{
+		Scheme: imgRepo.Scheme(),
+		Host:   imgRepo.RegistryStr(),
+	}
+	imgPath := strings.TrimPrefix(imgRepo.RepositoryStr(), imgRepo.RegistryStr())
+	imgURL := path.Join("/", "v2", imgPath, "blobs", layerDigest.String())
+	u, err := registryURL.Parse(imgURL)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Range", "bytes=0-0")
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	utils.IgnoreError(res.Body.Close)
+	return res.Request, nil
+}
+
 // getContainerImageLayers fetches the image's manifest from the registry to get
 // a list of layers.
-func getContainerImageLayers(ctx context.Context, o options, ref name.Reference) (string, []v1.Layer, error) {
+func getContainerImageLayers(ctx context.Context, o options, ref name.Reference) ([]v1.Layer, error) {
 	// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
 	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform))
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	img, err := desc.Image()
 	if err != nil {
-		return "", nil, err
-	}
-	ccd, err := img.Digest()
-	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	layers, err := img.Layers()
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
-	return ccd.String(), layers, nil
+	return layers, nil
 }
 
 // parseContainerImageURL returns a image reference from an image URL.
