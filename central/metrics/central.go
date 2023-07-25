@@ -1,11 +1,9 @@
 package metrics
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -239,8 +237,9 @@ func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
 }
 
+// IncrementSensorConnect increments the counter for times that a new Sensor connection was observed
 func IncrementSensorConnect(cluserID string, reconnect bool) {
-	sensorConnectedCounter.With(prometheus.Labels{"ClusterID": cluserID, "reconnect": fmt.Sprintf("%s", reconnect)}).Inc()
+	sensorConnectedCounter.With(prometheus.Labels{"ClusterID": cluserID, "reconnect": strconv.FormatBool(reconnect)}).Inc()
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
