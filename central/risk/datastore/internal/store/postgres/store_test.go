@@ -310,14 +310,14 @@ func (s *RisksStoreSuite) TestSACGet() {
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, exists, err := s.store.Get(testCase.context, objA.GetId())
+			assert.NoError(t, err)
+
 			// Assumption from the test case structure: objA is always in the visible list
 			// in the first position.
 			expectedFound := len(testCase.expectedObjects) > 0
-
-			actual, exists, err := s.store.Get(testCase.context, objA.GetId())
-			assert.NoError(t, err)
 			assert.Equal(t, expectedFound, exists)
-			if expectedFound == true {
+			if expectedFound {
 				assert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
