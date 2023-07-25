@@ -2,9 +2,9 @@ package matcher
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
-	"github.com/pkg/errors"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libvuln"
@@ -25,15 +25,15 @@ type matcherImpl struct {
 func NewMatcher(ctx context.Context) (Matcher, error) {
 	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libvuln")
 	if err != nil {
-		return nil, errors.Wrap(err, "connecting to postgres for matcher")
+		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
 	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
-		return nil, errors.Wrap(err, "initializing postgres matcher store")
+		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating matcher postgres locker")
+		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
 
 	// TODO: Update HTTP client.
@@ -50,7 +50,7 @@ func NewMatcher(ctx context.Context) (Matcher, error) {
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "creating libvuln")
+		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
 	return &matcherImpl{
 		matcher: matcher,

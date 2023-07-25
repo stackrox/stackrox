@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/quay/claircore"
-	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -76,7 +76,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupMock(0, nil, fmt.Errorf(`indexer said "ouch"`))
+	s.setupMock(0, nil, errors.New(`indexer said "ouch"`))
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")

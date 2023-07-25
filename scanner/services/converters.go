@@ -3,7 +3,7 @@ package services
 import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
-	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 )
 
 func convertToIndexReport(r *claircore.IndexReport) *v4.IndexReport {
