@@ -89,7 +89,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			if msg.GetEvent().GetSynced() != nil {
 				log.Info("Sending synced signal to Central")
 			}
-
+			log.Debug("Sending message to Central")
 			if err := wrappedStream.Send(msg); err != nil {
 				s.stopper.Flow().StopWithError(err)
 				return
