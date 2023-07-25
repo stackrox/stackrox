@@ -117,7 +117,7 @@ The recommended approach is the following.
    You don't need to do anything when using KIND.  
    For minikube it could be done like this
    ```bash
-   $ docker save stackrox/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
+   $ docker save quay.io/stackrox-io/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
    ```
 3. Install CRDs and deploy operator resources
    ```bash
