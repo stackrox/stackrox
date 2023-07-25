@@ -148,16 +148,16 @@ func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 
 // region Public constructors
 
-// AllowResourceLevelFixedScopes returns a scope checker core that allows those scopes that
+// AllowFixedResourceLevelScopes returns a scope checker core that allows those scopes that
 // are in the cross product of all access and resource individual scope key lists. I.e.,
 //
-//	 AllowResourceLevelFixedScopes(
+//	 AllowFixedResourceLevelScopes(
 //			AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
 //			ResourceScopeKeys(resources.CLUSTER),
 //	 )
 //
 // returns a scope checker core that allows read and write access to all cluster resources.
-func AllowResourceLevelFixedScopes(
+func AllowFixedResourceLevelScopes(
 	accessLevelKeys []AccessModeScopeKey,
 	resourceLevelKeys []ResourceScopeKey,
 ) ScopeCheckerCore {
@@ -170,10 +170,10 @@ func AllowResourceLevelFixedScopes(
 	}
 }
 
-// AllowClusterLevelFixedScopes returns a scope checker core that allows those scopes that
+// AllowFixedClusterLevelScopes returns a scope checker core that allows those scopes that
 // are in the cross product of all access and resource individual scope key lists. I.e.,
 //
-//		 AllowClusterLevelFixedScopes(
+//		 AllowFixedClusterLevelScopes(
 //				AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
 //				ResourceScopeKeys(resources.CLUSTER),
 //	         ClusterScopeKeys(clusterID1, clusterID2),
@@ -181,7 +181,7 @@ func AllowResourceLevelFixedScopes(
 //
 // returns a scope checker core that allows read and write access to all cluster resources
 // within cluster1 and cluster2.
-func AllowClusterLevelFixedScopes(
+func AllowFixedClusterLevelScopes(
 	accessLevelKeys []AccessModeScopeKey,
 	resourceLevelKeys []ResourceScopeKey,
 	clusterLevelKeys []ClusterScopeKey,
@@ -195,10 +195,10 @@ func AllowClusterLevelFixedScopes(
 	}
 }
 
-// AllowNamespaceLevelFixedScopes returns a scope checker core that allows those scopes that
+// AllowFixedNamespaceLevelScopes returns a scope checker core that allows those scopes that
 // are in the cross product of all access and resource individual scope key lists. I.e.,
 //
-//		 AllowNamespaceLevelFixedScopes(
+//		 AllowFixedNamespaceLevelScopes(
 //				AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
 //				ResourceScopeKeys(resources.CLUSTER),
 //	         ClusterScopeKeys(clusterID1, clusterID2),
@@ -207,7 +207,7 @@ func AllowClusterLevelFixedScopes(
 //
 // returns a scope checker core that allows read and write access to all cluster resources within
 // cluster1 namespace1, cluster1 namespace2, cluster2 namespace1 and cluster2 namespace2.
-func AllowNamespaceLevelFixedScopes(
+func AllowFixedNamespaceLevelScopes(
 	accessLevelKeys []AccessModeScopeKey,
 	resourceLevelKeys []ResourceScopeKey,
 	clusterLevelKeys []ClusterScopeKey,
