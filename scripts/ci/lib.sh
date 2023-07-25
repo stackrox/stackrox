@@ -106,7 +106,7 @@ setup_deployment_env() {
     local use_websocket="$2"
 
     if [[ "$docker_login" == "true" ]]; then
-        registry_ro_login "quay.io/rhacs-eng"
+        registry_ro_login "$REGISTRY"
     fi
 
     if [[ "$use_websocket" == "true" ]]; then
@@ -115,14 +115,22 @@ setup_deployment_env() {
 
     ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
     ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
-    if [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
+    if [[ "$REGISTRY" =~ ^brew.registry.redhat.io ]]; then
+        ci_export MAIN_IMAGE_TAG "1.0.0"
+    elif [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
         ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
 
-    REPO=rhacs-eng
-    ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
-    ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
-    ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
+    if [[ "$REGISTRY" =~ ^brew.registry.redhat.io ]]; then
+        ci_export MAIN_IMAGE_REPO "${REGISTRY}/rhacs-main"
+        ci_export CENTRAL_DB_IMAGE_REPO "${REGISTRY}/rhacs-central-db"
+        ci_export COLLECTOR_IMAGE_REPO "${REGISTRY}/rhacs-collector-slim"
+    else
+        REPO=rhacs-eng
+        ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
+        ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
+        ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
+    fi
 }
 
 get_central_debug_dump() {
@@ -303,6 +311,9 @@ registry_ro_login() {
     case "$registry" in
         quay.io/rhacs-eng)
             docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            ;;
+        brew.registry.redhat.io/rh-osbs)
+            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" brew.registry.redhat.io
             ;;
         *)
             die "Unsupported registry login: $registry"
@@ -948,7 +959,7 @@ openshift_ci_e2e_mods() {
 
 operator_e2e_test_setup() {
     # TODO(ROX-11901): pass the brand explicitly from the CI config file rather than hardcode here
-    registry_ro_login "quay.io/rhacs-eng"
+    registry_ro_login "${REGISTRY}"
     export ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
     # $NAMESPACE is set by OpenShift CI, but confuses `operator-sdk scorecard` which runs against
