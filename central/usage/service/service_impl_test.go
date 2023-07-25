@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	testid "github.com/stackrox/rox/pkg/grpc/authn/test"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -106,29 +105,27 @@ func (s *usageSvcSuite) TestGetCurrentUsage() {
 func (s *usageSvcSuite) TestAuth() {
 	var err error
 
-	goodID := testid.NewTestIdentity("test", s.T())
-	goodID.AddRole("Administration", storage.Access_READ_ACCESS, role.AccessScopeIncludeAll)
+	goodCtx := testid.NewTestIdentity("test", s.T()).
+		AddRole("Administration", storage.Access_READ_ACCESS, role.AccessScopeIncludeAll).
+		Context()
 
-	badID := testid.NewTestIdentity("test", s.T())
-	badID.AddRole("Cluster", storage.Access_READ_ACCESS, role.AccessScopeIncludeAll)
+	badCtx := testid.NewTestIdentity("test", s.T()).
+		AddRole("Cluster", storage.Access_READ_ACCESS, role.AccessScopeIncludeAll).
+		Context()
 
 	svc := New(s.store)
 
-	ctx := authn.ContextWithIdentity(context.Background(), goodID, s.T())
-	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetCurrentUsage")
+	_, err = svc.AuthFuncOverride(goodCtx, "/v1.UsageService/GetCurrentUsage")
 	s.NoError(err)
 
-	ctx = authn.ContextWithIdentity(context.Background(), badID, s.T())
-	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetCurrentUsage")
+	_, err = svc.AuthFuncOverride(badCtx, "/v1.UsageService/GetCurrentUsage")
 	s.Error(err)
 	s.ErrorIs(err, errox.NotAuthorized)
 
-	ctx = authn.ContextWithIdentity(context.Background(), goodID, s.T())
-	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetMaxUsage")
+	_, err = svc.AuthFuncOverride(goodCtx, "/v1.UsageService/GetMaxUsage")
 	s.NoError(err)
 
-	ctx = authn.ContextWithIdentity(context.Background(), badID, s.T())
-	_, err = svc.AuthFuncOverride(ctx, "/v1.UsageService/GetMaxUsage")
+	_, err = svc.AuthFuncOverride(badCtx, "/v1.UsageService/GetMaxUsage")
 	s.Error(err)
 	s.ErrorIs(err, errox.NotAuthorized)
 }

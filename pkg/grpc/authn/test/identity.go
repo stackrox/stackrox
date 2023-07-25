@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -26,9 +27,14 @@ func NewTestIdentity(userName string, _ *testing.T) *identity {
 	return &identity{username: userName}
 }
 
-func (i *identity) AddRole(resourceName string, access storage.Access, as *storage.SimpleAccessScope) {
+func (i *identity) Context() context.Context {
+	return authn.ContextWithIdentity(context.Background(), i, nil)
+}
+
+func (i *identity) AddRole(resource permissions.Resource, access storage.Access, as *storage.SimpleAccessScope) *identity {
 	i.resolvedRoles = append(i.resolvedRoles, roletest.NewResolvedRole("test",
-		map[string]storage.Access{resourceName: access}, as))
+		map[string]storage.Access{string(resource): access}, as))
+	return i
 }
 
 func (i *identity) UID() string {
