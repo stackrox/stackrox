@@ -215,7 +215,7 @@ export function isRouteEnabled(
         }
     }
 
-    return resourceAccessRequirements.every((resource) => hasReadAccess(resource));
+    return resourceAccessRequirements.every((resourceName) => hasReadAccess(resourceName));
 }
 
 /**
