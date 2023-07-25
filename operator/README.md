@@ -21,7 +21,7 @@ Helm charts use it by default to configure pods. If it does not exist, you'll ne
 make stackrox-image-pull-secret
 ```
 
-3. Create Central Custom Resource using ~~the provided sample~~ test sample.    
+3. Create Central Custom Resource using a test sample.    
 
 ```bash
 kubectl -n stackrox delete persistentvolumeclaims stackrox-db
