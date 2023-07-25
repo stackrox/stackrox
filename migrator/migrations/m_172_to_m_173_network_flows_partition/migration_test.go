@@ -42,7 +42,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *networkFlowsMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableNetworkFlowsStmt)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableClustersStmt)
 

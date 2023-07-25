@@ -119,7 +119,7 @@ func TestGroupUniqueConstraintMigration(t *testing.T) {
 }
 
 func (s *groupUniqueConstraintMigrationTestSuite) SetupSuite() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	pgutils.CreateTableFromModel(ctx, s.db.GetGormDB(), frozenSchemav73.CreateTableGroupsStmt)
 }
 
