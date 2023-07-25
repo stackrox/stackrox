@@ -40,7 +40,6 @@ export type FilterAutocompleteSelectProps = {
     searchFilter: SearchFilter;
     setSearchFilter: (s) => void;
     supportedResourceFilters?: FilterResourceDropdownProps['supportedResourceFilters'];
-    onDeleteGroup: (category) => void;
     autocompleteSearchContext?:
         | { 'Image SHA': string }
         | { 'Deployment ID': string }
@@ -52,7 +51,6 @@ function FilterAutocompleteSelect({
     searchFilter,
     setSearchFilter,
     supportedResourceFilters,
-    onDeleteGroup,
     autocompleteSearchContext = {},
 }: FilterAutocompleteSelectProps) {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -112,7 +110,6 @@ function FilterAutocompleteSelect({
                 onSelect={(e, value) => {
                     onSelect(value);
                 }}
-                onClear={() => onDeleteGroup(resource)}
                 onToggle={onToggle}
                 isOpen={isOpen}
                 placeholderText={`Filter results by ${resource.toLowerCase()}`}
