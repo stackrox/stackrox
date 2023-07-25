@@ -70,7 +70,7 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, _ *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
+func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, _ *scan.LocalScan, usingScannerV4 bool) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
@@ -88,20 +88,20 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 	return svc.ScanImageInternal(ctx, internalReq)
 }
 
-func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan, usingScannerV4 bool) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "", false)
+	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "", false, usingScannerV4)
 
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
 }
 
-type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan, usingScannerV4 bool) (*v1.ScanImageInternalResponse, error)
 
-func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scanFn scanFunc) (*v1.ScanImageInternalResponse, error) {
+func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, scanFn scanFunc, usingScannerV4 bool) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -114,7 +114,7 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := scanFn(ctx, svc, req, c.localScan)
+		scannedImage, err := scanFn(ctx, svc, req, c.localScan, usingScannerV4)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
 				// If the client is effectively rate-limited, backoff and try again.
@@ -141,7 +141,7 @@ outer:
 	}
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, usingScannerV4 bool) {
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
@@ -153,7 +153,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
 	}
 
-	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
+	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn, usingScannerV4)
 	// lock here to set the image
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -188,7 +188,7 @@ func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
 	return value.waitAndGet(), true
 }
 
-func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
+func (e *enricher) runScan(req *scanImageRequest, usingScannerV4 bool) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
@@ -232,7 +232,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
+		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req, usingScannerV4)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),
@@ -245,16 +245,17 @@ type scanImageRequest struct {
 	containerImage       *storage.ContainerImage
 	clusterID, namespace string
 	pullSecrets          []string
+	usingScannerV4       bool
 }
 
-func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scanImageRequest) {
+func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scanImageRequest, usingScannerV4 bool) {
 	go func() {
 		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
-		imageChan <- e.runScan(req)
+		imageChan <- e.runScan(req, usingScannerV4)
 	}()
 }
 
-func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
+func (e *enricher) getImages(deployment *storage.Deployment, usingScannerV4 bool) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 
 	var pullSecrets []string
@@ -270,7 +271,7 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 			clusterID:      clusterid.Get(),
 			namespace:      deployment.GetNamespace(),
 			pullSecrets:    pullSecrets,
-		})
+		}, usingScannerV4)
 	}
 	images := make([]*storage.Image, len(deployment.GetContainers()))
 	for i := 0; i < len(deployment.GetContainers()); i++ {

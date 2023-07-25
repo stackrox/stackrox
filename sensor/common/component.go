@@ -27,7 +27,7 @@ type SensorComponent interface {
 	Notify(e SensorComponentEvent)
 	Capabilities() []centralsensor.SensorCapability
 
-	ProcessMessage(msg *central.MsgToSensor) error
+	ProcessMessage(msg *central.MsgToSensor, usingScannerV4 bool) error
 	ResponsesC() <-chan *central.MsgFromSensor
 }
 

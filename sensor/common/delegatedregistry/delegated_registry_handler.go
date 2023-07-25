@@ -59,7 +59,7 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
-func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor, usingScannerV4 bool) error {
 	if !enabled {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	case msg.GetDelegatedRegistryConfig() != nil:
 		return d.processUpdatedDelegatedRegistryConfig(msg.GetDelegatedRegistryConfig())
 	case msg.GetScanImage() != nil:
-		return d.processScanImage(msg.GetScanImage())
+		return d.processScanImage(msg.GetScanImage(), usingScannerV4)
 	case msg.GetImageIntegrations() != nil:
 		return d.processImageIntegrations(msg.GetImageIntegrations())
 	}
@@ -99,7 +99,7 @@ func (d *delegatedRegistryImpl) processUpdatedDelegatedRegistryConfig(config *ce
 	return nil
 }
 
-func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) error {
+func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage, usingScannerV4 bool) error {
 	select {
 	case <-d.stopSig.Done():
 		return errors.New("could not process scan image request, stop requested")
@@ -108,13 +108,13 @@ func (d *delegatedRegistryImpl) processScanImage(scanReq *central.ScanImage) err
 
 		// Spawn a goroutine so that this handler doesn't block other messages from being processed
 		// while waiting for scan to complete.
-		go d.executeScan(scanReq)
+		go d.executeScan(scanReq, usingScannerV4)
 	}
 
 	return nil
 }
 
-func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
+func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage, usingScannerV4 bool) {
 	ci, err := utils.GenerateImageFromString(scanReq.GetImageName())
 	if err != nil {
 		d.sendScanStatusUpdate(scanReq, err)
@@ -125,7 +125,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 	defer cancel()
 
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.
-	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
+	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce(), usingScannerV4)
 	if err != nil {
 		log.Errorf("Scan failed for req %q image %q: %v", scanReq.GetRequestId(), ci.GetName().GetFullName(), err)
 
