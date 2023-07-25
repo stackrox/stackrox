@@ -55,7 +55,7 @@ COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/roxctl*            /assets/downloads/cli/
 
 COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
-COPY ui /
+COPY ui /ui
 
 COPY --from=downloads /output/rpms/ /tmp/
 COPY --from=downloads /output/go/ /go/
