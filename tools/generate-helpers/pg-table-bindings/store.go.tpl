@@ -51,7 +51,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-    "github.com/stackrox/rox/pkg/sync"
     "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
     "gorm.io/gorm"
@@ -107,19 +106,13 @@ type Store interface {
     Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-    *pgSearch.GenericStore[storeType, *storeType]
-    mutex sync.RWMutex
-}
-
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-    return &storeImpl{
-        GenericStore: pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[storeType, *storeType](
+    return pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[storeType, *storeType](
             db,
             schema,
             pkGetter,
@@ -142,8 +135,7 @@ func New(db postgres.DB) Store {
             isUpsertAllowed,
             {{- end }}
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
-        ),
-    }
+    )
 }
 
 // region Helper functions
