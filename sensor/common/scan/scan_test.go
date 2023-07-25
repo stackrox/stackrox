@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	scannerV4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -94,7 +95,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
-			registry registryTypes.ImageRegistry, _ scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+			registry registryTypes.ImageRegistry, _ scannerclient.Client) (*scannerV1.GetImageComponentsResponse, *scannerV4.IndexReport, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
 			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getRegistryForImageInNamespace func(image *storage.ImageName, ns string) (registryTypes.ImageRegistry, error)
@@ -408,7 +409,7 @@ func (suite *scanTestSuite) TestGetRegistries() {
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,
-	reg registryTypes.ImageRegistry, _ scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	reg registryTypes.ImageRegistry, _ scannerclient.Client) (*scannerV1.GetImageComponentsResponse, *scannerV4.IndexReport, error) {
 
 	if reg != nil {
 		reg.Config()
@@ -424,7 +425,7 @@ func successfulScan(_ context.Context, _ *storage.Image,
 				Version: "1.0",
 			}},
 		},
-	}, nil
+	}, nil, nil
 }
 
 func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
@@ -438,8 +439,8 @@ func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher,
 }
 
 func failingScan(_ context.Context, _ *storage.Image,
-	_ registryTypes.ImageRegistry, _ scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
-	return nil, errors.New("failed scanning image")
+	_ registryTypes.ImageRegistry, _ scannerclient.Client) (*scannerV1.GetImageComponentsResponse, *scannerV4.IndexReport, error) {
+	return nil, nil, errors.New("failed scanning image")
 }
 
 func failingFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,

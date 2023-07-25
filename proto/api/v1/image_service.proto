@@ -10,6 +10,7 @@ import "scanner/api/v1/component.proto";
 import "scanner/api/v1/note.proto";
 import "storage/image.proto";
 import "storage/deployment.proto";
+import "internalapi/scanner/v4/index_report.proto";
 
 package v1;
 
@@ -70,6 +71,12 @@ message EnrichLocalImageInternalRequest {
     string                      error            = 8;
     string                      request_id       = 9;
     bool                        force            = 10;
+    scanner.v4.IndexReportComponents                 IndexReportComponents = 11;
+}
+
+message GetV4VulnerabilitiesRequest {
+    string hash_id = 1;
+    scanner.v4.IndexReportComponents components = 2;
 }
 
 message UpdateLocalScanStatusInternalRequest {
