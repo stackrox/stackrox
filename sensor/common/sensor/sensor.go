@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -71,6 +72,7 @@ type Sensor struct {
 	stoppedSig concurrency.ErrorSignal
 
 	notifyList []common.Notifiable
+	reconnect  atomic.Bool
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -91,6 +93,8 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		currentStateMtx: &sync.Mutex{},
 
 		stoppedSig: concurrency.NewErrorSignal(),
+
+		reconnect: atomic.Bool{},
 	}
 }
 
@@ -297,7 +301,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.components...)
+	s.centralCommunication = NewCentralCommunication(false, s.components...)
 
 	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 
@@ -358,7 +362,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection if up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.components...)
+		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
@@ -371,6 +375,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.centralConnectionFactory.Reset()
+			s.reconnect.Store(true)
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)

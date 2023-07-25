@@ -16,6 +16,35 @@ var (
 	NginxDeployment1 = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml", Name: "nginx-deployment"}
 )
 
+func Test_SensorHello(t *testing.T) {
+	if buildinfo.ReleaseBuild {
+		t.Skipf("Don't run test in release mode: feature flag cannot be enabled")
+	}
+
+	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
+	t.Setenv("ROX_RESYNC_DISABLED", "true")
+	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
+	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
+
+	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
+		InitialSystemPolicies: nil,
+		CertFilePath:          "../../../tools/local-sensor/certs/",
+	})
+
+	require.NoError(t, err)
+
+	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		hello1 := testContext.WaitForHello(3 * time.Minute)
+		require.NotNil(t, hello1)
+		assert.False(t, hello1.GetReconnect())
+		testContext.RestartFakeCentralConnection()
+		hello2 := testContext.WaitForHello(3 * time.Minute)
+		require.NotNil(t, hello2)
+		assert.False(t, hello2.GetReconnect())
+	}))
+
+}
+
 func Test_SensorReconnects(t *testing.T) {
 	// TODO(ROX-18197) Address flakiness
 	t.Skipf("This test is too flaky. Has to be fixed before re-enabled")
