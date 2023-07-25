@@ -1,4 +1,4 @@
-import { visitFromLeftNav } from '../../helpers/nav';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 import selectSelectors from '../../selectors/select';
@@ -77,7 +77,7 @@ const routeMatcherMapToVisitNetworkGraph = {
 export const basePath = '/main/network-graph';
 
 export function visitNetworkGraphFromLeftNav() {
-    visitFromLeftNav('Network Graph', routeMatcherMapToVisitNetworkGraph);
+    visitFromLeftNavExpandable('Network', 'Network Graph', routeMatcherMapToVisitNetworkGraph);
 
     cy.location('pathname').should('eq', basePath);
 }

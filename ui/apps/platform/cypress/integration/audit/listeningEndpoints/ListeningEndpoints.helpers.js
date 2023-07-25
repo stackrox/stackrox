@@ -1,6 +1,6 @@
 import { visit } from '../../../helpers/visit';
 
-const basePath = '/main/audit/listening-endpoints/';
+const basePath = '/main/listening-endpoints/';
 
 export function visitListeningEndpoints() {
     visit(basePath);
