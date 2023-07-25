@@ -61,8 +61,8 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 	})
 }
 
-// delValueFromIfValueExists deletes the valueFrom key from customize.envVars entries if both value and valueFrom key exists
-// returns the unmodified values in case of error
+// delValueFromIfValueExists deletes the valueFrom key from customize.envVars entries
+// if both value and valueFrom key exist. Returns the unmodified values in case of error in accessing values.
 func delValueFromIfValueExists(values chartutil.Values) chartutil.Values {
 	envVarsMap, err := values.Table("customize.envVars")
 	if err != nil {
