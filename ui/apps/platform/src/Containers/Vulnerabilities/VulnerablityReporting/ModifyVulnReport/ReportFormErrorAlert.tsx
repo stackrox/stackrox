@@ -7,7 +7,7 @@ function ReportFormErrorAlert({ error }) {
     // When an error occurs, scroll the message into view
     useEffect(() => {
         if (error && alertRef.current) {
-            alertRef.current?.scrollIntoView({
+            alertRef.current.scrollIntoView({
                 behavior: 'smooth',
             });
         }
