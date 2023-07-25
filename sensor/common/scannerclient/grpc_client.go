@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	scannerV4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -23,7 +24,7 @@ var (
 // Client represents a gRPC client interface.
 type Client interface {
 	Dial(endpoint string) (Client, error)
-	GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error)
+	GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, *scannerV4.IndexReport, error)
 	Close() error
 }
 
@@ -68,7 +69,7 @@ func (c *GrpcClient) Dial(endpoint string) (Client, error) {
 }
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
-func (c *GrpcClient) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, error) {
+func (c *GrpcClient) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*scannerV1.GetImageComponentsResponse, *scannerV4.IndexReport, error) {
 	name := image.GetName().GetFullName()
 
 	// The WaitForReady option will cause invocations to block (until server ready or ctx done/expires)
@@ -85,12 +86,12 @@ func (c *GrpcClient) GetImageAnalysis(ctx context.Context, image *storage.Image,
 	}, grpc.WaitForReady(true))
 	if err != nil {
 		log.Debugf("Unable to get image components from local Scanner for image %s: %v", name, err)
-		return nil, errors.Wrap(err, "getting image components from scanner")
+		return nil, nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
 	log.Debugf("Received image components from local Scanner for image %s", name)
 
-	return resp, nil
+	return resp, nil, nil
 }
 
 // Close closes the underlying grpc.ClientConn.
