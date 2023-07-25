@@ -99,7 +99,6 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImplWithContext(ctx co
 		seenIDs:                    make(map[types.UID]struct{}),
 		missingInitialIDs:          nil,
 	}
-
 }
 
 // Test that when a message is handled by an unsynced resourceEventHandlerImpl it's ID is added to the seedIDs set
