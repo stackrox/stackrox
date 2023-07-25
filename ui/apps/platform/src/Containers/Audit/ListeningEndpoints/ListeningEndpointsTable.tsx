@@ -19,7 +19,7 @@ function EmbeddedTable({
         <TableComposable isNested>
             <Thead noWrap>
                 <Tr>
-                    <Th width={20}>Program name</Th>
+                    <Th width={20}>Process name</Th>
                     <Th width={10}>PID</Th>
                     <Th width={10}>Port</Th>
                     <Th width={10}>Protocol</Th>

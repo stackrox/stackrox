@@ -47,7 +47,7 @@ export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const listeningEndpointsBasePath = `${mainPath}/audit/listening-endpoints`;
+export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
 
 // Configuration Management
 
@@ -164,7 +164,8 @@ const vulnerabilitiesPathToLabelMap = {
 
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
-    [networkBasePath]: 'Network Graph (2.0)',
+    [networkBasePath]: 'Network Graph',
+    [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
     [complianceEnhancedBasePath]: 'Compliance (2.0)',
