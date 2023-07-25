@@ -98,16 +98,3 @@ func TestInjectProxyNoValueConflict(t *testing.T) {
 		}
 	}
 }
-
-func customizeProxyVarsTranslator(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
-	customizeValue := translation.GetCustomize(&platform.CustomizeSpec{
-		EnvVars: []corev1.EnvVar{
-			{Name: "HTTP_PROXY", Value: "cr.proxy.value"},
-		},
-	})
-
-	vb := translation.ValuesBuilder{}
-	vb.AddChild("customize", customizeValue)
-
-	return vb.Build()
-}
