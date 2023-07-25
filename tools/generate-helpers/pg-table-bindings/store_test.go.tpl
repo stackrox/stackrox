@@ -188,12 +188,14 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
+			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}}, {{ (index .Schema.PrimaryKeys 0).Getter "objB"}} },
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*{{.Type}}{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*{{.Type}}{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -206,6 +208,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*{{.Type}}{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -219,6 +222,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*{{.Type}}{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -234,6 +238,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					{{- end }}
 				),
 			),
+			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*{{.Type}}{objA},
 			expectedWriteError:     nil,
@@ -246,6 +251,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
 				),
 			),
+			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*{{.Type}}{objA},
 			expectedWriteError:     nil,
@@ -289,34 +295,20 @@ func (s *{{$namePrefix}}StoreSuite) TestSACCount() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
-	objA := &{{.Type}}{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &{{.Type}}{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}}, {{ (index .Schema.PrimaryKeys 0).Getter "objB"}} },
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
-		withAccessToCluster:     []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
 			getIDs := func(obj *{{.Type}}) error {
-				identifiers = append(identifiers,  {{ (index .Schema.PrimaryKeys 0).Getter "obj" }} )
+				identifiers = append(identifiers, {{ (index .Schema.PrimaryKeys 0).Getter "obj" }} )
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIDs)
+			err := s.store.Walk(testCase.context, getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})
 	}
 }

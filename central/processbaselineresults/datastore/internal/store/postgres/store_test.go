@@ -145,12 +145,14 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
+			expectedIdentifiers:    []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.ProcessBaselineResults{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ProcessBaselineResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -163,6 +165,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ProcessBaselineResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -176,6 +179,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ProcessBaselineResults{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -189,6 +193,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
 				),
 			),
+			expectedIdentifiers:    []string{objA.GetDeploymentId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ProcessBaselineResults{objA},
 			expectedWriteError:     nil,
@@ -201,6 +206,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
+			expectedIdentifiers:    []string{objA.GetDeploymentId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ProcessBaselineResults{objA},
 			expectedWriteError:     nil,
@@ -244,34 +250,20 @@ func (s *ProcessBaselineResultsStoreSuite) TestSACCount() {
 }
 
 func (s *ProcessBaselineResultsStoreSuite) TestSACWalk() {
-	objA := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetDeploymentId()},
-		withAccessToCluster:     []string{objA.GetDeploymentId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
 			getIDs := func(obj *storage.ProcessBaselineResults) error {
 				identifiers = append(identifiers, obj.GetDeploymentId())
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIDs)
+			err := s.store.Walk(testCase.context, getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})
 	}
 }
