@@ -94,65 +94,14 @@ func allowFixedNamespaceLevelScopes(
 	}
 }
 
-func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) ScopeCheckerCore {
-	switch key := scopeKey.(type) {
-	case AccessModeScopeKey:
-		if c.checkerLevel != GlobalScopeKind {
-			return denyAllScopeCheckerCore
-		}
-		if c.accessKeys.Cardinality() > 0 && !c.accessKeys.Contains(key) {
-			return denyAllScopeCheckerCore
-		}
-		return &allowedFixedScopesCheckerCore{
-			checkerLevel:  AccessModeScopeKind,
-			accessKeys:    c.accessKeys,
-			resourceKeys:  c.resourceKeys,
-			clusterKeys:   c.clusterKeys,
-			namespaceKeys: c.namespaceKeys,
-			accessLevel:   key,
-		}
-	case ResourceScopeKey:
-		if c.checkerLevel != AccessModeScopeKind {
-			return denyAllScopeCheckerCore
-		}
-		if c.resourceKeys.Cardinality() > 0 && !c.resourceKeys.Contains(key) {
-			return denyAllScopeCheckerCore
-		}
-		return &allowedFixedScopesCheckerCore{
-			checkerLevel:   ResourceScopeKind,
-			accessKeys:     c.accessKeys,
-			resourceKeys:   c.resourceKeys,
-			clusterKeys:    c.clusterKeys,
-			namespaceKeys:  c.namespaceKeys,
-			accessLevel:    c.accessLevel,
-			targetResource: key,
-		}
-	case ClusterScopeKey:
-		if c.checkerLevel != ResourceScopeKind {
-			return denyAllScopeCheckerCore
-		}
-		if c.clusterKeys.Cardinality() > 0 && !c.clusterKeys.Contains(key) {
-			return denyAllScopeCheckerCore
-		}
-		return &allowedFixedScopesCheckerCore{
-			checkerLevel:   ClusterScopeKind,
-			accessKeys:     c.accessKeys,
-			resourceKeys:   c.resourceKeys,
-			clusterKeys:    c.clusterKeys,
-			namespaceKeys:  c.namespaceKeys,
-			accessLevel:    c.accessLevel,
-			targetResource: c.targetResource,
-			targetCluster:  key,
-		}
-	case NamespaceScopeKey:
-		if c.checkerLevel != ClusterScopeKind {
-			return denyAllScopeCheckerCore
-		}
-		if c.namespaceKeys.Cardinality() > 0 && !c.namespaceKeys.Contains(key) {
-			return denyAllScopeCheckerCore
-		}
-		return &allowedFixedScopesCheckerCore{
-			checkerLevel:    NamespaceScopeKind,
+type subScopeCheckerBuilder struct {
+	core *allowedFixedScopesCheckerCore
+}
+
+func (c *allowedFixedScopesCheckerCore) subScopeCheckerBuilder() *subScopeCheckerBuilder {
+	return &subScopeCheckerBuilder{
+		core: &allowedFixedScopesCheckerCore{
+			checkerLevel:    c.checkerLevel + 1,
 			accessKeys:      c.accessKeys,
 			resourceKeys:    c.resourceKeys,
 			clusterKeys:     c.clusterKeys,
@@ -160,8 +109,82 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 			accessLevel:     c.accessLevel,
 			targetResource:  c.targetResource,
 			targetCluster:   c.targetCluster,
-			targetNamespace: key,
+			targetNamespace: c.targetNamespace,
+		},
+	}
+}
+
+func (b *subScopeCheckerBuilder) withAccessMode(key AccessModeScopeKey) ScopeCheckerCore {
+	b.core.accessLevel = key
+	return b.core
+}
+
+func (b *subScopeCheckerBuilder) withResource(key ResourceScopeKey) ScopeCheckerCore {
+	b.core.targetResource = key
+	return b.core
+}
+
+func (b *subScopeCheckerBuilder) withCluster(key ClusterScopeKey) ScopeCheckerCore {
+	b.core.targetCluster = key
+	return b.core
+}
+
+func (b *subScopeCheckerBuilder) withNamespace(key NamespaceScopeKey) ScopeCheckerCore {
+	b.core.targetNamespace = key
+	return b.core
+}
+
+func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) ScopeCheckerCore {
+	switch key := scopeKey.(type) {
+	case AccessModeScopeKey:
+		if c.checkerLevel != GlobalScopeKind {
+			return denyAllScopeCheckerCore
 		}
+		if c.accessKeys.Cardinality() == 0 &&
+			c.resourceKeys.Cardinality() == 0 &&
+			c.clusterKeys.Cardinality() == 0 &&
+			c.namespaceKeys.Cardinality() == 0 {
+			return c.subScopeCheckerBuilder().withAccessMode(key)
+		}
+		if !c.accessKeys.Contains(key) {
+			return denyAllScopeCheckerCore
+		}
+		return c.subScopeCheckerBuilder().withAccessMode(key)
+	case ResourceScopeKey:
+		if c.checkerLevel != AccessModeScopeKind {
+			return denyAllScopeCheckerCore
+		}
+		if c.resourceKeys.Cardinality() == 0 &&
+			c.clusterKeys.Cardinality() == 0 &&
+			c.namespaceKeys.Cardinality() == 0 {
+			return c.subScopeCheckerBuilder().withResource(key)
+		}
+		if c.resourceKeys.Cardinality() > 0 && !c.resourceKeys.Contains(key) {
+			return denyAllScopeCheckerCore
+		}
+		return c.subScopeCheckerBuilder().withResource(key)
+	case ClusterScopeKey:
+		if c.checkerLevel != ResourceScopeKind {
+			return denyAllScopeCheckerCore
+		}
+		if c.clusterKeys.Cardinality() == 0 && c.namespaceKeys.Cardinality() == 0 {
+			return c.subScopeCheckerBuilder().withCluster(key)
+		}
+		if !c.clusterKeys.Contains(key) {
+			return denyAllScopeCheckerCore
+		}
+		return c.subScopeCheckerBuilder().withCluster(key)
+	case NamespaceScopeKey:
+		if c.checkerLevel != ClusterScopeKind {
+			return denyAllScopeCheckerCore
+		}
+		if c.namespaceKeys.Cardinality() == 0 {
+			return c.subScopeCheckerBuilder().withNamespace(key)
+		}
+		if c.namespaceKeys.Cardinality() > 0 && !c.namespaceKeys.Contains(key) {
+			return denyAllScopeCheckerCore
+		}
+		return c.subScopeCheckerBuilder().withNamespace(key)
 	}
 	return denyAllScopeCheckerCore
 }
@@ -169,16 +192,18 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 func (c *allowedFixedScopesCheckerCore) Allowed() bool {
 	switch c.checkerLevel {
 	case GlobalScopeKind:
-		return c.accessKeys.Cardinality() == 0
+		return c.accessKeys.Cardinality() == 0 &&
+			c.resourceKeys.Cardinality() == 0 &&
+			c.clusterKeys.Cardinality() == 0 &&
+			c.namespaceKeys.Cardinality() == 0
 	case AccessModeScopeKind:
-		return c.resourceKeys.Cardinality() == 0
+		return c.resourceKeys.Cardinality() == 0 &&
+			c.clusterKeys.Cardinality() == 0 &&
+			c.namespaceKeys.Cardinality() == 0
 	case ResourceScopeKind:
-		return c.clusterKeys.Cardinality() == 0
+		return c.clusterKeys.Cardinality() == 0 &&
+			c.namespaceKeys.Cardinality() == 0
 	case ClusterScopeKind:
-		// resourceScope := resources.GetScopeForResource(permissions.Resource(c.targetResource))
-		// if resourceScope == permissions.ClusterScope {
-		// 	return true
-		// }
 		return c.namespaceKeys.Cardinality() == 0
 	case NamespaceScopeKind:
 		return true
@@ -189,12 +214,15 @@ func (c *allowedFixedScopesCheckerCore) Allowed() bool {
 func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 	resource permissions.ResourceWithAccess,
 ) (*effectiveaccessscope.ScopeTree, error) {
+	// Global access granted
 	if c.accessKeys.Cardinality() == 0 &&
 		c.resourceKeys.Cardinality() == 0 &&
 		c.clusterKeys.Cardinality() == 0 &&
 		c.resourceKeys.Cardinality() == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
+
+	// Drill down to AccessMode level
 	if !c.accessKeys.Contains(AccessModeScopeKey(resource.Access)) {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
@@ -203,6 +231,8 @@ func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 		c.resourceKeys.Cardinality() == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
+
+	// Drill down to Resource level
 	targetResource := resource.Resource.GetResource()
 	targetReplacingResource := resource.Resource.GetReplacingResource()
 	if !c.resourceKeys.Contains(ResourceScopeKey(targetResource)) &&
@@ -213,23 +243,25 @@ func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 		c.namespaceKeys.Cardinality() == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
+
+	// Cluster and Namespace level
 	clusterIDs := make([]string, 0, c.clusterKeys.Cardinality())
-	for _, clusterKey := range c.clusterKeys.AsSlice() {
+	for clusterKey := range c.clusterKeys {
 		clusterIDs = append(clusterIDs, clusterKey.String())
 	}
 	if c.namespaceKeys.Cardinality() == 0 {
 		return effectiveaccessscope.FromClustersAndNamespacesMap(clusterIDs, nil), nil
 	}
 	namespaces := make([]string, 0, c.namespaceKeys.Cardinality())
-	for _, namespaceKey := range c.namespaceKeys.AsSlice() {
+	for namespaceKey := range c.namespaceKeys {
 		namespaces = append(namespaces, namespaceKey.String())
 	}
-	namespaceMap := make(map[string][]string, len(clusterIDs))
+	clusterNamespaceMap := make(map[string][]string, len(clusterIDs))
 	for clusterIx := range clusterIDs {
 		clusterID := clusterIDs[clusterIx]
-		namespaceMap[clusterID] = namespaces
+		clusterNamespaceMap[clusterID] = namespaces
 	}
-	return effectiveaccessscope.FromClustersAndNamespacesMap(nil, namespaceMap), nil
+	return effectiveaccessscope.FromClustersAndNamespacesMap(nil, clusterNamespaceMap), nil
 }
 
 // AllowFixedScopes returns a scope checker core that allows those scopes that

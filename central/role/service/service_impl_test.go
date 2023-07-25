@@ -576,6 +576,7 @@ const (
 	namespaceUUIDNamespace = "namespace"
 
 	clusterPermission             = "Cluster"
+	compliancePermission          = "Compliance"
 	deploymentPermission          = "Deployment"
 	deploymentExtensionPermission = "DeploymentExtension"
 	integrationPermission         = "Integration"
@@ -602,6 +603,7 @@ func getNamespaceID(namespaceName string) string {
 }
 
 func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
+	deepPurpleClusterID := s.clusterNameToIDMap[clusterDeepPurple.GetName()]
 	queenClusterID := s.clusterNameToIDMap[clusterQueen.GetName()]
 	testResourceScope1 := getTestResourceScopeSingleNamespace(
 		queenClusterID,
@@ -619,6 +621,11 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 			resources.Deployment.GetResource():   testResourceScope1,
 			resources.NetworkGraph.GetResource(): testResourceScope2,
 		},
+	}
+
+	deepPurpleClusterResponse := &v1.ScopeObject{
+		Id:   deepPurpleClusterID,
+		Name: clusterDeepPurple.GetName(),
 	}
 
 	queenClusterResponse := &v1.ScopeObject{
@@ -689,6 +696,99 @@ func (s *serviceImplTestSuite) TestGetClustersForPermissions() {
 	for _, c := range testCases {
 		s.Run(c.name, func() {
 			clusterResponse, err := s.service.GetClustersForPermissions(testCtx, &v1.GetClustersForPermissionsRequest{
+				Pagination:  nil,
+				Permissions: c.testedPermissions,
+			})
+			s.NoError(err)
+			s.ElementsMatch(clusterResponse.GetClusters(), c.expectedClusters)
+		})
+	}
+
+	extendedAccessTestScopeMap := sac.TestScopeMap{
+		storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+			resources.Compliance.GetResource(): {
+				Included: true,
+			},
+			resources.Integration.GetResource(): {
+				Included: true,
+			},
+			resources.Node.GetResource():         testResourceScope1,
+			resources.Deployment.GetResource():   testResourceScope1,
+			resources.NetworkGraph.GetResource(): testResourceScope2,
+		},
+	}
+
+	extendedAccessTestCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(), extendedAccessTestScopeMap))
+
+	extendedAccessTestCases := []struct {
+		name              string
+		testedPermissions []string
+		expectedClusters  []*v1.ScopeObject
+	}{
+		{
+			name:              "Extended Access - Global permission (Not Granted) gets no cluster data.",
+			testedPermissions: []string{rolePermission},
+			expectedClusters:  []*v1.ScopeObject{},
+		},
+		{
+			name:              "Extended Access - Global permission (Granted) gets no cluster data.",
+			testedPermissions: []string{integrationPermission},
+			expectedClusters:  []*v1.ScopeObject{},
+		},
+		{
+			name:              "Extended Access - Not granted Cluster scoped permission gets no cluster data.",
+			testedPermissions: []string{clusterPermission},
+			expectedClusters:  []*v1.ScopeObject{},
+		},
+		{
+			name:              "Extended Access - Granted Cluster scoped permission at resource level gets all cluster data",
+			testedPermissions: []string{compliancePermission},
+			expectedClusters: []*v1.ScopeObject{
+				deepPurpleClusterResponse,
+				queenClusterResponse,
+				pinkFloydClusterResponse,
+			},
+		},
+		{
+			name:              "Extended Access - Granted Cluster scoped permission gets only cluster data for clusters in permission scope.",
+			testedPermissions: []string{nodePermission},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse},
+		},
+		{
+			name:              "Extended Access - Not granted Namespace scoped permission gets no cluster data.",
+			testedPermissions: []string{namespacePermission},
+			expectedClusters:  []*v1.ScopeObject{},
+		},
+		{
+			name:              "Extended Access - Granted Namespace scoped permission gets only cluster data for clusters in permission scope.",
+			testedPermissions: []string{deploymentPermission},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse},
+		},
+		{
+			name:              "Extended Access - Multiple not granted Namespace scoped permissions get no cluster data.",
+			testedPermissions: []string{namespacePermission, deploymentExtensionPermission},
+			expectedClusters:  []*v1.ScopeObject{},
+		},
+		{
+			name:              "Extended Access - Multiple Namespace scoped permissions get only cluster data for clusters in granted permission scopes.",
+			testedPermissions: []string{namespacePermission, deploymentPermission},
+			expectedClusters:  []*v1.ScopeObject{queenClusterResponse},
+		},
+		{
+			name:              "Extended Access - empty permission list get cluster data for all cluster data in scope of granted cluster and namespace permissions.",
+			testedPermissions: []string{},
+			expectedClusters: []*v1.ScopeObject{
+				deepPurpleClusterResponse,
+				queenClusterResponse,
+				pinkFloydClusterResponse,
+			},
+		},
+	}
+
+	for _, c := range extendedAccessTestCases {
+		s.Run(c.name, func() {
+			clusterResponse, err := s.service.GetClustersForPermissions(extendedAccessTestCtx, &v1.GetClustersForPermissionsRequest{
 				Pagination:  nil,
 				Permissions: c.testedPermissions,
 			})
