@@ -72,6 +72,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	var workerType string
 	switch evt := msg.Msg.(type) {
 	case *central.MsgFromSensor_Event:
+		if msg.GetEvent() == nil {
+			log.Errorf("Received unknown event from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
+			return
+		}
 		switch evt.Event.Resource.(type) {
 		case *central.SensorEvent_Synced:
 			// Call the reconcile functions
@@ -92,7 +96,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
 		default:
 			if evt.Event.GetResource() == nil {
-				log.Errorf("Received unknown event from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
+				log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
 				return
 			}
 			// Default worker type is the event type.
