@@ -42,7 +42,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.postgresDB = pghelper.ForT(s.T(), true)
+	s.postgresDB = pghelper.ForT(s.T(), false)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {

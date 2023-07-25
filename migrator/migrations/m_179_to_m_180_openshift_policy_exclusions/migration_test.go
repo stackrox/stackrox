@@ -32,7 +32,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *categoriesMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	s.policyStore = policyPostgresStore.New(s.db.DB)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePoliciesStmt)
 
