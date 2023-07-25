@@ -49,6 +49,28 @@
         ]
       }
     },
+    "/v1/billing/current": {
+      "get": {
+        "operationId": "BillingMetricsService_GetCurrent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/BillingMetricsResponseBillingMetricsRecord"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "BillingMetricsService"
+        ]
+      }
+    },
     "/v1/billing/max": {
       "get": {
         "operationId": "BillingMetricsService_GetMax",

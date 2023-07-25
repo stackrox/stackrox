@@ -3,15 +3,18 @@ package billingmetrics
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	bmstore "github.com/stackrox/rox/central/billingmetrics/store"
+	"github.com/stackrox/rox/central/telemetry/billingmetrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
@@ -22,6 +25,7 @@ var (
 		user.With(permissions.View(resources.Administration)): {
 			"/v1.BillingMetricsService/GetMetrics",
 			"/v1.BillingMetricsService/GetMax",
+			"/v1.BillingMetricsService/GetCurrent",
 		}})
 )
 
@@ -82,4 +86,16 @@ func (s *serviceImpl) GetMax(ctx context.Context, req *v1.BillingMetricsRequest)
 		}
 	}
 	return max, nil
+}
+
+func (s *serviceImpl) GetCurrent(ctx context.Context, _ *v1.Empty) (*v1.BillingMetricsResponse_BillingMetricsRecord, error) {
+	current := &v1.BillingMetricsResponse_BillingMetricsRecord{
+		Ts: protoconv.ConvertTimeToTimestamp(time.Now().UTC())}
+	if m := billingmetrics.GetCurrent(ctx); m != nil {
+		current.Metrics = &v1.SecuredResourcesMetrics{
+			Nodes: int32(m.TotalNodes),
+			Cores: int32(m.TotalCores),
+		}
+	}
+	return current, nil
 }

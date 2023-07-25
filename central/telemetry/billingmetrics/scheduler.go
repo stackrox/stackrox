@@ -1,6 +1,7 @@
 package billingmetrics
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
@@ -15,8 +16,8 @@ var (
 	stop = concurrency.NewSignal()
 )
 
-func gather() {
-	ids, err := getClusterIDs()
+func gather(ctx context.Context) {
+	ids, err := getClusterIDs(ctx)
 	if err != nil {
 		log.Debug("Failed to get cluster IDs for billing metrics snapshot: ", err)
 		return
@@ -30,15 +31,29 @@ func gather() {
 	previousMetrics = newMetrics
 }
 
+// GetCurrent returns the total values of last known metrics reported by known
+// clusters.
+func GetCurrent(ctx context.Context) *clustermetrics.BillingMetrics {
+	ids, err := getClusterIDs(ctx)
+	if err != nil {
+		log.Debug("Failed to get cluster IDs for current billing metrics: ", err)
+		return nil
+	}
+	log.Debugf("Cutting billing metrics for %d clusters: %v", len(ids), ids)
+	return clustermetrics.FilterCurrent(ids)
+}
+
 func run() {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
-	gather()
+	ctx, cancel := context.WithCancel(context.Background())
+	gather(ctx)
 	for {
 		select {
 		case <-ticker.C:
-			gather()
+			gather(ctx)
 		case <-stop.Done():
+			cancel()
 			log.Debug("Billing metrics reporting stopped")
 			stop.Reset()
 			return

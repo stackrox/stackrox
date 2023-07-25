@@ -42,8 +42,8 @@ func average(metrics ...*clustermetrics.BillingMetrics) clustermetrics.BillingMe
 	return a
 }
 
-func getClusterIDs() (set.StringSet, error) {
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), clusterReader)
+func getClusterIDs(ctx context.Context) (set.StringSet, error) {
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, clusterReader)
 
 	clusters, err := cluStore.Singleton().GetClusters(ctx)
 	if err != nil {

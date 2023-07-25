@@ -3,6 +3,7 @@ syntax = "proto3";
 package v1;
 
 import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "v1";
@@ -38,5 +39,8 @@ service BillingMetricsService {
   }
   rpc GetMax(BillingMetricsRequest) returns (BillingMetricsMaxResponse) {
     option (google.api.http) = {get: "/v1/billing/max"};
+  }
+  rpc GetCurrent(v1.Empty) returns (BillingMetricsResponse.BillingMetricsRecord) {
+    option (google.api.http) = {get: "/v1/billing/current"};
   }
 }
