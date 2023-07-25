@@ -294,11 +294,11 @@ func (s *NetworkBaselinesStoreSuite) TestSACExists() {
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			exists, err := s.store.Exists(testCase.context, objA.GetDeploymentId())
+			assert.NoError(t, err)
 			// Assumption from the test case structure: objA is always in the visible list
 			// in the first position.
 			expectedFound := len(testCase.expectedObjects) > 0
-			exists, err := s.store.Exists(testCase.context, objA.GetDeploymentId())
-			assert.NoError(t, err)
 			assert.Equal(t, expectedFound, exists)
 		})
 	}
