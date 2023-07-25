@@ -1,15 +1,11 @@
-## Iterate over operator versions passed by fleet-shard sync
-{{- range .Values.operator.images }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: rhacs-operator
     control-plane: controller-manager
-  ## Name field must contain up to 63 characters
-  ## https://www.rfc-editor.org/rfc/rfc1123
-  name: {{ .deploymentName | lower }}
-  namespace: {{ $.Release.Namespace }}
+  name: rhacs-operator-controller-manager
+  namespace: rhacs-operator
 spec:
   replicas: 1
   selector:
@@ -33,13 +29,6 @@ spec:
             - --upstream=http://127.0.0.1:8080/
             - --logtostderr=true
             - --v=0
-          env:
-            - name: ROX_OPERATOR_MAIN_REGISTRY
-              value: quay.io/rhacs-eng
-            - name: ROX_OPERATOR_COLLECTOR_REGISTRY
-              value: quay.io/rhacs-eng
-            - name: OPERATOR_CONDITION_NAME
-              value: rhacs-operator.v3.74.0
           image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
           imagePullPolicy: IfNotPresent
           name: kube-rbac-proxy
@@ -49,11 +38,11 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: 2
-              memory: 1Gi
+              cpu: 500m
+              memory: 128Mi
             requests:
-              cpu: 1
-              memory: 200Mi
+              cpu: 5m
+              memory: 64Mi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
         - args:
@@ -61,8 +50,6 @@ spec:
             - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
           env:
-            - name: ENABLE_WEBHOOKS
-              value: "false"
             - name: RELATED_IMAGE_MAIN
             - name: RELATED_IMAGE_SCANNER
             - name: RELATED_IMAGE_SCANNER_SLIM
@@ -72,21 +59,13 @@ spec:
             - name: RELATED_IMAGE_COLLECTOR_FULL
             - name: RELATED_IMAGE_ROXCTL
             - name: RELATED_IMAGE_CENTRAL_DB
-            - name: ROX_OPERATOR_MAIN_REGISTRY
-              value: quay.io/rhacs-eng
-            - name: ROX_OPERATOR_COLLECTOR_REGISTRY
-              value: quay.io/rhacs-eng
             - name: MEMORY_LIMIT_BYTES
               valueFrom:
                 resourceFieldRef:
                   containerName: manager
                   resource: limits.memory
                   divisor: '0'
-            {{- if $.Values.operator.centralLabelSelector -}}
-            - name: CENTRAL_LABEL_SELECTOR
-              value: "rhacs.redhat.com/tag={{ substr 0 64 (lower .tag) }},rhacs.redhat.com/repository={{ substr 0 64 (lower .repository )}}"
-            {{- end }}
-          image: "{{ .repository }}:{{ .tag }}"
+          image: quay.io/stackrox-io/stackrox-operator:0.0.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -115,10 +94,10 @@ spec:
             timeoutSeconds: 1
           resources:
             limits:
-              cpu: 2
+              cpu: 200m
               memory: 1Gi
             requests:
-              cpu: 1
+              cpu: 100m
               memory: 200Mi
           securityContext:
             allowPrivilegeEscalation: false
@@ -132,5 +111,3 @@ spec:
       serviceAccount: rhacs-operator-controller-manager
       serviceAccountName: rhacs-operator-controller-manager
       terminationGracePeriodSeconds: 10
----
-{{- end }}
