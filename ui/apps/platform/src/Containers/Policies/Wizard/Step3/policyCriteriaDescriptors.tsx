@@ -354,6 +354,17 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'Days since CVE was first detected in the image',
+        name: 'First Image Occurrence Age',
+        shortName: 'First Image Occurrence Age',
+        longName: 'Minimum days since last image scan',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'number',
+        placeholder: '1',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
         label: 'Image user',
         name: 'Image User',
         shortName: 'Image user',

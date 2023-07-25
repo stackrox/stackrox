@@ -47,6 +47,7 @@ var (
 		fieldnames.ImageRegistry:                {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
 		fieldnames.ImageRemote:                  {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
 		fieldnames.ImageScanAge:                 {{required: set.NewStringSet(search.ImageScanTime.String()), printerFuncKey: printer.ImageScanAgeKey}},
+		fieldnames.FirstImageOccuranceAge:       {{required: set.NewStringSet(search.FirstImageOccurrenceTimestamp.String()), printerFuncKey: printer.FirstImageOccuranceAgeKey}},
 		fieldnames.ImageTag:                     {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
 		fieldnames.ImageUser:                    {{required: set.StringSet{}, printerFuncKey: printer.ImageUserKey}},
 		fieldnames.ImageSignatureVerifiedBy:     {{required: set.NewStringSet(augmentedobjs.ImageSignatureVerifiedCustomTag), printerFuncKey: printer.ImageSignatureVerifiedKey}},

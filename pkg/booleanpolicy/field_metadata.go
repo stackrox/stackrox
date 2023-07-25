@@ -406,6 +406,15 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
+	f.registerFieldMetadata(fieldnames.FirstImageOccuranceAge,
+		querybuilders.ForDays(search.FirstImageOccurrenceTimestamp),
+		violationmessages.ImageContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return integerValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+
 	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
 		querybuilders.ForImageSignatureVerificationStatus(),
 		violationmessages.ImageContextFields,

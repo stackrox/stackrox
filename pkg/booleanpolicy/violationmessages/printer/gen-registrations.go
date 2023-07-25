@@ -24,6 +24,7 @@ const (
 	ImageOSKey                      = "imageOS"
 	ImageScanKey                    = "imageScan"
 	ImageScanAgeKey                 = "imageScanAge"
+	FirstImageOccuranceAgeKey                 = "firstImageOccuranceAge"
 	ImageSignatureVerifiedKey       = "imageSignatureVerified"
 	ImageUserKey                    = "imageUser"
 	LineKey                         = "line"
@@ -70,6 +71,7 @@ func init() {
 	registerFunc(ImageOSKey, imageOSPrinter)
 	registerFunc(ImageScanKey, imageScanPrinter)
 	registerFunc(ImageScanAgeKey, imageScanAgePrinter)
+	registerFunc(FirstImageOccuranceAgeKey, firstImageOccuranceAgePrinter)
 	registerFunc(ImageSignatureVerifiedKey, imageSignatureVerifiedPrinter)
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)

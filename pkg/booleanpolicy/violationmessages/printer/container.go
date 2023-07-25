@@ -68,6 +68,15 @@ func imageScanAgePrinter(fieldMap map[string][]string) ([]string, error) {
 	return executeTemplate(imageScanAgeTemplate, r)
 }
 
+func firstImageOccuranceAgePrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName string
+		ImageScanTime string
+	}
+	r := resultFields{}
+	return executeTemplate(`TBD`, r)
+}
+
 const (
 	imageOSTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} base OS '{{.ImageOS}}'`
 )

@@ -35,6 +35,7 @@ var (
 	ImageRegistry                 = newFieldName("Image Registry")
 	ImageRemote                   = newFieldName("Image Remote")
 	ImageScanAge                  = newFieldName("Image Scan Age")
+	FirstImageOccuranceAge        = newFieldName("First Image Occurrence Age")
 	ImageSignatureVerifiedBy      = newFieldName("Image Signature Verified By")
 	ImageTag                      = newFieldName("Image Tag")
 	ImageUser                     = newFieldName("Image User")
