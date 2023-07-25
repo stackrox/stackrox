@@ -145,12 +145,14 @@ func (s *ServiceAccountsStoreSuite) getTestData(access storage.Access) (*storage
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
+			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.ServiceAccount{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ServiceAccount{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -163,6 +165,7 @@ func (s *ServiceAccountsStoreSuite) getTestData(access storage.Access) (*storage
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ServiceAccount{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -176,6 +179,7 @@ func (s *ServiceAccountsStoreSuite) getTestData(access storage.Access) (*storage
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ServiceAccount{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -189,6 +193,7 @@ func (s *ServiceAccountsStoreSuite) getTestData(access storage.Access) (*storage
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
 				),
 			),
+			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ServiceAccount{objA},
 			expectedWriteError:     nil,
@@ -201,6 +206,7 @@ func (s *ServiceAccountsStoreSuite) getTestData(access storage.Access) (*storage
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
+			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ServiceAccount{objA},
 			expectedWriteError:     nil,
@@ -244,34 +250,20 @@ func (s *ServiceAccountsStoreSuite) TestSACCount() {
 }
 
 func (s *ServiceAccountsStoreSuite) TestSACWalk() {
-	objA := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ServiceAccount{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetId(), objB.GetId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetId()},
-		withAccessToCluster:     []string{objA.GetId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
 			getIDs := func(obj *storage.ServiceAccount) error {
 				identifiers = append(identifiers, obj.GetId())
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIDs)
+			err := s.store.Walk(testCase.context, getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})
 	}
 }
