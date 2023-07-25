@@ -69,10 +69,6 @@ func (s *eventPipelineSuite) SetupTest() {
 	}
 }
 
-// 1. Making sure that k8s listeners will stop when we go into offline mode
-// 2. Context from the messages received in ResponsesC will be cancelled when
-//    going into offline mode
-
 func (s *eventPipelineSuite) write() {
 	s.outputC <- message.NewExpiring(s.pipeline.context, nil)
 }
@@ -131,8 +127,6 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	}
 
 	for i, orderedFunctions := range testCases {
-		// Expect listener to be reset (i.e. started twice and stopped once)
-
 		s.Run(fmt.Sprintf("case %d", i), func() {
 			for _, fn := range orderedFunctions {
 				fn()
