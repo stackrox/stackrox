@@ -13,7 +13,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Telemetry collection enabled by default for self-managed installations. Opt-out is available on bundle generation, or
   at any time via the System Configuration UI.
-- ROX-17702: Billing metrics collection API: `/v1/billing`, `/v1/billing/max`. New `/api/billing/csv` endpoint.
+- ROX-17702: Billing metrics collection API: `/v1/billing`, `/v1/billing/max`, `/v1/billing/current`. New `/api/billing/csv` endpoint.
 
 ### Removed Features
 
