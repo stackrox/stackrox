@@ -44,4 +44,7 @@ var (
 	// This is meant to be a 'kill switch' that allows for local scanning to continue (ie: for OCP internal repos)
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
 	DelegatedScanningDisabled = RegisterBooleanSetting("ROX_DELEGATED_SCANNING_DISABLED", false)
+
+	// EnableScannerV4 enables image scanning with new era scanner
+	EnableScannerV4 = RegisterBooleanSetting("ROX_SCANNER_V4_ENABLED", false)
 )
