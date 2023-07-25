@@ -142,7 +142,7 @@ func (i *indexerImpl) IndexContainerImage(
 		if err != nil {
 			return nil, err
 		}
-		res.Body.Close()
+		utils.IgnoreError(res.Body.Close)
 		res.Request.Header.Del("User-Agent")
 		res.Request.Header.Del("Range")
 		manifest.Layers = append(manifest.Layers, &claircore.Layer{
