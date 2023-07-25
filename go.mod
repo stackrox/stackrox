@@ -424,6 +424,8 @@ replace (
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c
 
+	google.golang.org/grpc => github.com/dhaus67/grpc-go v0.0.0-20230725080314-c1f8ef9d747b
+
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
