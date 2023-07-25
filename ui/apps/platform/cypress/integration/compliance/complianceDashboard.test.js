@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasOrchestratorFlavor } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -24,12 +23,6 @@ function getStandardSunburstControlsLink(standardName) {
 
 describe('Compliance Dashboard', () => {
     withAuth();
-
-    before(function beforeHook() {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-    });
 
     it('should scan for compliance data', () => {
         visitComplianceDashboard();
