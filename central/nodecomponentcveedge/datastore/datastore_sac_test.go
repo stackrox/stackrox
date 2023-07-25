@@ -143,11 +143,11 @@ var (
 		},
 		{
 			contextKey:        sacTestUtils.Cluster1NamespaceAReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster1Map,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster1NamespacesABReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster1Map,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2ReadWriteCtx,
@@ -155,15 +155,15 @@ var (
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespaceBReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2Map,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespacesABReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2Map,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespacesACReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2Map,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster3ReadWriteCtx,
@@ -172,7 +172,7 @@ var (
 		{
 			contextKey: sacTestUtils.MixedClusterAndNamespaceReadCtx,
 			// Has access to Cluster1 + NamespaceA as well as full access to Cluster2.
-			expectedEdgeFound: cluster2Map,
+			expectedEdgeFound: fullAccessMap,
 		},
 	}
 )

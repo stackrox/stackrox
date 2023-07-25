@@ -90,9 +90,9 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			name: "Full read-write access has access to all data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
+				sac.AllowResourceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -106,9 +106,9 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			name: "Full read-only access has read access to all data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
+				sac.AllowResourceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -122,10 +122,10 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			name: "Full cluster access has access to all data for the cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster1),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster1),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -136,19 +136,19 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			},
 		},
 		{
-			name: "Partial cluster access has access to no data",
+			name: "Partial cluster access has access to all data for the cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster1),
-					sac.NamespaceScopeKeys(testconsts.NamespaceA),
+				sac.AllowNamespaceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster1),
+					sac.NamespaceScopeKeyList(testconsts.NamespaceA),
 				),
 			),
 			visibleEdges: map[string]bool{
-				cluster1ToCVE1EdgeID: false,
-				cluster1ToCVE2EdgeID: false,
+				cluster1ToCVE1EdgeID: true,
+				cluster1ToCVE2EdgeID: true,
 				cluster2ToCVE2EdgeID: false,
 				cluster2ToCVE3EdgeID: false,
 			},
@@ -157,10 +157,10 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			name: "Full access to other cluster has access to all data for that cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster2),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster2),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -171,31 +171,31 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			},
 		},
 		{
-			name: "Partial access to other cluster has access to no data",
+			name: "Partial access to other cluster has access to all data for that cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster2),
-					sac.NamespaceScopeKeys(testconsts.NamespaceB),
+				sac.AllowNamespaceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster2),
+					sac.NamespaceScopeKeyList(testconsts.NamespaceB),
 				),
 			),
 			visibleEdges: map[string]bool{
 				cluster1ToCVE1EdgeID: false,
 				cluster1ToCVE2EdgeID: false,
-				cluster2ToCVE2EdgeID: false,
-				cluster2ToCVE3EdgeID: false,
+				cluster2ToCVE2EdgeID: true,
+				cluster2ToCVE3EdgeID: true,
 			},
 		},
 		{
 			name: "Full access to wrong cluster has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(testconsts.WrongCluster),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(testconsts.WrongCluster),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -214,9 +214,9 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			name: "Full read-write access has access to all data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
+				sac.AllowResourceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -227,12 +227,12 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			},
 		},
 		{
-			name: "Full read-only access has read access to all data",
+			name: "Full read-only access has write access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
+				sac.AllowResourceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -243,13 +243,13 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			},
 		},
 		{
-			name: "Full cluster access has access to all data for the cluster",
+			name: "Full cluster access has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster1),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster1),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -263,11 +263,11 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			name: "Partial cluster access has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster1),
-					sac.NamespaceScopeKeys(testconsts.NamespaceA),
+				sac.AllowNamespaceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster1),
+					sac.NamespaceScopeKeyList(testconsts.NamespaceA),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -278,13 +278,13 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			},
 		},
 		{
-			name: "Full access to other cluster has access to all data for that cluster",
+			name: "Full access to other cluster has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster2),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster2),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -298,11 +298,11 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			name: "Partial access to other cluster has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(validCluster2),
-					sac.NamespaceScopeKeys(testconsts.NamespaceB),
+				sac.AllowNamespaceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(validCluster2),
+					sac.NamespaceScopeKeyList(testconsts.NamespaceB),
 				),
 			),
 			visibleEdges: map[string]bool{
@@ -316,10 +316,10 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			name: "Full access to wrong cluster has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Cluster),
-					sac.ClusterScopeKeys(testconsts.WrongCluster),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resources.Cluster),
+					sac.ClusterScopeKeyList(testconsts.WrongCluster),
 				),
 			),
 			visibleEdges: map[string]bool{
