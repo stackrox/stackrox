@@ -79,13 +79,12 @@ func TestInjectProxyNoValueConflict(t *testing.T) {
 
 	injectTranslator := InjectProxyEnvVars(values.TranslatorFunc(proxyCustomizeTranslator), proxyEnvVars)
 	values, err := injectTranslator.Translate(context.Background(), &unstructured.Unstructured{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "translating values")
 
 	envVars, err := values.Table("customize.envVars")
 	require.NoError(t, err, "getting customize.envVars as YAML table")
 
+	require.Len(t, envVars, 1)
 	for envVarName := range envVars {
 		envVar, err := envVars.Table(envVarName)
 		require.NoErrorf(t, err, "getting %s as YAML table", envVarName)

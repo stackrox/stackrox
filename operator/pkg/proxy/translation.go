@@ -63,6 +63,7 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 
 // delValueFromIfValueExists deletes the valueFrom key from customize.envVars entries
 // if both value and valueFrom key exist. Returns the unmodified values in case of error in accessing values.
+// This function was introduced to fix the bug documented in ROX-18477
 func delValueFromIfValueExists(values chartutil.Values) chartutil.Values {
 	envVarsMap, err := values.Table("customize.envVars")
 	if err != nil {
