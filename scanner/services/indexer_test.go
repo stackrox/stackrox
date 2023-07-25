@@ -192,7 +192,7 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	s.indexerMock.
 		EXPECT().
 		GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
-		Return(nil, false, fmt.Errorf("ouch"))
+		Return(nil, false, errors.New("ouch"))
 	r, err := s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
 
