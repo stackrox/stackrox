@@ -107,54 +107,54 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 	return map[string]sacMultiNodeTest{
 		"(full) read-only can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resourceHandles...))),
+				sac.AllowResourceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeyList(resourceHandles...))),
 			ValidClusterScope:  false,
 			ExpectedClusterIds: []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3},
 		},
 		"full read-write can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resourceHandles...))),
+				sac.AllowResourceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resourceHandles...))),
 			ValidClusterScope:  false,
 			ExpectedClusterIds: []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3},
 		},
 		"full read-write on wrong cluster cannot get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resourceHandles...),
-					sac.ClusterScopeKeys(wrongClusterID))),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resourceHandles...),
+					sac.ClusterScopeKeyList(wrongClusterID))),
 			ValidClusterScope:  false,
 			ExpectedClusterIds: []string{},
 		},
 		"read-write on wrong cluster and partial namespace access cannot get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resourceHandles...),
-					sac.ClusterScopeKeys(wrongClusterID),
-					sac.NamespaceScopeKeys("someNamespace"))),
+				sac.AllowNamespaceLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resourceHandles...),
+					sac.ClusterScopeKeyList(wrongClusterID),
+					sac.NamespaceScopeKeyList("someNamespace"))),
 			ValidClusterScope:  false,
 			ExpectedClusterIds: []string{},
 		},
 		"read-only on right cluster can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resourceHandles...),
-					sac.ClusterScopeKeys(validClusterIDs...))),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeyList(resourceHandles...),
+					sac.ClusterScopeKeyList(validClusterIDs...))),
 			ValidClusterScope:  true,
 			ExpectedClusterIds: validClusterIDs,
 		},
 		"full read-write on right cluster can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resourceHandles...),
-					sac.ClusterScopeKeys(validClusterIDs...))),
+				sac.AllowClusterLevelFixedScopes(
+					sac.AccessModeScopeKeyList(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+					sac.ResourceScopeKeyList(resourceHandles...),
+					sac.ClusterScopeKeyList(validClusterIDs...))),
 			ValidClusterScope:  true,
 			ExpectedClusterIds: validClusterIDs,
 		},
