@@ -128,7 +128,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.K8SRole
@@ -145,6 +145,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
+			expectedObjIDs:         []string{objA.GetId(), objB.GetId()},
 			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.K8SRole{objA, objB},
@@ -152,6 +153,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.K8SRole{},
@@ -165,6 +167,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.K8SRole{},
@@ -179,6 +182,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.K8SRole{},
@@ -193,6 +197,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
 				),
 			),
+			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.K8SRole{objA},
@@ -206,6 +211,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
+			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.K8SRole{objA},
@@ -269,29 +275,15 @@ func (s *K8sRolesStoreSuite) TestSACWalk() {
 }
 
 func (s *K8sRolesStoreSuite) TestSACGetIDs() {
-	objA := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.K8SRole{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetId(), objB.GetId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetId()},
-		withAccessToCluster:     []string{objA.GetId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			identifiers, err := s.store.GetIDs(ctxs[name])
+			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }

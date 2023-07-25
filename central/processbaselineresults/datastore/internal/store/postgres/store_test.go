@@ -128,7 +128,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.ProcessBaselineResults
@@ -145,6 +145,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
+			expectedObjIDs:         []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 			expectedIdentifiers:    []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.ProcessBaselineResults{objA, objB},
@@ -152,6 +153,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ProcessBaselineResults{},
@@ -165,6 +167,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ProcessBaselineResults{},
@@ -179,6 +182,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ProcessBaselineResults{},
@@ -193,6 +197,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
 				),
 			),
+			expectedObjIDs:         []string{objA.GetDeploymentId()},
 			expectedIdentifiers:    []string{objA.GetDeploymentId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ProcessBaselineResults{objA},
@@ -206,6 +211,7 @@ func (s *ProcessBaselineResultsStoreSuite) getTestData(access storage.Access) (*
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
+			expectedObjIDs:         []string{objA.GetDeploymentId()},
 			expectedIdentifiers:    []string{objA.GetDeploymentId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ProcessBaselineResults{objA},
@@ -269,29 +275,15 @@ func (s *ProcessBaselineResultsStoreSuite) TestSACWalk() {
 }
 
 func (s *ProcessBaselineResultsStoreSuite) TestSACGetIDs() {
-	objA := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ProcessBaselineResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetDeploymentId()},
-		withAccessToCluster:     []string{objA.GetDeploymentId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			identifiers, err := s.store.GetIDs(ctxs[name])
+			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
