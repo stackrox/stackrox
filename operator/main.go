@@ -28,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
+	"github.com/stackrox/rox/operator/pkg/common"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -88,6 +89,7 @@ func main() {
 
 func run() error {
 	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
+	setupLog.Info("Running in outer mode", "OperatorOuterMode", common.OperatorOuterMode.BooleanSetting())
 
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -152,12 +154,18 @@ func run() error {
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
-		return errors.Wrap(err, "unable to set up Central reconciler")
+	if common.OperatorOuterMode.BooleanSetting() {
+		setupLog.Info("Operator running in OUTER mode. Watching central.")
+		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
+			return errors.Wrap(err, "unable to set up Central reconciler")
+		}
 	}
 
-	if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
-		return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+	if !common.OperatorOuterMode.BooleanSetting() {
+		setupLog.Info("Operator running in INNER mode. Watching secured clusters.")
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
+			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+		}
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
