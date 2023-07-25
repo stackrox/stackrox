@@ -1,12 +1,3 @@
-#workload-cves-table-toolbar .pf-c-chip-group__close {
-    align-self: center;
-}
-
-#workload-cves-table-toolbar .pf-c-chip-group__main {
-    align-items: center;
-    flex-wrap: nowrap;
-}
-
 #workload-cves-table-toolbar .pf-m-typeahead .pf-c-chip-group,
 #workload-cves-table-toolbar .pf-m-typeahead button.pf-c-select__toggle-clear {
     display: none;
