@@ -128,7 +128,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.Risk
@@ -145,7 +145,7 @@ func (s *RisksStoreSuite) getTestData(access storage.Access) (*storage.Risk, *st
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
-			expectedIDs:            []string{objA.GetId(), objB.GetId()},
+			expectedObjIDs:         []string{objA.GetId(), objB.GetId()},
 			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.Risk{objA, objB},
@@ -153,7 +153,7 @@ func (s *RisksStoreSuite) getTestData(access storage.Access) (*storage.Risk, *st
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.Risk{},
@@ -167,7 +167,7 @@ func (s *RisksStoreSuite) getTestData(access storage.Access) (*storage.Risk, *st
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.Risk{},
@@ -182,7 +182,7 @@ func (s *RisksStoreSuite) getTestData(access storage.Access) (*storage.Risk, *st
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.Risk{},
@@ -197,7 +197,7 @@ func (s *RisksStoreSuite) getTestData(access storage.Access) (*storage.Risk, *st
 					sac.NamespaceScopeKeys(objA.GetSubject().GetNamespace()),
 				),
 			),
-			expectedIDs:            []string{objA.GetId()},
+			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.Risk{objA},
@@ -211,7 +211,7 @@ func (s *RisksStoreSuite) getTestData(access storage.Access) (*storage.Risk, *st
 					sac.ClusterScopeKeys(objA.GetSubject().GetClusterId()),
 				),
 			),
-			expectedIDs:            []string{objA.GetId()},
+			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.Risk{objA},
@@ -283,7 +283,7 @@ func (s *RisksStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }

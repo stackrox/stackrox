@@ -128,7 +128,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.ComplianceRunMetadata
@@ -145,7 +145,7 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
-			expectedIDs:            []string{objA.GetRunId(), objB.GetRunId()},
+			expectedObjIDs:         []string{objA.GetRunId(), objB.GetRunId()},
 			expectedIdentifiers:    []string{objA.GetRunId(), objB.GetRunId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.ComplianceRunMetadata{objA, objB},
@@ -153,7 +153,7 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ComplianceRunMetadata{},
@@ -167,7 +167,7 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ComplianceRunMetadata{},
@@ -182,7 +182,7 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.ComplianceRunMetadata{},
@@ -196,7 +196,7 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedIDs:            []string{objA.GetRunId()},
+			expectedObjIDs:         []string{objA.GetRunId()},
 			expectedIdentifiers:    []string{objA.GetRunId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ComplianceRunMetadata{objA},
@@ -210,7 +210,7 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedIDs:            []string{objA.GetRunId()},
+			expectedObjIDs:         []string{objA.GetRunId()},
 			expectedIdentifiers:    []string{objA.GetRunId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.ComplianceRunMetadata{objA},
@@ -282,7 +282,7 @@ func (s *ComplianceRunMetadataStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }

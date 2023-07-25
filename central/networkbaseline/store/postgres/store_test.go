@@ -128,7 +128,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.NetworkBaseline
@@ -145,7 +145,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
-			expectedIDs:            []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
+			expectedObjIDs:         []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 			expectedIdentifiers:    []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.NetworkBaseline{objA, objB},
@@ -153,7 +153,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NetworkBaseline{},
@@ -167,7 +167,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NetworkBaseline{},
@@ -182,7 +182,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NetworkBaseline{},
@@ -197,7 +197,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
 				),
 			),
-			expectedIDs:            []string{objA.GetDeploymentId()},
+			expectedObjIDs:         []string{objA.GetDeploymentId()},
 			expectedIdentifiers:    []string{objA.GetDeploymentId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NetworkBaseline{objA},
@@ -211,7 +211,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedIDs:            []string{objA.GetDeploymentId()},
+			expectedObjIDs:         []string{objA.GetDeploymentId()},
 			expectedIdentifiers:    []string{objA.GetDeploymentId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NetworkBaseline{objA},
@@ -283,7 +283,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }

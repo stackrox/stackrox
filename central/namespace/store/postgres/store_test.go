@@ -128,7 +128,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.NamespaceMetadata
@@ -145,7 +145,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
-			expectedIDs:            []string{objA.GetId(), objB.GetId()},
+			expectedObjIDs:         []string{objA.GetId(), objB.GetId()},
 			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.NamespaceMetadata{objA, objB},
@@ -153,7 +153,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NamespaceMetadata{},
@@ -167,7 +167,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NamespaceMetadata{},
@@ -182,7 +182,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.NamespaceScopeKeys("unknown ns"),
 				),
 			),
-			expectedIDs:            []string{},
+			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NamespaceMetadata{},
@@ -197,7 +197,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.NamespaceScopeKeys(objA.GetName()),
 				),
 			),
-			expectedIDs:            []string{objA.GetId()},
+			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NamespaceMetadata{objA},
@@ -211,7 +211,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				),
 			),
-			expectedIDs:            []string{objA.GetId()},
+			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NamespaceMetadata{objA},
@@ -283,7 +283,7 @@ func (s *NamespacesStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
