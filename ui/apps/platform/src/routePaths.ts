@@ -113,6 +113,7 @@ type RouteDescription = {
     resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS
 };
 
+// Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 const routeDescriptionMap: Record<string, RouteDescription> = {
     [accessControlPath]: {
         resourceAccessRequirements: [],
