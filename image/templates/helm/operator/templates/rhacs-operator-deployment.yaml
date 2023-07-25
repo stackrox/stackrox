@@ -101,6 +101,12 @@ spec:
               memory: 200Mi
           securityContext:
             allowPrivilegeEscalation: false
+          # FIXME: REMOVE BEFORE PROD
+          volumeMounts:
+          - mountPath: /tmp/k8s-webhook-server/serving-certs
+            name: cert
+            readOnly: true  
+          # FIXME: REMOVE BEFORE PROD
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
@@ -111,3 +117,63 @@ spec:
       serviceAccount: rhacs-operator-controller-manager
       serviceAccountName: rhacs-operator-controller-manager
       terminationGracePeriodSeconds: 10
+      # FIXME: REMOVE BEFORE PROD
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+      # FIXME: REMOVE BEFORE PROD
+---
+# FIXME: REMOVE BEFORE PROD
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rhacs-operator-serving-cert
+  namespace: rhacs-operator
+spec:
+  dnsNames:
+  - rhacs-operator-webhook-service.rhacs-operator.svc
+  - rhacs-operator-webhook-service.rhacs-operator.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: rhacs-operator-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: rhacs-operator-selfsigned-issuer
+  namespace: rhacs-operator
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: stackrox-operator-system/rhacs-operator-serving-cert
+  creationTimestamp: null
+  name: rhacs-operator-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: rhacs-operator-webhook-service
+      namespace: rhacs-operator
+      path: /validate-platform-stackrox-io-v1alpha1-central
+  failurePolicy: Fail
+  name: vcentral.kb.io
+  rules:
+  - apiGroups:
+    - platform.stackrox.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - centrals
+  sideEffects: None
+# FIXME: REMOVE BEFORE PROD

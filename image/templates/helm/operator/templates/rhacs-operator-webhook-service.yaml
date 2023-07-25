@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rhacs-operator-webhook-service
+  namespace: rhacs-operator
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app: rhacs-operator
+    control-plane: controller-manager
