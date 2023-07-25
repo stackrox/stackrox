@@ -53,6 +53,35 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 		}
 
 		proxyVals, _ := getProxyConfigHelmValues(obj, proxyEnv) // ignore errors for now
-		return chartutil.CoalesceTables(vals, proxyVals), nil
+
+		mergedVals := chartutil.CoalesceTables(vals, proxyVals)
+		mergedVals = delValueFromIfValueExists(mergedVals)
+
+		return mergedVals, nil
 	})
+}
+
+// delValueFromIfValueExists deletes the valueFrom key from customize.envVars entries if both value and valueFrom key exists
+// returns the unmodified values in case of error
+func delValueFromIfValueExists(values chartutil.Values) chartutil.Values {
+	envVarsMap, err := values.Table("customize.envVars")
+	if err != nil {
+		return values
+	}
+
+	for envVarName := range envVarsMap {
+		envVar, err := envVarsMap.Table(envVarName)
+		if err != nil {
+			return values
+		}
+
+		_, hasValue := envVar["value"]
+		_, hasValueFrom := envVar["valueFrom"]
+
+		if hasValue && hasValueFrom {
+			delete(envVar, "valueFrom")
+		}
+	}
+
+	return values
 }
