@@ -86,7 +86,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 		if central.Spec.Central.IsExternalDB() {
 			return nil
 		}
-		dbPersistence := central.Spec.Central.DB.GetPersistence()
+		dbPersistence := central.Spec.Central.GetDB().GetPersistence()
 		if dbPersistence == nil {
 			dbPersistence = &platform.DBPersistence{}
 		}

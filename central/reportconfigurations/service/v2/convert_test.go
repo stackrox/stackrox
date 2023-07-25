@@ -308,7 +308,7 @@ func TestConvertProtoScheduleToV2(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.testname, func(t *testing.T) {
-			converted := convertProtoScheduleToV2(c.schedule)
+			converted := ConvertProtoScheduleToV2(c.schedule)
 			assert.Equal(t, c.result, converted)
 		})
 	}

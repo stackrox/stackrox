@@ -7,11 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,16 +18,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
 const (
 	baseTable = "deployments"
 	storeName = "Deployment"
-
-	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -43,10 +39,12 @@ var (
 	targetResource = resources.Deployment
 )
 
+type storeType = storage.Deployment
+
 // Store is the interface to interact with the storage for storage.Deployment
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.Deployment) error
-	UpsertMany(ctx context.Context, objs []*storage.Deployment) error
+	Upsert(ctx context.Context, obj *storeType) error
+	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
@@ -54,38 +52,32 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Deployment, error)
-	GetMany(ctx context.Context, identifiers []string) ([]*storage.Deployment, []int, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.Deployment) error) error
-}
-
-type storeImpl struct {
-	*pgSearch.GenericStore[storage.Deployment, *storage.Deployment]
-	db    postgres.DB
-	mutex sync.RWMutex
+	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		db: db,
-		GenericStore: pgSearch.NewGenericStore[storage.Deployment, *storage.Deployment](
-			db,
-			schema,
-			pkGetter,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoDeployments,
+		copyFromDeployments,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		isUpsertAllowed,
+		targetResource,
+	)
 }
 
 // region Helper functions
 
-func pkGetter(obj *storage.Deployment) string {
+func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
@@ -95,6 +87,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying deployments with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.Deployment) error {
@@ -306,52 +315,31 @@ func insertIntoDeploymentsPortsExposureInfos(_ context.Context, batch *pgx.Batch
 	return nil
 }
 
-func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, objs ...*storage.Deployment) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Deployment) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
+	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
-
 		"id",
-
 		"name",
-
 		"type",
-
 		"namespace",
-
 		"namespaceid",
-
 		"orchestratorcomponent",
-
 		"labels",
-
 		"podlabels",
-
 		"created",
-
 		"clusterid",
-
 		"clustername",
-
 		"annotations",
-
 		"priority",
-
 		"imagepullsecrets",
-
 		"serviceaccount",
-
 		"serviceaccountpermissionlevel",
-
 		"riskscore",
-
 		"serialized",
 	}
 
@@ -367,41 +355,23 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, ob
 		}
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(obj.GetId()),
-
 			obj.GetName(),
-
 			obj.GetType(),
-
 			obj.GetNamespace(),
-
 			pgutils.NilOrUUID(obj.GetNamespaceId()),
-
 			obj.GetOrchestratorComponent(),
-
 			obj.GetLabels(),
-
 			obj.GetPodLabels(),
-
 			pgutils.NilOrTime(obj.GetCreated()),
-
 			pgutils.NilOrUUID(obj.GetClusterId()),
-
 			obj.GetClusterName(),
-
 			obj.GetAnnotations(),
-
 			obj.GetPriority(),
-
 			obj.GetImagePullSecrets(),
-
 			obj.GetServiceAccount(),
-
 			obj.GetServiceAccountPermissionLevel(),
-
 			obj.GetRiskScore(),
-
 			serialized,
 		})
 
@@ -417,14 +387,11 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, ob
 				return err
 			}
 			// clear the inserts and vals for the next batch
-			deletes = nil
+			deletes = deletes[:0]
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
@@ -433,53 +400,35 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx *postgres.Tx, ob
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromDeploymentsContainers(ctx, tx, obj.GetId(), obj.GetContainers()...); err != nil {
+		if err := copyFromDeploymentsContainers(ctx, s, tx, obj.GetId(), obj.GetContainers()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsPorts(ctx, tx, obj.GetId(), obj.GetPorts()...); err != nil {
+		if err := copyFromDeploymentsPorts(ctx, s, tx, obj.GetId(), obj.GetPorts()...); err != nil {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
-func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"idx",
-
 		"image_id",
-
 		"image_name_registry",
-
 		"image_name_remote",
-
 		"image_name_tag",
-
 		"image_name_fullname",
-
 		"securitycontext_privileged",
-
 		"securitycontext_dropcapabilities",
-
 		"securitycontext_addcapabilities",
-
 		"securitycontext_readonlyrootfilesystem",
-
 		"resources_cpucoresrequest",
-
 		"resources_cpucoreslimit",
-
 		"resources_memorymbrequest",
-
 		"resources_memorymblimit",
 	}
 
@@ -490,35 +439,20 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			idx,
-
 			obj.GetImage().GetId(),
-
 			obj.GetImage().GetName().GetRegistry(),
-
 			obj.GetImage().GetName().GetRemote(),
-
 			obj.GetImage().GetName().GetTag(),
-
 			obj.GetImage().GetName().GetFullName(),
-
 			obj.GetSecurityContext().GetPrivileged(),
-
 			obj.GetSecurityContext().GetDropCapabilities(),
-
 			obj.GetSecurityContext().GetAddCapabilities(),
-
 			obj.GetSecurityContext().GetReadOnlyRootFilesystem(),
-
 			obj.GetResources().GetCpuCoresRequest(),
-
 			obj.GetResources().GetCpuCoresLimit(),
-
 			obj.GetResources().GetMemoryMbRequest(),
-
 			obj.GetResources().GetMemoryMbLimit(),
 		})
 
@@ -527,12 +461,9 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
@@ -541,38 +472,29 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx *postg
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromDeploymentsContainersEnvs(ctx, tx, deploymentID, idx, obj.GetConfig().GetEnv()...); err != nil {
+		if err := copyFromDeploymentsContainersEnvs(ctx, s, tx, deploymentID, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deploymentID, idx, obj.GetVolumes()...); err != nil {
+		if err := copyFromDeploymentsContainersVolumes(ctx, s, tx, deploymentID, idx, obj.GetVolumes()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersSecrets(ctx, tx, deploymentID, idx, obj.GetSecrets()...); err != nil {
+		if err := copyFromDeploymentsContainersSecrets(ctx, s, tx, deploymentID, idx, obj.GetSecrets()...); err != nil {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_containers_idx",
-
 		"idx",
-
 		"key",
-
 		"value",
-
 		"envvarsource",
 	}
 
@@ -583,17 +505,11 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *p
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentContainerIdx,
-
 			idx,
-
 			obj.GetKey(),
-
 			obj.GetValue(),
-
 			obj.GetEnvVarSource(),
 		})
 
@@ -602,42 +518,28 @@ func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx *p
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.Volume) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.Volume) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_containers_idx",
-
 		"idx",
-
 		"name",
-
 		"source",
-
 		"destination",
-
 		"readonly",
-
 		"type",
 	}
 
@@ -648,21 +550,13 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentContainerIdx,
-
 			idx,
-
 			obj.GetName(),
-
 			obj.GetSource(),
-
 			obj.GetDestination(),
-
 			obj.GetReadOnly(),
-
 			obj.GetType(),
 		})
 
@@ -671,36 +565,25 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_volumes"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.EmbeddedSecret) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.EmbeddedSecret) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_containers_idx",
-
 		"idx",
-
 		"name",
-
 		"path",
 	}
 
@@ -711,15 +594,10 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentContainerIdx,
-
 			idx,
-
 			obj.GetName(),
-
 			obj.GetPath(),
 		})
 
@@ -728,36 +606,25 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_secrets"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_secrets"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
+	return nil
 }
 
-func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.Tx, deploymentID string, objs ...*storage.PortConfig) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.PortConfig) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"idx",
-
 		"containerport",
-
 		"protocol",
-
 		"exposure",
 	}
 
@@ -768,15 +635,10 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			idx,
-
 			obj.GetContainerPort(),
-
 			obj.GetProtocol(),
-
 			obj.GetExposure(),
 		})
 
@@ -785,12 +647,9 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
@@ -799,38 +658,26 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx *postgres.T
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromDeploymentsPortsExposureInfos(ctx, tx, deploymentID, idx, obj.GetExposureInfos()...); err != nil {
+		if err := copyFromDeploymentsPortsExposureInfos(ctx, s, tx, deploymentID, idx, obj.GetExposureInfos()...); err != nil {
 			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
-func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx *postgres.Tx, deploymentID string, deploymentPortIdx int, objs ...*storage.PortConfig_ExposureInfo) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
+func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentPortIdx int, objs ...*storage.PortConfig_ExposureInfo) error {
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-
 		"deployments_id",
-
 		"deployments_ports_idx",
-
 		"idx",
-
 		"level",
-
 		"servicename",
-
 		"serviceport",
-
 		"nodeport",
-
 		"externalips",
-
 		"externalhostnames",
 	}
 
@@ -841,23 +688,14 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-
 			pgutils.NilOrUUID(deploymentID),
-
 			deploymentPortIdx,
-
 			idx,
-
 			obj.GetLevel(),
-
 			obj.GetServiceName(),
-
 			obj.GetServicePort(),
-
 			obj.GetNodePort(),
-
 			obj.GetExternalIps(),
-
 			obj.GetExternalHostnames(),
 		})
 
@@ -866,129 +704,20 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
-
 			// clear the input rows for the next batch
 			inputRows = inputRows[:0]
 		}
 	}
 
-	return err
-}
-
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Deployment) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromDeployments(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) error {
-	conn, err := s.AcquireConn(ctx, ops.Get)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoDeployments(ctx, batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
 // endregion Helper functions
 
-//// Interface functions
-
-// Upsert saves the current state of an object in storage.
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-	if !scopeChecker.IsAllowed() {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return pgutils.Retry(func() error {
-		return s.upsert(ctx, obj)
-	})
-}
-
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Deployment")
-
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
-	if !scopeChecker.IsAllowed() {
-		var deniedIDs []string
-		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
-			if !subScopeChecker.IsAllowed() {
-				deniedIDs = append(deniedIDs, obj.GetId())
-			}
-		}
-		if len(deniedIDs) != 0 {
-			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying deployments with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
-		}
-	}
-
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
-}
-
-//// Interface functions - END
-
-//// Used for testing
+// region Used for testing
 
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
@@ -1042,4 +771,4 @@ func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db postgres.DB)
 
 }
 
-//// Used for testing - END
+// endregion Used for testing

@@ -225,15 +225,15 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 		defer utils.IgnoreError(conn.Close)
 	}
 
-	mdClient := v1.NewMetadataServiceClient(conn)
+	pingClient := v1.NewPingServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	_, err = mdClient.GetMetadata(ctx, &v1.Empty{})
+	_, err = pingClient.Ping(ctx, &v1.Empty{})
 	if !c.expectGRPCSuccess {
-		assert.Error(t, err, "expected GetMetadata request to fail")
+		assert.Error(t, err, "expected Ping request to fail")
 		return
 	}
-	assert.NoError(t, err, "expected GetMetadata request to succeed")
+	assert.NoError(t, err, "expected ping request to succeed")
 
 	authClient := v1.NewAuthServiceClient(conn)
 	ctx, cancel = context.WithTimeout(context.Background(), timeout)
@@ -294,7 +294,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		Timeout:   timeout,
 	}
 
-	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/metadata", scheme, targetHost))
+	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/ping", scheme, targetHost))
 	if resp != nil {
 		defer utils.IgnoreError(resp.Body.Close)
 	}
@@ -312,9 +312,9 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		return
 	}
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 status code for metadata request")
-	var md v1.Metadata
-	assert.NoError(t, jsonpb.Unmarshal(resp.Body, &md), "expected response for metadata request to be unmarshalable into metadata PB")
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 status code for ping request")
+	var pong v1.PongMessage
+	assert.NoError(t, jsonpb.Unmarshal(resp.Body, &pong), "expected response for ping request to be unmarshalable into Pong protobuf")
 
 	resp, err = client.Get(fmt.Sprintf("%s://%s/v1/auth/status", scheme, targetHost))
 	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {

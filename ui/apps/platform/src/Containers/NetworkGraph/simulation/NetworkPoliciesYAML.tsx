@@ -1,9 +1,10 @@
 import React from 'react';
 import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
-import { DownloadIcon, MoonIcon, SunIcon } from '@patternfly/react-icons';
+import { DownloadIcon } from '@patternfly/react-icons';
 
 import { useTheme } from 'Containers/ThemeProvider';
 import download from 'utils/download';
+import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
 
 type NetworkPoliciesYAMLProp = {
     yaml: string;
@@ -25,16 +26,6 @@ function NetworkPoliciesYAML({ yaml }: NetworkPoliciesYAMLProp) {
         setCustomDarkMode((prevValue) => !prevValue);
     }
 
-    const toggleDarkModeControl = (
-        <CodeEditorControl
-            icon={customDarkMode ? <SunIcon /> : <MoonIcon />}
-            aria-label="Toggle dark mode"
-            toolTipText={customDarkMode ? 'Toggle to light mode' : 'Toggle to dark mode'}
-            onClick={onToggleDarkMode}
-            isVisible
-        />
-    );
-
     const downloadYAMLControl = (
         <CodeEditorControl
             icon={<DownloadIcon />}
@@ -49,7 +40,13 @@ function NetworkPoliciesYAML({ yaml }: NetworkPoliciesYAMLProp) {
         <div className="pf-u-h-100">
             <CodeEditor
                 isDarkTheme={customDarkMode}
-                customControls={[toggleDarkModeControl, downloadYAMLControl]}
+                customControls={[
+                    <CodeEditorDarkModeControl
+                        isDarkMode={customDarkMode}
+                        onToggleDarkMode={onToggleDarkMode}
+                    />,
+                    downloadYAMLControl,
+                ]}
                 isCopyEnabled
                 isLineNumbersVisible
                 isReadOnly

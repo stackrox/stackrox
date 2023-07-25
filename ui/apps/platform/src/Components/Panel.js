@@ -31,11 +31,15 @@ export function PanelHead({ children }) {
 export function PanelTitle({ testid = '', breakAll = true, text }) {
     return (
         <div
-            className="flex font-700 items-center leading-normal min-w-24 overflow-hidden px-4 text-base-600"
+            className="flex items-center leading-normal min-w-24 overflow-hidden px-4 text-base-600"
             data-testid={testid || null}
         >
             <Tooltip content={text}>
-                <div className={`line-clamp ${breakAll ? 'break-all' : ''}`}>{text}</div>
+                <h2>
+                    <div className={`font-700 line-clamp ${breakAll ? 'break-all' : ''}`}>
+                        {text}
+                    </div>
+                </h2>
             </Tooltip>
         </div>
     );

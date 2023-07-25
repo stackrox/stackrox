@@ -105,7 +105,7 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
                 return (
                     <Widget
                         className="s-2 overflow-hidden pdf-page"
-                        header="Users with most Cluster Admin Roles"
+                        header="Users with most cluster admin roles"
                         headerComponents={viewAllLink}
                     >
                         {contents}

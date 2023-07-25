@@ -78,14 +78,14 @@ func convertV2VulnReportFiltersToProto(filters *apiV2.VulnerabilityReportFilters
 			AllVuln: filters.GetAllVuln(),
 		}
 
-	case *apiV2.VulnerabilityReportFilters_LastSuccessfulReport:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_LastSuccessfulReport{
-			LastSuccessfulReport: filters.GetLastSuccessfulReport(),
+	case *apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport:
+		ret.CvesSince = &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+			SinceLastSentScheduledReport: filters.GetSinceLastSentScheduledReport(),
 		}
 
-	case *apiV2.VulnerabilityReportFilters_StartDate:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_StartDate{
-			StartDate: filters.GetStartDate(),
+	case *apiV2.VulnerabilityReportFilters_SinceStartDate:
+		ret.CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{
+			SinceStartDate: filters.GetSinceStartDate(),
 		}
 	}
 
@@ -173,18 +173,18 @@ func convertProtoReportConfigurationToV2(config *storage.ReportConfiguration,
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          apiV2.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      convertProtoScheduleToV2(config.GetSchedule()),
+		Schedule:      ConvertProtoScheduleToV2(config.GetSchedule()),
 		ResourceScope: resourceScope,
 	}
 
 	if config.GetVulnReportFilters() != nil {
 		ret.Filter = &apiV2.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: convertProtoVulnReportFiltersToV2(config.GetVulnReportFilters()),
+			VulnReportFilters: ConvertProtoVulnReportFiltersToV2(config.GetVulnReportFilters()),
 		}
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		converted, err := convertProtoNotifierConfigToV2(notifier, notifierDatastore)
+		converted, err := ConvertProtoNotifierConfigToV2(notifier, notifierDatastore)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +194,8 @@ func convertProtoReportConfigurationToV2(config *storage.ReportConfiguration,
 	return ret, nil
 }
 
-func convertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilters) *apiV2.VulnerabilityReportFilters {
+// ConvertProtoVulnReportFiltersToV2 converts storaage.VulnerabilityReportFilters to apiV2.VulnerabilityReportFilters
+func ConvertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilters) *apiV2.VulnerabilityReportFilters {
 	if filters == nil {
 		return nil
 	}
@@ -217,14 +218,14 @@ func convertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilte
 			AllVuln: filters.GetAllVuln(),
 		}
 
-	case *storage.VulnerabilityReportFilters_LastSuccessfulReport:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_LastSuccessfulReport{
-			LastSuccessfulReport: filters.GetLastSuccessfulReport(),
+	case *storage.VulnerabilityReportFilters_SinceLastSentScheduledReport:
+		ret.CvesSince = &apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+			SinceLastSentScheduledReport: filters.GetSinceLastSentScheduledReport(),
 		}
 
-	case *storage.VulnerabilityReportFilters_StartDate:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_StartDate{
-			StartDate: filters.GetStartDate(),
+	case *storage.VulnerabilityReportFilters_SinceStartDate:
+		ret.CvesSince = &apiV2.VulnerabilityReportFilters_SinceStartDate{
+			SinceStartDate: filters.GetSinceStartDate(),
 		}
 	}
 
@@ -259,7 +260,8 @@ func convertProtoResourceScopeToV2(scope *storage.ResourceScope,
 	return ret, nil
 }
 
-func convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration,
+// ConvertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration
+func ConvertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration,
 	notifierDatastore notifierDS.DataStore) (*apiV2.NotifierConfiguration, error) {
 	if notifierConfig == nil {
 		return nil, nil
@@ -290,8 +292,8 @@ func convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 	return ret, nil
 }
 
-// convertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule
-func convertProtoScheduleToV2(schedule *storage.Schedule) *apiV2.ReportSchedule {
+// ConvertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule
+func ConvertProtoScheduleToV2(schedule *storage.Schedule) *apiV2.ReportSchedule {
 	if schedule == nil {
 		return nil
 	}

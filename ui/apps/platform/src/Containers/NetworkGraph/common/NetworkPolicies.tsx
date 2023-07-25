@@ -14,14 +14,14 @@ import {
     StackItem,
     Title,
 } from '@patternfly/react-core';
-import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
-import { MoonIcon, SunIcon } from '@patternfly/react-icons';
+import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
 import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
 
 type NetworkPoliciesProps = {
     entityName: string;
@@ -82,16 +82,6 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
             download(`${fileName}.yml`, fileContent, 'yml');
         }
     }
-
-    const customControl = (
-        <CodeEditorControl
-            icon={customDarkMode ? <SunIcon /> : <MoonIcon />}
-            aria-label="Toggle dark mode"
-            toolTipText={customDarkMode ? 'Toggle to light mode' : 'Toggle to dark mode'}
-            onClick={onToggleDarkMode}
-            isVisible
-        />
-    );
 
     if (isLoading) {
         return (
@@ -179,7 +169,12 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         <div className="pf-u-h-100">
                             <CodeEditor
                                 isDarkTheme={customDarkMode}
-                                customControls={customControl}
+                                customControls={
+                                    <CodeEditorDarkModeControl
+                                        isDarkMode={customDarkMode}
+                                        onToggleDarkMode={onToggleDarkMode}
+                                    />
+                                }
                                 isCopyEnabled
                                 isLineNumbersVisible
                                 isReadOnly

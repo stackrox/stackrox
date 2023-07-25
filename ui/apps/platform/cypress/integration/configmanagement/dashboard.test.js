@@ -197,13 +197,13 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('clicking the "Policy Violations By Severity" widget\'s "View All" button should take you to the policies list', () => {
+    it('should go to policies list from View All button in Policies widget', () => {
         const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(selectors.getWidget('Policy Violations by Severity'))
+            cy.get(selectors.getWidget('Policy violations by severity'))
                 .find('button:contains("View All")')
                 .click();
         }, entitiesKey);
@@ -221,44 +221,44 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('clicking the "Users with most Cluster Admin Roles" widget\'s "View All" button should take you to the users & groups list', () => {
+    it('should go to subjects (users and groups) list from View All button in Users widget', () => {
         const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(selectors.getWidget('Users with most Cluster Admin Roles'))
+            cy.get(selectors.getWidget('Users with most cluster admin roles'))
                 .find('button:contains("View All")')
                 .click();
         }, entitiesKey);
     });
 
-    it('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
+    it('should open side panel from link in Users widget', () => {
         const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
-            cy.get(selectors.getWidget('Users with most Cluster Admin Roles'))
+            cy.get(selectors.getWidget('Users with most cluster admin roles'))
                 .find(selectors.horizontalBars)
                 .eq(0)
                 .click();
         }, entitiesKey);
     });
 
-    it('clicking the "Secrets Most Used Across Deployments" widget\'s "View All" button should take you to the secrets list', () => {
+    it('should go to secrets list from View All button in Secrets widget', () => {
         const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
-            cy.get(selectors.getWidget('Secrets Most Used Across Deployments'))
+            cy.get(selectors.getWidget('Secrets most used across deployments'))
                 .find('button:contains("View All")')
                 .click();
         }, entitiesKey);
     });
 
-    it('should show the same number of policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
+    it('should go to filtered policies list from link in Policy violations widget', () => {
         const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
@@ -266,7 +266,7 @@ describe('Configuration Management Dashboard', () => {
         // Click the first bullet list link.
         // All bases are covered, because policies without violations is a possible link.
         policyViolationsBySeverityLinkShouldMatchList(
-            `${selectors.getWidget('Policy Violations by Severity')} .widget-detail-bullet:eq(0) a`,
+            `${selectors.getWidget('Policy violations by severity')} .widget-detail-bullet:eq(0) a`,
             /^(\d+) /,
             entitiesKey
         );
@@ -316,13 +316,13 @@ describe('Configuration Management Dashboard', () => {
         cy.location('search').should('contain', '[Compliance%20State]=Fail');
     });
 
-    it('clicking the "Secrets Most Used Across Deployments" widget\'s individual list items should take you to the secret\'s single page', () => {
+    it('should open side panel from link in Secrets widget', () => {
         const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntityInSidePanel(() => {
-            cy.get(selectors.getWidget('Secrets Most Used Across Deployments'))
+            cy.get(selectors.getWidget('Secrets most used across deployments'))
                 .find('ul li')
                 .eq(0)
                 .click();

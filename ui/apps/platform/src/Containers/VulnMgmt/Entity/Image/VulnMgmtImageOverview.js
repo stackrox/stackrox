@@ -171,7 +171,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                 className="h-full sm:min-h-64 min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
-                                title="Details & Metadata"
+                                title="Details and metadata"
                             />
                         </div>
                         <div className="s-1">

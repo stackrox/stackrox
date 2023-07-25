@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"math"
 	"path/filepath"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -10,7 +9,6 @@ import (
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -57,34 +55,17 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 
 	upgradeStatus := &v1.CentralUpgradeStatus{
 		Version: version.GetMainVersion(),
+		// Due to backwards compatibility going forward we can assume
+		// we can rollback after an upgrade
+		CanRollbackAfterUpgrade: true,
 	}
-	// When using managed services, Postgres space is not a concern at this time.
-	if env.ManagedCentral.BooleanSetting() {
-		upgradeStatus.CanRollbackAfterUpgrade = true
-	} else {
-		// Check Postgres remaining capacity
-		freeBytes, err := pgadmin.GetRemainingCapacity(adminConfig)
-		if err != nil {
-			return nil, err
-		}
 
-		currentDBBytes, err := pgadmin.GetDatabaseSize(adminConfig, migrations.GetCurrentClone())
-		if err != nil {
-			return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.CurrentDatabase)
-		}
-		requiredBytes := int64(math.Ceil(float64(currentDBBytes) * (1.0 + capacityMarginFraction)))
-
-		var toBeFreedBytes int64
+	if !pgconfig.IsExternalDatabase() {
 		exists, err := pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to determine if %s database exists", migrations.PreviousDatabase)
 		}
 		if exists {
-			toBeFreedBytes, err = pgadmin.GetDatabaseSize(adminConfig, migrations.GetPreviousClone())
-			if err != nil {
-				return nil, errors.Wrapf(err, "Fail to get database size %s", migrations.PreviousDatabase)
-			}
-
 			// Get a short-lived connection for the purposes of checking the version of the previous clone.
 			pool, err := pgadmin.GetClonePool(adminConfig, migrations.GetPreviousClone())
 			if err != nil {
@@ -111,10 +92,6 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 				upgradeStatus.ForceRollbackTo = migVer.MainVersion
 			}
 		}
-
-		upgradeStatus.CanRollbackAfterUpgrade = freeBytes+toBeFreedBytes > requiredBytes
-		upgradeStatus.SpaceAvailableForRollbackAfterUpgrade = freeBytes + toBeFreedBytes
-		upgradeStatus.SpaceRequiredForRollbackAfterUpgrade = requiredBytes
 	}
 
 	return &v1.GetUpgradeStatusResponse{

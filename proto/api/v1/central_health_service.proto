@@ -31,6 +31,6 @@ message CentralUpgradeStatus {
     bool can_rollback_after_upgrade = 3;
 
     // Current disk space stats for upgrade
-    int64 space_required_for_rollback_after_upgrade = 4;
-    int64 space_available_for_rollback_after_upgrade = 5;
+    int64 space_required_for_rollback_after_upgrade = 4 [deprecated = true];
+    int64 space_available_for_rollback_after_upgrade = 5 [deprecated = true];
 }

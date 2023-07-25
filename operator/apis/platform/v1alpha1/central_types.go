@@ -56,6 +56,10 @@ type CentralSpec struct {
 	// Miscellaneous settings.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Misc *MiscSpec `json:"misc,omitempty"`
+
+	// Overlays
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
@@ -129,6 +133,14 @@ type CentralComponentSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
+}
+
+// GetDB returns Central's db config
+func (c *CentralComponentSpec) GetDB() *CentralDBSpec {
+	if c == nil {
+		return nil
+	}
+	return c.DB
 }
 
 // GetPersistence returns Central's persistence config

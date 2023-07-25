@@ -28,3 +28,8 @@ func MinimumSupportedDBVersionSeqNum() int {
 func LastRocksDBVersionSeqNum() int {
 	return internal.LastRocksDBVersionSeqNum
 }
+
+// LastRocksDBToPostgresVersionSeqNum is the sequence number for the last RocksDB to Postgres version.
+func LastRocksDBToPostgresVersionSeqNum() int {
+	return internal.LastRocksDBVersionSeqNum + internal.LastRocksDBToPostgresVersionSeqNum
+}

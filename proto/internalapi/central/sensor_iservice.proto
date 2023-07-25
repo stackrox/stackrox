@@ -42,6 +42,7 @@ message MsgFromSensor {
         ClusterMetrics                cluster_metrics                   = 13;
         ProcessListeningOnPortsUpdate process_listening_on_port_update  = 14;
         ComplianceOperatorInfo        compliance_operator_info          = 16;
+        ComplianceResponse            compliance_response               = 17;
     }
 }
 
@@ -49,6 +50,7 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
+// next available tag: 25
 message MsgToSensor {
     oneof msg {
         SensorEnforcement              enforcement                        =  1;
@@ -73,7 +75,8 @@ message MsgToSensor {
         NodeInventoryACK               node_inventory_ack                 = 20;
         DelegatedRegistryConfig        delegated_registry_config          = 21;
         ScanImage                      scan_image                         = 22;
-        ImageIntegrations              image_integrations                 = 23;   
+        ImageIntegrations              image_integrations                 = 23;
+        ComplianceRequest              compliance_request                 = 24;
     }
 }
 

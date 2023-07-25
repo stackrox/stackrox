@@ -13,7 +13,6 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -313,6 +313,27 @@ func (m *manager) ProcessDeploymentCreate(deploymentID, _, clusterID, _ string) 
 	return m.processDeploymentCreate(deploymentID, clusterID)
 }
 
+func (m *manager) deleteDeploymentFromBaselines(deploymentID string) error {
+	modifiedDeployments := set.NewStringSet()
+	for id, baseline := range m.baselinesByDeploymentID {
+		if ok, peer := baseline.GetPeer(deploymentID); ok {
+			delete(baseline.BaselinePeers, peer)
+			modifiedDeployments.Add(id)
+		}
+
+		if ok, forbiddenPeer := baseline.GetForbiddenPeer(deploymentID); ok {
+			delete(baseline.ForbiddenPeers, forbiddenPeer)
+			modifiedDeployments.Add(id)
+		}
+	}
+
+	if err := m.persistNetworkBaselines(modifiedDeployments, nil); err != nil {
+		return errors.Wrapf(err, "deleting baseline of deployment ID %s", deploymentID)
+	}
+
+	return nil
+}
+
 func (m *manager) processDeploymentDelete(deploymentID string) error {
 	deletingBaseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found {
@@ -320,8 +341,8 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 		return nil
 	}
 
-	// If the deployment is being tracked, but the baseline is not yet created, we cannot look at hte peers.  If we
-	// have a peer at all, then the peer will have been created
+	// If baseline for deleting deploynment exists, then we should look at all entries in its baseline
+	// in order to the delete its reference from peer baselines.
 	if deletingBaseline != nil {
 		modifiedDeployments := set.NewStringSet()
 		for peer := range deletingBaseline.BaselinePeers {
@@ -352,6 +373,12 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 		err := m.persistNetworkBaselines(modifiedDeployments, nil)
 		if err != nil {
 			return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
+		}
+	} else {
+		// If baseline does not exist yet, it could still be that this deployment is already present in some other
+		// deployment's baseline. So we need to manually look through all the baselines
+		if err := m.deleteDeploymentFromBaselines(deploymentID); err != nil {
+			return err
 		}
 	}
 

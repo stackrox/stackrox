@@ -20,7 +20,7 @@ import spock.lang.Unroll
 @Tag("BAT")
 class CSVTest extends BaseSpecification {
 
-    private static final IMAGE_SHA = "sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f"
+    private static final IMAGE_SHA = "sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec"
 
     private static final CVE_FIELDS_FRAGEMENT = """
     fragment cveFields on EmbeddedVulnerability {
@@ -150,11 +150,11 @@ class CSVTest extends BaseSpecification {
 
     private static final Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
-            .setImage("quay.io/rhacs-eng/qa:nginx-1-9")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
             .addLabel("app", "test")
 
     def setupSpec() {
-        ImageService.scanImage("quay.io/rhacs-eng/qa:nginx-1-9")
+        ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
         // wait for all image CVEs to be discovered and added to db
@@ -199,7 +199,7 @@ class CSVTest extends BaseSpecification {
     }
 
     def getComponentId() {
-        return isPostgresRun() ? "openssl#1.0.1k-3+deb8u5#debian:8" : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1"
+        return isPostgresRun() ? "openssl#1.1.1d-0+deb10u7#debian:10" : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1"
     }
 
     def getComponentQuery() {

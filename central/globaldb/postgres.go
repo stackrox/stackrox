@@ -104,6 +104,7 @@ func InitializePostgres(ctx context.Context) postgres.DB {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
 
+		// TODO(ROX-18005): remove this when we no longer have to worry about changing databases
 		if !pgconfig.IsExternalDatabase() {
 			// Get the active database name for the connection
 			activeDB := pgconfig.GetActiveDB()

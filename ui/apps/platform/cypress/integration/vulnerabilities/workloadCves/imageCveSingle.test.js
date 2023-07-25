@@ -1,4 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
     selectResourceFilterType,
@@ -9,6 +10,12 @@ import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Image CVE Single page', () => {
     withAuth();
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
+            this.skip();
+        }
+    });
 
     it('should correctly handle ImageCVE single page specific behavior', () => {
         // Apply global default filters

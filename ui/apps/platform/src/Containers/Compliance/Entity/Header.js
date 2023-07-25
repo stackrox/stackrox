@@ -1,14 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import upperFirst from 'lodash/upperFirst';
 
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
-import { resourceLabels } from 'messages/common';
+
+import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
 const EntityHeader = ({
     entityType,
@@ -20,7 +20,8 @@ const EntityHeader = ({
     setIsExporting,
 }) => {
     const header = entityName || 'Loading...';
-    const subHeader = upperFirst(resourceLabels[entityType]);
+    const subHeader = entityNounSentenceCaseSingular[entityType];
+    // Leave raw entity types in case customer depends on this convention for export file name.
     let exportFilename = listEntityType
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
         : `${entityType} "${entityId}"`;

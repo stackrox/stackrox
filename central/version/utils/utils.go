@@ -30,7 +30,7 @@ func ReadVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error)
 }
 
 // ReadPreviousVersionPostgres - reads the version from the postgres database.
-// TODO(ROX-16774) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
+// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
 // the older database.  In that case we will need to process the serialized data.
 func ReadPreviousVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error) {
 	store := vStore.NewPostgres(pool)

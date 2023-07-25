@@ -284,14 +284,8 @@ clean-easyjson-srcs:
 	@echo "+ $@"
 	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
 
-COMPLIANCEOPERATOR_FILES = $(shell grep -R '+k8s:deepcopy-gen' pkg/complianceoperator/api/v1alpha1 -l)
-pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go: $(CONTROLLER_GEN_BIN) $(COMPLIANCEOPERATOR_FILES) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN_BIN) object:headerFile="tools/boilerplate.go.txt" paths="./pkg/complianceoperator/api/v1alpha1..."
-	# The generated source files might not comply with the current go formatting, so format them explicitly.
-	go fmt ./pkg/complianceoperator/api/v1alpha1/...
-
 .PHONY: go-generated-srcs
-go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) pkg/complianceoperator/api/v1alpha1/zz_generated.deepcopy.go
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
@@ -567,11 +561,10 @@ main-image: all-builds
 	make docker-build-main-image
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
-                         $(CURDIR)/image/rhel/bundle.tar.gz
+docker-build-main-image: copy-binaries-to-image-dir central-db-image $(CURDIR)/image/rhel/bundle.tar.gz
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
@@ -585,13 +578,6 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-
-.PHONY: docker-build-data-image
-docker-build-data-image:
-	docker build -t stackrox-data:$(TAG) \
-		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
-		image/ \
-		--file image/stackrox-data.Dockerfile
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
@@ -635,7 +621,7 @@ ifdef CI
 else
 	$(SILENT)[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
 endif
-	$(SILENT)[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
+	$(SILENT)[ -d image/rhel/docs ] || { echo "Generated docs not found in image/rhel/docs. They are required for build."; exit 1; }
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
@@ -673,11 +659,8 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
 		integration-tests/mock-grpc-server/image
 
-$(CURDIR)/image/postgres/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
-
 .PHONY: central-db-image
-central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
+central-db-image:
 	docker build \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
@@ -696,7 +679,7 @@ clean: clean-image
 clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
-	git clean -xdf image/ui image/docs
+	git clean -xdf image/ui image/rhel/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts

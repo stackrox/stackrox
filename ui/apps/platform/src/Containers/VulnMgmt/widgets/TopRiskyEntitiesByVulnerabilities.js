@@ -7,10 +7,7 @@ import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
-import Scatterplot from 'Components/visuals/Scatterplot';
-import HoverHintListItem from 'Components/visuals/HoverHintListItem';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import { policySeverityColorMap } from 'constants/visuals/colors';
@@ -21,7 +18,11 @@ import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entityPriorityField } from '../VulnMgmt.constants';
+
 import { entityNounOrdinaryCasePlural } from '../entitiesForVulnerabilityManagement';
+import Scatterplot from './Scatterplot';
+
+import ViewAllButton from './ViewAllButton';
 
 // Beware, policy instead of vulnerability severities because of getSeverityByCvss function!
 
@@ -179,7 +180,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
     const entityOptions = riskEntityTypes.map((entityType) => ({
-        label: `Top risky ${entityNounOrdinaryCasePlural[entityType]} by CVE count & CVSS score`,
+        label: `Top risky ${entityNounOrdinaryCasePlural[entityType]} by CVE count and CVSS score`,
         value: entityType,
     }));
     function onChange(datum) {
@@ -231,48 +232,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
         return avgScore.toFixed(1);
     }
 
-    function getHint(datum, filter) {
-        let subtitle = '';
-        if (selectedEntityType === entityTypes.DEPLOYMENT) {
-            subtitle = `${datum.clusterName} / ${datum.namespaceName}`;
-        } else if (selectedEntityType === entityTypes.NAMESPACE) {
-            subtitle = `${datum.metadata && datum.metadata.clusterName}`;
-        }
-        const riskPriority =
-            selectedEntityType === entityTypes.NAMESPACE
-                ? (datum.metadata && datum.metadata.priority) || 0
-                : datum.priority;
-        const severityKey = getSeverityByCvss(datum.avgSeverity);
-        const severityText = policySeverityLabels[severityKey];
-
-        let cveCountText =
-            filter !== 'Fixable' ? `${datum.plottedVulns.basicVulnCounter.all.total} total / ` : '';
-        cveCountText += `${datum.plottedVulns.basicVulnCounter.all.fixable} fixable`;
-
-        return {
-            title:
-                (datum.name && datum.name.fullName) ||
-                datum.name ||
-                (datum.metadata && datum.metadata.name),
-            body: (
-                <ul className="flex-1 border-base-300 overflow-hidden">
-                    <HoverHintListItem key="severity" label="Severity" value={severityText} />
-                    <HoverHintListItem
-                        key="riskPriority"
-                        label="Risk Priority"
-                        value={riskPriority}
-                    />
-                    <HoverHintListItem
-                        key="weightedCvss"
-                        label="Weighted CVSS"
-                        value={datum.avgSeverity}
-                    />
-                    <HoverHintListItem key="cves" label="CVEs" value={cveCountText} />
-                </ul>
-            ),
-            subtitle,
-        };
-    }
     function processData(data) {
         if (!data || !data.results) {
             return [];
@@ -290,7 +249,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     x: vulnCount,
                     y: +avgSeverity,
                     color,
-                    hint: getHint({ ...result, avgSeverity }, cveFilter),
                     url,
                 };
             })

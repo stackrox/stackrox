@@ -31,7 +31,18 @@ const TextSelect = ({ ...rest }) => {
     const components = {
         DropdownIndicator,
     };
-    return <Select styles={selectStyles} isSearchable={false} {...rest} components={components} />;
+    // Because React Select renders a dummy input element,
+    // axe DevTools reports a theoretical issue: Form elements must have labels.
+    // One of its suggestions is to enclose the form element in a label element.
+    // Thankfully that does not affect the layout.
+    // However, jsx-a11y rule only accepts label as sibling, not enclosing.
+    /* eslint-disable jsx-a11y/label-has-associated-control */
+    return (
+        <label>
+            <Select styles={selectStyles} isSearchable={false} {...rest} components={components} />
+        </label>
+    );
+    /* eslint-enable jsx-a11y/label-has-associated-control */
 };
 
 export default TextSelect;

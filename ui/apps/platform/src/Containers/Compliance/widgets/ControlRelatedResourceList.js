@@ -1,16 +1,16 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import LinkListWidget from 'Components/LinkListWidget';
 import URLService from 'utils/URLService';
-import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 import queryService from 'utils/queryService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
+
+import { entityNounOrdinaryCase } from '../entitiesForCompliance';
+import LinkListWidget from './LinkListWidget';
 
 const ControlRelatedEntitiesList = ({
     match,
@@ -88,9 +88,8 @@ const ControlRelatedEntitiesList = ({
         if (!items) {
             return 'Loading...';
         }
-        const resourceLabel = resourceLabels[listEntityType];
         const count = typeof items.length !== 'undefined' ? items.length : 0;
-        return `${count} Related ${pluralize(resourceLabel, count)}`;
+        return `${count} related ${entityNounOrdinaryCase(count, listEntityType)}`;
     }
 
     const viewAllLink =

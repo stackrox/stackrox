@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -16,8 +17,6 @@ import (
 const (
 	// DBPasswordFile is the database password file
 	DBPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-
-	activeSuffix = "_active"
 
 	// capacity - Minimum recommended Postgres capacity
 	capacity = 100 * size.GB
@@ -70,7 +69,7 @@ func ParseSource(source string) (map[string]string, error) {
 
 // GetActiveDB - returns the name of the active database
 func GetActiveDB() string {
-	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.DatabaseName, activeSuffix)
+	return migrations.CurrentDatabase
 }
 
 // GetPostgresCapacity - returns the capacity of the Postgres instance

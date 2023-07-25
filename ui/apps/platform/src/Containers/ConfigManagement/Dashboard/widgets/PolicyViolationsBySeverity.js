@@ -289,7 +289,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 return (
                     <Widget
                         className="s-2 pdf-page"
-                        header="Policy Violations by Severity"
+                        header="Policy violations by severity"
                         headerComponents={viewAllLink}
                     >
                         {contents}

@@ -8,7 +8,6 @@ import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { resourceTypes } from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import { useTheme } from 'Containers/ThemeProvider';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import {
     ComplianceStandardMetadata,
@@ -27,7 +26,6 @@ import ComplianceDashboardTile from './ComplianceDashboardTile';
 
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [isFetchingStandards, setIsFetchingStandards] = useState(false);
     const [errorMessageFetching, setErrorMessageFetching] = useState('');
     const [standards, setStandards] = useState<ComplianceStandardMetadata[]>([]);
@@ -43,11 +41,7 @@ function ComplianceDashboardPage(): ReactElement {
     }`;
 
     const hasWriteAccessForComplianceStandards = hasReadWriteAccess('Compliance'); // TODO confirm
-    const isDisableComplianceStandardsEnabled = isFeatureFlagEnabled(
-        'ROX_DISABLE_COMPLIANCE_STANDARDS'
-    );
-    const hasManageStandardsButton =
-        hasWriteAccessForComplianceStandards && isDisableComplianceStandardsEnabled;
+    const hasManageStandardsButton = hasWriteAccessForComplianceStandards;
 
     function clickManageStandardsButton() {
         setIsFetchingStandards(true);

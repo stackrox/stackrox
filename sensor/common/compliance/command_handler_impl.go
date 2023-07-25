@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 
 type commandHandlerImpl struct {
 	commands chan *central.ScrapeCommand
-	updates  chan *central.MsgFromSensor
+	updates  chan *message.ExpiringMessage
 
 	service Service
 
@@ -31,7 +32,7 @@ func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.ComplianceInNodesCap}
 }
 
-func (c *commandHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return c.updates
 }
 
@@ -194,11 +195,11 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 	case <-c.stopper.Flow().StopRequested():
 		log.Errorf("component is shutting down, failed to send update: %s", proto.MarshalTextString(update))
 		return
-	case c.updates <- &central.MsgFromSensor{
+	case c.updates <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ScrapeUpdate{
 			ScrapeUpdate: update,
 		},
-	}:
+	}):
 		return
 	}
 }

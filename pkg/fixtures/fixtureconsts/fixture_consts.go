@@ -9,6 +9,7 @@ const (
 	AlertFake           = "aeaaaaaa-0000-0000-0000-000000000000"
 	Cluster1            = "caaaaaaa-bbbb-4011-0000-111111111111"
 	Cluster2            = "caaaaaaa-bbbb-4011-0000-222222222222"
+	Cluster3            = "caaaaaaa-bbbb-4011-0000-333333333333"
 	ClusterFake1        = "caaaaaaa-bbbb-4011-9999-111111111111"
 	ClusterFake2        = "caaaaaaa-bbbb-4011-9999-222222222222"
 	Deployment1         = "deaaaaaa-bbbb-4011-0000-111111111111"

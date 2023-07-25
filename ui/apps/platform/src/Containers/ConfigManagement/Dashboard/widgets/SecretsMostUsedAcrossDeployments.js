@@ -4,7 +4,6 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
-import { Tooltip } from '@patternfly/react-core';
 
 import Loader from 'Components/Loader';
 import URLService from 'utils/URLService';
@@ -108,52 +107,33 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                     .push(item.id)
                                     .url();
                                 return (
-                                    <Link
+                                    <li
                                         key={item.id}
-                                        to={linkTo}
-                                        className={`no-underline text-base-600 hover:bg-base-200 inline-block border-base-300 w-full ${
+                                        className={`text-base-600 inline-block flex flex-row border-base-300 w-full ${
                                             index !== 4 || index !== 9 ? 'border-b' : ''
                                         }`}
                                     >
-                                        <li>
-                                            <div className="flex flex-row">
-                                                <div className="self-center text-2xl pl-4 pr-4">
-                                                    {index + 1}
-                                                </div>
-                                                <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
-                                                    <span className="text-xs pb-1 text-base-500">
-                                                        {item.clusterName}/{item.namespace}
-                                                    </span>
-                                                    <span className="pb-2">{item.name}</span>
-                                                    <Tooltip
-                                                        content={
-                                                            <div>
-                                                                {`${
-                                                                    item.deploymentCount
-                                                                } ${pluralize(
-                                                                    'Deployment',
-                                                                    item.deploymentCount
-                                                                )}, `}
-                                                                {getCertificateStatus(item.files)}
-                                                            </div>
-                                                        }
-                                                    >
-                                                        {item.deploymentCount > 0 && (
-                                                            <div className="truncate">
-                                                                {`${
-                                                                    item.deploymentCount
-                                                                } ${pluralize(
-                                                                    'Deployment',
-                                                                    item.deploymentCount
-                                                                )}, `}
-                                                                {getCertificateStatus(item.files)}
-                                                            </div>
-                                                        )}
-                                                    </Tooltip>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    </Link>
+                                        <div className="self-center text-2xl pl-4 pr-4">
+                                            {index + 1}
+                                        </div>
+                                        <div className="flex flex-col truncate pr-4 pb-4 pt-4 text-sm">
+                                            <span className="text-base-500">
+                                                {item.clusterName}/{item.namespace}
+                                            </span>
+                                            <Link className="text-base-600 underline" to={linkTo}>
+                                                {item.name}
+                                            </Link>
+                                            {item.deploymentCount > 0 && (
+                                                <span className="mt-1 truncate">
+                                                    {`${item.deploymentCount} ${pluralize(
+                                                        'deployment',
+                                                        item.deploymentCount
+                                                    )}, `}
+                                                    {getCertificateStatus(item.files)}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </li>
                                 );
                             })}
                         </ul>
@@ -162,7 +142,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                 return (
                     <Widget
                         className="s-2 overflow-hidden pdf-page"
-                        header="Secrets Most Used Across Deployments"
+                        header="Secrets most used across deployments"
                         headerComponents={viewAllLink}
                     >
                         {contents}

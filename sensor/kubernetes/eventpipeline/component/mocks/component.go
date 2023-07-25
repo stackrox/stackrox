@@ -7,7 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	central "github.com/stackrox/rox/generated/internalapi/central"
+	message "github.com/stackrox/rox/sensor/common/message"
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -146,10 +146,10 @@ func (m *MockOutputQueue) EXPECT() *MockOutputQueueMockRecorder {
 }
 
 // ResponsesC mocks base method.
-func (m *MockOutputQueue) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockOutputQueue) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 

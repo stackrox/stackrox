@@ -33,6 +33,7 @@ import {
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
 import { deploymentTabs } from './utils/deploymentUtils';
+import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -57,6 +58,7 @@ export type TopologyComponentProps = {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
     edgeState: EdgeState;
+    scopeHierarchy: NetworkScopeHierarchy;
 };
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
@@ -74,6 +76,7 @@ const TopologyComponent = ({
     simulator,
     setNetworkPolicyModification,
     edgeState,
+    scopeHierarchy,
 }: TopologyComponentProps) => {
     const firstRenderRef = useRef(true);
     const history = useHistory();
@@ -175,6 +178,7 @@ const TopologyComponent = ({
                         <NetworkPolicySimulatorSidePanel
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
+                            scopeHierarchy={scopeHierarchy}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (

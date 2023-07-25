@@ -5,7 +5,6 @@ import (
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"k8s.io/client-go/dynamic"
@@ -79,9 +78,6 @@ func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interf
 }
 
 func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
-	if !features.ComplianceOperatorCheckResults.Enabled() {
-		return nil
-	}
 	client, err := dynamic.NewForConfig(config)
 	if err != nil {
 		log.Panicf("Creating dynamic client: %v", err)

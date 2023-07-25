@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	metadataDSMocks "github.com/stackrox/rox/central/reports/metadata/datastore/mocks"
+	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -23,12 +24,14 @@ type ReportServiceTestSuite struct {
 	mockCtrl *gomock.Controller
 
 	reportDS          *metadataDSMocks.MockDataStore
+	snapshotDS        *reportSnapshotDSMocks.MockDataStore
 	collectionService Service
 }
 
 func (suite *ReportServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.reportDS = metadataDSMocks.NewMockDataStore(suite.mockCtrl)
+	suite.snapshotDS = reportSnapshotDSMocks.NewMockDataStore(suite.mockCtrl)
 
 }
 func (suite *ReportServiceTestSuite) TestGetReportStatus() {
@@ -54,9 +57,60 @@ func (suite *ReportServiceTestSuite) TestGetReportStatus() {
 		Id: "test_report",
 	}
 	s := serviceImpl{metadataDatastore: suite.reportDS}
-	repStatus, err := s.GetReportStatus(ctx, &id)
+	repStatusResponse, err := s.GetReportStatus(ctx, &id)
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), repStatus.GetErrorMsg(), status.GetErrorMsg())
+	assert.Equal(suite.T(), repStatusResponse.Status.GetErrorMsg(), status.GetErrorMsg())
+
+}
+
+func (suite *ReportServiceTestSuite) TestGetReportHistory() {
+	suite.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+	if !features.VulnMgmtReportingEnhancements.Enabled() {
+		suite.T().Skip("Skip test when reporting enhancements are disabled")
+		suite.T().SkipNow()
+	}
+	ctx := context.Background()
+	reportSnapshot := &storage.ReportSnapshot{
+		ReportId: "test_report",
+		Name:     "Report",
+		ReportStatus: &storage.ReportStatus{
+			ErrorMsg:                 "Error msg",
+			ReportNotificationMethod: 1,
+		},
+		ReportConfigurationId: "test_report",
+	}
+
+	suite.snapshotDS.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
+	s := serviceImpl{snapshotDatastore: suite.snapshotDS}
+	emptyQuery := &apiV2.RawQuery{Query: ""}
+	req := &apiV2.GetReportHistoryRequest{
+		ReportConfigId:   "test_report_config",
+		ReportParamQuery: emptyQuery,
+	}
+
+	res, err := s.GetReportHistory(ctx, req)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), res.ReportSnapshots[0].GetId(), "test_report")
+	assert.Equal(suite.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
+
+	req = &apiV2.GetReportHistoryRequest{
+		ReportConfigId:   "",
+		ReportParamQuery: emptyQuery,
+	}
+
+	_, err = s.GetReportHistory(ctx, req)
+	assert.Error(suite.T(), err)
+
+	query := &apiV2.RawQuery{Query: "Report Name:test_report"}
+	req = &apiV2.GetReportHistoryRequest{
+		ReportConfigId:   "test_report_config",
+		ReportParamQuery: query,
+	}
+
+	res, err = s.GetReportHistory(ctx, req)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), res.ReportSnapshots[0].GetId(), "test_report")
+	assert.Equal(suite.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
 }
 

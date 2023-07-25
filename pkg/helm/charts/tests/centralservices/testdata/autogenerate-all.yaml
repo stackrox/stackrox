@@ -21,6 +21,8 @@ central:
     enabled: true
   persistence:
     none: true
-enableOpenShiftMonitoring: true
+monitoring:
+  openshift:
+    enabled: true
 system:
   enablePodSecurityPolicies: true

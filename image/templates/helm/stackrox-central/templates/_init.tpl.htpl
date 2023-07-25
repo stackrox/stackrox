@@ -99,17 +99,16 @@
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
-  {{ if (ne $._rox.env.openshift 4) }}
-    {{ include "srox.fail" "'enableOpenShiftMonitoring' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
-  {{ end }}
-
-  {{/* Override monitoring exposure when openshift monitoring is desired */}}
-  {{ if not $._rox.central.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'central.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'central.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.central "exposeMonitoring" true }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
+  {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
+{{ end }}
+{{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
+{{ end }}
+{{ if $._rox.monitoring.openshift.enabled }}
+    {{ $_ := set $._rox.central "monitoring" dict }}
+    {{ include "srox.mergeInto" (list $._rox.central.monitoring $._rox.monitoring) }}
 {{ end }}
 
 {{/* Infer GKE, if needed */}}

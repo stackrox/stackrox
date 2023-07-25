@@ -97,7 +97,6 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_DISABLE_COMPLIANCE_STANDARDS "${ROX_DISABLE_COMPLIANCE_STANDARDS:-true}"
     ci_export ROX_QUAY_ROBOT_ACCOUNTS "${ROX_QUAY_ROBOT_ACCOUNTS:-true}"
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-false}"
@@ -431,6 +430,9 @@ patch_resources_for_test() {
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
         check_endpoint_availability "$target_port"
     done
+
+    # Ensure the API is available as well after patching the load balancer.
+    wait_for_api
 }
 
 check_endpoint_availability() {
@@ -629,18 +631,18 @@ wait_for_api() {
         API_PORT=443
     fi
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
-    METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
-    info "METADATA_URL is set to ${METADATA_URL}"
+    PING_URL="https://${API_ENDPOINT}/v1/ping"
+    info "PING_URL is set to ${PING_URL}"
 
     set +e
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
     # shellcheck disable=SC2034
     for i in $(seq 1 60); do
-        metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
-        metadata_exitstatus="$?"
-        status="$(echo "$metadata" | jq '.licenseStatus' -r)"
-        if [[ "$metadata_exitstatus" -eq "0" && "$status" != "RESTARTING" ]]; then
+        pong="$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}")"
+        pong_exitstatus="$?"
+        status="$(echo "$pong" | jq -r '.status')"
+        if [[ "$pong_exitstatus" -eq "0" && "$status" == "ok" ]]; then
             NUM_SUCCESSES_IN_A_ROW=$((NUM_SUCCESSES_IN_A_ROW + 1))
             if [[ "${NUM_SUCCESSES_IN_A_ROW}" == "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
                 break
@@ -681,11 +683,12 @@ _record_build_info() {
         return
     fi
 
+    require_environment "ROX_PASSWORD"
+
     local build_info
 
     local metadata_url="https://${API_ENDPOINT}/v1/metadata"
-    local metadata
-    releaseBuild="$(curl -skS "${metadata_url}" | jq -r '.releaseBuild')"
+    releaseBuild="$(curl -skS -u "admin:${ROX_PASSWORD}" "${metadata_url}" | jq -r '.releaseBuild')"
 
     if [[ "$releaseBuild" == "true" ]]; then
         build_info="release"

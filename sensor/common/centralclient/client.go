@@ -34,7 +34,7 @@ var (
 const (
 	requestTimeout          = 10 * time.Second
 	tlsChallengeRoute       = "/v1/tls-challenge"
-	metadataRoute           = "/v1/metadata"
+	pingRoute               = "/v1/ping"
 	challengeTokenParamName = "challengeToken"
 )
 
@@ -74,6 +74,10 @@ func NewClient(endpoint string) (*Client, error) {
 	// authentication, it is possible that a user has required client certificate authentication for the
 	// endpoint Sensor is connecting to. Since a client certificate can be used without harm even if the
 	// remote is not trusted, make it available here to be on the safe side.
+	//
+	// Moreover, authentication requirements can be tightened in future and thus having an older version
+	// of Sensor authenticating itself will enable backward compatibility with newer Centrals. This has
+	// indeed happened in the past when `/v1/metadata` became authenticated.
 	clientCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining client certificate")
@@ -99,21 +103,20 @@ func NewClient(endpoint string) (*Client, error) {
 	}, nil
 }
 
-// GetMetadata returns Central's metadata
-func (c *Client) GetMetadata(ctx context.Context) (*v1.Metadata, error) {
-	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, metadataRoute, nil, nil)
+// GetPing pings Central.
+func (c *Client) GetPing(ctx context.Context) (*v1.PongMessage, error) {
+	resp, _, err := c.doHTTPRequest(ctx, http.MethodGet, pingRoute, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "receiving Central metadata")
+		return nil, errors.Wrap(err, "pinging Central")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	var metadata v1.Metadata
-	err = jsonutil.JSONReaderToProto(resp.Body, &metadata)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", metadataRoute, resp.StatusCode)
+	var pong v1.PongMessage
+	if err := jsonutil.JSONReaderToProto(resp.Body, &pong); err != nil {
+		return nil, errors.Wrapf(err, "parsing Central %s response with status code %d", pingRoute, resp.StatusCode)
 	}
 
-	return &metadata, nil
+	return &pong, nil
 }
 
 // GetTLSTrustedCerts returns all certificates which are trusted by Central and its leaf certificates.
@@ -240,7 +243,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating tls-challenge request")
+		return nil, nil, errors.Wrapf(err, "creating request for %s", u.String())
 	}
 
 	req.Header.Set("User-Agent", clientconn.GetUserAgent())
@@ -261,7 +264,7 @@ func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params
 		if err != nil {
 			return nil, peerCertificates, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
 		}
-		return nil, peerCertificates, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, tlsChallengeRoute, resp.Status, body)
+		return nil, peerCertificates, errors.Errorf("HTTP request %s with code '%s', body: %s", u.String(), resp.Status, body)
 	}
 	return resp, peerCertificates, nil
 }

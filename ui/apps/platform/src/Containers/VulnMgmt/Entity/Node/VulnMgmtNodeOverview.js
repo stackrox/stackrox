@@ -123,7 +123,7 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
                                 className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={nodeStats}
-                                title="Details & Metadata"
+                                title="Details and metadata"
                                 labels={labels}
                                 annotations={annotations}
                             />

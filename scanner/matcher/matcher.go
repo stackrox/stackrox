@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libvuln"
@@ -11,22 +12,24 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock"
 )
 
+// Matcher represents a vulnerability matcher.
 type Matcher struct {
 	matcher *libvuln.Libvuln
 }
 
+// NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context) (*Matcher, error) {
 	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libvuln")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "connecting to postgres for matcher")
 	}
 	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "initializing postgres matcher store")
 	}
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating matcher postgres locker")
 	}
 
 	// TODO: Update HTTP client.
@@ -43,9 +46,14 @@ func NewMatcher(ctx context.Context) (*Matcher, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating libvuln")
 	}
 	return &Matcher{
 		matcher: matcher,
 	}, nil
+}
+
+// Close closes the matcher.
+func (i *Matcher) Close(ctx context.Context) error {
+	return i.matcher.Close(ctx)
 }

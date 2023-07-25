@@ -18,5 +18,95 @@ message ComplianceOperatorInfo {
     }
 
     // Collection of errors that occurred while trying to obtain collector health info.
-    repeated string status_errors       = 5;
+    string          status_error        = 5;
+}
+
+message EnableComplianceRequest {
+    string id = 1;
+}
+
+message DisableComplianceRequest {
+    string id = 1;
+}
+
+// ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
+message ApplyComplianceScanConfigRequest {
+    message BaseScanSettings {
+        string              db_record_id    = 1;
+        string              scan_name       = 2;
+        repeated string     profiles        = 3;
+
+        bool    show_not_applicable         = 4;
+        bool    strict_node_scan            = 5;
+        bool    auto_apply_remediations     = 6;
+        bool    auto_update_remediations    = 7;
+    }
+
+    message OneTimeScan {
+        BaseScanSettings    scan_settings = 1;
+    }
+    message ScheduledScan {
+        BaseScanSettings    scan_settings = 1;
+        string              cron          = 2;
+    }
+    message RerunScheduledScan {
+       string scan_name = 1;
+    }
+
+    string                  id              = 1;
+    oneof scan_request {
+        OneTimeScan         one_time_scan   = 2;
+        ScheduledScan       scheduled_scan  = 3;
+        RerunScheduledScan  rerun_scan      = 4;
+    }
+}
+
+// DeleteComplianceScanConfigRequest contains information about compliance scan configuration to be deleted from secured cluster.
+message DeleteComplianceScanConfigRequest {
+    string id       = 1;
+    string name     = 2;
+}
+
+// ComplianceRequest is a message from Central (to Sensor) to perform an action related to compliance.
+message ComplianceRequest {
+    oneof request {
+        EnableComplianceRequest             enable_compliance   = 1;
+        DisableComplianceRequest            disable_compliance  = 2;
+        ApplyComplianceScanConfigRequest    apply_scan_config   = 3;
+        DeleteComplianceScanConfigRequest   delete_scan_config  = 4;
+    }
+}
+
+// ComplianceResponse is a message from Sensor (to Central) representing success/failure processing request.
+message ComplianceResponse {
+    message EnableComplianceResponse {
+        string      id      = 1;
+        oneof payload {
+            string  error   = 2;
+        }
+    }
+    message DisableComplianceResponse {
+        string      id      = 1;
+        oneof payload {
+            string  error   = 2;
+        }
+    }
+    message ApplyComplianceScanConfigResponse {
+        string      id      = 1;
+        oneof payload {
+            string  error   = 2;
+        }
+    }
+    message DeleteComplianceScanConfigResponse {
+        string      id      = 1;
+        oneof payload {
+            string  error   = 2;
+        }
+    }
+    oneof response {
+        EnableComplianceResponse            enable_compliance_response              = 1;
+        DisableComplianceResponse           disable_compliance_response             = 2;
+        ApplyComplianceScanConfigResponse   apply_compliance_scan_config_response   = 3;
+        DeleteComplianceScanConfigResponse  delete_compliance_scan_config_response  = 4;
+    }
 }

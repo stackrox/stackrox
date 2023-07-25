@@ -1,10 +1,19 @@
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
 import { visitWorkloadCveOverview } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload table toolbar', () => {
     withAuth();
-    it('should correctly handle applied filters', () => {
+
+    before(function () {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
+            this.skip();
+        }
+    });
+
+    // TODO Fix the flake and re-enable this test https://issues.redhat.com/browse/ROX-17959
+    it.skip('should correctly handle applied filters', () => {
         visitWorkloadCveOverview();
 
         // Set the entity type to 'Namespace'

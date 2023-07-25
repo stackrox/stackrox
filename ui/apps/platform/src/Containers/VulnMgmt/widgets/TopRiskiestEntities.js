@@ -4,7 +4,6 @@ import { gql, useQuery } from '@apollo/client';
 import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import TextSelect from 'Components/TextSelect';
@@ -23,6 +22,8 @@ import {
     entityNounOrdinaryCasePlural,
     entityNounSentenceCaseSingular,
 } from '../entitiesForVulnerabilityManagement';
+
+import ViewAllButton from './ViewAllButton';
 
 const TOP_RISKIEST_IMAGE_VULNS = gql`
     query topRiskiestImageVulns($query: String, $pagination: Pagination) {
@@ -198,13 +199,13 @@ const getEntitiesByContext = (entityContext) => {
     const entities = [];
     if (!entityContext[entityTypes.NODE_COMPONENT] && !entityContext[entityTypes.IMAGE]) {
         entities.push({
-            label: 'Top Riskiest Node Components',
+            label: 'Top riskiest node components',
             value: entityTypes.NODE_COMPONENT,
         });
     }
     if (!entityContext[entityTypes.IMAGE_COMPONENT] && !entityContext[entityTypes.NODE]) {
         entities.push({
-            label: 'Top Riskiest Image Components',
+            label: 'Top riskiest image components',
             value: entityTypes.IMAGE_COMPONENT,
         });
     }
@@ -214,13 +215,13 @@ const getEntitiesByContext = (entityContext) => {
     ) {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
         entities.unshift({
-            label: 'Top Riskiest Images',
+            label: 'Top riskiest images',
             value: entityTypes.IMAGE,
         });
     }
     if (!entityContext[entityTypes.NODE] && !entityContext[entityTypes.IMAGE]) {
         entities.push({
-            label: 'Top Riskiest Nodes',
+            label: 'Top riskiest nodes',
             value: entityTypes.NODE,
         });
     }

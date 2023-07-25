@@ -5,9 +5,9 @@ import (
 
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -29,6 +29,8 @@ const (
 	DefaultExpiredVulnReqRetention = 90
 	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
 	DefaultDecommissionedClusterRetentionDays = 0
+	// DefaultReportHistoryRetentionWindow number of days to retain reports
+	DefaultReportHistoryRetentionWindow = 7
 )
 
 var (
@@ -76,6 +78,13 @@ func initialize() {
 	if privateConfig.GetDecommissionedClusterRetention() == nil {
 		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
 			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		}
+		needsUpsert = true
+	}
+
+	if privateConfig.GetReportRetentionConfig() == nil {
+		privateConfig.ReportRetentionConfig = &storage.ReportRetentionConfig{
+			HistoryRetentionDurationDays: DefaultReportHistoryRetentionWindow,
 		}
 		needsUpsert = true
 	}

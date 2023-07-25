@@ -1,7 +1,7 @@
 import queryString from 'qs';
 
 import { ReportConfiguration as ReportConfigurationV1 } from 'types/report.proto';
-import { ReportConfiguration } from 'types/reportConfigurationService.proto';
+import { ReportConfiguration, ReportStatus } from 'services/ReportsService.types';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ApiSortOption } from 'types/search';
 import axios from './instance';
@@ -97,4 +97,36 @@ export function fetchReportConfigurations(): Promise<ReportConfiguration[]> {
         .then((response) => {
             return response?.data?.reportConfigs ?? [];
         });
+}
+
+export function fetchReportStatus(id: string): Promise<ReportStatus | null> {
+    return axios
+        .get<{ status: ReportStatus | null }>(`/v2/reports/status/${id}`)
+        .then((response) => {
+            return response.data?.status;
+        });
+}
+
+export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | null> {
+    return axios
+        .get<{ status: ReportStatus | null }>(`/v2/reports/last-status/${id}`)
+        .then((response) => {
+            return response.data?.status;
+        });
+}
+
+export function createReportConfiguration(
+    report: ReportConfiguration
+): Promise<ReportConfiguration> {
+    return axios
+        .post<ReportConfiguration>('/v2/reports/configurations', report)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function deleteReportConfiguration(reportId: string): Promise<Empty> {
+    return axios.delete<Empty>(`/v2/reports/configurations/${reportId}`).then((response) => {
+        return response.data;
+    });
 }

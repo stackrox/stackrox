@@ -18,6 +18,7 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
         ? standardLabels[standardId]
         : `${startCase(lowerCase(entityType))}s`;
 
+    // If standardId is truthy, then standard page entity is CONTROL for address controls?s[standard]=WHAT_EVER&s[groupBy]=CATEGORY
     const subHeaderText = standardId ? 'Standard' : 'Resource list';
     let tableOptions = null;
     if (standardId) {

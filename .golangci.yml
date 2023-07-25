@@ -13,10 +13,10 @@ issues:
   exclude-use-default: false
 
   exclude-rules:
-    - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|sensor|tests|tools|scale)/"
+    - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:
         - wrapcheck
-    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|sensor|tests|tools|scale)/"
+    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:
         - forbidigo
     - path: "roxctl/central/generate/interactive.go"

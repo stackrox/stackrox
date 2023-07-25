@@ -1,14 +1,18 @@
 import React, { useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { DownloadCloud, Trash2 } from 'react-feather';
 import get from 'lodash/get';
-import { Dropdown, DropdownItem, DropdownPosition, DropdownToggle } from '@patternfly/react-core';
+import {
+    Button,
+    Dropdown,
+    DropdownItem,
+    DropdownPosition,
+    DropdownToggle,
+} from '@patternfly/react-core';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
-import PanelButton from 'Components/PanelButton';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
@@ -215,24 +219,22 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const headerActions = (
         <>
             <AutoUpgradeToggle />
-            <PanelButton
-                icon={<DownloadCloud className="h-4 w-4 ml-1" />}
-                tooltip={`Upgrade (${upgradableClusters.length})`}
-                className="btn btn-tertiary ml-2"
+            <Button
+                variant="secondary"
+                className="pf-u-ml-sm"
                 onClick={upgradeSelectedClusters}
-                disabled={upgradableClusters.length === 0 || !!selectedClusterId}
+                isDisabled={upgradableClusters.length === 0 || !!selectedClusterId}
             >
                 {`Upgrade (${upgradableClusters.length})`}
-            </PanelButton>
-            <PanelButton
-                icon={<Trash2 className="h-4 w-4 ml-1" />}
-                tooltip={`Delete (${checkedClusterIds.length})`}
-                className="btn btn-alert ml-2 mr-2"
+            </Button>
+            <Button
+                variant="danger"
+                className="pf-u-ml-sm pf-u-mr-sm"
                 onClick={deleteSelectedClusters}
-                disabled={checkedClusterIds.length === 0 || !!selectedClusterId}
+                isDisabled={checkedClusterIds.length === 0 || !!selectedClusterId}
             >
                 {`Delete (${checkedClusterIds.length})`}
-            </PanelButton>
+            </Button>
             <Dropdown
                 className="mr-4"
                 onSelect={onSelectInstallMenuItem}

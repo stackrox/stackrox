@@ -147,10 +147,6 @@
                         "value": "sensor.stackrox.svc:443"
                     },
                     {
-                        "name": "ROX_COMPLIANCE_OPERATOR_INTEGRATION",
-                        "value": "true"
-                    },
-                    {
                         "name": "ROX_CSV_EXPORT",
                         "value": "false"
                     },

@@ -54,7 +54,7 @@ function Header({
     }
 
     return (
-        <div className="pf-u-p-md" data-testid="enforcement-detail-message">
+        <div className="pf-u-p-md" aria-label="Enforcement detail message">
             Enforcement {countMessage}
         </div>
     );

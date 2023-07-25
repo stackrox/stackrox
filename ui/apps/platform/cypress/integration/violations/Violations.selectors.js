@@ -6,7 +6,6 @@ export const selectors = {
         resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
     },
     details: {
-        page: '[data-testid="violation-details-page"]',
         title: 'h1.pf-c-title',
         subtitle: 'h2.pf-c-title',
         tabs: 'li.pf-c-tabs__item',
@@ -16,14 +15,17 @@ export const selectors = {
         policyTab: 'li.pf-c-tabs__item:contains("Policy")',
     },
     enforcement: {
-        detailMessage: '[data-testid="enforcement-detail-message"]',
-        explanationMessage: '[data-testid="enforcement-explanation-message"]',
+        detailMessage: '[aria-label="Enforcement detail message"]',
+        explanationMessage: '[aria-label="Enforcement explanation message"]',
     },
     deployment: {
-        overview: '[data-testid="deployment-details"] [data-testid="deployment-overview"]',
+        overview: '[aria-label="Deployment details"] [aria-label="Deployment overview"]',
         containerConfiguration:
-            '[data-testid="deployment-details"] [data-testid="container-configuration"]',
-        securityContext: '[data-testid="deployment-details"] [data-testid="security-context"]',
-        portConfiguration: '[data-testid="deployment-details"] [data-testid="port-configuration"]',
+            '[aria-label="Deployment details"] [aria-label="Container configuration"]',
+        securityContext: '[aria-label="Deployment details"] [aria-label="Security context"]',
+        portConfiguration: '[aria-label="Deployment details"] [aria-label="Port configuration"]',
+        networkPolicy:
+            '[aria-label="Deployment details"] [aria-label="Network policies in namespace"]',
+        networkPolicyModal: "[role='dialog']:contains('Network policy details')",
     },
 };

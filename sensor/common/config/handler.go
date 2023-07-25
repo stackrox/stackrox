@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -65,7 +66,7 @@ func (c *configHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (c *configHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *configHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 

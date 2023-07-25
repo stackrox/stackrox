@@ -7,8 +7,50 @@ import "google/protobuf/timestamp.proto";
 import "api/v2/common.proto";
 import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
+import "api/v2/report_configuration_service.proto";
+import "api/v2/user.proto";
 
 package v2;
+
+message GetReportHistoryRequest {
+    string   report_config_id  = 1;
+    RawQuery report_param_query = 2;
+}
+
+message ReportHistoryResponse {
+    repeated ReportSnapshot report_snapshots = 1;
+}
+
+message ReportStatusResponse {
+    ReportStatus status = 1;
+}
+
+message CollectionSnapshot {
+    string id   = 1;
+    string name = 2;
+}
+
+message ReportSnapshot {
+
+    string                    id                           = 1;
+    string                    name                         = 2;
+    string                    description                  = 3;
+    oneof                     filter {
+        VulnerabilityReportFilters  vuln_report_filters   = 5;
+    }
+    CollectionSnapshot         collection_snapshot        = 6;
+    ReportSchedule                   schedule                   = 7;
+    ReportStatus               report_status              = 8;
+    repeated NotifierSnapshot notifiers                   = 9;
+    SlimUser                  user                        = 10;
+}
+
+message NotifierSnapshot {
+    oneof notifier_config {
+        EmailNotifierConfiguration email_config = 1;
+    }
+    string notifier_name = 2;
+}
 
 message ReportStatus {
     enum RunState {
@@ -24,31 +66,37 @@ message ReportStatus {
     }
 
     enum NotificationMethod {
-        UNSET = 0;
-        EMAIL = 1;
+        UNSET    = 0;
+        EMAIL    = 1;
         DOWNLOAD = 2;
     }
 
-    RunState                   run_state       = 1;
-    google.protobuf.Timestamp  completed_at        = 2;
-    string                     error_msg       = 3;
-    ReportMethod               report_request_type   = 4;
+    RunState                   run_state                  = 1;
+    google.protobuf.Timestamp  completed_at               = 2;
+    string                     error_msg                  = 3;
+    ReportMethod               report_request_type        = 4;
     NotificationMethod         report_notification_method = 5;
 }
 
-
 service ReportService {
-
     // GetReportStatus returns report status
-    rpc GetReportStatus (ResourceByID) returns (ReportStatus) {
+    rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
             get: "/v2/reports/status/{id}"
         };
     }
     // GetReportStatusConfigID returns report status for a report config id
-    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatus) {
+    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
             get: "/v2/reports/last-status/{id}"
         };
     }
+
+    // GetReportHistory returns the full history for a report configuration with the specified ID.
+    rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/history/{report_config_id}"
+        };
+    }
+
 }

@@ -51,14 +51,35 @@ func GetK8sRoleBindingWithSubjects(id, name, clusterID, clusterName, namespace s
 }
 
 // GetMultipleK8sRoleBindings returns given number of roleBindings, each with given number of subjects
-// ClusterRole will toggle between true and false
+// The cluster role property will toggle from false to true.
 func GetMultipleK8sRoleBindings(numBindings, numSubjectsPerBinding int) []*storage.K8SRoleBinding {
+	return GetMultipleK8sRoleBindingsWithRole(numBindings, numSubjectsPerBinding, nil)
+}
+
+// GetMultipleK8sRoleBindingsWithRole returns given number of roleBindings, each with given number of subjects and a
+// reference to one of the given roles.
+// The cluster role property will toggle from false to true and the referenced role will be a round robin of all given
+// roles.
+func GetMultipleK8sRoleBindingsWithRole(numBindings, numSubjectsPerBinding int,
+	roles []*storage.K8SRole) []*storage.K8SRoleBinding {
 	clusterRole := true
 	bindings := make([]*storage.K8SRoleBinding, 0, numBindings)
+	var roleIndex int
+	var roleID string
 	for i := 0; i < numBindings; i++ {
 		name := fmt.Sprintf("k8sRoleBinding%d", i)
 		clusterName := fmt.Sprintf("cluster%d", i)
 		namespace := fmt.Sprintf("namespace%d", i)
+		binding := GetK8sRoleBindingWithSubjects(
+			uuid.NewV4().String(),
+			name,
+			uuid.NewV4().String(),
+			clusterName,
+			namespace,
+			clusterRole,
+			numSubjectsPerBinding)
+		roleID, roleIndex = getRoleAndNewIndex(roleIndex, roles)
+		binding.RoleId = roleID
 		bindings = append(bindings,
 			GetK8sRoleBindingWithSubjects(
 				uuid.NewV4().String(),
@@ -71,4 +92,15 @@ func GetMultipleK8sRoleBindings(numBindings, numSubjectsPerBinding int) []*stora
 		clusterRole = !clusterRole
 	}
 	return bindings
+}
+
+func getRoleAndNewIndex(i int, roles []*storage.K8SRole) (string, int) {
+	if len(roles) == 0 {
+		return "", 0
+	}
+	id := roles[i].GetId()
+	if len(roles) == i-1 {
+		return id, 0
+	}
+	return id, i + 1
 }

@@ -1,6 +1,9 @@
+import path from 'path';
+
 import { visitFromLeftNav } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
+import { selectors } from './Violations.selectors';
 
 // Source of truth for keys in routeMatcherMap and staticResponseMap objects.
 export const alertsAlias = 'alerts';
@@ -182,17 +185,25 @@ export function interactAndWaitForSortedViolationsResponses(interactionCallback,
  */
 export function clickDeploymentTabWithFixture(fixturePath) {
     const deploymentAlias = 'deployments/id';
+    const networkPolicyAlias = 'networkpolicies';
 
     const routeMatcherMapForDeployment = {
         [deploymentAlias]: {
             method: 'GET',
             url: '/v1/deployments/*',
         },
+        [networkPolicyAlias]: {
+            method: 'GET',
+            url: '/v1/networkpolicies?*',
+        },
     };
 
     const staticResponseMapForDeployment = {
         [deploymentAlias]: {
             fixture: fixturePath,
+        },
+        [networkPolicyAlias]: {
+            fixture: 'network/networkPoliciesInNamespace.json',
         },
     };
 
@@ -209,4 +220,15 @@ export function clickDeploymentTabWithFixture(fixturePath) {
     );
 
     cy.get(deploymentTab).should('have.class', 'pf-m-current');
+}
+
+/**
+ * Click the Export YAML button in the Network Policy modal and wait for the file to be downloaded.
+ * @param {string} fileName
+ * @param {(yaml: string) => void} onDownload
+ */
+export function exportAndWaitForNetworkPolicyYaml(fileName, onDownload) {
+    cy.get(`${selectors.deployment.networkPolicyModal} button:contains('Export YAML')`).click();
+
+    cy.readFile(path.join(Cypress.config('downloadsFolder'), fileName)).then(onDownload);
 }

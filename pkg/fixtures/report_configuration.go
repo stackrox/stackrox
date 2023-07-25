@@ -54,8 +54,8 @@ func GetValidReportConfigWithMultipleNotifiers() *storage.ReportConfiguration {
 					storage.VulnerabilityReportFilters_DEPLOYED,
 					storage.VulnerabilityReportFilters_WATCHED,
 				},
-				CvesSince: &storage.VulnerabilityReportFilters_LastSuccessfulReport{
-					LastSuccessfulReport: true,
+				CvesSince: &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+					SinceLastSentScheduledReport: true,
 				},
 			},
 		},
@@ -189,8 +189,8 @@ func GetValidV2ReportConfigWithMultipleNotifiers() *v2.ReportConfiguration {
 					v2.VulnerabilityReportFilters_DEPLOYED,
 					v2.VulnerabilityReportFilters_WATCHED,
 				},
-				CvesSince: &v2.VulnerabilityReportFilters_LastSuccessfulReport{
-					LastSuccessfulReport: true,
+				CvesSince: &v2.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+					SinceLastSentScheduledReport: true,
 				},
 			},
 		},

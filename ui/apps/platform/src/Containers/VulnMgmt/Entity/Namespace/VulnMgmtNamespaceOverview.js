@@ -71,7 +71,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={namespaceStats}
                                 labels={labels}
-                                title="Details & Metadata"
+                                title="Details and metadata"
                             />
                         </div>
                         <div className="sx-1 lg:sx-2 sy-1 min-h-55 h-full">

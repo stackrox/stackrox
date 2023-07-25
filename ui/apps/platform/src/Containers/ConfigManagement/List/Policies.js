@@ -36,22 +36,11 @@ const tableColumns = [
     },
     {
         Header: `Policy`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
+        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
+        className: `w-1/4 ${defaultColumnClassName}`,
         accessor: 'name',
         id: policySortFields.POLICY,
         sortField: policySortFields.POLICY,
-    },
-    {
-        Header: `Enabled`,
-        headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
-        Cell: ({ original }) => {
-            const { disabled, pdf } = original;
-            return <PolicyDisabledIconText isDisabled={disabled} isTextOnly={pdf} />;
-        },
-        accessor: 'disabled',
-        sortable: false, // not performant as of 2020-06-11
     },
     {
         Header: `Enforced`,
@@ -98,8 +87,8 @@ const tableColumns = [
     },
     {
         Header: `Categories`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-        className: `w-1/8 ${defaultColumnClassName}`,
+        headerClassName: `w-1/4 ${defaultHeaderClassName}`,
+        className: `w-1/4 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { categories } = original;
             return categories.join(', ');

@@ -107,13 +107,13 @@ import (
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
 	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
+	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
@@ -184,6 +184,7 @@ import (
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
@@ -258,15 +259,17 @@ func main() {
 		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
-	// Need to remove the backup clone and set the current version
-	sourceMap, config, err := pgconfig.GetPostgresConfig()
-	if err != nil {
-		log.Errorf("Unable to get Postgres DB config: %v", err)
-	}
+	if !pgconfig.IsExternalDatabase() {
+		// Need to remove the backup clone and set the current version
+		sourceMap, config, err := pgconfig.GetPostgresConfig()
+		if err != nil {
+			log.Errorf("Unable to get Postgres DB config: %v", err)
+		}
 
-	err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
-	if err != nil {
-		log.Errorf("Failed to remove backup DB: %v", err)
+		err = pgadmin.DropDB(sourceMap, config, migrations.GetBackupClone())
+		if err != nil {
+			log.Errorf("Failed to remove backup DB: %v", err)
+		}
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
@@ -618,7 +621,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		uiRoute(),
 		{
 			Route:         "/api/extensions/clusters/zip",
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
+			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster), permissions.View(resources.Administration))),
 			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
@@ -630,7 +633,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/cli/download/",
-			Authorizer:    user.With(),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: cli.Handler(),
 			Compression:   true,
 		},
@@ -642,7 +645,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/graphql",
-			Authorizer:    user.With(), // graphql enforces permissions internally
+			Authorizer:    user.Authenticated(), // graphql enforces permissions internally
 			ServerHandler: graphqlHandler.Handler(),
 			Compression:   true,
 		},
@@ -696,7 +699,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/logimbue",
-			Authorizer:    user.With(),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
 			EnableAudit:   true,
@@ -737,7 +740,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/extensions/clusters/helm-config.yaml",
-			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
+			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
 			Compression:   true,
 		},
@@ -756,7 +759,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		routes.CustomRoute{
 			Route: scannerDefinitionsRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				or.SensorOrAuthorizer(
+				or.SensorOr(
 					or.ScannerOr(
 						user.With(permissions.View(resources.Administration)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
@@ -825,11 +828,16 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
-		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+	}
+
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	} else {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

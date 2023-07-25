@@ -73,19 +73,16 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		reprocessing.GetPipeline(),
 		alerts.GetPipeline(),
 		auditlogstateupdate.GetPipeline(),
+		complianceoperatorresults.GetPipeline(),
+		complianceoperatorprofiles.GetPipeline(),
+		complianceoperatorscansettingbinding.GetPipeline(),
+		complianceoperatorrules.GetPipeline(),
+		complianceoperatorscans.GetPipeline(),
 	}
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		pipelines = append(pipelines, nodeinventory.GetPipeline())
 	}
-	if features.ComplianceOperatorCheckResults.Enabled() {
-		pipelines = append(pipelines,
-			complianceoperatorresults.GetPipeline(),
-			complianceoperatorprofiles.GetPipeline(),
-			complianceoperatorscansettingbinding.GetPipeline(),
-			complianceoperatorrules.GetPipeline(),
-			complianceoperatorscans.GetPipeline(),
-		)
-	}
+
 	if features.ComplianceEnhancements.Enabled() {
 		pipelines = append(pipelines, complianceoperatorinfo.GetPipeline())
 	}

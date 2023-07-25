@@ -9,47 +9,17 @@ die() {
     exit 1
 }
 
-image_exists() {
-  if ! docker image inspect "$1" > /dev/null ; then
-     die "Image file $1 not found."
-  fi
-}
+INPUT_ROOT="${1:-}"
+OUTPUT_DIR="${2:-}"
 
-extract_from_image() {
-  local image=$1
-  local src=$2
-  local dst=$3
-
-  [[ -n "$image" && -n "$src" && -n "$dst" ]] \
-      || die "extract_from_image: <image> <src> <dst>"
-
-  docker create --name copier "${image}"
-  docker cp "copier:${src}" "${dst}"
-  docker rm copier
-
-  [[ -s $dst ]] || die "file extracted from image is empty: $dst"
-}
-
-INPUT_ROOT="$1"
-DATA_IMAGE="$2"
-BUILDER_IMAGE="$3"
-OUTPUT_DIR="$4"
-# Install the PG repo natively if true (versus using a container)
-NATIVE_PG_INSTALL="${5:-false}"
-
-[[ -n "$INPUT_ROOT" && -n "$DATA_IMAGE" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
-    || die "Usage: $0 <input-root-directory> <enc-data-image> <builder-image> <output-directory>"
+[[ -n "$INPUT_ROOT" && -n "$OUTPUT_DIR" ]] \
+    || die "Usage: $0 <input-root-directory> <builder-image> <output-directory>"
 [[ -d "$INPUT_ROOT" ]] \
     || die "Input root directory doesn't exist or is not a directory."
 [[ -d "$OUTPUT_DIR" ]] \
     || die "Output directory doesn't exist or is not a directory."
 
 OUTPUT_BUNDLE="${OUTPUT_DIR}/bundle.tar.gz"
-
-# Verify images exist
-if [[ "${DATA_IMAGE}" != "local" ]]; then
-  image_exists "${DATA_IMAGE}"
-fi
 
 # Create tmp directory with stackrox directory structure
 bundle_root="$(mktemp -d)"
@@ -108,16 +78,6 @@ if [[ "$DEBUG_BUILD" == "yes" ]]; then
   fi
 fi
 
-if [[ "${DATA_IMAGE}" != "local" ]]; then
-  # Extract data from data container image
-  mkdir -p "${bundle_root}/stackrox/static-data/"
-  extract_from_image "${DATA_IMAGE}" "/stackrox-data/." "${bundle_root}/stackrox/static-data/"
-  extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
-else
-  cp -a "/stackrox-data" "${bundle_root}/stackrox/static-data/"
-  cp "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
-fi
-
 # Install all the required compression packages for RocksDB to compile
 rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/${arch}/os/Packages"
 rpm_suffix="el8.${arch}.rpm"
@@ -133,21 +93,15 @@ pg_rhel_version="${pg_rhel_major}.${pg_rhel_minor}"
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
 postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
 
-# Determine the Postgres minor version
-if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
-    dnf install --disablerepo='*' -y "${postgres_repo_url}"
-    postgres_minor="$(dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y "postgresql${postgres_major}-devel.${arch}" | tail -n 1 | awk '{print $2}').${arch}"
-    echo "PG minor version: ${postgres_minor}"
-else
-    build_dir="$(mktemp -d)"
-    docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
+build_dir="$(mktemp -d)"
+docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install --disablerepo='*' -y "${postgres_repo_url}"
-ENTRYPOINT dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
+ENTRYPOINT dnf list --disablerepo='*' --enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server.$arch | tail -n 1 | awk '{print \$2}'
 EOF
-    postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
-    rm -rf "${build_dir}"
-fi
+
+postgres_minor="$(docker run --rm postgres-minor-image).${arch}"
+rm -rf "${build_dir}"
 
 curl --retry 3 -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"

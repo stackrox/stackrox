@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -14,34 +16,49 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
+	batchAfter      = 100
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
 )
 
+var (
+	errInvalidOperation = errors.New("invalid operation, function not set up")
+)
+
+// Deleter is an interface that allow deletions of multiple identifiers
+type Deleter interface {
+	DeleteMany(ctx context.Context, identifiers []string) error
+}
+
 // PermissionChecker is a permission checker that could be used by GenericStore
 type PermissionChecker interface {
-	CountAllowed(ctx context.Context) (bool, error)
-	DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
-	DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
-	ExistsAllowed(ctx context.Context) (bool, error)
-	GetAllowed(ctx context.Context) (bool, error)
-	WalkAllowed(ctx context.Context) (bool, error)
+	ReadAllowed(ctx context.Context) (bool, error)
+	WriteAllowed(ctx context.Context) (bool, error)
 }
 
 type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
+type inserter[T any, PT unmarshaler[T]] func(ctx context.Context, batch *pgx.Batch, obj PT) error
+type copier[T any, PT unmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
+type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
 // GenericStore implements subset of Store interface for resources with single ID.
 type GenericStore[T any, PT unmarshaler[T]] struct {
+	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
 	pkGetter                         primaryKeyGetter[T, PT]
+	insertInto                       inserter[T, PT]
+	copyFromObj                      copier[T, PT]
 	setAcquireDBConnDuration         durationTimeSetter
 	setPostgresOperationDurationTime durationTimeSetter
 	permissionChecker                PermissionChecker
+	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
 }
 
@@ -51,16 +68,22 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
+	upsertAllowed upsertChecker[T, PT],
 	targetResource permissions.ResourceMetadata,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,
 		schema:                           schema,
 		pkGetter:                         pkGetter,
+		insertInto:                       insertInto,
+		copyFromObj:                      copyFromObj,
 		setAcquireDBConnDuration:         setAcquireDBConnDuration,
 		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
+		upsertAllowed:                    upsertAllowed,
 		targetResource:                   targetResource,
 	}
 }
@@ -71,6 +94,8 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
+	insertInto inserter[T, PT],
+	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
 	checker PermissionChecker,
@@ -79,24 +104,12 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 		db:                               db,
 		schema:                           schema,
 		pkGetter:                         pkGetter,
+		copyFromObj:                      copyFromObj,
+		insertInto:                       insertInto,
 		setAcquireDBConnDuration:         setAcquireDBConnDuration,
 		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
 		permissionChecker:                checker,
 	}
-}
-
-func (s *GenericStore[T, PT]) hasPermissionsChecker() bool {
-	return s.permissionChecker != nil
-}
-
-// AcquireConn returns Acquires new connection from DB.
-func (s *GenericStore[T, PT]) AcquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
-	defer s.setAcquireDBConnDuration(time.Now(), op)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
 }
 
 // Exists tells whether the ID exists in the store.
@@ -105,7 +118,7 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ExistsAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil {
 			return false, err
 		} else if !ok {
 			return false, nil
@@ -135,7 +148,7 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.CountAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return 0, err
 		}
 	} else {
@@ -153,7 +166,7 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WalkAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return err
 		}
 	} else {
@@ -203,7 +216,7 @@ func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, false, err
 		}
 	} else {
@@ -233,7 +246,7 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, err
 		}
 	} else {
@@ -266,7 +279,7 @@ func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, err
 		}
 	} else {
@@ -299,7 +312,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.GetAllowed(ctx); err != nil || !ok {
+		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
 			return nil, nil, err
 		}
 	} else {
@@ -349,7 +362,7 @@ func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.DeleteAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
 			return err
 		} else if !ok {
 			return sac.ErrResourceAccessDenied
@@ -382,7 +395,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 
 	var sacQueryFilter *v1.Query
 	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.DeleteManyAllowed(ctx); err != nil {
+		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
 			return err
 		} else if !ok {
 			return sac.ErrResourceAccessDenied
@@ -423,3 +436,156 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 
 	return nil
 }
+
+// Upsert saves the current state of an object in storage.
+func (s *GenericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Upsert)
+
+	if s.hasPermissionsChecker() {
+		err := s.permissionCheckerAllowsUpsert(ctx)
+		if err != nil {
+			return err
+		}
+	} else if err := s.upsertAllowed(ctx, obj); err != nil {
+		return err
+	}
+
+	return pgutils.Retry(func() error {
+		return s.upsert(ctx, obj)
+	})
+}
+
+// UpsertMany saves the state of multiple objects in the storage.
+func (s *GenericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
+
+	if s.hasPermissionsChecker() {
+		err := s.permissionCheckerAllowsUpsert(ctx)
+		if err != nil {
+			return err
+		}
+	} else if err := s.upsertAllowed(ctx, objs...); err != nil {
+		return err
+	}
+
+	return pgutils.Retry(func() error {
+		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+		// violations
+		if len(objs) < batchAfter {
+			s.mutex.RLock()
+			defer s.mutex.RUnlock()
+
+			return s.upsert(ctx, objs...)
+		}
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
+
+		if s.copyFromObj == nil {
+			return s.upsert(ctx, objs...)
+		}
+
+		return s.copyFrom(ctx, objs...)
+	})
+}
+
+// region Helper functions
+
+func (s *GenericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
+	defer s.setAcquireDBConnDuration(time.Now(), op)
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not acquire connection")
+	}
+	return conn, nil
+}
+
+func (s *GenericStore[T, PT]) hasPermissionsChecker() bool {
+	return s.permissionChecker != nil
+}
+
+func (s *GenericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context) error {
+	if !s.hasPermissionsChecker() {
+		return utils.ShouldErr(errInvalidOperation)
+	}
+	allowed, err := s.permissionChecker.WriteAllowed(ctx)
+	if err != nil {
+		return err
+	}
+	if !allowed {
+		return sac.ErrResourceAccessDenied
+	}
+	return nil
+}
+
+func (s *GenericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
+	if s.insertInto == nil {
+		return utils.ShouldErr(errInvalidOperation)
+	}
+	conn, err := s.acquireConn(ctx, ops.Upsert)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	for _, obj := range objs {
+		batch := &pgx.Batch{}
+		if err := s.insertInto(ctx, batch, obj); err != nil {
+			return err
+		}
+		batchResults := conn.SendBatch(ctx, batch)
+		var result *multierror.Error
+		for i := 0; i < batch.Len(); i++ {
+			_, err := batchResults.Exec()
+			result = multierror.Append(result, err)
+		}
+		if err := batchResults.Close(); err != nil {
+			return err
+		}
+		if err := result.ErrorOrNil(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *GenericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
+	if s.copyFromObj == nil {
+		return utils.ShouldErr(errInvalidOperation)
+	}
+
+	conn, err := s.acquireConn(ctx, ops.UpsertAll)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "could not begin transaction")
+	}
+
+	if err := s.copyFromObj(ctx, s, tx, objs...); err != nil {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			return errors.Wrap(rollbackErr, "could not rollback transaction")
+		}
+		return errors.Wrap(err, "copy from objects failed")
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return errors.Wrap(err, "could not commit transaction")
+	}
+	return nil
+}
+
+// GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
+func GloballyScopedUpsertChecker[T any, PT unmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+	return func(ctx context.Context, objs ...PT) error {
+		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+		if !scopeChecker.IsAllowed() {
+			return sac.ErrResourceAccessDenied
+		}
+		return nil
+	}
+}
+
+// endregion Helper functions

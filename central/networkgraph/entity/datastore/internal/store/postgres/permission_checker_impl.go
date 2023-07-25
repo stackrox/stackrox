@@ -3,11 +3,12 @@ package postgres
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -15,12 +16,12 @@ type permissionCheckerImpl struct{}
 
 var (
 	once     sync.Once
-	instance PermissionChecker
+	instance pgSearch.PermissionChecker
 
 	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
 )
 
-func permissionCheckerSingleton() PermissionChecker {
+func permissionCheckerSingleton() pgSearch.PermissionChecker {
 	once.Do(func() {
 		instance = permissionCheckerImpl{}
 	})
@@ -45,42 +46,10 @@ func genericPassThrough(ctx context.Context, access storage.Access) (bool, error
 	return true, nil
 }
 
-func (permissionCheckerImpl) CountAllowed(ctx context.Context) (bool, error) {
+func (permissionCheckerImpl) ReadAllowed(ctx context.Context) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
 }
 
-func (permissionCheckerImpl) ExistsAllowed(ctx context.Context) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
-}
-
-func (permissionCheckerImpl) GetAllowed(ctx context.Context) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
-}
-
-func (permissionCheckerImpl) WalkAllowed(ctx context.Context) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
-}
-
-func (permissionCheckerImpl) UpsertAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
-}
-
-func (permissionCheckerImpl) UpsertManyAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
-}
-
-func (permissionCheckerImpl) DeleteAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
-}
-
-func (permissionCheckerImpl) GetIDsAllowed(ctx context.Context) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
-}
-
-func (permissionCheckerImpl) GetManyAllowed(ctx context.Context) (bool, error) {
-	return genericPassThrough(ctx, storage.Access_READ_ACCESS)
-}
-
-func (permissionCheckerImpl) DeleteManyAllowed(ctx context.Context, _ ...sac.ScopeKey) (bool, error) {
+func (permissionCheckerImpl) WriteAllowed(ctx context.Context) (bool, error) {
 	return genericPassThrough(ctx, storage.Access_READ_WRITE_ACCESS)
 }

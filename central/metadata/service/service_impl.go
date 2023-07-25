@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -30,13 +31,18 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.MetadataService/GetDatabaseStatus",
 			"/v1.MetadataService/GetDatabaseBackupStatus",
 			"/v1.MetadataService/GetCentralCapabilities",
 		},
-		allow.Anonymous(): {
+		// When this endpoint was public, Sensor relied on it to check Central's
+		// availability. While Sensor might not do so today, we need to ensure
+		// backward compatibility with older Sensors.
+		or.SensorOr(user.Authenticated()): {
 			"/v1.MetadataService/GetMetadata",
+		},
+		allow.Anonymous(): {
 			"/v1.MetadataService/TLSChallenge",
 		},
 	})

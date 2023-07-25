@@ -70,11 +70,7 @@ function ViolationDetailsPage(): ReactElement {
                 <Title headingLevel="h1">{title}</Title>
                 <Title headingLevel="h2">{`in "${entityName as string}" ${resourceType}`}</Title>
             </PageSection>
-            <PageSection
-                variant="default"
-                padding={{ default: 'noPadding' }}
-                data-testid="violation-details-page"
-            >
+            <PageSection variant="default" padding={{ default: 'noPadding' }}>
                 <Tabs
                     mountOnEnter
                     activeKey={activeTabKey}

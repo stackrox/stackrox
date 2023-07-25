@@ -12,6 +12,7 @@ import (
 	pgClone "github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
+	"github.com/stackrox/rox/migrator/postgreshelper"
 	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -429,11 +430,11 @@ func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
 	if breakpoint == breakAfterRemove {
 		return
 	}
-	_ = pgadmin.RenameDB(connectPool, prev, pgClone.CurrentClone)
+	_ = postgreshelper.RenameDB(connectPool, prev, pgClone.CurrentClone)
 	if breakpoint == breakBeforeCommitCurrent {
 		return
 	}
-	_ = pgadmin.RenameDB(connectPool, pgClone.CurrentClone, clone)
+	_ = postgreshelper.RenameDB(connectPool, pgClone.CurrentClone, clone)
 }
 
 func (m *mockCentral) removePreviousClone() {

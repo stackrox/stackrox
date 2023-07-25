@@ -1,8 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import { getInputByLabel } from '../../helpers/formHelpers';
 
-import { visitComplianceDashboard } from './Compliance.helpers';
+import { scanCompliance, visitComplianceDashboard } from './Compliance.helpers';
 import {
     clickSaveAndWaitForPatchComplianceStandards,
     openModal,
@@ -58,18 +57,9 @@ function assertCheckedAndClickStandard(forStandard, checked) {
 describe('Compliance hideScanResults', () => {
     withAuth();
 
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_DISABLE_COMPLIANCE_STANDARDS')) {
-            this.skip();
-        }
-
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-    });
-
     it('should open modal and then cancel', () => {
         visitComplianceDashboard();
+        scanCompliance(); // in case complianceDashboard.test.js is skipped
         openModal();
 
         cy.get(selectorInModal('button:contains("Save")')).should('be.disabled');

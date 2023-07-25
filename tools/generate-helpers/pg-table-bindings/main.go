@@ -47,9 +47,6 @@ var storeTestFile string
 //go:embed index.go.tpl
 var indexFile string
 
-//go:embed permission_checker.go.tpl
-var permissionCheckerFile string
-
 //go:embed migration.go.tpl
 var migrationFile string
 
@@ -69,7 +66,6 @@ var (
 	storeTemplate             = newTemplate(storeFile)
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
-	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
 	migrationTemplate         = newTemplate(migrationFile)
 	migrationTestTemplate     = newTemplate(migrationTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
@@ -351,11 +347,6 @@ func main() {
 
 				if props.SearchCategory != "" {
 					if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
-						return err
-					}
-				}
-				if permissionCheckerEnabled {
-					if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
 						return err
 					}
 				}

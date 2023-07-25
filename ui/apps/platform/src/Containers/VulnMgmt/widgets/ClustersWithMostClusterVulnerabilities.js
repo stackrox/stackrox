@@ -9,7 +9,6 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -18,6 +17,8 @@ import FixableCVECount from 'Components/FixableCVECount';
 import kubeSVG from 'images/kube.svg';
 import istioSVG from 'images/istio.svg';
 import openShiftSVG from 'images/openShift.svg';
+
+import ViewAllButton from './ViewAllButton';
 
 const CLUSTER_WITH_MOST_CLUSTER_VULNERABILTIES = gql`
     query clustersWithMostClusterVulnerabilities {
@@ -116,7 +117,7 @@ const processData = (data, workflowState, limit) => {
 
             const orchestratorContent = isOpenShiftCluster ? (
                 <div className="flex items-center justify-left mr-8">
-                    <Tooltip content="OpenShift Vulnerabilities">
+                    <Tooltip content="OpenShift vulnerabilities">
                         <div className="flex">
                             <img src={openShiftSVG} alt="openshift" className="pr-2" />
                             <FixableCVECount
@@ -132,7 +133,7 @@ const processData = (data, workflowState, limit) => {
                 </div>
             ) : (
                 <div className="flex flex-1 items-center justify-left mr-8">
-                    <Tooltip content="Kubernetes Vulnerabilities">
+                    <Tooltip content="Kubernetes vulnerabilities">
                         <div className="flex">
                             <img src={kubeSVG} alt="kube" className="pr-2" />
                             <FixableCVECount
@@ -152,7 +153,7 @@ const processData = (data, workflowState, limit) => {
             const orchestratorIstioContent = (
                 <div className="flex">
                     {orchestratorContent}
-                    <Tooltip content="Istio Vulnerabilities">
+                    <Tooltip content="Istio vulnerabilities">
                         <div className="flex items-center justify-left pr-2">
                             <img src={istioSVG} alt="istio" className="pr-2" />
                             <FixableCVECount
@@ -227,7 +228,7 @@ const ClustersWithMostClusterVulnerabilities = ({ entityContext, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Clusters With Most Orchestrator & Istio Vulnerabilities"
+            header="Clusters with most orchestrator and Istio vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}
