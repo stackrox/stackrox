@@ -20,10 +20,13 @@ var (
 	// This is typically used for Sensor to communicate with a local Scanner-slim's gRPC server.
 	ScannerSlimGRPCEndpoint = RegisterSetting("ROX_SCANNER_GRPC_ENDPOINT", WithDefault("scanner.stackrox.svc:8443"))
 
-	ScannerV4GRPCEndpoint = RegisterSetting("ROX_V4_SCANNER_GRPC_ENDPOINT", WithDefault("scannerV4.stackrox.svc:8443"))
-
 	// LocalImageScanningEnabled is used to specify if Sensor should attempt to scan images via a local Scanner.
 	LocalImageScanningEnabled = RegisterBooleanSetting("ROX_LOCAL_IMAGE_SCANNING_ENABLED", false)
+
+	ScannerV4GRPCEndpoint = RegisterSetting("ROX_SCANNER_V4_GRPC_ENDPOINT", WithDefault("scannerV4.stackrox.svc:8443"))
+
+	// EnableScannerV4 enables image scanning with new era scanner
+	EnableScannerV4 = RegisterBooleanSetting("ROX_SCANNER_V4_ENABLED", false)
 
 	// EventPipelineQueueSize is used to specify the size of the eventPipeline's queues
 	EventPipelineQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_QUEUE_SIZE", 1000)

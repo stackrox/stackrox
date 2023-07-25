@@ -19,3 +19,10 @@ message IndexReport {
     repeated Repository           repositories  = 7;
     map<string, Environment.List> environments  = 8;
 }
+
+message IndexReportComponents {
+    repeated scanner.v4.Package              packages      = 1;
+    repeated scanner.v4.Distribution        distributions = 2;
+    repeated scanner.v4.Repository           repositories  = 3;
+    map<string, scanner.v4.Environment.List> environments  = 4;
+}
