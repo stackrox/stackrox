@@ -20,7 +20,7 @@ type ContextProvider interface {
 
 var _ ContextProvider = (*contextProviderImpl)(nil)
 
-// NewContextProvider Initializes a new ContextProvider
+// NewContextProvider initializes a new ContextProvider
 func NewContextProvider() ContextProvider {
 	ret := &contextProviderImpl{
 		firstCentralConnection: &atomic.Bool{},
@@ -40,7 +40,7 @@ type contextProviderImpl struct {
 	// newContextFn defines the function that creates a new context/cancelFunction.
 	// This is needed for testing purposes.
 	newContextFn func() (context.Context, func())
-	// firstCentralConnection indicates whether is the first time Central is reachable or not.
+	// firstCentralConnection indicates whether it is the first time Central is reachable or not.
 	// This is needed to make sure any SensorComponent that calls GetContext on Start gets a
 	// valid context that won't be overriden on receiving the CentralReachable notification.
 	firstCentralConnection *atomic.Bool

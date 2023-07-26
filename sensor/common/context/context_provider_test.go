@@ -91,8 +91,8 @@ func (s *contextProviderSuite) TestGetContextCallFromMultipleGoroutines() {
 func (s *contextProviderSuite) TestOrderOfComponentsMatter() {
 	provider := s.createContextProvider(newTestContextFnHelper(contextValuePrefix).contextWithValue())
 	components := []notifiableComponent{
-		// The provider needs to be the first in getting notify.
-		// Otherwise, other components would get and old context on CentralReachable.
+		// The provider needs to be the first to get notified.
+		// Otherwise, other components would get an old context on CentralReachable.
 		provider,
 		&fakeComponent{
 			provider: provider,
