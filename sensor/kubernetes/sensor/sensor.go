@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	contextprovider "github.com/stackrox/rox/sensor/common/context"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -65,6 +66,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		log.Infof("Running sensor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
 	}
 
+	contextProvider := contextprovider.NewContextProvider()
 	storeProvider := resources.InitializeStore()
 
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
@@ -133,6 +135,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector)
 	components := []common.SensorComponent{
+		// The contextProvider needs to be first in this slice to ensure it is the first component that gets called on Notify
+		contextProvider,
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
