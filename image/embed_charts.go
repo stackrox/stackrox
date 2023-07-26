@@ -37,6 +37,9 @@ func (c ChartPrefix) Path() string {
 const (
 	templatePath = "templates"
 
+	// OperatorChartPrefix points to the new outer/inner Operator Helm Chart.
+	OperatorChartPrefix ChartPrefix = "templates/helm/operator"
+
 	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
 	CentralServicesChartPrefix ChartPrefix = "templates/helm/stackrox-central"
 	// SecuredClusterServicesChartPrefix points to the new stackrox-secured-cluster-services Helm Chart.

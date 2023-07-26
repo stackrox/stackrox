@@ -2,15 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: rhacs-operator
+    app: rhacs-inner-operator
     control-plane: controller-manager
-  name: rhacs-operator-controller-manager
-  namespace: rhacs-operator
+  name: rhacs-inner-operator-controller-manager
+  namespace: rhacs-inner-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rhacs-operator
+      app: rhacs-inner-operator
       control-plane: controller-manager
   strategy:
     rollingUpdate:
@@ -20,7 +20,7 @@ spec:
   template:
     metadata:
       labels:
-        app: rhacs-operator
+        app: rhacs-inner-operator
         control-plane: controller-manager
     spec:
       containers:
@@ -50,6 +50,8 @@ spec:
             - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
           env:
+            - name: ROX_OPERATOR_OUTER_MODE
+              value: "{{operator.outerMode}}"
             - name: RELATED_IMAGE_MAIN
             - name: RELATED_IMAGE_SCANNER
             - name: RELATED_IMAGE_SCANNER_SLIM
@@ -101,12 +103,12 @@ spec:
               memory: 200Mi
           securityContext:
             allowPrivilegeEscalation: false
-          # FIXME: REMOVE BEFORE PROD
-          volumeMounts:
-          - mountPath: /tmp/k8s-webhook-server/serving-certs
-            name: cert
-            readOnly: true  
-          # FIXME: REMOVE BEFORE PROD
+          # # FIXME: REMOVE BEFORE PROD
+          # volumeMounts:
+          # - mountPath: /tmp/k8s-webhook-server/serving-certs
+          #   name: cert
+          #   readOnly: true  
+          # # FIXME: REMOVE BEFORE PROD
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
@@ -114,66 +116,66 @@ spec:
       schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
-      serviceAccount: rhacs-operator-controller-manager
-      serviceAccountName: rhacs-operator-controller-manager
+      serviceAccount: rhacs-inner-operator-controller-manager
+      serviceAccountName: rhacs-inner-operator-controller-manager
       terminationGracePeriodSeconds: 10
-      # FIXME: REMOVE BEFORE PROD
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-cert
-      # FIXME: REMOVE BEFORE PROD
+      # # FIXME: REMOVE BEFORE PROD
+      # volumes:
+      # - name: cert
+      #   secret:
+      #     defaultMode: 420
+      #     secretName: webhook-server-cert
+      # # FIXME: REMOVE BEFORE PROD
 ---
-# FIXME: REMOVE BEFORE PROD
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: rhacs-operator-serving-cert
-  namespace: rhacs-operator
-spec:
-  dnsNames:
-  - rhacs-operator-webhook-service.rhacs-operator.svc
-  - rhacs-operator-webhook-service.rhacs-operator.svc.cluster.local
-  issuerRef:
-    kind: Issuer
-    name: rhacs-operator-selfsigned-issuer
-  secretName: webhook-server-cert
----
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: rhacs-operator-selfsigned-issuer
-  namespace: rhacs-operator
-spec:
-  selfSigned: {}
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: stackrox-operator-system/rhacs-operator-serving-cert
-  creationTimestamp: null
-  name: rhacs-operator-validating-webhook-configuration
-webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: rhacs-operator-webhook-service
-      namespace: rhacs-operator
-      path: /validate-platform-stackrox-io-v1alpha1-central
-  failurePolicy: Fail
-  name: vcentral.kb.io
-  rules:
-  - apiGroups:
-    - platform.stackrox.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - centrals
-  sideEffects: None
-# FIXME: REMOVE BEFORE PROD
+# # FIXME: REMOVE BEFORE PROD
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: rhacs-inner-operator-serving-cert
+#   namespace: rhacs-inner-operator
+# spec:
+#   dnsNames:
+#   - rhacs-inner-operator-webhook-service.rhacs-inner-operator.svc
+#   - rhacs-inner-operator-webhook-service.rhacs-inner-operator.svc.cluster.local
+#   issuerRef:
+#     kind: Issuer
+#     name: rhacs-inner-operator-selfsigned-issuer
+#   secretName: webhook-server-cert
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Issuer
+# metadata:
+#   name: rhacs-inner-operator-selfsigned-issuer
+#   namespace: rhacs-inner-operator
+# spec:
+#   selfSigned: {}
+# ---
+# apiVersion: admissionregistration.k8s.io/v1
+# kind: ValidatingWebhookConfiguration
+# metadata:
+#   annotations:
+#     cert-manager.io/inject-ca-from: stackrox-operator-system/rhacs-inner-operator-serving-cert
+#   creationTimestamp: null
+#   name: rhacs-inner-operator-validating-webhook-configuration
+# webhooks:
+# - admissionReviewVersions:
+#   - v1
+#   clientConfig:
+#     service:
+#       name: rhacs-inner-operator-webhook-service
+#       namespace: rhacs-inner-operator
+#       path: /validate-platform-stackrox-io-v1alpha1-central
+#   failurePolicy: Fail
+#   name: vcentral.kb.io
+#   rules:
+#   - apiGroups:
+#     - platform.stackrox.io
+#     apiVersions:
+#     - v1alpha1
+#     operations:
+#     - CREATE
+#     - UPDATE
+#     resources:
+#     - centrals
+#   sideEffects: None
+# # FIXME: REMOVE BEFORE PROD
