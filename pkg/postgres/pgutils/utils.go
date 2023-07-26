@@ -76,6 +76,14 @@ func NilOrUUID(value string) *uuid.UUID {
 	return &id
 }
 
+// EmptyOrMap allows for map to be stored explicit as an empty object ({}) rather than null.
+func EmptyOrMap[K comparable, V any, M map[K]V](m M) interface{} {
+	if m == nil {
+		return make(M)
+	}
+	return m
+}
+
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
 	// Partitioned tables are not supported by Gorm migration or models
