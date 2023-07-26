@@ -9,3 +9,6 @@ spec:
   scanner:
     monitoring:
       exposeEndpoint: Disabled
+  monitoring:
+    openshift:
+      enabled: false

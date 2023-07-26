@@ -85,6 +85,11 @@ spec:
         path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Monitoring configuration.
+        displayName: Monitoring
+        path: monitoring
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Specify a secret that contains the administrator password in
           the "password" data item. If omitted, the operator will auto-generate a
           password and store it in the "password" item in the "central-htpasswd" secret.
@@ -377,6 +382,10 @@ spec:
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+      - displayName: Enabled
+        path: monitoring.openshift.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: Resource API version.
         displayName: API Version
         path: overlays[0].apiVersion
