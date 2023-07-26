@@ -5,13 +5,17 @@ import { ReportConfiguration } from 'services/ReportsService.types';
 import { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
+export type UseSaveReportProps = {
+    onCompleted: (response: ReportConfiguration) => void;
+};
+
 type Result = {
     data: ReportConfiguration | null;
     isSaving: boolean;
     saveError: string | null;
 };
 
-type CreateReportResult = {
+type SaveReportResult = {
     saveReport: (reportId: string, formValues: ReportFormValues) => void;
 } & Result;
 
@@ -21,7 +25,7 @@ const defaultResult = {
     saveError: null,
 };
 
-function useSaveReport(): CreateReportResult {
+function useSaveReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
     const saveReport = useCallback((reportId: string, formValues: ReportFormValues) => {
@@ -44,6 +48,7 @@ function useSaveReport(): CreateReportResult {
                     isSaving: false,
                     saveError: null,
                 });
+                onCompleted(response);
             })
             .catch((err) => {
                 setResult({

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     PageSection,
@@ -33,17 +33,12 @@ function CreateVulnReportPage() {
     const history = useHistory();
 
     const { formValues, setFormFieldValue, clearFormValues } = useReportFormValues();
-    const { data, isLoading, error, createReport } = useCreateReport();
-
-    // When report is created, navigate to the vuln reports page
-    // @TODO: We want to change this in the future to navigate to the read-only report page to verify the details
-    useEffect(() => {
-        if (data) {
+    const { isLoading, error, createReport } = useCreateReport({
+        onCompleted: () => {
             clearFormValues();
             history.push(vulnerabilityReportsPath);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data]);
+        },
+    });
 
     function onCreate() {
         createReport(formValues);

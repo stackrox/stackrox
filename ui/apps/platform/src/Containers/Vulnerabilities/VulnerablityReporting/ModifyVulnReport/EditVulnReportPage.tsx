@@ -40,17 +40,12 @@ function EditVulnReportPage() {
 
     const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
     const { formValues, setFormValues, setFormFieldValue, clearFormValues } = useReportFormValues();
-    const { data, isSaving, saveError, saveReport } = useSaveReport();
-
-    // When report is created, navigate to the vuln reports page
-    // @TODO: We want to change this in the future to navigate to the read-only report page to verify the details
-    useEffect(() => {
-        if (data) {
+    const { isSaving, saveError, saveReport } = useSaveReport({
+        onCompleted: () => {
             clearFormValues();
             history.push(vulnerabilityReportsPath);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data]);
+        },
+    });
 
     // We fetch the report configuration for the edittable report and then populate the form values
     useEffect(() => {

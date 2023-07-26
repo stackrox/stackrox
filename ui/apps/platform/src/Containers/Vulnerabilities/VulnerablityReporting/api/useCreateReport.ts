@@ -5,13 +5,17 @@ import { ReportConfiguration } from 'services/ReportsService.types';
 import { ReportFormValues } from '../forms/useReportFormValues';
 import { getReportConfigurationFromFormValues } from '../utils';
 
-type Result = {
+export type UseCreateReportProps = {
+    onCompleted: (response: ReportConfiguration) => void;
+};
+
+export type Result = {
     data: ReportConfiguration | null;
     isLoading: boolean;
     error: string | null;
 };
 
-type CreateReportResult = {
+export type CreateReportResult = {
     createReport: (formValues: ReportFormValues) => void;
 } & Result;
 
@@ -21,7 +25,7 @@ const defaultResult = {
     error: null,
 };
 
-function useCreateReport(): CreateReportResult {
+function useCreateReport({ onCompleted }: UseCreateReportProps): CreateReportResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
     const createReport = useCallback((formValues: ReportFormValues) => {
@@ -41,6 +45,7 @@ function useCreateReport(): CreateReportResult {
                     isLoading: false,
                     error: null,
                 });
+                onCompleted(response);
             })
             .catch((err) => {
                 setResult({
