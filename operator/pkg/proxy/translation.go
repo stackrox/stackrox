@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string) (chartutil.Values, error) {
@@ -47,7 +47,7 @@ func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string
 }
 
 // InjectProxyEnvVars wraps a Translator to inject proxy configuration environment variables.
-func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string) values.Translator {
+func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string, log logr.Logger) values.Translator {
 	return values.TranslatorFunc(func(ctx context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
 		vals, err := translator.Translate(ctx, obj)
 		if err != nil {
@@ -61,7 +61,7 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 		mergedVals, conflicts := deleteValueFromIfValueExists(mergedVals)
 		if len(conflicts) > 0 {
 			err := fmt.Errorf("conflicts: %s for %s/%s", conflicts, obj.GetNamespace(), obj.GetName())
-			ctrlLog.FromContext(ctx).Error(err, "injecting proxy env vars")
+			log.Error(err, "injecting proxy env vars")
 		}
 
 		return mergedVals, nil

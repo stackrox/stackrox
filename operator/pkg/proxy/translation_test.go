@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
@@ -77,7 +78,7 @@ func TestInjectProxyNoValueConflict(t *testing.T) {
 		return vb.Build()
 	}
 
-	injectTranslator := InjectProxyEnvVars(values.TranslatorFunc(proxyCustomizeTranslator), proxyEnvVars)
+	injectTranslator := InjectProxyEnvVars(values.TranslatorFunc(proxyCustomizeTranslator), proxyEnvVars, logr.New(nil))
 	values, err := injectTranslator.Translate(context.Background(), &unstructured.Unstructured{})
 	require.NoError(t, err, "translating values")
 
