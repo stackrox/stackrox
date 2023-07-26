@@ -334,6 +334,12 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 			"envVars": retrieveCustomEnvVars(envVarSliceToObj(k8s.evaluateToSlice(ctx, "deployment", "central",
 				`{.spec.template.spec.containers[?(@.name == "central")].env}`, nil))),
 		},
+		"monitoring": map[string]interface{}{
+			"openshift": map[string]interface{}{
+				"enabled": k8s.evaluateToString(ctx, "deployment", "central",
+					`{.spec.template.spec.containers[?(@.name == "central")].env[?(@.name == "ROX_ENABLE_SECURE_METRICS")].value}`, "false") == "true",
+			},
+		},
 	}
 	return m, nil
 }

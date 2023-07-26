@@ -180,3 +180,7 @@ customize:
     {{ end }}
 
 {{- end }}
+
+monitoring:
+  openshift:
+    enabled: {{ .K8sConfig.Monitoring.OpenShiftMonitoring }}
