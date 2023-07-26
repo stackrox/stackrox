@@ -29,7 +29,7 @@ type Datastore interface {
 
 	Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error)
 	SearchIDs(ctx context.Context, q *v1.Query) ([]string, error)
-	SearchBlobMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
+	SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
 }
 
 // NewDatastore creates a new Blob datastore
@@ -91,7 +91,7 @@ func (d *datastoreImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, e
 	return d.searcher.SearchIDs(ctx, q)
 }
 
-// SearchBlobMetadata searches and return blob metadata only
-func (d *datastoreImpl) SearchBlobMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
-	return d.searcher.SearchBlobMetadata(ctx, q)
+// SearchMetadata searches and return blob metadata only
+func (d *datastoreImpl) SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	return d.searcher.SearchMetadata(ctx, q)
 }

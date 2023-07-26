@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -79,20 +81,20 @@ func (s *blobTestSuite) TestSearch() {
 	s.Require().NoError(err)
 	s.Equal(len(blobs1)+len(blobs2), len(blobsResults))
 
-	blobs, err := s.datastore.SearchBlobMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery())
+	blobs, err := s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery())
 	s.Require().NoError(err)
 	s.Len(blobs, 1)
 	s.Equal(blobs2[0].GetName(), blobs[0].GetName())
 
-	blobs, err = s.datastore.SearchBlobMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery())
+	blobs, err = s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery())
 	s.Require().NoError(err)
 	s.ElementsMatch(blobs2, blobs)
 
-	blobs, err = s.datastore.SearchBlobMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobModificationTime, "03/09/2020 UTC").ProtoQuery())
+	blobs, err = s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobModificationTime, "03/09/2020 UTC").ProtoQuery())
 	s.Require().NoError(err)
 	s.ElementsMatch(blobs1, blobs)
 
-	blobs, err = s.datastore.SearchBlobMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.BlobName, "/path1/.+").ProtoQuery())
+	blobs, err = s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.BlobName, "/path1/.+").ProtoQuery())
 	s.Require().NoError(err)
 	s.ElementsMatch(blobs1, blobs)
 }

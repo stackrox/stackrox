@@ -22,7 +22,7 @@ type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchIDs(ctx context.Context, q *v1.Query) ([]string, error)
-	SearchBlobMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
+	SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

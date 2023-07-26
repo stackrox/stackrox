@@ -26,7 +26,7 @@ func (s *searcherImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, er
 	return ids, nil
 }
 
-func (s *searcherImpl) SearchBlobMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+func (s *searcherImpl) SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
 	blobs, err := s.storage.GetMetadataByQuery(ctx, q)
 	if err != nil {
 		return nil, err

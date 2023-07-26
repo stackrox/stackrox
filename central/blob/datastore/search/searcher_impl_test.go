@@ -8,9 +8,9 @@ import (
 
 	mockIndex "github.com/stackrox/rox/central/blob/datastore/index/mocks"
 	mockStore "github.com/stackrox/rox/central/blob/datastore/store/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +37,7 @@ func (suite *BlobSearchTestSuite) SetupTest() {
 	suite.allowAllCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.DeploymentExtension),
+			sac.ResourceScopeKeys(resources.Administration),
 		))
 	suite.controller = gomock.NewController(suite.T())
 	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
@@ -71,15 +71,21 @@ func getMockBlobResults(num int) ([]search.Result, []*storage.Blob, []string) {
 func (suite *BlobSearchTestSuite) TestErrors() {
 	q := search.EmptyQuery()
 	someError := errors.New("this is a test error")
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(nil, someError)
-	results, err := suite.searcher.SearchIDs(suite.allowAllCtx, q)
+	suite.indexer.EXPECT().Search(gomock.Any(), q).Times(3).Return(nil, someError)
+	ids, err := suite.searcher.SearchIDs(suite.allowAllCtx, q)
+	suite.Equal(someError, err)
+	suite.Nil(ids)
+
+	results, err := suite.searcher.Search(suite.allowAllCtx, q)
 	suite.Equal(someError, err)
 	suite.Nil(results)
 
-	indexResults, _, _ := getMockBlobResults(1)
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
-	suite.store.EXPECT().GetManyBlobMetadata(suite.allowAllCtx, search.ResultsToIDs(indexResults)).Return(nil, nil, someError)
-	blobs, err := suite.searcher.SearchBlobsWithoutData(suite.allowAllCtx, q)
+	ct, err := suite.searcher.Search(suite.allowAllCtx, q)
+	suite.Equal(someError, err)
+	suite.Zero(ct)
+
+	suite.store.EXPECT().GetMetadataByQuery(suite.allowAllCtx, q).Return(nil, someError)
+	blobs, err := suite.searcher.SearchMetadata(suite.allowAllCtx, q)
 	suite.Error(err)
 	suite.Nil(blobs)
 }
@@ -99,15 +105,13 @@ func (suite *BlobSearchTestSuite) TestSearchForAll() {
 	suite.NoError(err)
 	suite.Equal(ids, blobIDs)
 
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(emptyList, nil)
-	suite.store.EXPECT().GetManyBlobMetadata(suite.allowAllCtx, testutils.AssertionMatcher(assert.Empty)).MinTimes(0).MaxTimes(1)
-	results, err := suite.searcher.SearchBlobsWithoutData(suite.allowAllCtx, q)
+	suite.store.EXPECT().GetMetadataByQuery(suite.allowAllCtx, testutils.AssertionMatcher(assert.Empty)).Times(1).Return(nil, nil)
+	results, err := suite.searcher.SearchMetadata(suite.allowAllCtx, q)
 	suite.NoError(err)
 	suite.Empty(results)
 
-	suite.indexer.EXPECT().Search(gomock.Any(), q).Return(indexResults, nil)
-	suite.store.EXPECT().GetManyBlobMetadata(suite.allowAllCtx, search.ResultsToIDs(indexResults)).Return(blobs, nil, nil)
-	results, err = suite.searcher.SearchBlobsWithoutData(suite.allowAllCtx, q)
+	suite.store.EXPECT().GetMetadataByQuery(suite.allowAllCtx, testutils.AssertionMatcher(assert.Empty)).Times(1).Return(blobs, nil)
+	results, err = suite.searcher.SearchMetadata(suite.allowAllCtx, q)
 	suite.NoError(err)
 	suite.Equal(blobs, results)
 }
