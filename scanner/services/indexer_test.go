@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
