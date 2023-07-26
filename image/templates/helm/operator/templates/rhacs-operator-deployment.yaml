@@ -4,7 +4,7 @@ metadata:
   labels:
     app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
-  name: rhacs-operator-{{ .Release.Name }}-controller-manager
+  name: rhacs-operator-controller-manager-{{ .Release.Name }}
   namespace: rhacs-operator
 spec:
   replicas: 1
@@ -67,7 +67,7 @@ spec:
                   containerName: manager
                   resource: limits.memory
                   divisor: '0'
-          image: quay.io/stackrox-io/stackrox-operator:4.1.0-528-gcd0dea371a
+          image: quay.io/stackrox-io/stackrox-operator:4.1.0-532-g0d07851195
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -116,8 +116,8 @@ spec:
       schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
-      serviceAccount: rhacs-operator-controller-manager
-      serviceAccountName: rhacs-operator-controller-manager
+      serviceAccount: rhacs-operator-controller-manager-{{ .Release.Name }}
+      serviceAccountName: rhacs-operator-controller-manager-{{ .Release.Name }}
       terminationGracePeriodSeconds: 10
       # # FIXME: REMOVE BEFORE PROD
       # volumes:
