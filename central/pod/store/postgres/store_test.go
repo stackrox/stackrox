@@ -289,25 +289,17 @@ func (s *PodsStoreSuite) TestSACGetIDs() {
 }
 
 func (s *PodsStoreSuite) TestSACExists() {
-	objA := &storage.Pod{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]bool{
-		withAllAccess:           true,
-		withNoAccess:            false,
-		withNoAccessToCluster:   false,
-		withAccessToDifferentNs: false,
-		withAccess:              true,
-		withAccessToCluster:     true,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			exists, err := s.store.Exists(testCase.context, objA.GetId())
 			assert.NoError(t, err)
-			assert.Equal(t, expected, exists)
+			// Assumption from the test case structure: objA is always in the visible list
+			// in the first position.
+			expectedFound := len(testCase.expectedObjects) > 0
+			assert.Equal(t, expectedFound, exists)
 		})
 	}
 }
