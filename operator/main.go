@@ -162,7 +162,7 @@ func run() error {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
 		setupLog.Info("Adding watch for inner operator.")
-		if err = innerOperatorReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
+		if err = innerOperatorReconciler.RegisterNewReconciler(mgr); err != nil {
 			return errors.Wrap(err, "unable to set up inner Operator reconciler")
 		}
 	}

@@ -2,15 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: rhacs-inner-operator
+    app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
-  name: rhacs-inner-operator-controller-manager
+  name: rhacs-operator-{{ .Release.Name }}-controller-manager
   namespace: rhacs-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rhacs-inner-operator
+      app: rhacs-operator-{{ .Release.Name }}
       control-plane: controller-manager
   strategy:
     rollingUpdate:
@@ -20,7 +20,7 @@ spec:
   template:
     metadata:
       labels:
-        app: rhacs-inner-operator
+        app: rhacs-operator-{{ .Release.Name }}
         control-plane: controller-manager
     spec:
       containers:
@@ -67,7 +67,7 @@ spec:
                   containerName: manager
                   resource: limits.memory
                   divisor: '0'
-          image: quay.io/stackrox-io/stackrox-operator:4.1.x-525-gcabdefb979
+          image: quay.io/stackrox-io/stackrox-operator:4.1.0-528-gcd0dea371a
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -131,21 +131,21 @@ spec:
 # apiVersion: cert-manager.io/v1
 # kind: Certificate
 # metadata:
-#   name: rhacs-inner-operator-serving-cert
+#   name: rhacs-operator-{{ .Release.Name }}-serving-cert
 #   namespace: rhacs-operator
 # spec:
 #   dnsNames:
-#   - rhacs-inner-operator-webhook-service.rhacs-inner-operator.svc
-#   - rhacs-inner-operator-webhook-service.rhacs-inner-operator.svc.cluster.local
+#   - rhacs-operator-{{ .Release.Name }}-webhook-service.rhacs-operator-{{ .Release.Name }}.svc
+#   - rhacs-operator-{{ .Release.Name }}-webhook-service.rhacs-operator-{{ .Release.Name }}.svc.cluster.local
 #   issuerRef:
 #     kind: Issuer
-#     name: rhacs-inner-operator-selfsigned-issuer
+#     name: rhacs-operator-{{ .Release.Name }}-selfsigned-issuer
 #   secretName: webhook-server-cert
 # ---
 # apiVersion: cert-manager.io/v1
 # kind: Issuer
 # metadata:
-#   name: rhacs-inner-operator-selfsigned-issuer
+#   name: rhacs-operator-{{ .Release.Name }}-selfsigned-issuer
 #   namespace: rhacs-operator
 # spec:
 #   selfSigned: {}
@@ -154,16 +154,16 @@ spec:
 # kind: ValidatingWebhookConfiguration
 # metadata:
 #   annotations:
-#     cert-manager.io/inject-ca-from: stackrox-operator-system/rhacs-inner-operator-serving-cert
+#     cert-manager.io/inject-ca-from: stackrox-operator-system/rhacs-operator-{{ .Release.Name }}-serving-cert
 #   creationTimestamp: null
-#   name: rhacs-inner-operator-validating-webhook-configuration
+#   name: rhacs-operator-{{ .Release.Name }}-validating-webhook-configuration
 # webhooks:
 # - admissionReviewVersions:
 #   - v1
 #   clientConfig:
 #     service:
-#       name: rhacs-inner-operator-webhook-service
-#       namespace: rhacs-inner-operator
+#       name: rhacs-operator-{{ .Release.Name }}-webhook-service
+#       namespace: rhacs-operator-{{ .Release.Name }}
 #       path: /validate-platform-stackrox-io-v1alpha1-central
 #   failurePolicy: Fail
 #   name: vcentral.kb.io
