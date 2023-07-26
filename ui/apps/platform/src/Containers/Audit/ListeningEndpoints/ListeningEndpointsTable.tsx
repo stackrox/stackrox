@@ -16,7 +16,7 @@ function EmbeddedTable({
     listeningEndpoints: ProcessListeningOnPort[];
 }) {
     return (
-        <TableComposable isNested>
+        <TableComposable isNested aria-label="Listening endpoints for deployment">
             <Thead noWrap>
                 <Tr>
                     <Th width={20}>Process name</Th>
@@ -30,7 +30,7 @@ function EmbeddedTable({
             <Tbody>
                 {listeningEndpoints.map(({ podId, endpoint, signal, containerName }) => (
                     <Tr key={`${deploymentId}/${podId}/${endpoint.port}`}>
-                        <Td dataLabel="Program name">{signal.name}</Td>
+                        <Td dataLabel="Process name">{signal.name}</Td>
                         <Td dataLabel="PID">{signal.pid}</Td>
                         <Td dataLabel="Port">{endpoint.port}</Td>
                         <Td dataLabel="Protocol">{l4ProtocolLabels[endpoint.protocol]}</Td>
@@ -51,7 +51,7 @@ export type ListeningEndpointsTableProps = {
 function ListeningEndpointsTable({ deployments, getSortParams }: ListeningEndpointsTableProps) {
     const expandedRowSet = useSet<string>();
     return (
-        <TableComposable variant="compact">
+        <TableComposable variant="compact" aria-label="Deployment results">
             <Thead noWrap>
                 <Tr>
                     <Td width={10}>{/* Header for expanded column */}</Td>
