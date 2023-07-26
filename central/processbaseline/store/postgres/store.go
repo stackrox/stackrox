@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoProcessBaselines(_ context.Context, batch *pgx.Batch, obj *storage.ProcessBaseline) error {
+func insertIntoProcessBaselines(batch *pgx.Batch, obj *storage.ProcessBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

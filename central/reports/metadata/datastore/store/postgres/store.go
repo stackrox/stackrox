@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoReportMetadata(_ context.Context, batch *pgx.Batch, obj *storage.ReportMetadata) error {
+func insertIntoReportMetadata(batch *pgx.Batch, obj *storage.ReportMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

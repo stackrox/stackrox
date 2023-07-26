@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoNetworkpolicies(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicy) error {
+func insertIntoNetworkpolicies(batch *pgx.Batch, obj *storage.NetworkPolicy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoImageComponents(_ context.Context, batch *pgx.Batch, obj *storage.ImageComponent) error {
+func insertIntoImageComponents(batch *pgx.Batch, obj *storage.ImageComponent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

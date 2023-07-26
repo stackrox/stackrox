@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoClusters(_ context.Context, batch *pgx.Batch, obj *storage.Cluster) error {
+func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

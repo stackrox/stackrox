@@ -84,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkGraphConfigs(_ context.Context, batch *pgx.Batch, obj *storage.NetworkGraphConfig) error {
+func insertIntoNetworkGraphConfigs(batch *pgx.Batch, obj *storage.NetworkGraphConfig) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

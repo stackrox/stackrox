@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoK8sRoles(_ context.Context, batch *pgx.Batch, obj *storage.K8SRole) error {
+func insertIntoK8sRoles(batch *pgx.Batch, obj *storage.K8SRole) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

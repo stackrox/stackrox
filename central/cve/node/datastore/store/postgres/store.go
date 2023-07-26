@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNodeCves(_ context.Context, batch *pgx.Batch, obj *storage.NodeCVE) error {
+func insertIntoNodeCves(batch *pgx.Batch, obj *storage.NodeCVE) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

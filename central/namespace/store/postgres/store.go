@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoNamespaces(_ context.Context, batch *pgx.Batch, obj *storage.NamespaceMetadata) error {
+func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *storage.ActiveComponent) error {
+func insertIntoActiveComponents(batch *pgx.Batch, obj *storage.ActiveComponent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -107,7 +107,7 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 	var query string
 
 	for childIndex, child := range obj.GetActiveContextsSlice() {
-		if err := insertIntoActiveComponentsActiveContextsSlices(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoActiveComponentsActiveContextsSlices(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -117,7 +117,7 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoActiveComponentsActiveContextsSlices(_ context.Context, batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
+func insertIntoActiveComponentsActiveContextsSlices(batch *pgx.Batch, obj *storage.ActiveComponent_ActiveContext, activeComponentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

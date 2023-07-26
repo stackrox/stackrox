@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNetworkpoliciesundodeployments(_ context.Context, batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

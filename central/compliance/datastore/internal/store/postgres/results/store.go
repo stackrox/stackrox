@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoComplianceRunResults(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceRunResults) error {
+func insertIntoComplianceRunResults(batch *pgx.Batch, obj *storage.ComplianceRunResults) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

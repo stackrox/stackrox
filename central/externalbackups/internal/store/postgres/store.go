@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoExternalBackups(_ context.Context, batch *pgx.Batch, obj *storage.ExternalBackup) error {
+func insertIntoExternalBackups(batch *pgx.Batch, obj *storage.ExternalBackup) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
