@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common"
 	"google.golang.org/grpc/codes"
 )
 
@@ -20,29 +22,48 @@ var (
 	headersToProxy = set.NewFrozenStringSet("If-Modified-Since", "Accept-Encoding")
 )
 
-// scannerDefinitionsHandler handles requests to retrieve scanner definitions
+// ScannerDefinitionHandler handles requests to retrieve scanner definitions
 // from Central.
-type scannerDefinitionsHandler struct {
-	centralClient *http.Client
+type ScannerDefinitionHandler struct {
+	centralClient    *http.Client
+	centralReachable atomic.Bool
 }
 
 // NewDefinitionsHandler creates a new scanner definitions handler.
-func NewDefinitionsHandler(centralEndpoint string) (http.Handler, error) {
+func NewDefinitionsHandler(centralEndpoint string) (*ScannerDefinitionHandler, error) {
 	client, err := clientconn.NewHTTPClient(mtls.CentralSubject, centralEndpoint, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
-	return &scannerDefinitionsHandler{
-		centralClient: client,
+	return &ScannerDefinitionHandler{
+		centralClient:    client,
+		centralReachable: atomic.Bool{},
 	}, nil
 }
 
-func (h *scannerDefinitionsHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+// Notify reacts to sensor going into online/offline mode.
+func (h *ScannerDefinitionHandler) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		h.centralReachable.Store(true)
+	case common.SensorComponentEventOfflineMode:
+		h.centralReachable.Store(false)
+	}
+}
+
+func (h *ScannerDefinitionHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	// Validate request.
 	if request.Method != http.MethodGet {
 		writer.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+
+	// If central is not reachable, then the request should return an error to Scanner.
+	if !h.centralReachable.Load() {
+		httputil.WriteGRPCStyleErrorf(writer, codes.Internal, "central not reachable")
+		return
+	}
+
 	// Prepare the Central's request, proxy relevant headers and all parameters.
 	// No need to set Scheme nor Host, as the client will already do that for us.
 	centralURL := url.URL{

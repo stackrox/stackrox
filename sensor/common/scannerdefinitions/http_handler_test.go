@@ -82,7 +82,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 				} else {
 					tt.args.request.Method = method
 				}
-				h := &scannerDefinitionsHandler{
+				h := &ScannerDefinitionHandler{
 					centralClient: &http.Client{
 						Transport: httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 							assert.Equal(t, tt.args.request.URL.RawQuery, req.URL.RawQuery)
