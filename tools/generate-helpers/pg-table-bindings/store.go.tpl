@@ -180,6 +180,19 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
 
+{{- define "insertValues"}}{{- $schema := . -}}
+{{- range $field := $schema.DBColumnFields -}}
+    {{- if eq $field.DataType "datetime" }}
+        pgutils.NilOrTime({{$field.Getter "obj"}}),
+    {{- else if eq $field.SQLType "uuid" }}
+        pgutils.NilOrUUID({{$field.Getter "obj"}}),
+    {{- else if eq $field.DataType "map" }}
+        pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+    {{- else }}
+        {{$field.Getter "obj"}},{{end}}
+{{- end}}
+{{- end}}
+
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}({{ if eq (len $schema.Children) 0 }}_{{ else }}ctx{{ end }} context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
@@ -192,16 +205,7 @@ func {{ template "insertFunctionName" $schema }}({{ if eq (len $schema.Children)
 
     values := []interface{} {
         // parent primary keys start
-        {{- range $field := $schema.DBColumnFields -}}
-        {{- if eq $field.DataType "datetime" }}
-        pgutils.NilOrTime({{$field.Getter "obj"}}),
-        {{- else if eq $field.SQLType "uuid" }}
-        pgutils.NilOrUUID({{$field.Getter "obj"}}),
-        {{- else if eq $field.DataType "map" }}
-        pgutils.EmptyOrMap({{$field.Getter "obj"}}),
-        {{- else }}
-        {{$field.Getter "obj"}},{{end}}
-        {{- end}}
+        {{- template "insertValues" $schema }}
     }
 
     finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.DBColumnFields }}) VALUES({{ valueExpansion (len $schema.DBColumnFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.PrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.DBColumnFields}}"
@@ -264,16 +268,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         {{end}}
 
         inputRows = append(inputRows, []interface{}{
-            {{- range $index, $field := $schema.DBColumnFields }}
-            {{- if eq $field.DataType "datetime"}}
-            pgutils.NilOrTime({{$field.Getter "obj"}}),
-            {{- else if eq $field.SQLType "uuid" }}
-            pgutils.NilOrUUID({{$field.Getter "obj"}}),
-            {{- else if eq $field.DataType "map" }}
-            pgutils.EmptyOrMap({{$field.Getter "obj"}}),
-            {{- else }}
-            {{$field.Getter "obj"}},{{end}}
-            {{- end}}
+            {{- template "insertValues" $schema }}
         })
 
         {{ if not $schema.Parent }}
