@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: rhacs-operator
+  name: rhacs-operator-{{ .Release.Name }}
 rules:
   - apiGroups:
       - '*'
@@ -77,12 +77,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: rhacs-operator
+  name: rhacs-operator-{{ .Release.Name }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: rhacs-operator
+  name: rhacs-operator-{{ .Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: rhacs-operator-controller-manager
+    name: rhacs-operator-controller-manager-{{ .Release.Name }}
     namespace: rhacs-operator

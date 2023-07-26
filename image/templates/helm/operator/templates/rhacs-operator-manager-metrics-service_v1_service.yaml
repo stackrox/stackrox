@@ -3,9 +3,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app: rhacs-operator
+    app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
-  name: rhacs-operator-manager-metrics-service
+  name: rhacs-operator-manager-metrics-service-{{ .Release.Name }}
   namespace: rhacs-operator
 spec:
   ports:
@@ -14,7 +14,7 @@ spec:
       protocol: TCP
       targetPort: https
   selector:
-    app: rhacs-operator
+    app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
 status:
   loadBalancer: {}

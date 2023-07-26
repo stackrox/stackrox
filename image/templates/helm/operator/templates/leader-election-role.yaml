@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: rhacs-operator-controller-manager-role
+  name: rhacs-operator-controller-manager-role-{{ .Release.Name }}
   namespace: rhacs-operator
 rules:
   - apiGroups:
@@ -39,13 +39,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: rhacs-operator-controller-manager-role-binding
+  name: rhacs-operator-controller-manager-role-binding-{{ .Release.Name }}
   namespace: rhacs-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: rhacs-operator-controller-manager-role
+  name: rhacs-operator-controller-manager-role-{{ .Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: rhacs-operator-controller-manager
+    name: rhacs-operator-controller-manager-{{ .Release.Name }}
     namespace: rhacs-operator

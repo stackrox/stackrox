@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: rhacs-operator-webhook-service
+  name: rhacs-operator-webhook-service-{{ .Release.Name }}
   namespace: rhacs-operator
 spec:
   ports:
@@ -9,5 +9,5 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
-    app: rhacs-operator
+    app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
