@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,6 +21,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
+	ticker := time.NewTicker(100 * time.Millisecond)
 	mgr := &networkFlowManager{
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
@@ -28,6 +31,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		sensorUpdates:     make(chan *message.ExpiringMessage),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
+		enricherTicker:    ticker,
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }

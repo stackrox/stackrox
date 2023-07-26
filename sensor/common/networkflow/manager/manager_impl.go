@@ -198,6 +198,8 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 ) Manager {
+	enricherTicker := time.NewTicker(tickerTime)
+	enricherTicker.Stop()
 	mgr := &networkFlowManager{
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
@@ -206,6 +208,7 @@ func NewManager(
 		publicIPs:         newPublicIPsManager(),
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
+		enricherTicker:    enricherTicker,
 	}
 
 	return mgr
@@ -239,7 +242,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (m *networkFlowManager) Start() error {
-	m.enricherTicker = time.NewTicker(tickerTime)
+
 	go m.enrichConnections(m.enricherTicker.C)
 	go m.publicIPs.Run(&m.done, m.clusterEntities)
 	return nil
@@ -258,8 +261,10 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		m.resetLastSentState()
 		m.centralReady.Signal()
+		m.enricherTicker.Reset(tickerTime)
 	case common.SensorComponentEventOfflineMode:
 		m.centralReady.Reset()
+		m.enricherTicker.Stop()
 	}
 }
 
@@ -304,7 +309,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			return
 		case <-tickerC:
 			if !m.centralReady.IsDone() {
-				log.Debugf("sensor is in offline mode. Waiting %s to retry enriching and sending connections", tickerTime)
+				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
 			}
 			m.enrichAndSend()
