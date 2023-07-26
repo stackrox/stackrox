@@ -1,7 +1,6 @@
 package eventpipeline
 
 import (
-	"fmt"
 	"sync/atomic"
 	"testing"
 
@@ -109,25 +108,18 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
 
-	testCases := [][]func(){
-		// Base case: Start, WA, WB, RA, RB, Disconnect
-		{s.online, s.write, s.write, s.readSuccess, s.readSuccess, s.offline},
-		// Case: Start, WA, WB, Disconnect, RA, RB, Reconnect
-		{s.write, s.write, s.offline, s.readExpired, s.readExpired, s.online},
-		// Case: Start, WA, Disconnect, WB, Reconnect, RA, RB
-		{s.write, s.write, s.offline, s.online, s.readExpired, s.readExpired},
-		// Case: Start, WA, Disconnect, Reconnect, WB, RA, RB
-		{s.write, s.offline, s.write, s.online, s.readExpired, s.readExpired},
-		// Case: Start, WA, Disconnect, Reconnect, WB, RA, RB
-		{s.write, s.offline, s.online, s.write, s.readExpired, s.readSuccess},
-		// Case: Start, Disconnect, WA, Reconnect, WB, RA, RB
-		{s.offline, s.write, s.online, s.write, s.readExpired, s.readSuccess},
-		// Case: Start, Disconnect, Reconnect, WA, WB, RA, RB
-		{s.offline, s.online, s.write, s.write, s.readSuccess, s.readSuccess},
+	testCases := map[string][]func(){
+		"Base case: Start, WA, WB, RA, RB, Disconnect":       {s.online, s.write, s.write, s.readSuccess, s.readSuccess, s.offline},
+		"Case: Start, WA, WB, Disconnect, RA, RB, Reconnect": {s.write, s.write, s.offline, s.readExpired, s.readExpired, s.online},
+		"Case: Start, WA, WB, Disconnect, Reconnect, RA, RB": {s.write, s.write, s.offline, s.online, s.readExpired, s.readExpired},
+		"Case: Start, WA, Disconnect, WB, Reconnect, RA, RB": {s.write, s.offline, s.write, s.online, s.readExpired, s.readExpired},
+		"Case: Start, WA, Disconnect, Reconnect, WB, RA, RB": {s.write, s.offline, s.online, s.write, s.readExpired, s.readSuccess},
+		"Case: Start, Disconnect, WA, Reconnect, WB, RA, RB": {s.offline, s.write, s.online, s.write, s.readExpired, s.readSuccess},
+		"Case: Start, Disconnect, Reconnect, WA, WB, RA, RB": {s.offline, s.online, s.write, s.write, s.readSuccess, s.readSuccess},
 	}
 
-	for i, orderedFunctions := range testCases {
-		s.Run(fmt.Sprintf("case %d", i), func() {
+	for caseName, orderedFunctions := range testCases {
+		s.Run(caseName, func() {
 			for _, fn := range orderedFunctions {
 				fn()
 			}
