@@ -307,8 +307,6 @@ func (s *NetworkBaselinesStoreSuite) TestSACExists() {
 			exists, err := s.store.Exists(testCase.context, objA.GetDeploymentId())
 			assert.NoError(t, err)
 
-			exists, err := s.store.Exists(testCase.context, objA.GetDeploymentId())
-			assert.NoError(t, err)
 			// Assumption from the test case structure: objA is always in the visible list
 			// in the first position.
 			expectedFound := len(testCase.expectedObjects) > 0
