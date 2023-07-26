@@ -2,7 +2,6 @@ package registries
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
 	artifactRegistryFactory "github.com/stackrox/rox/pkg/registries/artifactregistry"
 	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
@@ -61,7 +60,6 @@ func NewFactory(opts FactoryOptions) Factory {
 	reg := &factoryImpl{
 		creators:                make(map[string]Creator),
 		creatorsWithoutRepoList: make(map[string]Creator),
-		disableRepoListForAll:   env.DisableRegistryRepoList.BooleanSetting(),
 	}
 
 	creatorFuncs := AllCreatorFuncs
