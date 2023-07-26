@@ -213,12 +213,12 @@ function NetworkPolicySimulatorSidePanel({
                                         }
                                         icon={<CodeCompareIcon />}
                                     >
-                                        Compare changes
+                                        Compare
                                     </Button>
                                     <Popover
                                         bodyContent={
                                             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                                                <Title headingLevel="h3">Compare changes</Title>
+                                                <Title headingLevel="h3">Compare</Title>
                                                 <Text>
                                                     Compare the generated network policies to the
                                                     existing network policies.
