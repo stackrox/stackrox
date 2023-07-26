@@ -72,6 +72,11 @@ type TelemetryConfig struct {
 	StorageKey      string
 }
 
+// MonitoringConfig contains config to set up monitoring infrastructure.
+type MonitoringConfig struct {
+	OpenShiftMonitoring *bool
+}
+
 // DeclarativeConfigMounts contains mounts to config maps holding configuration to create resources in a declarative
 // manner.
 type DeclarativeConfigMounts struct {
@@ -102,6 +107,9 @@ type K8sConfig struct {
 
 	// Telemetry holds the configuration for telemetry.
 	Telemetry TelemetryConfig
+
+	// Monitoring holds the monitoring configuration.
+	Monitoring MonitoringConfig
 
 	// DeclarativeConfigMounts holds the mounts for specifying resources to be created in a declarative manner.
 	DeclarativeConfigMounts DeclarativeConfigMounts
