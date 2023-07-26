@@ -22,17 +22,18 @@ import {
 import { CaretDownIcon, DownloadIcon, HistoryIcon, HomeIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
+import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
+import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
-import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportModal from '../components/DeleteReportModal';
 import ReportParametersDetails from '../components/ReportParametersDetails';
-import { getReportFormValuesFromConfiguration } from '../utils';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
+import RunHistory from './RunHistory';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -187,8 +188,13 @@ function ViewVulnReportPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }} isCenterAligned>
-                <Tabs defaultActiveKey={0} aria-label="Report details tabs" role="region">
+            <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
+                <Tabs
+                    className="pf-u-background-color-100"
+                    defaultActiveKey={0}
+                    aria-label="Report details tabs"
+                    role="region"
+                >
                     <Tab
                         eventKey={0}
                         title={<TabTitle icon={<HomeIcon />}>Configuration details</TabTitle>}
@@ -211,7 +217,12 @@ function ViewVulnReportPage() {
                         title={<TabTitle icon={<HistoryIcon />}>Run history</TabTitle>}
                         aria-label="Run history tab"
                     >
-                        <div />
+                        <PageSection
+                            padding={{ default: 'noPadding' }}
+                            className="pf-u-py-lg pf-u-px-lg"
+                        >
+                            <RunHistory reportId={reportId} />
+                        </PageSection>
                     </Tab>
                     <Tab
                         eventKey={2}
