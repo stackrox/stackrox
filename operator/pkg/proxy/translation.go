@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -9,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string) (chartutil.Values, error) {
@@ -55,25 +57,32 @@ func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string
 		proxyVals, _ := getProxyConfigHelmValues(obj, proxyEnv) // ignore errors for now
 
 		mergedVals := chartutil.CoalesceTables(vals, proxyVals)
-		mergedVals = delValueFromIfValueExists(mergedVals)
+
+		mergedVals, conflicts := deleteValueFromIfValueExists(mergedVals)
+		if len(conflicts) > 0 {
+			err := fmt.Errorf("conflicts: %s for %s/%s", conflicts, obj.GetNamespace(), obj.GetName())
+			ctrlLog.FromContext(ctx).Error(err, "injecting proxy env vars")
+		}
 
 		return mergedVals, nil
 	})
 }
 
-// delValueFromIfValueExists deletes the valueFrom key from customize.envVars entries
+// deleteValueFromIfValueExists deletes the valueFrom key from customize.envVars entries
 // if both value and valueFrom key exist. Returns the unmodified values in case of error in accessing values.
 // This function was introduced to fix the bug documented in ROX-18477
-func delValueFromIfValueExists(values chartutil.Values) chartutil.Values {
+func deleteValueFromIfValueExists(values chartutil.Values) (chartutil.Values, []string) {
 	envVarsMap, err := values.Table("customize.envVars")
+	conflicts := []string{}
+
 	if err != nil {
-		return values
+		return values, conflicts
 	}
 
 	for envVarName := range envVarsMap {
 		envVar, err := envVarsMap.Table(envVarName)
 		if err != nil {
-			return values
+			return values, conflicts
 		}
 
 		_, hasValue := envVar["value"]
@@ -81,8 +90,10 @@ func delValueFromIfValueExists(values chartutil.Values) chartutil.Values {
 
 		if hasValue && hasValueFrom {
 			delete(envVar, "valueFrom")
+			valueConflict := fmt.Sprintf("env var: %s, has both value and valueFrom set", envVarName)
+			conflicts = append(conflicts, valueConflict)
 		}
 	}
 
-	return values
+	return values, conflicts
 }
