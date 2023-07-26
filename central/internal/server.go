@@ -1,4 +1,4 @@
-package private
+package internal
 
 import (
 	"log"
@@ -9,23 +9,23 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/metrics"
 )
 
-// HTTPServer is a HTTP server to serve private functionality.
+// HTTPServer is a HTTP server to serve functionality available only within the cluster.
 type HTTPServer struct {
 	Address string
 	mux     *http.ServeMux
 	metrics metrics.HTTPMetrics
 }
 
-// NewHTTPServer creates and returns a new private http server.
+// NewHTTPServer creates and returns a new cluster-internal http server.
 func NewHTTPServer(metricsInstance metrics.HTTPMetrics) *HTTPServer {
 	return &HTTPServer{
-		Address: env.PrivatePortSetting.Setting(),
+		Address: env.ClusterInternalPortSetting.Setting(),
 		mux:     http.NewServeMux(),
 		metrics: metricsInstance,
 	}
 }
 
-// AddRoutes adds routes to private server to be exposed on.
+// AddRoutes adds routes to cluster-internal server to be exposed on.
 func (s *HTTPServer) AddRoutes(routes []*Route) {
 	for _, r := range routes {
 		h := r.ServerHandler
