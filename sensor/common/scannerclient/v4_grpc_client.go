@@ -2,6 +2,7 @@ package scannerclient
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func (v V4GRPCClient) GetImageAnalysis(ctx context.Context, image *storage.Image
 	log.Debugf("Received image indexing report from local Scanner for image %s", name)
 
 	//convert indexReport to scannerV4.CreateIndexReportResponse
-	resp, err := convertIndexToV1GetImageComponentsResponse(*indexReport, image)
+	resp, err := convertIndexReportToV1GetImageComponentsResponse(*indexReport, image)
 	//return resp or return indexReport directly?
 	if err != nil {
 		log.Debugf("Failed to convert indexer report to image components from local Scanner for image %s: %v", name, err)
@@ -85,12 +86,13 @@ func (v V4GRPCClient) GetImageAnalysis(ctx context.Context, image *storage.Image
 	return resp, nil
 }
 
-func convertIndexToV1GetImageComponentsResponse(indexReport scannerV4.IndexReport, image *storage.Image) (*scannerV1.GetImageComponentsResponse, error) {
+func convertIndexReportToV1GetImageComponentsResponse(indexReport scannerV4.IndexReport, image *storage.Image) (*scannerV1.GetImageComponentsResponse, error) {
 	res := &scannerV1.GetImageComponentsResponse{}
 	if indexReport.Success {
 		res.Status = scannerV1.ScanStatus_SUCCEEDED
 		res.ScannerVersion = image.GetScan().ScannerVersion
 		// TODO: Convert indexReport package information to scannerV1.GetImageComponentsResponse components
+		res.Components.Namespace = getNamespace(indexReport)
 	} else {
 		if len(indexReport.Err) > 0 {
 			return nil, errors.New(indexReport.Err)
@@ -98,6 +100,14 @@ func convertIndexToV1GetImageComponentsResponse(indexReport scannerV4.IndexRepor
 		return nil, errors.New("Failed to fetch index report")
 	}
 	return res, nil
+}
+
+func getNamespace(indexReport scannerV4.IndexReport) string {
+	distributions := indexReport.GetDistributions()
+	sort.Slice(distributions, func(i, j int) bool {
+		return distributions[i].Name < distributions[j].Name
+	})
+	return distributions[0].Name
 }
 
 func (v V4GRPCClient) Close() error {
