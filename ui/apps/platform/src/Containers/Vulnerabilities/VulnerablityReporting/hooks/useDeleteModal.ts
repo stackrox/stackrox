@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { deleteReportConfiguration } from 'services/ReportsService';
 import { getErrorMessage } from '../errorUtils';
 
+export type UseDeleteModalProps = {
+    onCompleted: () => void;
+};
+
 export type UseDeleteModalResult = {
     openDeleteModal: (reportId: string) => void;
     isDeleteModalOpen: boolean;
@@ -10,14 +14,12 @@ export type UseDeleteModalResult = {
     isDeleting: boolean;
     onDelete: () => void;
     deleteError: string | null;
-    isDeleted: boolean;
 };
 
-function useDeleteModal(): UseDeleteModalResult {
+function useDeleteModal({ onCompleted }: UseDeleteModalProps): UseDeleteModalResult {
     const { isModalOpen: isDeleteModalOpen, openModal, closeModal } = useModal();
     const [reportIdToDelete, setReportIdToDelete] = useState<string>('');
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isDeleted, setIsDeleted] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
 
     function openDeleteModal(reportId: string) {
@@ -28,6 +30,8 @@ function useDeleteModal(): UseDeleteModalResult {
     function closeDeleteModal() {
         closeModal();
         setReportIdToDelete('');
+        setIsDeleting(false);
+        setDeleteError(null);
     }
 
     async function onDelete() {
@@ -35,8 +39,8 @@ function useDeleteModal(): UseDeleteModalResult {
         try {
             await deleteReportConfiguration(reportIdToDelete);
             setIsDeleting(false);
-            setIsDeleted(true);
             closeDeleteModal();
+            onCompleted();
         } catch (err) {
             setIsDeleting(false);
             setDeleteError(getErrorMessage(err));
@@ -50,7 +54,6 @@ function useDeleteModal(): UseDeleteModalResult {
         isDeleting,
         onDelete,
         deleteError,
-        isDeleted,
     };
 }
 
