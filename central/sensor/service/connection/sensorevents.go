@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -69,44 +67,41 @@ func stripTypePrefix(s string) string {
 }
 
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
+	event := msg.GetEvent()
+	if event == nil {
+		log.Errorf("Received unknown msg from cluster %s (%s) of type %T. May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), msg.Msg, s.sensorVersion, version.GetMainVersion())
+		return
+	}
+
 	var workerType string
-	switch evt := msg.Msg.(type) {
-	case *central.MsgFromSensor_Event:
-		if msg.GetEvent() == nil {
-			log.Errorf("Received unknown event from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
-			return
+	switch event.Resource.(type) {
+	case *central.SensorEvent_Synced:
+		// Call the reconcile functions
+		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
+			log.Errorf("error reconciling state: %v", err)
 		}
-		switch evt.Event.Resource.(type) {
-		case *central.SensorEvent_Synced:
-			// Call the reconcile functions
-			if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
-				log.Errorf("error reconciling state: %v", err)
-			}
-			s.deduper.ProcessSync()
-			s.reconciliationMap.Close()
-			return
-		case *central.SensorEvent_ReprocessDeployment:
-			workerType = deploymentEventType
-		case *central.SensorEvent_NodeInventory:
-			// This will put both NodeInventory and Node events in the same worker queue,
-			// preventing events for the same Node ID to run concurrently.
-			workerType = nodeEventType
-			// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
-			// NodeInventory because the two should not dedupe between themselves.
-			msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
-		default:
-			if evt.Event.GetResource() == nil {
-				log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
-				return
-			}
-			// Default worker type is the event type.
-			workerType = reflectutils.Type(evt.Event.Resource)
-			if !s.reconciliationMap.IsClosed() {
-				s.reconciliationMap.Add(evt.Event.Resource, evt.Event.Id)
-			}
-		}
+		s.deduper.ProcessSync()
+		s.reconciliationMap.Close()
+		return
+	case *central.SensorEvent_ReprocessDeployment:
+		workerType = deploymentEventType
+	case *central.SensorEvent_NodeInventory:
+		// This will put both NodeInventory and Node events in the same worker queue,
+		// preventing events for the same Node ID to run concurrently.
+		workerType = nodeEventType
+		// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
+		// NodeInventory because the two should not dedupe between themselves.
+		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
 	default:
-		utils.Should(errors.New("handler only supports events"))
+		if event.GetResource() == nil {
+			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
+			return
+		}
+		// Default worker type is the event type.
+		workerType = reflectutils.Type(event.Resource)
+		if !s.reconciliationMap.IsClosed() {
+			s.reconciliationMap.Add(event.Resource, event.Id)
+		}
 	}
 
 	// If this is our first attempt at processing, then dedupe if we already processed this
