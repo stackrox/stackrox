@@ -110,8 +110,8 @@ export const vulnerabilityReportPath = `${vulnerabilitiesBasePath}/reports/:repo
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
 
 type RouteDescription = {
-    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all are enabled
-    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS and multiple resource names imply has access to all
+    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
+    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS and multiple resource names imply must have access to all
 };
 
 // Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
