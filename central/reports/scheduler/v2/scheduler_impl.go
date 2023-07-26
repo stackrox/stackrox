@@ -3,7 +3,6 @@ package v2
 import (
 	"container/list"
 	"context"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
@@ -115,7 +113,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportMeta
 
 /* Concurrency and scheduling functions */
 
-// Start scheduler. A scheduler instance can only call Start once. It cannot be re-started once stopped.
+// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
 // This func will log errors if the scheduler fails to start.
 func (s *scheduler) Start() {
 	if s.isStopped.Load() {
@@ -200,6 +198,7 @@ func (s *scheduler) removeFromRunningReportConfigs(configID string) {
 	s.runningReportConfigs.Remove(configID)
 }
 
+// UpsertReportSchedule adds/updates the schedule at which reports for the given report config are executed.
 func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
 	s.cronJobsLock.Lock()
 	defer s.cronJobsLock.Unlock()
@@ -222,6 +221,7 @@ func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfigurati
 	return nil
 }
 
+// RemoveReportSchedule removes the given report configuration from scheduled execution.
 func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 	s.cronJobsLock.Lock()
 	defer s.cronJobsLock.Unlock()
@@ -235,38 +235,18 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 
 /* Functions to add/remove report jobs from queue */
 
-// CancelReportRequest cancels a report that is still waiting in queue.
+// CancelReportRequest cancels a report request that is still waiting in queue. A user can only cancel a report requested by them.
 // If the report is already being prepared or has completed execution, it cannot be cancelled.
-func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, string, error) {
-	metadata, found, err := s.reportMetadataStore.Get(ctx, reportID)
-	if err != nil {
-		return false, "", errors.Errorf("Error finding report ID '%s': %s", reportID, err)
-	}
-	if !found {
-		return false, "", errors.Wrapf(errox.NotFound, "Report ID '%s' does not exist", reportID)
-	}
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return false, "", errors.New("Could not determine user identity from provided context")
-	}
-	if slimUser.GetId() != metadata.GetRequester().GetId() {
-		return false, "", errors.Wrap(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
-	}
-	if metadata.ReportStatus.RunState == storage.ReportStatus_SUCCESS ||
-		metadata.ReportStatus.RunState == storage.ReportStatus_FAILURE {
-		return false, fmt.Sprintf("Cannot cancel. Report ID '%s' has already completed execution.", reportID), nil
-	}
-
+func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
 	removed := s.tryRemoveFromRequestQueue(reportID)
 	if !removed {
-		return false, fmt.Sprintf("Cannot cancel. Report ID '%s' is currently being prepared.", reportID), err
+		return false, nil
 	}
-	err = s.reportMetadataStore.DeleteReportMetadata(ctx, reportID)
+	err := s.reportMetadataStore.DeleteReportMetadata(ctx, reportID)
 	if err != nil {
-		return false, "", errors.Errorf("Error deleting report ID '%s' from storage", reportID)
+		return false, errors.Wrapf(err, "Error deleting report ID '%s' from storage", reportID)
 	}
-
-	return true, "", nil
+	return true, nil
 }
 
 // Returns true if the request was successfully removed from the ReportRequests queue
@@ -280,9 +260,9 @@ func (s *scheduler) tryRemoveFromRequestQueue(reportID string) bool {
 	return request != nil
 }
 
-// SubmitReportRequest submits a report for scheduling either on demand or on a schedule.
-// If it's on demand, it will begin running if there isn't already one running from the same requesting user.
-// However, the same report can be run concurrently by different users including the system.
+// SubmitReportRequest submits a report execution request. The report request can be either for an on demand report or a scheduled report.
+// If there is already a pending report request submitted by the same user for the same report config, this request will be denied.
+// However, there can be multiple pending report requests for same configuration by different users.
 func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error) {
 	err := reportGen.ValidateReportRequest(request)
 	if err != nil {

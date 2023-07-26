@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -246,9 +247,19 @@ func (suite *ReportServiceTestSuite) TestRunReport() {
 }
 
 func (suite *ReportServiceTestSuite) TestCancelReport() {
+	reportMetadata := fixtures.GetReportMetadata()
+	user := reportMetadata.GetRequester()
+
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	userContext := authn.ContextWithIdentity(suite.ctx, mockID, suite.T())
+
 	testCases := []struct {
 		desc    string
 		req     *apiV2.ResourceByID
+		ctx     context.Context
 		mockGen func()
 		isError bool
 		resp    *apiV2.CancelReportResponse
@@ -258,45 +269,94 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 			req: &apiV2.ResourceByID{
 				Id: "",
 			},
+			ctx:     userContext,
 			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "User info not present in context",
+			req: &apiV2.ResourceByID{
+				Id: reportMetadata.GetReportId(),
+			},
+			ctx:     suite.ctx,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Report ID not found",
+			req: &apiV2.ResourceByID{
+				Id: reportMetadata.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(nil, false, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Report requester id and cancelling user id mismatch",
+			req: &apiV2.ResourceByID{
+				Id: reportMetadata.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				metadata := reportMetadata.Clone()
+				metadata.Requester = &storage.SlimUser{
+					Id:   reportMetadata.Requester.Id + "-1",
+					Name: reportMetadata.Requester.Name + "-1",
+				}
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(metadata, true, nil).Times(1)
+			},
 			isError: true,
 		},
 		{
 			desc: "Scheduler error while cancelling request",
 			req: &apiV2.ResourceByID{
-				Id: "reportID",
+				Id: reportMetadata.GetReportId(),
 			},
+			ctx: userContext,
 			mockGen: func() {
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(reportMetadata, true, nil).Times(1)
 				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(false, "", errors.New("Could not determine user identity from provided context")).
+					Return(false, errors.New("Datastore error")).
 					Times(1)
 			},
 			isError: true,
 		},
 		{
-			desc: "Scheduler couldn't cancel request due to a non-error reason",
+			desc: "Scheduler couldn't find report ID in queue",
 			req: &apiV2.ResourceByID{
-				Id: "reportID",
+				Id: reportMetadata.GetReportId(),
 			},
+			ctx: userContext,
 			mockGen: func() {
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(reportMetadata, true, nil).Times(1)
 				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(false, "Cannot cancel. Report ID 'reportID' has already completed execution.", nil).
+					Return(false, nil).
 					Times(1)
 			},
 			isError: false,
 			resp: &apiV2.CancelReportResponse{
-				Cancelled:      false,
-				FailureMessage: "Cannot cancel. Report ID 'reportID' has already completed execution.",
+				Cancelled: false,
+				FailureMessage: fmt.Sprintf("Report ID '%s' is no longer queued. "+
+					"Report is either already completed or being prepared.", reportMetadata.GetReportId()),
 			},
 		},
 		{
 			desc: "Request cancelled",
 			req: &apiV2.ResourceByID{
-				Id: "reportID",
+				Id: reportMetadata.GetReportId(),
 			},
+			ctx: userContext,
 			mockGen: func() {
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(reportMetadata, true, nil).Times(1)
 				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(true, "", nil).
+					Return(true, nil).
 					Times(1)
 			},
 			isError: false,
@@ -310,7 +370,7 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 	for _, tc := range testCases {
 		suite.T().Run(tc.desc, func(t *testing.T) {
 			tc.mockGen()
-			response, err := suite.service.CancelReport(suite.ctx, tc.req)
+			response, err := suite.service.CancelReport(tc.ctx, tc.req)
 			if tc.isError {
 				suite.Error(err)
 			} else {

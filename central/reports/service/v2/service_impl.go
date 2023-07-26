@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
@@ -27,6 +29,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
@@ -51,7 +55,6 @@ type serviceImpl struct {
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	apiV2.RegisterReportServiceServer(grpcServer, s)
-
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
@@ -124,6 +127,9 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 }
 
 func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest) (*apiV2.RunReportResponse, error) {
+	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
+		return nil, err
+	}
 	if req.GetReportConfigId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
 	}
@@ -167,15 +173,37 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 }
 
 func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.CancelReportResponse, error) {
+	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
+		return nil, err
+	}
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report ID is empty")
 	}
-	cancelled, reason, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+	metadata, found, err := s.metadataDatastore.Get(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error finding report ID '%s'.", req.GetId())
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Report ID '%s' does not exist", req.GetId())
+	}
+	if slimUser.GetId() != metadata.GetRequester().GetId() {
+		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
+	}
+
+	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
-	return &apiV2.CancelReportResponse{
-		Cancelled:      cancelled,
-		FailureMessage: reason,
-	}, nil
+	resp := &apiV2.CancelReportResponse{
+		Cancelled: cancelled,
+	}
+	if !cancelled {
+		resp.FailureMessage = fmt.Sprintf("Report ID '%s' is no longer queued. "+
+			"Report is either already completed or being prepared.", req.GetId())
+	}
+	return resp, nil
 }

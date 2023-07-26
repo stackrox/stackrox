@@ -37,13 +37,12 @@ func (m *MockScheduler) EXPECT() *MockSchedulerMockRecorder {
 }
 
 // CancelReportRequest mocks base method.
-func (m *MockScheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, string, error) {
+func (m *MockScheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelReportRequest", ctx, reportID)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CancelReportRequest indicates an expected call of CancelReportRequest.

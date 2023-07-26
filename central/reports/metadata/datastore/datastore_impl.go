@@ -10,6 +10,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -105,7 +106,7 @@ func (ds *datastoreImpl) AddReportMetadata(ctx context.Context, report *storage.
 		return "", err
 	}
 	if report.ReportId != "" {
-		return "", errors.New("New report metadata must not have a preset `id`")
+		return "", errors.Wrap(errox.InvalidArgs, "New report metadata must not have a preset `id`")
 	}
 	report.ReportId = uuid.NewV4().String()
 	if err := ds.storage.Upsert(ctx, report); err != nil {
@@ -120,7 +121,7 @@ func (ds *datastoreImpl) UpdateReportMetadata(ctx context.Context, report *stora
 		return err
 	}
 	if report.GetReportId() == "" {
-		return errors.New("Report Metadata id field must be set")
+		return errors.Wrapf(errox.InvalidArgs, "Report Metadata id field must be set")
 	}
 	if err := ds.storage.Upsert(ctx, report); err != nil {
 		return err
