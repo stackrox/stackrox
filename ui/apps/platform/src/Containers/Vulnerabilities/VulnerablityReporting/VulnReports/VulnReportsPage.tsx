@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
     PageSection,
     Title,
@@ -61,14 +61,11 @@ function VulnReportsPage() {
         isDeleting,
         onDelete,
         deleteError,
-        isDeleted,
-    } = useDeleteModal();
-
-    useEffect(() => {
-        if (isDeleted) {
+    } = useDeleteModal({
+        onCompleted: () => {
             fetchReports();
-        }
-    }, [fetchReports, isDeleted]);
+        },
+    });
 
     return (
         <>

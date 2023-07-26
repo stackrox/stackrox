@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { useHistory, useParams, Link, generatePath } from 'react-router-dom';
 import {
     PageSection,
@@ -64,14 +64,11 @@ function ViewVulnReportPage() {
         isDeleting,
         onDelete,
         deleteError,
-        isDeleted,
-    } = useDeleteModal();
-
-    useEffect(() => {
-        if (isDeleted) {
+    } = useDeleteModal({
+        onCompleted: () => {
             history.push(vulnerabilityReportsPath);
-        }
-    }, [history, isDeleted]);
+        },
+    });
 
     function onToggleActionsDropdown() {
         setIsActionsDropdownOpen((prevValue) => !prevValue);
@@ -185,11 +182,7 @@ function ViewVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }} isCenterAligned>
-                <Tabs
-                    defaultActiveKey={0}
-                    aria-label="Tabs in the uncontrolled example"
-                    role="region"
-                >
+                <Tabs defaultActiveKey={0} aria-label="Report details tabs" role="region">
                     <Tab
                         eventKey={0}
                         title={<TabTitle icon={<HomeIcon />}>Configuration details</TabTitle>}
