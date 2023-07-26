@@ -87,14 +87,6 @@ message RunReportResponse {
     string report_id        = 2;
 }
 
-message CancelReportResponse {
-    // cancelled is true when report is successfully cancelled
-    bool   cancelled       = 1;
-    // failure_message is set when the report cannot be cancelled due to a reason which is not an error like
-    // report already being prepared or completed execution.
-    string failure_message = 2;
-}
-
 service ReportService {
     // GetReportStatus returns report status for the given report id
     rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
@@ -127,7 +119,7 @@ service ReportService {
 
     // Cancels a queued report job for the given report id. If the job is not active, it is a noop.
     // If a report is already being prepared, it won't be cancelled.
-    rpc CancelReport(ResourceByID) returns (CancelReportResponse) {
+    rpc CancelReport(ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v2/reports/cancel/{id}"
         };

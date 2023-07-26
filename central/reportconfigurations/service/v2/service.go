@@ -5,7 +5,7 @@ import (
 
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reports/manager"
+	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -23,9 +23,9 @@ type Service interface {
 func New(reportConfigStore datastore.DataStore,
 	notifierDatastore notifierDataStore.DataStore,
 	collectionDatastore collectionDataStore.DataStore,
-	manager manager.Manager) Service {
+	scheduler schedulerV2.Scheduler) Service {
 	return &serviceImpl{
-		manager:             manager,
+		scheduler:           scheduler,
 		reportConfigStore:   reportConfigStore,
 		collectionDatastore: collectionDatastore,
 		notifierDatastore:   notifierDatastore,

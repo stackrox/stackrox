@@ -36,6 +36,21 @@ func (m *MockScheduler) EXPECT() *MockSchedulerMockRecorder {
 	return m.recorder
 }
 
+// CanSubmitReportRequest mocks base method.
+func (m *MockScheduler) CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanSubmitReportRequest", user, reportConfig)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CanSubmitReportRequest indicates an expected call of CanSubmitReportRequest.
+func (mr *MockSchedulerMockRecorder) CanSubmitReportRequest(user, reportConfig interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanSubmitReportRequest", reflect.TypeOf((*MockScheduler)(nil).CanSubmitReportRequest), user, reportConfig)
+}
+
 // CancelReportRequest mocks base method.
 func (m *MockScheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
 	m.ctrl.T.Helper()

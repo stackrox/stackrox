@@ -2,7 +2,6 @@ package v2
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -248,6 +247,7 @@ func (suite *ReportServiceTestSuite) TestRunReport() {
 
 func (suite *ReportServiceTestSuite) TestCancelReport() {
 	reportMetadata := fixtures.GetReportMetadata()
+	reportMetadata.ReportStatus.RunState = storage.ReportStatus_WAITING
 	user := reportMetadata.GetRequester()
 
 	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
@@ -262,7 +262,6 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 		ctx     context.Context
 		mockGen func()
 		isError bool
-		resp    *apiV2.CancelReportResponse
 	}{
 		{
 			desc: "Empty Report ID",
@@ -312,6 +311,34 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 			isError: true,
 		},
 		{
+			desc: "Report ID is already generated",
+			req: &apiV2.ResourceByID{
+				Id: reportMetadata.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				metadata := reportMetadata.Clone()
+				metadata.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(metadata, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Report already in PREPARING state",
+			req: &apiV2.ResourceByID{
+				Id: reportMetadata.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				metadata := reportMetadata.Clone()
+				metadata.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
+					Return(metadata, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
 			desc: "Scheduler error while cancelling request",
 			req: &apiV2.ResourceByID{
 				Id: reportMetadata.GetReportId(),
@@ -339,12 +366,7 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 					Return(false, nil).
 					Times(1)
 			},
-			isError: false,
-			resp: &apiV2.CancelReportResponse{
-				Cancelled: false,
-				FailureMessage: fmt.Sprintf("Report ID '%s' is no longer queued. "+
-					"Report is either already completed or being prepared.", reportMetadata.GetReportId()),
-			},
+			isError: true,
 		},
 		{
 			desc: "Request cancelled",
@@ -360,10 +382,6 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 					Times(1)
 			},
 			isError: false,
-			resp: &apiV2.CancelReportResponse{
-				Cancelled:      true,
-				FailureMessage: "",
-			},
 		},
 	}
 
@@ -375,7 +393,7 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 				suite.Error(err)
 			} else {
 				suite.NoError(err)
-				suite.Equal(tc.resp, response)
+				suite.Equal(&apiV2.Empty{}, response)
 			}
 		})
 	}

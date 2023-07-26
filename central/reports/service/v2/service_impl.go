@@ -2,7 +2,6 @@ package v2
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -172,7 +171,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	}, nil
 }
 
-func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.CancelReportResponse, error) {
+func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
 	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
 	}
@@ -190,6 +189,14 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report ID '%s' does not exist", req.GetId())
 	}
+
+	runState := metadata.GetReportStatus().GetRunState()
+	if runState == storage.ReportStatus_SUCCESS || runState == storage.ReportStatus_FAILURE {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report ID '%s' has already completed execution.", req.GetId())
+	} else if runState == storage.ReportStatus_PREPARING {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report ID '%s' is currently being prepared.", req.GetId())
+	}
+
 	if slimUser.GetId() != metadata.GetRequester().GetId() {
 		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
 	}
@@ -198,12 +205,10 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 	if err != nil {
 		return nil, err
 	}
-	resp := &apiV2.CancelReportResponse{
-		Cancelled: cancelled,
-	}
 	if !cancelled {
-		resp.FailureMessage = fmt.Sprintf("Report ID '%s' is no longer queued. "+
-			"Report is either already completed or being prepared.", req.GetId())
+		return nil, errors.Wrapf(errox.InvariantViolation, "Cannot cancel. Report ID '%s' no longer queued."+
+			"It might already be preparing", req.GetId())
 	}
-	return resp, nil
+
+	return &apiV2.Empty{}, nil
 }
