@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection) error {
+func insertIntoCollections(batch *pgx.Batch, obj *storage.ResourceCollection) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -107,7 +107,7 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	var query string
 
 	for childIndex, child := range obj.GetEmbeddedCollections() {
-		if err := insertIntoCollectionsEmbeddedCollections(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoCollectionsEmbeddedCollections(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -117,7 +117,7 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	return nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(_ context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

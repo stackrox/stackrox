@@ -43,7 +43,7 @@ type PermissionChecker interface {
 
 type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
-type inserter[T any, PT unmarshaler[T]] func(ctx context.Context, batch *pgx.Batch, obj PT) error
+type inserter[T any, PT unmarshaler[T]] func(batch *pgx.Batch, obj PT) error
 type copier[T any, PT unmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
 type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
@@ -530,7 +530,7 @@ func (s *GenericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 
 	for _, obj := range objs {
 		batch := &pgx.Batch{}
-		if err := s.insertInto(ctx, batch, obj); err != nil {
+		if err := s.insertInto(batch, obj); err != nil {
 			return err
 		}
 		batchResults := conn.SendBatch(ctx, batch)

@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoRisks(_ context.Context, batch *pgx.Batch, obj *storage.Risk) error {
+func insertIntoRisks(batch *pgx.Batch, obj *storage.Risk) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

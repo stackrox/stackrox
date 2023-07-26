@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoPolicyCategoryEdges(_ context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
+func insertIntoPolicyCategoryEdges(batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

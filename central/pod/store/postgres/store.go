@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) error {
+func insertIntoPods(batch *pgx.Batch, obj *storage.Pod) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -129,7 +129,7 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 	var query string
 
 	for childIndex, child := range obj.GetLiveInstances() {
-		if err := insertIntoPodsLiveInstances(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoPodsLiveInstances(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -139,7 +139,7 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 	return nil
 }
 
-func insertIntoPodsLiveInstances(_ context.Context, batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
+func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

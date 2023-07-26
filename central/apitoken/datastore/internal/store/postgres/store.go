@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {
+func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

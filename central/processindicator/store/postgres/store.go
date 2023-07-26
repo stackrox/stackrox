@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoProcessIndicators(_ context.Context, batch *pgx.Batch, obj *storage.ProcessIndicator) error {
+func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

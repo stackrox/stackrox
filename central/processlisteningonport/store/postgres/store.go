@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoListeningEndpoints(_ context.Context, batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
+func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

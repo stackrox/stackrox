@@ -106,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoServiceAccounts(_ context.Context, batch *pgx.Batch, obj *storage.ServiceAccount) error {
+func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

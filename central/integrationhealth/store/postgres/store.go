@@ -84,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoIntegrationHealths(_ context.Context, batch *pgx.Batch, obj *storage.IntegrationHealth) error {
+func insertIntoIntegrationHealths(batch *pgx.Batch, obj *storage.IntegrationHealth) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

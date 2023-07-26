@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoDeclarativeConfigHealths(_ context.Context, batch *pgx.Batch, obj *storage.DeclarativeConfigHealth) error {
+func insertIntoDeclarativeConfigHealths(batch *pgx.Batch, obj *storage.DeclarativeConfigHealth) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

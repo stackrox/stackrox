@@ -84,7 +84,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoWatchedImages(_ context.Context, batch *pgx.Batch, obj *storage.WatchedImage) error {
+func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {

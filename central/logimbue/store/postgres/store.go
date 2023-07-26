@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoLogImbues(_ context.Context, batch *pgx.Batch, obj *storage.LogImbue) error {
+func insertIntoLogImbues(batch *pgx.Batch, obj *storage.LogImbue) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
