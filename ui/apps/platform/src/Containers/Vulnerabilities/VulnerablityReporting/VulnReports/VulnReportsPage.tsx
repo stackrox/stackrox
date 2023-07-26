@@ -149,7 +149,7 @@ function VulnReportsPage() {
                                             <HelpIconTh tooltip="The report that was last run by a schedule or an on-demand action including 'send report now' and 'generate a downloadable report'">
                                                 Last run
                                             </HelpIconTh>
-                                            <Th />
+                                            <Td />
                                         </Tr>
                                     </Thead>
                                     {reports.length === 0 && (
