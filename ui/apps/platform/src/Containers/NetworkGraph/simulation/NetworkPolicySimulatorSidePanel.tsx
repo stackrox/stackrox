@@ -195,7 +195,7 @@ function NetworkPolicySimulatorSidePanel({
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
                         <NetworkPoliciesYAML
-                            yaml={currentYaml}
+                            yaml={generatedYaml}
                             additionalControls={[
                                 <Flex
                                     justifyContent={{ default: 'justifyContentFlexEnd' }}
