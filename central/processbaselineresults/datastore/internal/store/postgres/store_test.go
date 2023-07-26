@@ -355,6 +355,13 @@ func (s *ProcessBaselineResultsStoreSuite) TestSACDelete() {
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, obj.GetDeploymentId())
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
@@ -376,6 +383,13 @@ func (s *ProcessBaselineResultsStoreSuite) TestSACDeleteMany() {
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2-len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, obj.GetDeploymentId())
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }

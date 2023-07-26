@@ -403,6 +403,13 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2 - len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+			    found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+			    assert.NoError(t, err)
+			    assert.False(t, found)
+			}
 		})
 	}
 }
@@ -425,6 +432,13 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2 - len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+			    found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+			    assert.NoError(t, err)
+			    assert.False(t, found)
+			}
 		})
 	}
 }
