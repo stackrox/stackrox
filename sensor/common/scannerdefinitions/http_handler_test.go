@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/httputil"
@@ -19,19 +20,28 @@ func TestServeHTTP_Responses(t *testing.T) {
 		methods []string
 	}
 	tests := []struct {
-		name         string
-		args         args
-		responseBody string
-		statusCode   int
+		name             string
+		args             args
+		responseBody     string
+		statusCode       int
+		centralReachable bool
 	}{
 		{
-			name:         "when central replies 200 with content then writer matches",
-			statusCode:   http.StatusOK,
-			responseBody: "the foobar body.",
+			name:             "when central is not reachable then return internal error",
+			statusCode:       http.StatusInternalServerError,
+			responseBody:     "{\"code\":13,\"message\":\"central not reachable\"}",
+			centralReachable: false,
 		},
 		{
-			name:       "when central replies 304 then writer matches",
-			statusCode: http.StatusNotModified,
+			name:             "when central replies 200 with content then writer matches",
+			statusCode:       http.StatusOK,
+			responseBody:     "the foobar body.",
+			centralReachable: true,
+		},
+		{
+			name:             "when central replies 304 then writer matches",
+			statusCode:       http.StatusNotModified,
+			centralReachable: true,
 		},
 		{
 			name:       "when method is not GET then 405",
@@ -49,6 +59,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 				},
 				request: &http.Request{},
 			},
+			centralReachable: true,
 		},
 		{
 			name:       "when request contains multiple headers then proxy all of them",
@@ -59,6 +70,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 					Header: map[string][]string{"Accept-Encoding": {"foo", "bar"}},
 				},
 			},
+			centralReachable: true,
 		},
 	}
 	for _, tt := range tests {
@@ -82,7 +94,10 @@ func TestServeHTTP_Responses(t *testing.T) {
 				} else {
 					tt.args.request.Method = method
 				}
+				reachable := atomic.Bool{}
+				reachable.Store(tt.centralReachable)
 				h := &ScannerDefinitionHandler{
+					centralReachable: &reachable,
 					centralClient: &http.Client{
 						Transport: httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 							assert.Equal(t, tt.args.request.URL.RawQuery, req.URL.RawQuery)

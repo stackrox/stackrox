@@ -26,7 +26,7 @@ var (
 // from Central.
 type ScannerDefinitionHandler struct {
 	centralClient    *http.Client
-	centralReachable atomic.Bool
+	centralReachable *atomic.Bool
 }
 
 // NewDefinitionsHandler creates a new scanner definitions handler.
@@ -37,7 +37,7 @@ func NewDefinitionsHandler(centralEndpoint string) (*ScannerDefinitionHandler, e
 	}
 	return &ScannerDefinitionHandler{
 		centralClient:    client,
-		centralReachable: atomic.Bool{},
+		centralReachable: &atomic.Bool{},
 	}, nil
 }
 
