@@ -25,8 +25,6 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
 
-	ctrl.Log.Info("RECONCILING INNER OPERATOR")
-
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.SecuredClusterGVK,
 		image.OperatorChartPrefix,

@@ -29,7 +29,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	"github.com/stackrox/rox/operator/pkg/common"
-	innerOperatorReconciler "github.com/stackrox/rox/operator/pkg/inneroperator/reconciler"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -161,10 +160,10 @@ func run() error {
 		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
-		setupLog.Info("Adding watch for inner operator.")
-		if err = innerOperatorReconciler.RegisterNewReconciler(mgr); err != nil {
-			return errors.Wrap(err, "unable to set up inner Operator reconciler")
-		}
+		// setupLog.Info("Adding watch for inner operator.")
+		// if err = innerOperatorReconciler.RegisterNewReconciler(mgr); err != nil {
+		// 	return errors.Wrap(err, "unable to set up inner Operator reconciler")
+		// }
 	}
 
 	if !common.OperatorOuterMode.BooleanSetting() {
