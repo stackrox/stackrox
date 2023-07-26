@@ -220,8 +220,8 @@ function NetworkPolicySimulatorSidePanel({
                                             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                                                 <Title headingLevel="h3">Compare changes</Title>
                                                 <Text>
-                                                    Compare changes in the generated network
-                                                    policies to the existing network policies.
+                                                    Compare the generated network policies to the
+                                                    existing network policies.
                                                 </Text>
                                             </Flex>
                                         }

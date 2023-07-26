@@ -18,8 +18,7 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
                 <>
                     <Title headingLevel="h2">Compare with existing network policies</Title>
                     <Text>
-                        Compare changes in the generated network policies to the existing network
-                        policies.
+                        Compare the generated network policies to the existing network policies.
                     </Text>
                 </>
             }
@@ -36,12 +35,12 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
                 flexWrap={{ default: 'nowrap' }}
             >
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
-                    <Text className="pf-u-font-weight-bold">Generated network policies</Text>
-                    <NetworkPoliciesYAML yaml={generated} height="400px" />
-                </Flex>
-                <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
                     <Text className="pf-u-font-weight-bold">Existing network policies</Text>
                     <NetworkPoliciesYAML yaml={current} height="400px" />
+                </Flex>
+                <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
+                    <Text className="pf-u-font-weight-bold">Generated network policies</Text>
+                    <NetworkPoliciesYAML yaml={generated} height="400px" />
                 </Flex>
             </Flex>
         </Modal>
