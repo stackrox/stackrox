@@ -51,8 +51,9 @@ COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
 COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/roxctl*            /assets/downloads/cli/
 
-COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY --from=extracted_bundle /bundle/ui/ /ui/
+COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
+COPY ui /ui
+
 COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
 COPY --from=extracted_bundle /bundle/postgres-libs.rpm /tmp/
 COPY --from=extracted_bundle /bundle/postgres.rpm /tmp/

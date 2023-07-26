@@ -615,11 +615,11 @@ endif
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
-	cp -r ui/build image/ui/
+	cp -r ui/build image/rhel/ui/
 ifdef CI
-	$(SILENT)[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
+	$(SILENT)[ -d image/rhel/THIRD_PARTY_NOTICES ] || { echo "image/rhel/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
 else
-	$(SILENT)[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
+	$(SILENT)[ -f image/rhel/THIRD_PARTY_NOTICES ] || mkdir -p image/rhel/THIRD_PARTY_NOTICES
 endif
 	$(SILENT)[ -d image/rhel/docs ] || { echo "Generated docs not found in image/rhel/docs. They are required for build."; exit 1; }
 
@@ -679,7 +679,7 @@ clean: clean-image
 clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin image/rhel/bin
-	git clean -xdf image/ui image/rhel/docs
+	git clean -xdf image/ui image/rhel/ui image/rhel/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
@@ -716,7 +716,7 @@ ossls-audit: deps
 .PHONY: ossls-notice
 ossls-notice: deps
 	ossls version
-	ossls audit --export image/THIRD_PARTY_NOTICES
+	ossls audit --export image/rhel/THIRD_PARTY_NOTICES
 
 .PHONY: collector-tag
 collector-tag:

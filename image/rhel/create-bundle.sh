@@ -33,9 +33,6 @@ chmod -R 755 "${bundle_root}"
 # includes artifacts that would be otherwise downloaded or included via a COPY
 # command in the Dockerfile.
 
-cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
-cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
-
 arch="x86_64"
 goarch="amd64"
 if [[ $(uname -m) == "arm64" ]]; then
