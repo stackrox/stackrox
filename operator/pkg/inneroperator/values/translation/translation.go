@@ -3,6 +3,9 @@ package translation
 import (
 	"context"
 
+	// Required for the usage of go:embed below.
+	_ "embed"
+
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -26,7 +29,7 @@ type Translator struct {
 }
 
 // Translate translates and enriches helm values
-func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
+func (t Translator) Translate(_ context.Context, _ *unstructured.Unstructured) (chartutil.Values, error) {
 	baseValues, err := chartutil.ReadValues(baseValuesYAML)
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
