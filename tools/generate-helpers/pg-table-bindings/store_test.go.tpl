@@ -404,9 +404,9 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 
 			// Ensure objects allowed by test scope were actually deleted
 			for _, obj := range testCase.expectedObjects {
-			    found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-			    assert.NoError(t, err)
-			    assert.False(t, found)
+				found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+				assert.NoError(t, err)
+				assert.False(t, found)
 			}
 		})
 	}
@@ -433,9 +433,9 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 
 			// Ensure objects allowed by test scope were actually deleted
 			for _, obj := range testCase.expectedObjects {
-			    found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-			    assert.NoError(t, err)
-			    assert.False(t, found)
+				found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+				assert.NoError(t, err)
+				assert.False(t, found)
 			}
 		})
 	}
