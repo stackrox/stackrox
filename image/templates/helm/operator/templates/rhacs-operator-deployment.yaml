@@ -5,7 +5,7 @@ metadata:
     app: rhacs-inner-operator
     control-plane: controller-manager
   name: rhacs-inner-operator-controller-manager
-  namespace: rhacs-inner-operator
+  namespace: rhacs-operator
 spec:
   replicas: 1
   selector:
@@ -51,7 +51,7 @@ spec:
             - --leader-elect
           env:
             - name: ROX_OPERATOR_OUTER_MODE
-              value: "{{operator.outerMode}}"
+              value: "{{.Values.operator.outerMode}}"
             - name: RELATED_IMAGE_MAIN
             - name: RELATED_IMAGE_SCANNER
             - name: RELATED_IMAGE_SCANNER_SLIM
@@ -116,8 +116,8 @@ spec:
       schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
-      serviceAccount: rhacs-inner-operator-controller-manager
-      serviceAccountName: rhacs-inner-operator-controller-manager
+      serviceAccount: rhacs-operator-controller-manager
+      serviceAccountName: rhacs-operator-controller-manager
       terminationGracePeriodSeconds: 10
       # # FIXME: REMOVE BEFORE PROD
       # volumes:
@@ -132,7 +132,7 @@ spec:
 # kind: Certificate
 # metadata:
 #   name: rhacs-inner-operator-serving-cert
-#   namespace: rhacs-inner-operator
+#   namespace: rhacs-operator
 # spec:
 #   dnsNames:
 #   - rhacs-inner-operator-webhook-service.rhacs-inner-operator.svc
@@ -146,7 +146,7 @@ spec:
 # kind: Issuer
 # metadata:
 #   name: rhacs-inner-operator-selfsigned-issuer
-#   namespace: rhacs-inner-operator
+#   namespace: rhacs-operator
 # spec:
 #   selfSigned: {}
 # ---

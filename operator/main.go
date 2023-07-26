@@ -57,9 +57,10 @@ const (
 )
 
 var (
-	setupLog                   = ctrl.Log.WithName("setup")
-	scheme                     = runtime.NewScheme()
-	enableWebhooks             = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	setupLog = ctrl.Log.WithName("setup")
+	scheme   = runtime.NewScheme()
+	// enableWebhooks             = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true) # FIXME: Flip back default
+	enableWebhooks             = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", false)
 	enableProfiling            = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
 	profilingThresholdFraction = env.RegisterSetting("PROFILING_THRESHOLD_FRACTION", env.WithDefault("0.8"))
 	memLimit                   = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)

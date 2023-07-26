@@ -18,4 +18,4 @@ operator:
 
   # In outer mode, the Operator reconciles Central CRs as well as the inner Operator.
   # In non-outer mode (inner mode), the Operator reconciles Secured Cluster CRs.
-  outerMode: true
+  outerMode: false
