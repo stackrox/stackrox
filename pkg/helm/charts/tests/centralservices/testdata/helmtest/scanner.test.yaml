@@ -12,6 +12,9 @@ values:
     dbServiceTLS:
       cert: ""
       key: ""
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - name: "scanner with default settings"
   expect: |

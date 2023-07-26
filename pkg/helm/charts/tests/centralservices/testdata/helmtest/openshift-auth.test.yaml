@@ -8,6 +8,9 @@ values:
   central:
     persistence:
       none: true
+  monitoring:
+    openshift:
+      enabled: false
 
 server:
   availableSchemas:
