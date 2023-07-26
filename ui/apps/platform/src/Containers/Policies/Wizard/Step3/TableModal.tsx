@@ -112,7 +112,7 @@ function TableModal({
                                                     </Th>
                                                 );
                                             })}
-                                            <Th aria-label="Row actions" />
+                                            <Td />
                                         </Tr>
                                     </Thead>
                                     <Tbody>
