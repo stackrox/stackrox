@@ -33,13 +33,6 @@ chmod -R 755 "${bundle_root}"
 # includes artifacts that would be otherwise downloaded or included via a COPY
 # command in the Dockerfile.
 
-cp -p "${INPUT_ROOT}/bin/migrator"          "${bundle_root}/stackrox/bin/"
-cp -p "${INPUT_ROOT}/bin/central"           "${bundle_root}/stackrox/"
-cp -p "${INPUT_ROOT}/bin/compliance"        "${bundle_root}/stackrox/bin/"
-cp -p "${INPUT_ROOT}/bin/roxctl"*           "${bundle_root}/assets/downloads/cli/"
-cp -p "${INPUT_ROOT}/bin/kubernetes-sensor" "${bundle_root}/stackrox/bin/"
-cp -p "${INPUT_ROOT}/bin/sensor-upgrader"   "${bundle_root}/stackrox/bin/"
-cp -p "${INPUT_ROOT}/bin/admission-control" "${bundle_root}/stackrox/bin/"
 cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
 cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 

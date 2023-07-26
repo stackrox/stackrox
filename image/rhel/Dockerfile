@@ -42,8 +42,15 @@ ENV PATH="/stackrox:$PATH" \
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY static-bin /stackrox/
-COPY --from=extracted_bundle /bundle/assets/ /assets/
-COPY --from=extracted_bundle /bundle/stackrox/ /stackrox/
+
+COPY bin/central            /stackrox/central
+COPY bin/migrator           /stackrox/bin/migrator
+COPY bin/compliance         /stackrox/bin/compliance
+COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY bin/admission-control  /stackrox/bin/admission-control
+COPY bin/roxctl*            /assets/downloads/cli/
+
 COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/ui/ /ui/
 COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
