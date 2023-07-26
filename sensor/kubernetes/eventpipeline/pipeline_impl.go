@@ -73,7 +73,7 @@ func (p *eventPipeline) ResponsesC() <-chan *message.ExpiringMessage {
 func (p *eventPipeline) stopCurrentContext() {
 	p.contextMtx.Lock()
 	defer p.contextMtx.Unlock()
-	if p.context != nil {
+	if p.cancelContext != nil {
 		p.cancelContext()
 	}
 }

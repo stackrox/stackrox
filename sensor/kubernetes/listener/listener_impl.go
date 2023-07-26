@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
@@ -45,6 +46,9 @@ func (k *listenerImpl) StartWithContext(ctx context.Context) error {
 
 func (k *listenerImpl) Start() error {
 	if k.context == nil {
+		if !buildinfo.ReleaseBuild {
+			panic("Something went very wrong: starting Kubernetes Listener with nil context")
+		}
 		return errors.New("cannot start listener without a context")
 	}
 

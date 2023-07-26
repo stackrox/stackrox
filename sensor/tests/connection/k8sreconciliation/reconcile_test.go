@@ -48,8 +48,7 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	//  NetworkPolicy 	block-all-egress
 	//
 	// Using a NetworkPolicy here will make sure that no deployments that were removed while the connection
-	// was down will be used for
-	//
+	// was down will be reprocessed and sent when the NetworkPolicy event gets resynced.
 	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
 
