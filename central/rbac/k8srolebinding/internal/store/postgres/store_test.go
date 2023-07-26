@@ -327,69 +327,41 @@ func (s *RoleBindingsStoreSuite) TestSACGet() {
 }
 
 func (s *RoleBindingsStoreSuite) TestSACDelete() {
-	objA := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-
-	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           0,
-		withNoAccess:            2,
-		withNoAccessToCluster:   2,
-		withAccessToDifferentNs: 2,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
 
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetId()))
-			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetId()))
+			assert.NoError(t, s.store.Delete(testCase.context, objA.GetId()))
+			assert.NoError(t, s.store.Delete(testCase.context, objB.GetId()))
 
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, count)
+			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 		})
 	}
 }
 
 func (s *RoleBindingsStoreSuite) TestSACDeleteMany() {
-	objA := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-
-	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           0,
-		withNoAccess:            2,
-		withNoAccessToCluster:   2,
-		withAccessToDifferentNs: 2,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
 
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
 				objA.GetId(),
 				objB.GetId(),
 			}))
 
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, count)
+			assert.Equal(t, 2-len(testCase.expectedObjects), count)
 		})
 	}
 }
