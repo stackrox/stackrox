@@ -104,6 +104,9 @@ import (
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
+	usageCSV "github.com/stackrox/rox/central/productusage/csv"
+	usageDataStore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	usageService "github.com/stackrox/rox/central/productusage/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
@@ -396,6 +399,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		siService.Singleton(),
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
+		usageService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
 		clusterCVEService.Singleton(),
@@ -745,6 +749,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/clusters/helm-config.yaml",
 			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/product/usage/csv",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: usageCSV.CSVHandler(usageDataStore.Singleton()),
 			Compression:   true,
 		},
 	}

@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	telemetryMocks "github.com/stackrox/rox/central/metrics/telemetry/mocks"
+	usageMocks "github.com/stackrox/rox/central/productusage/datastore/securedunits/mocks"
 	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -21,6 +23,7 @@ type PipelineTestSuite struct {
 	pipeline         *pipelineImpl
 	metricsStore     *metricsMocks.MockMetricsStore
 	telemetryMetrics *telemetryMocks.MockTelemetry
+	usageStore       *usageMocks.MockDataStore
 	mockCtrl         *gomock.Controller
 }
 
@@ -29,7 +32,8 @@ func (suite *PipelineTestSuite) SetupTest() {
 
 	suite.metricsStore = metricsMocks.NewMockMetricsStore(suite.mockCtrl)
 	suite.telemetryMetrics = telemetryMocks.NewMockTelemetry(suite.mockCtrl)
-	suite.pipeline = NewPipeline(suite.metricsStore, suite.telemetryMetrics).(*pipelineImpl)
+	suite.usageStore = usageMocks.NewMockDataStore(suite.mockCtrl)
+	suite.pipeline = NewPipeline(suite.metricsStore, suite.telemetryMetrics, suite.usageStore).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -43,6 +47,10 @@ func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor() {
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
 	suite.telemetryMetrics.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
+	suite.usageStore.EXPECT().UpdateUsage(context.Background(), clusterID, &storage.SecuredUnits{
+		NumNodes:    expectedMetrics.GetNodeCount(),
+		NumCpuUnits: expectedMetrics.GetCpuCapacity(),
+	}).Return(nil)
 
 	err := suite.pipeline.Run(context.Background(), clusterID, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterMetrics{

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	hashManager "github.com/stackrox/rox/central/hash/manager"
+	usageDS "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
@@ -36,14 +37,16 @@ import (
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
-func NewFactory(manager hashManager.Manager) pipeline.Factory {
+func NewFactory(manager hashManager.Manager, usageStore usageDS.DataStore) pipeline.Factory {
 	return &factoryImpl{
-		manager: manager,
+		manager:    manager,
+		usageStore: usageStore,
 	}
 }
 
 type factoryImpl struct {
-	manager hashManager.Manager
+	manager    hashManager.Manager
+	usageStore usageDS.DataStore
 }
 
 // PipelineForCluster grabs items from the queue, processes them, and potentially sends them back to sensor.
@@ -66,7 +69,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		imageintegrations.GetPipeline(),
 		clusterstatusupdate.GetPipeline(),
 		clusterhealthupdate.GetPipeline(),
-		clustermetrics.GetPipeline(),
+		clustermetrics.GetPipeline(s.usageStore),
 		serviceaccounts.GetPipeline(),
 		roles.GetPipeline(),
 		rolebindings.GetPipeline(),
