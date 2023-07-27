@@ -28,8 +28,12 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// Backends holds the potential engines the scanner
+// may use depending on the mode in which it is running.
 type Backends struct {
+	// Indexer is the indexing engine.
 	Indexer *indexer.Indexer
+	// Matcher is the vulnerability matching engine.
 	Matcher *matcher.Matcher
 }
 
@@ -186,6 +190,7 @@ func createBackends(ctx context.Context) (*Backends, error) {
 	}, nil
 }
 
+// Close closes all the backends used by the scanner.
 func (b *Backends) Close(ctx context.Context) {
 	if b.Matcher != nil {
 		err := b.Matcher.Close(ctx)

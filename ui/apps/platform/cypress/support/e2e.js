@@ -29,6 +29,7 @@ Cypress.on('scrolled', ($el) => {
 Cypress.on(
     'uncaught:exception',
     (err) =>
+        !err.message.includes('ResizeObserver loop completed') &&
         !err.message.includes('ResizeObserver loop limit exceeded') &&
         // Addendum (2022-11-28): ignore error about multiple versions of Mobx
         // The patternfly topology extension uses a 5.x version of Mobx, and the redoc library needs a 6.x version

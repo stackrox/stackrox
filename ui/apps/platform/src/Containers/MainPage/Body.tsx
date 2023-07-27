@@ -8,6 +8,7 @@ import {
     networkPath,
     violationsPath,
     compliancePath,
+    complianceEnhancedBasePath,
     clustersListPath,
     clustersDelegateScanningPath,
     clustersPathWithParam,
@@ -33,13 +34,14 @@ import {
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
-import asyncComponent from 'Components/AsyncComponent';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
+
+import asyncComponent from './AsyncComponent';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -73,6 +75,9 @@ const AsyncPolicyManagementPage = asyncComponent(
 const AsyncCollectionsPage = asyncComponent(() => import('Containers/Collections/CollectionsPage'));
 
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
+const AsyncComplianceEnhancedPage = asyncComponent(
+    () => import('Containers/ComplianceEnhanced/CompliancePage')
+);
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPageV2 = asyncComponent(
     () => import('Containers/AccessControl/AccessControl')
@@ -137,6 +142,10 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={networkPath} component={AsyncNetworkGraphPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
+                    <Route
+                        path={complianceEnhancedBasePath}
+                        component={AsyncComplianceEnhancedPage}
+                    />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
                     <Route path={policyManagementBasePath} component={AsyncPolicyManagementPage} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}

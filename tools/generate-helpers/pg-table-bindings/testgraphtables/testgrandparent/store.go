@@ -16,7 +16,6 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -57,26 +56,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoTestGrandparents,
-			copyFromTestGrandparents,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoTestGrandparents,
+		copyFromTestGrandparents,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -93,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent) error {
+func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -115,7 +107,7 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 	var query string
 
 	for childIndex, child := range obj.GetEmbedded() {
-		if err := insertIntoTestGrandparentsEmbeddeds(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddeds(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -125,7 +117,7 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -140,7 +132,7 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, 
 	var query string
 
 	for childIndex, child := range obj.GetEmbedded2() {
-		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, testGrandparentID, idx, childIndex); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(batch, child, testGrandparentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -150,7 +142,7 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, 
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(_ context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

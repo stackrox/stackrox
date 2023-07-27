@@ -39,6 +39,9 @@ spec:
     additionalCAs:
     - name: foo.pem
       content: some cert content
+  monitoring:
+    openshift:
+      enabled: true
 ---
 apiVersion: v1
 kind: Secret

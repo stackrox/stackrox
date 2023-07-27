@@ -3,6 +3,10 @@
  */
 
 import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { HasReadAccess } from 'hooks/usePermissions';
+import { FeatureFlagEnvVar } from 'types/featureFlag';
+import { ResourceName } from 'types/roleResources';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -42,11 +46,12 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
+export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const listeningEndpointsBasePath = `${mainPath}/audit/listening-endpoints`;
+export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
 
 // Configuration Management
 
@@ -100,6 +105,119 @@ export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilities
 
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityReportPath = `${vulnerabilitiesBasePath}/reports/:reportId`;
+
+// Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
+
+type RouteDescription = {
+    featureFlagDependency?: FeatureFlagEnvVar; // can add array as alternative if needed in the future
+    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS
+};
+
+// Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
+const routeDescriptionMap: Record<string, RouteDescription> = {
+    [accessControlPath]: {
+        resourceAccessRequirements: [],
+    },
+    [apidocsPath]: {
+        resourceAccessRequirements: [],
+    },
+    [clustersDelegateScanningPath]: {
+        resourceAccessRequirements: [],
+    },
+    [clustersPathWithParam]: {
+        resourceAccessRequirements: [],
+    },
+    [collectionsPath]: {
+        resourceAccessRequirements: ['WorkflowAdministration'],
+    },
+    [compliancePath]: {
+        resourceAccessRequirements: [],
+    },
+    [complianceEnhancedBasePath]: {
+        resourceAccessRequirements: [],
+    },
+    [configManagementPath]: {
+        resourceAccessRequirements: [],
+    },
+    [dashboardPath]: {
+        resourceAccessRequirements: [],
+    },
+    [integrationsPath]: {
+        resourceAccessRequirements: [],
+    },
+    [listeningEndpointsBasePath]: {
+        resourceAccessRequirements: [],
+    },
+    [networkPath]: {
+        resourceAccessRequirements: [],
+    },
+    [policyManagementBasePath]: {
+        resourceAccessRequirements: [],
+    },
+    [riskPath]: {
+        resourceAccessRequirements: [],
+    },
+    [searchPath]: {
+        resourceAccessRequirements: [],
+    },
+    [systemConfigPath]: {
+        resourceAccessRequirements: [],
+    },
+    [systemHealthPath]: {
+        resourceAccessRequirements: [],
+    },
+    [userBasePath]: {
+        resourceAccessRequirements: [],
+    },
+    [violationsPath]: {
+        resourceAccessRequirements: [],
+    },
+    [vulnManagementPath]: {
+        resourceAccessRequirements: [],
+    },
+    [vulnManagementReportsPath]: {
+        resourceAccessRequirements: ['WorkflowAdministration'],
+    },
+    [vulnManagementRiskAcceptancePath]: {
+        resourceAccessRequirements: [],
+    },
+    [vulnerabilitiesWorkloadCvesPath]: {
+        featureFlagDependency: 'ROX_VULN_MGMT_WORKLOAD_CVES',
+        resourceAccessRequirements: [],
+    },
+    [vulnerabilityReportsPath]: {
+        featureFlagDependency: 'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS',
+        resourceAccessRequirements: ['WorkflowAdministration'],
+    },
+};
+
+type RoutePredicates = {
+    hasReadAccess: HasReadAccess;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+};
+
+export function isRouteEnabled(
+    { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
+    path: string
+) {
+    const routeDescription = routeDescriptionMap[path];
+
+    if (!routeDescription) {
+        // eslint-disable-next-line no-console
+        console.warn(`isRouteEnabled for unknown path ${path}`);
+        return true;
+    }
+
+    const { featureFlagDependency, resourceAccessRequirements } = routeDescription;
+
+    if (typeof featureFlagDependency === 'string') {
+        if (!isFeatureFlagEnabled(featureFlagDependency)) {
+            return false;
+        }
+    }
+
+    return resourceAccessRequirements.every((resourceName) => hasReadAccess(resourceName));
+}
 
 /**
  * New Framwork-related route paths
@@ -163,9 +281,11 @@ const vulnerabilitiesPathToLabelMap = {
 
 export const basePathToLabelMap = {
     [dashboardPath]: 'Dashboard',
-    [networkBasePath]: 'Network Graph (2.0)',
+    [networkBasePath]: 'Network Graph',
+    [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
     [complianceBasePath]: 'Compliance',
+    [complianceEnhancedBasePath]: 'Compliance (2.0)',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',

@@ -10,6 +10,7 @@ import {
     dashboardPath,
     violationsBasePath,
     complianceBasePath,
+    complianceEnhancedBasePath,
     vulnManagementPath,
     vulnManagementReportsPath,
     vulnManagementRiskAcceptancePath,
@@ -25,6 +26,7 @@ import {
     vulnerabilitiesWorkloadCvesPath,
     networkBasePath,
     vulnerabilityReportsPath,
+    listeningEndpointsBasePath,
 } from 'routePaths';
 
 import LeftNavItem from './LeftNavItem';
@@ -46,6 +48,7 @@ function NavigationSidebar({
     const isReportingEnhancementsEnabled = isFeatureFlagEnabled(
         'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
     );
+    const isComplianceEnhancementsEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_ENHANCEMENTS');
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
     if (
@@ -75,7 +78,15 @@ function NavigationSidebar({
         );
     }
 
+    const getOriginalComplianceTitle = () => {
+        return isComplianceEnhancementsEnabled
+            ? `${basePathToLabelMap[complianceBasePath]} (1.0)`
+            : basePathToLabelMap[complianceBasePath];
+    };
+
     const vulnerabilitiesPaths = [vulnerabilitiesWorkloadCvesPath, vulnerabilityReportsPath];
+
+    const networkSectionPaths = [networkBasePath, listeningEndpointsBasePath];
 
     const Navigation = (
         <Nav id="nav-primary-simple">
@@ -85,20 +96,41 @@ function NavigationSidebar({
                     path={dashboardPath}
                     title={basePathToLabelMap[dashboardPath]}
                 />
-                <LeftNavItem
-                    isActive={location.pathname.includes(networkBasePath)}
-                    path={networkBasePath}
-                    title="Network Graph"
-                />
+                <NavExpandable
+                    id="Network"
+                    title="Network"
+                    isActive={networkSectionPaths.some((path) => location.pathname.includes(path))}
+                    isExpanded={networkSectionPaths.some((path) =>
+                        location.pathname.includes(path)
+                    )}
+                >
+                    <LeftNavItem
+                        isActive={location.pathname.includes(networkBasePath)}
+                        path={networkBasePath}
+                        title={basePathToLabelMap[networkBasePath]}
+                    />
+                    <LeftNavItem
+                        isActive={location.pathname.includes(listeningEndpointsBasePath)}
+                        path={listeningEndpointsBasePath}
+                        title={basePathToLabelMap[listeningEndpointsBasePath]}
+                    />
+                </NavExpandable>
                 <LeftNavItem
                     isActive={location.pathname.includes(violationsBasePath)}
                     path={violationsBasePath}
                     title={basePathToLabelMap[violationsBasePath]}
                 />
+                {isComplianceEnhancementsEnabled && (
+                    <LeftNavItem
+                        isActive={location.pathname.includes(complianceEnhancedBasePath)}
+                        path={complianceEnhancedBasePath}
+                        title={basePathToLabelMap[complianceEnhancedBasePath]}
+                    />
+                )}
                 <LeftNavItem
-                    isActive={location.pathname.includes(complianceBasePath)}
+                    isActive={/^\/${complianceBasePath}(?!-)/.test(location.pathname)}
                     path={complianceBasePath}
-                    title={basePathToLabelMap[complianceBasePath]}
+                    title={getOriginalComplianceTitle()}
                 />
                 {(isWorkloadCvesEnabled || isReportingEnhancementsEnabled) && (
                     <NavExpandable

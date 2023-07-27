@@ -17,7 +17,6 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -59,26 +58,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoComplianceOperatorScanSettingV2,
-			copyFromComplianceOperatorScanSettingV2,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoComplianceOperatorScanSettingV2,
+		copyFromComplianceOperatorScanSettingV2,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -95,7 +87,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorScanSettingV2(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2) error {
+func insertIntoComplianceOperatorScanSettingV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -115,7 +107,7 @@ func insertIntoComplianceOperatorScanSettingV2(ctx context.Context, batch *pgx.B
 	var query string
 
 	for childIndex, child := range obj.GetProfiles() {
-		if err := insertIntoComplianceOperatorScanSettingV2Profiles(ctx, batch, child, obj.GetScanName(), childIndex); err != nil {
+		if err := insertIntoComplianceOperatorScanSettingV2Profiles(batch, child, obj.GetScanName(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -123,7 +115,7 @@ func insertIntoComplianceOperatorScanSettingV2(ctx context.Context, batch *pgx.B
 	query = "delete from compliance_operator_scan_setting_v2_profiles where compliance_operator_scan_setting_v2_ScanName = $1 AND idx >= $2"
 	batch.Queue(query, obj.GetScanName(), len(obj.GetProfiles()))
 	for childIndex, child := range obj.GetClusters() {
-		if err := insertIntoComplianceOperatorScanSettingV2Clusters(ctx, batch, child, obj.GetScanName(), childIndex); err != nil {
+		if err := insertIntoComplianceOperatorScanSettingV2Clusters(batch, child, obj.GetScanName(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -133,7 +125,7 @@ func insertIntoComplianceOperatorScanSettingV2(ctx context.Context, batch *pgx.B
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingV2Profiles(_ context.Context, batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanSettingV2ScanName string, idx int) error {
+func insertIntoComplianceOperatorScanSettingV2Profiles(batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanSettingV2ScanName string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -148,7 +140,7 @@ func insertIntoComplianceOperatorScanSettingV2Profiles(_ context.Context, batch 
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingV2Clusters(_ context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2_ClusterScanStatus, complianceOperatorScanSettingV2ScanName string, idx int) error {
+func insertIntoComplianceOperatorScanSettingV2Clusters(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2_ClusterScanStatus, complianceOperatorScanSettingV2ScanName string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

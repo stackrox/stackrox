@@ -75,6 +75,7 @@ import (
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
+	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
@@ -96,7 +97,6 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
-	"github.com/stackrox/rox/central/private"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -282,10 +282,10 @@ func main() {
 	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
-	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
-		privateServer := private.NewHTTPServer(metrics.HTTPSingleton())
-		privateServer.AddRoutes(privateRoutes())
-		privateServer.RunForever()
+	if env.ManagedCentral.BooleanSetting() {
+		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
+		clusterInternalServer.AddRoutes(clusterInternalRoutes())
+		clusterInternalServer.RunForever()
 	}
 
 	go startGRPCServer()
@@ -293,25 +293,25 @@ func main() {
 	waitForTerminationSignal()
 }
 
-// privateRoutes returns list of route-handler pairs to be served on "private" port.
-// Private port is not exposed to the internet and thus requires no authorization.
-// There are 3 ways to access private port:
+// clusterInternalRoutes returns list of route-handler pairs to be served on "cluster-internal" port.
+// Cluster-internal port is not exposed to the internet and thus requires no authorization.
+// There are 3 ways to access cluster-internal port:
 // * kubectl port-forward to central pod
 // * kubectl exec into central pod
 // * modifying central service definition
-func privateRoutes() []*private.Route {
-	result := make([]*private.Route, 0)
+func clusterInternalRoutes() []*internal.Route {
+	result := make([]*internal.Route, 0)
 	debugRoutes := debugRoutes()
 	for _, r := range debugRoutes {
-		result = append(result, &private.Route{
+		result = append(result, &internal.Route{
 			Route:         r.Route,
 			ServerHandler: r.ServerHandler,
 			Compression:   r.Compression,
 		})
 	}
-	result = append(result, &private.Route{
+	result = append(result, &internal.Route{
 		Route:         "/diagnostics",
-		ServerHandler: debugService.Singleton().PrivateDiagnosticsHandler(),
+		ServerHandler: debugService.Singleton().InternalDiagnosticsHandler(),
 		Compression:   true,
 	})
 	return result
@@ -773,7 +773,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	debugRoutes := utils.IfThenElse(env.PrivateDiagnosticsEnabled.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
+	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
 }

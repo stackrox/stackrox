@@ -29,7 +29,7 @@ func TestMigration(t *testing.T) {
 
 
 func (s *migrationTestSuite) SetupSuite() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	// {{template "TODO"}}: Create the schemas and tables required for the pre-migration dataset push to DB
 }
 

@@ -12,22 +12,24 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
 	v4.UnimplementedMatcherServer
 	matcher *Matcher
 }
 
+// NewMatcherService creates a new vulnerability matcher gRPC service.
 func NewMatcherService(matcher *Matcher) (*matcherService, error) {
 	return &matcherService{
 		matcher: matcher,
 	}, nil
 }
 
-func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
+func (s *matcherService) GetVulnerabilities(_ context.Context, _ *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetVulnerabilities not implemented")
 }
 
-func (s *matcherService) GetMetadata(ctx context.Context, req *types.Empty) (*v4.Metadata, error) {
+func (s *matcherService) GetMetadata(_ context.Context, _ *types.Empty) (*v4.Metadata, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMetadata not implemented")
 }
 
@@ -43,7 +45,7 @@ func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName st
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
-func (s *matcherService) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// Currently we do not set up gRPC gateway for the matcher.
 	return nil
 }

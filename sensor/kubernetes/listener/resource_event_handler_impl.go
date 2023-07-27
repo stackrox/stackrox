@@ -1,6 +1,8 @@
 package listener
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -17,6 +19,7 @@ import (
 // resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
 // channel
 type resourceEventHandlerImpl struct {
+	context    context.Context
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
@@ -106,8 +109,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 	}
 
 	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	// TODO(ROX-17157) Add context here
-	message.Context = nil
+	message.Context = h.context
 	h.resolver.Send(message)
 }
 
