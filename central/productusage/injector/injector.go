@@ -26,6 +26,7 @@ var (
 )
 
 func (i *injectorImpl) gather(ctx context.Context) {
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, metricsWriter)
 	newMetrics, err := i.ds.AggregateAndFlush(ctx)
 	if err != nil {
 		log.Debug("Failed to get and flush the aggregated usage metrics: ", err)
