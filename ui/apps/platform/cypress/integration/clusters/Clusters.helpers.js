@@ -1,11 +1,17 @@
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
-import { interceptRequests, waitForResponses } from '../../helpers/request';
+import {
+    interceptRequests,
+    waitForResponses,
+    interactAndWaitForResponses,
+} from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 
 export const sensorUpgradesConfigAlias = 'sensorupgrades/config';
 export const clustersAlias = 'clusters';
 export const clusterDefaultsAlias = 'cluster-defaults';
 export const delegatedRegistryConfigAlias = 'delegatedregistryconfig';
+export const delegatedRegistryClustersAlias = `${delegatedRegistryConfigAlias}/clusters`;
+export const delegatedRegistryConfigAliasForPUT = 'PUT_delegatedregistryconfig';
 
 const routeMatcherMapForClusterDefaults = {
     [clusterDefaultsAlias]: {
@@ -29,6 +35,10 @@ const routeMatcherMapForDelegateScanning = {
     [delegatedRegistryConfigAlias]: {
         method: 'GET',
         url: '/v1/delegatedregistryconfig',
+    },
+    [delegatedRegistryClustersAlias]: {
+        method: 'GET',
+        url: '/v1/delegatedregistryconfig/clusters',
     },
 };
 
@@ -163,4 +173,24 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
  */
 export function visitDelegateScanning(staticResponseMap) {
     visit(delegateScanningPath, routeMatcherMapForDelegateScanning, staticResponseMap);
+}
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function saveDelegatedRegistryConfig(staticResponseMap) {
+    const routeMatcherMap = {
+        [delegatedRegistryConfigAliasForPUT]: {
+            method: 'PUT',
+            url: '/v1/delegatedregistryconfig',
+        },
+    };
+
+    return interactAndWaitForResponses(
+        () => {
+            cy.get('button:contains("Save")').click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
 }
