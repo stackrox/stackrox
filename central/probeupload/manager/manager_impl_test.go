@@ -10,7 +10,9 @@ import (
 	"testing"
 
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
+	blobSearch "github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
+	blobPg "github.com/stackrox/rox/central/blob/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -37,7 +39,8 @@ func TestManager(t *testing.T) {
 func (s *managerTestSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	s.datastore = blobstore.NewDatastore(s.store, nil)
+	searcher := blobSearch.New(s.store, blobPg.NewIndexer(s.testDB.DB))
+	s.datastore = blobstore.NewDatastore(s.store, searcher)
 	s.mgr = newManager(s.datastore)
 	s.mgr.freeStorageThreshold = 0 // not interested in testing this
 }
