@@ -16,18 +16,14 @@ func TestCSV(t *testing.T) {
 	ts2, _ := time.Parse(time.RFC3339Nano, "2023-07-24T15:13:21.702316Z")
 	metrics := []*storage.Usage{
 		{
-			Ts: protoconv.ConvertTimeToTimestamp(ts1),
-			Sr: &storage.Usage_SecuredResources{
-				Nodes: 1,
-				Cores: 2,
-			},
+			Timestamp: protoconv.ConvertTimeToTimestamp(ts1),
+			NumNodes:  1,
+			NumCores:  2,
 		},
 		{
-			Ts: protoconv.ConvertTimeToTimestamp(ts2),
-			Sr: &storage.Usage_SecuredResources{
-				Nodes: 3,
-				Cores: 4,
-			},
+			Timestamp: protoconv.ConvertTimeToTimestamp(ts2),
+			NumNodes:  3,
+			NumCores:  4,
 		},
 	}
 	var data []byte

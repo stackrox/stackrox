@@ -8,11 +8,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "storage";
 
 message Usage {
-    message SecuredResources {
-        int32 nodes = 1;
-        int32 cores = 2;
-    }
-
-    google.protobuf.Timestamp ts = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Timestamp"'];
-    SecuredResources sr = 2;
+    google.protobuf.Timestamp timestamp = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Timestamp"'];
+    int32 num_nodes = 2;
+    int32 num_cores = 3;
 }
