@@ -312,6 +312,90 @@ teardown() {
   }'
 }
 
+@test "roxctl-release connectivity-map generates connlist for acs-security-demo" {
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/catalog/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/notification/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/shipping/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/route.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/route.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/gateway/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/mastercard-processor/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/visa-processor/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/acs_netpols.yaml"
+  run roxctl-release connectivity-map "${test_data}/np-guard/acs-security-demos" 
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter WARN and INFO messages
+  assert_output --partial 'backend/checkout[Deployment] => backend/notification[Deployment] : TCP 8080
+backend/checkout[Deployment] => backend/recommendation[Deployment] : TCP 8080
+backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+backend/recommendation[Deployment] => backend/catalog[Deployment] : TCP 8080
+backend/reports[Deployment] => backend/catalog[Deployment] : TCP 8080
+backend/reports[Deployment] => backend/recommendation[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/checkout[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/recommendation[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/reports[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
+{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
+{ingress-controller} => frontend/webapp[Deployment] : TCP 8080' 
+}
+
+@test "roxctl-release connectivity-map generates connlist for acs-security-demo md format" {
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/catalog/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/notification/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/shipping/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/route.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/configmap.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/route.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/gateway/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/mastercard-processor/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/visa-processor/deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/acs-security-demos/acs_netpols.yaml"
+  run roxctl-release connectivity-map "${test_data}/np-guard/acs-security-demos" --output-format=md
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # output lines , skipping WARN and INFO messages
+  assert_output --partial '| src | dst | conn |
+|-----|-----|------|
+| backend/checkout[Deployment] | backend/notification[Deployment] | TCP 8080 |
+| backend/checkout[Deployment] | backend/recommendation[Deployment] | TCP 8080 |
+| backend/checkout[Deployment] | payments/gateway[Deployment] | TCP 8080 |
+| backend/recommendation[Deployment] | backend/catalog[Deployment] | TCP 8080 |
+| backend/reports[Deployment] | backend/catalog[Deployment] | TCP 8080 |
+| backend/reports[Deployment] | backend/recommendation[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/checkout[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/recommendation[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/reports[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/shipping[Deployment] | TCP 8080 |
+| payments/gateway[Deployment] | payments/mastercard-processor[Deployment] | TCP 8080 |
+| payments/gateway[Deployment] | payments/visa-processor[Deployment] | TCP 8080 |
+| {ingress-controller} | frontend/asset-cache[Deployment] | TCP 8080 |
+| {ingress-controller} | frontend/webapp[Deployment] | TCP 8080 |'
+}
+
 write_yaml_to_file() {
   image="${1}"
   templatedYaml="${2:-/dev/null}"

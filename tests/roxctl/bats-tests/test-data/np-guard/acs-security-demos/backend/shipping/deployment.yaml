@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  namespace: backend
+  labels:
+    app: shipping
+    app.kubernetes.io/part-of: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipping
+  template:
+    metadata:
+      labels:
+        app: shipping
+    spec:
+      containers:
+        - image: quay.io/vuln/rce-webapp:latest
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+            ]
+          imagePullPolicy: Always
+          name: shipping
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+---
+# Service named "shipping-service"
+# Listens on :8080
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: shipping
+  name: shipping-service
+  namespace: backend
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: shipping
+  type: ClusterIP
