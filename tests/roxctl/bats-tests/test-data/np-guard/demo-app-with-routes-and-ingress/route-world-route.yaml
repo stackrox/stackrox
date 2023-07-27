@@ -1,0 +1,12 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: route-world
+  namespace: routeworld
+spec:
+  port:
+    targetPort: 8060
+  to:
+    kind: Service
+    name: route-world
+    weight: 100

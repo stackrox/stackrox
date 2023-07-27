@@ -222,6 +222,96 @@ teardown() {
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
 }
 
+@test "roxctl-development connectivity-map generates empty connlist netpols blocks ingress connections from Routes" {
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-route.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/frontend-netpols.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-route.yaml"
+  run roxctl-development connectivity-map "${test_data}/np-guard/security-frontend-demo"
+  assert_success
+  # netpols deny connections between the existing deployments; and blocks ingress from external ips or ingress-controller
+  # the output contains only WARN and INFO messages
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'Route objects/s: frontend/asset-cache specified workload frontend/asset-cache[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload.'
+}
+
+@test "roxctl-development connectivity-map generates connlist with ingress connections from k8s-Ingress" {
+  assert_file_exist "${test_data}/np-guard/k8s-ingress-example/default_pods_list.yaml"
+  assert_file_exist "${test_data}/np-guard/k8s-ingress-example/k8s_ingress_policies.yaml"
+  assert_file_exist "${test_data}/np-guard/k8s-ingress-example/services.yaml"
+  run roxctl-development connectivity-map "${test_data}/np-guard/k8s-ingress-example"
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter all connections that are not from ingress-controller
+  assert_output --partial '{ingress-controller} => default/details-v1-79f774bdb9[ReplicaSet] : TCP 9080'
+}
+
+@test "roxctl-development connectivity-map generates connlist with ingress connections from k8s-Ingress dot format" {
+  assert_file_exist "${test_data}/np-guard/k8s-ingress-example/default_pods_list.yaml"
+  assert_file_exist "${test_data}/np-guard/k8s-ingress-example/k8s_ingress_policies.yaml"
+  assert_file_exist "${test_data}/np-guard/k8s-ingress-example/services.yaml"
+  run roxctl-development connectivity-map "${test_data}/np-guard/k8s-ingress-example" --output-format=dot
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter all connections that are not from ingress-controller
+  assert_output --partial '"{ingress-controller}" [label="{ingress-controller}" color="blue" fontcolor="blue"]'
+  assert_output --partial '"{ingress-controller}" -> "default/details-v1-79f774bdb9[ReplicaSet]" [label="TCP 9080" color="gold2" fontcolor="darkgreen"]'
+}
+
+@test "roxctl-development connectivity-map generates connlist with ingress connections from k8s-Ingress and Route objects csv format" {
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/hello-world-deployment-and-service.yaml"
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/hello-world-ingress.yaml"
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/hello-world-route.yaml"
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/ingress-world-deployment-and-service.yaml"
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/ingress-world-ingress.yaml"
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/route-world-deployment-and-service.yaml"
+  assert_file_exist "${test_data}/np-guard/demo-app-with-routes-and-ingress/route-world-route.yaml"
+  run roxctl-development connectivity-map "${test_data}/np-guard/demo-app-with-routes-and-ingress" --output-format=csv
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter all connections that are not from ingress-controller
+  assert_output --partial '{ingress-controller},helloworld/hello-world[Deployment],TCP 8000'
+  assert_output --partial '{ingress-controller},ingressworld/ingress-world[Deployment],TCP 8090'
+  assert_output --partial '{ingress-controller},routeworld/route-world[Deployment],TCP 8060'
+}
+
+@test "roxctl-development connectivity-map generates connlist with ingress connections from Routes md format" {
+  assert_file_exist "${test_data}/np-guard/multiple-routes-example/deployment_with_multiple_ports.yaml"
+  assert_file_exist "${test_data}/np-guard/multiple-routes-example/route-1.yaml"
+  assert_file_exist "${test_data}/np-guard/multiple-routes-example/route-2.yaml"
+  run roxctl-development connectivity-map "${test_data}/np-guard/multiple-routes-example" --output-format=md
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter all connections that are not from ingress-controller
+  assert_output --partial '| {ingress-controller} | routes-world/workload-with-multiple-ports[Deployment] | TCP 8000,8090 |'
+}
+
+@test "roxctl-development connectivity-map generates connlist with ingress connections from Ingress json format" {
+  assert_file_exist "${test_data}/np-guard/ingress-with-multiple-services-example/deployment_with_multiple_services.yaml"
+  assert_file_exist "${test_data}/np-guard/ingress-with-multiple-services-example/ingress_multiple_rules.yaml"
+  run roxctl-development connectivity-map "${test_data}/np-guard/ingress-with-multiple-services-example" --output-format=json
+  assert_success
+  
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter all connections that are not from ingress-controller
+  assert_output --partial ' {
+    "src": "{ingress-controller}",
+    "dst": "ingressworld/ingress-world-multiple-ports[Deployment]",
+    "conn": "TCP 8000,8090"
+  }'
+}
+
 write_yaml_to_file() {
   image="${1}"
   templatedYaml="${2:-/dev/null}"

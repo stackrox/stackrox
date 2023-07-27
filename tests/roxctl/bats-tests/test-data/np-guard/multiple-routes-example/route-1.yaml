@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: route-1
+  namespace: routes-world 
+  labels:
+    app: routes-world
+spec:
+  to:
+    kind: Service
+    name: routes-world-svc
+    weight: 100
+  port:
+    targetPort: first-port
+  wildcardPolicy: None

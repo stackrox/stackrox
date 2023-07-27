@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: "2022-01-27T18:20:25Z"
+  generation: 3
+  name: testcase26-ingress-policy #-ingress
+  namespace: default
+  resourceVersion: "37135"
+  uid: 85e70fbc-0b4b-462c-9bc1-9a1e7e00db58
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: demo.localdev.me
+    http:
+      paths:
+      - backend:
+          service:
+            name: details
+            port:
+              number: 9080
+        path: /details
+        pathType: Prefix
