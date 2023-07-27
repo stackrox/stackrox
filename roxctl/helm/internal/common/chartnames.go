@@ -24,7 +24,7 @@ const (
 	ChartCentralServices string = "central-services"
 	// ChartSecuredClusterServices is the shortname for the StackRox Secured Cluster Services Helm chart.
 	ChartSecuredClusterServices string = "secured-cluster-services"
-	//ChartOperator is the shortname for the StackRox Operator Helm chart.
+	// ChartOperator is the shortname for the StackRox Operator Helm chart.
 	ChartOperator string = "operator"
 )
 
