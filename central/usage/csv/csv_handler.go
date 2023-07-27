@@ -11,30 +11,40 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
+var bom = ([]byte)("\uFEFF")
+
+func writeError(w http.ResponseWriter, code int, err error, description string) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(code)
+	_, _ = w.Write([]byte(errors.Wrap(err, description).Error()))
+}
+
 // CSVHandler returns an HTTP handler function that serves usage data as CSV.
 func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		from, to, err := parseRequest(r)
 		if err != nil {
-			log.Error("Bad CSV usage metrics request: ", err)
-			w.WriteHeader(http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, err, "bad CSV usage metrics request")
 			return
 		}
 
 		metrics, err := ds.Get(r.Context(), from, to)
 		if err != nil {
-			log.Error("Failed to call usage metrics store: ", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			writeError(w, http.StatusInternalServerError, err, "failed to call usage metrics store")
 			return
 		}
-		w.Header().Add("Content-Type", "text/csv")
-		err = writeCSV(metrics, w)
-		if err != nil {
-			log.Error("Failed to send CSV data: ", err)
-			w.WriteHeader(http.StatusInternalServerError)
+
+		w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
+		w.Header().Set("Content-Disposition", `attachment; filename="usage.csv"`)
+
+		if n, err := w.Write(bom); err != nil || n != len(bom) {
+			writeError(w, http.StatusInternalServerError, err, "failed to write BOM header")
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		if err = writeCSV(metrics, w); err != nil {
+			writeError(w, http.StatusInternalServerError, err, "failed to send CSV data")
+			return
+		}
 	}
 }
 
