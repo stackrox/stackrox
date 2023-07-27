@@ -287,17 +287,11 @@ func (m *networkFlowManager) resetContext() {
 	m.pipelineCtx, m.cancelCtx = context.WithCancel(context.Background())
 }
 
-func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
-	var msgToSend *message.ExpiringMessage
-	func() {
-		m.ctxMutex.Lock()
-		defer m.ctxMutex.Unlock()
-		msgToSend = message.NewExpiring(m.pipelineCtx, msg)
-	}()
+func (m *networkFlowManager) sendToCentral(msg *message.ExpiringMessage) bool {
 	select {
 	case <-m.done.Done():
 		return false
-	case m.sensorUpdates <- msgToSend:
+	case m.sensorUpdates <- msg:
 		return true
 	}
 }
@@ -342,7 +336,14 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	}
 }
 
+func (m *networkFlowManager) getCurrentContext() context.Context {
+	m.ctxMutex.Lock()
+	defer m.ctxMutex.Unlock()
+	return m.pipelineCtx
+}
+
 func (m *networkFlowManager) enrichAndSend() {
+	ctx := m.getCurrentContext()
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
@@ -368,11 +369,11 @@ func (m *networkFlowManager) enrichAndSend() {
 	}()
 
 	log.Debugf("Flow update : %v", protoToSend)
-	if m.sendToCentral(&central.MsgFromSensor{
+	if m.sendToCentral(message.NewExpiring(ctx, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	}) {
+	})) {
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
@@ -380,6 +381,7 @@ func (m *networkFlowManager) enrichAndSend() {
 }
 
 func (m *networkFlowManager) enrichAndSendProcesses() {
+	ctx := m.getCurrentContext()
 	currentProcesses := m.currentEnrichedProcesses()
 
 	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
@@ -393,11 +395,11 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		Time:                      types.TimestampNow(),
 	}
 
-	if m.sendToCentral(&central.MsgFromSensor{
+	if m.sendToCentral(message.NewExpiring(ctx, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
-	}) {
+	})) {
 		m.updateProcessesState(currentProcesses)
 		metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
 	}
