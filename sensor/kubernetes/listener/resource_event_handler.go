@@ -5,6 +5,7 @@ import (
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
+	osOperatorExtVersions "github.com/openshift/client-go/operator/informers/externalversions"
 	osRouteExtVersions "github.com/openshift/client-go/route/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
@@ -136,20 +137,43 @@ func (k *listenerImpl) handleAllEvents() {
 	handle(k.context, roleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	handle(k.context, clusterRoleInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 
+	// For openshift clusters only
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
 	if k.client.OpenshiftConfig() != nil {
-		if ok, err := clusterOperatorCRDExists(k.client); err != nil {
-			log.Errorf("Error checking for cluster operator CRD: %v", err)
-		} else if !ok {
-			log.Warnf("Skipping cluster operator discovery....")
+		if resourceList, err := serverResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
+			log.Errorf("Error checking for API resources for group %q: %v", osConfigGroupVersion, err)
 		} else {
 			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
+
+			if resourceExists(resourceList, osClusterOperatorsResourceName) {
+				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
+				handle(k.context, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
+			}
+
+			if resourceExists(resourceList, osImageDigestMirrorSetsResourceName) {
+				log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
+				handle(k.context, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+			}
+
+			if resourceExists(resourceList, osImageTagMirrorSetsResourceName) {
+				log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
+				handle(k.context, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+			}
 		}
 	}
-	// For openshift clusters only
-	if osConfigFactory != nil {
-		handle(k.context, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(),
-			k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
+
+	var osOperatorFactory osOperatorExtVersions.SharedInformerFactory
+	if k.client.OpenshiftOperator() != nil {
+		if resourceList, err := serverResourcesForGroup(k.client, osOperatorAlphaGroupVersion); err != nil {
+			log.Errorf("Error checking for API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
+		} else {
+			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
+
+			if resourceExists(resourceList, osImageContentSourcePoliciesResourceName) {
+				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
+				handle(k.context, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+			}
+		}
 	}
 
 	if crdSharedInformerFactory != nil {
@@ -161,7 +185,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
