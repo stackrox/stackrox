@@ -106,6 +106,7 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	usageCSV "github.com/stackrox/rox/central/productusage/csv"
 	usageDataStore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	usageInjector "github.com/stackrox/rox/central/productusage/injector"
 	usageService "github.com/stackrox/rox/central/productusage/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
@@ -338,6 +339,7 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
+	usageInjector.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
