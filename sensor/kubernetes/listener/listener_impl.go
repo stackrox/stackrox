@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -33,13 +32,19 @@ type listenerImpl struct {
 	traceWriter        io.Writer
 	outputQueue        component.Resolver
 	storeProvider      *resources.InMemoryStoreProvider
+	mayCreateHandlers  concurrency.Signal
 	context            context.Context
-	contextMtx         sync.Mutex
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {
-	k.contextMtx.Lock()
-	defer k.contextMtx.Unlock()
+	// There is a caveat here that we need to make sure that the previous Start has already
+	// finished before swap the context, otherwise there is a risk of data racing by swapping
+	// the context while its being used to create the handlers.
+	// Since the handleAllEvents function takes too long to run, using mutex is a problem in
+	// dev environments, since the mutex will be locked to more than 5s, resulting in a panic.
+	// The current workaround is to use a signal instead of a mutex.
+	k.mayCreateHandlers.Wait()
+	k.mayCreateHandlers.Reset()
 	k.context = ctx
 	return k.Start()
 }

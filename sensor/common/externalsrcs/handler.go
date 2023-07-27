@@ -23,6 +23,8 @@ var (
 )
 
 // Store is a store for network graph external sources.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList]
 	LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo

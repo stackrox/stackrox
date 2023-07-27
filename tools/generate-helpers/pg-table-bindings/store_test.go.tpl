@@ -22,9 +22,9 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type {{$namePrefix}}StoreSuite struct {
@@ -58,11 +58,11 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TearDownSuite() {
-    s.testDB.Teardown(s.T())
+	s.testDB.Teardown(s.T())
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
-    ctx := sac.WithAllAccess(context.Background())
+	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
@@ -77,10 +77,10 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-    {{if and (not .JoinTable) (eq (len .Schema.RelationshipsToDefineAsForeignKeys) 0) -}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    withNoAccessCtx := sac.WithNoAccess(ctx)
-    {{- end }}
+	{{if and (not .JoinTable) (eq (len .Schema.RelationshipsToDefineAsForeignKeys) 0) -}}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+	{{- end }}
 
 	s.NoError(store.Upsert(ctx, {{$name}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
@@ -92,19 +92,19 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(1, {{$name}}Count)
 
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-    {{$name}}Count, err = store.Count(withNoAccessCtx)
-    s.NoError(err)
-    s.Zero({{$name}}Count)
-    {{- end }}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+	{{$name}}Count, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero({{$name}}Count)
+	{{- end }}
 
 	{{$name}}Exists, err := store.Exists(ctx, {{template "paramList" $}})
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
-    {{- end }}
+	{{- end }}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
@@ -118,22 +118,22 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
 	{{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
-    s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
 	{{- else }}
 	s.NoError(store.Delete(withNoAccessCtx, {{template "paramList" $}}))
 	{{- end }}
 
 	var {{$name}}s []*{{.Type}}
 	var {{$name}}IDs []string
-    for i := 0; i < 200; i++ {
-        {{$name}} := &{{.Type}}{}
-        s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-        {{- if .Cycle}}
-        {{$name}}.{{.EmbeddedFK}} = nil
-        {{- end}}
-        {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
-        {{$name}}IDs = append({{$name}}IDs, {{template "paramList" $}})
-    }
+	for i := 0; i < 200; i++ {
+		{{$name}} := &{{.Type}}{}
+		s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		{{- if .Cycle}}
+		{{$name}}.{{.EmbeddedFK}} = nil
+		{{- end}}
+		{{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+		{{$name}}IDs = append({{$name}}IDs, {{template "paramList" $}})
+	}
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
@@ -143,16 +143,16 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.ElementsMatch({{$name}}s, all{{.TrimmedType|upperCamelCase}})
 {{- end }}
 
-    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
-    s.NoError(err)
-    s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
+	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
 
-    s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
+	s.NoError(store.DeleteMany(ctx, {{$name}}IDs))
 
-    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
-    s.NoError(err)
-    s.Equal(0, {{.TrimmedType|lowerCamelCase}}Count)
-    {{- end }}
+	{{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(0, {{.TrimmedType|lowerCamelCase}}Count)
+	{{- end }}
 }
 
 {{- if eq (len (.Schema.RelationshipsToDefineAsForeignKeys)) 0 }}
@@ -160,10 +160,11 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 const (
 	withAllAccess = "AllAccess"
 	withNoAccess = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
 	withAccess = "Access"
 	withAccessToCluster = "AccessToCluster"
 	withNoAccessToCluster = "NoAccessToCluster"
+	withAccessToDifferentCluster = "AccessToDifferentCluster"
+	withAccessToDifferentNs = "AccessToDifferentNs"
 )
 
 var (
@@ -178,6 +179,7 @@ type testCase struct {
 	expectedObjects        []*{{.Type}}
 	expectedWriteError     error
 }
+
 func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type}}, *{{.Type}}, map[string]testCase) {
 	objA := &{{.Type}}{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -208,23 +210,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
-				),
-			),
-			expectedObjIDs:         []string{},
-			expectedIdentifiers:    []string{},
-			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*{{.Type}}{},
-			expectedWriteError:     sac.ErrResourceAccessDenied,
-		},
-		withAccessToDifferentNs: {
-			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
-					sac.NamespaceScopeKeys("unknown ns"),
-				),
-			),
+			)),
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
@@ -240,8 +226,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					{{- if .Obj.IsNamespaceScope }}
 					sac.NamespaceScopeKeys({{ "objA" | .Obj.GetNamespace }}),
 					{{- end }}
-				),
-			),
+			)),
 			expectedObjIDs:         []string{ {{ "objA" | .Obj.GetID }} },
 			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA" }} },
 			expectedMissingIndices: []int{1},
@@ -254,13 +239,39 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
-				),
-			),
+			)),
 			expectedObjIDs:         []string{ {{ "objA" | .Obj.GetID }} },
 			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA" }} },
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*{{.Type}}{objA},
 			expectedWriteError:     nil,
+		},
+		withAccessToDifferentCluster: {
+			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+			)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*{{.Type}}{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccessToDifferentNs: {
+			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
+					sac.NamespaceScopeKeys("unknown ns"),
+			)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*{{.Type}}{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 	}
 
@@ -343,6 +354,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			exists, err := s.store.Exists(testCase.context, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objA"}}, {{end}})
 			assert.NoError(t, err)
+
 			// Assumption from the test case structure: objA is always in the visible list
 			// in the first position.
 			expectedFound := len(testCase.expectedObjects) > 0
@@ -375,6 +387,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
 
 func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
@@ -388,6 +401,13 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2 - len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
@@ -410,6 +430,13 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
 			assert.Equal(t, 2 - len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
@@ -437,39 +464,5 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 }
 {{ end }}
 
-func getSACContexts(obj *{{.Type}}, access storage.Access) map[string]context.Context {
-	return map[string]context.Context {
-		withAllAccess: sac.WithAllAccess(context.Background()),
-		withNoAccess: sac.WithNoAccess(context.Background()),
-		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
-				sac.NamespaceScopeKeys("unknown ns"),
-		)),
-		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
-				{{- if .Obj.IsNamespaceScope }}
-					sac.NamespaceScopeKeys({{ "obj" | .Obj.GetNamespace }}),
-				{{- end }}
-		)),
-		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
-		)),
-		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(uuid.Nil.String()),
-		)),
-	}
-}
 {{end}}
 {{- end }}
