@@ -73,8 +73,9 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 			return denyAllScopeCheckerCore
 		}
 		return c.subScopeCheckerBuilder().withNamespace(key)
+	default:
+		return denyAllScopeCheckerCore
 	}
-	return denyAllScopeCheckerCore
 }
 
 func (c *allowedFixedScopesCheckerCore) Allowed() bool {
@@ -89,8 +90,9 @@ func (c *allowedFixedScopesCheckerCore) Allowed() bool {
 		return c.allowsClusterLevelAccess()
 	case NamespaceScopeKind:
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
@@ -165,8 +167,9 @@ func AllowFixedScopes(keyLists ...[]ScopeKey) ScopeCheckerCore {
 		return allowFixedClusterLevelScopes(keyLists[0], keyLists[1], keyLists[2])
 	case 4:
 		return allowFixedNamespaceLevelScopes(keyLists[0], keyLists[1], keyLists[2], keyLists[3])
+	default:
+		return denyAllScopeCheckerCore
 	}
-	return denyAllScopeCheckerCore
 }
 
 // endregion Public constructors
@@ -214,21 +217,15 @@ func (b *subScopeCheckerBuilder) withNamespace(key NamespaceScopeKey) ScopeCheck
 }
 
 func (c *allowedFixedScopesCheckerCore) allowsGlobalAccess() bool {
-	return c.accessKeys.Cardinality() == 0 &&
-		c.resourceKeys.Cardinality() == 0 &&
-		c.clusterKeys.Cardinality() == 0 &&
-		c.namespaceKeys.Cardinality() == 0
+	return c.accessKeys.Cardinality() == 0 && c.allowsAccessModeLevelAccess()
 }
 
 func (c *allowedFixedScopesCheckerCore) allowsAccessModeLevelAccess() bool {
-	return c.resourceKeys.Cardinality() == 0 &&
-		c.clusterKeys.Cardinality() == 0 &&
-		c.namespaceKeys.Cardinality() == 0
+	return c.resourceKeys.Cardinality() == 0 && c.allowsResourceLevelAccess()
 }
 
 func (c *allowedFixedScopesCheckerCore) allowsResourceLevelAccess() bool {
-	return c.clusterKeys.Cardinality() == 0 &&
-		c.namespaceKeys.Cardinality() == 0
+	return c.clusterKeys.Cardinality() == 0 && c.allowsClusterLevelAccess()
 }
 
 func (c *allowedFixedScopesCheckerCore) allowsClusterLevelAccess() bool {
