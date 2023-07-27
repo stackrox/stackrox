@@ -30,7 +30,9 @@ func New(client client.Interface, configHandler config.Handler, nodeName string,
 		traceWriter:        traceWriter,
 		outputQueue:        queue,
 		storeProvider:      storeProvider,
+		mayCreateHandlers:  concurrency.NewSignal(),
 	}
+	k.mayCreateHandlers.Signal()
 	return k
 }
 
