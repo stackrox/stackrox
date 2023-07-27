@@ -46,31 +46,31 @@ func (mr *MockMetricsStoreMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockMetricsStore)(nil).Set), arg0, arg1)
 }
 
-// MockusageStore is a mock of usageStore interface.
-type MockusageStore struct {
+// MockUsageStore is a mock of UsageStore interface.
+type MockUsageStore struct {
 	ctrl     *gomock.Controller
-	recorder *MockusageStoreMockRecorder
+	recorder *MockUsageStoreMockRecorder
 }
 
-// MockusageStoreMockRecorder is the mock recorder for MockusageStore.
-type MockusageStoreMockRecorder struct {
-	mock *MockusageStore
+// MockUsageStoreMockRecorder is the mock recorder for MockUsageStore.
+type MockUsageStoreMockRecorder struct {
+	mock *MockUsageStore
 }
 
-// NewMockusageStore creates a new mock instance.
-func NewMockusageStore(ctrl *gomock.Controller) *MockusageStore {
-	mock := &MockusageStore{ctrl: ctrl}
-	mock.recorder = &MockusageStoreMockRecorder{mock}
+// NewMockUsageStore creates a new mock instance.
+func NewMockUsageStore(ctrl *gomock.Controller) *MockUsageStore {
+	mock := &MockUsageStore{ctrl: ctrl}
+	mock.recorder = &MockUsageStoreMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockusageStore) EXPECT() *MockusageStoreMockRecorder {
+func (m *MockUsageStore) EXPECT() *MockUsageStoreMockRecorder {
 	return m.recorder
 }
 
 // UpdateUsage mocks base method.
-func (m *MockusageStore) UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error {
+func (m *MockUsageStore) UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUsage", clusterID, metrics)
 	ret0, _ := ret[0].(error)
@@ -78,7 +78,7 @@ func (m *MockusageStore) UpdateUsage(clusterID string, metrics *central.ClusterM
 }
 
 // UpdateUsage indicates an expected call of UpdateUsage.
-func (mr *MockusageStoreMockRecorder) UpdateUsage(clusterID, metrics interface{}) *gomock.Call {
+func (mr *MockUsageStoreMockRecorder) UpdateUsage(clusterID, metrics interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockusageStore)(nil).UpdateUsage), clusterID, metrics)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockUsageStore)(nil).UpdateUsage), clusterID, metrics)
 }
