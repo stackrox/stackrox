@@ -14,30 +14,30 @@ type cache struct {
 	lastKnown    map[string]storage.Usage
 	lastKnownMux sync.Mutex
 
-	// nodesMap and coresMap store the maximum numbers of nodes and cores
+	// nodesMap and cpuUnitsMap store the maximum numbers of nodes and cores
 	// per cluster. Maps access is internally synchronized.
-	nodesMap maputil.CmpMap[string, int32]
-	coresMap maputil.CmpMap[string, int32]
+	nodesMap    maputil.CmpMap[string, int32]
+	cpuUnitsMap maputil.CmpMap[string, int32]
 }
 
 // NewCache initializes and returns a usage structure.
 func NewCache() *cache {
 	return &cache{
-		lastKnown: make(map[string]storage.Usage),
-		nodesMap:  maputil.NewMaxMap[string, int32](),
-		coresMap:  maputil.NewMaxMap[string, int32](),
+		lastKnown:   make(map[string]storage.Usage),
+		nodesMap:    maputil.NewMaxMap[string, int32](),
+		cpuUnitsMap: maputil.NewMaxMap[string, int32](),
 	}
 }
 
 func (u *cache) UpdateUsage(clusterID string, cm *central.ClusterMetrics) {
 	u.nodesMap.Store(clusterID, int32(cm.GetNodeCount()))
-	u.coresMap.Store(clusterID, int32(cm.GetCpuCapacity()))
+	u.cpuUnitsMap.Store(clusterID, int32(cm.GetCpuCapacity()))
 
 	u.lastKnownMux.Lock()
 	defer u.lastKnownMux.Unlock()
 	u.lastKnown[clusterID] = storage.Usage{
-		NumNodes: int32(cm.GetNodeCount()),
-		NumCores: int32(cm.GetCpuCapacity()),
+		NumNodes:    int32(cm.GetNodeCount()),
+		NumCpuUnits: int32(cm.GetCpuCapacity()),
 	}
 }
 
@@ -50,7 +50,7 @@ func (u *cache) FilterCurrent(ids set.StringSet) *storage.Usage {
 	for id, v := range u.lastKnown {
 		if ids.Contains(id) {
 			m.NumNodes += v.NumNodes
-			m.NumCores += v.NumCores
+			m.NumCpuUnits += v.NumCpuUnits
 		} else {
 			delete(u.lastKnown, id)
 		}
@@ -71,9 +71,9 @@ func (u *cache) CutMetrics(ids set.StringSet) *storage.Usage {
 			m.NumNodes += v
 		}
 	}
-	for id, v := range u.coresMap.Reset() {
+	for id, v := range u.cpuUnitsMap.Reset() {
 		if ids.Contains(id) {
-			m.NumCores += v
+			m.NumCpuUnits += v
 		}
 	}
 	return &m
