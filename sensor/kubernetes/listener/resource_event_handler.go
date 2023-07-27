@@ -141,7 +141,7 @@ func (k *listenerImpl) handleAllEvents() {
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
 	if k.client.OpenshiftConfig() != nil {
 		if resourceList, err := serverResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
-			log.Errorf("Error checking for API resources for group %q: %v", osConfigGroupVersion, err)
+			log.Errorf("Error checking API resources for group %q: %v", osConfigGroupVersion, err)
 		} else {
 			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
 
@@ -150,22 +150,24 @@ func (k *listenerImpl) handleAllEvents() {
 				handle(k.context, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
 			}
 
-			if resourceExists(resourceList, osImageDigestMirrorSetsResourceName) {
-				log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
-				handle(k.context, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-			}
+			if env.RegistryMirroringEnabled.BooleanSetting() {
+				if resourceExists(resourceList, osImageDigestMirrorSetsResourceName) {
+					log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
+					handle(k.context, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+				}
 
-			if resourceExists(resourceList, osImageTagMirrorSetsResourceName) {
-				log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
-				handle(k.context, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+				if resourceExists(resourceList, osImageTagMirrorSetsResourceName) {
+					log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
+					handle(k.context, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+				}
 			}
 		}
 	}
 
 	var osOperatorFactory osOperatorExtVersions.SharedInformerFactory
-	if k.client.OpenshiftOperator() != nil {
+	if k.client.OpenshiftOperator() != nil && env.RegistryMirroringEnabled.BooleanSetting() {
 		if resourceList, err := serverResourcesForGroup(k.client, osOperatorAlphaGroupVersion); err != nil {
-			log.Errorf("Error checking for API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
+			log.Errorf("Error checking API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
 		} else {
 			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
 

@@ -94,6 +94,9 @@ func serverResourcesForGroup(client client.Interface, group string) (*metav1.API
 	return resourceList, err
 }
 
+// resourceExists returns true if resource exists in list.  Use with output from
+// `serverResourcesForGroup` to verify a resource exists prior to starting an
+// Informer to prevent client-go from spamming the k8s API and logs.
 func resourceExists(list *metav1.APIResourceList, resource string) bool {
 	for _, apiResource := range list.APIResources {
 		if apiResource.Name == resource {
