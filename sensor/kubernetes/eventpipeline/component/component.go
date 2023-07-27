@@ -1,8 +1,6 @@
 package component
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -27,10 +25,4 @@ type OutputQueue interface {
 	PipelineComponent
 	Send(event *ResourceEvent)
 	ResponsesC() <-chan *message.ExpiringMessage
-}
-
-// ContextListener is a component that listens but has a context in the messages
-type ContextListener interface {
-	PipelineComponent
-	StartWithContext(context.Context) error
 }

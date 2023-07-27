@@ -1,7 +1,6 @@
 package eventpipeline
 
 import (
-	"context"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -11,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -27,7 +25,7 @@ var (
 type eventPipeline struct {
 	output      component.OutputQueue
 	resolver    component.Resolver
-	listener    component.ContextListener
+	listener    component.PipelineComponent
 	detector    detector.Detector
 	reprocessor reprocessor.Handler
 
@@ -35,10 +33,6 @@ type eventPipeline struct {
 
 	eventsC chan *message.ExpiringMessage
 	stopSig concurrency.Signal
-
-	contextMtx    sync.Mutex
-	context       context.Context
-	cancelContext context.CancelFunc
 }
 
 // Capabilities implements common.SensorComponent
@@ -68,20 +62,6 @@ func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
 // ResponsesC implements common.SensorComponent
 func (p *eventPipeline) ResponsesC() <-chan *message.ExpiringMessage {
 	return p.eventsC
-}
-
-func (p *eventPipeline) stopCurrentContext() {
-	p.contextMtx.Lock()
-	defer p.contextMtx.Unlock()
-	if p.cancelContext != nil {
-		p.cancelContext()
-	}
-}
-
-func (p *eventPipeline) createNewContext() {
-	p.contextMtx.Lock()
-	defer p.contextMtx.Unlock()
-	p.context, p.cancelContext = context.WithCancel(context.Background())
 }
 
 // Start implements common.SensorComponent
@@ -122,16 +102,13 @@ func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {
 			log.Infof("Connection established: Starting Kubernetes listener")
-			// TODO(ROX-18613): use contextProvider to provide context for listener
-			p.createNewContext()
-			if err := p.listener.StartWithContext(p.context); err != nil {
+			if err := p.listener.Start(); err != nil {
 				log.Fatalf("Failed to start listener component. Sensor cannot run without listening to Kubernetes events: %s", err)
 			}
 		}
 	case common.SensorComponentEventOfflineMode:
 		// Stop listening to events
 		if p.offlineMode.CompareAndSwap(false, true) {
-			p.stopCurrentContext()
 			p.listener.Stop(errors.New("gRPC connection stopped"))
 		}
 	}

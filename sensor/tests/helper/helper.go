@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
-	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -478,33 +477,6 @@ func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout tim
 
 }
 
-// FirstDeploymentStateMatchesWithTimeout checks that the first deployment received with name matches the assertion function.
-func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
-	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(defaultTicker)
-	for {
-		select {
-		case <-timer.C:
-			c.t.Errorf("timeout reached waiting for state: (%s): no deployment found", message)
-			return
-		case <-ticker.C:
-			messages := c.GetFakeCentral().GetAllMessages()
-			deploymentMessage := GetFirstMessageWithDeploymentName(messages, DefaultNamespace, name)
-			deployment := deploymentMessage.GetEvent().GetDeployment()
-			action := deploymentMessage.GetEvent().GetAction()
-			if deployment != nil {
-				// Always return when deployment is found. As soon as deployment != nil it should be the deployment
-				// that matches assertion. If it isn't, the test should fail immediately. There's no point in waiting.
-				err := assertion(deployment, action)
-				if err != nil {
-					c.t.Errorf("first deployment found didn't meet expected state: %s", err)
-				}
-				return
-			}
-		}
-	}
-}
-
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
 func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
 	c.LastDeploymentStateWithTimeout(name, assertion, message, defaultWaitTimeout)
@@ -537,24 +509,17 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 
 // DeploymentCreateReceived checks if a deployment object was received with CREATE action.
 func (c *TestContext) DeploymentCreateReceived(name string) {
-	c.FirstDeploymentReceivedWithAction(name, central.ResourceAction_CREATE_RESOURCE)
+	c.DeploymentActionReceived(name, central.ResourceAction_CREATE_RESOURCE)
 }
 
-// FirstDeploymentReceivedWithAction checks if a deployment object was received with specific action type.
-func (c *TestContext) FirstDeploymentReceivedWithAction(name string, expectedAction central.ResourceAction) {
-	c.FirstDeploymentStateMatchesWithTimeout(name, func(_ *storage.Deployment, action central.ResourceAction) error {
+// DeploymentActionReceived checks if a deployment object was received with specific action type.
+func (c *TestContext) DeploymentActionReceived(name string, expectedAction central.ResourceAction) {
+	c.LastDeploymentState(name, func(_ *storage.Deployment, action central.ResourceAction) error {
 		if action != expectedAction {
 			return errors.Errorf("event action is %s, but expected %s", action, expectedAction)
 		}
 		return nil
-	}, fmt.Sprintf("Deployment %s should be received with action %s", name, expectedAction), defaultWaitTimeout)
-}
-
-// DeploymentNotReceived checks that a deployment event for deployment with name should not have been received by fake central.
-func (c *TestContext) DeploymentNotReceived(name string) {
-	messages := c.GetFakeCentral().GetAllMessages()
-	lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
-	assert.Nilf(c.t, lastDeploymentUpdate, "should not have found deployment with name %s: %+v", name, lastDeploymentUpdate)
+	}, fmt.Sprintf("Deployment %s should be received with action %s", name, expectedAction))
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -830,17 +795,6 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 			}
 		}
 	}
-}
-
-// GetFirstMessageWithDeploymentName find the first sensor message by namespace and deployment name
-func GetFirstMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, name string) *central.MsgFromSensor {
-	for _, msg := range messages {
-		deployment := msg.GetEvent().GetDeployment()
-		if deployment.GetName() == name && deployment.GetNamespace() == ns {
-			return msg
-		}
-	}
-	return nil
 }
 
 // GetLastMessageWithDeploymentName find most recent sensor messages by namespace and deployment name

@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	message "github.com/stackrox/rox/sensor/common/message"
@@ -196,67 +195,4 @@ func (m *MockOutputQueue) Stop(arg0 error) {
 func (mr *MockOutputQueueMockRecorder) Stop(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockOutputQueue)(nil).Stop), arg0)
-}
-
-// MockContextListener is a mock of ContextListener interface.
-type MockContextListener struct {
-	ctrl     *gomock.Controller
-	recorder *MockContextListenerMockRecorder
-}
-
-// MockContextListenerMockRecorder is the mock recorder for MockContextListener.
-type MockContextListenerMockRecorder struct {
-	mock *MockContextListener
-}
-
-// NewMockContextListener creates a new mock instance.
-func NewMockContextListener(ctrl *gomock.Controller) *MockContextListener {
-	mock := &MockContextListener{ctrl: ctrl}
-	mock.recorder = &MockContextListenerMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockContextListener) EXPECT() *MockContextListenerMockRecorder {
-	return m.recorder
-}
-
-// Start mocks base method.
-func (m *MockContextListener) Start() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Start indicates an expected call of Start.
-func (mr *MockContextListenerMockRecorder) Start() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockContextListener)(nil).Start))
-}
-
-// StartWithContext mocks base method.
-func (m *MockContextListener) StartWithContext(arg0 context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartWithContext", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// StartWithContext indicates an expected call of StartWithContext.
-func (mr *MockContextListenerMockRecorder) StartWithContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartWithContext", reflect.TypeOf((*MockContextListener)(nil).StartWithContext), arg0)
-}
-
-// Stop mocks base method.
-func (m *MockContextListener) Stop(arg0 error) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", arg0)
-}
-
-// Stop indicates an expected call of Stop.
-func (mr *MockContextListenerMockRecorder) Stop(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockContextListener)(nil).Stop), arg0)
 }
