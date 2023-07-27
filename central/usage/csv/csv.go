@@ -25,9 +25,9 @@ func writeCSV(metrics []*storage.Usage, wio io.Writer) error {
 		return errors.Wrap(err, "failed to write CSV header")
 	}
 	for _, m := range metrics {
-		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.Ts, zeroTime).UTC().Format(time.RFC3339)
-		record[1] = fmt.Sprint(m.Sr.GetNodes())
-		record[2] = fmt.Sprint(m.Sr.GetCores())
+		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.Timestamp, zeroTime).UTC().Format(time.RFC3339)
+		record[1] = fmt.Sprint(m.GetNumNodes())
+		record[2] = fmt.Sprint(m.GetNumCores())
 		if err := w.Write(record); err != nil {
 			return errors.Wrap(err, "failed to write CSV record")
 		}

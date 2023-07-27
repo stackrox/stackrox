@@ -25,11 +25,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Usage struct {
-	Ts                   *types.Timestamp        `protobuf:"bytes,1,opt,name=ts,proto3" json:"ts,omitempty" sql:"pk" search:"Timestamp"`
-	Sr                   *Usage_SecuredResources `protobuf:"bytes,2,opt,name=sr,proto3" json:"sr,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
-	XXX_unrecognized     []byte                  `json:"-"`
-	XXX_sizecache        int32                   `json:"-"`
+	Timestamp            *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty" sql:"pk" search:"Timestamp"`
+	NumNodes             int32            `protobuf:"varint,2,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
+	NumCores             int32            `protobuf:"varint,3,opt,name=num_cores,json=numCores,proto3" json:"num_cores,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Usage) Reset()         { *m = Usage{} }
@@ -65,18 +66,25 @@ func (m *Usage) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Usage proto.InternalMessageInfo
 
-func (m *Usage) GetTs() *types.Timestamp {
+func (m *Usage) GetTimestamp() *types.Timestamp {
 	if m != nil {
-		return m.Ts
+		return m.Timestamp
 	}
 	return nil
 }
 
-func (m *Usage) GetSr() *Usage_SecuredResources {
+func (m *Usage) GetNumNodes() int32 {
 	if m != nil {
-		return m.Sr
+		return m.NumNodes
 	}
-	return nil
+	return 0
+}
+
+func (m *Usage) GetNumCores() int32 {
+	if m != nil {
+		return m.NumCores
+	}
+	return 0
 }
 
 func (m *Usage) MessageClone() proto.Message {
@@ -89,104 +97,32 @@ func (m *Usage) Clone() *Usage {
 	cloned := new(Usage)
 	*cloned = *m
 
-	cloned.Ts = m.Ts.Clone()
-	cloned.Sr = m.Sr.Clone()
-	return cloned
-}
-
-type Usage_SecuredResources struct {
-	Nodes                int32    `protobuf:"varint,1,opt,name=nodes,proto3" json:"nodes,omitempty"`
-	Cores                int32    `protobuf:"varint,2,opt,name=cores,proto3" json:"cores,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Usage_SecuredResources) Reset()         { *m = Usage_SecuredResources{} }
-func (m *Usage_SecuredResources) String() string { return proto.CompactTextString(m) }
-func (*Usage_SecuredResources) ProtoMessage()    {}
-func (*Usage_SecuredResources) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5b4522b7737f3601, []int{0, 0}
-}
-func (m *Usage_SecuredResources) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Usage_SecuredResources) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Usage_SecuredResources.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Usage_SecuredResources) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Usage_SecuredResources.Merge(m, src)
-}
-func (m *Usage_SecuredResources) XXX_Size() int {
-	return m.Size()
-}
-func (m *Usage_SecuredResources) XXX_DiscardUnknown() {
-	xxx_messageInfo_Usage_SecuredResources.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Usage_SecuredResources proto.InternalMessageInfo
-
-func (m *Usage_SecuredResources) GetNodes() int32 {
-	if m != nil {
-		return m.Nodes
-	}
-	return 0
-}
-
-func (m *Usage_SecuredResources) GetCores() int32 {
-	if m != nil {
-		return m.Cores
-	}
-	return 0
-}
-
-func (m *Usage_SecuredResources) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *Usage_SecuredResources) Clone() *Usage_SecuredResources {
-	if m == nil {
-		return nil
-	}
-	cloned := new(Usage_SecuredResources)
-	*cloned = *m
-
+	cloned.Timestamp = m.Timestamp.Clone()
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*Usage)(nil), "storage.Usage")
-	proto.RegisterType((*Usage_SecuredResources)(nil), "storage.Usage.SecuredResources")
 }
 
 func init() { proto.RegisterFile("storage/usage.proto", fileDescriptor_5b4522b7737f3601) }
 
 var fileDescriptor_5b4522b7737f3601 = []byte{
-	// 248 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x31, 0x4e, 0xc4, 0x30,
-	0x10, 0x45, 0xb1, 0xa5, 0x80, 0x64, 0x1a, 0x14, 0xb6, 0x58, 0x82, 0x94, 0xac, 0x5c, 0x51, 0xd9,
-	0x12, 0x74, 0x5b, 0x50, 0x6c, 0x4b, 0x67, 0xa0, 0xa1, 0xcb, 0x66, 0x07, 0x83, 0xd8, 0x65, 0xc2,
-	0x8c, 0x73, 0x17, 0x2e, 0x84, 0x44, 0xc9, 0x09, 0x10, 0x0a, 0x37, 0xe0, 0x04, 0x28, 0x76, 0x42,
-	0x41, 0xe7, 0xff, 0xc6, 0xff, 0xfb, 0x7b, 0xd4, 0x31, 0x07, 0xa4, 0xda, 0x83, 0xed, 0xb8, 0xf6,
-	0x60, 0x5a, 0xc2, 0x80, 0xf9, 0xc1, 0x08, 0x8b, 0x99, 0x47, 0x8f, 0x91, 0xd9, 0xe1, 0x94, 0xc6,
-	0x45, 0xe5, 0x11, 0xfd, 0x16, 0x6c, 0x54, 0xeb, 0xee, 0xde, 0x86, 0xc7, 0x1d, 0x70, 0xa8, 0x77,
-	0x6d, 0xba, 0xa0, 0xdf, 0x84, 0xca, 0x6e, 0x87, 0xbc, 0xfc, 0x4a, 0xc9, 0xc0, 0x73, 0xb1, 0x10,
-	0x67, 0x87, 0xe7, 0x85, 0x49, 0x3e, 0x33, 0xf9, 0xcc, 0xcd, 0xe4, 0x5b, 0x55, 0x3f, 0x9f, 0xd5,
-	0x29, 0xbf, 0x6c, 0x97, 0xba, 0x7d, 0xd2, 0x0b, 0x86, 0x9a, 0x9a, 0x87, 0xa5, 0xfe, 0x9b, 0x6b,
-	0x27, 0x03, 0xe7, 0x56, 0x49, 0xa6, 0xb9, 0x8c, 0x61, 0x95, 0x19, 0x3b, 0x9a, 0xf8, 0x90, 0xb9,
-	0x86, 0xa6, 0x23, 0xd8, 0x38, 0x60, 0xec, 0xa8, 0x01, 0x76, 0x92, 0xa9, 0xb8, 0x54, 0x47, 0xff,
-	0x79, 0x3e, 0x53, 0xd9, 0x33, 0x6e, 0x20, 0x95, 0xca, 0x5c, 0x12, 0x03, 0x6d, 0x90, 0x80, 0x63,
-	0x7a, 0xe6, 0x92, 0x58, 0x9d, 0xbc, 0xf7, 0xa5, 0xf8, 0xe8, 0x4b, 0xf1, 0xd5, 0x97, 0xe2, 0xf5,
-	0xbb, 0xdc, 0xbb, 0x9b, 0x36, 0xb3, 0xde, 0x8f, 0x9f, 0xb8, 0xf8, 0x0d, 0x00, 0x00, 0xff, 0xff,
-	0x77, 0xad, 0xe7, 0xe1, 0x40, 0x01, 0x00, 0x00,
+	// 216 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x2e, 0xc9, 0x2f,
+	0x4a, 0x4c, 0x4f, 0xd5, 0x2f, 0x2d, 0x4e, 0x4c, 0x4f, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
+	0x62, 0x87, 0x0a, 0x4a, 0x89, 0xa4, 0xe7, 0xa7, 0xe7, 0x83, 0xc5, 0xf4, 0x41, 0x2c, 0x88, 0xb4,
+	0x94, 0x7c, 0x7a, 0x7e, 0x7e, 0x7a, 0x4e, 0xaa, 0x3e, 0x98, 0x97, 0x54, 0x9a, 0xa6, 0x5f, 0x92,
+	0x99, 0x9b, 0x5a, 0x5c, 0x92, 0x98, 0x5b, 0x00, 0x51, 0xa0, 0x34, 0x87, 0x91, 0x8b, 0x35, 0x14,
+	0x64, 0x9e, 0x50, 0x24, 0x17, 0x27, 0x5c, 0x52, 0x82, 0x51, 0x81, 0x51, 0x83, 0xdb, 0x48, 0x4a,
+	0x0f, 0xa2, 0x5d, 0x0f, 0xa6, 0x5d, 0x2f, 0x04, 0xa6, 0xc2, 0x49, 0xfe, 0xd3, 0x3d, 0x79, 0xe9,
+	0xe2, 0xc2, 0x1c, 0x2b, 0xa5, 0x82, 0x6c, 0x25, 0x85, 0xe2, 0xd4, 0xc4, 0xa2, 0xe4, 0x0c, 0x2b,
+	0x25, 0xb8, 0xbc, 0x52, 0x10, 0xc2, 0x34, 0x21, 0x69, 0x2e, 0xce, 0xbc, 0xd2, 0xdc, 0xf8, 0xbc,
+	0xfc, 0x94, 0xd4, 0x62, 0x09, 0x26, 0x05, 0x46, 0x0d, 0xd6, 0x20, 0x8e, 0xbc, 0xd2, 0x5c, 0x3f,
+	0x10, 0x1f, 0x26, 0x99, 0x9c, 0x5f, 0x94, 0x5a, 0x2c, 0xc1, 0x0c, 0x97, 0x74, 0x06, 0xf1, 0x9d,
+	0x24, 0x4f, 0x3c, 0x92, 0x63, 0xbc, 0xf0, 0x48, 0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x19, 0x8f,
+	0xe5, 0x18, 0xa2, 0x60, 0x1e, 0x4e, 0x62, 0x03, 0x3b, 0xca, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff,
+	0x16, 0xfe, 0x0c, 0x52, 0x17, 0x01, 0x00, 0x00,
 }
 
 func (m *Usage) Marshal() (dAtA []byte, err error) {
@@ -213,21 +149,19 @@ func (m *Usage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Sr != nil {
-		{
-			size, err := m.Sr.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintUsage(dAtA, i, uint64(size))
-		}
+	if m.NumCores != 0 {
+		i = encodeVarintUsage(dAtA, i, uint64(m.NumCores))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x18
 	}
-	if m.Ts != nil {
+	if m.NumNodes != 0 {
+		i = encodeVarintUsage(dAtA, i, uint64(m.NumNodes))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Timestamp != nil {
 		{
-			size, err := m.Ts.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Timestamp.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -236,43 +170,6 @@ func (m *Usage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		}
 		i--
 		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Usage_SecuredResources) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Usage_SecuredResources) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Usage_SecuredResources) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Cores != 0 {
-		i = encodeVarintUsage(dAtA, i, uint64(m.Cores))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.Nodes != 0 {
-		i = encodeVarintUsage(dAtA, i, uint64(m.Nodes))
-		i--
-		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -294,31 +191,15 @@ func (m *Usage) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Ts != nil {
-		l = m.Ts.Size()
+	if m.Timestamp != nil {
+		l = m.Timestamp.Size()
 		n += 1 + l + sovUsage(uint64(l))
 	}
-	if m.Sr != nil {
-		l = m.Sr.Size()
-		n += 1 + l + sovUsage(uint64(l))
+	if m.NumNodes != 0 {
+		n += 1 + sovUsage(uint64(m.NumNodes))
 	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *Usage_SecuredResources) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Nodes != 0 {
-		n += 1 + sovUsage(uint64(m.Nodes))
-	}
-	if m.Cores != 0 {
-		n += 1 + sovUsage(uint64(m.Cores))
+	if m.NumCores != 0 {
+		n += 1 + sovUsage(uint64(m.NumCores))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -363,7 +244,7 @@ func (m *Usage) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ts", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -390,18 +271,18 @@ func (m *Usage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Ts == nil {
-				m.Ts = &types.Timestamp{}
+			if m.Timestamp == nil {
+				m.Timestamp = &types.Timestamp{}
 			}
-			if err := m.Ts.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Timestamp.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sr", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumNodes", wireType)
 			}
-			var msglen int
+			m.NumNodes = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowUsage
@@ -411,84 +292,16 @@ func (m *Usage) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.NumNodes |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthUsage
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthUsage
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Sr == nil {
-				m.Sr = &Usage_SecuredResources{}
-			}
-			if err := m.Sr.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipUsage(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthUsage
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Usage_SecuredResources) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowUsage
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: SecuredResources: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SecuredResources: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
+		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Nodes", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumCores", wireType)
 			}
-			m.Nodes = 0
+			m.NumCores = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowUsage
@@ -498,26 +311,7 @@ func (m *Usage_SecuredResources) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Nodes |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cores", wireType)
-			}
-			m.Cores = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowUsage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Cores |= int32(b&0x7F) << shift
+				m.NumCores |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
