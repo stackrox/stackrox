@@ -67,21 +67,6 @@ func (mr *MockSearcherMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, q)
 }
 
-// SearchBlobMetadata mocks base method.
-func (m *MockSearcher) SearchBlobMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchBlobMetadata", ctx, q)
-	ret0, _ := ret[0].([]*storage.Blob)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SearchBlobMetadata indicates an expected call of SearchBlobMetadata.
-func (mr *MockSearcherMockRecorder) SearchBlobMetadata(ctx, q interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchBlobMetadata", reflect.TypeOf((*MockSearcher)(nil).SearchBlobMetadata), ctx, q)
-}
-
 // SearchIDs mocks base method.
 func (m *MockSearcher) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -95,4 +80,19 @@ func (m *MockSearcher) SearchIDs(ctx context.Context, q *v1.Query) ([]string, er
 func (mr *MockSearcherMockRecorder) SearchIDs(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchIDs", reflect.TypeOf((*MockSearcher)(nil).SearchIDs), ctx, q)
+}
+
+// SearchMetadata mocks base method.
+func (m *MockSearcher) SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchMetadata", ctx, q)
+	ret0, _ := ret[0].([]*storage.Blob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchMetadata indicates an expected call of SearchMetadata.
+func (mr *MockSearcherMockRecorder) SearchMetadata(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchMetadata", reflect.TypeOf((*MockSearcher)(nil).SearchMetadata), ctx, q)
 }
