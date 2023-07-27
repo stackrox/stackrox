@@ -19,7 +19,7 @@ type PipelineTestSuite struct {
 	suite.Suite
 	pipeline     *pipelineImpl
 	metricsStore *metricsMocks.MockMetricsStore
-	usageStore   *metricsMocks.MockusageStore
+	usageStore   *metricsMocks.MockUsageStore
 	mockCtrl     *gomock.Controller
 }
 
@@ -33,7 +33,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.metricsStore = metricsMocks.NewMockMetricsStore(suite.mockCtrl)
-	suite.usageStore = metricsMocks.NewMockusageStore(suite.mockCtrl)
+	suite.usageStore = metricsMocks.NewMockUsageStore(suite.mockCtrl)
 	suite.pipeline = NewPipeline(suite.metricsStore, suite.usageStore).(*pipelineImpl)
 }
 

@@ -36,14 +36,16 @@ import (
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
-func NewFactory(manager hashManager.Manager) pipeline.Factory {
+func NewFactory(manager hashManager.Manager, usageStore clustermetrics.UsageStore) pipeline.Factory {
 	return &factoryImpl{
-		manager: manager,
+		manager:    manager,
+		usageStore: usageStore,
 	}
 }
 
 type factoryImpl struct {
-	manager hashManager.Manager
+	manager    hashManager.Manager
+	usageStore clustermetrics.UsageStore
 }
 
 // PipelineForCluster grabs items from the queue, processes them, and potentially sends them back to sensor.
@@ -66,7 +68,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		imageintegrations.GetPipeline(),
 		clusterstatusupdate.GetPipeline(),
 		clusterhealthupdate.GetPipeline(),
-		clustermetrics.GetPipeline(),
+		clustermetrics.GetPipeline(s.usageStore),
 		serviceaccounts.GetPipeline(),
 		roles.GetPipeline(),
 		rolebindings.GetPipeline(),

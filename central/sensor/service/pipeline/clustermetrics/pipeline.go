@@ -30,16 +30,17 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 }
 
 // GetPipeline returns an instantiation of this particular pipeline.
-func GetPipeline() pipeline.Fragment {
-	return &pipelineImpl{metricsStore: &prometheusStore{}}
+func GetPipeline(usageStore UsageStore) pipeline.Fragment {
+	return &pipelineImpl{metricsStore: &prometheusStore{}, usageStore: usageStore}
 }
 
-type usageStore interface {
+// UsageStore interface allows for updating a usage store.
+type UsageStore interface {
 	UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error
 }
 
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore, usageStore usageStore) pipeline.Fragment {
+func NewPipeline(metricsStore MetricsStore, usageStore UsageStore) pipeline.Fragment {
 	return &pipelineImpl{metricsStore: metricsStore, usageStore: usageStore}
 }
 
@@ -47,7 +48,7 @@ type pipelineImpl struct {
 	pipeline.Fragment
 
 	metricsStore MetricsStore
-	usageStore   usageStore
+	usageStore   UsageStore
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
