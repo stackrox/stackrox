@@ -23,7 +23,8 @@ func GRPCClientSingleton() Client {
 		}
 
 		// Get the Client interface based on the type assertion
-		if env.EnableScannerV4.BooleanSetting() {
+		// If it's node scanning, we don't want to use scanner v4 for now
+		if env.EnableScannerV4.BooleanSetting() && !env.RHCOSNodeScanning.BooleanSetting() {
 			// Use a type assertion to get the Client interface for V4GRPCClient
 			v4GrpcClient, ok := scannerClient.(*V4GRPCClient)
 			if !ok {

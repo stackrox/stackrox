@@ -2,7 +2,7 @@ package scannerclient
 
 import (
 	"context"
-	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,6 +17,12 @@ import (
 )
 
 var _ Client = (*V4GRPCClient)(nil)
+var languageComponents = map[string]bool{
+	"Go":       true,
+	"Maven":    true,
+	"PiPI":     true,
+	"RubyGems": true,
+}
 
 // V4GRPCClient represents a client implementation using the v4 gRPC protocol.
 type V4GRPCClient struct {
@@ -92,7 +98,42 @@ func convertIndexReportToV1GetImageComponentsResponse(indexReport scannerV4.Inde
 		res.Status = scannerV1.ScanStatus_SUCCEEDED
 		res.ScannerVersion = image.GetScan().ScannerVersion
 		// TODO: Convert indexReport package information to scannerV1.GetImageComponentsResponse components
-		res.Components.Namespace = getNamespace(indexReport)
+		ns, isRhelComponent := getNamespace(indexReport)
+		res.Components.Namespace = ns
+		for _, pkg := range indexReport.Packages {
+			envMap := indexReport.Environments
+			envList := envMap[pkg.Id].GetEnvironments()
+			isLanguageComponent := false
+
+			// Check if it's a language component
+			for _, env := range envList {
+				repoIdList := env.RepositoryIds
+				for _, repoId := range repoIdList {
+					id, err := strconv.Atoi(repoId)
+					if err != nil {
+						log.Errorf("Error converting repoId to int: %v", err)
+						continue
+					}
+					repoName := indexReport.Repositories[id].Name
+					if languageComponents[repoName] {
+						// TODO: We know it's a language component
+						isLanguageComponent = true
+						break
+					}
+				}
+				if isLanguageComponent {
+					break
+				}
+			}
+
+			if !isLanguageComponent {
+				if isRhelComponent {
+					// TODO: Process as RHEL component
+				} else {
+					// TODO: Process as OS component
+				}
+			}
+		}
 	} else {
 		if len(indexReport.Err) > 0 {
 			return nil, errors.New(indexReport.Err)
@@ -102,12 +143,13 @@ func convertIndexReportToV1GetImageComponentsResponse(indexReport scannerV4.Inde
 	return res, nil
 }
 
-func getNamespace(indexReport scannerV4.IndexReport) string {
-	distributions := indexReport.GetDistributions()
-	sort.Slice(distributions, func(i, j int) bool {
-		return distributions[i].Name < distributions[j].Name
-	})
-	return distributions[0].Name
+func getNamespace(report scannerV4.IndexReport) (string, bool) {
+	if len(report.Distributions) == 1 {
+		dist := report.Distributions[0]
+		os := dist.Name + ":" + dist.Version
+		return os, dist.Did == "rhel"
+	}
+	return "unknown", false
 }
 
 func (v V4GRPCClient) Close() error {
