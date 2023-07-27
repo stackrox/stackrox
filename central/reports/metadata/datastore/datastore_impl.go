@@ -121,7 +121,7 @@ func (ds *datastoreImpl) UpdateReportMetadata(ctx context.Context, report *stora
 		return err
 	}
 	if report.GetReportId() == "" {
-		return errors.Wrapf(errox.InvalidArgs, "Report Metadata id field must be set")
+		return errors.Wrap(errox.InvalidArgs, "Report Metadata id field must be set")
 	}
 	if err := ds.storage.Upsert(ctx, report); err != nil {
 		return err
