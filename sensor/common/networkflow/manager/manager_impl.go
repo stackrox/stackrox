@@ -232,7 +232,7 @@ type networkFlowManager struct {
 	centralReady  concurrency.Signal
 
 	ctxMutex    sync.Mutex
-	cancelCtx   func()
+	cancelCtx   context.CancelFunc
 	pipelineCtx context.Context
 
 	enricherTicker *time.Ticker
