@@ -85,8 +85,8 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
 	github.com/prometheus/common v0.44.0
-	github.com/quay/claircore v1.5.10
-	github.com/quay/zlog v1.1.4
+	github.com/quay/claircore v1.5.13
+	github.com/quay/zlog v1.1.5
 	github.com/rs/zerolog v1.29.1
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.4.0
