@@ -1,8 +1,10 @@
 
 # Changelog
+
 Entries in this file should be limited to:
--  Any changes that introduce a deprecation in functionality, OR
--  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
+
+- Any changes that introduce a deprecation in functionality, OR
+- Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
@@ -13,6 +15,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Integration with OpenShift Container Platform monitoring is configured and enabled by default for OpenShift 4 installations. The flag `monitoring.openshift.enabled: false` disables the integration.
 - A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central (defaults to `false`). When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
 - A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added that when set to `true` will enable processing registry mirrors during image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
+- ROX-17702: Product usage metrics API: `/v1/product/usage/secured-units/current`, `/v1/product/usage/secured-units/max`. New `/api/product/usage/secured-units/csv` endpoint.
 
 ### Removed Features
 
@@ -39,9 +42,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-15969: The column `Component Upgrade` in vulnerability reports has been renamed to `CVE Fixed In`.
 ## [4.1.0]
 
-
-
 ### Added Features
+
 - Two new default permission sets `Vulnerability Management Consumer` and `Vulnerability Management Admin` have been added for vulnerability management.
   - `Vulnerability Management Consumer` provides read-only access to analyze vulnerabilities and initiate risk acceptance process.
   - `Vulnerability Management Admin` provides administrative access to analyze vulnerabilities, generate reports, and manage risk acceptance process.
@@ -57,6 +59,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-16703: Helm setting `scanner.disable=false` now valid for any secured cluster (instead of OpenShift only). This enables scanner slim to be installed in non-OCP secured clusters.
 
 ### Removed Features
+
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
 - ROX-14398: As announced in 3.74, the `Scope Manager` system role and permission set will be removed. If existing product installations do have customer references to either the `Scope Manager` system role or the `Scope Manager` system permission set, then the referenced object will be adjusted to contain a description mentioning its deprecation. Furthermore, the objects will not be marked as system resources, and will not be supported anymore.
 - ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the `DelegatedRegistryConfig` API.
@@ -66,6 +69,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Secured clusters configured to use KernelModule collection will automatically switch to EBPF
 
 ### Deprecated Features
+
 - Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
 - Custom Security Context Constraints (SCC) (e.g.: `stackrox-collector`, `stackrox-admission-control`, `stackrox-sensor`) are deprecated and will be removed in the future.
   Users should ensure that those SCCs are not being used by workloads other than Stackrox/RHACS.
@@ -75,6 +79,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` APIs used to defer image vulnerabilities globally and undo deferral are deprecated and will be removed in a future release. Once removed, use Risk Acceptance workflow to defer image vulnerabilities globally.
 
 ### Technical Changes
+
 - The Central PVC stackrox-db is no longer required after this upgrade. To obsolete existing PVC, please check the docs online.
 - The output of `roxctl central whoami` now includes the username as well.
 - Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.
