@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+
+message TargetClusterVersionResponse {
+    string version = 1;
+}
+
+service TargetClusterVersionService {
+    rpc GetTargetClusterVersion (Empty) returns (TargetClusterVersionResponse) {
+        option (google.api.http) = {
+            get: "/v1/target/clusterversion"
+        };
+    }
+}

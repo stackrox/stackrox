@@ -133,6 +133,7 @@ import (
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
+	targetClusterVersionService "github.com/stackrox/rox/central/targetclusterversion/service"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -392,6 +393,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
+		targetClusterVersionService.New(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
