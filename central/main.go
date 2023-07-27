@@ -140,6 +140,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	usageCSV "github.com/stackrox/rox/central/usage/csv"
 	usageDataStore "github.com/stackrox/rox/central/usage/datastore"
+	usageInjector "github.com/stackrox/rox/central/usage/injector"
 	usageService "github.com/stackrox/rox/central/usage/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
@@ -335,6 +336,7 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
+	usageInjector.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
