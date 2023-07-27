@@ -206,7 +206,7 @@ export function isRouteEnabled(
     if (!routeDescription) {
         // eslint-disable-next-line no-console
         console.warn(`isRouteEnabled for unknown path ${path}`);
-        return true;
+        return false; // better to find mistakes than allow loopholes
     }
 
     const { featureFlagDependency, resourceAccessRequirements } = routeDescription;
