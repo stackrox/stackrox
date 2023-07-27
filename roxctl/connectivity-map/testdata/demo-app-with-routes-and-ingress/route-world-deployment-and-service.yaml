@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: routeworld
+spec: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: route-world
+  namespace: routeworld
+  labels:
+    app: route-world
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: route-world
+  template:
+    metadata:
+      labels:
+        app: route-world
+    spec:
+      containers:
+      - name: routeworld
+        image: quay.io/shfa/route-world:latest
+        ports:
+        - containerPort: 8060
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: route-world
+  namespace: routeworld
+spec:
+  ports:
+    - protocol: TCP
+      port: 8060
+      targetPort: 8060
+  selector:
+    app: route-world

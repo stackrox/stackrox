@@ -186,18 +186,14 @@ teardown() {
 }
 
 @test "roxctl-release connectivity-map skips unsupported openshift resources" {
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-route.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/frontend-netpols.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-route.yaml"
+  assert_file_exist "${test_data}/np-guard/irrelevant-oc-resource-example/irrelevant_oc_resource.yaml"
   echo "Writing connlist to ${ofile}" >&3
-  run roxctl-release connectivity-map "${test_data}/np-guard/security-frontend-demo"
-  assert_success
-
+  run roxctl-release connectivity-map "${test_data}/np-guard/irrelevant-oc-resource-example"
+  assert_failure # no workload nor network-policy resources
+  
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
-  assert_output --partial 'skipping object with type: Route'
+  assert_output --partial 'skipping object with type: SecurityContextConstraints'
 }
 
 @test "roxctl-release connectivity-map generates focused to workload connlist output" {
@@ -211,8 +207,7 @@ teardown() {
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # partial here is used to filter the WARN and INFO messages
-  assert_output --partial 'default/backend[Deployment] => default/backend[Deployment] : All Connections
-default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+  assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
   refute_output --partial 'default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53'
 }
 
@@ -225,6 +220,23 @@ default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
 
   assert_file_exist "$out_dir/out.txt"
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+}
+
+@test "roxctl-release connectivity-map generates empty connlist netpols blocks ingress connections from Routes" {
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-route.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/frontend-netpols.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-deployment.yaml"
+  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-route.yaml"
+  run roxctl-release connectivity-map "${test_data}/np-guard/security-frontend-demo"
+  assert_success
+  # netpols deny connections between the existing deployments; and blocks ingress from external ips or ingress-controller
+  # the output contains only WARN and INFO messages
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_line --index 0 --partial 'WARN' 
+  assert_line --index 1 --partial 'INFO'
+  assert_line --index 2 '' 
 }
 
 write_yaml_to_file() {

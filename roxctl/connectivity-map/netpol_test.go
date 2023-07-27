@@ -166,6 +166,13 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			outputToFile:          true,
 			outputFormat:          "json",
 		},
+		{
+			name:                  "generate connections list with ingress controller",
+			inputFolderPath:       "testdata/demo-app-with-routes-and-ingress",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+			outputToFile:          true,
+		},
 	}
 
 	for _, tt := range cases {
