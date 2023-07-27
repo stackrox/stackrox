@@ -115,13 +115,22 @@ deploy_stackrox_operator() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
         return
     fi
+    
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        info "Deploying ACS operator via midstream image"
+        # placeholder variables 
+        export VERSION=""
+        export IMAGE_TAG_BASE=""
 
-    info "Deploying ACS operator"
+        make -C operator kuttl deploy-via-olm
+    else
+        info "Deploying ACS operator"
 
-    export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
-    export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
+        export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
+        export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
 
-    ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+        ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+    fi
 }
 
 deploy_central() {
