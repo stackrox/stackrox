@@ -8,12 +8,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	usageDataStore "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/logging"
 )
-
-var log = logging.LoggerForModule()
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -38,16 +34,20 @@ func GetPipeline() pipeline.Fragment {
 	return &pipelineImpl{metricsStore: &prometheusStore{}}
 }
 
+type usageStore interface {
+	UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error
+}
+
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore) pipeline.Fragment {
-	return &pipelineImpl{metricsStore: metricsStore}
+func NewPipeline(metricsStore MetricsStore, usageStore usageStore) pipeline.Fragment {
+	return &pipelineImpl{metricsStore: metricsStore, usageStore: usageStore}
 }
 
 type pipelineImpl struct {
 	pipeline.Fragment
 
 	metricsStore MetricsStore
-	usageStore   usageDataStore.DataStore
+	usageStore   usageStore
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -69,7 +69,7 @@ func (p *pipelineImpl) Run(
 
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
 
-	p.usageStore.UpdateUsage(clusterID, msg.GetClusterMetrics())
+	_ = p.usageStore.UpdateUsage(clusterID, msg.GetClusterMetrics())
 
 	return nil
 }

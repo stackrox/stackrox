@@ -22,11 +22,17 @@ type PipelineTestSuite struct {
 	mockCtrl     *gomock.Controller
 }
 
+type testUsageStore struct{}
+
+func (tus *testUsageStore) UpdateUsage(_ string, _ *central.ClusterMetrics) error {
+	return nil
+}
+
 func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.metricsStore = metricsMocks.NewMockMetricsStore(suite.mockCtrl)
-	suite.pipeline = NewPipeline(suite.metricsStore).(*pipelineImpl)
+	suite.pipeline = NewPipeline(suite.metricsStore, &testUsageStore{}).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
