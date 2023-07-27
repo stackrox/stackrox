@@ -68,7 +68,9 @@ function NotifierSelection({
     function onNotifierChange(_id, selectionId) {
         const notifierObject = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierObject) {
+            const notifierMailingLists = notifierObject.labelDefault.split(',');
             setFieldValue('notifier', notifierObject);
+            setFieldValue('mailingLists', notifierMailingLists);
             setIsEmailNotifierModalOpen(false);
         }
     }
