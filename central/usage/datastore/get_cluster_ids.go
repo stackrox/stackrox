@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	cluStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -17,10 +16,13 @@ var (
 		sac.ResourceScopeKeys(resources.Cluster))
 )
 
-func getClusterIDs(ctx context.Context) (set.StringSet, error) {
-	ctx = sac.WithGlobalAccessScopeChecker(ctx, clusterReader)
+type clustore interface {
+	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
+}
 
-	clusters, err := cluStore.Singleton().GetClusters(ctx)
+func getClusterIDs(ctx context.Context, clustore clustore) (set.StringSet, error) {
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, clusterReader)
+	clusters, err := clustore.GetClusters(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "cluster datastore failure")
 	}

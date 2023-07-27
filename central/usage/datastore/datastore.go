@@ -23,6 +23,9 @@ type DataStore interface {
 }
 
 // New initializes a datastore implementation instance.
-func New(_ any) DataStore {
-	return nil
+func New(_ any, clustore clustore) DataStore {
+	return &dataStoreImpl{
+		clustore: clustore,
+		cache:    NewCache(),
+	}
 }

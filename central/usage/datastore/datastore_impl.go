@@ -14,7 +14,8 @@ var (
 )
 
 type dataStoreImpl struct {
-	cache *cache
+	clustore clustore
+	cache    *cache
 }
 
 var _ DataStore = (*dataStoreImpl)(nil)
@@ -31,7 +32,7 @@ func (ds *dataStoreImpl) Insert(ctx context.Context, metrics *storage.Usage) err
 
 // GetCurrent returns the current usage.
 func (ds *dataStoreImpl) GetCurrent(ctx context.Context) (*storage.Usage, error) {
-	ids, err := getClusterIDs(ctx)
+	ids, err := getClusterIDs(ctx, ds.clustore)
 	if err != nil {
 		log.Debug("Failed to get cluster IDs for current usage: ", err)
 		return nil, err
@@ -41,8 +42,10 @@ func (ds *dataStoreImpl) GetCurrent(ctx context.Context) (*storage.Usage, error)
 	return m, nil
 }
 
+// CutMetrics returns collected metrics for the known clusters. Resets the cache
+// for the next iteration.
 func (ds *dataStoreImpl) CutMetrics(ctx context.Context) (*storage.Usage, error) {
-	ids, err := getClusterIDs(ctx)
+	ids, err := getClusterIDs(ctx, ds.clustore)
 	if err != nil {
 		log.Debug("Failed to get cluster IDs for usage snapshot: ", err)
 		return nil, err
@@ -50,7 +53,7 @@ func (ds *dataStoreImpl) CutMetrics(ctx context.Context) (*storage.Usage, error)
 	return ds.cache.CutMetrics(ids), nil
 }
 
-func (ds *dataStoreImpl) UpdateUsage(clusterID string, cm *central.ClusterMetrics) error {
+// UpdateUsage updates the cache with the metrics of the clusterID cluster.
+func (ds *dataStoreImpl) UpdateUsage(clusterID string, cm *central.ClusterMetrics) {
 	ds.cache.UpdateUsage(clusterID, cm)
-	return nil
 }
