@@ -17,7 +17,6 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -59,26 +58,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoTestSingleUUIDKeyStructs,
-			copyFromTestSingleUUIDKeyStructs,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoTestSingleUUIDKeyStructs,
+		copyFromTestSingleUUIDKeyStructs,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -95,7 +87,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestSingleUUIDKeyStructs(_ context.Context, batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
+func insertIntoTestSingleUUIDKeyStructs(batch *pgx.Batch, obj *storage.TestSingleUUIDKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -111,7 +103,7 @@ func insertIntoTestSingleUUIDKeyStructs(_ context.Context, batch *pgx.Batch, obj
 		obj.GetUint64(),
 		obj.GetInt64(),
 		obj.GetFloat(),
-		obj.GetLabels(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
 		pgutils.NilOrTime(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
@@ -165,7 +157,7 @@ func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, t
 			obj.GetUint64(),
 			obj.GetInt64(),
 			obj.GetFloat(),
-			obj.GetLabels(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
 			pgutils.NilOrTime(obj.GetTimestamp()),
 			obj.GetEnum(),
 			obj.GetEnums(),

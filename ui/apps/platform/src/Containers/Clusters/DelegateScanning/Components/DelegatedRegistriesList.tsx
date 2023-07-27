@@ -9,7 +9,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { DelegatedRegistry } from 'types/dedicatedRegistryConfig.proto';
+import { DelegatedRegistry } from 'services/DelegatedRegistryConfigService';
 
 type DelegatedRegistriesListProps = {
     registries: DelegatedRegistry[];

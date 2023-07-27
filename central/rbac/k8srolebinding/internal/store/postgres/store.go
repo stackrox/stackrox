@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -61,26 +60,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoRoleBindings,
-			copyFromRoleBindings,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			isUpsertAllowed,
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoRoleBindings,
+		copyFromRoleBindings,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		isUpsertAllowed,
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -114,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
+func insertIntoRoleBindings(batch *pgx.Batch, obj *storage.K8SRoleBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -129,8 +121,8 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetClusterName(),
 		obj.GetClusterRole(),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		pgutils.NilOrUUID(obj.GetRoleId()),
 		serialized,
 	}
@@ -141,7 +133,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetSubjects() {
-		if err := insertIntoRoleBindingsSubjects(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoRoleBindingsSubjects(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -151,7 +143,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	return nil
 }
 
-func insertIntoRoleBindingsSubjects(_ context.Context, batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
+func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -205,8 +197,8 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetClusterName(),
 			obj.GetClusterRole(),
-			obj.GetLabels(),
-			obj.GetAnnotations(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			pgutils.NilOrUUID(obj.GetRoleId()),
 			serialized,
 		})

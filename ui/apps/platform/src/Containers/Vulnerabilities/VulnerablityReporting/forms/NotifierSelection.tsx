@@ -14,11 +14,13 @@ import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { NotifierIntegration } from 'types/notifier.proto';
+import { ReportNotifier } from './useReportFormValues';
+
 // eslint-disable-next-line import/no-named-as-default
 import EmailNotifierFormModal from './EmailNotifierFormModal';
 
 type NotifierSelectionProps = {
-    selectedNotifier: NotifierIntegration | null;
+    selectedNotifier: ReportNotifier | null;
     mailingLists: string[];
     setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
     allowCreate: boolean;
@@ -66,7 +68,9 @@ function NotifierSelection({
     function onNotifierChange(_id, selectionId) {
         const notifierObject = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierObject) {
+            const notifierMailingLists = notifierObject.labelDefault.split(',');
             setFieldValue('notifier', notifierObject);
+            setFieldValue('mailingLists', notifierMailingLists);
             setIsEmailNotifierModalOpen(false);
         }
     }

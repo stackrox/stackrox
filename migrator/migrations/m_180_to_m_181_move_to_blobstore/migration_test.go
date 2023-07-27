@@ -36,7 +36,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *blobMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 }
 
 func (s *blobMigrationTestSuite) TearDownTest() {

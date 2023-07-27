@@ -114,12 +114,13 @@ func (s *NamespacesStoreSuite) TestStore() {
 }
 
 const (
-	withAllAccess           = "AllAccess"
-	withNoAccess            = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
-	withAccess              = "Access"
-	withAccessToCluster     = "AccessToCluster"
-	withNoAccessToCluster   = "NoAccessToCluster"
+	withAllAccess                = "AllAccess"
+	withNoAccess                 = "NoAccess"
+	withAccess                   = "Access"
+	withAccessToCluster          = "AccessToCluster"
+	withNoAccessToCluster        = "NoAccessToCluster"
+	withAccessToDifferentCluster = "AccessToDifferentCluster"
+	withAccessToDifferentNs      = "AccessToDifferentNs"
 )
 
 var (
@@ -128,7 +129,7 @@ var (
 
 type testCase struct {
 	context                context.Context
-	expectedIDs            []string
+	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
 	expectedObjects        []*storage.NamespaceMetadata
@@ -145,12 +146,16 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 	testCases := map[string]testCase{
 		withAllAccess: {
 			context:                sac.WithAllAccess(context.Background()),
+			expectedObjIDs:         []string{objA.GetId(), objB.GetId()},
+			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
 			expectedObjects:        []*storage.NamespaceMetadata{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
 			context:                sac.WithNoAccess(context.Background()),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NamespaceMetadata{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -161,21 +166,9 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
-				),
-			),
-			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.NamespaceMetadata{},
-			expectedWriteError:     sac.ErrResourceAccessDenied,
-		},
-		withAccessToDifferentNs: {
-			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
-					sac.ResourceScopeKeys(targetResource),
-					sac.ClusterScopeKeys(objA.GetClusterId()),
-					sac.NamespaceScopeKeys("unknown ns"),
-				),
-			),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*storage.NamespaceMetadata{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
@@ -187,8 +180,9 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys(objA.GetName()),
-				),
-			),
+				)),
+			expectedObjIDs:         []string{objA.GetId()},
+			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NamespaceMetadata{objA},
 			expectedWriteError:     nil,
@@ -199,11 +193,39 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
-				),
-			),
+				)),
+			expectedObjIDs:         []string{objA.GetId()},
+			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
 			expectedObjects:        []*storage.NamespaceMetadata{objA},
 			expectedWriteError:     nil,
+		},
+		withAccessToDifferentCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NamespaceMetadata{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccessToDifferentNs: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetClusterId()),
+					sac.NamespaceScopeKeys("unknown ns"),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.NamespaceMetadata{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 	}
 
@@ -229,27 +251,14 @@ func (s *NamespacesStoreSuite) TestSACUpsertMany() {
 }
 
 func (s *NamespacesStoreSuite) TestSACCount() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           2,
-		withNoAccess:            0,
-		withNoAccessToCluster:   0,
-		withAccessToDifferentNs: 0,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			count, err := s.store.Count(ctxs[name])
+			expectedCount := len(testCase.expectedObjects)
+			count, err := s.store.Count(testCase.context)
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -257,111 +266,69 @@ func (s *NamespacesStoreSuite) TestSACCount() {
 }
 
 func (s *NamespacesStoreSuite) TestSACWalk() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetId(), objB.GetId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetId()},
-		withAccessToCluster:     []string{objA.GetId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
 			getIDs := func(obj *storage.NamespaceMetadata) error {
 				identifiers = append(identifiers, obj.GetId())
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIDs)
+			err := s.store.Walk(testCase.context, getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})
 	}
 }
 
 func (s *NamespacesStoreSuite) TestSACGetIDs() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetId(), objB.GetId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetId()},
-		withAccessToCluster:     []string{objA.GetId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			identifiers, err := s.store.GetIDs(ctxs[name])
+			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
 
 func (s *NamespacesStoreSuite) TestSACExists() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]bool{
-		withAllAccess:           true,
-		withNoAccess:            false,
-		withNoAccessToCluster:   false,
-		withAccessToDifferentNs: false,
-		withAccess:              true,
-		withAccessToCluster:     true,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			exists, err := s.store.Exists(testCase.context, objA.GetId())
 			assert.NoError(t, err)
-			assert.Equal(t, expected, exists)
+
+			// Assumption from the test case structure: objA is always in the visible list
+			// in the first position.
+			expectedFound := len(testCase.expectedObjects) > 0
+			assert.Equal(t, expectedFound, exists)
 		})
 	}
 }
 
 func (s *NamespacesStoreSuite) TestSACGet() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]bool{
-		withAllAccess:           true,
-		withNoAccess:            false,
-		withNoAccessToCluster:   false,
-		withAccessToDifferentNs: false,
-		withAccess:              true,
-		withAccessToCluster:     true,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			actual, exists, err := s.store.Get(testCase.context, objA.GetId())
 			assert.NoError(t, err)
-			assert.Equal(t, expected, exists)
-			if expected == true {
+
+			// Assumption from the test case structure: objA is always in the visible list
+			// in the first position.
+			expectedFound := len(testCase.expectedObjects) > 0
+			assert.Equal(t, expectedFound, exists)
+			if expectedFound {
 				assert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
@@ -371,69 +338,56 @@ func (s *NamespacesStoreSuite) TestSACGet() {
 }
 
 func (s *NamespacesStoreSuite) TestSACDelete() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
 
-	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-
-	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           0,
-		withNoAccess:            2,
-		withNoAccessToCluster:   2,
-		withAccessToDifferentNs: 2,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
 
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetId()))
-			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetId()))
+			assert.NoError(t, s.store.Delete(testCase.context, objA.GetId()))
+			assert.NoError(t, s.store.Delete(testCase.context, objB.GetId()))
 
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, count)
+			assert.Equal(t, 2-len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, obj.GetId())
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
 
 func (s *NamespacesStoreSuite) TestSACDeleteMany() {
-	objA := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.NamespaceMetadata{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-
-	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           0,
-		withNoAccess:            2,
-		withNoAccessToCluster:   2,
-		withAccessToDifferentNs: 2,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
 
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
 				objA.GetId(),
 				objB.GetId(),
 			}))
 
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, count)
+			assert.Equal(t, 2-len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, obj.GetId())
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
@@ -458,37 +412,4 @@ func (s *NamespacesStoreSuite) TestSACGetMany() {
 		assert.Nil(t, actual)
 		assert.Nil(t, missingIndices)
 	})
-}
-
-func getSACContexts(obj *storage.NamespaceMetadata, access storage.Access) map[string]context.Context {
-	return map[string]context.Context{
-		withAllAccess: sac.WithAllAccess(context.Background()),
-		withNoAccess:  sac.WithNoAccess(context.Background()),
-		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetClusterId()),
-				sac.NamespaceScopeKeys("unknown ns"),
-			)),
-		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetClusterId()),
-				sac.NamespaceScopeKeys(obj.GetName()),
-			)),
-		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetClusterId()),
-			)),
-		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(uuid.Nil.String()),
-			)),
-	}
 }

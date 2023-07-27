@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -24,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -200,6 +202,104 @@ func TestTelemetryConfiguration(t *testing.T) {
 			key, err := values.PathValue("central.telemetry.storage.key")
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.expected.key, key)
+		})
+	}
+}
+
+func TestMonitoringConfiguration(t *testing.T) {
+	// Keep the bundle in memory
+	t.Setenv("ROX_ROXCTL_IN_MAIN_IMAGE", "true")
+
+	testutils.SetExampleVersion(t)
+
+	flavorName := defaults.ImageFlavorNameDevelopmentBuild
+	if buildinfo.ReleaseBuild {
+		flavorName = defaults.ImageFlavorNameStackRoxIORelease
+	}
+	config := renderer.Config{
+		K8sConfig: &renderer.K8sConfig{
+			ImageFlavorName:  flavorName,
+			DeploymentFormat: v1.DeploymentFormat_HELM,
+		},
+	}
+
+	testCases := []struct {
+		testName      string
+		clusterType   storage.ClusterType
+		flagEnabled   *bool
+		expectErr     error
+		expectEnabled bool
+	}{
+		{
+			testName:      "OpenShift 3, --openshift-monitoring=true",
+			clusterType:   storage.ClusterType_OPENSHIFT_CLUSTER,
+			flagEnabled:   pointer.Bool(true),
+			expectErr:     errox.InvalidArgs,
+			expectEnabled: false,
+		},
+		{
+			testName:      "OpenShift 4, --openshift-monitoring=true",
+			clusterType:   storage.ClusterType_OPENSHIFT4_CLUSTER,
+			flagEnabled:   pointer.Bool(true),
+			expectErr:     nil,
+			expectEnabled: true,
+		},
+		{
+			testName:      "OpenShift 3, --openshift-monitoring=false",
+			clusterType:   storage.ClusterType_OPENSHIFT_CLUSTER,
+			flagEnabled:   pointer.Bool(false),
+			expectErr:     nil,
+			expectEnabled: false,
+		},
+		{
+			testName:      "OpenShift 4, --openshift-monitoring=false",
+			clusterType:   storage.ClusterType_OPENSHIFT4_CLUSTER,
+			flagEnabled:   pointer.Bool(false),
+			expectEnabled: false,
+		},
+		{
+			testName:      "OpenShift 3, --openshift-monitoring=auto",
+			clusterType:   storage.ClusterType_OPENSHIFT_CLUSTER,
+			flagEnabled:   nil,
+			expectErr:     nil,
+			expectEnabled: false,
+		},
+		{
+			testName:      "OpenShift 4, --openshift-monitoring=auto",
+			clusterType:   storage.ClusterType_OPENSHIFT4_CLUSTER,
+			flagEnabled:   nil,
+			expectErr:     nil,
+			expectEnabled: true,
+		},
+	}
+
+	logio, _, _, _ := io2.TestIO()
+	logger := logger.NewLogger(logio, printer.DefaultColorPrinter())
+
+	for _, testCase := range testCases {
+		t.Run(testCase.testName, func(t *testing.T) {
+			bundleio, _, out, _ := io2.TestIO()
+			config.ClusterType = testCase.clusterType
+			config.K8sConfig.Monitoring.OpenShiftMonitoring = testCase.flagEnabled
+			err := OutputZip(logger, bundleio, config)
+			require.ErrorIs(t, err, testCase.expectErr)
+			if err != nil {
+				return
+			}
+
+			r, err := zip.NewReader(bytes.NewReader(out.Bytes()), int64(len(out.Bytes())))
+			require.NoError(t, err)
+			file, err := r.Open("values-public.yaml")
+			require.NoError(t, err)
+			data, err := io.ReadAll(file)
+			require.NoError(t, err)
+
+			values, err := chartutil.ReadValues(data)
+			require.NoError(t, err)
+
+			enabled, err := values.PathValue("monitoring.openshift.enabled")
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectEnabled, enabled)
 		})
 	}
 }

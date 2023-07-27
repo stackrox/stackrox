@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement, ReactFragment } from 'react';
 import {
     Alert,
     AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
+    Button,
     Flex,
     FlexItem,
     Form,
@@ -14,14 +15,23 @@ import {
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath } from 'routePaths';
-import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
-import { fetchDelegatedRegistryConfig } from 'services/DelegatedRegistryConfigService';
-import { DelegatedRegistryConfig } from 'types/dedicatedRegistryConfig.proto';
+import {
+    fetchDelegatedRegistryConfig,
+    fetchDelegatedRegistryClusters,
+    updateDelegatedRegistryConfig,
+    DelegatedRegistryConfig,
+    DelegatedRegistryCluster,
+} from 'services/DelegatedRegistryConfigService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ToggleDelegatedScanning from './Components/ToggleDelegatedScanning';
 import DelegatedScanningSettings from './Components/DelegatedScanningSettings';
 import DelegatedRegistriesList from './Components/DelegatedRegistriesList';
 
+type AlertObj = {
+    type: AlertVariant.danger | AlertVariant.success;
+    title: string;
+    body: ReactElement | ReactFragment;
+};
 const initialDelegatedState: DelegatedRegistryConfig = {
     enabledFor: 'NONE',
     defaultClusterId: '',
@@ -32,21 +42,63 @@ function DelegateScanningPage() {
     const displayedPageTitle = 'Delegate Image Scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
-    const [errMessage, setErrMessage] = useState<string>('');
-
-    const { clusters } = useFetchClustersForPermissions(['Cluster']);
+    const [delegatedRegistryClusters, setDelegatedRegistryClusters] = useState<
+        DelegatedRegistryCluster[]
+    >([]);
+    const [alertObj, setAlertObj] = useState<AlertObj | null>(null);
 
     useEffect(() => {
-        setErrMessage('');
+        fetchClusters();
+        fetchConfig();
+    }, []);
+
+    function fetchConfig() {
+        setAlertObj(null);
         fetchDelegatedRegistryConfig()
             .then((configFetched) => {
                 setDedicatedRegistryConfig(configFetched);
             })
             .catch((error) => {
-                setErrMessage(getAxiosErrorMessage(error));
+                const newErrorObj: AlertObj = {
+                    type: AlertVariant.danger,
+                    title: 'Problem retrieving the delegated scanning configuration from the server',
+                    body: (
+                        <>
+                            <p>{getAxiosErrorMessage(error)}</p>
+                            <p>
+                                Try reloading the page. If this problem persists, contact support.
+                            </p>
+                        </>
+                    ),
+                };
+                setAlertObj(newErrorObj);
                 setDedicatedRegistryConfig(initialDelegatedState);
             });
-    }, []);
+    }
+
+    function fetchClusters() {
+        fetchDelegatedRegistryClusters()
+            .then((clusters) => {
+                const validClusters = clusters.filter((cluster) => cluster.isValid);
+                setDelegatedRegistryClusters(validClusters);
+            })
+            .catch((error) => {
+                const newErrorObj: AlertObj = {
+                    type: AlertVariant.danger,
+                    title: 'Problem retrieving clusters eligible for delegated scanning',
+                    body: (
+                        <>
+                            <p>{getAxiosErrorMessage(error)}</p>
+                            <p>
+                                Try reloading the page. If this problem persists, contact support.
+                            </p>
+                        </>
+                    ),
+                };
+                setAlertObj(newErrorObj);
+                setDelegatedRegistryClusters([]);
+            });
+    }
 
     function toggleDelegation() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
@@ -79,6 +131,38 @@ function DelegateScanningPage() {
         setDedicatedRegistryConfig(newState);
     }
 
+    function onSave() {
+        setAlertObj(null);
+        updateDelegatedRegistryConfig(delegatedRegistryConfig)
+            .then(() => {
+                const newSuccessObj: AlertObj = {
+                    type: AlertVariant.success,
+                    title: 'Delegated scanning configuration saved successfully',
+                    body: <></>,
+                };
+                setAlertObj(newSuccessObj);
+            })
+            .catch((error) => {
+                const newErrorObj: AlertObj = {
+                    type: AlertVariant.danger,
+                    title: 'Problem saving the delegated scanning configuration to the server',
+                    body: (
+                        <>
+                            <p>{getAxiosErrorMessage(error)}</p>
+                            <p>
+                                Try reloading the page. If this problem persists, contact support.
+                            </p>
+                        </>
+                    ),
+                };
+                setAlertObj(newErrorObj);
+            });
+    }
+
+    function onCancel() {
+        fetchConfig();
+    }
+
     return (
         <>
             <PageTitle title={displayedPageTitle} />
@@ -100,15 +184,15 @@ function DelegateScanningPage() {
                 </Flex>
             </PageSection>
             <PageSection>
-                {!!errMessage && (
+                {!!alertObj && (
                     <Alert
-                        title="Problem retrieving the delegated scanning configuration from the server"
-                        variant={AlertVariant.danger}
+                        title={alertObj.title}
+                        variant={alertObj.type}
                         isInline
                         className="pf-u-mb-lg"
+                        component="h2"
                     >
-                        <p>{errMessage}</p>
-                        <p>Try reloading the page. If this problem persists, contact support.</p>
+                        {alertObj.body}
                     </Alert>
                 )}
                 <Form>
@@ -122,7 +206,7 @@ function DelegateScanningPage() {
                             <DelegatedScanningSettings
                                 enabledFor={delegatedRegistryConfig.enabledFor}
                                 onChangeEnabledFor={onChangeEnabledFor}
-                                clusters={clusters}
+                                clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
                                 setSelectedClusterId={onChangeCluster}
                             />
@@ -132,6 +216,18 @@ function DelegateScanningPage() {
                         </>
                     )}
                 </Form>
+                <Flex className="pf-u-p-md">
+                    <FlexItem align={{ default: 'alignLeft' }}>
+                        <Flex>
+                            <Button variant="primary" onClick={onSave}>
+                                Save
+                            </Button>
+                            <Button variant="secondary" onClick={onCancel}>
+                                Cancel
+                            </Button>
+                        </Flex>
+                    </FlexItem>
+                </Flex>
             </PageSection>
         </>
     );

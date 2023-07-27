@@ -40,7 +40,7 @@ func simplePolicy(policyID string) *storage.Policy {
 }
 
 func (s *policyMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	s.policyStore = policyPostgresStore.New(s.db.DB)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePoliciesStmt)
 

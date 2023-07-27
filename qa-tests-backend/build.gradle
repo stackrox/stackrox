@@ -20,7 +20,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.23.2'
 def protobufVersion = '3.23.4'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.7.2'
+def fabric8Version = '6.8.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -106,7 +106,7 @@ dependencies {
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.29.2'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.30.0'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"

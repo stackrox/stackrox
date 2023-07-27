@@ -18,7 +18,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSetting{
 		TypeMeta: v1.TypeMeta{
-			Kind:       complianceoperator.ScanSettingGVK.Kind,
+			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -45,7 +45,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 			Name:     profile,
-			Kind:     complianceoperator.ScanSettingGVK.Kind,
+			Kind:     complianceoperator.ScanSetting.Kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
 		})
 	}
@@ -53,7 +53,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSettingBinding{
 		TypeMeta: v1.TypeMeta{
-			Kind:       complianceoperator.ScanSettingBindingGVK.Kind,
+			Kind:       complianceoperator.ScanSettingBinding.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -63,7 +63,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 		Profiles: profileRefs,
 		SettingsRef: &v1alpha1.NamedObjectReference{
 			Name:     defaultScanSettingName,
-			Kind:     complianceoperator.ScanSettingGVK.Kind,
+			Kind:     complianceoperator.ScanSetting.Kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
 		},
 	}

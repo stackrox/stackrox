@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/mode"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"k8s.io/utils/pointer"
 )
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
@@ -210,6 +211,14 @@ func updateConfig(config *renderer.Config) error {
 		} else {
 			config.K8sConfig.Telemetry.StorageKey = phonehome.DisabledKey
 			config.K8sConfig.Telemetry.Enabled = false
+		}
+
+		if config.K8sConfig.Monitoring.OpenShiftMonitoring == nil {
+			isOpenShift4 := config.ClusterType == storage.ClusterType_OPENSHIFT4_CLUSTER
+			config.K8sConfig.Monitoring.OpenShiftMonitoring = pointer.Bool(isOpenShift4)
+		} else if *config.K8sConfig.Monitoring.OpenShiftMonitoring &&
+			config.ClusterType != storage.ClusterType_OPENSHIFT4_CLUSTER {
+			return errox.InvalidArgs.Newf("OpenShift monitoring integration requires OpenShift 4, got %q", config.ClusterType.String())
 		}
 	}
 

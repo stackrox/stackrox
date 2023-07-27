@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardBody, Checkbox } from '@patternfly/react-core';
 
-import { DelegatedRegistryConfigEnabledFor } from 'types/dedicatedRegistryConfig.proto';
+import { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryConfigService';
 
 type ToggleDelegatedScanningProps = {
     enabledFor: DelegatedRegistryConfigEnabledFor;
