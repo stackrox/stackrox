@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/httputil"
@@ -29,7 +28,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 		{
 			name:             "when central is not reachable then return internal error",
 			statusCode:       http.StatusInternalServerError,
-			responseBody:     "{\"code\":13,\"message\":\"central not reachable\"}",
+			responseBody:     "{\"code\":14,\"message\":\"central not reachable\"}",
 			centralReachable: false,
 		},
 		{
@@ -94,10 +93,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 				} else {
 					tt.args.request.Method = method
 				}
-				reachable := atomic.Bool{}
-				reachable.Store(tt.centralReachable)
-				h := &ScannerDefinitionHandler{
-					centralReachable: &reachable,
+				h := &Handler{
 					centralClient: &http.Client{
 						Transport: httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 							assert.Equal(t, tt.args.request.URL.RawQuery, req.URL.RawQuery)
@@ -111,6 +107,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 						}),
 					},
 				}
+				h.centralReachable.Store(tt.centralReachable)
 				h.ServeHTTP(tt.args.writer, tt.args.request)
 				assert.Equal(t, tt.responseBody, tt.args.writer.Data.String())
 				assert.Equal(t, tt.statusCode, tt.args.writer.Code)
