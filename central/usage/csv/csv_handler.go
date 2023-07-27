@@ -2,8 +2,11 @@ package usagecsv
 
 import (
 	"net/http"
+	"net/url"
 	"time"
 
+	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
@@ -11,25 +14,14 @@ import (
 // CSVHandler returns an HTTP handler function that serves usage data as CSV.
 func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := r.ParseForm(); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-		var err error
-		from := time.Unix(0, 0).UTC()
-		to := time.Now()
-		if reqFrom := r.Form.Get("from"); reqFrom != "" {
-			from, err = time.Parse(time.RFC3339, reqFrom)
-		}
-		if reqTo := r.Form.Get("to"); reqTo != "" {
-			to, err = time.Parse(time.RFC3339, reqTo)
-		}
+		from, to, err := parseRequest(r)
 		if err != nil {
 			log.Error("Bad CSV usage metrics request: ", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		metrics, err := ds.Get(r.Context(), protoconv.ConvertTimeToTimestamp(from), protoconv.ConvertTimeToTimestamp(to))
+		metrics, err := ds.Get(r.Context(), from, to)
 		if err != nil {
 			log.Error("Failed to call usage metrics store: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -44,4 +36,29 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func getTimeParameter(r url.Values, param string, def time.Time) (*types.Timestamp, error) {
+	if v := r.Get(param); v != "" {
+		var err error
+		if def, err = time.Parse(time.RFC3339Nano, v); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse '%s' parameter", param)
+		}
+	}
+	return protoconv.ConvertTimeToTimestamp(def), nil
+}
+
+func parseRequest(r *http.Request) (*types.Timestamp, *types.Timestamp, error) {
+	if err := r.ParseForm(); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to parse request paremeters")
+	}
+	var err error
+	var from, to *types.Timestamp
+	if from, err = getTimeParameter(r.Form, "from", zeroTime); err != nil {
+		return nil, nil, err
+	}
+	if to, err = getTimeParameter(r.Form, "to", time.Now()); err != nil {
+		return nil, nil, err
+	}
+	return from, to, nil
 }
