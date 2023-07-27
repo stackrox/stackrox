@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     PageSection,
     Title,
@@ -15,9 +15,6 @@ import {
     EmptyStateBody,
     EmptyStateVariant,
     Text,
-    Modal,
-    Alert,
-    AlertVariant,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link, generatePath } from 'react-router-dom';
@@ -29,12 +26,11 @@ import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-import { deleteReportConfiguration } from 'services/ReportsService';
-import useModal from 'hooks/useModal';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
-import { getErrorMessage } from '../errorUtils';
+import useDeleteModal from '../hooks/useDeleteModal';
+import DeleteReportModal from '../components/DeleteReportModal';
 
 const CreateReportsButton = () => {
     return (
@@ -58,33 +54,18 @@ function VulnReportsPage() {
 
     const { reports, isLoading, error: fetchError, fetchReports } = useFetchReports();
 
-    const { isModalOpen, openModal, closeModal } = useModal();
-    const [reportIdToDelete, setReportIdToDelete] = useState<string>('');
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [deleteError, setDeleteError] = useState<string>('');
-
-    function openDeleteModal(reportId: string) {
-        openModal();
-        setReportIdToDelete(reportId);
-    }
-
-    function closeDeleteModal() {
-        closeModal();
-        setReportIdToDelete('');
-    }
-
-    async function deleteReport(reportId: string) {
-        setIsDeleting(true);
-        try {
-            await deleteReportConfiguration(reportId);
-            setIsDeleting(false);
-            closeDeleteModal();
+    const {
+        openDeleteModal,
+        isDeleteModalOpen,
+        closeDeleteModal,
+        isDeleting,
+        onDelete,
+        deleteError,
+    } = useDeleteModal({
+        onCompleted: () => {
             fetchReports();
-        } catch (err) {
-            setIsDeleting(false);
-            setDeleteError(getErrorMessage(err));
-        }
-    }
+        },
+    });
 
     return (
         <>
@@ -186,20 +167,18 @@ function VulnReportsPage() {
                                         </Tbody>
                                     )}
                                     {reports.map((report) => {
-                                        const editVulnReportURL = `${
-                                            generatePath(vulnerabilityReportPath, {
+                                        const vulnReportURL = generatePath(
+                                            vulnerabilityReportPath,
+                                            {
                                                 reportId: report.id,
-                                            }) as string
-                                        }?action=edit`;
-                                        const cloneVulnReportURL = `${
-                                            generatePath(vulnerabilityReportPath, {
-                                                reportId: report.id,
-                                            }) as string
-                                        }?action=clone`;
+                                            }
+                                        ) as string;
                                         const rowActions = [
                                             {
                                                 title: (
-                                                    <Link to={editVulnReportURL}>Edit report</Link>
+                                                    <Link to={`${vulnReportURL}?action=edit`}>
+                                                        Edit report
+                                                    </Link>
                                                 ),
                                             },
                                             {
@@ -219,7 +198,7 @@ function VulnReportsPage() {
                                             },
                                             {
                                                 title: (
-                                                    <Link to={cloneVulnReportURL}>
+                                                    <Link to={`${vulnReportURL}?action=clone`}>
                                                         Clone report
                                                     </Link>
                                                 ),
@@ -248,7 +227,11 @@ function VulnReportsPage() {
                                                 }}
                                             >
                                                 <Tr>
-                                                    <Td>{report.name}</Td>
+                                                    <Td>
+                                                        <Link to={vulnReportURL}>
+                                                            {report.name}
+                                                        </Link>
+                                                    </Td>
                                                     <Td>
                                                         {
                                                             report.resourceScope.collectionScope
@@ -280,41 +263,13 @@ function VulnReportsPage() {
                     </Card>
                 </PageSection>
             </PageSection>
-            {reportIdToDelete !== '' && (
-                <Modal
-                    variant="small"
-                    title="Permanently delete report?"
-                    isOpen={isModalOpen}
-                    onClose={closeDeleteModal}
-                    actions={[
-                        <Button
-                            key="confirm"
-                            variant="danger"
-                            isLoading={isDeleting}
-                            isDisabled={isDeleting}
-                            onClick={() => deleteReport(reportIdToDelete)}
-                        >
-                            Delete
-                        </Button>,
-                        <Button key="cancel" variant="secondary" onClick={closeDeleteModal}>
-                            Cancel
-                        </Button>,
-                    ]}
-                >
-                    {deleteError && (
-                        <Alert
-                            isInline
-                            variant={AlertVariant.danger}
-                            title={deleteError}
-                            className="pf-u-mb-sm"
-                        />
-                    )}
-                    <p>
-                        This report and any attached downloadable reports will be permanently
-                        deleted. The action cannot be undone.
-                    </p>
-                </Modal>
-            )}
+            <DeleteReportModal
+                isOpen={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                isDeleting={isDeleting}
+                onDelete={onDelete}
+                error={deleteError}
+            />
         </>
     );
 }
