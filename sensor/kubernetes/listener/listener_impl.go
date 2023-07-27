@@ -104,6 +104,6 @@ func resourceExists(list *metav1.APIResourceList, resource string) bool {
 		}
 	}
 
-	log.Warn("Resource %q does not exist...", resource)
+	log.Warnf("Resource %q does not exist...", resource)
 	return false
 }
