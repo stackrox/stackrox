@@ -584,7 +584,7 @@ copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
-	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-arm64
+	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
 	cp bin/linux_ppc64le/roxctl image/rhel/bin/roxctl-linux-ppc64le
 	cp bin/linux_s390x/roxctl image/rhel/bin/roxctl-linux-s390x
 	cp bin/darwin_amd64/roxctl image/rhel/bin/roxctl-darwin-amd64

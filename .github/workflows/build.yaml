@@ -28,7 +28,7 @@ jobs:
         run: |
           source './scripts/ci/lib.sh'
 
-          matrix='{ "pre_build_go_binaries": { "name":[], "arch":[] }, "build_and_push_main": { "name":[], "arch":[] }, "build_and_push_main_manifests": { "name":[] } }'
+          matrix='{ "pre_build_go_binaries": { "name":[], "arch":[] }, "build_and_push_main": { "name":[], "arch":[] }, "push_main_multiarch_manifests": { "name":[] } }'
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
@@ -37,14 +37,14 @@ jobs:
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64", "ppc64le"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_main_manifests.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.push_main_multiarch_manifests.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
           if ! is_tagged; then
             if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
               matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
-              matrix="$(jq '.build_and_push_main_manifests.name += ["prerelease"]' <<< "$matrix")"
+              matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
             fi
           fi
 
@@ -52,7 +52,7 @@ jobs:
           if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
+            matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
@@ -399,7 +399,7 @@ jobs:
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
-  build-and-push-main-manifests:
+  push-main-manifests:
     runs-on: ubuntu-latest
     needs:
     - define-job-matrix
@@ -411,7 +411,7 @@ jobs:
       # prerelease
       # race-condition-debug
       fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_main_manifests }}
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
     container:

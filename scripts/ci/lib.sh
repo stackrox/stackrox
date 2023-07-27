@@ -158,7 +158,7 @@ get_central_diagnostics() {
 }
 
 push_image_manifest_lists() {
-    info "Pushing main, roxctl, central-db, scanner, collector images as manifests"
+    info "Pushing main, roxctl and central-db images as manifest lists"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_image_manifest_lists <push_context> <brand>"
