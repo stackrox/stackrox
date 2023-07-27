@@ -190,6 +190,7 @@ function DelegateScanningPage() {
                         variant={alertObj.type}
                         isInline
                         className="pf-u-mb-lg"
+                        component="h2"
                     >
                         {alertObj.body}
                     </Alert>
