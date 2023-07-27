@@ -67,7 +67,7 @@ spec:
                   containerName: manager
                   resource: limits.memory
                   divisor: '0'
-          image: quay.io/stackrox-io/stackrox-operator:4.1.0-533-gab0b1dd9dd
+          image: quay.io/stackrox-io/stackrox-operator:4.1.0-536-ge4d88a2cb7
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
