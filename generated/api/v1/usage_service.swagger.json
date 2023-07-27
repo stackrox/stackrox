@@ -11,52 +11,16 @@
     "application/json"
   ],
   "paths": {
-    "/v1/usage": {
-      "get": {
-        "operationId": "UsageService_GetMetrics",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1UsageResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "from",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "date-time"
-          }
-        ],
-        "tags": [
-          "UsageService"
-        ]
-      }
-    },
     "/v1/usage/current": {
       "get": {
-        "operationId": "UsageService_GetCurrent",
+        "summary": "GetCurrentUsage",
+        "description": "Returns current usage, with about 5 minutes precision.",
+        "operationId": "UsageService_GetCurrentUsage",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/UsageResponseUsageRecord"
+              "$ref": "#/definitions/v1CurrentUsageResponse"
             }
           },
           "default": {
@@ -73,12 +37,14 @@
     },
     "/v1/usage/max": {
       "get": {
-        "operationId": "UsageService_GetMax",
+        "summary": "GetMaxUsage",
+        "description": "Returns maximum, i.e. peak, usage for the given time frame together\nwith the time when this maximum was observed.",
+        "operationId": "UsageService_GetMaxUsage",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1UsageMaxResponse"
+              "$ref": "#/definitions/v1MaxUsageResponse"
             }
           },
           "default": {
@@ -111,18 +77,6 @@
     }
   },
   "definitions": {
-    "UsageResponseUsageRecord": {
-      "type": "object",
-      "properties": {
-        "ts": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "metrics": {
-          "$ref": "#/definitions/v1SecuredResourcesMetrics"
-        }
-      }
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -159,48 +113,41 @@
         }
       }
     },
-    "v1SecuredResourcesMetrics": {
+    "v1CurrentUsageResponse": {
       "type": "object",
       "properties": {
-        "nodes": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "numNodes": {
           "type": "integer",
           "format": "int32"
         },
-        "cores": {
+        "numCores": {
           "type": "integer",
           "format": "int32"
         }
       }
     },
-    "v1UsageMaxResponse": {
+    "v1MaxUsageResponse": {
       "type": "object",
       "properties": {
-        "nodesTs": {
+        "maxNodesAt": {
           "type": "string",
           "format": "date-time"
         },
-        "nodes": {
+        "maxNodes": {
           "type": "integer",
           "format": "int32"
         },
-        "coresTs": {
+        "maxCoresAt": {
           "type": "string",
           "format": "date-time"
         },
-        "cores": {
+        "maxCores": {
           "type": "integer",
           "format": "int32"
-        }
-      }
-    },
-    "v1UsageResponse": {
-      "type": "object",
-      "properties": {
-        "record": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/UsageResponseUsageRecord"
-          }
         }
       }
     }

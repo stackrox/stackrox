@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v1;
 
-import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "v1";
@@ -13,34 +13,33 @@ message UsageRequest {
   google.protobuf.Timestamp to = 2;
 }
 
-message SecuredResourcesMetrics {
-  int32 nodes = 1;
-  int32 cores = 2;
+message CurrentUsageResponse {
+  google.protobuf.Timestamp timestamp = 1;
+
+  int32 num_nodes = 2;
+  int32 num_cores = 3;
 }
 
-message UsageResponse {
-  message UsageRecord {
-    google.protobuf.Timestamp ts = 1;
-    SecuredResourcesMetrics metrics = 2;
-  }
-  repeated UsageRecord record = 1;
-}
-
-message UsageMaxResponse {
-  google.protobuf.Timestamp nodes_ts = 1;
-  int32 nodes = 2;
-  google.protobuf.Timestamp cores_ts = 3;
-  int32 cores = 4;
+message MaxUsageResponse {
+  google.protobuf.Timestamp max_nodes_at = 1;
+  int32 max_nodes = 2;
+  google.protobuf.Timestamp max_cores_at = 3;
+  int32 max_cores = 4;
 }
 
 service UsageService {
-  rpc GetMetrics(UsageRequest) returns (UsageResponse) {
-    option (google.api.http) = {get: "/v1/usage"};
-  }
-  rpc GetMax(UsageRequest) returns (UsageMaxResponse) {
-    option (google.api.http) = {get: "/v1/usage/max"};
-  }
-  rpc GetCurrent(v1.Empty) returns (UsageResponse.UsageRecord) {
+  // GetCurrentUsage
+  //
+  // Returns current usage, with about 5 minutes precision.
+  rpc GetCurrentUsage(v1.Empty) returns (CurrentUsageResponse) {
     option (google.api.http) = {get: "/v1/usage/current"};
+  }
+
+  // GetMaxUsage
+  //
+  // Returns maximum, i.e. peak, usage for the given time frame together
+  // with the time when this maximum was observed.
+  rpc GetMaxUsage(UsageRequest) returns (MaxUsageResponse) {
+    option (google.api.http) = {get: "/v1/usage/max"};
   }
 }
