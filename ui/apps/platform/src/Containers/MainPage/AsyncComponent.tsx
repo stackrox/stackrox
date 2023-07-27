@@ -6,7 +6,7 @@ type State = {
     component: ElementType | null;
 };
 
-export default function asyncComponent(importComponent) {
+export default function asyncComponent(importComponent): ElementType {
     class AsyncComponent extends Component<Props, State> {
         isComponentMounted: boolean;
 
