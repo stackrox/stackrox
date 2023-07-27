@@ -36,25 +36,21 @@ func (u *cache) UpdateUsage(clusterID string, cm *central.ClusterMetrics) {
 	u.lastKnownMux.Lock()
 	defer u.lastKnownMux.Unlock()
 	u.lastKnown[clusterID] = storage.Usage{
-		Sr: &storage.Usage_SecuredResources{
-			Nodes: int32(cm.GetNodeCount()),
-			Cores: int32(cm.GetCpuCapacity()),
-		},
+		NumNodes: int32(cm.GetNodeCount()),
+		NumCores: int32(cm.GetCpuCapacity()),
 	}
 }
 
 // FilterCurrent removes the last known metrics values for the cluster IDs
 // not present in the ids, and returns the total values for other IDs.
 func (u *cache) FilterCurrent(ids set.StringSet) *storage.Usage {
-	m := storage.Usage{
-		Sr: &storage.Usage_SecuredResources{},
-	}
+	m := storage.Usage{}
 	u.lastKnownMux.Lock()
 	defer u.lastKnownMux.Unlock()
 	for id, v := range u.lastKnown {
 		if ids.Contains(id) {
-			m.Sr.Nodes += v.Sr.Nodes
-			m.Sr.Cores += v.Sr.Cores
+			m.NumNodes += v.NumNodes
+			m.NumCores += v.NumCores
 		} else {
 			delete(u.lastKnown, id)
 		}
@@ -69,17 +65,15 @@ func (u *cache) FilterCurrent(ids set.StringSet) *storage.Usage {
 // usage counting when customers remove and add clusters within one collection
 // period.
 func (u *cache) CutMetrics(ids set.StringSet) *storage.Usage {
-	m := storage.Usage{
-		Sr: &storage.Usage_SecuredResources{},
-	}
+	m := storage.Usage{}
 	for id, v := range u.nodesMap.Reset() {
 		if ids.Contains(id) {
-			m.Sr.Nodes += v
+			m.NumNodes += v
 		}
 	}
 	for id, v := range u.coresMap.Reset() {
 		if ids.Contains(id) {
-			m.Sr.Cores += v
+			m.NumCores += v
 		}
 	}
 	return &m
