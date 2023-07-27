@@ -44,19 +44,19 @@ export type NotifierConfiguration = {
     notifierName: string;
 };
 
-type ScheduleBase = {
-    intervalType: IntervalType;
-    hour: number;
-    minute: number;
-};
-
 export type Schedule =
-    | (ScheduleBase & {
+    | {
+          intervalType: 'WEEKLY';
+          hour: number;
+          minute: number;
           daysOfWeek: DaysOfWeek;
-      })
-    | (ScheduleBase & {
+      }
+    | {
+          intervalType: 'MONTHLY';
+          hour: number;
+          minute: number;
           daysOfMonth: DaysOfMonth;
-      });
+      };
 
 export type IntervalType = 'WEEKLY' | 'MONTHLY';
 

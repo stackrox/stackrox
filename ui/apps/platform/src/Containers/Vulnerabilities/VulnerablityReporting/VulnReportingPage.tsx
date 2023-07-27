@@ -3,10 +3,13 @@ import { Route, Switch, Redirect } from 'react-router-dom';
 
 import usePageAction from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
 
 import VulnReportsPage from './VulnReports/VulnReportsPage';
-import CreateVulnReportPage from './CreateVulnReport/CreateVulnReportPage';
+import CreateVulnReportPage from './ModifyVulnReport/CreateVulnReportPage';
+import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
+import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
+import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
 
 import './VulnReportingPage.css';
 
@@ -39,6 +42,19 @@ function VulnReportingPage() {
                         return <VulnReportsPage {...props} />;
                     }
                     return <Redirect to={vulnerabilityReportsPath} />;
+                }}
+            />
+            <Route
+                exact
+                path={vulnerabilityReportPath}
+                render={(props) => {
+                    if (pageAction === 'edit' && canReadWriteReports) {
+                        return <EditVulnReportPage {...props} />;
+                    }
+                    if (pageAction === 'clone' && canReadWriteReports) {
+                        return <CloneVulnReportPage {...props} />;
+                    }
+                    return <ViewVulnReportPage {...props} />;
                 }}
             />
         </Switch>

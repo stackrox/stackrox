@@ -34,10 +34,11 @@ import { daysOfMonthMap, daysOfWeekMap } from 'Components/PatternFly/DayPickerDr
 import exampleReportsCSVData from '../exampleReportsCSVData';
 
 export type ReportReviewFormParams = {
+    title: string;
     formValues: ReportFormValues;
 };
 
-function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement {
+function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactElement {
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
             formValues.reportParameters.cveSeverities.map((severity) => (
@@ -107,7 +108,7 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Review and create</Title>
+                        <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
                 </Flex>
             </PageSection>

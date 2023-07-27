@@ -14,20 +14,30 @@ export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 export const authorizeRoxctlPath = '/authorize-roxctl';
 
-export const dashboardPath = `${mainPath}/dashboard`;
-export const networkBasePath = `${mainPath}/network-graph`;
-export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
-export const violationsBasePath = `${mainPath}/violations`;
-export const violationsPath = `${violationsBasePath}/:alertId?`;
+// Add (related) path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
+export const accessControlBasePath = `${mainPath}/access-control`;
+export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
+export const apidocsPath = `${mainPath}/apidocs`;
 export const clustersBasePath = `${mainPath}/clusters`;
-export const clustersDelegateScanningPath = `${clustersBasePath}/delegate-scanning`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
+export const clustersDelegateScanningPath = `${clustersBasePath}/delegate-scanning`;
+export const collectionsBasePath = `${mainPath}/collections`;
+export const collectionsPath = `${mainPath}/collections/:collectionId?`;
+export const complianceBasePath = `${mainPath}/compliance`;
+export const compliancePath = `${mainPath}/:context(compliance)`;
+export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
+export const configManagementPath = `${mainPath}/configmanagement`;
+export const dashboardPath = `${mainPath}/dashboard`;
+export const dataRetentionPath = `${mainPath}/retention`;
 export const integrationsPath = `${mainPath}/integrations`;
-export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
 export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
+export const integrationsListPath = `${integrationsPath}/:source/:type`;
+export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
+export const networkBasePath = `${mainPath}/network-graph`;
+export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
 export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
@@ -36,26 +46,23 @@ export const deprecatedPoliciesBasePath = `${mainPath}/policies`;
 export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
-export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const searchPath = `${mainPath}/search`;
-export const apidocsPath = `${mainPath}/apidocs`;
-export const accessControlBasePath = `${mainPath}/access-control`;
-export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
+export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
+export const systemConfigPath = `${mainPath}/systemconfig`;
+export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
-export const systemConfigPath = `${mainPath}/systemconfig`;
-export const complianceBasePath = `${mainPath}/compliance`;
-export const compliancePath = `${mainPath}/:context(compliance)`;
-export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
-export const dataRetentionPath = `${mainPath}/retention`;
-export const systemHealthPath = `${mainPath}/system-health`;
-export const collectionsBasePath = `${mainPath}/collections`;
-export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
+export const violationsBasePath = `${mainPath}/violations`;
+export const violationsPath = `${violationsBasePath}/:alertId?`;
+export const vulnManagementPath = `${mainPath}/vulnerability-management`;
+export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
+export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
+export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
+export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
 // Configuration Management
 
-export const configManagementPath = `${mainPath}/configmanagement`;
 export const configManagementClustersPath = `${configManagementPath}/clusters`;
 export const configManagementControlsPath = `${configManagementPath}/controls`;
 export const configManagementDeploymentsPath = `${configManagementPath}/deployments`;
@@ -70,7 +77,6 @@ export const configManagementSubjectsPath = `${configManagementPath}/subjects`;
 
 // Vuln Management Paths
 
-export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
 export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
 export const vulnManagementImageCVEsPath = `${vulnManagementPath}/image-cves`;
@@ -87,30 +93,25 @@ export const vulnManagementImageComponentsPath = `${vulnManagementPath}/image-co
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 // The following paths are not part of the infinite nesting Workflow in Vuln Management
-export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementReportsPathWithParam = `${vulnManagementPath}/reports/:reportId`;
 
-export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
 export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptancePath}/pending-approvals`;
 export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
 export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
 
 // VM 2.0 "Vulnerabilities" paths
-export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 
-export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/workload-cves/cves/:cveId`;
 export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
 export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
 
-export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityReportPath = `${vulnerabilitiesBasePath}/reports/:reportId`;
 
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
 
 type RouteDescription = {
-    featureFlagDependency?: FeatureFlagEnvVar; // can add array as alternative if needed in the future
-    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS
+    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
+    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS and multiple resource names imply must have access to all
 };
 
 // Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
@@ -182,11 +183,11 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: [],
     },
     [vulnerabilitiesWorkloadCvesPath]: {
-        featureFlagDependency: 'ROX_VULN_MGMT_WORKLOAD_CVES',
+        featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
         resourceAccessRequirements: [],
     },
     [vulnerabilityReportsPath]: {
-        featureFlagDependency: 'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS',
+        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
         resourceAccessRequirements: ['WorkflowAdministration'],
     },
 };
@@ -210,8 +211,12 @@ export function isRouteEnabled(
 
     const { featureFlagDependency, resourceAccessRequirements } = routeDescription;
 
-    if (typeof featureFlagDependency === 'string') {
-        if (!isFeatureFlagEnabled(featureFlagDependency)) {
+    if (Array.isArray(featureFlagDependency)) {
+        if (
+            !featureFlagDependency.every((featureFlagEnvVar) =>
+                isFeatureFlagEnabled(featureFlagEnvVar)
+            )
+        ) {
             return false;
         }
     }
