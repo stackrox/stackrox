@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	usageDataStore "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -46,6 +47,7 @@ type pipelineImpl struct {
 	pipeline.Fragment
 
 	metricsStore MetricsStore
+	usageStore   usageDataStore.DataStore
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -66,6 +68,9 @@ func (p *pipelineImpl) Run(
 	p.metricsStore.Set(clusterID, msg.GetClusterMetrics())
 
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
+
+	p.usageStore.UpdateUsage(clusterID, msg.GetClusterMetrics())
+
 	return nil
 }
 
