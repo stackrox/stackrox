@@ -25,11 +25,13 @@ import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import NotifierSelection from './NotifierSelection';
 
 export type DeliveryDestinationsFormParams = {
+    title: string;
     formValues: ReportFormValues;
     setFormFieldValue: SetReportFormFieldValue;
 };
 
 function DeliveryDestinationsForm({
+    title,
     formValues,
     setFormFieldValue,
 }: DeliveryDestinationsFormParams): ReactElement {
@@ -67,7 +69,7 @@ function DeliveryDestinationsForm({
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Configure delivery destinations (Optional)</Title>
+                        <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
                 </Flex>
             </PageSection>
