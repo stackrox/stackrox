@@ -6,14 +6,14 @@ import (
 	clusterTelemetry "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/telemetry"
+	usageDS "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
-
-var log = logging.LoggerForModule()
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -35,12 +35,12 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 
 // GetPipeline returns an instantiation of this particular pipeline.
 func GetPipeline() pipeline.Fragment {
-	return &pipelineImpl{metricsStore: &prometheusStore{}, telemetryMetrics: telemetry.Singleton()}
+	return NewPipeline(&prometheusStore{}, telemetry.Singleton(), usageDS.Singleton())
 }
 
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore, telemetryMetrics telemetry.Telemetry) pipeline.Fragment {
-	return &pipelineImpl{metricsStore: metricsStore, telemetryMetrics: telemetryMetrics}
+func NewPipeline(metricsStore MetricsStore, telemetryMetrics telemetry.Telemetry, usageStore usageDS.DataStore) pipeline.Fragment {
+	return &pipelineImpl{metricsStore: metricsStore, telemetryMetrics: telemetryMetrics, usageStore: usageStore}
 }
 
 type pipelineImpl struct {
@@ -48,6 +48,7 @@ type pipelineImpl struct {
 
 	metricsStore     MetricsStore
 	telemetryMetrics telemetry.Telemetry
+	usageStore       usageDS.DataStore
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -68,6 +69,13 @@ func (p *pipelineImpl) Run(
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
+	if err := p.usageStore.UpdateUsage(ctx, clusterID, &storage.SecuredUnits{
+		NumNodes:    clusterMetrics.GetNodeCount(),
+		NumCpuUnits: clusterMetrics.GetCpuCapacity(),
+	}); err != nil {
+		logging.GetRateLimitedLogger().Warn(
+			"Error while trying to update secured units usage:", err.Error())
+	}
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 	return nil
 }
