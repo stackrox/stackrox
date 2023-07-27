@@ -140,6 +140,9 @@ import (
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/trace"
 	"github.com/stackrox/rox/central/ui"
+	usageService "github.com/stackrox/rox/central/usage"
+	usageCSV "github.com/stackrox/rox/central/usage/csv"
+	usageDataStore "github.com/stackrox/rox/central/usage/datastore"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
@@ -348,6 +351,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
+		usageService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -745,6 +749,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/clusters/helm-config.yaml",
 			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/usage/csv",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: usageCSV.CSVHandler(usageDataStore.Singleton()),
 			Compression:   true,
 		},
 	}
