@@ -83,6 +83,7 @@ func init() {
 		&storage.ResourceCollection{}:                           resources.WorkflowAdministration,
 		&storage.Risk{}:                                         resources.DeploymentExtension,
 		&storage.Role{}:                                         resources.Access,
+		&storage.SecuredUnits{}:                                 resources.Administration,
 		&storage.SensorUpgradeConfig{}:                          resources.Administration,
 		&storage.ServiceIdentity{}:                              resources.Administration,
 		&storage.SignatureIntegration{}:                         resources.Integration,

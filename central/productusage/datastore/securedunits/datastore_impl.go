@@ -2,13 +2,16 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/productusage/store"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -16,26 +19,44 @@ var (
 )
 
 type dataStoreImpl struct {
+	store     store.Store
 	clusterDS clusterDataStore
 	cache     cache.Cache
 }
 
 var _ DataStore = (*dataStoreImpl)(nil)
 
-// Get returns the object, if it exists from the store.
-func (ds *dataStoreImpl) Walk(ctx context.Context, _ *types.Timestamp, _ *types.Timestamp, _ func(m *storage.SecuredUnits) error) error {
+// Walk returns the object, if it exists from the store.
+func (ds *dataStoreImpl) Walk(ctx context.Context, from *types.Timestamp, to *types.Timestamp, fn func(*storage.SecuredUnits) error) error {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
-		return errors.Wrap(err, "cannot permit to get usage data")
+		return errors.Wrap(err, "cannot permit to walk through usage data")
 	}
-	return errors.New("not implemented")
+	if from == nil {
+		from, _ = types.TimestampProto(time.Time{})
+	}
+	if to == nil {
+		to = types.TimestampNow()
+	}
+	if err := ds.store.Walk(ctx, func(record *storage.SecuredUnits) error {
+		if record.GetTimestamp().Compare(from) >= 0 && record.GetTimestamp().Compare(to) < 0 {
+			return fn(record)
+		}
+		return nil
+	}); err != nil {
+		log.Info("Error while walking the product usage table:", err)
+	}
+	return nil
 }
 
 // Upsert saves the current state of an object in storage.
-func (ds *dataStoreImpl) Upsert(ctx context.Context, _ *storage.SecuredUnits) error {
+func (ds *dataStoreImpl) Upsert(ctx context.Context, obj *storage.SecuredUnits) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to upsert usage data")
 	}
-	return errors.New("not implemented")
+	if obj.Id == "" {
+		obj.Id = uuid.NewV4().String()
+	}
+	return errors.Wrap(ds.store.Upsert(ctx, obj), "failed to upsert usage record")
 }
 
 // GetCurrent returns the current usage.
