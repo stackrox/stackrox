@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"go.etcd.io/etcd/proxy/grpcproxy/cache"
 )
 
 // DataStore is the datastore for usage.
@@ -30,6 +31,9 @@ type DataStore interface {
 }
 
 // New initializes a datastore implementation instance.
-func New() DataStore {
-	return nil
+func New(clusterStore clusterStoreI) DataStore {
+	return &dataStoreImpl{
+		clusterStore: clusterStore,
+		cache:        cache.NewCache(),
+	}
 }

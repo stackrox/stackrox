@@ -73,6 +73,9 @@ func (p *pipelineImpl) Run(
 		NumCpuUnits: clusterMetrics.GetCpuCapacity(),
 	})
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
+
+	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
+
 	return nil
 }
 
