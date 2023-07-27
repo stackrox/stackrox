@@ -60,7 +60,7 @@ func (s *serviceImpl) GetCurrentUsage(ctx context.Context, _ *v1.Empty) (*v1.Cur
 		return nil, errors.Wrap(err, "datastore failed to get current usage metrics")
 	} else if m != nil {
 		current.NumNodes = m.NumNodes
-		current.NumCores = m.NumCores
+		current.NumCpuUnits = m.NumCpuUnits
 	}
 	return current, nil
 }
@@ -76,9 +76,9 @@ func (s *serviceImpl) GetMaxUsage(ctx context.Context, req *v1.UsageRequest) (*v
 			max.MaxNodes = n
 			max.MaxNodesAt = m.GetTimestamp()
 		}
-		if ms := m.GetNumCores(); ms >= max.MaxCores {
-			max.MaxCores = ms
-			max.MaxCoresAt = m.GetTimestamp()
+		if ms := m.GetNumCpuUnits(); ms >= max.MaxCpuUnits {
+			max.MaxCpuUnits = ms
+			max.MaxCpuUnitsAt = m.GetTimestamp()
 		}
 	}
 	return max, nil

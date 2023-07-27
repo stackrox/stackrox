@@ -17,14 +17,14 @@ message CurrentUsageResponse {
   google.protobuf.Timestamp timestamp = 1;
 
   int32 num_nodes = 2;
-  int32 num_cores = 3;
+  int32 num_cpu_units = 3;
 }
 
 message MaxUsageResponse {
   google.protobuf.Timestamp max_nodes_at = 1;
   int32 max_nodes = 2;
-  google.protobuf.Timestamp max_cores_at = 3;
-  int32 max_cores = 4;
+  google.protobuf.Timestamp max_cpu_units_at = 3;
+  int32 max_cpu_units = 4;
 }
 
 service UsageService {

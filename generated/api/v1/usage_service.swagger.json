@@ -124,7 +124,7 @@
           "type": "integer",
           "format": "int32"
         },
-        "numCores": {
+        "numCpuUnits": {
           "type": "integer",
           "format": "int32"
         }
@@ -141,11 +141,11 @@
           "type": "integer",
           "format": "int32"
         },
-        "maxCoresAt": {
+        "maxCpuUnitsAt": {
           "type": "string",
           "format": "date-time"
         },
-        "maxCores": {
+        "maxCpuUnits": {
           "type": "integer",
           "format": "int32"
         }
