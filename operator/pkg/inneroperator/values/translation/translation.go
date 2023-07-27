@@ -66,6 +66,8 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, err
 	}
 
+	// This endpoint yields the target inner operator version to deploy.
+	// TODO: Have this be an actual call instead of just logging.
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // flushes buffer, if any
 	sugar := logger.Sugar()
