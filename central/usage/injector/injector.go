@@ -20,8 +20,6 @@ var (
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Administration))
 
-	previousMetrics = &storage.Usage{}
-
 	once     sync.Once
 	injector Injector
 	log      = logging.LoggerForModule()
@@ -36,13 +34,13 @@ func (i *injectorImpl) gather(ctx context.Context) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, metricsWriter)
 
 	// Store the average values to smooth short (< 2 periods) peaks and drops.
-	if err := i.ds.Insert(ctx, average(previousMetrics, newMetrics)); err != nil {
+	if err := i.ds.Insert(ctx, average(i.previousMetrics, newMetrics)); err != nil {
 		log.Debug("Failed to store a usage snapshot: ", err)
 	}
-	previousMetrics = newMetrics
+	i.previousMetrics = newMetrics
 }
 
-func (i *injectorImpl) run() {
+func (i *injectorImpl) gatherLoop() {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -53,7 +51,7 @@ func (i *injectorImpl) run() {
 			i.gather(ctx)
 		case <-i.stop.Done():
 			cancel()
-			log.Debug("Usage reporting stopped")
+			log.Info("Usage reporting stopped")
 			i.stop.Reset()
 			return
 		}
@@ -69,20 +67,23 @@ type Injector interface {
 type injectorImpl struct {
 	ds   datastore.DataStore
 	stop concurrency.Signal
+
+	previousMetrics *storage.Usage
 }
 
 // NewInjector creates an injector instance.
 func NewInjector(ds datastore.DataStore) Injector {
 	return &injectorImpl{
-		ds:   ds,
-		stop: concurrency.NewSignal(),
+		ds:              ds,
+		stop:            concurrency.NewSignal(),
+		previousMetrics: &storage.Usage{},
 	}
 }
 
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
-	go i.run()
+	go i.gatherLoop()
 }
 
 // Stop stops the scheduled timer
