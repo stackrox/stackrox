@@ -25,11 +25,6 @@ type allowedFixedScopesCheckerCore struct {
 func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) ScopeCheckerCore {
 	switch key := scopeKey.(type) {
 	case AccessModeScopeKey:
-		if c.checkerLevel != GlobalScopeKind ||
-			(!c.allowsGlobalAccess() && !c.accessKeys.Contains(key)) {
-			return denyAllScopeCheckerCore
-		}
-		return c.subScopeCheckerBuilder().withAccessMode(key)
 		if c.checkerLevel != GlobalScopeKind {
 			return denyAllScopeCheckerCore
 		}
@@ -69,7 +64,7 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 		if c.allowsClusterLevelAccess() {
 			return c.subScopeCheckerBuilder().withNamespace(key)
 		}
-		if c.namespaceKeys.Cardinality() > 0 && !c.namespaceKeys.Contains(key) {
+		if !c.namespaceKeys.Contains(key) {
 			return denyAllScopeCheckerCore
 		}
 		return c.subScopeCheckerBuilder().withNamespace(key)
