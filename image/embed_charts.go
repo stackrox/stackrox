@@ -118,6 +118,11 @@ func (i *Image) GetChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.Cha
 	return chartTpl, nil
 }
 
+// GetOperatorChartTemplate retrieves the StackRox Operator Helm chart template.
+func (i *Image) GetOperatorChartTemplate() (*helmTemplate.ChartTemplate, error) {
+	return i.GetChartTemplate(OperatorChartPrefix)
+}
+
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
 func (i *Image) GetCentralServicesChartTemplate() (*helmTemplate.ChartTemplate, error) {
 	return i.GetChartTemplate(CentralServicesChartPrefix)

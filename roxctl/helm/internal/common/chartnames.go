@@ -12,6 +12,7 @@ var (
 	ChartTemplates = map[string]image.ChartPrefix{
 		ChartCentralServices:        image.CentralServicesChartPrefix,
 		ChartSecuredClusterServices: image.SecuredClusterServicesChartPrefix,
+		ChartOperator:               image.OperatorChartPrefix,
 	}
 	// PrettyChartNameList contains the list of currently supported chart names for Helm related
 	// commands suitable for inline display.
@@ -23,6 +24,8 @@ const (
 	ChartCentralServices string = "central-services"
 	// ChartSecuredClusterServices is the shortname for the StackRox Secured Cluster Services Helm chart.
 	ChartSecuredClusterServices string = "secured-cluster-services"
+	//ChartOperator is the shortname for the StackRox Operator Helm chart.
+	ChartOperator string = "operator"
 )
 
 // MakePrettyChartNameList forms a pretty printed string listing multiple chart names.

@@ -33,6 +33,6 @@ func (t Translator) Translate(_ context.Context, _ *unstructured.Unstructured) (
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
 	// FIXME: Add option to read / overwrite via env vars
-	//return helmUtil.CoalesceTables(baseValues), nil
+	// return helmUtil.CoalesceTables(baseValues), nil
 	return baseValues, nil
 }
