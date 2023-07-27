@@ -85,4 +85,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: rhacs-operator-controller-manager-{{ .Release.Name }}
-    namespace: rhacs-operator
+    namespace: "{{ .Values.operator.targetNamespace }}"

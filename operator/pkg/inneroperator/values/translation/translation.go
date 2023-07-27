@@ -6,7 +6,6 @@ import (
 	// Required for the usage of go:embed below.
 	_ "embed"
 
-	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,5 +33,6 @@ func (t Translator) Translate(_ context.Context, _ *unstructured.Unstructured) (
 	utils.CrashOnError(err) // ensured through unit test that this doesn't happen.
 
 	// FIXME: Add option to read / overwrite via env vars
-	return helmUtil.CoalesceTables(baseValues), nil
+	//return helmUtil.CoalesceTables(baseValues), nil
+	return baseValues, nil
 }

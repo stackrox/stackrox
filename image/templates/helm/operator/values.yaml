@@ -19,3 +19,7 @@ operator:
   # In outer mode, the Operator reconciles Central CRs as well as the inner Operator.
   # In non-outer mode (inner mode), the Operator reconciles Secured Cluster CRs.
   outerMode: false
+
+  ## target namespace is set as value here so it can be overriden programmatically
+  ## by the outer Operator in deployment.
+  targetNamespace: "rhacs-operator"

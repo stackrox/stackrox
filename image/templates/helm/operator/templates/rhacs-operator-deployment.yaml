@@ -5,7 +5,7 @@ metadata:
     app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
   name: rhacs-operator-controller-manager-{{ .Release.Name }}
-  namespace: rhacs-operator
+  namespace: "{{ .Values.operator.targetNamespace }}"
 spec:
   replicas: 1
   selector:
@@ -132,7 +132,7 @@ spec:
 # kind: Certificate
 # metadata:
 #   name: rhacs-operator-{{ .Release.Name }}-serving-cert
-#   namespace: rhacs-operator
+#   namespace: "{{ .Values.operator.targetNamespace }}"
 # spec:
 #   dnsNames:
 #   - rhacs-operator-{{ .Release.Name }}-webhook-service.rhacs-operator-{{ .Release.Name }}.svc
@@ -146,7 +146,7 @@ spec:
 # kind: Issuer
 # metadata:
 #   name: rhacs-operator-{{ .Release.Name }}-selfsigned-issuer
-#   namespace: rhacs-operator
+#   namespace: "{{ .Values.operator.targetNamespace }}"
 # spec:
 #   selfSigned: {}
 # ---
@@ -163,7 +163,7 @@ spec:
 #   clientConfig:
 #     service:
 #       name: rhacs-operator-{{ .Release.Name }}-webhook-service
-#       namespace: rhacs-operator-{{ .Release.Name }}
+#       namespace: "{{ .Values.operator.targetNamespace }}"-{{ .Release.Name }}
 #       path: /validate-platform-stackrox-io-v1alpha1-central
 #   failurePolicy: Fail
 #   name: vcentral.kb.io

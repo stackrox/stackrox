@@ -1,2 +1,3 @@
 operator:
   outerMode: false
+  targetNamespace: "rhacs-inner-operator"

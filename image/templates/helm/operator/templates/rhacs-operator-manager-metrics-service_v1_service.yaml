@@ -6,7 +6,7 @@ metadata:
     app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
   name: rhacs-operator-manager-metrics-service-{{ .Release.Name }}
-  namespace: rhacs-operator
+  namespace: "{{ .Values.operator.targetNamespace }}"
 spec:
   ports:
     - name: https
