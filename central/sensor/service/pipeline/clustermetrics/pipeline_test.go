@@ -21,6 +21,7 @@ type PipelineTestSuite struct {
 	pipeline     *pipelineImpl
 	metricsStore *metricsMocks.MockMetricsStore
 	infoMetric   *infoMocks.MockInfo
+	usageStore   *metricsMocks.MockusageStore
 	mockCtrl     *gomock.Controller
 }
 
@@ -35,7 +36,8 @@ func (suite *PipelineTestSuite) SetupTest() {
 
 	suite.metricsStore = metricsMocks.NewMockMetricsStore(suite.mockCtrl)
 	suite.infoMetric = infoMocks.NewMockInfo(suite.mockCtrl)
-	suite.pipeline = NewPipeline(suite.metricsStore, suite.infoMetric, &testUsageStore{}).(*pipelineImpl)
+	suite.usageStore = metricsMocks.NewMockusageStore(suite.mockCtrl)
+	suite.pipeline = NewPipeline(suite.metricsStore, suite.infoMetric, suite.usageStore).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -49,6 +51,7 @@ func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor() {
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
 	suite.infoMetric.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
+	suite.usageStore.EXPECT().UpdateUsage(clusterID, expectedMetrics)
 
 	err := suite.pipeline.Run(context.Background(), clusterID, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterMetrics{
