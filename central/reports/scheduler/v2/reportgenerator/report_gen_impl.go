@@ -13,6 +13,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
@@ -30,6 +31,8 @@ import (
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -49,6 +52,7 @@ type reportGeneratorImpl struct {
 	collectionQueryResolver collectionDS.QueryResolver
 	notifierDatastore       notifierDS.DataStore
 	notificationProcessor   notifier.Processor
+	blobStore               blobDS.Datastore
 
 	Schema *graphql.Schema
 }
@@ -128,9 +132,12 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		return errors.Wrap(err, "error formatting the report email text")
 	}
 
-	// TODO(ROX-18564) : Store downloadable report in blob storage
-
-	if req.ReportMetadata.ReportStatus.ReportNotificationMethod == storage.ReportStatus_EMAIL {
+	switch req.ReportMetadata.ReportStatus.ReportNotificationMethod {
+	case storage.ReportStatus_DOWNLOAD:
+		if err = rg.saveReportData(req.Ctx, req.ReportMetadata.ReportConfigId, req.ReportMetadata.ReportId, zippedCSVData); err != nil {
+			return errors.Wrap(err, "error persisting blob")
+		}
+	case storage.ReportStatus_EMAIL:
 		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 		for _, notifierConfig := range req.ReportConfig.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(req.Ctx, notifierConfig.GetEmailConfig().GetNotifierId())
@@ -151,6 +158,27 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		}
 	}
 	return nil
+}
+
+func (rg *reportGeneratorImpl) saveReportData(ctx context.Context, configID, reportID string, data *bytes.Buffer) error {
+	if data == nil {
+		data = bytes.NewBuffer([]byte{})
+	}
+
+	// Augment ctx with write access to Administration for Upsert.
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+
+	// Store downloadable report in blob storage
+	b := &storage.Blob{
+		Name:         common.GetReportBlobPath(configID, reportID),
+		LastUpdated:  types.TimestampNow(),
+		ModifiedTime: types.TimestampNow(),
+		Length:       int64(data.Len()),
+	}
+	return rg.blobStore.Upsert(ctx, b, data)
 }
 
 func (rg *reportGeneratorImpl) getReportData(ctx context.Context, rc *storage.ReportConfiguration, collection *storage.ResourceCollection,
