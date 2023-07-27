@@ -191,6 +191,11 @@ function VulnReportsPage() {
                                                 reportId: report.id,
                                             }) as string
                                         }?action=edit`;
+                                        const cloneVulnReportURL = `${
+                                            generatePath(vulnerabilityReportPath, {
+                                                reportId: report.id,
+                                            }) as string
+                                        }?action=clone`;
                                         const rowActions = [
                                             {
                                                 title: (
@@ -213,10 +218,11 @@ function VulnReportsPage() {
                                                 },
                                             },
                                             {
-                                                title: 'Clone report',
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                },
+                                                title: (
+                                                    <Link to={cloneVulnReportURL}>
+                                                        Clone report
+                                                    </Link>
+                                                ),
                                             },
                                             {
                                                 isSeparator: true,
