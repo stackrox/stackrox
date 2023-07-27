@@ -57,7 +57,7 @@ func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	u, err := suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
-	suite.Equal(int32(0), u.NumCores)
+	suite.Equal(int32(0), u.NumCpuUnits)
 	err = suite.datastore.UpdateUsage("existingCluster1", &central.ClusterMetrics{
 		NodeCount:   1,
 		CpuCapacity: 8,
@@ -71,7 +71,7 @@ func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	u, err = suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(3), u.NumNodes)
-	suite.Equal(int32(15), u.NumCores)
+	suite.Equal(int32(15), u.NumCpuUnits)
 	err = suite.datastore.UpdateUsage("unknownCluster", &central.ClusterMetrics{
 		NodeCount:   2,
 		CpuCapacity: 16,
@@ -80,14 +80,14 @@ func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	u, err = suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(3), u.NumNodes)
-	suite.Equal(int32(15), u.NumCores)
+	suite.Equal(int32(15), u.NumCpuUnits)
 }
 
 func (suite *UsageDataStoreTestSuite) TestUpdateCutMetrics() {
 	u, err := suite.datastore.CutMetrics(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
-	suite.Equal(int32(0), u.NumCores)
+	suite.Equal(int32(0), u.NumCpuUnits)
 	err = suite.datastore.UpdateUsage("existingCluster1", &central.ClusterMetrics{
 		NodeCount:   1,
 		CpuCapacity: 8,
@@ -101,9 +101,9 @@ func (suite *UsageDataStoreTestSuite) TestUpdateCutMetrics() {
 	u, err = suite.datastore.CutMetrics(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(1), u.NumNodes)
-	suite.Equal(int32(8), u.NumCores)
+	suite.Equal(int32(8), u.NumCpuUnits)
 	u, err = suite.datastore.CutMetrics(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
-	suite.Equal(int32(0), u.NumCores)
+	suite.Equal(int32(0), u.NumCpuUnits)
 }
