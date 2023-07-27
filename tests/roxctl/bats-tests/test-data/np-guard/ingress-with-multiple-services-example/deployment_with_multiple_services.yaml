@@ -60,4 +60,4 @@ spec:
       targetPort: 8090
   selector:
     app: ingress-world
-  
+
