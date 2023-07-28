@@ -23,5 +23,4 @@ func main() {
 	if err := updater.Export(ctx, *outputDir); err != nil {
 		zlog.Error(ctx).Err(err).Send()
 	}
-
 }
