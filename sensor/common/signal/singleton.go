@@ -2,6 +2,7 @@ package signal
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -11,5 +12,6 @@ func New(pipeline Pipeline, indicators chan *message.ExpiringMessage) Service {
 		queue:           make(chan *v1.Signal, maxBufferSize),
 		indicators:      indicators,
 		processPipeline: pipeline,
+		centralReady:    concurrency.NewSignal(),
 	}
 }

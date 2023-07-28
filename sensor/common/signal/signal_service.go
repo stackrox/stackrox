@@ -10,6 +10,7 @@ import (
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -40,15 +41,27 @@ type serviceImpl struct {
 	indicators chan *message.ExpiringMessage
 
 	processPipeline Pipeline
+	centralReady    concurrency.Signal
 }
 
 func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop(_ error) {
+	s.processPipeline.Shutdown()
+}
 
-func (s *serviceImpl) Notify(common.SensorComponentEvent) {}
+func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	log.Debugf("Received notify: %s", e)
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		s.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		s.centralReady.Reset()
+	}
+	s.processPipeline.Notify(e)
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil

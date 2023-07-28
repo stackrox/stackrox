@@ -1,11 +1,13 @@
 package processsignal
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -13,9 +15,206 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestProcessPipeline(t *testing.T) {
+func TestProcessPipelineOffline(t *testing.T) {
+	containerMetadata1 := clusterentities.ContainerMetadata{
+		DeploymentID: "mock-deployment-1",
+		ContainerID:  "1e43ac4f61f9",
+	}
+	containerMetadata2 := clusterentities.ContainerMetadata{
+		DeploymentID: "mock-deployment-2",
+		ContainerID:  "2e43ac4f61f9",
+	}
+	type processIndicatorMessageT struct {
+		signal              *storage.ProcessSignal
+		hasMetadataInStore  bool
+		expectDeploymentID  string
+		expectContextCancel func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
+	}
+	cases := []struct {
+		name string
+		// initialState is the state in which the pipeline will be set immediately after starting
+		initialState common.SensorComponentEvent
+		// laterState is the state in which the pipeline will be set after handling the `initialSignal`
+		laterState common.SensorComponentEvent
+		// initialSignal are emitted after transition to `initialState` but before `laterState`
+		initialSignal *processIndicatorMessageT
+		// laterSignal are emitted after transition to `laterState`
+		laterSignal *processIndicatorMessageT
+	}{
+		{
+			name:         "Staying online should yield all messages with valid context",
+			initialState: common.SensorComponentEventCentralReachable,
+			laterState:   common.SensorComponentEventCentralReachable,
+			initialSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata1.DeploymentID,
+				expectContextCancel: assert.NoError,
+			},
+			laterSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata2.DeploymentID,
+				expectContextCancel: assert.NoError,
+			},
+		},
+		{
+			name:         "Going offline should yield all second message with canceled context",
+			initialState: common.SensorComponentEventCentralReachable,
+			laterState:   common.SensorComponentEventOfflineMode,
+			initialSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata1.DeploymentID,
+				expectContextCancel: assert.NoError,
+			},
+			laterSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata2.DeploymentID,
+				expectContextCancel: assert.Error,
+			},
+		},
+		{
+			name:         "Staying Offline mode should yield all messages with canceled context",
+			initialState: common.SensorComponentEventOfflineMode,
+			laterState:   common.SensorComponentEventOfflineMode,
+			initialSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata1.DeploymentID,
+				expectContextCancel: assert.Error,
+			},
+			laterSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata2.DeploymentID,
+				expectContextCancel: assert.Error,
+			},
+		},
+		{
+			name:         "Going online should yield second message with vaild context",
+			initialState: common.SensorComponentEventOfflineMode,
+			laterState:   common.SensorComponentEventCentralReachable,
+			initialSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata1.DeploymentID,
+				expectContextCancel: assert.Error,
+			},
+			laterSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata2.DeploymentID,
+				expectContextCancel: assert.NoError,
+			},
+		},
+		{
+			name:         "Going online with new process should yield second message with vaild context",
+			initialState: common.SensorComponentEventOfflineMode,
+			laterState:   common.SensorComponentEventCentralReachable,
+			initialSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				hasMetadataInStore:  false,
+				expectDeploymentID:  containerMetadata1.DeploymentID,
+				expectContextCancel: assert.Error,
+			},
+			laterSignal: &processIndicatorMessageT{
+				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				hasMetadataInStore:  true,
+				expectDeploymentID:  containerMetadata2.DeploymentID,
+				expectContextCancel: assert.NoError,
+			},
+		},
+	}
+
 	sensorEvents := make(chan *message.ExpiringMessage)
-	actualEvents := make(chan *message.ExpiringMessage)
+	defer close(sensorEvents)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	testCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	actualEvents := forwardEvents(testCtx, sensorEvents)
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			caseCtx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			mockStore := clusterentities.NewStore()
+			mockDetector := mocks.NewMockDetector(mockCtrl)
+			defer deleteStore(containerMetadata1.DeploymentID, mockStore)
+			defer deleteStore(containerMetadata2.DeploymentID, mockStore)
+
+			// Detector can be called in any order, so no assertions regarding the order of events.
+			mockDetector.EXPECT().ProcessIndicator(gomock.Any()).
+				MinTimes(2).
+				MaxTimes(2).
+				DoAndReturn(func(ind *storage.ProcessIndicator) {
+					assert.Contains(t,
+						[]string{tc.initialSignal.expectDeploymentID, tc.laterSignal.expectDeploymentID},
+						ind.GetDeploymentId())
+				})
+
+			p := NewProcessPipeline(sensorEvents, mockStore,
+				filter.NewFilter(5, 5, []int{3, 3, 3}),
+				mockDetector)
+			defer p.Shutdown()
+
+			p.Notify(tc.initialState)
+			processSignal(p, tc.initialSignal.signal, tc.initialSignal.hasMetadataInStore, mockStore, containerMetadata1)
+
+			p.Notify(tc.laterState)
+			processSignal(p, tc.laterSignal.signal, tc.laterSignal.hasMetadataInStore, mockStore, containerMetadata2)
+
+			// Events contains processed signals. They may arrive in any order
+			events := collectEventsFor(caseCtx, actualEvents, 1*time.Second)
+			// These tests always use two signals that should be processed
+			assert.Len(t, events, 2)
+
+			for _, e := range events {
+				assert.Contains(t,
+					[]string{containerMetadata1.DeploymentID, containerMetadata2.DeploymentID},
+					e.GetEvent().GetProcessIndicator().GetDeploymentId())
+			}
+		})
+	}
+}
+
+// processSignal calls p.Process and ensures that the stores are in the correct state for the test to make sense
+func processSignal(p *Pipeline, singal *storage.ProcessSignal, hasMetadataInStore bool, store *clusterentities.Store, meta clusterentities.ContainerMetadata) {
+	// If PI has metadata in store it will be enriched immediately.
+	// If not, then the enrichment happens async based on ticker.
+	// For hasMetadataInStore==true, we simulate immediate enchirment
+	if hasMetadataInStore {
+		updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
+	}
+	p.Process(singal)
+	// For hasMetadataInStore==false, we emulate the ticker triggering data update in the stores later in the process.
+	if !hasMetadataInStore {
+		updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
+	}
+}
+
+// collectEventsFor reads events from a channel for a given time and returns them as slice
+func collectEventsFor(ctx context.Context, ch <-chan *message.ExpiringMessage, t time.Duration) []*message.ExpiringMessage {
+	arr := make([]*message.ExpiringMessage, 0)
+	for {
+		select {
+		case m, ok := <-ch:
+			if !ok {
+				return arr
+			}
+			arr = append(arr, m)
+		case <-ctx.Done():
+			return arr
+		case <-time.After(t):
+			return arr
+		}
+	}
+}
+
+func TestProcessPipelineOnline(t *testing.T) {
+	sensorEvents := make(chan *message.ExpiringMessage)
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -25,9 +224,11 @@ func TestProcessPipeline(t *testing.T) {
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector)
-	closeChan := make(chan bool)
+	p.Notify(common.SensorComponentEventCentralReachable)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	go consumeEnrichedSignals(sensorEvents, actualEvents, closeChan)
+	actualEvents := forwardEvents(ctx, sensorEvents)
 
 	containerID := "fe43ac4f61f9"
 	deploymentID := "mock-deployment"
@@ -45,7 +246,7 @@ func TestProcessPipeline(t *testing.T) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
 	p.Process(&signal)
-	time.Sleep(time.Second)
+
 	msg := <-actualEvents
 	assert.NotNil(t, msg)
 	assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
@@ -85,19 +286,21 @@ func TestProcessPipeline(t *testing.T) {
 	assert.NotNil(t, msg)
 	assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
 	deleteStore(deploymentID, mockStore)
-
-	closeChan <- true
 }
 
-func consumeEnrichedSignals(sensorEvents chan *message.ExpiringMessage, results chan *message.ExpiringMessage, closeChan chan bool) {
-	for {
-		select {
-		case event := <-sensorEvents:
-			results <- event
-		case <-closeChan:
-			return
+func forwardEvents(ctx context.Context, sensorEvents chan *message.ExpiringMessage) <-chan *message.ExpiringMessage {
+	results := make(chan *message.ExpiringMessage)
+	go func() {
+		defer close(results)
+		for {
+			select {
+			case results <- <-sensorEvents:
+			case <-ctx.Done():
+				return
+			}
 		}
-	}
+	}()
+	return results
 }
 
 func updateStore(containerID, deploymentID string, containerMetadata clusterentities.ContainerMetadata, mockStore *clusterentities.Store) {
