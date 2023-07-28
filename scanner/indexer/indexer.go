@@ -145,9 +145,6 @@ func getLayerDigests(layer v1.Layer) (ccd claircore.Digest, ld v1.Hash, err erro
 		return ccd, ld, err
 	}
 	ccd, err = claircore.ParseDigest(ld.String())
-	if err != nil {
-		return ccd, ld, err
-	}
 	return ccd, ld, err
 }
 
