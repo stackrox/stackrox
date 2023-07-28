@@ -25,35 +25,27 @@ export type NetworkPoliciesGenerationScopeProps = {
 function NetworkPoliciesGenerationScope({
     networkPolicyGenerationScope,
 }: NetworkPoliciesGenerationScopeProps) {
-    const { granularity, cluster } = networkPolicyGenerationScope;
+    const { granularity, cluster, deployments } = networkPolicyGenerationScope;
 
     let deploymentElement = <span>All deployments</span>;
     let namespaceElement = <span>All namespaces</span>;
 
-    if (granularity === 'NAMESPACE') {
-        const namespaceCount = networkPolicyGenerationScope.namespaces.length;
-        namespaceElement = (
-            <span>
-                {namespaceCount} {pluralize('namespace', namespaceCount)}
-            </span>
-        );
-    } else if (granularity === 'DEPLOYMENT') {
-        // Only count namespaces that have a deployment in scope, even if the namespace is selected
-        // otherwise
-        const namespaceCount = uniq(
-            networkPolicyGenerationScope.deployments.map((deployment) => deployment.namespace)
-        ).length;
-        namespaceElement = (
-            <span>
-                {namespaceCount} {pluralize('namespace', namespaceCount)}
-            </span>
-        );
-        const deploymentCount = networkPolicyGenerationScope.deployments.length;
-        deploymentElement = (
-            <span>
-                {deploymentCount} {pluralize('deployment', deploymentCount)}
-            </span>
-        );
+    if (granularity === 'NAMESPACE' || granularity === 'DEPLOYMENT') {
+        const namespaces = uniq(deployments.map((deployment) => deployment.namespace));
+        const namespaceCount = namespaces.length;
+        const namespaceText =
+            namespaceCount === 1 ? `namespace "${namespaces[0]}"` : `${namespaceCount} namespaces`;
+        namespaceElement = <span>{namespaceText}</span>;
+    }
+
+    if (granularity === 'DEPLOYMENT') {
+        const deploymentCount = deployments.length;
+        const deploymentText =
+            deploymentCount === 1
+                ? `deployment "${deployments[0].name}"`
+                : `${deploymentCount} deployments`;
+
+        deploymentElement = <span>{deploymentText}</span>;
     }
 
     return (
