@@ -1,7 +1,9 @@
 import React, { CSSProperties, ReactElement, ReactNode } from 'react';
 import { Flex, Label } from '@patternfly/react-core';
 
-const badgeMap = {
+type NavigationContentVariant = 'Deprecated' | 'TechPreview';
+
+const badgeMap: Record<string, ReactElement> = {
     Deprecated: (
         <Label
             isCompact
@@ -19,9 +21,7 @@ const badgeMap = {
             Tech preview
         </Label>
     ),
-} satisfies Record<string, ReactElement>;
-
-type NavigationContentVariant = keyof typeof badgeMap;
+}; // TODO why does tsc build fail with missing semicolon with satisfies Record<string, ReactElement>
 
 export type NavigationContentProps = {
     children: ReactNode;
