@@ -591,13 +591,27 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)
 		}
 
-		// Send the audit log state to sensor even if the the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
+		// Send the audit log state to sensor even if the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
 		}
 	}
 
-	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetReconnect())
+	switch c.sensorHello.GetSensorState() {
+	case central.SensorHello_RECONNECT:
+		metrics.IncrementSensorConnect(c.clusterID, true, true)
+	case central.SensorHello_STARTUP:
+		metrics.IncrementSensorConnect(c.clusterID, false, true)
+	case central.SensorHello_UNKNOWN:
+		metrics.IncrementSensorConnect(c.clusterID, false, false)
+		log.Warnf("Unknown sensor state: %s. This means that sensor is running an older version than central and does not report its connection state",
+			c.sensorHello.GetSensorState())
+	default:
+		metrics.IncrementSensorConnect(c.clusterID, false, true)
+		log.Warnf("Unknown sensor state: %s. This means that sensor is running a newer version than central and it is communicating a state that Central doesn't know about",
+			c.sensorHello.GetSensorState())
+	}
+
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()
 }

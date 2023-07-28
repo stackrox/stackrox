@@ -88,6 +88,13 @@ func communicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 	}
 }
 
+func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorState {
+	if s.isReconnect {
+		return central.SensorHello_RECONNECT
+	}
+	return central.SensorHello_STARTUP
+}
+
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
@@ -113,6 +120,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
+		SensorState:              s.getSensorState(),
 	}
 	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {

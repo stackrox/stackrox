@@ -187,7 +187,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_connected",
-	}, []string{"ClusterID", "reconnect"})
+	}, []string{"ClusterID", "reconnect", "preventRestartEnabled"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -238,8 +238,12 @@ func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 }
 
 // IncrementSensorConnect increments the counter for times that a new Sensor connection was observed
-func IncrementSensorConnect(cluserID string, reconnect bool) {
-	sensorConnectedCounter.With(prometheus.Labels{"ClusterID": cluserID, "reconnect": strconv.FormatBool(reconnect)}).Inc()
+func IncrementSensorConnect(clusterID string, reconnect, preventRestartEnabled bool) {
+	sensorConnectedCounter.With(prometheus.Labels{
+		"ClusterID":             clusterID,
+		"reconnect":             strconv.FormatBool(reconnect),
+		"preventRestartEnabled": strconv.FormatBool(preventRestartEnabled),
+	}).Inc()
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
