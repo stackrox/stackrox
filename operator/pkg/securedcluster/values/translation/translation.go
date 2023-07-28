@@ -174,11 +174,11 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 }
 
 func (t Translator) globalMonitoring(m *platform.GlobalMonitoring) *translation.ValuesBuilder {
-	enabled := translation.NewValuesBuilder()
-	enabled.SetBoolValue("enabled", m.IsOpenShiftMonitoringEnabled())
-	openshift := translation.NewValuesBuilder()
-	openshift.AddChild("openshift", &enabled)
-	return &openshift
+	openshiftMonitoring := translation.NewValuesBuilder()
+	openshiftMonitoring.SetBoolValue("enabled", m.IsOpenShiftMonitoringEnabled())
+	globalMonitoring := translation.NewValuesBuilder()
+	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
+	return &globalMonitoring
 }
 
 func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config scanner.AutoSenseResult) *translation.ValuesBuilder {
