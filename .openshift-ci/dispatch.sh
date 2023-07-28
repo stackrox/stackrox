@@ -10,7 +10,7 @@ source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
 
-set -euo pipefail
+set -exuo pipefail
 
 openshift_ci_mods
 openshift_ci_import_creds
