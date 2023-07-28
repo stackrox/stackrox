@@ -11,8 +11,8 @@ import (
 func Test_average(t *testing.T) {
 	a := average()
 	require.NotNil(t, a)
-	assert.Equal(t, int32(0), a.NumNodes)
-	assert.Equal(t, int32(0), a.NumCpuUnits)
+	assert.Equal(t, int64(0), a.NumNodes)
+	assert.Equal(t, int64(0), a.NumCpuUnits)
 
 	metrics := []*storage.Usage{{
 		NumNodes:    0,
@@ -23,6 +23,6 @@ func Test_average(t *testing.T) {
 	}}
 	a = average(metrics...)
 	require.NotNil(t, a)
-	assert.Equal(t, int32(5), a.NumNodes)
-	assert.Equal(t, int32(50), a.NumCpuUnits)
+	assert.Equal(t, int64(5), a.NumNodes)
+	assert.Equal(t, int64(50), a.NumCpuUnits)
 }
