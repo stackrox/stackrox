@@ -173,13 +173,14 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
     [violationsPath]: {
         resourceAccessRequirements: [],
     },
-    [vulnManagementPath]: {
-        resourceAccessRequirements: [],
-    },
+    // Reporting and Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     [vulnManagementReportsPath]: {
         resourceAccessRequirements: ['WorkflowAdministration'],
     },
     [vulnManagementRiskAcceptancePath]: {
+        resourceAccessRequirements: [],
+    },
+    [vulnManagementPath]: {
         resourceAccessRequirements: [],
     },
     [vulnerabilitiesWorkloadCvesPath]: {
@@ -206,7 +207,7 @@ export function isRouteEnabled(
     if (!routeDescription) {
         // eslint-disable-next-line no-console
         console.warn(`isRouteEnabled for unknown path ${path}`);
-        return true;
+        return false; // better to find mistakes than allow loopholes
     }
 
     const { featureFlagDependency, resourceAccessRequirements } = routeDescription;

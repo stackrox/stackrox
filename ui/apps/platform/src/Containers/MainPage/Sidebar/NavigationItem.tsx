@@ -2,20 +2,20 @@ import React, { ReactElement } from 'react';
 import { NavLink } from 'react-router-dom';
 import { NavItem } from '@patternfly/react-core';
 
-export type LeftNavItemProps = {
+export type NavigationItemProps = {
     isActive: boolean;
     path: string;
-    title: string | ReactElement;
+    content: string | ReactElement;
 };
 
-function LeftNavItem({ isActive, path, title }: LeftNavItemProps): ReactElement {
+function NavigationItem({ isActive, path, content }: NavigationItemProps): ReactElement {
     return (
-        <NavItem id={title.toString()} isActive={isActive}>
+        <NavItem isActive={isActive}>
             <NavLink exact to={path} activeClassName="pf-m-current">
-                {title}
+                {content}
             </NavLink>
         </NavItem>
     );
 }
 
-export default LeftNavItem;
+export default NavigationItem;
