@@ -23,6 +23,8 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		return r.handleImageDigestMirrorSet(v, action)
 	case *configV1.ImageTagMirrorSet:
 		return r.handleImageTagMirrorSet(v, action)
+	default:
+		log.Warnf("Unsupported type: %T", v)
 	}
 
 	return nil

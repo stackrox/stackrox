@@ -75,7 +75,7 @@ func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interf
 	}
 	client, err := configVersioned.NewForConfig(config)
 	if err != nil {
-		log.Warnf("Could not generate openshift config client: %s", err)
+		log.Warnf("Could not generate openshift config client: %v", err)
 	}
 	return client
 }
@@ -86,7 +86,7 @@ func mustCreateOpenshiftOperatorClient(config *rest.Config) operatorVersioned.In
 	}
 	client, err := operatorVersioned.NewForConfig(config)
 	if err != nil {
-		log.Warnf("Could not generate openshift operator client: %s", err)
+		log.Warnf("Could not generate openshift operator client: %v", err)
 	}
 	return client
 }

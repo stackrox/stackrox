@@ -83,12 +83,10 @@ func (k *listenerImpl) handleAllEvents() {
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
-	if ok, err := complianceCRDExists(k.client.Kubernetes()); err != nil {
-		log.Errorf("error finding compliance CRD: %v", err)
-	} else if !ok {
-		log.Info("compliance CRD could not be found")
-	} else {
-		log.Infof("initializing compliance operator informers")
+	if resourceList, err := serverResourcesForGroup(k.client, complianceoperator.GetGroupVersion().String()); err != nil {
+		log.Errorf("Error checking API resources for group %q: %v", complianceoperator.GetGroupVersion().String(), err)
+	} else if resourceExists(resourceList, complianceoperator.ComplianceCheckResult.Name) {
+		log.Info("initializing compliance operator informers")
 		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
