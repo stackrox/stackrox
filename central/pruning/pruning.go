@@ -30,6 +30,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -63,7 +64,6 @@ var (
 	pruningCtx            = sac.WithAllAccess(context.Background())
 	lastClusterPruneTime  time.Time
 	lastLogImbuePruneTime time.Time
-	lastReportPruneTime   time.Time
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -163,7 +163,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
-	g.collectReportHistory(pvtConfig)
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		g.collectReportHistory(pvtConfig)
+	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -557,20 +559,11 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 
 func (g *garbageCollectorImpl) collectReportHistory(config *storage.PrivateConfig) {
 	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
-	// Check to see if enough time has elapsed to run report history pruning again
-	reportHistoryRetentionDays := 24 * time.Hour * time.Duration(reportHistoryRetentionConfig)
-	if lastReportPruneTime.Add(reportHistoryRetentionDays).After(time.Now()) {
-		// pruning if it's been at least report retention days since last run
-		return
-	}
-	defer func() {
-		lastReportPruneTime = time.Now()
-	}()
 	query := search.NewQueryBuilder().AddDays(search.ReportCompletionTime, int64(reportHistoryRetentionConfig)).ProtoQuery()
 	err := pgSearch.RunDeleteRequestForSchema(pruningCtx, pkgSchema.ReportSnapshotsSchema, query, g.postgres)
 
 	if err != nil {
-		log.Infof("Delete query for report snapshot history unsuccessful: %s", err)
+		log.Errorf("Delete query for report snapshot history unsuccessful: %s", err)
 	}
 }
 
