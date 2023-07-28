@@ -1,4 +1,4 @@
-package datastore
+package cache
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func inject(c *cache) {
+func inject(c Cache) {
 	c.UpdateUsage("test1", &central.ClusterMetrics{
 		NodeCount:   1,
 		CpuCapacity: 10,

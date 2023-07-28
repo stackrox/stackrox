@@ -5,7 +5,8 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/central/usage/source"
+	"github.com/stackrox/rox/central/usage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -15,7 +16,7 @@ var (
 
 type dataStoreImpl struct {
 	clustore clustore
-	cache    *cache
+	cache    cache.Cache
 }
 
 var _ DataStore = (*dataStoreImpl)(nil)
@@ -54,6 +55,6 @@ func (ds *dataStoreImpl) CutMetrics(ctx context.Context) (*storage.Usage, error)
 }
 
 // UpdateUsage updates the cache with the metrics of the clusterID cluster.
-func (ds *dataStoreImpl) UpdateUsage(clusterID string, cm *central.ClusterMetrics) {
+func (ds *dataStoreImpl) UpdateUsage(clusterID string, cm source.UsageSource) {
 	ds.cache.UpdateUsage(clusterID, cm)
 }
