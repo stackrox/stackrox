@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -187,7 +186,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_connected",
-	}, []string{"ClusterID", "reconnect", "preventRestartEnabled"})
+	}, []string{"ClusterID", "connection_state"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -238,11 +237,10 @@ func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 }
 
 // IncrementSensorConnect increments the counter for times that a new Sensor connection was observed
-func IncrementSensorConnect(clusterID string, reconnect, preventRestartEnabled bool) {
+func IncrementSensorConnect(clusterID, state string) {
 	sensorConnectedCounter.With(prometheus.Labels{
-		"ClusterID":             clusterID,
-		"reconnect":             strconv.FormatBool(reconnect),
-		"preventRestartEnabled": strconv.FormatBool(preventRestartEnabled),
+		"ClusterID":        clusterID,
+		"connection_state": state,
 	}).Inc()
 }
 

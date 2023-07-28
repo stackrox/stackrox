@@ -597,20 +597,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	switch c.sensorHello.GetSensorState() {
-	case central.SensorHello_RECONNECT:
-		metrics.IncrementSensorConnect(c.clusterID, true, true)
-	case central.SensorHello_STARTUP:
-		metrics.IncrementSensorConnect(c.clusterID, false, true)
-	case central.SensorHello_UNKNOWN:
-		metrics.IncrementSensorConnect(c.clusterID, false, false)
-		log.Warnf("Unknown sensor state: %s. This means that sensor is running an older version than central and does not report its connection state",
-			c.sensorHello.GetSensorState())
-	default:
-		metrics.IncrementSensorConnect(c.clusterID, false, true)
-		log.Warnf("Unknown sensor state: %s. This means that sensor is running a newer version than central and it is communicating a state that Central doesn't know about",
-			c.sensorHello.GetSensorState())
-	}
+	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()
