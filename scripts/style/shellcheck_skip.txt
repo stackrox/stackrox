@@ -59,7 +59,6 @@ scripts/ci/jobs/check-pr-fixes.sh
 scripts/ci/jobs/check-todos.sh
 scripts/ci/jobs/local-roxctl-tests.sh
 scripts/ci/jobs/policy-checks.sh
-scripts/ci/jobs/powervs-qa-e2e-tests.sh
 scripts/ci/jobs/shell-unit-tests.sh
 scripts/ci/jobs/test-binary-build-commands.sh
 scripts/ci/lib.sh
