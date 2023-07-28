@@ -13,7 +13,7 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	_ "github.com/quay/claircore/updater/defaults"
 	"github.com/quay/zlog"
-	"github.com/stackrox/stackrox/scanner/v4/updater/manual"
+	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
 )
 
@@ -42,7 +42,6 @@ func Export(ctx context.Context, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	defer outputFile.Close()
 
 	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
 	httpClient := &http.Client{

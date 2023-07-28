@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/quay/zlog"
-	"github.com/stackrox/stackrox/scanner/v4/updater"
+	"github.com/stackrox/rox/scanner/updater"
 )
 
 func main() {
@@ -23,5 +23,4 @@ func main() {
 	if err := updater.Export(ctx, *outputDir); err != nil {
 		zlog.Error(ctx).Err(err).Send()
 	}
-
 }

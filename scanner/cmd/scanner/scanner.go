@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/quay/zlog"
-	"github.com/stackrox/scanner/v4/version"
+	"github.com/stackrox/rox/scanner/internal/version"
 )
 
 func main() {
