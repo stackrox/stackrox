@@ -9,6 +9,6 @@ option go_package = "storage";
 
 message Usage {
     google.protobuf.Timestamp timestamp = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Timestamp"'];
-    int32 num_nodes = 2;
-    int32 num_cpu_units = 3;
+    int64 num_nodes = 2;
+    int64 num_cpu_units = 3;
 }

@@ -121,12 +121,12 @@
           "format": "date-time"
         },
         "numNodes": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "numCpuUnits": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -138,16 +138,16 @@
           "format": "date-time"
         },
         "maxNodes": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "maxCpuUnitsAt": {
           "type": "string",
           "format": "date-time"
         },
         "maxCpuUnits": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         }
       }
     }
