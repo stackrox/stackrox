@@ -31,12 +31,13 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
+	usageDS "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
-func NewFactory(manager hashManager.Manager, usageStore clustermetrics.UsageStore) pipeline.Factory {
+func NewFactory(manager hashManager.Manager, usageStore usageDS.DataStore) pipeline.Factory {
 	return &factoryImpl{
 		manager:    manager,
 		usageStore: usageStore,
@@ -45,7 +46,7 @@ func NewFactory(manager hashManager.Manager, usageStore clustermetrics.UsageStor
 
 type factoryImpl struct {
 	manager    hashManager.Manager
-	usageStore clustermetrics.UsageStore
+	usageStore usageDS.DataStore
 }
 
 // PipelineForCluster grabs items from the queue, processes them, and potentially sends them back to sensor.

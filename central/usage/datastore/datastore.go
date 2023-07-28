@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -19,10 +19,10 @@ type DataStore interface {
 	// In-memory storage
 	CutMetrics(ctx context.Context) (*storage.Usage, error)
 	GetCurrent(ctx context.Context) (*storage.Usage, error)
-	UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error
+	UpdateUsage(clusterID string, metrics source.UsageSource)
 }
 
 // New initializes a datastore implementation instance.
-func New(any) DataStore {
+func New(_ any) DataStore {
 	return nil
 }

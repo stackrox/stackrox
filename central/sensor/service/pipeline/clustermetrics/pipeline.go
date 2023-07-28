@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	usageDS "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
@@ -30,17 +31,12 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 }
 
 // GetPipeline returns an instantiation of this particular pipeline.
-func GetPipeline(usageStore UsageStore) pipeline.Fragment {
+func GetPipeline(usageStore usageDS.DataStore) pipeline.Fragment {
 	return &pipelineImpl{metricsStore: &prometheusStore{}, usageStore: usageStore}
 }
 
-// UsageStore interface allows for updating a usage store.
-type UsageStore interface {
-	UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error
-}
-
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore, usageStore UsageStore) pipeline.Fragment {
+func NewPipeline(metricsStore MetricsStore, usageStore usageDS.DataStore) pipeline.Fragment {
 	return &pipelineImpl{metricsStore: metricsStore, usageStore: usageStore}
 }
 
@@ -48,7 +44,7 @@ type pipelineImpl struct {
 	pipeline.Fragment
 
 	metricsStore MetricsStore
-	usageStore   UsageStore
+	usageStore   usageDS.DataStore
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -67,10 +63,9 @@ func (p *pipelineImpl) Run(
 	_ common.MessageInjector,
 ) error {
 	p.metricsStore.Set(clusterID, msg.GetClusterMetrics())
+	p.usageStore.UpdateUsage(clusterID, msg.GetClusterMetrics())
 
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
-
-	_ = p.usageStore.UpdateUsage(clusterID, msg.GetClusterMetrics())
 
 	return nil
 }
