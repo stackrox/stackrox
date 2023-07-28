@@ -120,6 +120,7 @@ func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 func (s *indexerService) GetIndexReport(_ context.Context, _ *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetIndexReport not implemented")
 }
+
 func (s *indexerService) HasIndexReport(_ context.Context, _ *v4.HasIndexReportRequest) (*types.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method HasIndexReport not implemented")
 }
