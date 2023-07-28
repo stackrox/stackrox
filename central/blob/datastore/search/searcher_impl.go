@@ -3,22 +3,22 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/blob/datastore/index"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	searchAuth "github.com/stackrox/rox/pkg/search/auth"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 type searcherImpl struct {
 	storage           store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
 
 func (s *searcherImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
-	results, err := s.indexer.Search(ctx, q)
+	results, err := s.formattedSearcher.Search(ctx, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	// TODO(cdu): Add Administrator scope filter searcher
-	scopedSafeSearcher := postgres.WithScoping(searcher)
+	authSearcher := searchAuth.WithAuthFilter(searcher, resources.Administration)
+	scopedSafeSearcher := postgres.WithScoping(authSearcher)
 	return scopedSafeSearcher
 }

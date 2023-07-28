@@ -29,7 +29,6 @@ type Searcher interface {
 func New(blobStore store.Store, indexer index.Indexer) Searcher {
 	ds := &searcherImpl{
 		storage:           blobStore,
-		indexer:           indexer,
 		formattedSearcher: formatSearcher(indexer),
 	}
 	return ds

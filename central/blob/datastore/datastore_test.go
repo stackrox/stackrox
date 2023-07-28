@@ -14,10 +14,12 @@ import (
 	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/suite"
@@ -77,24 +79,36 @@ func (s *blobTestSuite) TestSearch() {
 	searchTime := protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z"))
 	blobs1 := s.createBlobs("/path1", 10, 2, searchTime)
 	blobs2 := s.createBlobs("/path2", 20, 3, timestamp.TimestampNow())
-	blobsResults, err := s.datastore.Search(s.ctx, pkgSearch.EmptyQuery())
-	s.Require().NoError(err)
-	s.Equal(len(blobs1)+len(blobs2), len(blobsResults))
 
-	blobs, err := s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery())
-	s.Require().NoError(err)
-	s.Len(blobs, 1)
-	s.Equal(blobs2[0].GetName(), blobs[0].GetName())
+	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery(), []*storage.Blob{blobs2[0]})
+	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery(), blobs2)
+	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobModificationTime, "03/09/2020 UTC").ProtoQuery(), blobs1)
+	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.BlobName, "/path1/.+").ProtoQuery(), blobs1)
 
-	blobs, err = s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery())
-	s.Require().NoError(err)
-	s.ElementsMatch(blobs2, blobs)
+	// Global access context without access to Blob
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
+	s.testQuery(ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery(), nil)
+}
 
-	blobs, err = s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobModificationTime, "03/09/2020 UTC").ProtoQuery())
+func (s *blobTestSuite) testQuery(ctx context.Context, q *v1.Query, expected []*storage.Blob) {
+	blobs, err := s.datastore.SearchMetadata(ctx, q)
 	s.Require().NoError(err)
-	s.ElementsMatch(blobs1, blobs)
+	s.Len(blobs, len(expected))
+	s.ElementsMatch(expected, blobs)
 
-	blobs, err = s.datastore.SearchMetadata(s.ctx, pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.BlobName, "/path1/.+").ProtoQuery())
+	results, err := s.datastore.Search(ctx, q)
 	s.Require().NoError(err)
-	s.ElementsMatch(blobs1, blobs)
+	s.Len(results, len(expected))
+	idSet := pkgSearch.ResultsToIDSet(results)
+	for _, e := range expected {
+		s.Contains(idSet, e.GetName())
+	}
+
+	ids, err := s.datastore.SearchIDs(ctx, q)
+	s.Require().NoError(err)
+	s.Len(ids, len(expected))
+	s.ElementsMatch(idSet.AsSlice(), ids)
 }
