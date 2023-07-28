@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	usageDS "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
@@ -31,17 +32,12 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 }
 
 // GetPipeline returns an instantiation of this particular pipeline.
-func GetPipeline(usageStore UsageStore) pipeline.Fragment {
+func GetPipeline(usageStore usageDS.DataStore) pipeline.Fragment {
 	return &pipelineImpl{metricsStore: &prometheusStore{}, infoMetric: info.Singleton(), usageStore: usageStore}
 }
 
-// UsageStore interface allows for updating a usage store.
-type UsageStore interface {
-	UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error
-}
-
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore, infoMetric info.Info, usageStore UsageStore) pipeline.Fragment {
+func NewPipeline(metricsStore MetricsStore, infoMetric info.Info, usageStore usageDS.DataStore) pipeline.Fragment {
 	return &pipelineImpl{metricsStore: metricsStore, infoMetric: infoMetric, usageStore: usageStore}
 }
 
@@ -50,7 +46,7 @@ type pipelineImpl struct {
 
 	metricsStore MetricsStore
 	infoMetric   info.Info
-	usageStore   UsageStore
+	usageStore   usageDS.DataStore
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
