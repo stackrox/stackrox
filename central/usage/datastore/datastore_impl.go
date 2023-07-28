@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/central/usage/store/cache"
+	"github.com/stackrox/rox/central/usage/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -19,6 +20,7 @@ var (
 
 type dataStoreImpl struct {
 	clustore clustore
+	store    postgres.Store
 	cache    cache.Cache
 }
 

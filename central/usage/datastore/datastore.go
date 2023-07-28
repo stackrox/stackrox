@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/central/usage/store/cache"
+	"github.com/stackrox/rox/central/usage/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -24,9 +25,10 @@ type DataStore interface {
 }
 
 // New initializes a datastore implementation instance.
-func New(_ any, clustore clustore) DataStore {
+func New(store postgres.Store, clustore clustore) DataStore {
 	return &dataStoreImpl{
 		clustore: clustore,
+		store:    store,
 		cache:    cache.NewCache(),
 	}
 }

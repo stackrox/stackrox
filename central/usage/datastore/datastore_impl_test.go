@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/central/usage/source/mocks"
+	pgMocks "github.com/stackrox/rox/central/usage/store/postgres/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -42,7 +43,7 @@ func (tcs *testCluStore) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 
 func (suite *UsageDataStoreTestSuite) SetupTest() {
 	suite.ctrl = gomock.NewController(suite.T())
-	suite.datastore = New(nil, &testCluStore{
+	suite.datastore = New(pgMocks.NewMockStore(suite.ctrl), &testCluStore{
 		clusters: []*storage.Cluster{{
 			Id: "existingCluster1",
 		}, {

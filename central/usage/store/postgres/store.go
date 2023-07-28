@@ -44,6 +44,8 @@ type serialized struct {
 }
 
 // Store is the interface to interact with the storage for storage.Usage.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) ([]*storage.Usage, error)
 	Insert(ctx context.Context, rec *storage.Usage) error

@@ -24,74 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type UsageMetrics struct {
-	NumNodes             int32    `protobuf:"varint,1,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
-	NumCpuUnits          int32    `protobuf:"varint,2,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UsageMetrics) Reset()         { *m = UsageMetrics{} }
-func (m *UsageMetrics) String() string { return proto.CompactTextString(m) }
-func (*UsageMetrics) ProtoMessage()    {}
-func (*UsageMetrics) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5b4522b7737f3601, []int{0}
-}
-func (m *UsageMetrics) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *UsageMetrics) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_UsageMetrics.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *UsageMetrics) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UsageMetrics.Merge(m, src)
-}
-func (m *UsageMetrics) XXX_Size() int {
-	return m.Size()
-}
-func (m *UsageMetrics) XXX_DiscardUnknown() {
-	xxx_messageInfo_UsageMetrics.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UsageMetrics proto.InternalMessageInfo
-
-func (m *UsageMetrics) GetNumNodes() int32 {
-	if m != nil {
-		return m.NumNodes
-	}
-	return 0
-}
-
-func (m *UsageMetrics) GetNumCpuUnits() int32 {
-	if m != nil {
-		return m.NumCpuUnits
-	}
-	return 0
-}
-
-func (m *UsageMetrics) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *UsageMetrics) Clone() *UsageMetrics {
-	if m == nil {
-		return nil
-	}
-	cloned := new(UsageMetrics)
-	*cloned = *m
-
-	return cloned
-}
-
 type Usage struct {
 	Timestamp            *types.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty" sql:"pk" search:"Timestamp"`
 	NumNodes             int64            `protobuf:"varint,2,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
@@ -105,7 +37,7 @@ func (m *Usage) Reset()         { *m = Usage{} }
 func (m *Usage) String() string { return proto.CompactTextString(m) }
 func (*Usage) ProtoMessage()    {}
 func (*Usage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5b4522b7737f3601, []int{1}
+	return fileDescriptor_5b4522b7737f3601, []int{0}
 }
 func (m *Usage) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -170,14 +102,13 @@ func (m *Usage) Clone() *Usage {
 }
 
 func init() {
-	proto.RegisterType((*UsageMetrics)(nil), "storage.UsageMetrics")
 	proto.RegisterType((*Usage)(nil), "storage.Usage")
 }
 
 func init() { proto.RegisterFile("storage/usage.proto", fileDescriptor_5b4522b7737f3601) }
 
 var fileDescriptor_5b4522b7737f3601 = []byte{
-	// 252 bytes of a gzipped FileDescriptorProto
+	// 232 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x2e, 0xc9, 0x2f,
 	0x4a, 0x4c, 0x4f, 0xd5, 0x2f, 0x2d, 0x4e, 0x4c, 0x4f, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
 	0x62, 0x87, 0x0a, 0x4a, 0x89, 0xa4, 0xe7, 0xa7, 0xe7, 0x83, 0xc5, 0xf4, 0x41, 0x2c, 0x88, 0xb4,
@@ -255,24 +186,6 @@ func encodeVarintUsage(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *UsageMetrics) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.NumNodes != 0 {
-		n += 1 + sovUsage(uint64(m.NumNodes))
-	}
-	if m.NumCpuUnits != 0 {
-		n += 1 + sovUsage(uint64(m.NumCpuUnits))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *Usage) Size() (n int) {
 	if m == nil {
 		return 0
@@ -300,95 +213,6 @@ func sovUsage(x uint64) (n int) {
 }
 func sozUsage(x uint64) (n int) {
 	return sovUsage(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *UsageMetrics) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowUsage
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: UsageMetrics: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UsageMetrics: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumNodes", wireType)
-			}
-			m.NumNodes = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowUsage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NumNodes |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumCpuUnits", wireType)
-			}
-			m.NumCpuUnits = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowUsage
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NumCpuUnits |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipUsage(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthUsage
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *Usage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)

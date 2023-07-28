@@ -2,6 +2,8 @@ package datastore
 
 import (
 	cluStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/usage/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +15,7 @@ var (
 // Singleton returns the singleton providing access to the usage store.
 func Singleton() DataStore {
 	once.Do(func() {
-		ds = New(nil, cluStore.Singleton())
+		ds = New(postgres.New(globaldb.GetPostgres()), cluStore.Singleton())
 	})
 	return ds
 }
