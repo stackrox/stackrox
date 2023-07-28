@@ -178,7 +178,7 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
 // a list of layers.
-func getContainerImageLayers(ctx context.Context, o options, ref name.Reference) ([]v1.Layer, error) {
+func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
 	// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
 	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform))
 	if err != nil {
