@@ -27,7 +27,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 	}{
 		{
 			name:             "when central is not reachable then return internal error",
-			statusCode:       http.StatusInternalServerError,
+			statusCode:       http.StatusServiceUnavailable,
 			responseBody:     "{\"code\":14,\"message\":\"central not reachable\"}",
 			centralReachable: false,
 		},
