@@ -3,7 +3,9 @@ package translation
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	// Required for the usage of go:embed below.
@@ -66,17 +68,33 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, err
 	}
 
-	// This endpoint yields the target inner operator version to deploy.
-	// TODO: Have this be an actual call instead of just logging.
-	logger, _ := zap.NewProduction()
-	defer logger.Sync() // flushes buffer, if any
-	sugar := logger.Sugar()
-	sugar.Infow("Got central endpoint from CR", "centralEndpoint", valsFromCR.AsMap()["centralEndpoint"])
-	sugar.Infof("Would have called: %s/v1/target/clusterversion", valsFromCR.AsMap()["centralEndpoint"])
+	// FIXME: Call queryCentralTargetVersion AFTER coalesce to get defaults/fallbacks
+	t.queryCentralTargetVersion(valsFromCR)
+	// Overwrite target image version of Operator with result from central
 
-	// FIXME: Add option to read / overwrite via env vars
+	// FIXME: Add Coalesce for env vars
 	// return helmUtil.CoalesceTables(baseValues), nil
 	return baseValues, nil
+}
+
+func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, error) {
+	logger, _ := zap.NewProduction()
+	sugar := logger.Sugar()
+	url := fmt.Sprintf("https://%v/v1/target/clusterversion", vals.AsMap()["centralEndpoint"])
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	sugar.Infof("Calling endpoint: %s", url)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		sugar.Error(err)
+	}
+
+	sugar.Infow("Got response", "response", resp)
+
+	return "", nil
 }
 
 //
