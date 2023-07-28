@@ -13,11 +13,12 @@ import useCases from 'constants/useCaseTypes';
 import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import ResourceTabs from 'Components/ResourceTabs';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
+
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 const ControlPage = ({
     entityId,
