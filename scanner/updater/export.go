@@ -11,10 +11,11 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
-	_ "github.com/quay/claircore/updater/defaults"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
+
+	_ "github.com/quay/claircore/updater/defaults"
 )
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
@@ -57,32 +58,33 @@ func Export(ctx context.Context, outputDir string) error {
 	}
 	defer zstdWriter.Close()
 
-	updaterStore, err := jsonblob.New()
-	updaterSetMgr, err := updates.NewManager(ctx, updaterStore, updates.NewLocalLockSource(), httpClient,
+	jsonStore1, err := jsonblob.New()
+	updateMgr1, err := updates.NewManager(ctx, jsonStore1, updates.NewLocalLockSource(), httpClient,
 		updates.WithEnabled([]string{"oracle", "photon", "suse", "aws", "rhcc"}),
 		updates.WithOutOfTree(outOfTree),
 	)
 	if err != nil {
 		return err
 	}
-	if err := updaterSetMgr.Run(ctx); err != nil {
+	if err := updateMgr1.Run(ctx); err != nil {
 		return err
 	}
-
-	err = updaterStore.Store(zstdWriter)
+	err = jsonStore1.Store(zstdWriter)
 	if err != nil {
 		return err
 	}
 
-	configStore, err := jsonblob.New()
-	configMgr, err := updates.NewManager(ctx, configStore, updates.NewLocalLockSource(), http.DefaultClient,
-		updates.WithEnabled([]string{"debian", "alpine", "rhel", "ubuntu", "osv"}),
+	jsonStore2, err := jsonblob.New()
+	updateMgr2, err := updates.NewManager(ctx, jsonStore2, updates.NewLocalLockSource(), httpClient,
+		updates.WithEnabled([]string{"alpine", "rhel", "ubuntu", "osv", "debian"}),
 	)
-	if err := configMgr.Run(ctx); err != nil {
+	if err != nil {
 		return err
 	}
-
-	err = configStore.Store(zstdWriter)
+	if err := updateMgr2.Run(ctx); err != nil {
+		return err
+	}
+	err = jsonStore2.Store(zstdWriter)
 	if err != nil {
 		return err
 	}

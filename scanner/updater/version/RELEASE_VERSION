@@ -5,6 +5,4 @@
 # Various versions of Scanner V4 matchers will import vulnerability data based on their respective versions from Google Storage.
 4.0.0
 3.74.4
-4.1.x-475-g08897c063a
-4.1.x-470-g7f0dea0e37
-4.1.x-470-g50d0a5b09a
+4.1.x-476-g1aa6557244

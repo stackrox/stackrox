@@ -27,6 +27,8 @@ jobs:
     needs: read-versions
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false #if one of the versions fails to get updated vulns, we still want to update for the other versions
+      max-parallel: 2
       matrix:
         version: ${{fromJson(needs.read-versions.outputs.matrix).versions}}
     env:
@@ -41,7 +43,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
 
       - name: Update vulnerabilities
-        continue-on-error: true #if one of the versions fail to get updated vulns, we still want to update for the other versions
+        continue-on-error: true
         run: |
           DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
           FILE_NAME=$(basename "$DOWNLOAD_URL")
@@ -54,7 +56,7 @@ jobs:
           fi
           
           cd scanner
-          go run cmd/updater/main.go -outputDir=${{ env.ROX_PRODUCT_VERSION }}
+          go run cmd/updater/main.go -output-dir=${{ env.ROX_PRODUCT_VERSION }}
           gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/"
         
   send-notification:
@@ -66,4 +68,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner Updater Workflow: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Failure in Scanner Updater Workflow: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
