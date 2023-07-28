@@ -100,6 +100,13 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if req == nil || req.GetReportConfigId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
 	}
+	exists, err := s.reportConfigStore.Exists(ctx, req.GetReportConfigId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' does not exist", req.GetReportConfigId())
+	}
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())

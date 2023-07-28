@@ -22,6 +22,7 @@ type DataStore interface {
 
 	GetReportConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ReportConfiguration, error)
 	GetReportConfiguration(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 	AddReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) (string, error)
 	UpdateReportConfiguration(ctx context.Context, reportConfig *storage.ReportConfiguration) error
 	RemoveReportConfiguration(ctx context.Context, id string) error

@@ -42,6 +42,17 @@ func (d *dataStoreImpl) GetReportConfigurations(ctx context.Context, query *v1.Q
 	return d.searcher.SearchReportConfigurations(ctx, query)
 }
 
+func (d *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
+		return false, err
+	}
+	found, err := d.reportConfigStore.Exists(ctx, id)
+	if err != nil || !found {
+		return false, err
+	}
+	return true, nil
+}
+
 func (d *dataStoreImpl) GetReportConfiguration(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error) {
 	if ok, err := reportConfigSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
