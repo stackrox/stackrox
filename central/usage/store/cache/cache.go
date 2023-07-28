@@ -24,7 +24,7 @@ type cacheImpl struct {
 type Cache interface {
 	// UpdateUsage upserts the metrics to the cache for the given cluster id,
 	// keeping maximum and last values.
-	UpdateUsage(id string, cm source.MetricsSource)
+	UpdateUsage(id string, cm source.UsageSource)
 	// FilterCurrent filters the last known usage metrics by keeping only the
 	// values of the clusters with the provided ids, and returns the values.
 	FilterCurrent(ids set.StringSet) *storage.Usage
@@ -41,7 +41,7 @@ func NewCache() Cache {
 	}
 }
 
-func (u *cacheImpl) UpdateUsage(id string, cm source.MetricsSource) {
+func (u *cacheImpl) UpdateUsage(id string, cm source.UsageSource) {
 	u.nodesMap.Store(id, int32(cm.GetNodeCount()))
 	u.cpuUnitsMap.Store(id, int32(cm.GetCpuCapacity()))
 

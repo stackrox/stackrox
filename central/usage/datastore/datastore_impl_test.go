@@ -49,26 +49,18 @@ type testMetricsSource [2]int64
 func (tms *testMetricsSource) GetNodeCount() int64   { return tms[0] }
 func (tms *testMetricsSource) GetCpuCapacity() int64 { return tms[1] }
 
-func (suite *UsageDataStoreTestSuite) TestUpdateMessage() {
-	err := suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
-	suite.NoError(err)
-}
-
 func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	u, err := suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
 	suite.Equal(int32(0), u.NumCpuUnits)
-	err = suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
-	suite.NoError(err)
-	err = suite.datastore.UpdateUsage("existingCluster2", &testMetricsSource{2, 7})
-	suite.NoError(err)
+	suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
+	suite.datastore.UpdateUsage("existingCluster2", &testMetricsSource{2, 7})
 	u, err = suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(3), u.NumNodes)
 	suite.Equal(int32(15), u.NumCpuUnits)
-	err = suite.datastore.UpdateUsage("unknownCluster", &testMetricsSource{2, 16})
-	suite.NoError(err)
+	suite.datastore.UpdateUsage("unknownCluster", &testMetricsSource{2, 16})
 	u, err = suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(3), u.NumNodes)
@@ -80,10 +72,8 @@ func (suite *UsageDataStoreTestSuite) TestUpdateCutMetrics() {
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
 	suite.Equal(int32(0), u.NumCpuUnits)
-	err = suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
-	suite.NoError(err)
-	err = suite.datastore.UpdateUsage("unknownCluster", &testMetricsSource{2, 7})
-	suite.NoError(err)
+	suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
+	suite.datastore.UpdateUsage("unknownCluster", &testMetricsSource{2, 7})
 	u, err = suite.datastore.CutMetrics(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(1), u.NumNodes)

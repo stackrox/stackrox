@@ -7,7 +7,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	source "github.com/stackrox/rox/central/usage/source"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	gomock "go.uber.org/mock/gomock"
 )
