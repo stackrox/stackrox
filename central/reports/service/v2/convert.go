@@ -14,7 +14,7 @@ func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportSta
 		ReportRequestType:        apiV2.ReportStatus_ReportMethod(status.GetReportRequestType()),
 		CompletedAt:              status.GetCompletedAt(),
 		RunState:                 apiV2.ReportStatus_RunState(status.GetRunState()),
-		ReportNotificationMethod: apiV2.ReportStatus_NotificationMethod(status.GetReportNotificationMethod()),
+		ReportNotificationMethod: apiV2.NotificationMethod(status.GetReportNotificationMethod()),
 		ErrorMsg:                 status.GetErrorMsg(),
 	}
 
