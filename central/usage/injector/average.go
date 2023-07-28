@@ -3,7 +3,7 @@ package injector
 import "github.com/stackrox/rox/generated/storage"
 
 func average(metrics ...*storage.Usage) *storage.Usage {
-	n := int32(len(metrics))
+	n := int64(len(metrics))
 	averageUsage := &storage.Usage{}
 	if n == 0 {
 		return averageUsage
