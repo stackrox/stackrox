@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -45,11 +44,13 @@ func (suite *UsageDataStoreTestSuite) SetupTest() {
 func (suite *UsageDataStoreTestSuite) TearDownSuite() {
 }
 
+type testMetricsSource [2]int64
+
+func (tms *testMetricsSource) GetNodeCount() int64   { return tms[0] }
+func (tms *testMetricsSource) GetCpuCapacity() int64 { return tms[1] }
+
 func (suite *UsageDataStoreTestSuite) TestUpdateMessage() {
-	err := suite.datastore.UpdateUsage("existingCluster1", &central.ClusterMetrics{
-		NodeCount:   1,
-		CpuCapacity: 8,
-	})
+	err := suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
 	suite.NoError(err)
 }
 
@@ -58,24 +59,15 @@ func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
 	suite.Equal(int32(0), u.NumCpuUnits)
-	err = suite.datastore.UpdateUsage("existingCluster1", &central.ClusterMetrics{
-		NodeCount:   1,
-		CpuCapacity: 8,
-	})
+	err = suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
 	suite.NoError(err)
-	err = suite.datastore.UpdateUsage("existingCluster2", &central.ClusterMetrics{
-		NodeCount:   2,
-		CpuCapacity: 7,
-	})
+	err = suite.datastore.UpdateUsage("existingCluster2", &testMetricsSource{2, 7})
 	suite.NoError(err)
 	u, err = suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
 	suite.Equal(int32(3), u.NumNodes)
 	suite.Equal(int32(15), u.NumCpuUnits)
-	err = suite.datastore.UpdateUsage("unknownCluster", &central.ClusterMetrics{
-		NodeCount:   2,
-		CpuCapacity: 16,
-	})
+	err = suite.datastore.UpdateUsage("unknownCluster", &testMetricsSource{2, 16})
 	suite.NoError(err)
 	u, err = suite.datastore.GetCurrent(context.Background())
 	suite.NoError(err)
@@ -88,15 +80,9 @@ func (suite *UsageDataStoreTestSuite) TestUpdateCutMetrics() {
 	suite.NoError(err)
 	suite.Equal(int32(0), u.NumNodes)
 	suite.Equal(int32(0), u.NumCpuUnits)
-	err = suite.datastore.UpdateUsage("existingCluster1", &central.ClusterMetrics{
-		NodeCount:   1,
-		CpuCapacity: 8,
-	})
+	err = suite.datastore.UpdateUsage("existingCluster1", &testMetricsSource{1, 8})
 	suite.NoError(err)
-	err = suite.datastore.UpdateUsage("unknownCluster", &central.ClusterMetrics{
-		NodeCount:   2,
-		CpuCapacity: 7,
-	})
+	err = suite.datastore.UpdateUsage("unknownCluster", &testMetricsSource{2, 7})
 	suite.NoError(err)
 	u, err = suite.datastore.CutMetrics(context.Background())
 	suite.NoError(err)

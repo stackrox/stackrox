@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/generated/storage"
+	"go.etcd.io/etcd/proxy/grpcproxy/cache"
 )
 
 // DataStore is the datastore for usage.
@@ -26,6 +27,6 @@ type DataStore interface {
 func New(_ any, clustore clustore) DataStore {
 	return &dataStoreImpl{
 		clustore: clustore,
-		cache:    NewCache(),
+		cache:    cache.NewCache(),
 	}
 }
