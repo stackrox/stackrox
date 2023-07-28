@@ -42,4 +42,7 @@ var (
 	// This is meant to be a 'kill switch' that allows for local scanning to continue (ie: for OCP internal repos)
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
 	DelegatedScanningDisabled = RegisterBooleanSetting("ROX_DELEGATED_SCANNING_DISABLED", false)
+
+	// PingInterval defines in which interval Sensor should send ping messages to Central.
+	PingInterval = registerDurationSetting("ROX_SENSOR_PING_INTERVAL", 30*time.Second)
 )

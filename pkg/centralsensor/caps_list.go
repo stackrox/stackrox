@@ -39,4 +39,7 @@ const (
 
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries).
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"
+
+	// PingCap identifies the capability for a sensor to send ping messages to Central.
+	PingCap SensorCapability = "SensorPing"
 )

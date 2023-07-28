@@ -49,6 +49,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
+	"github.com/stackrox/rox/sensor/kubernetes/ping"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
@@ -149,6 +150,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		reprocessorHandler,
 		delegatedRegistryHandler,
 		imageService,
+		ping.Singleton(),
 	}
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())

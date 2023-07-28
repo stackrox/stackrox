@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodeinventory"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/pings"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/podevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processlisteningonport"
@@ -78,6 +79,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorscansettingbinding.GetPipeline(),
 		complianceoperatorrules.GetPipeline(),
 		complianceoperatorscans.GetPipeline(),
+		pings.GetPipeline(),
 	}
 	if env.RHCOSNodeScanning.BooleanSetting() {
 		pipelines = append(pipelines, nodeinventory.GetPipeline())

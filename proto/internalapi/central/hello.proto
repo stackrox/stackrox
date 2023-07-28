@@ -41,3 +41,9 @@ message CentralHello {
     bool                managed_central = 3;
     string              central_id      = 4;
 }
+
+message SensorPing {
+}
+
+message CentralPong {
+}
