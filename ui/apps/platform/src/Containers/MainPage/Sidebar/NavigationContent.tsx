@@ -1,9 +1,7 @@
 import React, { CSSProperties, ReactElement, ReactNode } from 'react';
 import { Flex, Label } from '@patternfly/react-core';
 
-type NavigationContentVariant = 'Deprecated' | 'TechPreview';
-
-const badgeMap: Record<NavigationContentVariant, ReactElement> = {
+const badgeMap = {
     Deprecated: (
         <Label
             isCompact
@@ -21,7 +19,9 @@ const badgeMap: Record<NavigationContentVariant, ReactElement> = {
             Tech preview
         </Label>
     ),
-} as const;
+} satisfies Record<string, ReactElement>;
+
+type NavigationContentVariant = keyof typeof badgeMap;
 
 export type NavigationContentProps = {
     children: ReactNode;
