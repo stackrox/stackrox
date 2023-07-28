@@ -22,12 +22,12 @@ type dataStoreImpl struct {
 var _ DataStore = (*dataStoreImpl)(nil)
 
 // Get returns the object, if it exists from the store.
-func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) ([]*storage.Usage, error) {
+func (ds *dataStoreImpl) Get(_ context.Context, _ *types.Timestamp, _ *types.Timestamp) ([]*storage.Usage, error) {
 	return nil, errors.New("not implemented")
 }
 
-// Upsert saves the current state of an object in storage.
-func (ds *dataStoreImpl) Insert(ctx context.Context, metrics *storage.Usage) error {
+// Insert saves the current state of an object in storage.
+func (ds *dataStoreImpl) Insert(_ context.Context, _ *storage.Usage) error {
 	return errors.New("not implemented")
 }
 
