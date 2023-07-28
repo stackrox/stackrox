@@ -14,11 +14,6 @@
     --color-resource-configmap: var(--pf-global--palette--purple-600);
     /* unknown has no openshift equivalent */
     --color-resource-unknown: var(--pf-global--palette--black-500);
-
-    --color-severity-low: var(--pf-global--palette--black-500);
-    --color-severity-medium: var(--pf-global--palette--gold-300);
-    --color-severity-important: var(--pf-global--palette--orange-300);
-    --color-severity-critical: var(--pf-global--palette--red-100);
 }
 
 /*

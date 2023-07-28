@@ -2,12 +2,12 @@ import { History } from 'react-router-dom';
 import { getTheme, ChartThemeColor, ChartBarProps } from '@patternfly/react-charts';
 import merge from 'lodash/merge';
 
-import { severityColors } from 'constants/visuals/colors';
+import { policySeverityColorMap } from 'constants/visuals/colors';
 import { ValueOf } from './type.utils';
 
 export const solidBlueChartColor = 'var(--pf-global--palette--blue-400)';
 
-export const severityColorScale = Object.values(severityColors);
+export const severityColorScale = Object.values(policySeverityColorMap);
 
 // Clone default PatternFly chart themes
 const defaultTheme = getTheme(ChartThemeColor.multi);

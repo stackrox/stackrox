@@ -11,22 +11,7 @@ const colors = [
     'var(--secondary-400)',
 ];
 
-export const colorTypes = ['alert', 'caution', 'warning', 'success', 'tertiary', 'primary', 'base'];
-
-export const fileUploadColors = {
-    BACKGROUND_COLOR: 'var(--warning-300)', // close to original upload background '#faecd2'
-    ICON_COLOR: 'var(--warning-700)', // close to original upload icon '#b39357
-};
-
-export const defaultColorType = 'base';
-
-// TODO supersede with policySeverityColors below.
-export const severityColors: Record<PolicySeverity, string> = {
-    LOW_SEVERITY: 'var(--color-severity-low)',
-    MEDIUM_SEVERITY: 'var(--color-severity-medium)',
-    HIGH_SEVERITY: 'var(--color-severity-important)',
-    CRITICAL_SEVERITY: 'var(--color-severity-critical)',
-};
+export const noViolationsColor = 'var(--pf-global--Color--200)';
 
 /*
  * Export individual constants for consistency in pseudo-severity use cases like compliance.
@@ -45,7 +30,7 @@ export const policySeverityColorMap: Record<PolicySeverity, string> = {
     LOW_SEVERITY: LOW_SEVERITY_COLOR,
     MEDIUM_SEVERITY: MODERATE_MEDIUM_SEVERITY_COLOR,
     HIGH_SEVERITY: IMPORTANT_HIGH_SEVERITY_COLOR,
-    CRITICAL_SEVERITY: UNKNOWN_SEVERITY_COLOR,
+    CRITICAL_SEVERITY: CRITICAL_SEVERITY_COLOR,
 };
 
 // TODO rename as vulnerabilitySeverityColorMap.
