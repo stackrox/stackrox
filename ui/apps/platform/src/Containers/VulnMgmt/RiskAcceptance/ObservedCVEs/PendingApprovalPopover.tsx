@@ -3,7 +3,8 @@ import React, { ReactElement } from 'react';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 
 import { getQueryString } from 'utils/queryStringUtils';
-import { vulnManagementPendingApprovalsPath } from 'routePaths';
+
+import { vulnManagementPendingApprovalsPath } from '../pathsForRiskAcceptance';
 
 type PendingApprovalPopoverProps = {
     vulnRequestId: string;

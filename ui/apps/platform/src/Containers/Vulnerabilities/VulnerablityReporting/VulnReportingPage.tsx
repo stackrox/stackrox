@@ -3,13 +3,15 @@ import { Route, Switch, Redirect } from 'react-router-dom';
 
 import usePageAction from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
 
 import VulnReportsPage from './VulnReports/VulnReportsPage';
 import CreateVulnReportPage from './ModifyVulnReport/CreateVulnReportPage';
 import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
 import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
+
+import { vulnerabilityReportPath } from './pathsForVulnerabilityReporting';
 
 import './VulnReportingPage.css';
 
