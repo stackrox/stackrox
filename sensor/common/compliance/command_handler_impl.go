@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"sync/atomic"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -26,6 +28,7 @@ type commandHandlerImpl struct {
 	scrapeIDToState map[string]*scrapeState
 
 	stopper concurrency.Stopper
+	centralReachable atomic.Bool
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -37,6 +40,7 @@ func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (c *commandHandlerImpl) Start() error {
+	c.centralReachable.Store(true)
 	go c.run()
 	return nil
 }
@@ -45,7 +49,14 @@ func (c *commandHandlerImpl) Stop(_ error) {
 	c.stopper.Client().Stop()
 }
 
-func (c *commandHandlerImpl) Notify(common.SensorComponentEvent) {}
+func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		c.centralReachable.Store(true)
+	case common.SensorComponentEventOfflineMode:
+		c.centralReachable.Store(false)
+	}
+}
 
 func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
@@ -184,8 +195,12 @@ func (c *commandHandlerImpl) checkScrapeCompleted(scrapeID string, state *scrape
 
 func (c *commandHandlerImpl) sendUpdates(updates []*central.ScrapeUpdate) {
 	if len(updates) > 0 {
-		for _, update := range updates {
-			c.sendUpdate(update)
+		if c.centralReachable.Load() {
+			for _, update := range updates {
+				c.sendUpdate(update)
+			}
+		} else {
+			log.Debugf("sendUpdate() called while in offline mode, ScrapeUpdate discarded.")
 		}
 	}
 }
