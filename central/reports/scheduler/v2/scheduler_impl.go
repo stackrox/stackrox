@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
@@ -34,16 +35,6 @@ var (
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
-
-// Scheduler maintains the schedules for reports
-type Scheduler interface {
-	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
-	RemoveReportSchedule(reportConfigID string)
-	SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error)
-	CancelReportRequest(ctx context.Context, reportID string) error
-	Start()
-	Stop()
-}
 
 type scheduler struct {
 	// Used to map reportConfigs to their cron jobs. This is only used for scheduled reports, On-demand reports are directly added to reportsQueue
@@ -70,6 +61,7 @@ type scheduler struct {
 	// isStopped will prevent scheduler from being re-started once it is stopped
 	isStopped atomic.Bool
 
+	/* Concurrency and synchronization related fields */
 	stopper concurrency.Stopper
 
 	// Use to synchronize access to reportConfigToEntryIDs map
@@ -88,6 +80,7 @@ type scheduler struct {
 // New instantiates a new cron scheduler and supports adding and removing report requests
 func New(reportConfigDatastore reportConfigDS.DataStore, reportMetadataStore reportMetadataDS.DataStore,
 	collectionDatastore collectionDS.DataStore, reportGenerator reportGen.ReportGenerator) Scheduler {
+
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
@@ -111,17 +104,16 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportMeta
 		readyForReports:        concurrency.NewSignal(),
 		runningReportConfigs:   set.NewStringSet(),
 		Schema:                 schema,
-
-		stopper:         concurrency.NewStopper(),
-		cron:            cronScheduler,
-		concurrencySema: semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		stopper:                concurrency.NewStopper(),
+		cron:                   cronScheduler,
+		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 	}
 	return s
 }
 
 /* Concurrency and scheduling functions */
 
-// Start scheduler. A scheduler instance can only call Start once. It cannot be re-started once stopped.
+// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
 // This func will log errors if the scheduler fails to start.
 func (s *scheduler) Start() {
 	if s.isStopped.Load() {
@@ -206,6 +198,7 @@ func (s *scheduler) removeFromRunningReportConfigs(configID string) {
 	s.runningReportConfigs.Remove(configID)
 }
 
+// UpsertReportSchedule adds/updates the schedule at which reports for the given report config are executed.
 func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error {
 	s.cronJobsLock.Lock()
 	defer s.cronJobsLock.Unlock()
@@ -228,6 +221,7 @@ func (s *scheduler) UpsertReportSchedule(reportConfig *storage.ReportConfigurati
 	return nil
 }
 
+// RemoveReportSchedule removes the given report configuration from scheduled execution.
 func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 	s.cronJobsLock.Lock()
 	defer s.cronJobsLock.Unlock()
@@ -241,33 +235,22 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 
 /* Functions to add/remove report jobs from queue */
 
-// CancelReportRequest cancels a report that is still waiting in queue.
+// CancelReportRequest cancels a report request that is still waiting in queue. A user can only cancel a report requested by them.
 // If the report is already being prepared or has completed execution, it cannot be cancelled.
-func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) error {
-	metadata, found, err := s.reportMetadataStore.Get(ctx, reportID)
+func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
+	removed := s.tryRemoveFromRequestQueue(reportID)
+	if !removed {
+		return false, nil
+	}
+	err := s.reportMetadataStore.DeleteReportMetadata(ctx, reportID)
 	if err != nil {
-		return errors.Errorf("Error finding report ID '%s': %s", reportID, err)
+		return false, errors.Wrapf(err, "Error deleting report ID '%s' from storage", reportID)
 	}
-	if !found {
-		return errors.Errorf("Report ID '%s' not found", reportID)
-	}
-	if metadata.ReportStatus.RunState == storage.ReportStatus_SUCCESS ||
-		metadata.ReportStatus.RunState == storage.ReportStatus_FAILURE {
-		return nil
-	}
-
-	if !s.tryRemoveReportFromQueue(reportID) {
-		return errors.Errorf("Cannot cancel. Report ID '%s' is already being prepared", reportID)
-	}
-	err = s.reportMetadataStore.DeleteReportMetadata(ctx, reportID)
-	if err != nil {
-		return errors.Errorf("Error deleting report ID '%s' from storage", reportID)
-	}
-
-	return nil
+	return true, nil
 }
 
-func (s *scheduler) tryRemoveReportFromQueue(reportID string) bool {
+// Returns true if the request was successfully removed from the ReportRequests queue
+func (s *scheduler) tryRemoveFromRequestQueue(reportID string) bool {
 	s.schedulerLock.Lock()
 	defer s.schedulerLock.Unlock()
 
@@ -277,9 +260,13 @@ func (s *scheduler) tryRemoveReportFromQueue(reportID string) bool {
 	return request != nil
 }
 
-// SubmitReportRequest submits a report for scheduling either on demand or on a schedule.
-// If it's on demand, it will begin running if there isn't already one running from the same requesting user.
-// However, the same report can be run concurrently by different users including the system.
+func (s *scheduler) CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error) {
+	return s.doesUserHavePendingReport(scheduledCtx, reportConfig.GetId(), user.GetId())
+}
+
+// SubmitReportRequest submits a report execution request. The report request can be either for an on demand report or a scheduled report.
+// If there is already a pending report request submitted by the same user for the same report config, this request will be denied.
+// However, there can be multiple pending report requests for same configuration by different users.
 func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error) {
 	err := reportGen.ValidateReportRequest(request)
 	if err != nil {
@@ -296,9 +283,6 @@ func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubm
 	}
 	request.Collection = collection
 
-	if request.ReportMetadata == nil || request.ReportMetadata.ReportStatus == nil {
-		return "", errors.New("Inva")
-	}
 	request.ReportMetadata.ReportStatus.RunState = storage.ReportStatus_WAITING
 	request.ReportMetadata.ReportStatus.QueuedAt = types.TimestampNow()
 	request.ReportMetadata.ReportId, err = s.validateAndPersistMetadata(request.Ctx, request.ReportMetadata, reSubmission)
@@ -422,7 +406,7 @@ func (s *scheduler) validateAndPersistMetadata(ctx context.Context, metadata *st
 			return "", err
 		}
 		if userHasAnotherReport {
-			return "", errors.Errorf("User already has a report running for config ID '%s'", metadata.GetReportConfigId())
+			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'", metadata.GetReportConfigId())
 		}
 	}
 

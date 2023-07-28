@@ -6,7 +6,7 @@ import (
 
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
-	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
+	schedulerV2Mocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -31,7 +31,7 @@ type ReportConfigurationServiceTestSuite struct {
 	reportConfigDatastore *mocks.MockDataStore
 	notifierDatastore     *notifierMocks.MockDataStore
 	collectionDatastore   *collectionMocks.MockDataStore
-	manager               *managerMocks.MockManager
+	scheduler             *schedulerV2Mocks.MockScheduler
 	mockCtrl              *gomock.Controller
 }
 
@@ -52,8 +52,8 @@ func (s *ReportConfigurationServiceTestSuite) SetupTest() {
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.collectionDatastore = collectionMocks.NewMockDataStore(s.mockCtrl)
-	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.collectionDatastore, s.manager)
+	s.scheduler = schedulerV2Mocks.NewMockScheduler(s.mockCtrl)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.collectionDatastore, s.scheduler)
 }
 
 func (s *ReportConfigurationServiceTestSuite) TearDownTest() {
@@ -62,6 +62,7 @@ func (s *ReportConfigurationServiceTestSuite) TearDownTest() {
 
 func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
+	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
 	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
@@ -102,6 +103,7 @@ func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 
 func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
+	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
 	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
@@ -256,6 +258,7 @@ func (s *ReportConfigurationServiceTestSuite) TestCountReportConfigurations() {
 
 func (s *ReportConfigurationServiceTestSuite) TestDeleteReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
+	s.scheduler.EXPECT().RemoveReportSchedule(gomock.Any()).Return().AnyTimes()
 	testCases := []struct {
 		desc    string
 		id      string
