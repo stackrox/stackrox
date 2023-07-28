@@ -69,6 +69,8 @@ type Sensor struct {
 	centralConnectionFactory centralclient.CentralConnectionFactory
 
 	stoppedSig concurrency.ErrorSignal
+
+	notifyList []common.Notifiable
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -95,6 +97,12 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 // AddAPIServices adds the api services to the sensor. It should be called PRIOR to Start()
 func (s *Sensor) AddAPIServices(services ...pkgGRPC.APIService) {
 	s.apiServices = append(s.apiServices, services...)
+}
+
+// AddNotifiable adds a common.Notifiable component to the list of components that will be notified of any connectivity
+// state changes. All components passed to NewSensor are added by default.
+func (s *Sensor) AddNotifiable(notifiable common.Notifiable) {
+	s.notifyList = append(s.notifyList, notifiable)
 }
 
 func (s *Sensor) startProfilingServer() *http.Server {
@@ -129,6 +137,7 @@ func (s *Sensor) Start() {
 	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 
 	for _, c := range s.components {
+		s.AddNotifiable(c)
 		switch v := c.(type) {
 		case common.CentralGRPCConnAware:
 			v.SetCentralGRPCClient(s.centralConnection)
@@ -170,7 +179,7 @@ func (s *Sensor) Start() {
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
 	if env.LocalImageScanningEnabled.BooleanSetting() {
-		route, err := newScannerDefinitionsRoute(s.centralEndpoint)
+		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
@@ -249,11 +258,12 @@ func (s *Sensor) Start() {
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
 // definitions retrieved from Central.
-func newScannerDefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, error) {
+func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, error) {
 	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint)
 	if err != nil {
 		return nil, err
 	}
+	s.AddNotifiable(handler)
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
@@ -311,7 +321,7 @@ func (s *Sensor) changeState(state common.SensorComponentEvent) {
 }
 
 func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
-	for _, component := range s.components {
+	for _, component := range s.notifyList {
 		component.Notify(notification)
 	}
 }
