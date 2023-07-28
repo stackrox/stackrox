@@ -3,6 +3,7 @@
 package reportgenerator
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"testing"
@@ -10,6 +11,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/reports/common"
@@ -48,6 +50,8 @@ type EnhancedReportingTestSuite struct {
 	collectionDatastore     collectionDS.DataStore
 	watchedImageDatastore   watchedImageDS.DataStore
 	collectionQueryResolver collectionDS.QueryResolver
+
+	blobStore blobDS.Datastore
 }
 
 type vulnReportData struct {
@@ -84,9 +88,10 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
+	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
 	s.reportGenerator = newReportGeneratorImpl(nil, nil, nil,
 		s.resolver.DeploymentDataStore, s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
-		nil, nil, s.schema)
+		nil, nil, s.blobStore, s.schema)
 }
 
 func (s *EnhancedReportingTestSuite) TearDownSuite() {
@@ -99,6 +104,28 @@ func (s *EnhancedReportingTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImageComponentsTableName)
 	s.truncateTable(postgresSchema.ImageCvesTableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
+}
+
+func (s *EnhancedReportingTestSuite) TestSaveReportData() {
+	configID := "configid"
+	data := []byte("something something")
+	buf := bytes.NewBuffer(data)
+
+	// Save report
+	reportID := "reportid"
+	s.Require().NoError(s.reportGenerator.saveReportData(s.ctx, configID, reportID, buf))
+	newBuf, _, exists, err := s.blobStore.GetBlobWithDataInBuffer(s.ctx, common.GetReportBlobPath(configID, reportID))
+	s.Require().NoError(err)
+	s.Require().True(exists)
+	s.Equal(data, newBuf.Bytes())
+
+	// Save empty report
+	reportID = "anotherid"
+	s.Require().NoError(s.reportGenerator.saveReportData(s.ctx, configID, reportID, nil))
+	newBuf, _, exists, err = s.blobStore.GetBlobWithDataInBuffer(s.ctx, common.GetReportBlobPath(configID, reportID))
+	s.Require().NoError(err)
+	s.Require().True(exists)
+	s.Zero(newBuf.Len())
 }
 
 func (s *EnhancedReportingTestSuite) TestGetReportData() {
