@@ -130,8 +130,7 @@ func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 		namespaces = append(namespaces, namespaceKey.String())
 	}
 	clusterNamespaceMap := make(map[string][]string, len(clusterIDs))
-	for clusterIx := range clusterIDs {
-		clusterID := clusterIDs[clusterIx]
+	for _, clusterID := range clusterIDs {
 		clusterNamespaceMap[clusterID] = namespaces
 	}
 	return effectiveaccessscope.FromClustersAndNamespacesMap(nil, clusterNamespaceMap), nil
