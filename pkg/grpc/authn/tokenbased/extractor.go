@@ -115,6 +115,7 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		authProvider:  authProvider,
 	}
 	if id.friendlyName == "" {
+		// Note we use roles as seen in the token, without filtering.
 		id.friendlyName = fmt.Sprintf("anonymous bearer token %q with roles [%s] (jti: %s, expires: %s)",
 			token.Name,
 			strings.Join(roleNames, ","),
