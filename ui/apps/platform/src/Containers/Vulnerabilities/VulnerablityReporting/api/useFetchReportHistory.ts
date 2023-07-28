@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
 import { ReportSnapshot } from 'services/ReportsService.types';
-import { getErrorMessage } from '../errorUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseFetchReportHistory = {
     id: string;
@@ -28,26 +28,27 @@ const defaultResult = {
 function useFetchReportHistory({ id }: UseFetchReportHistory): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
-    const fetchReportSnapshots = useCallback(async () => {
+    const fetchReportSnapshots = useCallback(() => {
         setResult({
             reportSnapshots: [],
             isLoading: true,
             error: null,
         });
-        try {
-            const reportSnapshots = await fetchReportHistory(id);
-            setResult({
-                reportSnapshots,
-                isLoading: false,
-                error: null,
+        fetchReportHistory(id)
+            .then((reportSnapshots) => {
+                setResult({
+                    reportSnapshots,
+                    isLoading: false,
+                    error: null,
+                });
+            })
+            .catch((error) => {
+                setResult({
+                    reportSnapshots: [],
+                    isLoading: false,
+                    error: getAxiosErrorMessage(error),
+                });
             });
-        } catch (error) {
-            setResult({
-                reportSnapshots: [],
-                isLoading: false,
-                error: getErrorMessage(error),
-            });
-        }
     }, [id]);
 
     useEffect(() => {

@@ -75,7 +75,7 @@ function RunHistory({ reportId }: RunHistoryProps) {
         <TableComposable aria-label="Simple table" variant="compact">
             <Thead>
                 <Tr>
-                    <Th />
+                    <Td>{/* Header for expanded column */}</Td>
                     <Th>Run time</Th>
                     <Th>Status</Th>
                     <Th>Run type</Th>
