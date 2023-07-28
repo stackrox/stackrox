@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_parseImageURL(t *testing.T) {
+func TestParseImageURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     string
@@ -17,12 +17,12 @@ func Test_parseImageURL(t *testing.T) {
 		{
 			name:    "empty URL",
 			arg:     "",
-			wantErr: "could not parse ref",
+			wantErr: "invalid URL",
 		},
 		{
 			name:    "no schema",
 			arg:     "foobar",
-			wantErr: "could not parse ref",
+			wantErr: "invalid URL",
 		},
 		{
 			name: "with http",
@@ -38,6 +38,14 @@ func Test_parseImageURL(t *testing.T) {
 			want: func() name.Tag {
 				t, _ := name.NewTag("example.com/image:tag")
 				return t
+			}(),
+		},
+		{
+			name: "with digest",
+			arg:  "https://example.com/image@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106",
+			want: func() name.Digest {
+				d, _ := name.NewDigest("example.com/image@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106")
+				return d
 			}(),
 		},
 	}

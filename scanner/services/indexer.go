@@ -104,7 +104,9 @@ func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	if err != nil {
 		return errox.InvalidArgs.Newf("invalid image URL: %q", imgURL).CausedBy(err)
 	}
-	if u.Scheme != "http" && u.Scheme != "https" {
+	switch u.Scheme {
+	case "http", "https":
+	default:
 		return errox.InvalidArgs.New("image URL does not start with http:// or https://")
 	}
 	imageRef := strings.TrimPrefix(imgURL, u.Scheme+"://")

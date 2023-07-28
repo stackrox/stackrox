@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -199,16 +200,25 @@ func getContainerImageLayers(ctx context.Context, o options, ref name.Reference)
 
 // parseContainerImageURL returns a image reference from an image URL.
 func parseContainerImageURL(imageURL string) (name.Reference, error) {
-	// Parse image reference to ensure we have a valid reference.
+	// We expect input was sanitized, so all errors here are considered internal errors.
+	if imageURL == "" {
+		return nil, errors.New("invalid URL")
+	}
+	// Parse image reference to ensure it is valid.
 	parsedURL, err := url.Parse(imageURL)
 	if err != nil {
-		// We expect input was sanitized, so this is an internal error.
 		return nil, err
 	}
+	// Check URL scheme and update ref parsing options.
 	parseOpts := []name.Option{name.StrictValidation}
-	if parsedURL.Scheme == "http" {
+	switch parsedURL.Scheme {
+	case "http":
 		parseOpts = append(parseOpts, name.Insecure)
+	case "https":
+	default:
+		return nil, errors.New("invalid URL")
 	}
+	// Strip the URL scheme:// and parse host/path as an image reference.
 	imageRef := strings.TrimPrefix(imageURL, parsedURL.Scheme+"://")
 	ref, err := name.ParseReference(imageRef, parseOpts...)
 	if err != nil {
