@@ -38,6 +38,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		outputToFile          bool
 		focusWorkload         string
 		outputFormat          string
+		expectedOutput        string
 		removeOutputPath      bool
 		errStringContainment  bool
 	}{
@@ -103,6 +104,11 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 			outputToFile:          true,
+			expectedOutput: `0.0.0.0-255.255.255.255 => default/frontend[Deployment] : TCP 8080
+default/backend[Deployment] => default/backend[Deployment] : All Connections
+default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53
+default/frontend[Deployment] => default/backend[Deployment] : TCP 9090
+default/frontend[Deployment] => default/frontend[Deployment] : All Connections`,
 		},
 		{
 			name:                  "output should be focused to a workload",
@@ -163,6 +169,33 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedAnalysisError: nil,
 			outputToFile:          true,
 			outputFormat:          "json",
+			expectedOutput: `[
+  {
+    "src": "0.0.0.0-255.255.255.255",
+    "dst": "default/frontend[Deployment]",
+    "conn": "TCP 8080"
+  },
+  {
+    "src": "default/backend[Deployment]",
+    "dst": "default/backend[Deployment]",
+    "conn": "All Connections"
+  },
+  {
+    "src": "default/frontend[Deployment]",
+    "dst": "0.0.0.0-255.255.255.255",
+    "conn": "UDP 53"
+  },
+  {
+    "src": "default/frontend[Deployment]",
+    "dst": "default/backend[Deployment]",
+    "conn": "TCP 9090"
+  },
+  {
+    "src": "default/frontend[Deployment]",
+    "dst": "default/frontend[Deployment]",
+    "conn": "All Connections"
+  }
+]`,
 		},
 	}
 
@@ -215,8 +248,10 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				if tt.outputFormat != "" {
 					d.Assert().Contains(defaultFile, tt.outputFormat)
 				}
-				_, err := os.Stat(defaultFile)
-				d.Assert().NoError(err) // default output file should exist
+				output, err := os.ReadFile(defaultFile)
+				d.Assert().NoError(err)
+				d.Equal(tt.expectedOutput, string(output))
+				d.Assert().NoError(err)
 				d.Assert().NoError(os.Remove(defaultFile))
 			}
 		})
