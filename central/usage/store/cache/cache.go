@@ -16,8 +16,8 @@ type cacheImpl struct {
 
 	// nodesMap and cpuUnitsMap store the maximum numbers of nodes and cores
 	// per cluster. Maps access is internally synchronized.
-	nodesMap    maputil.CmpMap[string, int32]
-	cpuUnitsMap maputil.CmpMap[string, int32]
+	nodesMap    maputil.CmpMap[string, int64]
+	cpuUnitsMap maputil.CmpMap[string, int64]
 }
 
 // Cache interface provides methods to manipulate a usage metrics cash.
@@ -36,20 +36,20 @@ type Cache interface {
 func NewCache() Cache {
 	return &cacheImpl{
 		lastKnown:   make(map[string]storage.Usage),
-		nodesMap:    maputil.NewMaxMap[string, int32](),
-		cpuUnitsMap: maputil.NewMaxMap[string, int32](),
+		nodesMap:    maputil.NewMaxMap[string, int64](),
+		cpuUnitsMap: maputil.NewMaxMap[string, int64](),
 	}
 }
 
 func (u *cacheImpl) UpdateUsage(id string, cm source.UsageSource) {
-	u.nodesMap.Store(id, int32(cm.GetNodeCount()))
-	u.cpuUnitsMap.Store(id, int32(cm.GetCpuCapacity()))
+	u.nodesMap.Store(id, int64(cm.GetNodeCount()))
+	u.cpuUnitsMap.Store(id, int64(cm.GetCpuCapacity()))
 
 	u.lastKnownMux.Lock()
 	defer u.lastKnownMux.Unlock()
 	u.lastKnown[id] = storage.Usage{
-		NumNodes:    int32(cm.GetNodeCount()),
-		NumCpuUnits: int32(cm.GetCpuCapacity()),
+		NumNodes:    int64(cm.GetNodeCount()),
+		NumCpuUnits: int64(cm.GetCpuCapacity()),
 	}
 }
 
