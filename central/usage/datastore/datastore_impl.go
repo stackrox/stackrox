@@ -43,7 +43,7 @@ func (ds *dataStoreImpl) Insert(ctx context.Context, metrics *storage.Usage) err
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to insert usage data")
 	}
-	return errors.Wrap(ds.store.Insert(ctx, metrics), "failed to insert metrics to store")
+	return errors.Wrap(ds.store.Upsert(ctx, metrics), "failed to upsert metrics to store")
 }
 
 // GetCurrent returns the current usage.

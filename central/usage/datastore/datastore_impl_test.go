@@ -89,13 +89,13 @@ func (suite *UsageDataStoreTestSuite) TestGet() {
 	now := time.Now()
 	from := protoconv.ConvertTimeToTimestamp(now.Add(-10 * time.Minute))
 	to := protoconv.ConvertTimeToTimestamp(now)
-	suite.mockStore.EXPECT().Get(context.Background(), from, to).Times(1).Return([]*storage.Usage{
+	suite.mockStore.EXPECT().Get(suite.hasReadCtx, from, to).Times(1).Return([]*storage.Usage{
 		{Timestamp: from,
 			NumNodes:    1,
 			NumCpuUnits: 2,
 		},
 	}, nil)
-	u, err := suite.datastore.Get(context.Background(), from, to)
+	u, err := suite.datastore.Get(suite.hasReadCtx, from, to)
 	suite.NoError(err)
 	suite.Assert().Len(u, 1)
 	suite.Equal(int64(1), u[0].GetNumNodes())
@@ -116,8 +116,8 @@ func (suite *UsageDataStoreTestSuite) TestInsert() {
 		NumNodes:    1,
 		NumCpuUnits: 2,
 	}
-	suite.mockStore.EXPECT().Insert(context.Background(), metrics).Times(1).Return(nil)
-	err = suite.datastore.Insert(context.Background(), metrics)
+	suite.mockStore.EXPECT().Upsert(suite.hasWriteCtx, metrics).Times(1).Return(nil)
+	err = suite.datastore.Insert(suite.hasWriteCtx, metrics)
 	suite.NoError(err)
 }
 

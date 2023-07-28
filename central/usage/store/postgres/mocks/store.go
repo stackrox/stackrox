@@ -51,16 +51,16 @@ func (mr *MockStoreMockRecorder) Get(ctx, from, to interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, from, to)
 }
 
-// Insert mocks base method.
-func (m *MockStore) Insert(ctx context.Context, rec *storage.Usage) error {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, rec *storage.Usage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, rec)
+	ret := m.ctrl.Call(m, "Upsert", ctx, rec)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Insert indicates an expected call of Insert.
-func (mr *MockStoreMockRecorder) Insert(ctx, rec interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, rec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockStore)(nil).Insert), ctx, rec)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, rec)
 }

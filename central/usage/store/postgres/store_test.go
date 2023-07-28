@@ -55,8 +55,8 @@ func (s *UsageStoreSuite) TestStore() {
 	s.Require().NoError(err)
 	s.Empty(foundRecords)
 
-	s.Require().NoError(store.Insert(ctx, &records[0]))
-	s.Require().NoError(store.Insert(ctx, &records[1]))
+	s.Require().NoError(store.Upsert(ctx, &records[0]))
+	s.Require().NoError(store.Upsert(ctx, &records[1]))
 	foundRecords, err = store.Get(ctx, from, to)
 	s.Require().NoError(err)
 	s.Require().Len(foundRecords, 1)
@@ -95,7 +95,7 @@ func (s *UsageStoreSuite) TestGet() {
 		},
 	}
 
-	s.Require().NoError(store.Insert(ctx, &records[0]))
+	s.Require().NoError(store.Upsert(ctx, &records[0]))
 	foundRecords, err := store.Get(ctx, from, to)
 	s.Require().NoError(err)
 	s.Require().Len(foundRecords, 1)
