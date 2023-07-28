@@ -50,7 +50,7 @@ func (h *Handler) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventOfflineMode:
 		h.centralReachable.Store(false)
 	default:
-		log.Infof("Notified with unknown event: %s", e)
+		log.Warnf("Notified with unknown event: %s", e)
 	}
 }
 

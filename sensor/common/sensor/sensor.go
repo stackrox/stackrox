@@ -91,8 +91,6 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		currentStateMtx: &sync.Mutex{},
 
 		stoppedSig: concurrency.NewErrorSignal(),
-
-		notifyList: []common.Notifiable{},
 	}
 }
 
