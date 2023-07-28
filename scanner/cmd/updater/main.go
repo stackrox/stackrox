@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Parse command-line flags
-	outputDir := flag.String("outputDir", "", "Output directory")
+	outputDir := flag.String("output-dir", "", "Output directory")
 	flag.Parse()
 
 	// Check if outputDir flag is provided
