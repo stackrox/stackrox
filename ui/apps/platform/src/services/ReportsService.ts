@@ -5,7 +5,9 @@ import {
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
+    ReportNotificationMethod,
     ReportStatus,
+    RunReportResponse,
 } from 'services/ReportsService.types';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ApiSortOption } from 'types/search';
@@ -159,4 +161,19 @@ export function deleteReportConfiguration(reportId: string): Promise<Empty> {
     return axios.delete<Empty>(`/v2/reports/configurations/${reportId}`).then((response) => {
         return response.data;
     });
+}
+
+// @TODO: Rename this to runReport when we remove the old report code
+export function runReportRequest(
+    reportConfigId: string,
+    reportNotificationMethod: ReportNotificationMethod
+): Promise<RunReportResponse> {
+    return axios
+        .post<RunReportResponse>('/v2/reports/run', {
+            reportConfigId,
+            reportNotificationMethod,
+        })
+        .then((response) => {
+            return response.data;
+        });
 }

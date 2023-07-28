@@ -118,3 +118,10 @@ export type CollectionSnapshot = {
     id: string;
     name: string;
 };
+
+// Misc types
+
+export type RunReportResponse = {
+    reportConfigId: string;
+    reportId: string;
+};
