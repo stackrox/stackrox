@@ -83,7 +83,7 @@ const routeComponentMap: Record<string, ElementType> = {
     [systemHealthPath]: asyncComponent(() => import('Containers/SystemHealth/DashboardPage')),
     [userBasePath]: asyncComponent(() => import('Containers/User/UserPage')),
     [violationsPath]: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
-    // Reporting and Risk Acceptance must precede generic Vulnerability Management. Keep paths independent in the future!
+    // Reporting and Risk Acceptance must precede generic Vulnerability Management.
     [vulnManagementReportsPath]: asyncComponent(
         () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
     ),
