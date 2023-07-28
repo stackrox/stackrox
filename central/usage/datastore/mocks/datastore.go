@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	types "github.com/gogo/protobuf/types"
-	central "github.com/stackrox/rox/generated/internalapi/central"
+	source "github.com/stackrox/rox/central/usage/source"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -97,11 +97,9 @@ func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Ca
 }
 
 // UpdateUsage mocks base method.
-func (m *MockDataStore) UpdateUsage(clusterID string, metrics *central.ClusterMetrics) error {
+func (m *MockDataStore) UpdateUsage(clusterID string, metrics source.UsageSource) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUsage", clusterID, metrics)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "UpdateUsage", clusterID, metrics)
 }
 
 // UpdateUsage indicates an expected call of UpdateUsage.

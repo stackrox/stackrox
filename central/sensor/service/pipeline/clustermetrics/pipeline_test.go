@@ -6,6 +6,7 @@ import (
 
 	infoMocks "github.com/stackrox/rox/central/metrics/info/mocks"
 	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
+	usageMocks "github.com/stackrox/rox/central/usage/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
@@ -21,14 +22,8 @@ type PipelineTestSuite struct {
 	pipeline     *pipelineImpl
 	metricsStore *metricsMocks.MockMetricsStore
 	infoMetric   *infoMocks.MockInfo
-	usageStore   *metricsMocks.MockUsageStore
+	usageStore   *usageMocks.MockDataStore
 	mockCtrl     *gomock.Controller
-}
-
-type testUsageStore struct{}
-
-func (tus *testUsageStore) UpdateUsage(_ string, _ *central.ClusterMetrics) error {
-	return nil
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
@@ -36,7 +31,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 
 	suite.metricsStore = metricsMocks.NewMockMetricsStore(suite.mockCtrl)
 	suite.infoMetric = infoMocks.NewMockInfo(suite.mockCtrl)
-	suite.usageStore = metricsMocks.NewMockUsageStore(suite.mockCtrl)
+	suite.usageStore = usageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.pipeline = NewPipeline(suite.metricsStore, suite.infoMetric, suite.usageStore).(*pipelineImpl)
 }
 
