@@ -3,11 +3,13 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/central/usage/source/mocks"
 	pgMocks "github.com/stackrox/rox/central/usage/store/postgres/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -23,6 +25,7 @@ type UsageDataStoreTestSuite struct {
 
 	datastore DataStore
 	ctrl      *gomock.Controller
+	mockStore *pgMocks.MockStore
 
 	hasNoneCtx  context.Context
 	hasBadCtx   context.Context
@@ -43,7 +46,8 @@ func (tcs *testCluStore) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 
 func (suite *UsageDataStoreTestSuite) SetupTest() {
 	suite.ctrl = gomock.NewController(suite.T())
-	suite.datastore = New(pgMocks.NewMockStore(suite.ctrl), &testCluStore{
+	suite.mockStore = pgMocks.NewMockStore(suite.ctrl)
+	suite.datastore = New(suite.mockStore, &testCluStore{
 		clusters: []*storage.Cluster{{
 			Id: "existingCluster1",
 		}, {
@@ -81,6 +85,21 @@ func (suite *UsageDataStoreTestSuite) TestGet() {
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, err = suite.datastore.Get(suite.hasBadCtx, nil, nil)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	now := time.Now()
+	from := protoconv.ConvertTimeToTimestamp(now.Add(-10 * time.Minute))
+	to := protoconv.ConvertTimeToTimestamp(now)
+	suite.mockStore.EXPECT().Get(context.Background(), from, to).Times(1).Return([]*storage.Usage{
+		{Timestamp: from,
+			NumNodes:    1,
+			NumCpuUnits: 2,
+		},
+	}, nil)
+	u, err := suite.datastore.Get(context.Background(), from, to)
+	suite.NoError(err)
+	suite.Assert().Len(u, 1)
+	suite.Equal(int64(1), u[0].GetNumNodes())
+	suite.Equal(int64(2), u[0].GetNumCpuUnits())
 }
 
 func (suite *UsageDataStoreTestSuite) TestInsert() {
@@ -90,6 +109,16 @@ func (suite *UsageDataStoreTestSuite) TestInsert() {
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	err = suite.datastore.Insert(suite.hasReadCtx, &storage.Usage{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	now := protoconv.ConvertTimeToTimestamp(time.Now())
+	metrics := &storage.Usage{
+		Timestamp:   now,
+		NumNodes:    1,
+		NumCpuUnits: 2,
+	}
+	suite.mockStore.EXPECT().Insert(context.Background(), metrics).Times(1).Return(nil)
+	err = suite.datastore.Insert(context.Background(), metrics)
+	suite.NoError(err)
 }
 
 func (suite *UsageDataStoreTestSuite) TestGetCurrent() {

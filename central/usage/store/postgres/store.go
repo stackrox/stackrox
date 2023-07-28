@@ -38,11 +38,6 @@ var (
 	zeroTime       = time.Unix(0, 0).UTC()
 )
 
-type serialized struct {
-	NumNodes    int32
-	NumCpuUnits int32
-}
-
 // Store is the interface to interact with the storage for storage.Usage.
 //
 //go:generate mockgen-wrapper
