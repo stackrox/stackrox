@@ -29,6 +29,10 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportModal from '../components/DeleteReportModal';
+import ReportParametersDetails from '../components/ReportParametersDetails';
+import { getReportFormValuesFromConfiguration } from '../utils';
+import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
+import ScheduleDetails from '../components/ScheduleDetails';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -100,6 +104,8 @@ function ViewVulnReportPage() {
     const vulnReportPageURL = generatePath(vulnerabilityReportPath, {
         reportId: reportConfiguration.id,
     }) as string;
+
+    const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
 
     return (
         <>
@@ -188,7 +194,17 @@ function ViewVulnReportPage() {
                         title={<TabTitle icon={<HomeIcon />}>Configuration details</TabTitle>}
                         aria-label="Configuration details tab"
                     >
-                        <div />
+                        <PageSection
+                            variant="light"
+                            padding={{ default: 'noPadding' }}
+                            className="pf-u-py-lg pf-u-px-lg"
+                        >
+                            <ReportParametersDetails formValues={reportFormValues} />
+                            <Divider component="div" className="pf-u-py-md" />
+                            <DeliveryDestinationsDetails formValues={reportFormValues} />
+                            <Divider component="div" className="pf-u-py-md" />
+                            <ScheduleDetails formValues={reportFormValues} />
+                        </PageSection>
                     </Tab>
                     <Tab
                         eventKey={1}
