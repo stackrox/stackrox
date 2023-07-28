@@ -210,6 +210,7 @@ func NewManager(
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
+		finished:          &sync.WaitGroup{},
 	}
 
 	return mgr
@@ -240,6 +241,8 @@ type networkFlowManager struct {
 	publicIPs *publicIPsManager
 
 	policyDetector detector.Detector
+
+	finished *sync.WaitGroup
 }
 
 func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
@@ -247,7 +250,6 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (m *networkFlowManager) Start() error {
-
 	go m.enrichConnections(m.enricherTicker.C)
 	go m.publicIPs.Run(&m.done, m.clusterEntities)
 	return nil
@@ -255,6 +257,7 @@ func (m *networkFlowManager) Start() error {
 
 func (m *networkFlowManager) Stop(_ error) {
 	m.done.Signal()
+	m.finished.Wait()
 }
 
 func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
@@ -318,6 +321,8 @@ func (m *networkFlowManager) updateProcessesState(newProcesses map[processListen
 }
 
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
+	m.finished.Add(1)
+	defer m.finished.Done()
 	for {
 		select {
 		case <-m.done.WaitC():
