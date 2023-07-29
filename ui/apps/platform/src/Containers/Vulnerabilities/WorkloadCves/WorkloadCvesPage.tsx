@@ -5,19 +5,17 @@ import { Alert, PageSection } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
-import {
-    vulnManagementPath,
-    vulnerabilitiesWorkloadCveDeploymentSinglePath,
-    vulnerabilitiesWorkloadCveImageSinglePath,
-    vulnerabilitiesWorkloadCveSinglePath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
 import ImageCvePage from './ImageCve/ImageCvePage';
 
 import './WorkloadCvesPage.css';
+
+const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesWorkloadCvesPath}/cves/:cveId`;
+const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesWorkloadCvesPath}/images/:imageId`;
+const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloadCvesPath}/deployments/:deploymentId`;
 
 function WorkloadCvesPage() {
     return (
