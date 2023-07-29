@@ -3,7 +3,9 @@ package resources
 import (
 	configV1 "github.com/openshift/api/config/v1"
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
@@ -24,7 +26,7 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 	case *configV1.ImageTagMirrorSet:
 		return r.handleImageTagMirrorSet(v, action)
 	default:
-		log.Warnf("Unsupported type: %T", v)
+		utils.Should(errors.Errorf("Unsupported type: %T", v))
 	}
 
 	return nil

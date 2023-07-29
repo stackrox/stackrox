@@ -84,7 +84,7 @@ func (k *listenerImpl) handleAllEvents() {
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
 	if resourceList, err := serverResourcesForGroup(k.client, complianceoperator.GetGroupVersion().String()); err != nil {
-		log.Errorf("Error checking API resources for group %q: %v", complianceoperator.GetGroupVersion().String(), err)
+		log.Errorf("Checking API resources for group %q: %v", complianceoperator.GetGroupVersion().String(), err)
 	} else if resourceExists(resourceList, complianceoperator.ComplianceCheckResult.Name) {
 		log.Info("initializing compliance operator informers")
 		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
@@ -139,7 +139,7 @@ func (k *listenerImpl) handleAllEvents() {
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
 	if k.client.OpenshiftConfig() != nil {
 		if resourceList, err := serverResourcesForGroup(k.client, osConfigGroupVersion); err != nil {
-			log.Errorf("Error checking API resources for group %q: %v", osConfigGroupVersion, err)
+			log.Errorf("Checking API resources for group %q: %v", osConfigGroupVersion, err)
 		} else {
 			osConfigFactory = osConfigExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), noResyncPeriod)
 
@@ -165,7 +165,7 @@ func (k *listenerImpl) handleAllEvents() {
 	var osOperatorFactory osOperatorExtVersions.SharedInformerFactory
 	if k.client.OpenshiftOperator() != nil && env.RegistryMirroringEnabled.BooleanSetting() {
 		if resourceList, err := serverResourcesForGroup(k.client, osOperatorAlphaGroupVersion); err != nil {
-			log.Errorf("Error checking API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
+			log.Errorf("Checking API resources for group %q: %v", osOperatorAlphaGroupVersion, err)
 		} else {
 			osOperatorFactory = osOperatorExtVersions.NewSharedInformerFactory(k.client.OpenshiftOperator(), noResyncPeriod)
 
