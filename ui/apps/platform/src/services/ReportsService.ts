@@ -1,7 +1,12 @@
 import queryString from 'qs';
 
 import { ReportConfiguration as ReportConfigurationV1 } from 'types/report.proto';
-import { ReportConfiguration, ReportStatus } from 'services/ReportsService.types';
+import {
+    ReportConfiguration,
+    ReportHistoryResponse,
+    ReportSnapshot,
+    ReportStatus,
+} from 'services/ReportsService.types';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ApiSortOption } from 'types/search';
 import axios from './instance';
@@ -121,6 +126,12 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         .then((response) => {
             return response.data?.status;
         });
+}
+
+export function fetchReportHistory(id: string): Promise<ReportSnapshot[]> {
+    return axios.get<ReportHistoryResponse>(`/v2/reports/history/${id}`).then((response) => {
+        return response.data?.reportSnapshots ?? [];
+    });
 }
 
 export function createReportConfiguration(
