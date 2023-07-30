@@ -1,15 +1,15 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: route-1
-  namespace: routes-world 
+  name: webapp 
+  namespace: frontend 
   labels:
-    app: routes-world
+    app: webapp
 spec:
   to:
     kind: Service
-    name: routes-world-svc
+    name: webapp-service
     weight: 100
   port:
-    targetPort: first-port
+    targetPort: http
   wildcardPolicy: None

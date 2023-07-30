@@ -168,7 +168,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		},
 		{
 			name:                  "generate connections list with ingress controller",
-			inputFolderPath:       "testdata/demo-app-with-routes-and-ingress",
+			inputFolderPath:       "testdata/acs-security-demos",
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 			outputToFile:          true,
