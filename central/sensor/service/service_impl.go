@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
+	"github.com/stackrox/rox/central/metrics/info"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -92,6 +93,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		centralHello := &central.CentralHello{
 			ClusterId:      cluster.GetId(),
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
+			CentralId:      info.FetchInstallInfo(context.Background()).GetId(),
 		}
 
 		if err := safe.RunE(func() error {

@@ -14,9 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-func fetchInstallInfo() *storage.InstallationInfo {
+// FetchInstallInfo fetches the installation info.
+func FetchInstallInfo(ctx context.Context) *storage.InstallationInfo {
 	installInfo, _, err := store.Singleton().Get(
-		sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.WithGlobalAccessScopeChecker(ctx,
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.InstallationInfo),
@@ -44,7 +45,7 @@ func newGaugeVec() *prometheus.GaugeVec {
 			Name:      "info",
 			Help:      "A metric with a constant '1' value labeled by information identifying the Central installation",
 			ConstLabels: prometheus.Labels{
-				"central_id":      fetchInstallInfo().GetId(),
+				"central_id":      FetchInstallInfo(context.Background()).GetId(),
 				"central_version": version.GetMainVersion(),
 				"hosting":         getHosting(),
 				"install_method":  env.InstallMethod.Setting(),
