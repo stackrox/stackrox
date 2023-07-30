@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -92,6 +93,7 @@ func (cm *clusterMetricsImpl) Poll() {
 
 func (cm *clusterMetricsImpl) runPipeline() {
 	if metrics, err := cm.collectMetrics(); err == nil {
+		metricsPkg.SetInfoMetric(metrics)
 		cm.output <- message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_ClusterMetrics{
 				ClusterMetrics: metrics,

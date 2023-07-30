@@ -44,6 +44,13 @@ func Get() string {
 	return clusterID
 }
 
+// GetNoWait returns the cluster id without waiting until it is available.
+func GetNoWait() string {
+	clusterIDMutex.Lock()
+	defer clusterIDMutex.Unlock()
+	return clusterID
+}
+
 // Set sets the global cluster ID value.
 func Set(value string) {
 	effectiveClusterID, err := centralsensor.GetClusterID(value, clusterIDFromCert())

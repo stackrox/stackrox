@@ -1,9 +1,14 @@
 package metrics
 
 import (
+	"strconv"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 )
 
 var (
@@ -142,6 +147,21 @@ var (
 		Name:      "output_channel_size",
 		Help:      "A gauge to track the output channel size",
 	})
+
+	info = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.PrometheusNamespace,
+			Subsystem: metrics.SensorSubsystem.String(),
+			Name:      "info",
+			Help:      "A metric with a constant '1' value labeled by information identifying the Central installation",
+			ConstLabels: prometheus.Labels{
+				"sensor_version": version.GetMainVersion(),
+				"hosting":        getHosting(),
+				"install_method": env.InstallMethod.Setting(),
+			},
+		},
+		[]string{"central_id", "sensor_id", "secured_nodes", "secured_vcpu"},
+	)
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -240,4 +260,16 @@ func IncOutputChannelSize() {
 // DecOutputChannelSize decreases the outputChannel by 1
 func DecOutputChannelSize() {
 	outputChannelSize.Dec()
+}
+
+// SetInfoMetric sets the cluster metrics for the info metric.
+func SetInfoMetric(cm *central.ClusterMetrics) {
+	info.Reset()
+	info.WithLabelValues(
+		// TODO: Get central ID
+		"",
+		clusterid.GetNoWait(),
+		strconv.FormatInt(cm.GetNodeCount(), 10),
+		strconv.FormatInt(cm.GetCpuCapacity(), 10),
+	).Set(1)
 }
