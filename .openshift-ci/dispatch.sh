@@ -27,6 +27,7 @@ ci_export CI_JOB_NAME "$ci_job"
 REGISTRY="quay.io/rhacs-eng"
 if [[ "$ci_job" =~ downstream ]]; then
     REGISTRY="brew.registry.redhat.io/rh-osbs"
+    ci_export USE_LOCAL_ROXCTL true
 fi
 
 ci_export REGISTRY "$REGISTRY"
