@@ -120,7 +120,7 @@ deploy_stackrox_operator() {
         info "Deploying ACS operator via midstream image"
         # hardcoding values for testing
         export VERSION="541232"
-        export IMAGE_TAG_BASE="registry-proxy.engineering.redhat.com/rh-osbs/iib"
+        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
 
         make -C operator kuttl deploy-via-olm
     else
