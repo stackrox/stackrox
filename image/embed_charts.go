@@ -192,6 +192,11 @@ func (i *Image) getChartFiles(prefix ChartPrefix) ([]*loader.BufferedFile, error
 		return nil, err
 	}
 
+	// FIXME(POC): Remove early return for operator chart so it has shared files as well
+	if prefix == OperatorChartPrefix {
+		return chartFiles, nil
+	}
+
 	sharedFiles, err := i.getFiles(sharedFilesPrefix)
 	if err != nil {
 		return nil, err
