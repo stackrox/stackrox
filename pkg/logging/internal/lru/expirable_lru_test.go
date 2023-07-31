@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stretchr/testify/assert"
 )
 
 func getRand(tb testing.TB) int64 {
@@ -304,6 +305,43 @@ func TestExpirableLRUWithPurgeEnforcedBySize(t *testing.T) {
 
 	if lc.Len() != 10 {
 		t.Fatalf("length differs from expected")
+	}
+}
+
+func TestExpirableLRUWithEvictTriggeredBySize(t *testing.T) {
+	cacheSize := 10
+	evictedKeys := make([]string, 0, 10*cacheSize)
+	onEvict := func(key string, _ string) {
+		evictedKeys = append(evictedKeys, key)
+	}
+	lc := NewExpirableLRU[string, string](cacheSize, onEvict, 0)
+
+	for i := 0; i < 10*cacheSize; i++ {
+		evicted := lc.Add(fmt.Sprintf("key %d", i), fmt.Sprintf("value %d", i))
+		assert.Equal(t, i >= cacheSize, evicted)
+	}
+	for i := 0; i < 9*cacheSize; i++ {
+		assert.Equal(t, fmt.Sprintf("key %d", i), evictedKeys[i])
+	}
+}
+
+func TestExpirableLRUWithEvictTriggeredBySizeReduction(t *testing.T) {
+	initialCacheSize := 10
+	newCacheSize := 4
+	evictedKeys := make([]string, 0, initialCacheSize-newCacheSize)
+	onEvict := func(key string, _ string) {
+		evictedKeys = append(evictedKeys, key)
+	}
+	lc := NewExpirableLRU[string, string](initialCacheSize, onEvict, 0)
+
+	for i := 0; i < initialCacheSize; i++ {
+		evicted := lc.Add(fmt.Sprintf("key %d", i), fmt.Sprintf("value %d", i))
+		assert.False(t, evicted)
+	}
+	evictedItemCount := lc.Resize(newCacheSize)
+	assert.Equal(t, initialCacheSize-newCacheSize, evictedItemCount)
+	for i := 0; i < evictedItemCount; i++ {
+		assert.Equal(t, fmt.Sprintf("key %d", i), evictedKeys[i])
 	}
 }
 
