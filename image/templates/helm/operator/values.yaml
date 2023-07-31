@@ -23,3 +23,5 @@ operator:
   ## target namespace is set as value here so it can be overriden programmatically
   ## by the outer Operator in deployment.
   targetNamespace: "rhacs-operator"
+
+  version: "4.1.0-545-g969c09989e"

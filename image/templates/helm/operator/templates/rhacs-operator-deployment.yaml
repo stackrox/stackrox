@@ -1,5 +1,3 @@
-{{- include "srox.init" . -}}
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -69,7 +67,7 @@ spec:
                   containerName: manager
                   resource: limits.memory
                   divisor: '0'
-          image: quay.io/stackrox-io/stackrox-operator:4.1.0-545-g969c09989e
+          image: quay.io/stackrox-io/stackrox-operator:{{.Values.operator.version}}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
