@@ -68,7 +68,7 @@ func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 	if !pgconfig.IsExternalDatabase() && dbName != "" {
 		source = fmt.Sprintf("%s database=%s", gc.source, dbName)
 	}
-	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, gc.password, "<REDACTED>", -1))
+	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, strings.TrimSpace(gc.password), "<REDACTED>", -1))
 
 	db, err := gorm.Open(postgres.Open(source), &gorm.Config{
 		NamingStrategy:    pgutils.NamingStrategy,
@@ -105,7 +105,7 @@ func (gc *gormConfig) ConnectWithRetries(dbName string) (db *gorm.DB, err error)
 // ConnectDatabase connects to the configured database within the Postgres instance and returns a Gorm DB instance with error if applicable.
 func (gc *gormConfig) ConnectDatabase() (*gorm.DB, error) {
 	source := gc.source
-	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, gc.password, "<REDACTED>", -1))
+	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, strings.TrimSpace(gc.password), "<REDACTED>", -1))
 
 	db, err := gorm.Open(postgres.Open(source), &gorm.Config{
 		NamingStrategy:    pgutils.NamingStrategy,

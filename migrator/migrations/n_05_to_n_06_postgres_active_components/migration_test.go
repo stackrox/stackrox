@@ -168,7 +168,7 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, activeComponents))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	s.verify(newStore, images)
