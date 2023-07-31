@@ -4,31 +4,30 @@ import { Chart, ChartAxis, ChartBar, ChartGroup, ChartLabelProps } from '@patter
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
+    CRITICAL_SEVERITY_COLOR,
+    IMPORTANT_HIGH_SEVERITY_COLOR,
+    LOW_SEVERITY_COLOR,
+    MODERATE_MEDIUM_SEVERITY_COLOR,
+} from 'constants/visuals/colors';
+import {
     defaultChartBarWidth,
+    defaultChartHeight,
     patternflySeverityTheme,
 } from 'utils/chartUtils';
 
-import {
-    LOW_SEVERITY_COLOR,
-    MODERATE_MEDIUM_SEVERITY_COLOR,
-    IMPORTANT_HIGH_SEVERITY_COLOR,
-    CRITICAL_SEVERITY_COLOR,
-} from 'constants/visuals/colors';
-
 import WidgetCard from '../../../Dashboard/Widgets/WidgetCard';
 
-const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceData) => {
+const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceByClusterData) => {
     return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
 };
 
-export type ComplianceData = {
+export type ComplianceByClusterData = {
     name: string;
     passing: number;
     link: string;
 }[];
 
-const mockComplianceData = [
+const mockComplianceData: ComplianceByClusterData = [
     {
         name: 'staging',
         passing: 100,
@@ -66,7 +65,7 @@ function ComplianceByCluster() {
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
-    function getBarColor(percent) {
+    function getBarColor(percent: number): string {
         if (percent === 100) {
             return LOW_SEVERITY_COLOR;
         }
@@ -122,6 +121,7 @@ function ComplianceByCluster() {
                                         fill: ({ datum }) => getBarColor(datum.y),
                                     },
                                 }}
+                                sortOrder="ascending"
                             />
                         ))}
                     </ChartGroup>
