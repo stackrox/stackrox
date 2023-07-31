@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gogo/protobuf/types"
+	mockStore "github.com/stackrox/rox/central/productusage/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -19,6 +21,7 @@ type UsageDataStoreTestSuite struct {
 	suite.Suite
 
 	datastore DataStore
+	store     *mockStore.MockStore
 	ctrl      *gomock.Controller
 
 	hasNoneCtx  context.Context
@@ -40,7 +43,8 @@ func (tcs *testCluStore) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 
 func (suite *UsageDataStoreTestSuite) SetupTest() {
 	suite.ctrl = gomock.NewController(suite.T())
-	suite.datastore = New(&testCluStore{
+	suite.store = mockStore.NewMockStore(suite.ctrl)
+	suite.datastore = New(suite.store, &testCluStore{
 		clusters: []*storage.Cluster{{
 			Id: "existingCluster1",
 		}, {
@@ -73,11 +77,31 @@ func makeSource(n int64, c int64) *storage.SecuredUnits {
 	}
 }
 
+func drain[T any](ch <-chan T) {
+	for range ch {
+		<-ch
+	}
+}
+
 func (suite *UsageDataStoreTestSuite) TestGet() {
 	_, err := suite.datastore.Get(suite.hasNoneCtx, nil, nil)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, err = suite.datastore.Get(suite.hasBadCtx, nil, nil)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	suite.store.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(4).Return(nil)
+	ch, err := suite.datastore.Get(suite.hasReadCtx, nil, nil)
+	suite.NoError(err)
+	drain(ch)
+	ch, err = suite.datastore.Get(suite.hasReadCtx, &types.Timestamp{}, nil)
+	suite.NoError(err)
+	drain(ch)
+	ch, err = suite.datastore.Get(suite.hasReadCtx, nil, &types.Timestamp{})
+	suite.NoError(err)
+	drain(ch)
+	ch, err = suite.datastore.Get(suite.hasWriteCtx, &types.Timestamp{}, &types.Timestamp{})
+	suite.NoError(err)
+	drain(ch)
 }
 
 func (suite *UsageDataStoreTestSuite) TestInsert() {
@@ -87,9 +111,13 @@ func (suite *UsageDataStoreTestSuite) TestInsert() {
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	err = suite.datastore.Insert(suite.hasReadCtx, &storage.SecuredUnits{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	suite.store.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Times(1).Return(nil)
+	err = suite.datastore.Insert(suite.hasWriteCtx, &storage.SecuredUnits{})
+	suite.NoError(err)
 }
 
-func (suite *UsageDataStoreTestSuite) TestGetCurrent() {
+func (suite *UsageDataStoreTestSuite) TestGetCurrentPermissions() {
 	_, err := suite.datastore.GetCurrentUsage(suite.hasNoneCtx)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, err = suite.datastore.GetCurrentUsage(suite.hasBadCtx)
@@ -98,7 +126,7 @@ func (suite *UsageDataStoreTestSuite) TestGetCurrent() {
 	suite.NoError(err)
 }
 
-func (suite *UsageDataStoreTestSuite) TestUpdateUsage() {
+func (suite *UsageDataStoreTestSuite) TestUpdateUsagePermissions() {
 	err := suite.datastore.UpdateUsage(suite.hasNoneCtx, "existingCluster1", makeSource(1, 8))
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	err = suite.datastore.UpdateUsage(suite.hasBadCtx, "existingCluster1", makeSource(1, 8))
@@ -107,7 +135,7 @@ func (suite *UsageDataStoreTestSuite) TestUpdateUsage() {
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
-func (suite *UsageDataStoreTestSuite) TestAggregateAndFlush() {
+func (suite *UsageDataStoreTestSuite) TestAggregateAndFlushPermissions() {
 	_, err := suite.datastore.AggregateAndFlush(suite.hasNoneCtx)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 	_, err = suite.datastore.AggregateAndFlush(suite.hasBadCtx)

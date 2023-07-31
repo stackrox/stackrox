@@ -90,6 +90,7 @@ func init() {
 		&storage.StoredLicenseKey{}:                             resources.Access,
 		&storage.TelemetryConfiguration{}:                       resources.Administration,
 		&storage.TokenMetadata{}:                                resources.Integration,
+		&storage.Usage{}:                                        resources.Administration,
 		&storage.User{}:                                         resources.Access,
 		// Tests
 		&storage.TestStruct{}:              resources.Namespace,

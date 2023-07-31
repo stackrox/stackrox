@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/productusage/store"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -31,8 +32,9 @@ type DataStore interface {
 }
 
 // New initializes a datastore implementation instance.
-func New(clusterStore clusterStoreI) DataStore {
+func New(store store.Store, clusterStore clusterStoreI) DataStore {
 	return &dataStoreImpl{
+		store:        store,
 		clusterStore: clusterStore,
 		cache:        cache.NewCache(),
 	}

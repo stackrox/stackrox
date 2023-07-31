@@ -100,7 +100,8 @@
                 "COMPLIANCE_SCAN_SETTINGS",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
-                "BLOB"
+                "BLOB",
+                "USAGE"
               ]
             },
             "collectionFormat": "multi"
@@ -200,7 +201,8 @@
                 "COMPLIANCE_SCAN_SETTINGS",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
-                "BLOB"
+                "BLOB",
+                "USAGE"
               ]
             },
             "collectionFormat": "multi"
@@ -294,7 +296,8 @@
                 "COMPLIANCE_SCAN_SETTINGS",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
-                "BLOB"
+                "BLOB",
+                "USAGE"
               ]
             },
             "collectionFormat": "multi"
@@ -437,10 +440,11 @@
         "COMPLIANCE_SCAN_SETTINGS",
         "COMPLIANCE_SCAN",
         "COMPLIANCE_CHECK_RESULTS",
-        "BLOB"
+        "BLOB",
+        "USAGE"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 59"
+      "title": "Next available tag: 60"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

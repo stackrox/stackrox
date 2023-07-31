@@ -2,13 +2,16 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/productusage/store"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -17,6 +20,7 @@ var (
 )
 
 type dataStoreImpl struct {
+	store        store.Store
 	clusterStore clusterStoreI
 	cache        cache.Cache
 }
@@ -24,19 +28,38 @@ type dataStoreImpl struct {
 var _ DataStore = (*dataStoreImpl)(nil)
 
 // Get returns the object, if it exists from the store.
-func (ds *dataStoreImpl) Get(ctx context.Context, _ *types.Timestamp, _ *types.Timestamp) (<-chan *storage.SecuredUnits, error) {
+func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) (<-chan *storage.SecuredUnits, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get usage data")
 	}
-	return nil, errors.New("not implemented")
+	if from == nil {
+		from, _ = types.TimestampProto(time.Time{})
+	}
+	if to == nil {
+		to = types.TimestampNow()
+	}
+	result := make(chan *storage.SecuredUnits)
+	go func() {
+		defer close(result)
+		_ = ds.store.Walk(ctx, func(record *storage.SecuredUnits) error {
+			if record.Timestamp.Compare(from) >= 0 && record.Timestamp.Compare(to) < 0 {
+				result <- record
+			}
+			return nil
+		})
+	}()
+	return result, nil
 }
 
 // Insert saves the current state of an object in storage.
-func (ds *dataStoreImpl) Insert(ctx context.Context, _ *storage.SecuredUnits) error {
+func (ds *dataStoreImpl) Insert(ctx context.Context, obj *storage.SecuredUnits) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to insert usage data")
 	}
-	return errors.New("not implemented")
+	if obj.Id == "" {
+		obj.Id = uuid.NewV4().String()
+	}
+	return errors.Wrap(ds.store.Upsert(ctx, obj), "failed to upsert usage record")
 }
 
 // GetCurrent returns the current usage.
