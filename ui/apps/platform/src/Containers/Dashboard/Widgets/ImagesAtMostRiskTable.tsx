@@ -4,7 +4,7 @@ import { Tooltip, Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
-import { noViolationsColor } from 'constants/visuals/colors';
+import { noViolationsColor } from 'constants/severityColors';
 import { ImageName } from 'types/image.proto';
 import { vulnManagementPath } from 'routePaths';
 
