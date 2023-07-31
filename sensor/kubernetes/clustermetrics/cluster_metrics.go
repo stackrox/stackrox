@@ -76,6 +76,7 @@ func (cm *clusterMetricsImpl) ProcessIndicator(_ *storage.ProcessIndicator) {}
 func (cm *clusterMetricsImpl) Poll() {
 	defer cm.stopper.Flow().ReportStopped()
 
+	cm.runPipeline()
 	ticker := time.NewTicker(cm.pollingInterval)
 	go func() {
 		for {
@@ -83,18 +84,22 @@ func (cm *clusterMetricsImpl) Poll() {
 			case <-cm.stopper.Flow().StopRequested():
 				return
 			case <-ticker.C:
-				if metrics, err := cm.collectMetrics(); err == nil {
-					cm.output <- message.New(&central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_ClusterMetrics{
-							ClusterMetrics: metrics,
-						},
-					})
-				} else {
-					log.Errorf("Collection of cluster metrics failed: %v", err.Error())
-				}
+				cm.runPipeline()
 			}
 		}
 	}()
+}
+
+func (cm *clusterMetricsImpl) runPipeline() {
+	if metrics, err := cm.collectMetrics(); err == nil {
+		cm.output <- message.New(&central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_ClusterMetrics{
+				ClusterMetrics: metrics,
+			},
+		})
+	} else {
+		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
+	}
 }
 
 func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) {
