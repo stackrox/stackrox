@@ -99,7 +99,7 @@ type version struct {
 }
 
 func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, error) {
-	fallback_version := "1.2.3" // FIXME: Should return the Operators' own version, if any at all
+	fallbackVersion := "1.2.3" // FIXME: Should return the Operators' own version, if any at all
 
 	logger, _ := zap.NewProduction()
 	sugar := logger.Sugar()
@@ -113,19 +113,19 @@ func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, er
 	resp, err := client.Get(url)
 	if err != nil {
 		sugar.Error("error calling endpoint ", err)
-		return fallback_version, nil
+		return fallbackVersion, nil
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		sugar.Error("error reading response body ", err)
-		return fallback_version, nil
+		return fallbackVersion, nil
 	}
 
 	v1 := version{}
 	err = json.Unmarshal(body, &v1)
 	if err != nil {
 		sugar.Error("error unmarshalling response ", err)
-		return fallback_version, nil
+		return fallbackVersion, nil
 	}
 
 	sugar.Infow("Extracted version", "version", v1.Version)
@@ -133,7 +133,7 @@ func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, er
 		return v1.Version, nil
 	}
 
-	return fallback_version, nil
+	return fallbackVersion, nil
 }
 
 //
