@@ -65,7 +65,7 @@ func (s *postgresMigrationSuite) TestK8SRoleMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, k8SRoles))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
