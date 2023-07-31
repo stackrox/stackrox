@@ -24,5 +24,6 @@ func init() {
 		k8sObjectIngestionToSendDuration,
 		resolverChannelSize,
 		outputChannelSize,
+		info,
 	)
 }
