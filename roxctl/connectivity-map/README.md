@@ -85,7 +85,7 @@ Produced graph for the above example is depicted below:
 In addition to network policies, the connectivity analysis also considers `Kubernetes Ingress` and `Openshift Route` resources.
 For connections inferred from Ingress/Route resources, the src is specified as `{ingress-controller}`, representing the cluster's ingress controller Pod. 
 Its connectivity lines are of the form: `{ingress-controller} => dst : connections`, where `dst` is a workload in the cluster.
-This analysis assumes that the ingress controller Pod is unknown, and thus using this notation of {ingress-controller}.
+This analysis assumes that the ingress controller Pod is unknown, and thus using this notation of `{ingress-controller}`.
 
 Since the analysis assumes the manifest of the ingress controller is unknown, it checks whether an arbitrary workload can access (by network policies) the destination workloads specified in Ingress/Route rules. 
 If such access is not permitted by network policies, this connection is removed from the report. 
