@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -97,6 +98,7 @@ func (cm *clusterMetricsImpl) runPipeline() {
 				ClusterMetrics: metrics,
 			},
 		})
+		metricsPkg.SetInfoMetric(metrics)
 	} else {
 		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
 	}
