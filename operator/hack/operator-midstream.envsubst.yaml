@@ -1,0 +1,24 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: stackrox-operator-test-index
+spec:
+  sourceType: grpc
+  image: ${IMAGE_TAG_BASE}:${INDEX_VERSION}
+  displayName: StackRox Operator Test index
+---
+apiVersion: operators.coreos.com/v1alpha2
+kind: OperatorGroup
+metadata:
+  name: all-namespaces-operator-group
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: stackrox-operator-test-subscription
+spec:
+  channel: latest
+  name: rhacs-operator
+  source: stackrox-operator-test-index
+  sourceNamespace: ${NAMESPACE}
+  installPlanApproval: Automatic

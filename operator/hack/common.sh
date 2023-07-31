@@ -38,11 +38,19 @@ function apply_operator_manifests() {
   local -r image_tag_base="$2"
   local -r index_version="$3"
   local -r operator_version="$4"
+  if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+    env -i PATH="${PATH}" \
+    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
+    IMAGE_TAG_BASE="${image_tag_base}" \
+    envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
+    | kubectl -n "${operator_ns}" apply -f -
+  else
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
     IMAGE_TAG_BASE="${image_tag_base}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
+  fi
 }
 
 function retry() {
