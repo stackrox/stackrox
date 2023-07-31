@@ -93,12 +93,12 @@ func (cm *clusterMetricsImpl) Poll() {
 
 func (cm *clusterMetricsImpl) runPipeline() {
 	if metrics, err := cm.collectMetrics(); err == nil {
-		metricsPkg.SetInfoMetric(metrics)
 		cm.output <- message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_ClusterMetrics{
 				ClusterMetrics: metrics,
 			},
 		})
+		metricsPkg.SetInfoMetric(metrics)
 	} else {
 		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
 	}
