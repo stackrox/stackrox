@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -92,11 +93,13 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if sensorSupportsHello {
+		installInfo, err := info.FetchInstallInfo(context.Background(), s.installation)
+		utils.Should(err)
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
 			ClusterId:      cluster.GetId(),
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
-			CentralId:      info.FetchInstallInfo(context.Background(), s.installation).GetId(),
+			CentralId:      installInfo.GetId(),
 		}
 
 		if err := safe.RunE(func() error {
