@@ -1,5 +1,4 @@
 import queryString from 'qs';
-import sortBy from 'lodash/sortBy';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
@@ -355,7 +354,7 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
  */
 export function fetchNetworkPoliciesByClusterId(clusterId, deploymentQuery) {
     if (clusterId === '') {
-        return Promise.resolve([]);
+        return Promise.reject(new Error('A cluster ID must be provided to fetch network policies'));
     }
     // The `deploymentQuery` param functions identically to the general `query` param used in
     // other API calls and accepts the same search filter syntax.
@@ -364,9 +363,7 @@ export function fetchNetworkPoliciesByClusterId(clusterId, deploymentQuery) {
         method: 'GET',
         url: `${networkPoliciesBaseUrl}?${params}`,
     };
-    return axios(options).then((response) => {
-        return sortBy(response?.data?.networkPolicies, 'name') ?? [];
-    });
+    return axios(options).then((response) => response.data.networkPolicies ?? []);
 }
 
 /**
