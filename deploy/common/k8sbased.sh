@@ -329,7 +329,7 @@ function launch_central {
 
       if [[ -n "$ROX_OPENSHIFT_VERSION" ]]; then
         helm_args+=(
-          --set-string env.openshift="${ROX_OPENSHIFT_VERSION}"
+          --set env.openshift="${ROX_OPENSHIFT_VERSION}"
         )
       fi
 
@@ -541,8 +541,17 @@ function launch_sensor {
         --set "image.main.repository=${MAIN_IMAGE_REPO}"
         --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
-        --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
       )
+      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+        helm_args+=(
+          --set env.openshift="${ROX_OPENSHIFT_VERSION}"
+        )
+      else
+        helm_args+=(
+          --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
+        )
+      fi
+
       if [[ -f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml" ]]; then
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi
