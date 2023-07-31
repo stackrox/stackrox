@@ -271,6 +271,9 @@
 #       # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
 #       # The connection string must be in the format described here https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
 #       # The only connection string format supported is as specified in "34.1.1.1. Keyword/Value Connection Strings"
+#       # client_encoding=UTF8 is required in any connection string and the only supported encoding
+#       # statementTimeoutMs is ignored for external database connections
+#       # If using a connection that supports "statement_timeout" it is recommended to include "statement_timeout=1200000"
 #       # Do NOT use a connection string with a password field. Instead specify the value below in the password section in values-private.yaml.
 #       connectionString: "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full"
 #       minConns: 10
