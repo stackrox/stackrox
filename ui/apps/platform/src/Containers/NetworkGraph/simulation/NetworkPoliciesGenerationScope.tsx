@@ -1,6 +1,5 @@
 import React from 'react';
 import { Flex } from '@patternfly/react-core';
-import pluralize from 'pluralize';
 import uniq from 'lodash/uniq';
 
 import { ClusterIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
