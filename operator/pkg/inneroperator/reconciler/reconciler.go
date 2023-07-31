@@ -23,7 +23,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
-		pkgReconciler.WithReconcilePeriod(20 * time.Second), // FIXME: Increase timeout
+		pkgReconciler.WithReconcilePeriod(2 * time.Minute), // FIXME: Increase timeout
 	}
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
