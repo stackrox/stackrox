@@ -664,7 +664,7 @@ func TestFetchOptionFromRequest(t *testing.T) {
 		},
 		"force set and no external metadata should result in ForceRefetch": {
 			req:         &v1.BuildDetectionRequest{Force: true},
-			fetchOption: enricher.ForceRefetch,
+			fetchOption: enricher.UseImageNamesRefetchCachedValues,
 		},
 		"both force and no external metadata set should result in an error": {
 			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true, Force: true},
