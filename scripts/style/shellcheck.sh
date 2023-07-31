@@ -53,7 +53,7 @@ update_failing_list() {
     pushd "$ROOT" > /dev/null
 
     for shell in $(git ls-files | grep -E '.sh$'); do
-        if ! shellcheck -x "$shell" > /dev/null; then
+        if ! shellcheck -P SCRIPTDIR -x "$shell" > /dev/null; then
             echo "$shell" >> "$known_failures_file"
         fi
     done

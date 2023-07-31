@@ -42,7 +42,6 @@ def make_qa_e2e_test_runner(cluster):
             },
         ],
         final_post=FinalPost(
-            store_qa_test_debug_logs=True,
-            store_qa_spock_results=True,
+            store_qa_tests_data=True,
         ),
     )
