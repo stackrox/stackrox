@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,18 +45,31 @@ type updaterImpl struct {
 	stopSig        concurrency.Signal
 	updateInterval time.Duration
 	namespace      string
+	updateTicker   *time.Ticker
+	ctxMutex       sync.Mutex
+	pipelineCtx    context.Context
+	cancelCtx      context.CancelFunc
 }
 
 func (u *updaterImpl) Start() error {
-	go u.run()
+	go u.run(u.updateTicker.C)
 	return nil
 }
 
 func (u *updaterImpl) Stop(_ error) {
+	u.updateTicker.Stop()
 	u.stopSig.Signal()
 }
 
-func (u *updaterImpl) Notify(common.SensorComponentEvent) {}
+func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		u.resetContext()
+		u.updateTicker.Reset(u.updateInterval)
+	case common.SensorComponentEventOfflineMode:
+		u.updateTicker.Stop()
+	}
+}
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
@@ -69,18 +83,34 @@ func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
 }
 
-func (u *updaterImpl) run() {
+func (u *updaterImpl) resetContext() {
+	u.ctxMutex.Lock()
+	defer u.ctxMutex.Unlock()
+	if u.cancelCtx != nil {
+		u.cancelCtx()
+	}
+	u.pipelineCtx, u.cancelCtx = context.WithCancel(context.Background())
+}
+
+func (u *updaterImpl) getCurrentContext() context.Context {
+	u.ctxMutex.Lock()
+	defer u.ctxMutex.Unlock()
+	return u.pipelineCtx
+}
+
+func (u *updaterImpl) run(tickerC <-chan time.Time) {
 	ticker := time.NewTicker(u.updateInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-tickerC:
+			ctx := u.getCurrentContext()
 			collectorHealthInfo := u.getCollectorInfo()
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
 			scannerHealthInfo := u.getLocalScannerInfo()
 			select {
-			case u.updates <- message.New(&central.MsgFromSensor{
+			case u.updates <- message.NewExpiring(ctx, &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
 						CollectorHealthInfo:        collectorHealthInfo,
@@ -226,11 +256,14 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 	if interval == 0 {
 		interval = defaultInterval
 	}
+	updateTicker := time.NewTicker(interval)
+	updateTicker.Stop()
 	return &updaterImpl{
 		client:         client,
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,
 		namespace:      getSensorNamespace(),
+		updateTicker:   updateTicker,
 	}
 }
