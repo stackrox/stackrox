@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -77,6 +79,11 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	return baseValues, nil
 }
 
+type version struct {
+	// Version represents the target version returned from Central
+	Version string
+}
+
 func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, error) {
 	logger, _ := zap.NewProduction()
 	sugar := logger.Sugar()
@@ -89,12 +96,22 @@ func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, er
 
 	resp, err := client.Get(url)
 	if err != nil {
-		sugar.Error(err)
+		return "", err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
 	}
 
-	sugar.Infow("Got response", "response", resp)
+	v1 := version{}
+	err = json.Unmarshal(body, &v1)
+	if err != nil {
+		return "", err
+	}
 
-	return "", nil
+	sugar.Infow("Extracted version", "version", v1.Version)
+
+	return v1.Version, nil
 }
 
 //

@@ -1,3 +1,5 @@
+{{- include "srox.init" . -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
