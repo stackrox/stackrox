@@ -182,6 +182,11 @@ var (
 		Name:      "pipeline_panics",
 		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
 	}, []string{"resource"})
+	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_connected",
+	}, []string{"ClusterID", "connection_state"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -229,6 +234,14 @@ func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 	}
 	resource = stringutils.GetAfterLast(resource, "_")
 	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
+}
+
+// IncrementSensorConnect increments the counter for times that a new Sensor connection was observed
+func IncrementSensorConnect(clusterID, state string) {
+	sensorConnectedCounter.With(prometheus.Labels{
+		"ClusterID":        clusterID,
+		"connection_state": state,
+	}).Inc()
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
