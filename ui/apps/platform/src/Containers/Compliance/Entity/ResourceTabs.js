@@ -59,26 +59,19 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
                 }
                 const tabData = processData(data);
                 return (
-                    <ul className="border-b border-base-400 bg-base-200 pl-3">
+                    <ul className="border-b border-base-400 bg-base-100 pl-3">
                         {tabData.map((datum, i) => {
                             const borderLeft = !i ? 'border-l' : '';
-                            let bgColor = 'bg-base-200';
-                            let textColor = 'text-base-600';
-                            const style = {
-                                borderColor: 'hsla(225, 44%, 87%, 1)',
-                            };
-                            if (datum.type === selectedType || (!selectedType && !datum.type)) {
-                                bgColor = 'bg-base-100';
-                                textColor = 'text-primary-600';
-                                style.borderTopColor = 'hsla(225, 90%, 67%, 1)';
-                                style.borderTopWidth = '1px';
-                            }
+                            const bgColor =
+                                datum.type === selectedType || (!selectedType && !datum.type)
+                                    ? 'bg-primary-200'
+                                    : 'bg-base-100';
+                            const textColor = 'text-base-600';
 
                             return (
                                 <li key={datum.title} className="inline-block">
                                     <Link
-                                        style={style}
-                                        className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r min-w-32 px-3 text-center pt-3 pb-3 font-700 inline-block`}
+                                        className={`no-underline ${textColor} ${borderLeft} ${bgColor} border-r border-base-400 min-w-32 px-3 text-center pt-3 pb-3 font-700 inline-block`}
                                         to={datum.link}
                                     >
                                         {datum.title}
