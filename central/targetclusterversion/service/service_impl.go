@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -40,8 +41,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetTargetClusterVersion(ctx context.Context, _ *v1.Empty) (*v1.TargetClusterVersionResponse, error) {
 	targetVersion := &v1.TargetClusterVersionResponse{
-		Version: "42.42.24",
-		// Version: version.GetMainVersion // as a default. Pull env var for PoC for now.
+		// Version: version.GetMainVersion as a default. Pull env var for PoC for now.
+		Version: env.TargetClusterVersion.Setting(),
 	}
 	return targetVersion, nil
 }

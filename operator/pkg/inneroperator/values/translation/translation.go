@@ -19,6 +19,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"go.uber.org/zap"
@@ -70,20 +71,26 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 		return nil, err
 	}
 
-	// FIXME: Call queryCentralTargetVersion AFTER coalesce to get defaults/fallbacks
 	logger, _ := zap.NewProduction()
 	sugar := logger.Sugar()
 	targetVersion, err := t.queryCentralTargetVersion(valsFromCR)
 	if err != nil {
 		return nil, err
 	}
-	sugar.Infof("Target version: %v", targetVersion)
-	sugar.Infof("baseValues: %v", baseValues)
-	// Overwrite target image version of Operator with result from central
 
+	tversion, err := helmUtil.ValuesForKVPair("operator.version", targetVersion)
+	if err != nil {
+		return nil, err
+	}
+	sugar.Infof("tversion: %v", tversion)
+	// Overwrite target image version of Operator with result from central
+	// CHECKME: As this is preferred left-to-right, is this a bug in the other implementations?
+	//			Technically, we would need to apply CRs first, then imageOverrides, then baseValues, no?
+	values := helmUtil.CoalesceTables(tversion, baseValues)
+
+	sugar.Infof("Coalesced: %v", values)
 	// FIXME: Add Coalesce for env vars
-	// return helmUtil.CoalesceTables(baseValues), nil
-	return baseValues, nil
+	return values, nil
 }
 
 type version struct {
@@ -92,13 +99,13 @@ type version struct {
 }
 
 func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, error) {
-	DEFAULT_VERSION := "1.2.3"
+	DEFAULT_VERSION := "1.2.3" // FIXME: Should return the Operators' own version, if any at all
 
 	logger, _ := zap.NewProduction()
 	sugar := logger.Sugar()
 	url := fmt.Sprintf("https://%v/v1/target/clusterversion", vals.AsMap()["centralEndpoint"])
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // FIXME: Don't.
 	}
 	client := &http.Client{Transport: tr}
 	sugar.Infof("Calling endpoint: %s", url)
@@ -130,7 +137,7 @@ func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, er
 }
 
 //
-// FIXME: Everything from here on is copied from the SCS translator. Make commonly available
+// FIXME: Everything from here on is copied from the SCS translator. We only need the Central API Endpoint. Make that commonly available
 //
 
 // translate translates a SecuredCluster CR into helm values.
