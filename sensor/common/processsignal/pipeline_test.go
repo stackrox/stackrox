@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -160,14 +161,20 @@ func TestProcessPipelineOffline(t *testing.T) {
 				mockDetector)
 			defer p.Shutdown()
 
+			metadataWg := &sync.WaitGroup{}
+			metadataWg.Add(2)
+
 			p.Notify(tc.initialState)
-			processSignal(p, tc.initialSignal.signal, tc.initialSignal.hasMetadataInStore, mockStore, containerMetadata1)
+			processSignal(p, tc.initialSignal.signal, tc.initialSignal.hasMetadataInStore, mockStore, containerMetadata1, metadataWg)
 
 			p.Notify(tc.laterState)
-			processSignal(p, tc.laterSignal.signal, tc.laterSignal.hasMetadataInStore, mockStore, containerMetadata2)
+			processSignal(p, tc.laterSignal.signal, tc.laterSignal.hasMetadataInStore, mockStore, containerMetadata2, metadataWg)
+
+			// Wait for metadata to arrive - either directly or from ticker
+			metadataWg.Wait()
 
 			// Events contains processed signals. They may arrive in any order
-			events := collectEventsFor(caseCtx, actualEvents, 1*time.Second)
+			events := collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
 			// These tests always use two signals that should be processed
 			assert.Len(t, events, 2)
 
@@ -181,7 +188,13 @@ func TestProcessPipelineOffline(t *testing.T) {
 }
 
 // processSignal calls p.Process and ensures that the stores are in the correct state for the test to make sense
-func processSignal(p *Pipeline, singal *storage.ProcessSignal, hasMetadataInStore bool, store *clusterentities.Store, meta clusterentities.ContainerMetadata) {
+func processSignal(p *Pipeline,
+	singal *storage.ProcessSignal,
+	hasMetadataInStore bool,
+	store *clusterentities.Store,
+	meta clusterentities.ContainerMetadata,
+	wg *sync.WaitGroup) {
+	defer wg.Done()
 	// If PI has metadata in store it will be enriched immediately.
 	// If not, then the enrichment happens async based on ticker.
 	// For hasMetadataInStore==true, we simulate immediate enchirment
@@ -190,8 +203,12 @@ func processSignal(p *Pipeline, singal *storage.ProcessSignal, hasMetadataInStor
 	}
 	p.Process(singal)
 	// For hasMetadataInStore==false, we emulate the ticker triggering data update in the stores later in the process.
+	// This simulates the situation in which we receive a process indicator from a container that is still unknown;
+	// Next, by calling `updateStore`, we simulate the container registration, so that all data required is in place.
 	if !hasMetadataInStore {
 		updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
+		// we need to wait now for a tick to get this metadata consumed
+		<-time.After(enrichInterval)
 	}
 }
 

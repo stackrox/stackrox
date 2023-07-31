@@ -3,13 +3,14 @@ package processsignal
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/normalize"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -19,7 +20,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log              = logging.LoggerForModule()
+	errSensorOffline = errors.New("sensor is offline")
 )
 
 // Pipeline is the struct that handles a process signal
@@ -30,15 +32,16 @@ type Pipeline struct {
 	enricher           *enricher
 	processFilter      filter.Filter
 	detector           detector.Detector
-	centralReady       concurrency.Signal
-	ctxCancel          context.CancelFunc
 	cm                 *channelmultiplexer.ChannelMultiplexer[*storage.ProcessIndicator]
+	ctxMux             *sync.Mutex
+	ctx                context.Context
+	ctxCancel          context.CancelCauseFunc
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancelCause(context.Background())
 	en := newEnricher(ctx, clusterEntities)
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 
@@ -53,9 +56,10 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 		enrichedIndicators: enrichedIndicators,
 		processFilter:      processFilter,
 		detector:           detector,
-		centralReady:       concurrency.NewSignal(),
-		ctxCancel:          cancel,
 		cm:                 cm,
+		ctxMux:             &sync.Mutex{},
+		ctx:                ctx,
+		ctxCancel:          cancel,
 	}
 	go p.sendIndicatorEvent()
 	return p
@@ -73,8 +77,8 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 
 // Shutdown closes all communication channels and shutdowns the enricher
 func (p *Pipeline) Shutdown() {
+	p.cancelCurrentContext()
 	defer close(p.enrichedIndicators)
-	p.ctxCancel()
 }
 
 // Notify allows the component state to be propagated to the pipeline
@@ -82,11 +86,31 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 	log.Debugf("Received notify: %s", e)
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		p.centralReady.Signal()
+		p.createNewContext()
 		log.Debug("ProcessSingnalPipeline runs now in Online mode.")
 	case common.SensorComponentEventOfflineMode:
-		p.centralReady.Reset()
+		p.cancelCurrentContext()
 		log.Debug("ProcessSingnalPipeline runs now in Offline mode.")
+	}
+}
+
+func (p *Pipeline) createNewContext() {
+	p.ctxMux.Lock()
+	defer p.ctxMux.Unlock()
+	p.ctx, p.ctxCancel = context.WithCancelCause(context.Background())
+}
+
+func (p *Pipeline) getCurrentContext() context.Context {
+	p.ctxMux.Lock()
+	defer p.ctxMux.Unlock()
+	return p.ctx
+}
+
+func (p *Pipeline) cancelCurrentContext() {
+	p.ctxMux.Lock()
+	defer p.ctxMux.Unlock()
+	if p.ctxCancel != nil {
+		p.ctxCancel(errSensorOffline)
 	}
 }
 
@@ -115,7 +139,7 @@ func (p *Pipeline) sendIndicatorEvent() {
 			continue
 		}
 		p.detector.ProcessIndicator(indicator)
-		msg := message.New(&central.MsgFromSensor{
+		p.indicators <- message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Id:     indicator.GetId(),
@@ -126,12 +150,5 @@ func (p *Pipeline) sendIndicatorEvent() {
 				},
 			},
 		})
-		if !p.centralReady.IsDone() {
-			log.Debugf("Handling ProcessSignal in Offline mode: %s", msg.String())
-			canceledCtx, cancel := context.WithCancel(msg.Context)
-			cancel()
-			msg.Context = canceledCtx
-		}
-		p.indicators <- msg
 	}
 }
