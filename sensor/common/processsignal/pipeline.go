@@ -22,15 +22,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type offlineHandler interface {
-	HandleOffline(m *message.ExpiringMessage)
-}
-
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {
 	clusterEntities    *clusterentities.Store
 	indicators         chan *message.ExpiringMessage
-	offlineHandler     offlineHandler
 	enrichedIndicators chan *storage.ProcessIndicator
 	enricher           *enricher
 	processFilter      filter.Filter
@@ -54,7 +49,6 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	p := &Pipeline{
 		clusterEntities:    clusterEntities,
 		indicators:         indicators,
-		offlineHandler:     &drofOfflineHandler{},
 		enricher:           en,
 		enrichedIndicators: enrichedIndicators,
 		processFilter:      processFilter,
@@ -133,7 +127,10 @@ func (p *Pipeline) sendIndicatorEvent() {
 			},
 		})
 		if !p.centralReady.IsDone() {
-			p.offlineHandler.HandleOffline(msg)
+			log.Debugf("Handling ProcessSignal in Offline mode: %s", msg.String())
+			canceledCtx, cancel := context.WithCancel(msg.Context)
+			cancel()
+			msg.Context = canceledCtx
 		}
 		p.indicators <- msg
 	}
