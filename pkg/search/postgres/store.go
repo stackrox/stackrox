@@ -199,6 +199,8 @@ func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) e
 }
 
 // GetAll retrieves all objects from the store.
+//
+// Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
 func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
 
