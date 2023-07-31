@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
+	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/info"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -38,17 +39,19 @@ var (
 type serviceImpl struct {
 	central.UnimplementedSensorServiceServer
 
-	manager  connection.Manager
-	pf       pipeline.Factory
-	clusters clusterDataStore.DataStore
+	manager      connection.Manager
+	pf           pipeline.Factory
+	clusters     clusterDataStore.DataStore
+	installation installationStore.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore) Service {
+func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
 	return &serviceImpl{
-		manager:  manager,
-		pf:       pf,
-		clusters: clusters,
+		manager:      manager,
+		pf:           pf,
+		clusters:     clusters,
+		installation: installation,
 	}
 }
 
@@ -93,7 +96,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		centralHello := &central.CentralHello{
 			ClusterId:      cluster.GetId(),
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
-			CentralId:      info.FetchInstallInfo(context.Background()).GetId(),
+			CentralId:      info.FetchInstallInfo(context.Background(), s.installation).GetId(),
 		}
 
 		if err := safe.RunE(func() error {

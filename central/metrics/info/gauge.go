@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/central/installation/store"
+	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -15,8 +15,8 @@ import (
 )
 
 // FetchInstallInfo fetches the installation info.
-func FetchInstallInfo(ctx context.Context) *storage.InstallationInfo {
-	installInfo, _, err := store.Singleton().Get(
+func FetchInstallInfo(ctx context.Context, installation installationStore.Store) *storage.InstallationInfo {
+	installInfo, _, err := installation.Get(
 		sac.WithGlobalAccessScopeChecker(ctx,
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -37,7 +37,7 @@ func getHosting() string {
 	return "self-managed"
 }
 
-func newGaugeVec() *prometheus.GaugeVec {
+func newGaugeVec(installation installationStore.Store) *prometheus.GaugeVec {
 	return prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.PrometheusNamespace,
@@ -45,7 +45,7 @@ func newGaugeVec() *prometheus.GaugeVec {
 			Name:      "info",
 			Help:      "A metric with a constant '1' value labeled by information identifying the Central installation",
 			ConstLabels: prometheus.Labels{
-				"central_id":      FetchInstallInfo(context.Background()).GetId(),
+				"central_id":      FetchInstallInfo(context.Background(), installation).GetId(),
 				"central_version": version.GetMainVersion(),
 				"hosting":         getHosting(),
 				"install_method":  env.InstallMethod.Setting(),
