@@ -55,7 +55,7 @@ func getConfig() (*gormConfig, error) {
 		return nil, errors.Wrapf(err, "pgsql: could not load password file %q", pgconfig.DBPasswordFile)
 	}
 	// Add the password to the source to pass to get the pool config
-	source := fmt.Sprintf("%s password=%s client_encoding=UTF8", centralConfig.CentralDB.Source, password)
+	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
 	source = pgutils.PgxpoolDsnToPgxDsn(source)
 	gConfig = &gormConfig{source: source, password: string(password)}
 	return gConfig, nil
