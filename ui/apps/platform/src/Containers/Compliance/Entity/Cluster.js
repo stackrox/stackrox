@@ -12,11 +12,12 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Loader from 'Components/Loader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import ResourceTabs from 'Components/ResourceTabs';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
+
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 function processData(data) {
     if (!data || !data.results) {
