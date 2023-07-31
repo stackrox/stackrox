@@ -103,7 +103,7 @@ func (i *indexerImpl) IndexContainerImage(
 	if err != nil {
 		return nil, fmt.Errorf("parsing image URL: %w", err)
 	}
-	imgLayers, err := getContainerImageLayers(ctx, o, imgRef)
+	imgLayers, err := getContainerImageLayers(ctx, imgRef, o)
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
