@@ -48,6 +48,7 @@ $ roxctl connectivity-map  tests/roxctl/bats-tests/test-data/np-guard/netpols-an
 
 The output contains a list of permitted connectivity lines. Each connectivity line is of the format `src => dst : connnectivity-attributes`.
 The `src, dst` can be any of the analyzed cluster workloads or an IP address range.
+A cluster workload is of the format: `namespace/name[kind]` , such as: `default/backend[Deployment]`.
 If both `src` and `dst` are cluster workloads, it means that both `src` is allowed to send traffic to `dst` and that `dst` is allowed to receive traffic from `src` over the specified connectivity attributes.
 
 If one of `src` or `dst` are IP address ranges, it means that only one direction of this connection (either egress from workload or ingress to workload) is explicitly permitted by network policies.
@@ -77,6 +78,18 @@ Use [`Graphviz`](https://graphviz.org/) (locally installed or online viewer) to 
 Produced graph for the above example is depicted below:
 
 ![graph](connectivity-graph-example.svg)
+
+
+### Analysis of Ingress/Route resources
+
+In addition to network policies, the connectivity analysis also considers `Kubernetes Ingress` and `Openshift Route` resources.
+For connections inferred from Ingress/Route resources, the src is specified as `{ingress-controller}`, representing the cluster's ingress controller Pod. 
+Its connectivity lines are of the form: `{ingress-controller} => dst : connections`, where `dst` is a workload in the cluster.
+This analysis assumes that the ingress controller Pod is unknown, and thus using this notation of {ingress-controller}.
+
+Since the analysis assumes the manifest of the ingress controller is unknown, it checks whether an arbitrary workload can access (by network policies) the destination workloads specified in Ingress/Route rules. 
+If such access is not permitted by network policies, this connection is removed from the report. 
+It may be an allowed connection if a network policy specifically allows ingress access to that workload from a specific workload/namespace of the actual ingress controller installed.
 
 ### Parameters
 
