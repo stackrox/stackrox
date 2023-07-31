@@ -18,7 +18,6 @@ import (
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +29,7 @@ var (
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 116
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(dackboxhelper.GetMigrationDackBox(), dackboxhelper.GetMigrationKeyFence(), false)
-			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.DBCtx, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving images from rocksdb to postgres")
 			}
@@ -42,8 +41,7 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore store.Store) error {
-	ctx := sac.WithAllAccess(context.Background())
+func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore store.Store) error {
 	store := pgStore.New(postgresDB, true)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableImageCvesStmt)
@@ -51,6 +49,7 @@ func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore store.Store) erro
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableImageComponentEdgesStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableImageComponentCveEdgesStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableImagesStmt)
+
 	return walk(ctx, legacyStore, func(obj *storage.Image) error {
 		if err := store.Upsert(ctx, obj); err != nil {
 			log.WriteToStderrf("failed to persist images to store %v", err)

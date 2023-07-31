@@ -12,12 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-var (
-	ctx = sac.WithAllAccess(context.Background())
-)
-
 func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
-	ver, err := version.ReadVersionGormDB(ctx, databases.GormDB)
+	ver, err := version.ReadVersionGormDB(sac.WithAllAccess(context.Background()), databases.GormDB)
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current postgres sequence number")
 	}
@@ -28,7 +24,7 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	return getCurrentSeqNumPostgres(databases)
 }
 
-func updateVersion(databases *types.Databases, newVersion *storage.Version) error {
-	version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
+func updateVersion(ctx context.Context, databases *types.Databases, newVersion *storage.Version) error {
+	version.UpdateVersionPostgres(ctx, databases.PostgresDB, newVersion)
 	return nil
 }

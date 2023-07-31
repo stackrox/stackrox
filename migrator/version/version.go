@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -51,6 +52,22 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	ver.MinimumSeqNum = int(protoVersion.GetMinSeqNum())
 	ver.LastPersisted = timestamp.FromProtobuf(protoVersion.GetLastPersisted()).GoTime()
 	return &ver, nil
+}
+
+// UpdateVersionPostgres - updates the version allowing for outer transaction
+func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
+	err := pgutils.Retry(func() error {
+		_, err := db.Exec(ctx, "DELETE FROM versions")
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), pgutils.NilOrTime(updatedVersion.GetLastPersisted()))
+		return err
+	})
+	if err != nil {
+		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
+	}
 }
 
 // SetVersionPostgres - sets the version in the named postgres database
