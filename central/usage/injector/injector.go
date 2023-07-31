@@ -34,7 +34,9 @@ func (i *injectorImpl) gather(ctx context.Context) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, metricsWriter)
 
 	// Store the average values to smooth short (< 2 periods) peaks and drops.
-	if err := i.ds.Insert(ctx, average(i.previousMetrics, newMetrics)); err != nil {
+	averageMetrics := average(i.previousMetrics, newMetrics)
+	averageMetrics.Timestamp = newMetrics.Timestamp
+	if err := i.ds.Insert(ctx, averageMetrics); err != nil {
 		log.Debug("Failed to store a usage snapshot: ", err)
 	}
 	i.previousMetrics = newMetrics
