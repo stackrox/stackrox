@@ -1,6 +1,7 @@
 package cache
 
 import (
+	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -77,7 +78,9 @@ func (u *cacheImpl) FilterCurrent(ids set.StringSet) *storage.Usage {
 // usage counting when customers remove and add clusters within one collection
 // period.
 func (u *cacheImpl) CutMetrics(ids set.StringSet) *storage.Usage {
-	m := storage.Usage{}
+	m := storage.Usage{
+		Timestamp: gogoTypes.TimestampNow(),
+	}
 	for id, v := range u.nodesMap.Reset() {
 		if ids.Contains(id) {
 			m.NumNodes += v
