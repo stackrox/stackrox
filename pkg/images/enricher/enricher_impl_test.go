@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
+	imgTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
@@ -1196,4 +1198,29 @@ func TestEnrichImage_Delegate(t *testing.T) {
 		assert.True(t, result.ImageUpdated)
 		assert.NoError(t, err)
 	})
+}
+
+func TestFetchFromDatabase_ForceFetch(t *testing.T) {
+	cimg, err := utils.GenerateImageFromString("docker.io/test")
+	require.NoError(t, err)
+	img := imgTypes.ToImage(cimg)
+	img.Id = "some-SHA-for-testing"
+
+	secondImageName, _, err := utils.GenerateImageNameFromString("docker.io/test2")
+	require.NoError(t, err)
+	e := &enricherImpl{
+		imageGetter: func(ctx context.Context, id string) (*storage.Image, bool, error) {
+			img.Signature = &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("test", "test")}}
+			img.SignatureVerificationData = &storage.ImageSignatureVerificationData{Results: []*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("test", storage.ImageSignatureVerificationResult_VERIFIED)}}
+			img.Names = append(img.Names, secondImageName)
+			return img, true, nil
+		},
+	}
+	imgFetchedFromDB, exists := e.fetchFromDatabase(context.Background(), img, UseImageNamesRefetchCachedValues)
+	assert.False(t, exists)
+	assert.Equal(t, img.GetName(), imgFetchedFromDB.GetName())
+	assert.ElementsMatch(t, img.GetNames(), imgFetchedFromDB.GetNames())
+	assert.Nil(t, img.GetSignature())
+	assert.Nil(t, img.GetSignatureVerificationData())
 }
