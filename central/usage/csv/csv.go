@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	zeroTime = time.Unix(0, 0).UTC()
+	zeroTime = time.Time{}
 
 	log = logging.LoggerForModule()
 )
