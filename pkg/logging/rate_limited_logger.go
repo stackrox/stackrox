@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/logging/internal/lru"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -50,9 +51,7 @@ var (
 		if evictedLog == nil {
 			return
 		}
-		if evictedLog.count.Load() > 0 {
-			evictedLog.log()
-		}
+		evictedLog.log()
 	}
 )
 
@@ -215,6 +214,12 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	key := getLogKey(limiter, level, file, line, payload)
 	if throttledLog, found := rl.rateLimitedLogs.Get(key); found && throttledLog != nil {
 		throttledLog.count.Add(1)
+		// In case the log were evicted between cache lookup and count increase,
+		// check for existence in the cache after the increase, and log if the retrieved
+		// log is not in the cache anymore.
+		if checkLog, checkFound := rl.rateLimitedLogs.Get(key); !checkFound || throttledLog.id != checkLog.id {
+			throttledLog.log()
+		}
 	} else if found && throttledLog == nil {
 		// There is something wrong in the cache. Clean up.
 		rl.rateLimitedLogs.Remove(key)
@@ -240,14 +245,14 @@ const (
 )
 
 type rateLimitedLog struct {
-	logger   Logger
-	level    zapcore.Level
-	limiter  string
-	payload  string
-	file     string
-	line     int
-	count    atomic.Int32
-	logMutex sync.Mutex
+	logger  Logger
+	id      string
+	level   zapcore.Level
+	limiter string
+	payload string
+	file    string
+	line    int
+	count   atomic.Int32
 }
 
 func newRateLimitedLog(
@@ -258,20 +263,24 @@ func newRateLimitedLog(
 	file string,
 	line int,
 ) *rateLimitedLog {
-	return &rateLimitedLog{
+	log := &rateLimitedLog{
 		logger:  logger,
+		id:      uuid.NewV4().String(),
 		level:   level,
 		limiter: limiter,
 		payload: payload,
 		file:    file,
 		line:    line,
 	}
+	log.count.Add(1)
+	return log
 }
 
 func (l *rateLimitedLog) log() {
-	l.logMutex.Lock()
-	defer l.logMutex.Unlock()
 	count := l.count.Swap(0)
+	if count == 0 {
+		return
+	}
 	var suffix string
 	if count > 1 {
 		suffix = fmt.Sprintf(
