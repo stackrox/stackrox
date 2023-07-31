@@ -1,3 +1,4 @@
 operator:
   outerMode: false
   targetNamespace: "rhacs-inner-operator"
+  version: "9.9.9"

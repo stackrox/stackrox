@@ -71,7 +71,14 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	}
 
 	// FIXME: Call queryCentralTargetVersion AFTER coalesce to get defaults/fallbacks
-	t.queryCentralTargetVersion(valsFromCR)
+	logger, _ := zap.NewProduction()
+	sugar := logger.Sugar()
+	targetVersion, err := t.queryCentralTargetVersion(valsFromCR)
+	if err != nil {
+		return nil, err
+	}
+	sugar.Infof("Target version: %v", targetVersion)
+	sugar.Infof("baseValues: %v", baseValues)
 	// Overwrite target image version of Operator with result from central
 
 	// FIXME: Add Coalesce for env vars
@@ -85,6 +92,8 @@ type version struct {
 }
 
 func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, error) {
+	DEFAULT_VERSION := "1.2.3"
+
 	logger, _ := zap.NewProduction()
 	sugar := logger.Sugar()
 	url := fmt.Sprintf("https://%v/v1/target/clusterversion", vals.AsMap()["centralEndpoint"])
@@ -96,22 +105,28 @@ func (t Translator) queryCentralTargetVersion(vals chartutil.Values) (string, er
 
 	resp, err := client.Get(url)
 	if err != nil {
-		return "", err
+		sugar.Error("error calling endpoint ", err)
+		return DEFAULT_VERSION, nil
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		sugar.Error("error reading response body ", err)
+		return DEFAULT_VERSION, nil
 	}
 
 	v1 := version{}
 	err = json.Unmarshal(body, &v1)
 	if err != nil {
-		return "", err
+		sugar.Error("error unmarshalling response ", err)
+		return DEFAULT_VERSION, nil
 	}
 
 	sugar.Infow("Extracted version", "version", v1.Version)
+	if v1.Version != "" {
+		return v1.Version, nil
+	}
 
-	return v1.Version, nil
+	return DEFAULT_VERSION, nil
 }
 
 //
