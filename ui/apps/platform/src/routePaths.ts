@@ -113,7 +113,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: [],
     },
     [listeningEndpointsBasePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: ['Deployment', 'DeploymentExtension'],
     },
     [networkPath]: {
         resourceAccessRequirements: [],
