@@ -170,18 +170,14 @@ const (
 
 func getTrimmedFilePath(path string) string {
 	prefixes := []string{filePathPrefix, localFilePathPrefix, githubPathPrefix}
-	cutPath := path
 	for _, prefix := range prefixes {
-		prefixToCut := strings.Index(cutPath, prefix)
+		prefixToCut := strings.Index(path, prefix)
 		if prefixToCut >= 0 {
-			cutPath = cutPath[prefixToCut:]
+			cutPrefixLength := prefixToCut + len(prefix)
+			return path[cutPrefixLength:]
 		}
 	}
-	trimmedPath := cutPath
-	for _, prefix := range prefixes {
-		trimmedPath = strings.TrimPrefix(trimmedPath, prefix)
-	}
-	return trimmedPath
+	return path
 }
 
 func (rl *RateLimitedLogger) registerTraceAndLog(
