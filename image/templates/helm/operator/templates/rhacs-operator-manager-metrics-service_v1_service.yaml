@@ -5,7 +5,7 @@ metadata:
   labels:
     app: rhacs-operator-{{ .Release.Name }}
     control-plane: controller-manager
-  name: rhacs-operator-manager-metrics-service-{{ .Release.Name }}
+  name: opman-metrics-{{ .Release.Name }}
   namespace: "{{ .Values.operator.targetNamespace }}"
 spec:
   ports:
