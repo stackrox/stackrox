@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -62,10 +63,53 @@ func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
 	s.Equal(expected, metrics)
 }
 
+func (s *ClusterMetricsTestSuite) TestOfflineMode() {
+	states := []common.SensorComponentEvent{
+		common.SensorComponentEventCentralReachable,
+		common.SensorComponentEventOfflineMode,
+		common.SensorComponentEventCentralReachable,
+	}
+	metrics := s.createNewClusterMetrics(time.Millisecond)
+	s.Require().NoError(metrics.Start())
+	defer metrics.Stop(nil)
+	for _, state := range states {
+		metrics.Notify(state)
+		s.assertOfflineMode(state, metrics)
+	}
+}
+
+func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
+	metricsComponent := New(s.client)
+	metrics, ok := metricsComponent.(*clusterMetricsImpl)
+	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
+	metrics.pollingInterval = interval
+	return metrics
+}
+
+func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponentEvent, metrics *clusterMetricsImpl) {
+	switch state {
+	case common.SensorComponentEventCentralReachable:
+		select {
+		case <-time.After(10 * time.Second):
+			s.Fail("timeout waiting for the pollTicker to tick")
+		case <-metrics.pollTicker.C:
+			return
+		}
+	case common.SensorComponentEventOfflineMode:
+		select {
+		case <-time.After(10 * time.Millisecond):
+			return
+		case <-metrics.pollTicker.C:
+			s.Fail("the pollTicker should not tick in offline mode")
+		}
+	}
+}
+
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
 	clusterMetricsStream := New(s.client)
 
+	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
 	s.Require().NoError(err)
 	defer clusterMetricsStream.Stop(nil)
