@@ -219,11 +219,7 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 		},
 		withAccess: {
 			context:                sac.WithGlobalAccessScopeChecker(context.Background(),
-				{{- if .Obj.IsNamespaceScope }}
 				sac.AllowFixedScopes(
-				{{- else }}
-				sac.AllowFixedScopes(
-				{{- end }}
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
