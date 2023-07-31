@@ -30,6 +30,7 @@ import (
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	"github.com/stackrox/rox/operator/pkg/common"
 	innerOperatorReconciler "github.com/stackrox/rox/operator/pkg/inneroperator/reconciler"
+	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
@@ -168,10 +169,9 @@ func run() error {
 
 	if !common.OperatorOuterMode.BooleanSetting() {
 		setupLog.Info("Operator running in INNER mode. Watching secured clusters.")
-		// FIXME: Re-add SCS reconcile in inner mode
-		// if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
-		// 	return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
-		// }
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
+			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+		}
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

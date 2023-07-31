@@ -1,6 +1,8 @@
 package reconciler
 
 import (
+	"time"
+
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -21,6 +23,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), proxyEnv)),
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
+		pkgReconciler.WithReconcilePeriod(20 * time.Second), // FIXME: Increase timeout
 	}
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)
