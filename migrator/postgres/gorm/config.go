@@ -68,6 +68,7 @@ func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 	log.WriteToStderrf("SHREWS Connect to %s", dbName)
 	log.WriteToStderrf("SHREWS -- gc.password %q", gc.password)
 	source := gc.source
+	log.WriteToStderrf("SHREWS -- raw source %q", source)
 	log.WriteToStderrf("SHREWS -- %t", strings.Contains(source, gc.password))
 	if !pgconfig.IsExternalDatabase() && dbName != "" {
 		source = fmt.Sprintf("%s database=%s", gc.source, dbName)
@@ -111,6 +112,7 @@ func (gc *gormConfig) ConnectDatabase() (*gorm.DB, error) {
 	log.WriteToStderrf("SHREWS ConnectDatabase")
 	log.WriteToStderrf("SHREWS -- gc.password %q", gc.password)
 	source := gc.source
+	log.WriteToStderrf("SHREWS -- raw source %q", source)
 	log.WriteToStderrf("SHREWS -- %t", strings.Contains(source, gc.password))
 	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, gc.password, "<REDACTED>", -1))
 
