@@ -123,6 +123,9 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 			log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
 		}
 		ticker = time.NewTicker(repoListInterval)
+		log.Debugf("created integration %q with repo list enabled", integration.GetName())
+	} else {
+		log.Debugf("created integration %q with repo list disabled", integration.GetName())
 	}
 
 	return &Registry{
