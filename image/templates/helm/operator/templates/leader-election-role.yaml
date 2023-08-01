@@ -47,5 +47,5 @@ roleRef:
   name: rhacs-operator-controller-manager-role-{{ .Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: rhacs-operator-controller-manager-{{ .Release.Name }}
+    name: rhacs-operator-controller-manager-stackrox-secured-cluster-services
     namespace: "{{ .Values.operator.targetNamespace }}"

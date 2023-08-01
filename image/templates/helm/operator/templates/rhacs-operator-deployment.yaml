@@ -112,6 +112,6 @@ spec:
       schedulerName: default-scheduler
       securityContext:
         runAsNonRoot: true
-      serviceAccount: rhacs-operator-controller-manager-{{ .Release.Name }}
-      serviceAccountName: rhacs-operator-controller-manager-{{ .Release.Name }}
+      serviceAccount: rhacs-operator-controller-manager-stackrox-secured-cluster-services
+      serviceAccountName: rhacs-operator-controller-manager-stackrox-secured-cluster-services
       terminationGracePeriodSeconds: 10

@@ -1,88 +1,89 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: rhacs-operator-{{ .Release.Name }}
-rules:
-  - apiGroups:
-      - '*'
-    resources:
-      - '*'
-    verbs:
-      - '*'
-  - apiGroups:
-      - platform.stackrox.io
-    resources:
-      - centrals
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - platform.stackrox.io
-    resources:
-      - centrals/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - platform.stackrox.io
-    resources:
-      - centrals/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - platform.stackrox.io
-    resources:
-      - securedclusters
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - platform.stackrox.io
-    resources:
-      - securedclusters/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - platform.stackrox.io
-    resources:
-      - securedclusters/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - authentication.k8s.io
-    resources:
-      - tokenreviews
-    verbs:
-      - create
-  - apiGroups:
-      - authorization.k8s.io
-    resources:
-      - subjectaccessreviews
-    verbs:
-      - create
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: rhacs-operator-{{ .Release.Name }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: rhacs-operator-{{ .Release.Name }}
-subjects:
-  - kind: ServiceAccount
-    name: rhacs-operator-controller-manager-{{ .Release.Name }}
-    namespace: "{{ .Values.operator.targetNamespace }}"
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: rhacs-operator-{{ .Release.Name }}
+# rules:
+#   - apiGroups:
+#       - '*'
+#     resources:
+#       - '*'
+#     verbs:
+#       - '*'
+#   - apiGroups:
+#       - platform.stackrox.io
+#     resources:
+#       - centrals
+#     verbs:
+#       - create
+#       - delete
+#       - get
+#       - list
+#       - patch
+#       - update
+#       - watch
+#   - apiGroups:
+#       - platform.stackrox.io
+#     resources:
+#       - centrals/finalizers
+#     verbs:
+#       - update
+#   - apiGroups:
+#       - platform.stackrox.io
+#     resources:
+#       - centrals/status
+#     verbs:
+#       - get
+#       - patch
+#       - update
+#   - apiGroups:
+#       - platform.stackrox.io
+#     resources:
+#       - securedclusters
+#     verbs:
+#       - create
+#       - delete
+#       - get
+#       - list
+#       - patch
+#       - update
+#       - watch
+#   - apiGroups:
+#       - platform.stackrox.io
+#     resources:
+#       - securedclusters/finalizers
+#     verbs:
+#       - update
+#   - apiGroups:
+#       - platform.stackrox.io
+#     resources:
+#       - securedclusters/status
+#     verbs:
+#       - get
+#       - patch
+#       - update
+#   - apiGroups:
+#       - authentication.k8s.io
+#     resources:
+#       - tokenreviews
+#     verbs:
+#       - create
+#   - apiGroups:
+#       - authorization.k8s.io
+#     resources:
+#       - subjectaccessreviews
+#     verbs:
+#       - create
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: rhacs-operator-{{ .Release.Name }}
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: ClusterRole
+#   name: rhacs-operator-{{ .Release.Name }}
+# subjects:
+#   - kind: ServiceAccount
+#     name: rhacs-operator-controller-manager-{{ .Release.Name }}
+#     namespace: "{{ .Values.operator.targetNamespace }}"
