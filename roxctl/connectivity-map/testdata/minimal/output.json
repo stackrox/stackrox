@@ -5,11 +5,6 @@
     "conn": "TCP 8080"
   },
   {
-    "src": "default/backend[Deployment]",
-    "dst": "default/backend[Deployment]",
-    "conn": "All Connections"
-  },
-  {
     "src": "default/frontend[Deployment]",
     "dst": "0.0.0.0-255.255.255.255",
     "conn": "UDP 53"
@@ -18,10 +13,5 @@
     "src": "default/frontend[Deployment]",
     "dst": "default/backend[Deployment]",
     "conn": "TCP 9090"
-  },
-  {
-    "src": "default/frontend[Deployment]",
-    "dst": "default/frontend[Deployment]",
-    "conn": "All Connections"
   }
 ]
