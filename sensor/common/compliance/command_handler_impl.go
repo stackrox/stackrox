@@ -28,7 +28,7 @@ type commandHandlerImpl struct {
 	scrapeIDToState map[string]*scrapeState
 
 	stopper concurrency.Stopper
-	centralReachable atomic.Bool
+	centralReachable *atomic.Bool
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -52,9 +52,9 @@ func (c *commandHandlerImpl) Stop(_ error) {
 func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		c.centralReachable.Store(true)
+		c.centralReachable.CompareAndSwap(false, true)
 	case common.SensorComponentEventOfflineMode:
-		c.centralReachable.Store(false)
+		c.centralReachable.CompareAndSwap(true, false)
 	}
 }
 
