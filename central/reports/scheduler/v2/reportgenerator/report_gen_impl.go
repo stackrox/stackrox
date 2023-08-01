@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -26,13 +28,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -40,6 +42,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
 type reportGeneratorImpl struct {
@@ -67,13 +71,9 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 	if req.Collection == nil {
 		rg.logAndUpsertError(errors.New("Request does not have a valid non-nil collection"), req)
 	}
-	if req.Ctx == nil {
-		log.Error("Request does not have valid non-nil context")
-		return
-	}
 
 	if req.ReportConfig.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.Ctx, req.ReportConfig)
+		req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportConfig)
 		if err != nil {
 			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
 			return
@@ -83,7 +83,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 	}
 
 	// Change report status to PREPARING
-	err = rg.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_PREPARING)
+	err = rg.upsertReportStatus(req.ReportMetadata, storage.ReportStatus_PREPARING)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to PREPARING"), req)
 		return
@@ -97,7 +97,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 
 	// Change report status to SUCCESS
 	req.ReportMetadata.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_SUCCESS)
+	err = rg.upsertReportStatus(req.ReportMetadata, storage.ReportStatus_SUCCESS)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to SUCCESS"), req)
 		return
@@ -108,7 +108,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 /* Report generation helper functions */
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
 	// Get the results of running the report query
-	deployedImgData, watchedImgData, err := rg.getReportData(req.Ctx, req.ReportConfig, req.Collection, req.DataStartTime)
+	deployedImgData, watchedImgData, err := rg.getReportData(req.ReportConfig, req.Collection, req.DataStartTime)
 	if err != nil {
 		return err
 	}
@@ -134,19 +134,19 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 
 	switch req.ReportMetadata.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
-		if err = rg.saveReportData(req.Ctx, req.ReportMetadata.ReportConfigId, req.ReportMetadata.ReportId, zippedCSVData); err != nil {
+		if err = rg.saveReportData(req.ReportMetadata.ReportConfigId, req.ReportMetadata.ReportId, zippedCSVData); err != nil {
 			return errors.Wrap(err, "error persisting blob")
 		}
 	case storage.ReportStatus_EMAIL:
 		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 		for _, notifierConfig := range req.ReportConfig.GetNotifiers() {
-			nf := rg.notificationProcessor.GetNotifier(req.Ctx, notifierConfig.GetEmailConfig().GetNotifierId())
+			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierConfig.GetEmailConfig().GetNotifierId())
 			reportNotifier, ok := nf.(notifiers.ReportNotifier)
 			if !ok {
 				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierConfig.GetEmailConfig().GetNotifierId()))
 				continue
 			}
-			err := rg.retryableSendReportResults(req.Ctx, reportNotifier, notifierConfig.GetEmailConfig().GetMailingLists(),
+			err := rg.retryableSendReportResults(reportNotifier, notifierConfig.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, messageText)
 			if err != nil {
 				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
@@ -160,16 +160,10 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	return nil
 }
 
-func (rg *reportGeneratorImpl) saveReportData(ctx context.Context, configID, reportID string, data *bytes.Buffer) error {
+func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *bytes.Buffer) error {
 	if data == nil {
 		data = bytes.NewBuffer([]byte{})
 	}
-
-	// Augment ctx with write access to Administration for Upsert.
-	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
 
 	// Store downloadable report in blob storage
 	b := &storage.Blob{
@@ -178,14 +172,14 @@ func (rg *reportGeneratorImpl) saveReportData(ctx context.Context, configID, rep
 		ModifiedTime: types.TimestampNow(),
 		Length:       int64(data.Len()),
 	}
-	return rg.blobStore.Upsert(ctx, b, data)
+	return rg.blobStore.Upsert(reportGenCtx, b, data)
 }
 
-func (rg *reportGeneratorImpl) getReportData(ctx context.Context, rc *storage.ReportConfiguration, collection *storage.ResourceCollection,
+func (rg *reportGeneratorImpl) getReportData(rc *storage.ReportConfiguration, collection *storage.ResourceCollection,
 	dataStartTime *types.Timestamp) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
 	var deployedImgResults []common.DeployedImagesResult
 	var watchedImgResults []common.WatchedImagesResult
-	rQuery, err := rg.buildReportQuery(ctx, rc, collection, dataStartTime)
+	rQuery, err := rg.buildReportQuery(rc, collection, dataStartTime)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -199,11 +193,11 @@ func (rg *reportGeneratorImpl) getReportData(ctx context.Context, rc *storage.Re
 		// This query is a 'disjunction of conjunctions' where all conjunctions involve same fields.
 		// Current query language for graphQL does not have semantics to define such a query. Due to this we need to fetch deploymentIDs first
 		// and then pass them to graphQL.
-		deploymentIds, err := rg.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
+		deploymentIds, err := rg.getDeploymentIDs(rQuery.DeploymentsQuery)
 		if err != nil {
 			return nil, nil, err
 		}
-		result, err := rg.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
+		result, err := rg.runPaginatedDeploymentsQuery(rQuery.CveFieldsQuery, deploymentIds)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -212,11 +206,11 @@ func (rg *reportGeneratorImpl) getReportData(ctx context.Context, rc *storage.Re
 	}
 
 	if filterOnImageType(rc.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
-		watchedImages, err := rg.getWatchedImages(ctx)
+		watchedImages, err := rg.getWatchedImages()
 		if err != nil {
 			return nil, nil, err
 		}
-		result, err := rg.runPaginatedImagesQuery(ctx, rQuery.CveFieldsQuery, watchedImages)
+		result, err := rg.runPaginatedImagesQuery(rQuery.CveFieldsQuery, watchedImages)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -226,11 +220,11 @@ func (rg *reportGeneratorImpl) getReportData(ctx context.Context, rc *storage.Re
 	return deployedImgResults, watchedImgResults, nil
 }
 
-func (rg *reportGeneratorImpl) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
+func (rg *reportGeneratorImpl) buildReportQuery(rc *storage.ReportConfiguration,
 	collection *storage.ResourceCollection, dataStartTime *types.Timestamp) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), rg.collectionQueryResolver,
 		timestamp.FromProtobuf(dataStartTime).GoTime())
-	rQuery, err := qb.BuildQuery(ctx)
+	rQuery, err := qb.BuildQuery(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error building report query")
 	}
@@ -238,7 +232,7 @@ func (rg *reportGeneratorImpl) buildReportQuery(ctx context.Context, rc *storage
 }
 
 // Returns vuln report data from deployments matched by the collection.
-func (rg *reportGeneratorImpl) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.DeployedImagesResult, error) {
+func (rg *reportGeneratorImpl) runPaginatedDeploymentsQuery(cveQuery string, deploymentIds []string) (common.DeployedImagesResult, error) {
 	offset := paginatedQueryStartOffset
 	var resultData common.DeployedImagesResult
 	for {
@@ -247,7 +241,7 @@ func (rg *reportGeneratorImpl) runPaginatedDeploymentsQuery(ctx context.Context,
 		}
 		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
 			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+paginationLimit, len(deploymentIds))], ","))
-		r, err := execQuery[common.DeployedImagesResult](ctx, rg, deployedImagesReportQuery, deployedImagesReportQueryOpName,
+		r, err := execQuery[common.DeployedImagesResult](rg, deployedImagesReportQuery, deployedImagesReportQueryOpName,
 			scopeQuery, cveQuery, nil)
 		if err != nil {
 			return r, err
@@ -259,7 +253,7 @@ func (rg *reportGeneratorImpl) runPaginatedDeploymentsQuery(ctx context.Context,
 }
 
 // Returns vuln report data for watched images
-func (rg *reportGeneratorImpl) runPaginatedImagesQuery(ctx context.Context, cveQuery string, watchedImages []string) (common.WatchedImagesResult, error) {
+func (rg *reportGeneratorImpl) runPaginatedImagesQuery(cveQuery string, watchedImages []string) (common.WatchedImagesResult, error) {
 	offset := paginatedQueryStartOffset
 	var resultData common.WatchedImagesResult
 	for {
@@ -275,7 +269,7 @@ func (rg *reportGeneratorImpl) runPaginatedImagesQuery(ctx context.Context, cveQ
 				"distinct":      true,
 			},
 		}
-		r, err := execQuery[common.WatchedImagesResult](ctx, rg, watchedImagesReportQuery, watchedImagesReportQueryOpName,
+		r, err := execQuery[common.WatchedImagesResult](rg, watchedImagesReportQuery, watchedImagesReportQueryOpName,
 			scopeQuery, cveQuery, sortOpt)
 		if err != nil {
 			return r, err
@@ -286,7 +280,7 @@ func (rg *reportGeneratorImpl) runPaginatedImagesQuery(ctx context.Context, cveQ
 	return resultData, nil
 }
 
-func execQuery[T any](ctx context.Context, rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cveQuery string,
+func execQuery[T any](rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cveQuery string,
 	sortOpt map[string]interface{}) (T, error) {
 	pagination := map[string]interface{}{
 		"offset": paginatedQueryStartOffset,
@@ -298,7 +292,7 @@ func execQuery[T any](ctx context.Context, rg *reportGeneratorImpl, gqlQuery, op
 		}
 	}
 
-	response := rg.Schema.Exec(ctx,
+	response := rg.Schema.Exec(reportGenCtx,
 		gqlQuery, opName, map[string]interface{}{
 			"scopequery": scopeQuery,
 			"cvequery":   cveQuery,
@@ -317,10 +311,10 @@ func execQuery[T any](ctx context.Context, rg *reportGeneratorImpl, gqlQuery, op
 
 /* Utility Functions */
 
-func (rg *reportGeneratorImpl) retryableSendReportResults(ctx context.Context, reportNotifier notifiers.ReportNotifier, mailingList []string,
+func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
 	zippedCSVData *bytes.Buffer, messageText string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(ctx, zippedCSVData, mailingList, messageText)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, messageText)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -331,7 +325,7 @@ func (rg *reportGeneratorImpl) retryableSendReportResults(ctx context.Context, r
 	)
 }
 
-func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(ctx context.Context, config *storage.ReportConfiguration) (*types.Timestamp, error) {
+func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(config *storage.ReportConfiguration) (*types.Timestamp, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, config.GetId()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
@@ -340,7 +334,7 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(ctx context.Con
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
 			Limit(1)).
 		ProtoQuery()
-	results, err := rg.reportMetadataStore.SearchReportMetadatas(ctx, query)
+	results, err := rg.reportMetadataStore.SearchReportMetadatas(reportGenCtx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding last successful scheduled report time")
 	}
@@ -353,16 +347,16 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(ctx context.Con
 	return results[0].GetReportStatus().GetCompletedAt(), nil
 }
 
-func (rg *reportGeneratorImpl) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
-	results, err := rg.deploymentDatastore.Search(ctx, deploymentsQuery)
+func (rg *reportGeneratorImpl) getDeploymentIDs(deploymentsQuery *v1.Query) ([]string, error) {
+	results, err := rg.deploymentDatastore.Search(reportGenCtx, deploymentsQuery)
 	if err != nil {
 		return nil, err
 	}
 	return search.ResultsToIDs(results), nil
 }
 
-func (rg *reportGeneratorImpl) getWatchedImages(ctx context.Context) ([]string, error) {
-	watched, err := rg.watchedImageDatastore.GetAllWatchedImages(ctx)
+func (rg *reportGeneratorImpl) getWatchedImages() ([]string, error) {
+	watched, err := rg.watchedImageDatastore.GetAllWatchedImages(reportGenCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -373,9 +367,9 @@ func (rg *reportGeneratorImpl) getWatchedImages(ctx context.Context) ([]string, 
 	return results, nil
 }
 
-func (rg *reportGeneratorImpl) upsertReportStatus(ctx context.Context, metadata *storage.ReportMetadata, status storage.ReportStatus_RunState) error {
+func (rg *reportGeneratorImpl) upsertReportStatus(metadata *storage.ReportMetadata, status storage.ReportStatus_RunState) error {
 	metadata.ReportStatus.RunState = status
-	return rg.reportMetadataStore.UpdateReportMetadata(ctx, metadata)
+	return rg.reportMetadataStore.UpdateReportMetadata(reportGenCtx, metadata)
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
@@ -387,14 +381,10 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 		log.Error("Request does not have non-nil report metadata with a non-nil report status")
 		return
 	}
-	if req.Ctx == nil {
-		log.Error("Request does not have valid non-nil context")
-		return
-	}
 	log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
 	req.ReportMetadata.ReportStatus.ErrorMsg = reportErr.Error()
 	req.ReportMetadata.ReportStatus.CompletedAt = types.TimestampNow()
-	err := rg.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_FAILURE)
+	err := rg.upsertReportStatus(req.ReportMetadata, storage.ReportStatus_FAILURE)
 	if err != nil {
 		log.Errorf("Error changing report status to FAILURE for report config '%s', report ID '%s': %s",
 			req.ReportConfig.GetName(), req.ReportMetadata.GetReportId(), err)
@@ -405,7 +395,7 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 
 func (rg *reportGeneratorImpl) takeReportSnapshot(req *ReportRequest) {
 	snapshot := generateReportSnapshot(req.ReportConfig, req.ReportMetadata, req.Collection.GetName())
-	err := rg.reportSnapshotStore.AddReportSnapshot(req.Ctx, snapshot)
+	err := rg.reportSnapshotStore.AddReportSnapshot(reportGenCtx, snapshot)
 	if err != nil {
 		log.Errorf("Error storing snapshot for report config '%s', report ID '%s': %s",
 			req.ReportConfig.GetName(), req.ReportMetadata.GetReportId(), err)

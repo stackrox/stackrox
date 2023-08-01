@@ -219,7 +219,6 @@ func (suite *ReportServiceTestSuite) TestRunReport() {
 				suite.reportConfigStore.EXPECT().GetReportConfiguration(userContext, reportConfig.Id).
 					Return(reportConfig, true, nil).Times(1)
 				reportReq := getReportRequest(user, reportConfig, storage.ReportStatus_DOWNLOAD)
-				reportReq.Ctx = userContext
 				suite.scheduler.EXPECT().SubmitReportRequest(reportReq, false).
 					Return("reportID", nil).Times(1)
 			},
@@ -347,7 +346,7 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
 					Return(reportMetadata, true, nil).Times(1)
-				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
+				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any()).
 					Return(false, errors.New("Datastore error")).
 					Times(1)
 			},
@@ -362,7 +361,7 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
 					Return(reportMetadata, true, nil).Times(1)
-				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
+				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any()).
 					Return(false, nil).
 					Times(1)
 			},
@@ -377,7 +376,7 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				suite.reportMetadataStore.EXPECT().Get(userContext, reportMetadata.GetReportId()).
 					Return(reportMetadata, true, nil).Times(1)
-				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
+				suite.scheduler.EXPECT().CancelReportRequest(gomock.Any()).
 					Return(true, nil).
 					Times(1)
 			},

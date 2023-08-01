@@ -158,8 +158,6 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		reportReq.ReportMetadata.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
 	} else {
 		reportReq.ReportMetadata.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-		// Scope the downloadable reports to the access scope of user demanding the report
-		reportReq.Ctx = ctx
 	}
 	reportID, err := s.scheduler.SubmitReportRequest(reportReq, false)
 	if err != nil {
@@ -201,7 +199,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
 	}
 
-	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
+	cancelled, err := s.scheduler.CancelReportRequest(req.GetId())
 	if err != nil {
 		return nil, err
 	}
