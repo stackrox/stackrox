@@ -1,8 +1,6 @@
 package v2
 
 import (
-	"context"
-
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -26,7 +24,7 @@ type Scheduler interface {
 
 	// CancelReportRequest cancels a report request that is still waiting in queue.
 	// If the report is already being prepared or has completed execution, it cannot be cancelled.
-	CancelReportRequest(ctx context.Context, reportID string) (bool, error)
+	CancelReportRequest(reportID string) (bool, error)
 
 	// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
 	// This func will log errors if the scheduler fails to start.

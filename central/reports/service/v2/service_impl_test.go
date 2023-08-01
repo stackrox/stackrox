@@ -910,9 +910,8 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
-				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(false, errors.New("Datastore error")).
-					Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any()).
+					Return(false, errors.New("Datastore error")).Times(1)
 			},
 			isError: true,
 		},
@@ -925,9 +924,8 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
-				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(false, nil).
-					Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any()).
+					Return(false, nil).Times(1)
 			},
 			isError: true,
 		},
@@ -940,9 +938,8 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
-				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(true, nil).
-					Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any()).
+					Return(true, nil).Times(1)
 			},
 			isError: false,
 		},

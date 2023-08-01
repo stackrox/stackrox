@@ -321,7 +321,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, err
 	}
 
-	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
+	cancelled, err := s.scheduler.CancelReportRequest(req.GetId())
 	if err != nil {
 		return nil, err
 	}

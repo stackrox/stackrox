@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	reportgenerator "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
@@ -52,18 +51,18 @@ func (mr *MockSchedulerMockRecorder) CanSubmitReportRequest(user, reportConfig i
 }
 
 // CancelReportRequest mocks base method.
-func (m *MockScheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
+func (m *MockScheduler) CancelReportRequest(reportID string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelReportRequest", ctx, reportID)
+	ret := m.ctrl.Call(m, "CancelReportRequest", reportID)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CancelReportRequest indicates an expected call of CancelReportRequest.
-func (mr *MockSchedulerMockRecorder) CancelReportRequest(ctx, reportID interface{}) *gomock.Call {
+func (mr *MockSchedulerMockRecorder) CancelReportRequest(reportID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelReportRequest", reflect.TypeOf((*MockScheduler)(nil).CancelReportRequest), ctx, reportID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelReportRequest", reflect.TypeOf((*MockScheduler)(nil).CancelReportRequest), reportID)
 }
 
 // RemoveReportSchedule mocks base method.
