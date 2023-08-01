@@ -10,9 +10,11 @@ import (
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -24,13 +26,13 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	opts := []pkgReconciler.Option{
-		// pkgReconciler.WithExtraWatch(
-		// 	&source.Kind{Type: &platform.SecuredCluster{}},
-		// 	reconciler.HandleSiblings(platform.CentralGVK, mgr),
-		// 	// Only appearance and disappearance of a SecuredCluster resource can influence whether
-		// 	// an init bundle should be created by the Central controller.
-		// 	utils.CreateAndDeleteOnlyPredicate{},
-		// ),
+		pkgReconciler.WithExtraWatch(
+			&source.Kind{Type: &platform.SecuredCluster{}},
+			reconciler.HandleSiblings(platform.CentralGVK, mgr),
+			// Only appearance and disappearance of a SecuredCluster resource can influence whether
+			// an init bundle should be created by the Central controller.
+			utils.CreateAndDeleteOnlyPredicate{},
+		),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient())),
