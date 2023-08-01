@@ -244,3 +244,15 @@ export function runReportRequest(
             return response.data;
         });
 }
+
+export function downloadReport(reportId: string) {
+    return axios.get<string>(`/v2/reports/jobs/${reportId}/download`).then((response) => {
+        return response.data;
+    });
+}
+
+export function deleteDownloadableReport(reportId: string) {
+    return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
+        return response.data;
+    });
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
@@ -28,11 +28,14 @@ import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityRe
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
+import { saveFile } from 'services/DownloadService';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import ReportJobStatus from './ReportJobStatus';
 import JobDetails from './JobDetails';
+import useDeleteDownloadModal from '../hooks/useDeleteDownloadModal';
+import DeleteModal from '../components/DeleteModal';
 
 export type RunHistoryProps = {
     reportId: string;
@@ -48,12 +51,23 @@ function ReportJobs({ reportId }: RunHistoryProps) {
         'Report state': filteredStatuses,
     });
 
-    const { reportSnapshots, isLoading, error } = useFetchReportHistory({
+    const { reportSnapshots, isLoading, error, fetchReportSnapshots } = useFetchReportHistory({
         id: reportId,
         query,
         page,
         perPage,
         showMyHistory: showOnlyMyJobs,
+    });
+
+    const {
+        openDeleteDownloadModal,
+        isDeleteDownloadModalOpen,
+        closeDeleteDownloadModal,
+        isDeletingDownload,
+        onDeleteDownload,
+        deleteDownloadError,
+    } = useDeleteDownloadModal({
+        onCompleted: fetchReportSnapshots,
     });
 
     const handleChange = (checked: boolean) => {
@@ -138,6 +152,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             <Th>Completed</Th>
                             <Th>Status</Th>
                             <Th>Requestor</Th>
+                            <Td>{/* Header for table actions column */}</Td>
                         </Tr>
                     </Thead>
                     {reportSnapshots.length === 0 && (
@@ -176,6 +191,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             notifiers,
                             reportStatus,
                             user,
+                            isDownloadAvailable,
                         } = reportSnapshot;
                         const isExpanded = expandedRowSet.has(reportJobId);
                         const reportConfiguration: ReportConfiguration = {
@@ -195,6 +211,34 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         };
                         const formValues =
                             getReportFormValuesFromConfiguration(reportConfiguration);
+                        const hasDownloadableReport =
+                            isDownloadAvailable &&
+                            reportStatus.runState === 'SUCCESS' &&
+                            reportStatus.reportNotificationMethod === 'DOWNLOAD';
+                        const rowActions = [
+                            {
+                                title: 'Download report',
+                                onClick: (event) => {
+                                    event.preventDefault();
+                                    return saveFile({
+                                        method: 'get',
+                                        url: `/v2/reports/jobs/${reportJobId}/download`,
+                                        data: null,
+                                        timeout: 300000,
+                                        name: `${name}-report.gz`,
+                                    });
+                                },
+                            },
+                            {
+                                title: (
+                                    <span className="pf-u-danger-color-100">Delete download</span>
+                                ),
+                                onClick: (event) => {
+                                    event.preventDefault();
+                                    openDeleteDownloadModal(reportJobId);
+                                },
+                            },
+                        ];
 
                         return (
                             <Tbody key={reportJobId} isExpanded={isExpanded}>
@@ -215,6 +259,11 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                         <ReportJobStatus reportSnapshot={reportSnapshot} />
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>
+                                    <Td isActionCell>
+                                        {hasDownloadableReport && (
+                                            <ActionsColumn items={rowActions} />
+                                        )}
+                                    </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={4}>
@@ -248,6 +297,17 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     })}
                 </TableComposable>
             )}
+            <DeleteModal
+                title="Delete downloadable report?"
+                isOpen={isDeleteDownloadModalOpen}
+                onClose={closeDeleteDownloadModal}
+                isDeleting={isDeletingDownload}
+                onDelete={onDeleteDownload}
+                error={deleteDownloadError}
+            >
+                All data in this downloadable report will be deleted. Regenerating a downloadable
+                report will requre the download process to start over.
+            </DeleteModal>
         </>
     );
 }

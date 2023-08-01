@@ -32,7 +32,7 @@ import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hoo
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
-import DeleteReportModal from '../components/DeleteReportModal';
+import DeleteModal from '../components/DeleteModal';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -260,13 +260,17 @@ function ViewVulnReportPage() {
                     </Tab>
                 </Tabs>
             </PageSection>
-            <DeleteReportModal
+            <DeleteModal
+                title="Permanently delete report?"
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
                 isDeleting={isDeleting}
                 onDelete={onDelete}
                 error={deleteError}
-            />
+            >
+                This report and any attached downloadable reports will be permanently deleted. The
+                action cannot be undone.
+            </DeleteModal>
         </>
     );
 }

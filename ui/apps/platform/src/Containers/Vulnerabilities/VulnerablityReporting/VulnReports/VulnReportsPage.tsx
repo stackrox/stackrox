@@ -40,7 +40,7 @@ import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
-import DeleteReportModal from '../components/DeleteReportModal';
+import DeleteModal from '../components/DeleteModal';
 
 const CreateReportsButton = () => {
     return (
@@ -111,7 +111,9 @@ function VulnReportsPage() {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Flex direction={{ default: 'column' }}>
                             <FlexItem>
-                                <Title headingLevel="h1">Vulnerability reporting</Title>
+                                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                                    <Title headingLevel="h1">Vulnerability reporting</Title>
+                                </Flex>
                             </FlexItem>
                             <FlexItem>
                                 Configure reports, define report scopes, and assign delivery
@@ -436,13 +438,17 @@ function VulnReportsPage() {
                     </Card>
                 </PageSection>
             </PageSection>
-            <DeleteReportModal
+            <DeleteModal
+                title="Permanently delete report?"
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
                 isDeleting={isDeleting}
                 onDelete={onDelete}
                 error={deleteError}
-            />
+            >
+                This report and any attached downloadable reports will be permanently deleted. The
+                action cannot be undone.
+            </DeleteModal>
         </>
     );
 }
