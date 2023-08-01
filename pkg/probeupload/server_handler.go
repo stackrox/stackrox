@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common"
 )
 
 var (
@@ -55,13 +54,12 @@ func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *p
 	}
 }
 
-func (h *probeServerHandler) Notify(e common.SensorComponentEvent) {
-	switch e {
-	case common.SensorComponentEventCentralReachable:
-		h.centralReady.Signal()
-	case common.SensorComponentEventOfflineMode:
-		h.centralReady.Reset()
-	}
+func (h *probeServerHandler) GoOnline() {
+	h.centralReady.Signal()
+}
+
+func (h *probeServerHandler) GoOffline() {
+	h.centralReady.Reset()
 }
 
 func (h *probeServerHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
