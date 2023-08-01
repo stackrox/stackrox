@@ -74,6 +74,7 @@ import (
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	installationStore "github.com/stackrox/rox/central/installation/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
@@ -388,7 +389,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
-		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),

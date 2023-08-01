@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
+	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -26,7 +27,10 @@ type Info interface {
 }
 
 func initialize() {
-	info = &infoImpl{cache: newMetricsCache(), gauge: newGaugeVec()}
+	info = &infoImpl{
+		cache: newMetricsCache(),
+		gauge: newGaugeVec(installationStore.Singleton()),
+	}
 	prometheus.MustRegister(info.gauge)
 }
 
