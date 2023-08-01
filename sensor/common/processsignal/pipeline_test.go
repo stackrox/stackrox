@@ -26,9 +26,11 @@ func TestProcessPipelineOffline(t *testing.T) {
 		ContainerID:  "2e43ac4f61f9",
 	}
 	type processIndicatorMessageT struct {
-		signal              *storage.ProcessSignal
-		expectDeploymentID  string
-		expectContextCancel func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
+		signal                  *storage.ProcessSignal
+		expectDeploymentID      string
+		expectContextCancel     func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
+		signalProcessingRoutine func(p *Pipeline, signal *storage.ProcessSignal, store *clusterentities.Store,
+			meta clusterentities.ContainerMetadata, wg *sync.WaitGroup)
 	}
 	cases := []struct {
 		name string
@@ -46,14 +48,16 @@ func TestProcessPipelineOffline(t *testing.T) {
 			initialState: common.SensorComponentEventCentralReachable,
 			laterState:   common.SensorComponentEventCentralReachable,
 			initialSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
-				expectDeploymentID:  containerMetadata1.DeploymentID,
-				expectContextCancel: assert.NoError,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				expectDeploymentID:      containerMetadata1.DeploymentID,
+				expectContextCancel:     assert.NoError,
+				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
-				expectDeploymentID:  containerMetadata2.DeploymentID,
-				expectContextCancel: assert.NoError,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				expectDeploymentID:      containerMetadata2.DeploymentID,
+				expectContextCancel:     assert.NoError,
+				signalProcessingRoutine: processSignal,
 			},
 		},
 		{
@@ -61,14 +65,16 @@ func TestProcessPipelineOffline(t *testing.T) {
 			initialState: common.SensorComponentEventCentralReachable,
 			laterState:   common.SensorComponentEventOfflineMode,
 			initialSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
-				expectDeploymentID:  containerMetadata1.DeploymentID,
-				expectContextCancel: assert.NoError,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				expectDeploymentID:      containerMetadata1.DeploymentID,
+				expectContextCancel:     assert.NoError,
+				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
-				expectDeploymentID:  containerMetadata2.DeploymentID,
-				expectContextCancel: assert.Error,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				expectDeploymentID:      containerMetadata2.DeploymentID,
+				expectContextCancel:     assert.Error,
+				signalProcessingRoutine: processSignal,
 			},
 		},
 		{
@@ -76,14 +82,16 @@ func TestProcessPipelineOffline(t *testing.T) {
 			initialState: common.SensorComponentEventOfflineMode,
 			laterState:   common.SensorComponentEventOfflineMode,
 			initialSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
-				expectDeploymentID:  containerMetadata1.DeploymentID,
-				expectContextCancel: assert.Error,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				expectDeploymentID:      containerMetadata1.DeploymentID,
+				expectContextCancel:     assert.Error,
+				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
-				expectDeploymentID:  containerMetadata2.DeploymentID,
-				expectContextCancel: assert.Error,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				expectDeploymentID:      containerMetadata2.DeploymentID,
+				expectContextCancel:     assert.Error,
+				signalProcessingRoutine: processSignal,
 			},
 		},
 		{
@@ -91,14 +99,36 @@ func TestProcessPipelineOffline(t *testing.T) {
 			initialState: common.SensorComponentEventOfflineMode,
 			laterState:   common.SensorComponentEventCentralReachable,
 			initialSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
-				expectDeploymentID:  containerMetadata1.DeploymentID,
-				expectContextCancel: assert.Error,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				expectDeploymentID:      containerMetadata1.DeploymentID,
+				expectContextCancel:     assert.Error,
+				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:              &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
-				expectDeploymentID:  containerMetadata2.DeploymentID,
-				expectContextCancel: assert.NoError,
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				expectDeploymentID:      containerMetadata2.DeploymentID,
+				expectContextCancel:     assert.NoError,
+				signalProcessingRoutine: processSignal,
+			},
+		},
+		{
+			name:         "Transitioning through offline should keep the enricher alive",
+			initialState: common.SensorComponentEventOfflineMode,
+			laterState:   common.SensorComponentEventCentralReachable,
+			// initial signal is processed in offline mode without the enricher (processSignal) as metadata is known
+			initialSignal: &processIndicatorMessageT{
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				expectDeploymentID:      containerMetadata1.DeploymentID,
+				expectContextCancel:     assert.Error,
+				signalProcessingRoutine: processSignal,
+			},
+			// initial signal is processed in online using the enricher (processSignalAsync) as metadata will be
+			// updated through ticker asynchronously
+			laterSignal: &processIndicatorMessageT{
+				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				expectDeploymentID:      containerMetadata2.DeploymentID,
+				expectContextCancel:     assert.NoError,
+				signalProcessingRoutine: processSignalAsync,
 			},
 		},
 	}
@@ -169,11 +199,18 @@ func processSignal(p *Pipeline,
 	wg *sync.WaitGroup) {
 	defer wg.Done()
 	// If PI has metadata in store it will be enriched immediately.
-	// If not, then the enrichment happens async based on ticker.
+	// If not, then the enrichment happens async based on ticker - see processSignalAsync.
 	// Here, we simulate immediate enrichment to not make the test more complex.
 	updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
 	p.Process(signal)
+}
 
+func processSignalAsync(p *Pipeline,
+	signal *storage.ProcessSignal,
+	store *clusterentities.Store,
+	meta clusterentities.ContainerMetadata,
+	wg *sync.WaitGroup) {
+	defer wg.Done()
 	// For the scenario when the enrichment happens async based on ticker -
 	// simulating the situation in which we receive a process indicator from a container that is still unknown -
 	// this test would need to:
@@ -183,8 +220,11 @@ func processSignal(p *Pipeline,
 	// 4) Wait for enricher tick (see `enricher.processLoop` case <-ticker.C)
 	// 5) Wait for the enriched signal to be written to the channel
 	// 6) Assert on the messages from the channel.
-	// We do not test this scenario due to confirmed high risk of flakiness
-	// (provided, no additional refactorings are done).
+
+	p.Process(signal)
+	updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
+	// Let enricher tick at least once
+	<-time.After(enrichInterval)
 }
 
 // collectEventsFor reads events from a channel for a given time and returns them as slice

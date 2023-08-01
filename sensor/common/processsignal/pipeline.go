@@ -33,16 +33,20 @@ type Pipeline struct {
 	processFilter      filter.Filter
 	detector           detector.Detector
 	cm                 *channelmultiplexer.ChannelMultiplexer[*storage.ProcessIndicator]
-	ctxMux             *sync.Mutex
-	ctx                context.Context
-	ctxCancel          context.CancelCauseFunc
+	// enricher context
+	cancelEnricherCtx context.CancelCauseFunc
+	// message context
+	msgCtxMux    *sync.Mutex
+	msgCtx       context.Context
+	msgCtxCancel context.CancelCauseFunc
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
-	ctx, cancel := context.WithCancelCause(context.Background())
-	en := newEnricher(ctx, clusterEntities)
+	msgCtx, cancelMsgCtx := context.WithCancelCause(context.Background())
+	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
+	en := newEnricher(enricherCtx, clusterEntities)
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 
 	cm := channelmultiplexer.NewMultiplexer[*storage.ProcessIndicator]()
@@ -57,9 +61,10 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 		processFilter:      processFilter,
 		detector:           detector,
 		cm:                 cm,
-		ctxMux:             &sync.Mutex{},
-		ctx:                ctx,
-		ctxCancel:          cancel,
+		cancelEnricherCtx:  cancelEnricherCtx,
+		msgCtxMux:          &sync.Mutex{},
+		msgCtx:             msgCtx,
+		msgCtxCancel:       cancelMsgCtx,
 	}
 	go p.sendIndicatorEvent()
 	return p
@@ -77,7 +82,7 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 
 // Shutdown closes all communication channels and shutdowns the enricher
 func (p *Pipeline) Shutdown() {
-	p.cancelCurrentContext()
+	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
 	defer close(p.enrichedIndicators)
 }
 
@@ -93,22 +98,22 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 }
 
 func (p *Pipeline) createNewContext() {
-	p.ctxMux.Lock()
-	defer p.ctxMux.Unlock()
-	p.ctx, p.ctxCancel = context.WithCancelCause(context.Background())
+	p.msgCtxMux.Lock()
+	defer p.msgCtxMux.Unlock()
+	p.msgCtx, p.msgCtxCancel = context.WithCancelCause(context.Background())
 }
 
 func (p *Pipeline) getCurrentContext() context.Context {
-	p.ctxMux.Lock()
-	defer p.ctxMux.Unlock()
-	return p.ctx
+	p.msgCtxMux.Lock()
+	defer p.msgCtxMux.Unlock()
+	return p.msgCtx
 }
 
 func (p *Pipeline) cancelCurrentContext() {
-	p.ctxMux.Lock()
-	defer p.ctxMux.Unlock()
-	if p.ctxCancel != nil {
-		p.ctxCancel(errSensorOffline)
+	p.msgCtxMux.Lock()
+	defer p.msgCtxMux.Unlock()
+	if p.msgCtxCancel != nil {
+		p.msgCtxCancel(errSensorOffline)
 	}
 }
 
