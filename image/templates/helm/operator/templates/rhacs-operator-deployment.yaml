@@ -53,7 +53,7 @@ spec:
             - name: ROX_OPERATOR_OUTER_MODE
               value: "{{.Values.operator.outerMode}}"
             - name: ENABLE_WEBHOOKS
-              value: false
+              value: "false"
             - name: RELATED_IMAGE_MAIN
             - name: RELATED_IMAGE_SCANNER
             - name: RELATED_IMAGE_SCANNER_SLIM
