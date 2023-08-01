@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 )
 
@@ -266,8 +267,7 @@ func DecOutputChannelSize() {
 func SetInfoMetric(cm *central.ClusterMetrics) {
 	info.Reset()
 	info.WithLabelValues(
-		// TODO: Get central ID
-		"",
+		centralid.Get(),
 		clusterid.GetNoWait(),
 		strconv.FormatInt(cm.GetNodeCount(), 10),
 		strconv.FormatInt(cm.GetCpuCapacity(), 10),

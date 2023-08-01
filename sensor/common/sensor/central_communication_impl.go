@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -217,6 +218,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	}
 
 	managedcentral.Set(centralHello.GetManagedCentral())
+	centralid.Set(centralHello.GetCentralId())
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
