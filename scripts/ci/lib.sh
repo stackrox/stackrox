@@ -113,8 +113,8 @@ setup_deployment_env() {
         ci_export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
     fi
 
-    ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
-    ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+    ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RW_USERNAME"
+    ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RW_PASSWORD"
     if [[ "$REGISTRY" =~ ^brew.registry.redhat.io ]]; then
         ci_export MAIN_IMAGE_TAG "1.0.0"
     elif [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
