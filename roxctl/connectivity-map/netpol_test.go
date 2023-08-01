@@ -3,6 +3,7 @@ package connectivitymap
 import (
 	"errors"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
@@ -103,6 +104,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 			outputToFile:          true,
+			outputFormat:          defaultOutputFormat,
 		},
 		{
 			name:                  "output should be focused to a workload",
@@ -215,8 +217,14 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 				if tt.outputFormat != "" {
 					d.Assert().Contains(defaultFile, tt.outputFormat)
 				}
-				_, err := os.Stat(defaultFile)
-				d.Assert().NoError(err) // default output file should exist
+				output, err := os.ReadFile(defaultFile)
+				d.Assert().NoError(err)
+
+				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath, "output."+tt.outputFormat))
+				d.NoError(err)
+				d.Equal(string(expectedOutput), string(output))
+
+				d.Assert().NoError(err)
 				d.Assert().NoError(os.Remove(defaultFile))
 			}
 		})
