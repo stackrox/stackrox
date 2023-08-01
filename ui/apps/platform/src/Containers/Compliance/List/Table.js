@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
 import { useQuery } from '@apollo/client';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
@@ -344,7 +344,9 @@ const ListTable = ({
                         contents = (
                             <>
                                 {data.results.errorMessage && (
-                                    <Message type="error">{data.results.errorMessage}</Message>
+                                    <Alert variant="danger" isInline title="Unable to get data">
+                                        {data.results.errorMessage}
+                                    </Alert>
                                 )}
                                 {tableElement}
                             </>

@@ -103,7 +103,6 @@ func isProcessSignalValid(signal *storage.ProcessSignal) bool {
 }
 
 func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
-	log.Info("starting receiveMessages")
 	for {
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {

@@ -30,11 +30,13 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
+    title: string;
     formValues: ReportFormValues;
     setFormFieldValue: SetReportFormFieldValue;
 };
 
 function ReportParametersForm({
+    title,
     formValues,
     setFormFieldValue,
 }: ReportParametersFormParams): ReactElement {
@@ -70,7 +72,7 @@ function ReportParametersForm({
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Configure report parameters</Title>
+                        <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
                 </Flex>
             </PageSection>
@@ -206,7 +208,6 @@ function ReportParametersForm({
                 <FormGroup isRequired fieldId="reportParameters.reportScope">
                     <CollectionSelection
                         selectedScope={formValues.reportParameters.reportScope}
-                        initialReportScope={null}
                         onChange={handleCollectionSelection('reportParameters.reportScope')}
                         allowCreate={canWriteCollections}
                     />

@@ -12,7 +12,7 @@ updates:
       day: 'wednesday'
     # always update package.json files to match new version for any package in UI monorepo
     versioning-strategy: increase
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
     labels:
       - "dependencies"
       - "area/ui"
@@ -54,21 +54,6 @@ updates:
     ignore:
       - dependency-name: "github.com/aws/aws-sdk-go"
         update-types: ["version-update:semver-patch"]
-
-  - package-ecosystem: 'gomod'
-    directory: '/scanner/'
-    schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 3
-    labels:
-    - "area/scanner"
-    - "auto-merge"
-    - "dependencies"
-    reviewers:
-    - "stackrox/scanner"
-    commit-message:
-      include: scope
-      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/tools/linters/'

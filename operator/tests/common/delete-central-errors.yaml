@@ -231,3 +231,19 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: central-mtls
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: central-prometheus-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-central-auth-reader
+  namespace: kube-system

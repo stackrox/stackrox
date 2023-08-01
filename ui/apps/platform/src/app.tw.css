@@ -13,12 +13,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '~@stackrox/ui-components/lib/ui-components.css';
-
 /* reset the unthinking hardcoded resets of Tailwind Forms in v2 plugin,
    https://github.com/tailwindlabs/tailwindcss-forms/blob/master/src/index.js
-   This has to be done in both ui-components CSS and apps/platform CSS,
-   otherwise, the Tailwind reset will win if it's only done in one or the other. */
+*/
 [type='text'],
 [type='email'],
 [type='url'],

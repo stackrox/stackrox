@@ -2,6 +2,7 @@
 /.git/
 /bin/
 /image/bin/
+/image/rhel/bin/
 /linux-gocache/
 /operator/*/bin/
 /qa-tests-backend/

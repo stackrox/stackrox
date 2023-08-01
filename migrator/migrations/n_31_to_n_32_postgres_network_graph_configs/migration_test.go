@@ -40,7 +40,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.postgresDB = pghelper.ForT(s.T(), true)
+	s.postgresDB = pghelper.ForT(s.T(), false)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
@@ -61,7 +61,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, []*storage.NetworkGraphConfig{networkGraphConfig}))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
@@ -87,7 +87,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationWithEmptyID() {
 	s.NoError(crud.UpsertWithID(networkGraphConfigKey, networkGraphConfig))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
@@ -114,7 +114,7 @@ func (s *postgresMigrationSuite) TestNetworkGraphConfigMigrationMultiple() {
 	s.NoError(crud.UpsertWithID("random", networkGraphConfig))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

@@ -3,6 +3,8 @@
 package types
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/postgres"
 	"gorm.io/gorm"
 )
@@ -12,4 +14,7 @@ import (
 type Databases struct {
 	GormDB     *gorm.DB
 	PostgresDB postgres.DB
+
+	// Adding a context, so we can wrap migrations in a transaction if desired
+	DBCtx context.Context
 }

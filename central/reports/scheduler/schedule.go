@@ -277,7 +277,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVData, err := common.Format(reportData)
+	zippedCSVData, err := common.Format(reportData, nil)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
@@ -329,7 +329,7 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration) ([]common.Result, error) {
+func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration) ([]common.DeployedImagesResult, error) {
 	collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
@@ -337,7 +337,7 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 	if !found {
 		return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
 	}
-	rQuery, err := s.buildReportQuery(ctx, rc, collection, nil, nil)
+	rQuery, err := s.buildReportQuery(ctx, rc, collection)
 	if err != nil {
 		return nil, err
 	}
@@ -350,13 +350,13 @@ func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfigu
 		return nil, err
 	}
 	result.Deployments = orderByClusterAndNamespace(result.Deployments)
-	return []common.Result{result}, nil
+	return []common.DeployedImagesResult{result}, nil
 }
 
 func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
-	collection *storage.ResourceCollection, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata) (*common.ReportQuery, error) {
-	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, collection, rc.GetVulnReportFilters(),
-		s.collectionQueryResolver, timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
+	collection *storage.ResourceCollection) (*common.ReportQuery, error) {
+	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
+		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
 	rQuery, err := qb.BuildQuery(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error building report query")
@@ -365,9 +365,9 @@ func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConf
 }
 
 // Returns vuln report data from deployments matched by embedded resource collection.
-func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.Result, error) {
+func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.DeployedImagesResult, error) {
 	offset := paginatedQueryStartOffset
-	var resultData common.Result
+	var resultData common.DeployedImagesResult
 	for {
 		if offset >= len(deploymentIds) {
 			break
@@ -390,7 +390,7 @@ func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery s
 	return resultData, nil
 }
 
-func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuery, cveQuery string, offset int) (common.Result, error) {
+func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuery, cveQuery string, offset int) (common.DeployedImagesResult, error) {
 	response := s.Schema.Exec(ctx,
 		gqlQuery, "getVulnReportData", map[string]interface{}{
 			"scopequery": scopeQuery,
@@ -402,11 +402,11 @@ func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuer
 		})
 	if len(response.Errors) > 0 {
 		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
-		return common.Result{}, response.Errors[0].Err
+		return common.DeployedImagesResult{}, response.Errors[0].Err
 	}
-	var res common.Result
+	var res common.DeployedImagesResult
 	if err := json.Unmarshal(response.Data, &res); err != nil {
-		return common.Result{}, err
+		return common.DeployedImagesResult{}, err
 	}
 	return res, nil
 }

@@ -17,6 +17,7 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 # Override test env defaults here:
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
 os.environ["OUTPUT_FORMAT"] = "helm"
+os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 
 ClusterTestRunner(
     cluster=GKECluster("ui-e2e-test"),

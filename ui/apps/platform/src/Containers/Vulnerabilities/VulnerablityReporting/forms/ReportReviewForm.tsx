@@ -5,10 +5,6 @@ import {
     Card,
     CardBody,
     CardTitle,
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
     Divider,
     Flex,
     FlexItem,
@@ -20,74 +16,24 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { getDate } from 'utils/dateUtils';
-import {
-    cvesDiscoveredSinceLabelMap,
-    imageTypeLabelMap,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
-import { fixabilityLabels } from 'constants/reportConstants';
-
-import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-
 import exampleReportsCSVData from '../exampleReportsCSVData';
 
+import ReportParametersDetails from '../components/ReportParametersDetails';
+import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
+import ScheduleDetails from '../components/ScheduleDetails';
+
 export type ReportReviewFormParams = {
+    title: string;
     formValues: ReportFormValues;
 };
 
-function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement {
-    const cveSeverities =
-        formValues.reportParameters.cveSeverities.length !== 0 ? (
-            formValues.reportParameters.cveSeverities.map((severity) => (
-                <li key={severity}>
-                    <VulnerabilitySeverityIconText severity={severity} />
-                </li>
-            ))
-        ) : (
-            <li>None</li>
-        );
-    const cveStatuses =
-        formValues.reportParameters.cveStatus.length !== 0 ? (
-            formValues.reportParameters.cveStatus.map((status) => (
-                <li key={status}>{fixabilityLabels[status]}</li>
-            ))
-        ) : (
-            <li>None</li>
-        );
-    const imageTypes =
-        formValues.reportParameters.imageType.length !== 0 ? (
-            formValues.reportParameters.imageType.map((type) => (
-                <li key={type}>{imageTypeLabelMap[type]}</li>
-            ))
-        ) : (
-            <li>None</li>
-        );
-
-    const deliveryDestinations =
-        formValues.deliveryDestinations.length !== 0 ? (
-            formValues.deliveryDestinations.map((deliveryDestination) => (
-                <li key={deliveryDestination.notifier?.id}>{deliveryDestination.notifier?.name}</li>
-            ))
-        ) : (
-            <li>None</li>
-        );
-
-    const mailingLists =
-        formValues.deliveryDestinations.length !== 0 ? (
-            formValues.deliveryDestinations.map((deliveryDestination) => {
-                const emails = deliveryDestination.mailingLists.join(', ');
-                return <li key={emails}>{emails}</li>;
-            })
-        ) : (
-            <li>None</li>
-        );
-
+function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactElement {
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Review and create</Title>
+                        <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
                 </Flex>
             </PageSection>
@@ -97,110 +43,11 @@ function ReportReviewForm({ formValues }: ReportReviewFormParams): ReactElement 
                 padding={{ default: 'noPadding' }}
                 className="pf-u-py-lg pf-u-px-lg"
             >
-                <Flex direction={{ default: 'column' }}>
-                    <FlexItem>
-                        <Title headingLevel="h3">Report parameters</Title>
-                    </FlexItem>
-                    <FlexItem flex={{ default: 'flexNone' }}>
-                        <DescriptionList
-                            columnModifier={{
-                                default: '2Col',
-                                md: '2Col',
-                                sm: '1Col',
-                            }}
-                        >
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Report name</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {formValues.reportParameters.reportName || 'None'}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Description</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {formValues.reportParameters.description || 'None'}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>CVE severity</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ul>{cveSeverities}</ul>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>CVE status</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ul>{cveStatuses}</ul>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Report scope</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {formValues.reportParameters.reportScope?.name || 'None'}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Image type</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ul>{imageTypes}</ul>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>CVEs discovered since</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {formValues.reportParameters.cvesDiscoveredSince ===
-                                        'START_DATE' &&
-                                    !!formValues.reportParameters.cvesDiscoveredStartDate
-                                        ? getDate(
-                                              formValues.reportParameters.cvesDiscoveredStartDate
-                                          )
-                                        : cvesDiscoveredSinceLabelMap[
-                                              formValues.reportParameters.cvesDiscoveredSince
-                                          ]}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </DescriptionList>
-                    </FlexItem>
-                </Flex>
+                <ReportParametersDetails formValues={formValues} />
                 <Divider component="div" className="pf-u-py-md" />
-                <Flex direction={{ default: 'column' }}>
-                    <FlexItem>
-                        <Title headingLevel="h3">Delivery destinations</Title>
-                    </FlexItem>
-                    <FlexItem flex={{ default: 'flexNone' }}>
-                        <DescriptionList
-                            columnModifier={{
-                                default: '2Col',
-                            }}
-                        >
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Email notifier</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ul>{deliveryDestinations}</ul>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Destribution list</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <ul>{mailingLists}</ul>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </DescriptionList>
-                    </FlexItem>
-                </Flex>
+                <DeliveryDestinationsDetails formValues={formValues} />
                 <Divider component="div" className="pf-u-py-md" />
-                <Flex direction={{ default: 'column' }}>
-                    <FlexItem>
-                        <Title headingLevel="h3">Schedule details</Title>
-                    </FlexItem>
-                    <FlexItem flex={{ default: 'flexNone' }}>
-                        <TextContent>
-                            <Text component={TextVariants.p}>
-                                Report is scheduled to be sent on Monday every week
-                            </Text>
-                        </TextContent>
-                    </FlexItem>
-                </Flex>
+                <ScheduleDetails formValues={formValues} />
                 <Divider component="div" className="pf-u-py-md" />
                 <Card>
                     <CardTitle>CVE report format</CardTitle>

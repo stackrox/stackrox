@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/policycategory/index"
-	policyCategoryMapping "github.com/stackrox/rox/central/policycategory/index/mappings"
 	"github.com/stackrox/rox/central/policycategory/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/policycategory"
@@ -89,10 +89,9 @@ func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*st
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, policyCategoryMapping.OptionsMap)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PolicyCategoriesSchema.OptionsMap)
 	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
-	paginatedSearcher := paginated.Paginated(transformedCategoryNameSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return paginated.WithDefaultSortOption(transformedCategoryNameSearcher, defaultSortOption)
 }
 
 // convertCategory returns proto search result from a category object and the internal search result

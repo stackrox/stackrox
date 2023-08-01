@@ -122,8 +122,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 		log.Infof("clone %s is of version %v", PreviousClone, ver)
 
 		d.cloneMap[PreviousClone] = metadata.NewPostgres(ver, PreviousClone)
-	} else {
-		clonesToRemove.Add(PreviousClone)
 	}
 
 	// Check restore version

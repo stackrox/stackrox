@@ -50,7 +50,7 @@ func (s *ComplianceOperatorScanSettingV2StoreSuite) TestStore() {
 	complianceOperatorScanSettingV2 := &storage.ComplianceOperatorScanSettingV2{}
 	s.NoError(testutils.FullInit(complianceOperatorScanSettingV2, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceOperatorScanSettingV2, exists, err := store.Get(ctx, complianceOperatorScanSettingV2.GetName())
+	foundComplianceOperatorScanSettingV2, exists, err := store.Get(ctx, complianceOperatorScanSettingV2.GetScanName())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorScanSettingV2)
@@ -58,7 +58,7 @@ func (s *ComplianceOperatorScanSettingV2StoreSuite) TestStore() {
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingV2))
-	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetName())
+	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetScanName())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(complianceOperatorScanSettingV2, foundComplianceOperatorScanSettingV2)
@@ -70,23 +70,23 @@ func (s *ComplianceOperatorScanSettingV2StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Zero(complianceOperatorScanSettingV2Count)
 
-	complianceOperatorScanSettingV2Exists, err := store.Exists(ctx, complianceOperatorScanSettingV2.GetName())
+	complianceOperatorScanSettingV2Exists, err := store.Exists(ctx, complianceOperatorScanSettingV2.GetScanName())
 	s.NoError(err)
 	s.True(complianceOperatorScanSettingV2Exists)
 	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingV2))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScanSettingV2), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetName())
+	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetScanName())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(complianceOperatorScanSettingV2, foundComplianceOperatorScanSettingV2)
 
-	s.NoError(store.Delete(ctx, complianceOperatorScanSettingV2.GetName()))
-	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetName())
+	s.NoError(store.Delete(ctx, complianceOperatorScanSettingV2.GetScanName()))
+	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetScanName())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorScanSettingV2)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanSettingV2.GetName()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanSettingV2.GetScanName()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorScanSettingV2s []*storage.ComplianceOperatorScanSettingV2
 	var complianceOperatorScanSettingV2IDs []string
@@ -94,7 +94,7 @@ func (s *ComplianceOperatorScanSettingV2StoreSuite) TestStore() {
 		complianceOperatorScanSettingV2 := &storage.ComplianceOperatorScanSettingV2{}
 		s.NoError(testutils.FullInit(complianceOperatorScanSettingV2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScanSettingV2s = append(complianceOperatorScanSettingV2s, complianceOperatorScanSettingV2)
-		complianceOperatorScanSettingV2IDs = append(complianceOperatorScanSettingV2IDs, complianceOperatorScanSettingV2.GetName())
+		complianceOperatorScanSettingV2IDs = append(complianceOperatorScanSettingV2IDs, complianceOperatorScanSettingV2.GetScanName())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorScanSettingV2s))

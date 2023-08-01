@@ -2,10 +2,9 @@ import { Dispatch, SetStateAction, useState } from 'react';
 import cloneDeep from 'lodash/cloneDeep';
 import set from 'lodash/set';
 
-import { Collection } from 'services/CollectionsService';
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import { ImageType } from 'services/ReportsService.types';
-import { EmailNotifierIntegration } from 'types/notifier.proto';
+import { ImageType, IntervalType } from 'services/ReportsService.types';
+import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 
 export type ReportFormValuesResult = {
     formValues: ReportFormValues;
@@ -15,8 +14,14 @@ export type ReportFormValuesResult = {
 };
 
 export type ReportFormValues = {
+    reportId: string;
     reportParameters: ReportParametersFormValues;
     deliveryDestinations: DeliveryDestination[];
+    schedule: {
+        intervalType: IntervalType | null;
+        daysOfWeek: DayOfWeek[];
+        daysOfMonth: DayOfMonth[];
+    };
 };
 
 export type SetReportFormValues = Dispatch<SetStateAction<ReportFormValues>>;
@@ -33,20 +38,33 @@ export type ReportParametersFormValues = {
     cveStatus: CVEStatus[];
     imageType: ImageType[];
     cvesDiscoveredSince: CVESDiscoveredSince;
-    cvesDiscoveredStartDate: string | undefined;
-    reportScope: Collection | null;
+    cvesDiscoveredStartDate: CVESDiscoveredStartDate;
+    reportScope: ReportScope | null;
 };
 
 export type CVEStatus = 'FIXABLE' | 'NOT_FIXABLE';
 
 export type CVESDiscoveredSince = 'ALL_VULN' | 'SINCE_LAST_REPORT' | 'START_DATE';
 
+export type CVESDiscoveredStartDate = string | undefined;
+
+export type ReportScope = {
+    id: string;
+    name: string;
+};
+
 export type DeliveryDestination = {
-    notifier: EmailNotifierIntegration | null;
+    notifier: ReportNotifier | null;
     mailingLists: string[];
 };
 
+export type ReportNotifier = {
+    id: string;
+    name: string;
+};
+
 export const defaultReportFormValues: ReportFormValues = {
+    reportId: '',
     reportParameters: {
         reportName: '',
         description: '',
@@ -58,6 +76,11 @@ export const defaultReportFormValues: ReportFormValues = {
         reportScope: null,
     },
     deliveryDestinations: [],
+    schedule: {
+        intervalType: null,
+        daysOfWeek: [],
+        daysOfMonth: [],
+    },
 };
 
 function useReportFormValues(): ReportFormValuesResult {

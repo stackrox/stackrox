@@ -6,13 +6,16 @@ import (
 
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
-	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
+	schedulerV2Mocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -28,7 +31,7 @@ type ReportConfigurationServiceTestSuite struct {
 	reportConfigDatastore *mocks.MockDataStore
 	notifierDatastore     *notifierMocks.MockDataStore
 	collectionDatastore   *collectionMocks.MockDataStore
-	manager               *managerMocks.MockManager
+	scheduler             *schedulerV2Mocks.MockScheduler
 	mockCtrl              *gomock.Controller
 }
 
@@ -49,8 +52,8 @@ func (s *ReportConfigurationServiceTestSuite) SetupTest() {
 	s.reportConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.collectionDatastore = collectionMocks.NewMockDataStore(s.mockCtrl)
-	s.manager = managerMocks.NewMockManager(s.mockCtrl)
-	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.collectionDatastore, s.manager)
+	s.scheduler = schedulerV2Mocks.NewMockScheduler(s.mockCtrl)
+	s.service = New(s.reportConfigDatastore, s.notifierDatastore, s.collectionDatastore, s.scheduler)
 }
 
 func (s *ReportConfigurationServiceTestSuite) TearDownTest() {
@@ -58,13 +61,27 @@ func (s *ReportConfigurationServiceTestSuite) TearDownTest() {
 }
 
 func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
-	ctx := context.Background()
+	allAccessContext := sac.WithAllAccess(context.Background())
+	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
 	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
+
+			creator := &storage.SlimUser{
+				Id:   "uid",
+				Name: "name",
+			}
+
+			mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+			mockID.EXPECT().UID().Return(creator.Id).Times(1)
+			mockID.EXPECT().FullName().Return(creator.Name).Times(1)
+			mockID.EXPECT().FriendlyName().Return(creator.Name).Times(1)
+			ctx := authn.ContextWithIdentity(allAccessContext, mockID, s.T())
+
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
+				protoReportConfig.Creator = creator
 				s.reportConfigDatastore.EXPECT().AddReportConfiguration(ctx, protoReportConfig).Return(protoReportConfig.GetId(), nil).Times(1)
 				s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, protoReportConfig.GetId()).Return(protoReportConfig, true, nil).Times(1)
 			}
@@ -77,19 +94,25 @@ func (s *ReportConfigurationServiceTestSuite) TestCreateReportConfiguration() {
 			}
 		})
 	}
+
+	// Test error on context without user identity
+	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+	_, err := s.service.PostReportConfiguration(allAccessContext, requestConfig)
+	s.Error(err)
 }
 
 func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
-	ctx := context.Background()
+	allAccessContext := sac.WithAllAccess(context.Background())
+	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
 	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
-				s.reportConfigDatastore.EXPECT().UpdateReportConfiguration(ctx, protoReportConfig).Return(nil).Times(1)
+				s.reportConfigDatastore.EXPECT().UpdateReportConfiguration(allAccessContext, protoReportConfig).Return(nil).Times(1)
 			}
-			result, err := s.service.UpdateReportConfiguration(ctx, requestConfig)
+			result, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
 			if tc.isValidationError {
 				s.Error(err)
 			} else {
@@ -101,7 +124,7 @@ func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 }
 
 func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
-	ctx := context.Background()
+	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {
 		desc      string
 		query     *apiV2.RawQuery
@@ -134,14 +157,14 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
 				ReportConfigs: []*apiV2.ReportConfiguration{fixtures.GetValidV2ReportConfigWithMultipleNotifiers()},
 			}
 
-			s.reportConfigDatastore.EXPECT().GetReportConfigurations(ctx, tc.expectedQ).
+			s.reportConfigDatastore.EXPECT().GetReportConfigurations(allAccessContext, tc.expectedQ).
 				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiers()}, nil).Times(1)
 
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[0])
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[1])
 			s.mockGetCollectionCall(expectedResp.ReportConfigs[0])
 
-			configs, err := s.service.GetReportConfigurations(ctx, tc.query)
+			configs, err := s.service.GetReportConfigurations(allAccessContext, tc.query)
 			s.NoError(err)
 			s.Equal(expectedResp, configs)
 		})
@@ -149,7 +172,7 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
 }
 
 func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
-	ctx := context.Background()
+	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {
 		desc                string
 		id                  string
@@ -181,7 +204,7 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
 			var expectedResp *apiV2.ReportConfiguration
 			if !tc.isValidationError {
 				if !tc.isDataNotFoundError {
-					s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, tc.id).
+					s.reportConfigDatastore.EXPECT().GetReportConfiguration(allAccessContext, tc.id).
 						Return(fixtures.GetValidReportConfigWithMultipleNotifiers(), true, nil).Times(1)
 
 					expectedResp = fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
@@ -189,12 +212,12 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
 					s.mockGetNotifierCall(expectedResp.GetNotifiers()[1])
 					s.mockGetCollectionCall(expectedResp)
 				} else {
-					s.reportConfigDatastore.EXPECT().GetReportConfiguration(ctx, tc.id).
+					s.reportConfigDatastore.EXPECT().GetReportConfiguration(allAccessContext, tc.id).
 						Return(nil, false, nil)
 				}
 			}
 
-			config, err := s.service.GetReportConfiguration(ctx, &apiV2.ResourceByID{Id: tc.id})
+			config, err := s.service.GetReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
 			if tc.isValidationError || tc.isDataNotFoundError {
 				s.Error(err)
 			} else {
@@ -206,7 +229,7 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurationByID() {
 }
 
 func (s *ReportConfigurationServiceTestSuite) TestCountReportConfigurations() {
-	ctx := context.Background()
+	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {
 		desc      string
 		query     *apiV2.RawQuery
@@ -226,15 +249,16 @@ func (s *ReportConfigurationServiceTestSuite) TestCountReportConfigurations() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			s.reportConfigDatastore.EXPECT().Count(ctx, tc.expectedQ).Return(1, nil).Times(1)
-			_, err := s.service.CountReportConfigurations(ctx, tc.query)
+			s.reportConfigDatastore.EXPECT().Count(allAccessContext, tc.expectedQ).Return(1, nil).Times(1)
+			_, err := s.service.CountReportConfigurations(allAccessContext, tc.query)
 			s.NoError(err)
 		})
 	}
 }
 
 func (s *ReportConfigurationServiceTestSuite) TestDeleteReportConfiguration() {
-	ctx := context.Background()
+	allAccessContext := sac.WithAllAccess(context.Background())
+	s.scheduler.EXPECT().RemoveReportSchedule(gomock.Any()).Return().AnyTimes()
 	testCases := []struct {
 		desc    string
 		id      string
@@ -254,9 +278,9 @@ func (s *ReportConfigurationServiceTestSuite) TestDeleteReportConfiguration() {
 
 	for _, tc := range testCases {
 		if !tc.isError {
-			s.reportConfigDatastore.EXPECT().RemoveReportConfiguration(ctx, tc.id).Return(nil).Times(1)
+			s.reportConfigDatastore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
-		_, err := s.service.DeleteReportConfiguration(ctx, &apiV2.ResourceByID{Id: tc.id})
+		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
 		if tc.isError {
 			s.Error(err)
 		} else {

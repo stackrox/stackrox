@@ -15,8 +15,7 @@ export const divToggleOuterClassName =
 export const justifyBetweenClassName = 'flex items-center justify-between';
 
 // The select element base style includes: pr-8 w-full
-// Add font-400 to override `font-weight: 600` for select element from ui-components.css file.
 export const selectElementClassName =
-    'bg-base-100 block border-base-300 focus:border-base-500 p-2 text-base-600 font-400 z-1';
+    'bg-base-100 block border-base-300 focus:border-base-500 p-2 text-base-600 z-1';
 export const selectWrapperClassName =
     'bg-base-100 border-2 border-base-300 hover:border-base-400 leading-normal rounded text-base-600 w-full';

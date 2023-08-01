@@ -8,12 +8,12 @@ import (
 
 	"github.com/stackrox/rox/central/declarativeconfig/health/datastore/store"
 	postgresHealthStore "github.com/stackrox/rox/central/declarativeconfig/health/datastore/store/postgres"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )

@@ -1,0 +1,8 @@
+.network-policies-yaml .pf-c-code-editor__controls {
+  width: 100%;
+}
+
+
+.compare-yaml-modal {
+  --pf-c-modal-box--MaxWidth: 1200px;
+}

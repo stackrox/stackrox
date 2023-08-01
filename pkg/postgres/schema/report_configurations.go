@@ -49,5 +49,6 @@ type ReportConfigurations struct {
 	Type                      storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
 	ScopeID                   string                                 `gorm:"column:scopeid;type:varchar"`
 	ResourceScopeCollectionID string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
+	CreatorName               string                                 `gorm:"column:creator_name;type:varchar"`
 	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
 }

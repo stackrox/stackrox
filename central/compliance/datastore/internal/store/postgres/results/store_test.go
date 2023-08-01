@@ -113,66 +113,151 @@ func (s *ComplianceRunResultsStoreSuite) TestStore() {
 	s.Equal(0, complianceRunResultsCount)
 }
 
-func (s *ComplianceRunResultsStoreSuite) TestSACUpsert() {
-	obj := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+const (
+	withAllAccess                = "AllAccess"
+	withNoAccess                 = "NoAccess"
+	withAccess                   = "Access"
+	withAccessToCluster          = "AccessToCluster"
+	withNoAccessToCluster        = "NoAccessToCluster"
+	withAccessToDifferentCluster = "AccessToDifferentCluster"
+	withAccessToDifferentNs      = "AccessToDifferentNs"
+)
 
-	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedErr := range map[string]error{
-		withAllAccess:           nil,
-		withNoAccess:            sac.ErrResourceAccessDenied,
-		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
-		withAccess:              nil,
-		withAccessToCluster:     nil,
-	} {
-		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
-		})
-	}
+var (
+	withAllAccessCtx = sac.WithAllAccess(context.Background())
+)
+
+type testCase struct {
+	context                context.Context
+	expectedObjIDs         []string
+	expectedIdentifiers    []string
+	expectedMissingIndices []int
+	expectedObjects        []*storage.ComplianceRunResults
+	expectedWriteError     error
 }
 
-func (s *ComplianceRunResultsStoreSuite) TestSACUpsertMany() {
-	obj := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
-	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedErr := range map[string]error{
-		withAllAccess:           nil,
-		withNoAccess:            sac.ErrResourceAccessDenied,
-		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
-		withAccess:              nil,
-		withAccessToCluster:     nil,
-	} {
-		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.ComplianceRunResults{obj}), expectedErr)
-		})
-	}
-}
-
-func (s *ComplianceRunResultsStoreSuite) TestSACCount() {
+func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*storage.ComplianceRunResults, *storage.ComplianceRunResults, map[string]testCase) {
 	objA := &storage.ComplianceRunResults{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	objB := &storage.ComplianceRunResults{}
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	testCases := map[string]testCase{
+		withAllAccess: {
+			context:                sac.WithAllAccess(context.Background()),
+			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()},
+			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()},
+			expectedMissingIndices: []int{},
+			expectedObjects:        []*storage.ComplianceRunResults{objA, objB},
+			expectedWriteError:     nil,
+		},
+		withNoAccess: {
+			context:                sac.WithNoAccess(context.Background()),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunResults{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withNoAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(uuid.Nil.String()),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunResults{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccess: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
+				)),
+			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
+			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunResults{objA},
+			expectedWriteError:     nil,
+		},
+		withAccessToCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
+				)),
+			expectedObjIDs:         []string{objA.GetRunMetadata().GetRunId()},
+			expectedIdentifiers:    []string{objA.GetRunMetadata().GetRunId()},
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunResults{objA},
+			expectedWriteError:     nil,
+		},
+		withAccessToDifferentCluster: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunResults{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+		withAccessToDifferentNs: {
+			context: sac.WithGlobalAccessScopeChecker(context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(access),
+					sac.ResourceScopeKeys(targetResource),
+					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
+					sac.NamespaceScopeKeys("unknown ns"),
+				)),
+			expectedObjIDs:         []string{},
+			expectedIdentifiers:    []string{},
+			expectedMissingIndices: []int{0, 1},
+			expectedObjects:        []*storage.ComplianceRunResults{},
+			expectedWriteError:     sac.ErrResourceAccessDenied,
+		},
+	}
+
+	return objA, objB, testCases
+}
+
+func (s *ComplianceRunResultsStoreSuite) TestSACUpsert() {
+	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.Upsert(testCase.context, obj), testCase.expectedWriteError)
+		})
+	}
+}
+
+func (s *ComplianceRunResultsStoreSuite) TestSACUpsertMany() {
+	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.ComplianceRunResults{obj}), testCase.expectedWriteError)
+		})
+	}
+}
+
+func (s *ComplianceRunResultsStoreSuite) TestSACCount() {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           2,
-		withNoAccess:            0,
-		withNoAccessToCluster:   0,
-		withAccessToDifferentNs: 0,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			count, err := s.store.Count(ctxs[name])
+			expectedCount := len(testCase.expectedObjects)
+			count, err := s.store.Count(testCase.context)
 			assert.NoError(t, err)
 			assert.Equal(t, expectedCount, count)
 		})
@@ -180,111 +265,69 @@ func (s *ComplianceRunResultsStoreSuite) TestSACCount() {
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACWalk() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetRunMetadata().GetRunId()},
-		withAccessToCluster:     []string{objA.GetRunMetadata().GetRunId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
 			getIDs := func(obj *storage.ComplianceRunResults) error {
 				identifiers = append(identifiers, obj.GetRunMetadata().GetRunId())
 				return nil
 			}
-			err := s.store.Walk(ctxs[name], getIDs)
+			err := s.store.Walk(testCase.context, getIDs)
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, expectedIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})
 	}
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACGetIDs() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expectedIDs := range map[string][]string{
-		withAllAccess:           []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()},
-		withNoAccess:            []string{},
-		withNoAccessToCluster:   []string{},
-		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetRunMetadata().GetRunId()},
-		withAccessToCluster:     []string{objA.GetRunMetadata().GetRunId()},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			identifiers, err := s.store.GetIDs(ctxs[name])
+			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, expectedIDs, identifiers)
+			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACExists() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]bool{
-		withAllAccess:           true,
-		withNoAccess:            false,
-		withNoAccessToCluster:   false,
-		withAccessToDifferentNs: false,
-		withAccess:              true,
-		withAccessToCluster:     true,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			exists, err := s.store.Exists(ctxs[name], objA.GetRunMetadata().GetRunId())
+			exists, err := s.store.Exists(testCase.context, objA.GetRunMetadata().GetRunId())
 			assert.NoError(t, err)
-			assert.Equal(t, expected, exists)
+
+			// Assumption from the test case structure: objA is always in the visible list
+			// in the first position.
+			expectedFound := len(testCase.expectedObjects) > 0
+			assert.Equal(t, expectedFound, exists)
 		})
 	}
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACGet() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]bool{
-		withAllAccess:           true,
-		withNoAccess:            false,
-		withNoAccessToCluster:   false,
-		withAccessToDifferentNs: false,
-		withAccess:              true,
-		withAccessToCluster:     true,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, exists, err := s.store.Get(ctxs[name], objA.GetRunMetadata().GetRunId())
+			actual, exists, err := s.store.Get(testCase.context, objA.GetRunMetadata().GetRunId())
 			assert.NoError(t, err)
-			assert.Equal(t, expected, exists)
-			if expected == true {
+
+			// Assumption from the test case structure: objA is always in the visible list
+			// in the first position.
+			expectedFound := len(testCase.expectedObjects) > 0
+			assert.Equal(t, expectedFound, exists)
+			if expectedFound {
 				assert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
@@ -294,101 +337,71 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGet() {
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACDelete() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
 
-	objB := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-
-	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           0,
-		withNoAccess:            2,
-		withNoAccessToCluster:   2,
-		withAccessToDifferentNs: 2,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
 
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetRunMetadata().GetRunId()))
-			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetRunMetadata().GetRunId()))
+			assert.NoError(t, s.store.Delete(testCase.context, objA.GetRunMetadata().GetRunId()))
+			assert.NoError(t, s.store.Delete(testCase.context, objB.GetRunMetadata().GetRunId()))
 
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, count)
+			assert.Equal(t, 2-len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, obj.GetRunMetadata().GetRunId())
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACDeleteMany() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-
-	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
-	for name, expectedCount := range map[string]int{
-		withAllAccess:           0,
-		withNoAccess:            2,
-		withNoAccessToCluster:   2,
-		withAccessToDifferentNs: 2,
-		withAccess:              1,
-		withAccessToCluster:     1,
-	} {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
 
 			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
 			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+			assert.NoError(t, s.store.DeleteMany(testCase.context, []string{
 				objA.GetRunMetadata().GetRunId(),
 				objB.GetRunMetadata().GetRunId(),
 			}))
 
 			count, err := s.store.Count(withAllAccessCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedCount, count)
+			assert.Equal(t, 2-len(testCase.expectedObjects), count)
+
+			// Ensure objects allowed by test scope were actually deleted
+			for _, obj := range testCase.expectedObjects {
+				found, err := s.store.Exists(withAllAccessCtx, obj.GetRunMetadata().GetRunId())
+				assert.NoError(t, err)
+				assert.False(t, found)
+			}
 		})
 	}
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACGetMany() {
-	objA := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	objB := &storage.ComplianceRunResults{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
 
-	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
-	for name, expected := range map[string]struct {
-		elems          []*storage.ComplianceRunResults
-		missingIndices []int
-	}{
-		withAllAccess:           {elems: []*storage.ComplianceRunResults{objA, objB}, missingIndices: []int{}},
-		withNoAccess:            {elems: []*storage.ComplianceRunResults{}, missingIndices: []int{0, 1}},
-		withNoAccessToCluster:   {elems: []*storage.ComplianceRunResults{}, missingIndices: []int{0, 1}},
-		withAccessToDifferentNs: {elems: []*storage.ComplianceRunResults{}, missingIndices: []int{0, 1}},
-		withAccess:              {elems: []*storage.ComplianceRunResults{objA}, missingIndices: []int{1}},
-		withAccessToCluster:     {elems: []*storage.ComplianceRunResults{objA}, missingIndices: []int{1}},
-	} {
+	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()})
+			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetRunMetadata().GetRunId(), objB.GetRunMetadata().GetRunId()})
 			assert.NoError(t, err)
-			assert.Equal(t, expected.elems, actual)
-			assert.Equal(t, expected.missingIndices, missingIndices)
+			assert.Equal(t, testCase.expectedObjects, actual)
+			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}
 
@@ -398,45 +411,4 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGetMany() {
 		assert.Nil(t, actual)
 		assert.Nil(t, missingIndices)
 	})
-}
-
-const (
-	withAllAccess           = "AllAccess"
-	withNoAccess            = "NoAccess"
-	withAccessToDifferentNs = "AccessToDifferentNs"
-	withAccess              = "Access"
-	withAccessToCluster     = "AccessToCluster"
-	withNoAccessToCluster   = "NoAccessToCluster"
-)
-
-func getSACContexts(obj *storage.ComplianceRunResults, access storage.Access) map[string]context.Context {
-	return map[string]context.Context{
-		withAllAccess: sac.WithAllAccess(context.Background()),
-		withNoAccess:  sac.WithNoAccess(context.Background()),
-		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetRunMetadata().GetClusterId()),
-				sac.NamespaceScopeKeys("unknown ns"),
-			)),
-		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetRunMetadata().GetClusterId()),
-			)),
-		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(obj.GetRunMetadata().GetClusterId()),
-			)),
-		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(access),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys(uuid.Nil.String()),
-			)),
-	}
 }

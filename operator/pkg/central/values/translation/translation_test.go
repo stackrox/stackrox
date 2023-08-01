@@ -82,6 +82,11 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
@@ -123,6 +128,11 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 			},
 		},
 
@@ -150,6 +160,11 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 			},
 		},
 
@@ -169,6 +184,11 @@ func TestTranslate(t *testing.T) {
 							AdditionalCAs: []platform.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
+							},
+						},
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Enabled: true,
 							},
 						},
 						Central: &platform.CentralComponentSpec{
@@ -344,6 +364,11 @@ func TestTranslate(t *testing.T) {
 				),
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
 				"additionalCAs": map[string]interface{}{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
@@ -540,6 +565,11 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
@@ -601,6 +631,11 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 			},
 		},
 
@@ -638,6 +673,11 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 			},
 		},
 
@@ -663,6 +703,11 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
@@ -704,6 +749,11 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 				"central": map[string]interface{}{
 					"exposure": map[string]interface{}{
 						"route": map[string]interface{}{
@@ -739,6 +789,11 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
@@ -777,6 +832,11 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 				"central": map[string]interface{}{
 					"exposeMonitoring": false,
 					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
@@ -812,6 +872,11 @@ func TestTranslate(t *testing.T) {
 								"createClaim": false,
 							},
 						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
 					},
 				},
 			},
@@ -856,6 +921,11 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 			},
 		},
 		"enabled telemetry no key": {
@@ -884,6 +954,11 @@ func TestTranslate(t *testing.T) {
 								"createClaim": false,
 							},
 						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
 					},
 				},
 			},

@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/central/logimbue/writer"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -47,6 +46,7 @@ import (
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -106,7 +106,7 @@ type Service interface {
 	v1.DebugServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	PrivateDiagnosticsHandler() http.HandlerFunc
+	InternalDiagnosticsHandler() http.HandlerFunc
 }
 
 // New returns a Service that implements v1.DebugServiceServer
@@ -143,10 +143,10 @@ type serviceImpl struct {
 	notifierDataStore    notifierDS.DataStore
 }
 
-// PrivateDiagnosticsHandler returns handler to be served on "private" port.
-// Private port is not exposed via k8s Service and only accessible to callers with k8s/Openshift cluster access.
+// InternalDiagnosticsHandler returns handler to be served on "cluster-internal" port.
+// Cluster-internal port is not exposed via k8s Service and only accessible to callers with k8s/Openshift cluster access.
 // This handler shouldn't be exposed to other callers as it has no authorization and can elevate customer permissions.
-func (s *serviceImpl) PrivateDiagnosticsHandler() http.HandlerFunc {
+func (s *serviceImpl) InternalDiagnosticsHandler() http.HandlerFunc {
 	return func(responseWriter http.ResponseWriter, r *http.Request) {
 		// Adding scope checker as no authorizer is used, ergo no identity in context by default.
 		ctx := sac.WithGlobalAccessScopeChecker(r.Context(), sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))

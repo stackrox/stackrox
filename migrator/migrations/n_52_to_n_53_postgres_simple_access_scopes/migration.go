@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -43,7 +42,7 @@ var (
 		StartingSeqNum: startingSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 164
 		Run: func(databases *types.Databases) error {
-			return migrateAll(databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
+			return migrateAll(databases.DBCtx, databases.PkgRocksDB, databases.GormDB, databases.PostgresDB)
 		},
 	}
 	batchSize = 1000
@@ -67,12 +66,12 @@ var (
 	}
 )
 
-func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB postgres.DB) error {
+func migrateAll(ctx context.Context, rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB postgres.DB) error {
 	legacyAccessScopeStore, err := legacysimpleaccessscopes.New(rocksDatabase)
 	if err != nil {
 		return err
 	}
-	if err := migrateAccessScopes(gormDB, postgresDB, legacyAccessScopeStore); err != nil {
+	if err := migrateAccessScopes(ctx, gormDB, postgresDB, legacyAccessScopeStore); err != nil {
 		return errors.Wrap(err,
 			"moving simple_access_scopes from rocksdb to postgres")
 	}
@@ -80,7 +79,7 @@ func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB post
 	if err != nil {
 		return err
 	}
-	if err := migratePermissionSets(gormDB, postgresDB, legacyPermissionSetStore); err != nil {
+	if err := migratePermissionSets(ctx, gormDB, postgresDB, legacyPermissionSetStore); err != nil {
 		return errors.Wrap(err,
 			"moving permission_sets from rocksdb to postgres")
 	}
@@ -88,13 +87,13 @@ func migrateAll(rocksDatabase *rocksdb.RocksDB, gormDB *gorm.DB, postgresDB post
 	if err != nil {
 		return err
 	}
-	if err := migrateRoles(gormDB, postgresDB, legacyRoleStore); err != nil {
+	if err := migrateRoles(ctx, gormDB, postgresDB, legacyRoleStore); err != nil {
 		return errors.Wrap(err,
 			"moving roles from rocksdb to postgres")
 	}
 	// This function call was added in 3.74 in order to cover an overlooked reference to access scope IDs.
 	// Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
-	if err := migrateReportConfigurationScopeIDs(postgresDB); err != nil {
+	if err := migrateReportConfigurationScopeIDs(ctx, postgresDB); err != nil {
 		return errors.Wrap(err, "updating access scope IDs for Report Configuration objects in postgres")
 	}
 	return nil
@@ -115,8 +114,7 @@ func convertAccessScopeID(accessScopeID string) string {
 	return identifierSuffix
 }
 
-func migrateAccessScopes(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacysimpleaccessscopes.Store) error {
-	ctx := sac.WithAllAccess(context.Background())
+func migrateAccessScopes(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacysimpleaccessscopes.Store) error {
 	store := pgSimpleAccessScopeStore.New(postgresDB)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableSimpleAccessScopesStmt)
 
@@ -161,9 +159,9 @@ func convertPermissionSetID(permissionSetID string) string {
 	return identifierSuffix
 }
 
-func migratePermissionSets(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacypermissionsets.Store) error {
+func migratePermissionSets(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacypermissionsets.Store) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTablePermissionSetsStmt)
-	ctx := sac.WithAllAccess(context.Background())
+
 	store := pgPermissionSetStore.New(postgresDB)
 
 	var permissionSets []*storage.PermissionSet
@@ -218,9 +216,9 @@ func getRolePermissionSetID(role *storage.Role) (string, error) {
 	return rolePermissionSetID, nil
 }
 
-func migrateRoles(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacyroles.Store) error {
+func migrateRoles(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacyroles.Store) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableRolesStmt)
-	ctx := sac.WithAllAccess(context.Background())
+
 	store := pgRoleStore.New(postgresDB)
 
 	var roles []*storage.Role
@@ -286,8 +284,7 @@ func storeReportsConfigurationBatch(ctx context.Context, store pgReportConfigura
 
 // This function was added in 3.74 in order to cover an overlooked reference to access scope IDs.
 // Users who migrated to postgres with 3.73 may have report configurations relying on incorrect scope IDs.
-func migrateReportConfigurationScopeIDs(postgresDB postgres.DB) error {
-	ctx := sac.WithAllAccess(context.Background())
+func migrateReportConfigurationScopeIDs(ctx context.Context, postgresDB postgres.DB) error {
 	store := pgReportConfigurationStore.New(postgresDB)
 	var reportConfigs []*storage.ReportConfiguration
 	err := walkReportConfigurations(ctx, store, func(obj *storage.ReportConfiguration) error {

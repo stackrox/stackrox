@@ -28,6 +28,7 @@ function RepeatScheduleDropdown({
                 value={value}
                 handleSelect={handleSelect}
                 isDisabled={!isEditable}
+                placeholderText="Select frequency"
             >
                 <SelectOption value="WEEKLY">Weekly</SelectOption>
                 <SelectOption value="MONTHLY">Monthly</SelectOption>

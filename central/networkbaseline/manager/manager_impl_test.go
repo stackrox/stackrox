@@ -12,7 +12,6 @@ import (
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -558,6 +558,25 @@ func (suite *ManagerTestSuite) TestDeploymentDelete() {
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
 	suite.assertBaselinesAre(
 		emptyBaseline(1),
+	)
+}
+
+func (suite *ManagerTestSuite) TestDeploymentDelete_WithoutBaseline() {
+	suite.mustInitManager(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		wrapWithForbidden(baselineWithPeers(3),
+			depPeer(2, properties(false, 52))),
+	)
+
+	// DeploymentID 2 should be in the internal map, but no baseline created yet.
+	suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(2), depName(2), clusterID(2), ns(2)))
+
+	suite.Require().NoError(suite.m.ProcessDeploymentDelete(depID(2)))
+
+	// Should remove DeploymentID 2 from other baselines (BaselinedPeers and ForbiddenPeers) even if its baseline was never created
+	suite.assertBaselinesAre(
+		baselineWithPeers(1),
+		baselineWithPeers(3),
 	)
 }
 

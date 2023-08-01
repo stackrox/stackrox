@@ -28,7 +28,6 @@ type Searcher interface {
 func New(processBaselineStore store.Store, indexer index.Indexer) (Searcher, error) {
 	ds := &searcherImpl{
 		storage:           processBaselineStore,
-		indexer:           indexer,
 		formattedSearcher: formatSearcher(indexer),
 	}
 

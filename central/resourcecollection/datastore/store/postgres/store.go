@@ -8,15 +8,14 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -57,26 +56,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoCollections,
-			copyFromCollections,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoCollections,
+		copyFromCollections,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -93,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.ResourceCollection) error {
+func insertIntoCollections(batch *pgx.Batch, obj *storage.ResourceCollection) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -115,7 +107,7 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	var query string
 
 	for childIndex, child := range obj.GetEmbeddedCollections() {
-		if err := insertIntoCollectionsEmbeddedCollections(ctx, batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoCollectionsEmbeddedCollections(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -125,7 +117,7 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	return nil
 }
 
-func insertIntoCollectionsEmbeddedCollections(_ context.Context, batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
+func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start

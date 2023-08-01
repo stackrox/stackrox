@@ -16,8 +16,8 @@ import {
     EmptyStateVariant,
     Text,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link } from 'react-router-dom';
+import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Link, generatePath } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon } from '@patternfly/react-icons';
 
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
@@ -26,9 +26,13 @@ import { vulnerabilityReportsPath } from 'routePaths';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+
+import { vulnerabilityReportPath } from '../pathsForVulnerabilityReporting';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
+import useDeleteModal from '../hooks/useDeleteModal';
+import DeleteReportModal from '../components/DeleteReportModal';
 
 const CreateReportsButton = () => {
     return (
@@ -40,7 +44,6 @@ const CreateReportsButton = () => {
 
 function VulnReportsPage() {
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
     const hasAccessScopeReadAccess = hasReadAccess('Access');
@@ -51,7 +54,20 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const { reports, isLoading, error } = useFetchReports();
+    const { reports, isLoading, error: fetchError, fetchReports } = useFetchReports();
+
+    const {
+        openDeleteModal,
+        isDeleteModalOpen,
+        closeDeleteModal,
+        isDeleting,
+        onDelete,
+        deleteError,
+    } = useDeleteModal({
+        onCompleted: () => {
+            fetchReports();
+        },
+    });
 
     return (
         <>
@@ -92,7 +108,7 @@ function VulnReportsPage() {
                                     </Bullseye>
                                 </div>
                             )}
-                            {error && (
+                            {fetchError && (
                                 <EmptyState variant={EmptyStateVariant.small}>
                                     <EmptyStateIcon
                                         icon={ExclamationCircleIcon}
@@ -101,10 +117,10 @@ function VulnReportsPage() {
                                     <Title headingLevel="h2" size="lg">
                                         Unable to get vulnerability reports
                                     </Title>
-                                    <EmptyStateBody>{error}</EmptyStateBody>
+                                    <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
-                            {!isLoading && !error && (
+                            {!isLoading && !fetchError && (
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
@@ -116,6 +132,7 @@ function VulnReportsPage() {
                                             <HelpIconTh tooltip="The report that was last run by a schedule or an on-demand action including 'send report now' and 'generate a downloadable report'">
                                                 Last run
                                             </HelpIconTh>
+                                            <Td />
                                         </Tr>
                                     </Thead>
                                     {reports.length === 0 && (
@@ -152,6 +169,57 @@ function VulnReportsPage() {
                                         </Tbody>
                                     )}
                                     {reports.map((report) => {
+                                        const vulnReportURL = generatePath(
+                                            vulnerabilityReportPath,
+                                            {
+                                                reportId: report.id,
+                                            }
+                                        ) as string;
+                                        const rowActions = [
+                                            {
+                                                title: (
+                                                    <Link to={`${vulnReportURL}?action=edit`}>
+                                                        Edit report
+                                                    </Link>
+                                                ),
+                                            },
+                                            {
+                                                isSeparator: true,
+                                            },
+                                            {
+                                                title: 'Send report now',
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                },
+                                            },
+                                            {
+                                                title: 'Generate download',
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                },
+                                            },
+                                            {
+                                                title: (
+                                                    <Link to={`${vulnReportURL}?action=clone`}>
+                                                        Clone report
+                                                    </Link>
+                                                ),
+                                            },
+                                            {
+                                                isSeparator: true,
+                                            },
+                                            {
+                                                title: (
+                                                    <span className="pf-u-danger-color-100">
+                                                        Delete report
+                                                    </span>
+                                                ),
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                    openDeleteModal(report.id);
+                                                },
+                                            },
+                                        ];
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -161,7 +229,11 @@ function VulnReportsPage() {
                                                 }}
                                             >
                                                 <Tr>
-                                                    <Td>{report.name}</Td>
+                                                    <Td>
+                                                        <Link to={vulnReportURL}>
+                                                            {report.name}
+                                                        </Link>
+                                                    </Td>
                                                     <Td>
                                                         {
                                                             report.resourceScope.collectionScope
@@ -180,6 +252,9 @@ function VulnReportsPage() {
                                                             reportStatus={report.reportStatus}
                                                         />
                                                     </Td>
+                                                    <Td isActionCell>
+                                                        <ActionsColumn items={rowActions} />
+                                                    </Td>
                                                 </Tr>
                                             </Tbody>
                                         );
@@ -190,6 +265,13 @@ function VulnReportsPage() {
                     </Card>
                 </PageSection>
             </PageSection>
+            <DeleteReportModal
+                isOpen={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                isDeleting={isDeleting}
+                onDelete={onDelete}
+                error={deleteError}
+            />
         </>
     );
 }

@@ -24,7 +24,6 @@ ClusterTestRunner(
         check_stackrox_logs=False,
     ),
     final_post=FinalPost(
-        store_qa_test_debug_logs=False,
-        store_qa_spock_results=False,
+        store_qa_tests_data=False,
     ),
 ).run()

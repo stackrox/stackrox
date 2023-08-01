@@ -59,6 +59,11 @@ func (w *flagsWrapper) BoolVar(p *bool, name string, value bool, usage string, g
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
+func (w *flagsWrapper) OptBoolVar(p **bool, name, shorthand string, usage, unsetRep string, groups ...string) {
+	flags.OptBoolFlagVarPF(w.FlagSet, p, name, shorthand, usage, unsetRep)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
 func (w *flagsWrapper) Var(value pflag.Value, name, usage string, groups ...string) {
 	w.FlagSet.Var(value, name, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
@@ -176,6 +181,7 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("the deployment tool to use (%s)", strings.Join(validFormats, ", ")), "central")
 
 	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "the OpenShift major version (3 or 4) to deploy on")
+	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "integration with OpenShift 4 monitoring", "auto", "central")
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",

@@ -11,7 +11,7 @@ func complianceCRDExists(client kubernetes.Interface) (bool, error) {
 		return false, err
 	}
 	for _, apiResource := range resourceList.APIResources {
-		if apiResource.Name == complianceoperator.ComplianceCheckResultGVR.Resource {
+		if apiResource.Name == complianceoperator.ComplianceCheckResult.Name {
 			return true, nil
 		}
 	}
