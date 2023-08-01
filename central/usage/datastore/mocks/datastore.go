@@ -97,13 +97,15 @@ func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Ca
 }
 
 // UpdateUsage mocks base method.
-func (m *MockDataStore) UpdateUsage(clusterID string, metrics source.UsageSource) {
+func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics source.UsageSource) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateUsage", clusterID, metrics)
+	ret := m.ctrl.Call(m, "UpdateUsage", ctx, clusterID, metrics)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateUsage indicates an expected call of UpdateUsage.
-func (mr *MockDataStoreMockRecorder) UpdateUsage(clusterID, metrics interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpdateUsage(ctx, clusterID, metrics interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockDataStore)(nil).UpdateUsage), clusterID, metrics)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockDataStore)(nil).UpdateUsage), ctx, clusterID, metrics)
 }

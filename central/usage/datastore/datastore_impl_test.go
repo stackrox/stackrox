@@ -22,6 +22,11 @@ type UsageDataStoreTestSuite struct {
 
 	datastore DataStore
 	ctrl      *gomock.Controller
+
+	hasNoneCtx  context.Context
+	hasBadCtx   context.Context
+	hasReadCtx  context.Context
+	hasWriteCtx context.Context
 }
 
 type testCluStore struct {
@@ -44,6 +49,20 @@ func (suite *UsageDataStoreTestSuite) SetupTest() {
 			Id: "existingCluster2",
 		}},
 	})
+
+	suite.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
+	suite.hasBadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
+	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 }
 
 func (suite *UsageDataStoreTestSuite) TearDownSuite() {
@@ -56,36 +75,79 @@ func (suite *UsageDataStoreTestSuite) makeSource(n int64, c int64) source.UsageS
 	return s
 }
 
+func (suite *UsageDataStoreTestSuite) TestGet() {
+	_, err := suite.datastore.Get(suite.hasNoneCtx, nil, nil)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, err = suite.datastore.Get(suite.hasBadCtx, nil, nil)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+}
+
+func (suite *UsageDataStoreTestSuite) TestInsert() {
+	err := suite.datastore.Insert(suite.hasNoneCtx, &storage.Usage{})
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	err = suite.datastore.Insert(suite.hasBadCtx, &storage.Usage{})
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	err = suite.datastore.Insert(suite.hasReadCtx, &storage.Usage{})
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+}
+
+func (suite *UsageDataStoreTestSuite) TestGetCurrent() {
+	_, err := suite.datastore.GetCurrent(suite.hasNoneCtx)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, err = suite.datastore.GetCurrent(suite.hasBadCtx)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, err = suite.datastore.GetCurrent(suite.hasWriteCtx)
+	suite.NoError(err)
+}
+
+func (suite *UsageDataStoreTestSuite) TestUpdateUsage() {
+	err := suite.datastore.UpdateUsage(suite.hasNoneCtx, "existingCluster1", suite.makeSource(1, 8))
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	err = suite.datastore.UpdateUsage(suite.hasBadCtx, "existingCluster1", suite.makeSource(1, 8))
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	err = suite.datastore.UpdateUsage(suite.hasReadCtx, "existingCluster1", suite.makeSource(1, 8))
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+}
+
+func (suite *UsageDataStoreTestSuite) TestCutMetrics() {
+	_, err := suite.datastore.CutMetrics(suite.hasNoneCtx)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, err = suite.datastore.CutMetrics(suite.hasBadCtx)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, err = suite.datastore.CutMetrics(suite.hasReadCtx)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+}
+
 func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
-	u, err := suite.datastore.GetCurrent(context.Background())
+	u, err := suite.datastore.GetCurrent(suite.hasReadCtx)
 	suite.NoError(err)
 	suite.Equal(int64(0), u.NumNodes)
 	suite.Equal(int64(0), u.NumCpuUnits)
-	suite.datastore.UpdateUsage("existingCluster1", suite.makeSource(1, 8))
-	suite.datastore.UpdateUsage("existingCluster2", suite.makeSource(2, 7))
-	u, err = suite.datastore.GetCurrent(context.Background())
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", suite.makeSource(1, 8))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster2", suite.makeSource(2, 7))
+	u, err = suite.datastore.GetCurrent(suite.hasReadCtx)
 	suite.NoError(err)
 	suite.Equal(int64(3), u.NumNodes)
 	suite.Equal(int64(15), u.NumCpuUnits)
-	suite.datastore.UpdateUsage("unknownCluster", suite.makeSource(2, 16))
-	u, err = suite.datastore.GetCurrent(context.Background())
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", suite.makeSource(2, 16))
+	u, err = suite.datastore.GetCurrent(suite.hasReadCtx)
 	suite.NoError(err)
 	suite.Equal(int64(3), u.NumNodes)
 	suite.Equal(int64(15), u.NumCpuUnits)
 }
 
 func (suite *UsageDataStoreTestSuite) TestUpdateCutMetrics() {
-	u, err := suite.datastore.CutMetrics(context.Background())
+	u, err := suite.datastore.CutMetrics(suite.hasWriteCtx)
 	suite.NoError(err)
 	suite.Equal(int64(0), u.NumNodes)
 	suite.Equal(int64(0), u.NumCpuUnits)
-	suite.datastore.UpdateUsage("existingCluster1", suite.makeSource(1, 8))
-	suite.datastore.UpdateUsage("unknownCluster", suite.makeSource(2, 7))
-	u, err = suite.datastore.CutMetrics(context.Background())
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", suite.makeSource(1, 8))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", suite.makeSource(2, 7))
+	u, err = suite.datastore.CutMetrics(suite.hasWriteCtx)
 	suite.NoError(err)
 	suite.Equal(int64(1), u.NumNodes)
 	suite.Equal(int64(8), u.NumCpuUnits)
-	u, err = suite.datastore.CutMetrics(context.Background())
+	u, err = suite.datastore.CutMetrics(suite.hasWriteCtx)
 	suite.NoError(err)
 	suite.Equal(int64(0), u.NumNodes)
 	suite.Equal(int64(0), u.NumCpuUnits)

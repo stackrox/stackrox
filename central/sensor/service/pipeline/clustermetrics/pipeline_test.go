@@ -46,7 +46,7 @@ func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor() {
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
 	suite.infoMetric.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
-	suite.usageStore.EXPECT().UpdateUsage(clusterID, expectedMetrics)
+	suite.usageStore.EXPECT().UpdateUsage(context.Background(), clusterID, expectedMetrics).Return(nil)
 
 	err := suite.pipeline.Run(context.Background(), clusterID, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterMetrics{

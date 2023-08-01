@@ -20,7 +20,7 @@ type DataStore interface {
 	// In-memory storage
 	CutMetrics(ctx context.Context) (*storage.Usage, error)
 	GetCurrent(ctx context.Context) (*storage.Usage, error)
-	UpdateUsage(clusterID string, metrics source.UsageSource)
+	UpdateUsage(ctx context.Context, clusterID string, metrics source.UsageSource) error
 }
 
 // New initializes a datastore implementation instance.

@@ -8,10 +8,13 @@ import (
 	"github.com/stackrox/rox/central/usage/source"
 	"github.com/stackrox/rox/central/usage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
 	previousMetrics = &storage.Usage{}
+	usageSAC        = sac.ForResource(resources.Administration)
 )
 
 type dataStoreImpl struct {
@@ -22,17 +25,26 @@ type dataStoreImpl struct {
 var _ DataStore = (*dataStoreImpl)(nil)
 
 // Get returns the object, if it exists from the store.
-func (ds *dataStoreImpl) Get(_ context.Context, _ *types.Timestamp, _ *types.Timestamp) ([]*storage.Usage, error) {
+func (ds *dataStoreImpl) Get(ctx context.Context, _ *types.Timestamp, _ *types.Timestamp) ([]*storage.Usage, error) {
+	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
+		return nil, errors.Wrap(err, "cannot permit to get usage data")
+	}
 	return nil, errors.New("not implemented")
 }
 
 // Insert saves the current state of an object in storage.
-func (ds *dataStoreImpl) Insert(_ context.Context, _ *storage.Usage) error {
+func (ds *dataStoreImpl) Insert(ctx context.Context, _ *storage.Usage) error {
+	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
+		return errors.Wrap(err, "cannot permit to insert usage data")
+	}
 	return errors.New("not implemented")
 }
 
 // GetCurrent returns the current usage.
 func (ds *dataStoreImpl) GetCurrent(ctx context.Context) (*storage.Usage, error) {
+	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
+		return nil, errors.Wrap(err, "cannot permit to get current usage data")
+	}
 	ids, err := getClusterIDs(ctx, ds.clustore)
 	if err != nil {
 		return nil, err
@@ -45,6 +57,9 @@ func (ds *dataStoreImpl) GetCurrent(ctx context.Context) (*storage.Usage, error)
 // CutMetrics returns collected metrics for the known clusters. Resets the cache
 // for the next iteration.
 func (ds *dataStoreImpl) CutMetrics(ctx context.Context) (*storage.Usage, error) {
+	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
+		return nil, errors.Wrap(err, "cannot permit to cut usage data")
+	}
 	ids, err := getClusterIDs(ctx, ds.clustore)
 	if err != nil {
 		return nil, err
@@ -53,6 +68,10 @@ func (ds *dataStoreImpl) CutMetrics(ctx context.Context) (*storage.Usage, error)
 }
 
 // UpdateUsage updates the cache with the metrics of the clusterID cluster.
-func (ds *dataStoreImpl) UpdateUsage(clusterID string, cm source.UsageSource) {
+func (ds *dataStoreImpl) UpdateUsage(ctx context.Context, clusterID string, cm source.UsageSource) error {
+	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
+		return errors.Wrap(err, "cannot permit to update usage data cache")
+	}
 	ds.cache.UpdateUsage(clusterID, cm)
+	return nil
 }
