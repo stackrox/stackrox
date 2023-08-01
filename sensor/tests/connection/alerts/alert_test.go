@@ -51,7 +51,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 		// We need to wait some virtual time until all the deployment updates happen before restarting. Otherwise,
 		// the deployment will continue to receive updates (e.g. image SHA update) and the test will pass even if
 		// the deduper is not reset
-		//time.Sleep(30 * time.Second)
+		time.Sleep(30 * time.Second)
 
 		// Simulate a blit in the Network connection
 		testContext.RestartFakeCentralConnection()
