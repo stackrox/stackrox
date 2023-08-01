@@ -91,7 +91,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 
 	monitoring := c.Spec.Monitoring
-	v.AddChild("monitoring", getGlobalMonitoring(monitoring))
+	v.AddChild("monitoring", translation.GetGlobalMonitoring(monitoring))
 	central, err := getCentralComponentValues(centralSpec, checker, obsoletePVC)
 	if err != nil {
 		return nil, err
@@ -108,14 +108,6 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	v.AddAllFrom(translation.GetMisc(c.Spec.Misc))
 
 	return v.Build()
-}
-
-func getGlobalMonitoring(m *platform.GlobalMonitoring) *translation.ValuesBuilder {
-	openshiftMonitoring := translation.NewValuesBuilder()
-	openshiftMonitoring.SetBoolValue("enabled", m.IsOpenShiftMonitoringEnabled())
-	globalMonitoring := translation.NewValuesBuilder()
-	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
-	return &globalMonitoring
 }
 
 func getEnv(c platform.Central) *translation.ValuesBuilder {

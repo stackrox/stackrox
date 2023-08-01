@@ -120,7 +120,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddChild("meta", getMetaValues(sc))
 	v.AddAllFrom(translation.GetMisc(sc.Spec.Misc))
 
-	v.AddChild("monitoring", t.getGlobalMonitoring(sc.Spec.Monitoring))
+	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
 
 	return v.Build()
 }
@@ -171,14 +171,6 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 		return errors.Wrapf(err, "failed receiving secret %q", secretName)
 	}
 	return nil
-}
-
-func (t Translator) getGlobalMonitoring(m *platform.GlobalMonitoring) *translation.ValuesBuilder {
-	openshiftMonitoring := translation.NewValuesBuilder()
-	openshiftMonitoring.SetBoolValue("enabled", m.IsOpenShiftMonitoringEnabled())
-	globalMonitoring := translation.NewValuesBuilder()
-	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
-	return &globalMonitoring
 }
 
 func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config scanner.AutoSenseResult) *translation.ValuesBuilder {
