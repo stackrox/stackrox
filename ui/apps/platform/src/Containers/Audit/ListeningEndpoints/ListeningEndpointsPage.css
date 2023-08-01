@@ -1,0 +1,4 @@
+/* Hide the chip group within the search input. Chips are displayed in their own toolbar group below. */
+#listening-endpoints-page .pf-m-typeahead .pf-c-chip-group {
+  display: none;
+}

@@ -75,10 +75,12 @@ import (
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
+	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	"github.com/stackrox/rox/central/metrics/info"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -96,7 +98,6 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
-	"github.com/stackrox/rox/central/private"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -107,13 +108,13 @@ import (
 	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
 	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
+	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
@@ -184,6 +185,7 @@ import (
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
@@ -277,14 +279,16 @@ func main() {
 		log.Fatalf("Failed to remove backup DB: %v", err)
 	}
 
+	// Register cluster info metric.
+	info.Singleton().Start()
 	// Start the prometheus metrics server
 	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
-	if env.PrivateDiagnosticsEnabled.BooleanSetting() {
-		privateServer := private.NewHTTPServer(metrics.HTTPSingleton())
-		privateServer.AddRoutes(privateRoutes())
-		privateServer.RunForever()
+	if env.ManagedCentral.BooleanSetting() {
+		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
+		clusterInternalServer.AddRoutes(clusterInternalRoutes())
+		clusterInternalServer.RunForever()
 	}
 
 	go startGRPCServer()
@@ -292,25 +296,25 @@ func main() {
 	waitForTerminationSignal()
 }
 
-// privateRoutes returns list of route-handler pairs to be served on "private" port.
-// Private port is not exposed to the internet and thus requires no authorization.
-// There are 3 ways to access private port:
+// clusterInternalRoutes returns list of route-handler pairs to be served on "cluster-internal" port.
+// Cluster-internal port is not exposed to the internet and thus requires no authorization.
+// There are 3 ways to access cluster-internal port:
 // * kubectl port-forward to central pod
 // * kubectl exec into central pod
 // * modifying central service definition
-func privateRoutes() []*private.Route {
-	result := make([]*private.Route, 0)
+func clusterInternalRoutes() []*internal.Route {
+	result := make([]*internal.Route, 0)
 	debugRoutes := debugRoutes()
 	for _, r := range debugRoutes {
-		result = append(result, &private.Route{
+		result = append(result, &internal.Route{
 			Route:         r.Route,
 			ServerHandler: r.ServerHandler,
 			Compression:   r.Compression,
 		})
 	}
-	result = append(result, &private.Route{
+	result = append(result, &internal.Route{
 		Route:         "/diagnostics",
-		ServerHandler: debugService.Singleton().PrivateDiagnosticsHandler(),
+		ServerHandler: debugService.Singleton().InternalDiagnosticsHandler(),
 		Compression:   true,
 	})
 	return result
@@ -772,7 +776,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	debugRoutes := utils.IfThenElse(env.PrivateDiagnosticsEnabled.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
+	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
 }
@@ -827,11 +831,16 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
-		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+	}
+
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	} else {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

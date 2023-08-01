@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,8 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -61,26 +60,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoServiceAccounts,
-			copyFromServiceAccounts,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			isUpsertAllowed,
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoServiceAccounts,
+		copyFromServiceAccounts,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		isUpsertAllowed,
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -114,7 +106,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoServiceAccounts(_ context.Context, batch *pgx.Batch, obj *storage.ServiceAccount) error {
+func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -128,8 +120,8 @@ func insertIntoServiceAccounts(_ context.Context, batch *pgx.Batch, obj *storage
 		obj.GetNamespace(),
 		obj.GetClusterName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
-		obj.GetLabels(),
-		obj.GetAnnotations(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
+		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
 	}
 
@@ -174,8 +166,8 @@ func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetNamespace(),
 			obj.GetClusterName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetLabels(),
-			obj.GetAnnotations(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
+			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
 		})
 

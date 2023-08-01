@@ -8,13 +8,13 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 

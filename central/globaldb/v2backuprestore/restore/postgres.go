@@ -1,12 +1,10 @@
 package restore
 
 import (
-	"fmt"
 	"io"
 	"os/exec"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -14,8 +12,7 @@ import (
 )
 
 const (
-	// restoreSuffix - suffix for the restore database
-	restoreSuffix = "_restore"
+	restoreDB = "central_restore"
 )
 
 var (
@@ -85,6 +82,5 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 }
 
 func getRestoreDBName() string {
-	// Build the active database name for the connection
-	return fmt.Sprintf("%s%s", config.GetConfig().CentralDB.DatabaseName, restoreSuffix)
+	return restoreDB
 }

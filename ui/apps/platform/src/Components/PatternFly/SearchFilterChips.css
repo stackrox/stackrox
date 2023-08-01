@@ -1,0 +1,8 @@
+.search-filter-chips .pf-c-chip-group__close {
+    align-self: center;
+}
+
+.search-filter-chips .pf-c-chip-group__main {
+    align-items: center;
+    flex-wrap: nowrap;
+}

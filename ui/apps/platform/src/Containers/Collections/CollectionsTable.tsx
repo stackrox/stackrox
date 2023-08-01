@@ -225,7 +225,7 @@ function CollectionsTable({
                             Collection
                         </Th>
                         <Th modifier="wrap">Description</Th>
-                        <Th aria-label="Row actions" />
+                        <Td />
                     </Tr>
                 </Thead>
                 <Tbody>{tableContent}</Tbody>

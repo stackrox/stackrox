@@ -1,3 +1,4 @@
+import { SlimUser } from 'types/user.proto';
 import { VulnerabilitySeverity } from '../types/cve.proto';
 
 // Report configuration types
@@ -44,30 +45,23 @@ export type NotifierConfiguration = {
     notifierName: string;
 };
 
-type ScheduleBase = {
-    intervalType: IntervalType;
-    hour: number;
-    minute: number;
-};
-
 export type Schedule =
-    | (ScheduleBase & {
-          weekly: WeeklyInterval;
-      })
-    | (ScheduleBase & {
+    | {
+          intervalType: 'WEEKLY';
+          hour: number;
+          minute: number;
           daysOfWeek: DaysOfWeek;
-      })
-    | (ScheduleBase & {
+      }
+    | {
+          intervalType: 'MONTHLY';
+          hour: number;
+          minute: number;
           daysOfMonth: DaysOfMonth;
-      });
+      };
 
-export type IntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export type IntervalType = 'WEEKLY' | 'MONTHLY';
 
 export type Interval = DaysOfWeek | DaysOfMonth;
-
-export type WeeklyInterval = {
-    day: number; // int32
-};
 
 // Sunday = 0, Monday = 1, .... Saturday =  6
 export type DaysOfWeek = {
@@ -101,3 +95,26 @@ export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
 export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
 
 export type ReportNotificationMethod = 'UNSET' | 'EMAIL' | 'DOWNLOAD';
+
+// Report history
+
+export type ReportHistoryResponse = {
+    reportSnapshots: ReportSnapshot[];
+};
+
+export type ReportSnapshot = {
+    id: string;
+    name: string;
+    description: string;
+    vulnReportFilters: VulnerabilityReportFilters;
+    collectionSnapshot: CollectionSnapshot;
+    schedule: Schedule;
+    reportStatus: ReportStatus;
+    notifiers: NotifierConfiguration[];
+    user: SlimUser;
+};
+
+export type CollectionSnapshot = {
+    id: string;
+    name: string;
+};

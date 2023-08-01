@@ -1,22 +1,22 @@
 module github.com/stackrox/rox
 
-go 1.18
+go 1.19
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/containeranalysis v0.10.1
 	cloud.google.com/go/storage v1.31.0
 	github.com/BurntSushi/toml v1.3.2
-	github.com/ComplianceAsCode/compliance-operator v1.1.0
+	github.com/ComplianceAsCode/compliance-operator v1.2.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/RoaringBitmap/roaring v1.3.0
 	github.com/VividCortex/ewma v1.2.0
-	github.com/adhocore/gronx v1.6.3
+	github.com/adhocore/gronx v1.6.4
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.44.257
+	github.com/aws/aws-sdk-go v1.44.289
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.4
 	github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
@@ -58,7 +58,7 @@ require (
 	github.com/heimdalr/dag v1.2.1
 	github.com/helm/helm-mapkubeapis v0.4.1
 	github.com/heroku/docker-registry-client v0.0.0
-	github.com/jackc/pgconn v1.14.0
+	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgproto3/v2 v2.3.2
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
@@ -74,7 +74,7 @@ require (
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.11.0
-	github.com/onsi/gomega v1.27.8
+	github.com/onsi/gomega v1.27.10
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/openshift/api v0.0.0-20230502160752-c71432710382
 	github.com/openshift/client-go v0.0.0-20230120202327-72f107311084
@@ -85,7 +85,9 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
 	github.com/prometheus/common v0.44.0
-	github.com/quay/claircore v1.5.9
+	github.com/quay/claircore v1.5.13
+	github.com/quay/zlog v1.1.5
+	github.com/rs/zerolog v1.29.1
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.2.1
@@ -119,9 +121,9 @@ require (
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.11.0
 	golang.stackrox.io/grpc-http1 v0.2.9
-	google.golang.org/api v0.132.0
+	google.golang.org/api v0.133.0
 	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.57.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -130,14 +132,14 @@ require (
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.2
 	helm.sh/helm/v3 v3.11.3
-	k8s.io/api v0.26.6
+	k8s.io/api v0.26.7
 	k8s.io/apiextensions-apiserver v0.26.3
-	k8s.io/apimachinery v0.27.3
-	k8s.io/apiserver v0.26.6
-	k8s.io/cli-runtime v0.26.6
-	k8s.io/client-go v0.26.6
-	k8s.io/kubectl v0.26.6
-	k8s.io/kubelet v0.26.6
+	k8s.io/apimachinery v0.27.4
+	k8s.io/apiserver v0.26.7
+	k8s.io/cli-runtime v0.26.7
+	k8s.io/client-go v0.26.7
+	k8s.io/kubectl v0.26.7
+	k8s.io/kubelet v0.26.7
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/controller-runtime v0.14.6
 	sigs.k8s.io/controller-tools v0.11.3
@@ -162,7 +164,7 @@ require (
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/beevik/etree v1.1.1-0.20200718192613-4a2f8b9d084c // indirect
+	github.com/beevik/etree v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -188,7 +190,9 @@ require (
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
+	github.com/doug-martin/goqu/v8 v8.6.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
@@ -232,7 +236,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20221103000818-d260c55eee4c // indirect
+	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/trillian v1.5.2 // indirect
@@ -265,9 +269,12 @@ require (
 	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/pgzip v1.2.6-0.20220930104621-17e8dac29df8 // indirect
+	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f // indirect
+	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d // indirect
 	github.com/knqyf263/go-rpm-version v0.0.0-20220614171824-631e686d1075 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -315,6 +322,12 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
+	github.com/quay/alas v1.0.1 // indirect
+	github.com/quay/claircore/toolkit v1.0.0 // indirect
+	github.com/quay/claircore/updater/driver v1.0.0 // indirect
+	github.com/quay/goval-parser v0.8.8 // indirect
+	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/rootless-containers/rootlesskit v1.1.0 // indirect
@@ -369,16 +382,26 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230706204954-ccb25ca9f130 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230720185612-659f7aaaa771 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.26.6 // indirect
+	k8s.io/component-base v0.26.7 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
+	lukechampine.com/uint128 v1.2.0 // indirect
+	modernc.org/cc/v3 v3.40.0 // indirect
+	modernc.org/ccgo/v3 v3.16.13 // indirect
+	modernc.org/libc v1.22.5 // indirect
+	modernc.org/mathutil v1.5.0 // indirect
+	modernc.org/memory v1.5.0 // indirect
+	modernc.org/opt v0.1.3 // indirect
+	modernc.org/sqlite v1.24.0 // indirect
+	modernc.org/strutil v1.1.3 // indirect
+	modernc.org/token v1.0.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 	oras.land/oras-go v1.2.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
@@ -387,12 +410,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-// WARNING
-// =======
-//
-// The `scanner/go.mod` consumes this go.mod. When modifying replacements, make
-// sure to sync all changes with scanner/go.mod.
-//
 // HOW TO BUMP
 // ===========
 //

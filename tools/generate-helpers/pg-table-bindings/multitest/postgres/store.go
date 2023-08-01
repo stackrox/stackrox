@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -58,26 +57,19 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	*pgSearch.GenericStore[storeType, *storeType]
-	mutex sync.RWMutex
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		GenericStore: pgSearch.NewGenericStore[storeType, *storeType](
-			db,
-			schema,
-			pkGetter,
-			insertIntoTestStructs,
-			copyFromTestStructs,
-			metricsSetAcquireDBConnDuration,
-			metricsSetPostgresOperationDurationTime,
-			pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-			targetResource,
-		),
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoTestStructs,
+		copyFromTestStructs,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
+	)
 }
 
 // region Helper functions
@@ -94,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.TestStruct) error {
+func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -110,7 +102,7 @@ func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.T
 		obj.GetUint64(),
 		obj.GetInt64(),
 		obj.GetFloat(),
-		obj.GetLabels(),
+		pgutils.EmptyOrMap(obj.GetLabels()),
 		pgutils.NilOrTime(obj.GetTimestamp()),
 		obj.GetEnum(),
 		obj.GetEnums(),
@@ -126,7 +118,7 @@ func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	var query string
 
 	for childIndex, child := range obj.GetNested() {
-		if err := insertIntoTestStructsNesteds(ctx, batch, child, obj.GetKey1(), childIndex); err != nil {
+		if err := insertIntoTestStructsNesteds(batch, child, obj.GetKey1(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -136,7 +128,7 @@ func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	return nil
 }
 
-func insertIntoTestStructsNesteds(_ context.Context, batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
+func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -200,7 +192,7 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetUint64(),
 			obj.GetInt64(),
 			obj.GetFloat(),
-			obj.GetLabels(),
+			pgutils.EmptyOrMap(obj.GetLabels()),
 			pgutils.NilOrTime(obj.GetTimestamp()),
 			obj.GetEnum(),
 			obj.GetEnums(),

@@ -10,7 +10,6 @@ import Loader from 'Components/Loader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import URLService from 'utils/URLService';
-import ResourceTabs from 'Components/ResourceTabs';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -24,6 +23,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 function processData(data) {
     if (!data || !data.deployment) {

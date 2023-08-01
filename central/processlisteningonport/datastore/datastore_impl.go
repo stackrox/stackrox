@@ -10,11 +10,11 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )

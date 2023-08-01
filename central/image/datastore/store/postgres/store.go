@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -79,7 +79,7 @@ type storeImpl struct {
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
-	scanUpdated bool,
+	metadataUpdated, scanUpdated bool,
 	iTime *protoTypes.Timestamp,
 ) error {
 	cloned := parts.image
@@ -126,16 +126,18 @@ func (s *storeImpl) insertIntoImages(
 
 	var query string
 
-	for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
-		if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
+	if metadataUpdated {
+		for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
+			if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
+				return err
+			}
+		}
+
+		query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
+		_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
+		if err != nil {
 			return err
 		}
-	}
-
-	query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, cloned.GetId(), len(cloned.GetMetadata().GetV1().GetLayers()))
-	if err != nil {
-		return err
 	}
 
 	if !scanUpdated {
@@ -709,7 +711,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 			return err
 		}
 
-		if err := s.insertIntoImages(ctx, tx, imageParts, scanUpdated, iTime); err != nil {
+		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}

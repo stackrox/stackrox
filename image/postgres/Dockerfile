@@ -1,10 +1,12 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
+ARG POSTGRES_BASE_IMAGE=ubi8
 ARG BASE_TAG=8.7
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+FROM ${BASE_REGISTRY}/${POSTGRES_BASE_IMAGE}:${BASE_TAG} AS postgres_rpms
 
-ADD bundle.tar.gz /bundle
+COPY download.sh /download.sh
+RUN /download.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -21,7 +23,7 @@ ENV LANG=en_US.utf8
 COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/init-entrypoint.sh /usr/local/bin/
-COPY --from=extracted_bundle /bundle/postgres.rpm /bundle/postgres-libs.rpm /bundle/postgres-server.rpm /bundle/postgres-contrib.rpm /tmp/
+COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
 RUN microdnf upgrade -y --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.

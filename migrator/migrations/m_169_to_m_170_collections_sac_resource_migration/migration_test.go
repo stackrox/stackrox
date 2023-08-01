@@ -91,7 +91,7 @@ func TestMigration(t *testing.T) {
 }
 
 func (s *psMigrationTestSuite) SetupTest() {
-	s.db = pghelper.ForT(s.T(), true)
+	s.db = pghelper.ForT(s.T(), false)
 	s.store = permissionSetPostgresStore.New(s.db.DB)
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), frozenSchema.CreateTablePermissionSetsStmt)
 }

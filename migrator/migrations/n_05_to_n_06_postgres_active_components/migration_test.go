@@ -47,7 +47,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.postgresDB = pghelper.ForT(s.T(), true)
+	s.postgresDB = pghelper.ForT(s.T(), false)
 }
 
 func (s *postgresMigrationSuite) TearDownTest() {
@@ -168,7 +168,7 @@ func (s *postgresMigrationSuite) TestActiveComponentMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, activeComponents))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	s.verify(newStore, images)

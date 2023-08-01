@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
@@ -12,27 +12,19 @@ import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
 
-const riskErrMsg = `Risk not found. Risk for selected deployment may not have been processed.`;
-const deploymentErrMsg = `Deployment not found. The selected deployment may have been removed.`;
-const processErrMsg = `No processes discovered. The selected deployment may not have running pods,
-    or Collector may not be running in your cluster.
-    It is recommended to check the logs for more information.`;
-
-const RiskSidePanelErrorContent = ({ message }) => {
-    return (
-        <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
-            <Message type="error">{message}</Message>
-        </div>
-    );
-};
-
 function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, processGroup }) {
     if (isFetching) {
         return <Loader />;
     }
 
     if (!selectedDeployment) {
-        return <RiskSidePanelErrorContent message={deploymentErrMsg} />;
+        return (
+            <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
+                <Alert variant="warning" isInline title="Deployment not found">
+                    The selected deployment may have been removed.
+                </Alert>
+            </div>
+        );
     }
 
     const riskPanelTabs = [
@@ -59,7 +51,9 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                         View Deployment in Network Graph
                     </Link>
                     {!deploymentRisk ? (
-                        <RiskSidePanelErrorContent message={riskErrMsg} />
+                        <Alert variant="warning" isInline title="Risk not found">
+                            Risk for selected deployment may not have been processed.
+                        </Alert>
                     ) : (
                         <RiskDetails risk={deploymentRisk} />
                     )}
@@ -75,7 +69,13 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
             <Tab>
                 <div className="flex flex-1 flex-col relative">
                     {!processGroup || !processGroup.groups || processGroup.groups.length === 0 ? (
-                        <RiskSidePanelErrorContent message={processErrMsg} />
+                        <Alert variant="warning" isInline title="No processes discovered">
+                            <p>
+                                The selected deployment may not have running pods, or Collector may
+                                not be running in your cluster.
+                            </p>
+                            <p>It is recommended to check the logs for more information.</p>
+                        </Alert>
                     ) : (
                         <ProcessDetails
                             processGroup={processGroup}
@@ -87,10 +87,6 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         </Tabs>
     );
 }
-
-RiskSidePanelErrorContent.propTypes = {
-    message: PropTypes.string.isRequired,
-};
 
 RiskSidePanelContent.propTypes = {
     isFetching: PropTypes.bool.isRequired,

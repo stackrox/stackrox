@@ -1,7 +1,12 @@
 import queryString from 'qs';
 
 import { ReportConfiguration as ReportConfigurationV1 } from 'types/report.proto';
-import { ReportConfiguration, ReportStatus } from 'services/ReportsService.types';
+import {
+    ReportConfiguration,
+    ReportHistoryResponse,
+    ReportSnapshot,
+    ReportStatus,
+} from 'services/ReportsService.types';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { ApiSortOption } from 'types/search';
 import axios from './instance';
@@ -99,6 +104,14 @@ export function fetchReportConfigurations(): Promise<ReportConfiguration[]> {
         });
 }
 
+export function fetchReportConfiguration(reportId: string): Promise<ReportConfiguration> {
+    return axios
+        .get<ReportConfiguration>(`/v2/reports/configurations/${reportId}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
 export function fetchReportStatus(id: string): Promise<ReportStatus | null> {
     return axios
         .get<{ status: ReportStatus | null }>(`/v2/reports/status/${id}`)
@@ -115,6 +128,12 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
+export function fetchReportHistory(id: string): Promise<ReportSnapshot[]> {
+    return axios.get<ReportHistoryResponse>(`/v2/reports/history/${id}`).then((response) => {
+        return response.data?.reportSnapshots ?? [];
+    });
+}
+
 export function createReportConfiguration(
     report: ReportConfiguration
 ): Promise<ReportConfiguration> {
@@ -123,4 +142,21 @@ export function createReportConfiguration(
         .then((response) => {
             return response.data;
         });
+}
+
+export function updateReportConfiguration(
+    reportId: string,
+    report: ReportConfiguration
+): Promise<ReportConfiguration> {
+    return axios
+        .put<ReportConfiguration>(`/v2/reports/configurations/${reportId}`, report)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function deleteReportConfiguration(reportId: string): Promise<Empty> {
+    return axios.delete<Empty>(`/v2/reports/configurations/${reportId}`).then((response) => {
+        return response.data;
+    });
 }

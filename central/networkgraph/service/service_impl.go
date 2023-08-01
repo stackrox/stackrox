@@ -12,12 +12,10 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	"github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/central/networkgraph/entity/mappings"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,7 +28,9 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/objects"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
@@ -100,7 +100,7 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	query, _ = search.FilterQueryWithMap(query, mappings.OptionsMap)
+	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
 	pred, err := netEntityPredFactory.GeneratePredicate(query)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())

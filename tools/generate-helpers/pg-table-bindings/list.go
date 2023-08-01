@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -29,11 +29,13 @@ func init() {
 		&storage.ComplianceConfig{}:                             resources.Compliance,
 		&storage.ComplianceIntegration{}:                        resources.Integration,
 		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
+		&storage.ComplianceOperatorCheckResultV2{}:              resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfileV2{}:                  resources.ComplianceOperator,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
 		&storage.ComplianceOperatorRuleV2{}:                     resources.ComplianceOperator,
 		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
+		&storage.ComplianceOperatorScanV2{}:                     resources.ComplianceOperator,
 		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
 		&storage.ComplianceOperatorScanSettingV2{}:              resources.ComplianceOperator,
 		&storage.ComplianceRunMetadata{}:                        resources.Compliance,

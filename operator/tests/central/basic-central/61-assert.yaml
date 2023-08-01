@@ -27,6 +27,9 @@ spec:
         - containerPort: 9090
           name: monitoring
           protocol: TCP
+        - containerPort: 9091
+          name: monitoring-tls
+          protocol: TCP
 status:
   availableReplicas: 1
 ---

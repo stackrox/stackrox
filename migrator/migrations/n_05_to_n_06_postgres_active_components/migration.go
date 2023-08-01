@@ -17,7 +17,6 @@ import (
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -29,7 +28,7 @@ var (
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 117
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(dackboxhelper.GetMigrationDackBox(), dackboxhelper.GetMigrationKeyFence())
-			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.DBCtx, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving active_components from rocksdb to postgres")
 			}
@@ -48,7 +47,7 @@ type imageIDAndOs struct {
 	ScanOperatingSystem string `gorm:"column:scan_operatingsystem;type:varchar"`
 }
 
-func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
+func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
 	imageTable := gormDB.Table(frozenSchema.ImagesSchema.Table).Model(frozenSchema.CreateTableImagesStmt.GormModel)
 	var imageCount int64
 	if err := imageTable.Count(&imageCount).Error; err != nil {
@@ -66,9 +65,9 @@ func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) err
 		return result.Error
 	}
 	log.WriteToStderrf("Found %d images", result.RowsAffected)
-	ctx := sac.WithAllAccess(context.Background())
 	store := pgStore.New(postgresDB)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableActiveComponentsStmt)
+
 	var activeComponents []*storage.ActiveComponent
 	err := walk(ctx, legacyStore, func(obj *storage.ActiveComponent) error {
 		activeComponents = append(activeComponents, convertActiveVuln(imageToOsMap, obj)...)

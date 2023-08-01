@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
 
 import Widget from 'Components/Widget';
-import VerticalBarChart from 'Components/visuals/VerticalBarChart';
 import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
@@ -16,6 +15,7 @@ import { standardLabels } from 'messages/standards';
 import searchContext from 'Containers/searchContext';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
+import VerticalBarChart from './VerticalBarChart';
 
 const EntityCompliance = ({ entityType, entityName, clusterName }) => {
     const entityTypeLabel = entityNounSentenceCaseSingular[entityType];

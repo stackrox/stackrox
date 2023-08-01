@@ -15,10 +15,10 @@ import (
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	podDatastoreMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	scrapeMocks "github.com/stackrox/rox/central/scrape/factory/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )

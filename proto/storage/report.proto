@@ -9,6 +9,9 @@ import "storage/user.proto";
 
 package storage;
 
+// ReportMetadata stores details associated with a report job requested for a ReportConfiguration.
+// ReportMetadata also stores the status of the report. There can be many ReportMetadatas for a given ReportConfiguration,
+// one for each requested report.
 message ReportMetadata {
     string       report_id        = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string       report_config_id = 2 [(gogoproto.moretags) = 'search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"'];
@@ -28,9 +31,8 @@ message ReportStatus {
     }
 
     enum NotificationMethod {
-        UNSET = 0;
-        EMAIL = 1;
-        DOWNLOAD = 2;
+        EMAIL = 0;
+        DOWNLOAD = 1;
     }
 
     enum RunMethod {

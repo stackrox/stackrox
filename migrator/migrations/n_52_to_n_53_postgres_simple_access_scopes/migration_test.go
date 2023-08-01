@@ -93,7 +93,7 @@ func (s *postgresMigrationSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.postgresDB = pghelper.ForT(s.T(), true)
+	s.postgresDB = pghelper.ForT(s.T(), false)
 	s.gormDB = s.postgresDB.GetGormDB()
 	pgutils.CreateTableFromModel(s.ctx, s.gormDB, frozenSchema.CreateTableReportConfigurationsStmt)
 }
@@ -128,7 +128,7 @@ func (s *postgresMigrationSuite) TestSimpleAccessScopeMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, simpleAccessScopesBatch))
 
 	// Move
-	s.NoError(migrateAccessScopes(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(migrateAccessScopes(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
@@ -166,7 +166,7 @@ func (s *postgresMigrationSuite) TestPermissionSetMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, permissionSetsBatch))
 
 	// Move
-	s.NoError(migratePermissionSets(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(migratePermissionSets(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
@@ -196,7 +196,7 @@ func (s *postgresMigrationSuite) TestRoleMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, roles))
 
 	// Move
-	s.NoError(migrateRoles(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(migrateRoles(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)
@@ -678,7 +678,7 @@ func (s *postgresMigrationSuite) TestMigrateAll() {
 	s.NoError(postgresReportConfigStore.UpsertMany(s.ctx, reportConfigurations))
 
 	// Move
-	s.NoError(migrateAll(s.legacyDB, s.postgresDB.GetGormDB(), s.postgresDB.DB))
+	s.NoError(migrateAll(s.ctx, s.legacyDB, s.postgresDB.GetGormDB(), s.postgresDB.DB))
 
 	// Verify
 	scopeCount, err := newScopeStore.Count(s.ctx)
