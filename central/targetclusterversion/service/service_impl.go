@@ -39,7 +39,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetTargetClusterVersion(ctx context.Context, _ *v1.Empty) (*v1.TargetClusterVersionResponse, error) {
+func (s *serviceImpl) GetTargetClusterVersion(_ context.Context, _ *v1.Empty) (*v1.TargetClusterVersionResponse, error) {
 	targetVersion := &v1.TargetClusterVersionResponse{
 		// Version: version.GetMainVersion as a default. Pull env var for PoC for now.
 		Version: env.TargetClusterVersion.Setting(),
