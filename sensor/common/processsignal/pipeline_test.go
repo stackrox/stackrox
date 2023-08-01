@@ -87,7 +87,7 @@ func TestProcessPipelineOffline(t *testing.T) {
 			},
 		},
 		{
-			name:         "Going online should yield second message with vaild context",
+			name:         "Going online should yield second message with valid context",
 			initialState: common.SensorComponentEventOfflineMode,
 			laterState:   common.SensorComponentEventCentralReachable,
 			initialSignal: &processIndicatorMessageT{
@@ -170,7 +170,7 @@ func processSignal(p *Pipeline,
 	defer wg.Done()
 	// If PI has metadata in store it will be enriched immediately.
 	// If not, then the enrichment happens async based on ticker.
-	// Here, we simulate immediate enchirment to not make the test more complex.
+	// Here, we simulate immediate enrichment to not make the test more complex.
 	updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
 	p.Process(singal)
 
