@@ -4,17 +4,12 @@ import { Chart, ChartAxis, ChartBar, ChartGroup, ChartLabelProps } from '@patter
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    CRITICAL_SEVERITY_COLOR,
-    IMPORTANT_HIGH_SEVERITY_COLOR,
-    LOW_SEVERITY_COLOR,
-    MODERATE_MEDIUM_SEVERITY_COLOR,
-} from 'constants/visuals/colors';
-import {
     defaultChartBarWidth,
     defaultChartHeight,
     patternflySeverityTheme,
 } from 'utils/chartUtils';
 
+import { getBarColor } from './ColorsForCompliance';
 import WidgetCard from '../../../Dashboard/Widgets/WidgetCard';
 
 const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceByClusterData) => {
@@ -64,19 +59,6 @@ function ComplianceByCluster() {
     const [complianceData] = useState(mockComplianceData);
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
-
-    function getBarColor(percent: number): string {
-        if (percent === 100) {
-            return LOW_SEVERITY_COLOR;
-        }
-        if (percent > 50) {
-            return MODERATE_MEDIUM_SEVERITY_COLOR;
-        }
-        if (percent > 25) {
-            return IMPORTANT_HIGH_SEVERITY_COLOR;
-        }
-        return CRITICAL_SEVERITY_COLOR;
-    }
 
     return (
         <WidgetCard isLoading={false} header="Compliance by cluster">
