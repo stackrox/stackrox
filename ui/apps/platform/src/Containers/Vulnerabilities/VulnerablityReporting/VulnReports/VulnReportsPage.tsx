@@ -60,9 +60,7 @@ function VulnReportsPage() {
 
     const { reports, isLoading, error: fetchError, fetchReports } = useFetchReports();
     const { isRunning, runError, runReport } = useRunReport({
-        onCompleted: () => {
-            fetchReports();
-        },
+        onCompleted: fetchReports,
     });
 
     const {
@@ -73,9 +71,7 @@ function VulnReportsPage() {
         onDelete,
         deleteError,
     } = useDeleteModal({
-        onCompleted: () => {
-            fetchReports();
-        },
+        onCompleted: fetchReports,
     });
 
     return (

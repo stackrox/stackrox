@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { runReportRequest } from 'services/ReportsService';
 import { ReportNotificationMethod } from 'services/ReportsService.types';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseSaveReportProps = {
     onCompleted: () => void;
@@ -47,7 +48,7 @@ function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                     setResult({
                         isRunCompleted: true,
                         isRunning: false,
-                        runError: err.response.data.message,
+                        runError: getAxiosErrorMessage(err),
                     });
                 });
         },
