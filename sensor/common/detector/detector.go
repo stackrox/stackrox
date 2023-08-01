@@ -53,7 +53,7 @@ type Detector interface {
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
 	ReprocessDeployments(deploymentIDs ...string)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
-	ProcessNetworkFlow(flow *storage.NetworkFlow)
+	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(sync *central.PolicySync) error
 	ProcessReassessPolicies() error
 	ProcessReprocessDeployments() error
@@ -194,7 +194,8 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 			select {
 			case <-d.serializerStopper.Flow().StopRequested():
 				return
-			case d.output <- createAlertResultsMsg(result.action, alertResults):
+				// TODO(ROX-17326): Add context to detector messages
+			case d.output <- createAlertResultsMsg(context.TODO(), result.action, alertResults):
 			}
 		}
 	}
@@ -472,7 +473,7 @@ func (d *detectorImpl) ProcessIndicator(pi *storage.ProcessIndicator) {
 	go d.processIndicator(pi)
 }
 
-func createAlertResultsMsg(action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
+func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
 	msgFromSensor := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -489,8 +490,7 @@ func createAlertResultsMsg(action central.ResourceAction, alertResults *central.
 		},
 	}
 
-	// TODO(ROX-17326): Add context to detector messages
-	return message.NewExpiring(context.TODO(), msgFromSensor)
+	return message.NewExpiring(ctx, msgFromSensor)
 }
 
 func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
@@ -522,12 +522,13 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	select {
 	case <-d.alertStopSig.Done():
 		return
-	case d.output <- createAlertResultsMsg(central.ResourceAction_CREATE_RESOURCE, alertResults):
+		// TODO(ROX-17326): Add context to detector messages
+	case d.output <- createAlertResultsMsg(context.TODO(), central.ResourceAction_CREATE_RESOURCE, alertResults):
 	}
 }
 
-func (d *detectorImpl) ProcessNetworkFlow(flow *storage.NetworkFlow) {
-	go d.processNetworkFlow(flow)
+func (d *detectorImpl) ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
+	go d.processNetworkFlow(ctx, flow)
 }
 
 type networkEntityDetails struct {
@@ -567,6 +568,7 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 }
 
 func (d *detectorImpl) processAlertsForFlowOnEntity(
+	ctx context.Context,
 	entity *storage.NetworkEntityInfo,
 	flowDetails *augmentedobjs.NetworkFlowDetails,
 ) {
@@ -600,11 +602,11 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 	select {
 	case <-d.alertStopSig.Done():
 		return
-	case d.output <- createAlertResultsMsg(central.ResourceAction_CREATE_RESOURCE, alertResults):
+	case d.output <- createAlertResultsMsg(ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
 	}
 }
 
-func (d *detectorImpl) processNetworkFlow(flow *storage.NetworkFlow) {
+func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
 	// Only run the flows through policies if the entity types are supported
 	_, srcTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetSrcEntity().GetType()]
 	_, dstTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetDstEntity().GetType()]
@@ -640,8 +642,8 @@ func (d *detectorImpl) processNetworkFlow(flow *storage.NetworkFlow) {
 		DstDeploymentType:      dstDetails.deploymentType,
 	}
 
-	d.processAlertsForFlowOnEntity(flow.GetProps().GetSrcEntity(), flowDetails)
-	d.processAlertsForFlowOnEntity(flow.GetProps().GetDstEntity(), flowDetails)
+	d.processAlertsForFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
+	d.processAlertsForFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
 }
 
 func extractTimestamp(flow *storage.NetworkFlow) *types.Timestamp {

@@ -157,15 +157,50 @@ get_central_diagnostics() {
     ls -l "${output_dir}"
 }
 
-push_main_image_set() {
-    info "Pushing main, roxctl and central-db images"
+push_image_manifest_lists() {
+    info "Pushing main, roxctl and central-db images as manifest lists"
 
     if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_main_image_set <push_context> <brand>"
+        die "missing arg. usage: push_image_manifest_lists <push_context> <brand>"
     fi
 
     local push_context="$1"
     local brand="$2"
+
+    local main_image_set=("main" "roxctl" "central-db")
+    local architectures="amd64,arm64,ppc64le"
+
+    local registry
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        registry="quay.io/stackrox-io"
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        registry="quay.io/rhacs-eng"
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+    for image in "${main_image_set[@]}"; do
+         "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+          if [[ "$push_context" == "merge-to-master" ]]; then
+              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
+          fi
+    done
+}
+
+push_main_image_set() {
+    info "Pushing main, roxctl and central-db images"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_main_image_set <push_context> <brand> <arch>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+    local arch="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
     if is_OPENSHIFT_CI; then
@@ -178,7 +213,7 @@ push_main_image_set() {
         local tag="$2"
 
         for image in "${main_image_set[@]}"; do
-            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+            docker push "${registry}/${image}:${tag}" | cat
         done
     }
 
@@ -219,15 +254,15 @@ push_main_image_set() {
         if is_OPENSHIFT_CI; then
             _mirror_main_image_set "$registry" "$tag"
         else
-            _tag_main_image_set "$tag" "$registry" "$tag"
-            _push_main_image_set "$registry" "$tag"
+            _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+            _push_main_image_set "$registry" "$tag-$arch"
         fi
         if [[ "$push_context" == "merge-to-master" ]]; then
             if is_OPENSHIFT_CI; then
-                _mirror_main_image_set "$registry" "latest"
+                _mirror_main_image_set "$registry" "latest-${arch}"
             else
-                _tag_main_image_set "$tag" "$registry" "latest"
-                _push_main_image_set "$registry" "latest"
+                _tag_main_image_set "$tag" "$registry" "latest-${arch}"
+                _push_main_image_set "$registry" "latest-${arch}"
             fi
         fi
     done
@@ -271,8 +306,8 @@ registry_ro_login() {
 push_matching_collector_scanner_images() {
     info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_matching_collector_scanner_images <brand>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
     fi
 
     if is_OPENSHIFT_CI; then
@@ -280,6 +315,7 @@ push_matching_collector_scanner_images() {
     fi
 
     local brand="$1"
+    local arch="$2"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
         local source_registry="quay.io/stackrox-io"
@@ -299,6 +335,11 @@ push_matching_collector_scanner_images() {
         fi
     }
 
+    if [[ "$arch" != "amd64" ]]; then
+        echo "Skipping rebundling for non-amd64 arch"
+        exit 0
+    fi
+
     local main_tag
     main_tag="$(make --quiet --no-print-directory tag)"
     local scanner_version
@@ -309,13 +350,13 @@ push_matching_collector_scanner_images() {
     for target_registry in "${target_registries[@]}"; do
         registry_rw_login "${target_registry}"
 
-        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
-        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
-        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
-        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}-${arch}"
 
-        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
-        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}-${arch}"
     done
 }
 

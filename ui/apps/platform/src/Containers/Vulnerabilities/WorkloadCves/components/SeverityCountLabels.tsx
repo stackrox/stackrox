@@ -3,10 +3,18 @@ import { Flex, Label, Tooltip, pluralize, capitalize } from '@patternfly/react-c
 import { EllipsisHIcon } from '@patternfly/react-icons';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
-import { vulnSeverityTextColors } from 'constants/visuals/colors';
+import { noViolationsColor } from 'constants/severityColors';
+import { VulnerabilitySeverity } from 'types/cve.proto';
+
 import { VulnerabilitySeverityLabel } from '../types';
 
-const fadedTextColor = 'var(--pf-global--Color--200)';
+const vulnSeverityTextColors: Record<VulnerabilitySeverity, string> = {
+    LOW_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--blue-500)',
+    MODERATE_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--gold-600)',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--orange-500)',
+    CRITICAL_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--red-200)',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--black-400)',
+};
 
 type SeverityCountLabelsProps = {
     criticalCount: number;
@@ -57,13 +65,13 @@ function SeverityCountLabels({
                     aria-label={getTooltipContent('critical', critical, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
-                    icon={<CriticalIcon color={critical ? undefined : fadedTextColor} />}
+                    icon={<CriticalIcon color={critical ? undefined : noViolationsColor} />}
                 >
                     <span
                         style={{
                             color: critical
                                 ? vulnSeverityTextColors.CRITICAL_VULNERABILITY_SEVERITY
-                                : fadedTextColor,
+                                : noViolationsColor,
                         }}
                     >
                         {!critical && critical !== 0 ? (
@@ -79,13 +87,13 @@ function SeverityCountLabels({
                     aria-label={getTooltipContent('important', important, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
-                    icon={<ImportantIcon color={important ? undefined : fadedTextColor} />}
+                    icon={<ImportantIcon color={important ? undefined : noViolationsColor} />}
                 >
                     <span
                         style={{
                             color: important
                                 ? vulnSeverityTextColors.IMPORTANT_VULNERABILITY_SEVERITY
-                                : fadedTextColor,
+                                : noViolationsColor,
                         }}
                     >
                         {!important && important !== 0 ? (
@@ -101,13 +109,13 @@ function SeverityCountLabels({
                     aria-label={getTooltipContent('moderate', moderate, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
-                    icon={<ModerateIcon color={moderate ? undefined : fadedTextColor} />}
+                    icon={<ModerateIcon color={moderate ? undefined : noViolationsColor} />}
                 >
                     <span
                         style={{
                             color: moderate
                                 ? vulnSeverityTextColors.MODERATE_VULNERABILITY_SEVERITY
-                                : fadedTextColor,
+                                : noViolationsColor,
                         }}
                     >
                         {!moderate && moderate !== 0 ? (
@@ -123,13 +131,13 @@ function SeverityCountLabels({
                     aria-label={getTooltipContent('low', low, entity)}
                     variant="outline"
                     className="pf-u-font-weight-bold"
-                    icon={<LowIcon color={low ? undefined : fadedTextColor} />}
+                    icon={<LowIcon color={low ? undefined : noViolationsColor} />}
                 >
                     <span
                         style={{
                             color: low
                                 ? vulnSeverityTextColors.LOW_VULNERABILITY_SEVERITY
-                                : fadedTextColor,
+                                : noViolationsColor,
                         }}
                     >
                         {!low && low !== 0 ? <EllipsisHIcon className="pf-u-my-xs" /> : low}

@@ -17,7 +17,6 @@ import (
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gorm.io/gorm"
 )
@@ -30,7 +29,7 @@ var (
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 142
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.NewClusterStore(databases.PkgRocksDB)
-			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.DBCtx, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving network_flows from rocksdb to postgres")
 			}
@@ -40,8 +39,7 @@ var (
 	schema = frozenSchema.NetworkFlowsSchema
 )
 
-func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore store.ClusterStore) error {
-	ctx := sac.WithAllAccess(context.Background())
+func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore store.ClusterStore) error {
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNetworkFlowsStmt)
 
 	clusterStore := pgStore.NewClusterStore(postgresDB)

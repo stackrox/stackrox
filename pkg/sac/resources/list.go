@@ -153,6 +153,23 @@ func newInternalResourceMetadata(name permissions.Resource, scope permissions.Re
 	return md
 }
 
+// GetScopeForResource gives the scope associated with the target resource.
+func GetScopeForResource(resource permissions.Resource) permissions.ResourceScope {
+	md, found := resourceToMetadata[resource]
+	if found {
+		return md.GetScope()
+	}
+	md, found = disabledResourceToMetadata[resource]
+	if found {
+		return md.GetScope()
+	}
+	md, found = internalResourceToMetadata[resource]
+	if found {
+		return md.GetScope()
+	}
+	return permissions.GlobalScope
+}
+
 // ListAll returns a list of all resources.
 func ListAll() []permissions.Resource {
 	resources := make([]permissions.Resource, 0, len(resourceToMetadata))

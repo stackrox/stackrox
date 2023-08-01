@@ -432,6 +432,26 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 	}
 }
 
+// WaitForHello will wait until sensor transmits a `SensorHello` message to central and returns that message.
+func (c *TestContext) WaitForHello(timeout time.Duration) *central.SensorHello {
+	ticker := time.NewTicker(defaultTicker)
+	timeoutTimer := time.NewTicker(timeout)
+	for {
+		select {
+		case <-timeoutTimer.C:
+			c.t.Errorf("timeout (%s) reached waiting for hello event", timeout)
+			return nil
+		case <-ticker.C:
+			messages := c.GetFakeCentral().GetAllMessages()
+			for _, m := range messages {
+				if m.GetHello() != nil {
+					return m.GetHello()
+				}
+			}
+		}
+	}
+}
+
 // WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
 func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
 	ticker := time.NewTicker(defaultTicker)

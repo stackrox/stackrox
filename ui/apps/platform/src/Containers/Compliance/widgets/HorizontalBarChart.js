@@ -5,7 +5,6 @@ import {
     YAxis,
     VerticalGridLines,
     HorizontalBarSeries,
-    GradientDefs,
     LabelSeries,
 } from 'react-vis';
 import { withRouter, Link } from 'react-router-dom';
@@ -13,7 +12,7 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'deepmerge';
 
-import BarGradient from 'Components/visuals/BarGradient';
+import { getColor } from './colorsForCompliance';
 
 const minimalMargin = { top: -15, bottom: 0, left: 0, right: 0 };
 
@@ -110,7 +109,6 @@ class HorizontalBarChart extends Component {
     getSeriesProps = () => {
         const { minimal } = this.props;
         const defaultSeriesProps = {
-            color: 'url(#horizontalGradient)',
             style: {
                 height: minimal ? 15 : 20,
                 rx: '2px',
@@ -158,36 +156,7 @@ class HorizontalBarChart extends Component {
 
         return (
             <div {...containerProps}>
-                {/* Bar Background  */}
-                <svg
-                    className="absolute"
-                    height="0"
-                    width="10"
-                    xmlns="http://www.w3.org/2000/svg"
-                    version="1.1"
-                >
-                    <defs>
-                        <pattern
-                            id="bar-background"
-                            patternUnits="userSpaceOnUse"
-                            width="6"
-                            height="6"
-                        >
-                            background-color: #ffffff;
-                            <image
-                                xlinkHref="data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ccc9d2' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E"
-                                x="0"
-                                y="0"
-                                width="6"
-                                height="6"
-                            />
-                        </pattern>
-                    </defs>
-                </svg>
                 <FlexibleWidthXYPlot {...plotProps}>
-                    <GradientDefs>
-                        <BarGradient />
-                    </GradientDefs>
                     {/* Empty area bar background */}
 
                     {!minimal && <VerticalGridLines tickValues={tickValues} />}
@@ -209,10 +178,9 @@ class HorizontalBarChart extends Component {
                             y: item.y,
                             link: item.link,
                         }))}
+                        color="var(--pf-global--palette--black-200)"
                         style={{
                             height: seriesProps.style.height,
-                            stroke: 'var(--base-300)',
-                            fill: `url(#bar-background)`,
                             rx: '2',
                             ry: '2',
                             cursor: `${minimal ? '' : 'pointer'}`,
@@ -221,14 +189,18 @@ class HorizontalBarChart extends Component {
                     />
 
                     {/* Values */}
-                    <HorizontalBarSeries data={sortedData} {...seriesProps} />
+                    <HorizontalBarSeries
+                        data={sortedData.map((item) => ({ ...item, color: getColor(item.x) }))}
+                        {...seriesProps}
+                        colorType="literal"
+                    />
                     <LabelSeries
                         data={this.getLabelData()}
                         className="text-xs pointer-events-none theme-light"
                         labelAnchorY="no-change"
                         labelAnchorX="end-alignment"
                         style={{
-                            fill: 'var(--primary-800)',
+                            fill: '#ffffff',
                             cursor: `${minimal ? '' : 'pointer'}`,
                         }}
                     />

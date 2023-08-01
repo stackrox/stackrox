@@ -12,9 +12,12 @@ GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
 export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
+ifeq ($(CGO_ENABLED),)
 CGO_ENABLED := 1
+endif
 
 # Update the arch to arm64 but only for Macs running on Apple Silicon (M1)
+ifeq ($(GOARCH),)
 ifeq ($(shell uname -ms),Darwin arm64)
 	GOARCH := arm64
 else ifeq ($(shell uname -ms),Linux aarch64)
@@ -25,6 +28,7 @@ else ifeq ($(shell uname -ms),Linux s390x)
 	GOARCH := s390x
 else
 	GOARCH := amd64
+endif
 endif
 
 DEFAULT_GOOS := linux

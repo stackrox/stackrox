@@ -14,7 +14,7 @@ var (
 
 	once           sync.Once
 	clusterID      string
-	clusterIDMutex sync.Mutex
+	clusterIDMutex sync.RWMutex
 
 	clusterIDAvailable = concurrency.NewSignal()
 )
@@ -41,6 +41,13 @@ func Get() string {
 			clusterIDAvailable.Signal()
 		}
 	})
+	return GetNoWait()
+}
+
+// GetNoWait returns the cluster id without waiting until it is available.
+func GetNoWait() string {
+	clusterIDMutex.RLock()
+	defer clusterIDMutex.RUnlock()
 	return clusterID
 }
 

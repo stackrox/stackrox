@@ -424,7 +424,7 @@ func getFetchOptionFromRequest(request interface {
 		return enricher.NoExternalMetadata, nil
 	}
 	if request.GetForce() {
-		return enricher.ForceRefetch, nil
+		return enricher.UseImageNamesRefetchCachedValues, nil
 	}
 	return enricher.UseCachesIfPossible, nil
 }

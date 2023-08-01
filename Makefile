@@ -46,6 +46,7 @@ ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 endif
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
+DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
 GOCACHE_VOLUME_NAME := stackrox-rox-gocache
@@ -66,11 +67,6 @@ UNAME_M := $(shell uname -m)
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifneq ($(UNAME_M),x86_64)
 	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
-endif
-
-TARGET_ARCH := "amd64"
-ifeq ($(UNAME_M),arm64)
-TARGET_ARCH = "arm64"
 endif
 
 ifeq ($(UNAME_S),Darwin)
@@ -424,7 +420,7 @@ main-build-dockerized: main-builder-image
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
+	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
@@ -558,12 +554,12 @@ main-image: all-builds
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg DEBUG_BUILD="$(DEBUG_BUILD)" \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
-		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
+		--build-arg TARGET_ARCH=$(GOARCH) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--build-arg LABEL_VERSION=$(TAG) \
 		--build-arg LABEL_RELEASE=$(TAG) \
@@ -576,7 +572,7 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
 	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl/Dockerfile \
@@ -588,6 +584,7 @@ copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
+	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
 	cp bin/linux_ppc64le/roxctl image/rhel/bin/roxctl-linux-ppc64le
 	cp bin/linux_s390x/roxctl image/rhel/bin/roxctl-linux-s390x
 	cp bin/darwin_amd64/roxctl image/rhel/bin/roxctl-darwin-amd64
@@ -655,7 +652,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 
 .PHONY: central-db-image
 central-db-image:
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		--file image/postgres/Dockerfile \

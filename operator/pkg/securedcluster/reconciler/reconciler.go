@@ -38,7 +38,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
-		proxy.InjectProxyEnvVars(translation.NewTranslator(mgr.GetClient()), proxyEnv),
+		proxy.InjectProxyEnvVars(translation.NewTranslator(mgr.GetClient()), proxyEnv, mgr.GetLogger()),
 		opts...,
 	)
 }

@@ -17,7 +17,7 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(reconnect bool, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
 		allFinished: &finished,
@@ -25,6 +25,7 @@ func NewCentralCommunication(components ...common.SensorComponent) CentralCommun
 		sender:      NewCentralSender(&finished, components...),
 		components:  components,
 
-		stopper: concurrency.NewStopper(),
+		stopper:     concurrency.NewStopper(),
+		isReconnect: reconnect,
 	}
 }
