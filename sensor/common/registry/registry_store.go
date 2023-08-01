@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	configV1 "github.com/openshift/api/config/v1"
+	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -55,6 +57,12 @@ type Store struct {
 
 	// centralRegistryIntegration holds registry integrations sync'd from Central.
 	centralRegistryIntegrations registries.Set
+
+	// holds the mirror sets used for managing registry mirrors.
+	icspRules      map[string]*operatorV1Alpha1.ImageContentSourcePolicy
+	idmsRules      map[string]*configV1.ImageDigestMirrorSet
+	itmsRules      map[string]*configV1.ImageTagMirrorSet
+	mirrorSetMutex sync.RWMutex
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -76,6 +84,9 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		globalRegistries:            registries.NewSet(regFactory),
 		centralRegistryIntegrations: registries.NewSet(regFactory),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
+		icspRules:                   make(map[string]*operatorV1Alpha1.ImageContentSourcePolicy),
+		idmsRules:                   make(map[string]*configV1.ImageDigestMirrorSet),
+		itmsRules:                   make(map[string]*configV1.ImageTagMirrorSet),
 	}
 
 	if checkTLS != nil {
@@ -333,4 +344,77 @@ func (rs *Store) GetMatchingCentralRegistryIntegrations(imgName *storage.ImageNa
 	}
 
 	return regs
+}
+
+// UpsertImageContentSourcePolicy will store a new/updated ImageContentSourcePolicy.
+func (rs *Store) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
+	rs.icspRules[string(icsp.GetUID())] = icsp
+}
+
+// DeleteImageContentSourcePolicy will delete an ImageContentSourcePolicy from the store if it exists.
+func (rs *Store) DeleteImageContentSourcePolicy(uid string) {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
+	delete(rs.icspRules, uid)
+}
+
+// UpsertImageDigestMirrorSet will store a new/updated ImageDigestMirrorSet.
+func (rs *Store) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
+	rs.idmsRules[string(idms.GetUID())] = idms
+}
+
+// DeleteImageDigestMirrorSet will delete an ImageDigestMirrorSet from the store if it exists.
+func (rs *Store) DeleteImageDigestMirrorSet(uid string) {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
+	delete(rs.idmsRules, uid)
+}
+
+// UpsertImageTagMirrorSet will store a new/updated ImageTagMirrorSet.
+func (rs *Store) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
+	rs.itmsRules[string(itms.GetUID())] = itms
+}
+
+// DeleteImageTagMirrorSet will delete an ImageTagMirrorSet from the store if it exists.
+func (rs *Store) DeleteImageTagMirrorSet(uid string) {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
+	delete(rs.itmsRules, uid)
+}
+
+// GetAllMirrorSets returns slices of all the stored mirror sets as expected by openshift/runtime-utils.
+//
+// ref: https://github.com/openshift/runtime-utils/blob/5c488b20a19fc8c1fee9011c41ce70379bc8ca4d/pkg/registries/registries.go#L240
+func (rs *Store) GetAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePolicy, []*configV1.ImageDigestMirrorSet, []*configV1.ImageTagMirrorSet) {
+	rs.mirrorSetMutex.RLock()
+	defer rs.mirrorSetMutex.RUnlock()
+
+	icspRules := make([]*operatorV1Alpha1.ImageContentSourcePolicy, 0, len(rs.icspRules))
+	for _, rule := range rs.icspRules {
+		icspRules = append(icspRules, rule)
+	}
+
+	idmsRules := make([]*configV1.ImageDigestMirrorSet, 0, len(rs.idmsRules))
+	for _, rule := range rs.idmsRules {
+		idmsRules = append(idmsRules, rule)
+	}
+
+	itmsRules := make([]*configV1.ImageTagMirrorSet, 0, len(rs.itmsRules))
+	for _, rule := range rs.itmsRules {
+		itmsRules = append(itmsRules, rule)
+	}
+
+	return icspRules, idmsRules, itmsRules
 }

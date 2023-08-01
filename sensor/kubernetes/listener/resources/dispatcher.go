@@ -90,7 +90,7 @@ func NewDispatcherRegistry(
 		nodeDispatcher:            newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:  newServiceAccountDispatcher(serviceAccountStore),
 		clusterOperatorDispatcher: newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
-		osRegistryMirrorDispather: newRegistryMirrorDispatcher(),
+		osRegistryMirrorDispather: newRegistryMirrorDispatcher(registryStore),
 
 		traceWriter: traceWriter,
 
