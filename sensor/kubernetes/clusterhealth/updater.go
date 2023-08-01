@@ -99,18 +99,14 @@ func (u *updaterImpl) getCurrentContext() context.Context {
 }
 
 func (u *updaterImpl) run(tickerC <-chan time.Time) {
-	ticker := time.NewTicker(u.updateInterval)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-tickerC:
-			ctx := u.getCurrentContext()
 			collectorHealthInfo := u.getCollectorInfo()
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
 			scannerHealthInfo := u.getLocalScannerInfo()
 			select {
-			case u.updates <- message.NewExpiring(ctx, &central.MsgFromSensor{
+			case u.updates <- message.NewExpiring(u.getCurrentContext(), &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
 						CollectorHealthInfo:        collectorHealthInfo,

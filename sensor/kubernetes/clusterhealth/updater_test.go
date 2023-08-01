@@ -186,11 +186,10 @@ func (s *UpdaterTestSuite) TestNamespaceMismatch() {
 	})
 }
 
-func (s *UpdaterTestSuite) TestOfflineMode() {
+func (s *UpdaterTestSuite) TestExpiredMessages() {
 	states := []common.SensorComponentEvent{
 		common.SensorComponentEventCentralReachable,
 		common.SensorComponentEventOfflineMode,
-		common.SensorComponentEventCentralReachable,
 	}
 	s.addDaemonSet(makeDaemonSet())
 	s.addNodes(4)
@@ -205,6 +204,8 @@ func (s *UpdaterTestSuite) TestOfflineMode() {
 			expiredMessages = append(expiredMessages, expiredMsg)
 		}
 	}
+	updater.Notify(common.SensorComponentEventCentralReachable)
+	// All the messages received until now should be expired at this point
 	for _, msg := range expiredMessages {
 		select {
 		case <-msg.Context.Done():
@@ -213,6 +214,19 @@ func (s *UpdaterTestSuite) TestOfflineMode() {
 			s.Fail("the messages that were attempted to be sent while offline should be expired")
 		}
 	}
+	// The last message should not be expired
+	select {
+	case msg := <-updater.ResponsesC():
+		select {
+		case <-msg.Context.Done():
+			s.Fail("the last message should not be cancelled")
+		case <-time.After(10 * updateInterval):
+			break
+		}
+	case <-time.After(10 * time.Second):
+		s.Fail("timeout waiting for sensor message")
+	}
+
 }
 
 func (s *UpdaterTestSuite) TestNotExpiredMessage() {
@@ -230,11 +244,11 @@ func (s *UpdaterTestSuite) TestNotExpiredMessage() {
 	case msg := <-updater.ResponsesC():
 		select {
 		case <-msg.Context.Done():
-			s.Fail("the message in ResponseC should not be cancelled")
+			s.Fail("the message in ResponsesC should not be cancelled")
 		case <-time.After(10 * updateInterval):
 			break
 		}
-	case <-time.After(10 * time.Second):
+	case <-time.After(updateTimeout):
 		s.Fail("timeout waiting for sensor message")
 	}
 }
@@ -254,7 +268,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 	select {
 	case msg = <-updater.ResponsesC():
 		break
-	case <-time.After(10 * time.Second):
+	case <-time.After(updateTimeout):
 		s.Fail("timeout waiting for sensor message")
 	}
 	updater.Notify(common.SensorComponentEventOfflineMode)
@@ -263,7 +277,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 	case <-msg.Context.Done():
 		break
 	case <-time.After(10 * updateInterval):
-		s.Fail("the message in ResponseC should be cancelled")
+		s.Fail("the message in ResponsesC should be cancelled")
 	}
 }
 
@@ -278,15 +292,17 @@ func (s *UpdaterTestSuite) assertOfflineMode(state common.SensorComponentEvent, 
 	switch state {
 	case common.SensorComponentEventCentralReachable:
 		select {
-		case <-time.After(10 * time.Second):
+		case <-time.After(updateTimeout):
 			s.Fail("timeout waiting for sensor message")
-		case <-updater.ResponsesC():
-			return nil
+		case msg := <-updater.ResponsesC():
+			return msg
 		}
 	case common.SensorComponentEventOfflineMode:
 		select {
 		case <-time.After(10 * interval):
 			return nil
+		// Depending on our luck with the internal ticker, we could have a message already waiting in ResponsesC.
+		// If that's the case, we return it here and later assert that the message is cancelled.
 		case msg := <-updater.ResponsesC():
 			return msg
 		}
