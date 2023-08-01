@@ -136,6 +136,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enabled": "true",
 					},
 				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
+				},
 			},
 		},
 		"local scanner autosense suppression": {
@@ -165,6 +170,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"scanner": map[string]interface{}{
 					"disable": true,
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
+					},
 				},
 			},
 		},
@@ -196,6 +206,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": false,
 					},
 				},
 			},
@@ -281,6 +296,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 										v1.ResourceMemory: resource.MustParse("1003Mi"),
 									},
 								},
+							},
+						},
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Enabled: true,
 							},
 						},
 						Scanner: &platform.LocalScannerComponentSpec{
@@ -523,6 +543,11 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"system": map[string]interface{}{
 					"createSCCs": true,
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
 				},
 			},
 		},
