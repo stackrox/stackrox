@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -11,9 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -127,7 +130,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
-	sensorHello.Capabilities = centralsensor.CapSetToStringSlice(capsSet)
+	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
 	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
@@ -219,6 +222,13 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 
 	managedcentral.Set(centralHello.GetManagedCentral())
 	centralid.Set(centralHello.GetCentralId())
+
+	centralCaps := centralHello.GetCapabilities()
+	if len(centralCaps) != 0 {
+		centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
+		log.Infof("Central responded with the following capabilities: [%s]",
+			strings.Join(centralCaps, ","))
+	}
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {

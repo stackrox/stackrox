@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -49,6 +50,7 @@ func (p *pingComponent) Notify(_ common.SensorComponentEvent) {}
 
 func (p *pingComponent) Start() error {
 	p.ticker = time.NewTicker(p.pingInterval)
+	go p.run()
 	return nil
 }
 
@@ -58,17 +60,21 @@ func (p *pingComponent) Stop(_ error) {
 }
 
 func (p *pingComponent) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.PingCap}
+	return nil
 }
 
 func (p *pingComponent) run() {
 	for {
 		select {
 		case <-p.ticker.C:
-			log.Debug("Sending ping message to Central.")
-			p.responsesC <- message.New(&central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Ping{Ping: &central.SensorPing{}},
-			})
+			// Since Start() is called before the initial sync between Central and Sensor has been finalized, we cannot
+			// get away with not initializing or stopping the ticker.
+			if centralcaps.Has(centralsensor.PingCap) {
+				log.Debug("Sending ping message to Central.")
+				p.responsesC <- message.New(&central.MsgFromSensor{
+					Msg: &central.MsgFromSensor_Ping{Ping: &central.SensorPing{}},
+				})
+			}
 		case <-p.stopSignal.Done():
 			return
 		}

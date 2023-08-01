@@ -12,12 +12,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
-	log = logging.LoggerForModule()
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -34,6 +33,10 @@ func NewPipeline(clusters clusterDataStore.DataStore) pipeline.Fragment {
 
 type pipelineImpl struct {
 	clusters clusterDataStore.DataStore
+}
+
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

@@ -10,10 +10,12 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/centralsensor"
 )
 
-var log = logging.LoggerForModule()
+var (
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
+)
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -44,10 +46,12 @@ func NewPipeline(metricsStore MetricsStore, infoMetric info.Info) pipeline.Fragm
 }
 
 type pipelineImpl struct {
-	pipeline.Fragment
-
 	metricsStore MetricsStore
 	infoMetric   info.Info
+}
+
+func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

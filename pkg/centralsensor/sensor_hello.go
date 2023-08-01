@@ -5,6 +5,8 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -18,7 +20,8 @@ const (
 // legacy sensor info outgoing metadata in the given context. It does *not* indicate that the client wants to send
 // a SensorHello message.
 func AppendSensorHelloInfoToOutgoingMetadata(ctx context.Context, hello *central.SensorHello) (context.Context, error) {
-	ctx = appendCapsInfoToContext(ctx, CapSetFromStringSlice(hello.GetCapabilities()...))
+	ctx = appendCapsInfoToContext(ctx, set.NewSet(sliceutils.
+		FromStringSlice[SensorCapability](hello.GetCapabilities()...)...))
 	return appendSensorVersionInfoToContext(ctx, hello.GetSensorVersion())
 }
 
@@ -33,6 +36,6 @@ func DeriveSensorHelloFromIncomingMetadata(md metautils.NiceMD) (*central.Sensor
 		sensorHello.SensorVersion = versionInfo.MainVersion
 	}
 
-	sensorHello.Capabilities = CapSetToStringSlice(extractCapsFromMD(md))
+	sensorHello.Capabilities = sliceutils.StringSlice(extractCapsFromMD(md).AsSlice()...)
 	return sensorHello, versionErr
 }

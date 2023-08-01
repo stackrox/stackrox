@@ -40,6 +40,7 @@ message CentralHello {
     map<string, string> cert_bundle     = 2;
     bool                managed_central = 3;
     string              central_id      = 4;
+    repeated string     capabilities    = 5;
 }
 
 message SensorPing {

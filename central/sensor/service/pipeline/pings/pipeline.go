@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -29,6 +28,10 @@ func newPingPipeline() pipeline.Fragment {
 
 type pipelineImpl struct{}
 
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return []centralsensor.CentralCapability{centralsensor.PingCap}
+}
+
 func (s *pipelineImpl) OnFinish(_ string) {}
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -36,14 +39,6 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, _ *central.MsgFromSensor, injector common.MessageInjector) error {
-	conn := connection.FromContext(ctx)
-
-	if !conn.HasCapability(centralsensor.PingCap) {
-		log.Warnf(`Cluster %q does not have the capability to receive pings.
-It might have trouble with Central connection timeouts.`, clusterID)
-		return nil
-	}
-
 	log.Debugf("Received ping from Cluster %q, responding with pong message.", clusterID)
 	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_Pong{Pong: &central.CentralPong{}}}); err != nil {
