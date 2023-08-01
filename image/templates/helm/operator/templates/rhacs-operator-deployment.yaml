@@ -52,6 +52,8 @@ spec:
           env:
             - name: ROX_OPERATOR_OUTER_MODE
               value: "{{.Values.operator.outerMode}}"
+            - name: ENABLE_WEBHOOKS
+              value: false
             - name: RELATED_IMAGE_MAIN
             - name: RELATED_IMAGE_SCANNER
             - name: RELATED_IMAGE_SCANNER_SLIM
@@ -67,7 +69,7 @@ spec:
                   containerName: manager
                   resource: limits.memory
                   divisor: '0'
-          image: quay.io/stackrox-io/stackrox-operator:{{.Values.operator.version}}
+          image: quay.io/rhacs-eng/stackrox-operator:{{.Values.operator.version}}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -103,12 +105,6 @@ spec:
               memory: 200Mi
           securityContext:
             allowPrivilegeEscalation: false
-          # # FIXME: REMOVE BEFORE PROD
-          # volumeMounts:
-          # - mountPath: /tmp/k8s-webhook-server/serving-certs
-          #   name: cert
-          #   readOnly: true  
-          # # FIXME: REMOVE BEFORE PROD
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
@@ -119,63 +115,3 @@ spec:
       serviceAccount: rhacs-operator-controller-manager-{{ .Release.Name }}
       serviceAccountName: rhacs-operator-controller-manager-{{ .Release.Name }}
       terminationGracePeriodSeconds: 10
-      # # FIXME: REMOVE BEFORE PROD
-      # volumes:
-      # - name: cert
-      #   secret:
-      #     defaultMode: 420
-      #     secretName: webhook-server-cert
-      # # FIXME: REMOVE BEFORE PROD
----
-# # FIXME: REMOVE BEFORE PROD
-# apiVersion: cert-manager.io/v1
-# kind: Certificate
-# metadata:
-#   name: rhacs-operator-{{ .Release.Name }}-serving-cert
-#   namespace: "{{ .Values.operator.targetNamespace }}"
-# spec:
-#   dnsNames:
-#   - rhacs-operator-{{ .Release.Name }}-webhook-service.rhacs-operator-{{ .Release.Name }}.svc
-#   - rhacs-operator-{{ .Release.Name }}-webhook-service.rhacs-operator-{{ .Release.Name }}.svc.cluster.local
-#   issuerRef:
-#     kind: Issuer
-#     name: rhacs-operator-{{ .Release.Name }}-selfsigned-issuer
-#   secretName: webhook-server-cert
-# ---
-# apiVersion: cert-manager.io/v1
-# kind: Issuer
-# metadata:
-#   name: rhacs-operator-{{ .Release.Name }}-selfsigned-issuer
-#   namespace: "{{ .Values.operator.targetNamespace }}"
-# spec:
-#   selfSigned: {}
-# ---
-# apiVersion: admissionregistration.k8s.io/v1
-# kind: ValidatingWebhookConfiguration
-# metadata:
-#   annotations:
-#     cert-manager.io/inject-ca-from: stackrox-operator-system/rhacs-operator-{{ .Release.Name }}-serving-cert
-#   creationTimestamp: null
-#   name: rhacs-operator-{{ .Release.Name }}-validating-webhook-configuration
-# webhooks:
-# - admissionReviewVersions:
-#   - v1
-#   clientConfig:
-#     service:
-#       name: rhacs-operator-{{ .Release.Name }}-webhook-service
-#       namespace: "{{ .Values.operator.targetNamespace }}"-{{ .Release.Name }}
-#       path: /validate-platform-stackrox-io-v1alpha1-central
-#   failurePolicy: Fail
-#   name: vcentral.kb.io
-#   rules:
-#   - apiGroups:
-#     - platform.stackrox.io
-#     apiVersions:
-#     - v1alpha1
-#     operations:
-#     - CREATE
-#     - UPDATE
-#     resources:
-#     - centrals
-#   sideEffects: None
-# # FIXME: REMOVE BEFORE PROD
