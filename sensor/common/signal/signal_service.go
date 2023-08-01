@@ -53,7 +53,7 @@ func (s *serviceImpl) Stop(_ error) {
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
-	log.Debugf("Received notify: %s", e)
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.centralReady.Signal()

@@ -83,14 +83,12 @@ func (p *Pipeline) Shutdown() {
 
 // Notify allows the component state to be propagated to the pipeline
 func (p *Pipeline) Notify(e common.SensorComponentEvent) {
-	log.Debugf("Received notify: %s", e)
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		p.createNewContext()
-		log.Debug("ProcessSingnalPipeline runs now in Online mode.")
 	case common.SensorComponentEventOfflineMode:
 		p.cancelCurrentContext()
-		log.Debug("ProcessSingnalPipeline runs now in Offline mode.")
 	}
 }
 
