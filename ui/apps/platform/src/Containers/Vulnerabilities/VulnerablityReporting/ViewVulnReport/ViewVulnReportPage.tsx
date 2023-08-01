@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory, useParams, Link, generatePath } from 'react-router-dom';
+import { useHistory, useParams, generatePath } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -144,12 +144,13 @@ function ViewVulnReportPage() {
                             dropdownItems={[
                                 <DropdownItem
                                     key="Edit report"
-                                    component={
-                                        <Link to={`${vulnReportPageURL}?action=edit`}>
-                                            Edit report
-                                        </Link>
-                                    }
-                                />,
+                                    component="button"
+                                    onClick={() => {
+                                        history.push(`${vulnReportPageURL}?action=edit`);
+                                    }}
+                                >
+                                    Edit report
+                                </DropdownItem>,
                                 <DropdownSeparator key="separator" />,
                                 <DropdownItem
                                     key="Send report now"
@@ -167,12 +168,13 @@ function ViewVulnReportPage() {
                                 </DropdownItem>,
                                 <DropdownItem
                                     key="Clone report"
-                                    component={
-                                        <Link to={`${vulnReportPageURL}?action=clone`}>
-                                            Clone report
-                                        </Link>
-                                    }
-                                />,
+                                    component="button"
+                                    onClick={() => {
+                                        history.push(`${vulnReportPageURL}?action=clone`);
+                                    }}
+                                >
+                                    Clone report
+                                </DropdownItem>,
                                 <DropdownSeparator key="Separator" />,
                                 <DropdownItem
                                     key="Delete report"
