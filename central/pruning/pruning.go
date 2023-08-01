@@ -164,7 +164,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
 	if features.VulnMgmtReportingEnhancements.Enabled() {
-		g.collectReportHistory(pvtConfig)
+		g.removeOldReportHistory(pvtConfig)
 	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
@@ -557,7 +557,7 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 }
 
-func (g *garbageCollectorImpl) collectReportHistory(config *storage.PrivateConfig) {
+func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {
 	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
 	query := search.NewQueryBuilder().AddDays(search.ReportCompletionTime, int64(reportHistoryRetentionConfig)).ProtoQuery()
 	err := pgSearch.RunDeleteRequestForSchema(pruningCtx, pkgSchema.ReportSnapshotsSchema, query, g.postgres)

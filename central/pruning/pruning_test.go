@@ -661,7 +661,7 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		}
 		repBeforePruning, _, _ := reportds.Get(s.ctx, test.reportSnapshot.ReportId)
 		assert.NotEmpty(s.T(), repBeforePruning)
-		gci.collectReportHistory(config)
+		gci.removeOldReportHistory(config)
 		repsPruning, _, _ := reportds.Get(s.ctx, test.reportSnapshot.ReportId)
 		if test.repExpected {
 			assert.NotEmpty(s.T(), repsPruning)
