@@ -2,7 +2,7 @@ import { History } from 'react-router-dom';
 import { getTheme, ChartThemeColor, ChartBarProps } from '@patternfly/react-charts';
 import merge from 'lodash/merge';
 
-import { policySeverityColorMap } from 'constants/visuals/colors';
+import { policySeverityColorMap } from 'constants/severityColors';
 import { ValueOf } from './type.utils';
 
 export const solidBlueChartColor = 'var(--pf-global--palette--blue-400)';

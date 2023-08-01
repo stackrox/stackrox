@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { vulnSeverityIconColors } from 'constants/visuals/colors';
+import { vulnerabilitySeverityColorMap } from 'constants/severityColors';
 import { getPercentage } from 'utils/mathUtils';
 
 export type SeverityStackedPillProps = {
@@ -52,7 +52,7 @@ function SeverityStackedPill({ vulnCounter }: SeverityStackedPillProps): ReactEl
                         key={dataKey}
                         className="border-r border-base-100"
                         style={{
-                            backgroundColor: vulnSeverityIconColors[colorKey],
+                            backgroundColor: vulnerabilitySeverityColorMap[colorKey],
                             width: `${getPercentage(vulnCounter[dataKey].total, total)}%`,
                         }}
                     />

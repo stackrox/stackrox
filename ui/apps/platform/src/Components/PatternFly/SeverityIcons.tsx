@@ -14,7 +14,7 @@ import {
     IMPORTANT_HIGH_SEVERITY_COLOR,
     MODERATE_MEDIUM_SEVERITY_COLOR,
     UNKNOWN_SEVERITY_COLOR,
-} from 'constants/visuals/colors';
+} from 'constants/severityColors';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { PolicySeverity } from 'types/policy.proto';
 

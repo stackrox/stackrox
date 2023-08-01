@@ -5,7 +5,7 @@ import { violationsBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
-import { policySeverityColorMap } from 'constants/visuals/colors';
+import { policySeverityColorMap } from 'constants/severityColors';
 import { policySeverities, PolicySeverity } from 'types/policy.proto';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
