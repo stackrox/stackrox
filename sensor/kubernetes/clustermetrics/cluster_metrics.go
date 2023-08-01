@@ -30,13 +30,17 @@ type ClusterMetrics interface {
 }
 
 // New returns a new cluster metrics Sensor component.
-func New(k8sClient kubernetes.Interface) ClusterMetrics {
-	ticker := time.NewTicker(defaultInterval)
+func New(k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+	interval := pollInterval
+	if interval == 0 {
+		interval = defaultInterval
+	}
+	ticker := time.NewTicker(interval)
 	ticker.Stop()
 	return &clusterMetricsImpl{
 		output:          make(chan *message.ExpiringMessage),
 		stopper:         concurrency.NewStopper(),
-		pollingInterval: defaultInterval,
+		pollingInterval: interval,
 		pollingTimeout:  defaultTimeout,
 		k8sClient:       k8sClient,
 		pollTicker:      ticker,
