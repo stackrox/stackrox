@@ -4,7 +4,7 @@ import {
     IMPORTANT_HIGH_SEVERITY_COLOR,
     MODERATE_MEDIUM_SEVERITY_COLOR,
     noViolationsColor,
-} from 'constants/visuals/colors';
+} from 'constants/severityColors';
 
 export function getColor(value: number) {
     if (value === 100) {
@@ -21,3 +21,13 @@ export function getColor(value: number) {
     }
     return CRITICAL_SEVERITY_COLOR;
 }
+
+// For example, Passing Standards by Clusters chart.
+export const verticalBarColors = [
+    'var(--base-700)',
+    'var(--primary-700)',
+    'var(--secondary-700)',
+    'var(--base-400)',
+    'var(--primary-400)',
+    'var(--secondary-400)',
+];

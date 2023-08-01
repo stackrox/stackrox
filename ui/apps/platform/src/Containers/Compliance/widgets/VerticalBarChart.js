@@ -7,10 +7,10 @@ import {
     HorizontalGridLines,
     VerticalBarSeries,
 } from 'react-vis';
-import colors from 'constants/visuals/colors';
-
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
+
+import { verticalBarColors } from './colorsForCompliance';
 
 const sortByXValue = (a, b) => {
     if (a.x < b.x) {
@@ -27,7 +27,6 @@ const sortByXValue = (a, b) => {
 class VerticalBarChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object).isRequired,
-        colors: PropTypes.arrayOf(PropTypes.string),
         containerProps: PropTypes.shape({}),
         plotProps: PropTypes.shape({}),
         seriesProps: PropTypes.shape({}),
@@ -39,7 +38,6 @@ class VerticalBarChart extends Component {
     };
 
     static defaultProps = {
-        colors,
         containerProps: {},
         plotProps: {},
         seriesProps: {},
@@ -51,7 +49,7 @@ class VerticalBarChart extends Component {
     };
 
     render() {
-        const { colors: colorRange, tickValues, tickFormat, labelLinks, onValueClick } = this.props;
+        const { tickValues, tickFormat, labelLinks, onValueClick } = this.props;
 
         const data = this.props.data.sort(sortByXValue);
 
@@ -76,7 +74,7 @@ class VerticalBarChart extends Component {
             },
 
             colorDomain: data.map((datum) => datum.y),
-            colorRange,
+            colorRange: verticalBarColors,
             onValueClick: (datum) => {
                 if (onValueClick) {
                     onValueClick(datum);
@@ -93,7 +91,7 @@ class VerticalBarChart extends Component {
         // format data with colors:
         const letDataWithColors = data.map((datum, i) => ({
             ...datum,
-            color: colors[i % colors.length],
+            color: verticalBarColors[i % verticalBarColors.length],
         }));
 
         function formatTicks(value) {
