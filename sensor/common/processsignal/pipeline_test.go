@@ -163,7 +163,7 @@ func TestProcessPipelineOffline(t *testing.T) {
 
 // processSignal calls p.Process and ensures that the stores are in the correct state for the test to make sense
 func processSignal(p *Pipeline,
-	singal *storage.ProcessSignal,
+	signal *storage.ProcessSignal,
 	store *clusterentities.Store,
 	meta clusterentities.ContainerMetadata,
 	wg *sync.WaitGroup) {
@@ -172,7 +172,7 @@ func processSignal(p *Pipeline,
 	// If not, then the enrichment happens async based on ticker.
 	// Here, we simulate immediate enrichment to not make the test more complex.
 	updateStore(meta.ContainerID, meta.DeploymentID, meta, store)
-	p.Process(singal)
+	p.Process(signal)
 
 	// For the scenario when the enrichment happens async based on ticker -
 	// simulating the situation in which we receive a process indicator from a container that is still unknown -
