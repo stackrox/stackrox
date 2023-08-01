@@ -1,7 +1,7 @@
 apiVersion: platform.stackrox.io/v1alpha1
-kind: Central
+kind: SecuredCluster
 metadata:
-  name: stackrox-central-services
+  name: stackrox-secured-cluster-services
 spec:
   monitoring:
     openshift:
