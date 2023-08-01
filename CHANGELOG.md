@@ -10,7 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 - Telemetry collection enabled by default for self-managed installations. Opt-out is available on bundle generation, or at any time via the System Configuration UI.
-- OpenShift Container Platform monitoring is configured and enabled by default for OpenShift 4 installations. Disabling is available on bundle generation, or at any time via the System Configuration UI.
+- OpenShift Container Platform monitoring is configured and enabled by default for OpenShift 4 installations. Disabling is available on bundle generation, or at any time via the `monitoring.openshift.enabled: false`.
 - A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central (defaults to `false`). When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
 - A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added that when set to `true` will enable processing registry mirrors during image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
 
