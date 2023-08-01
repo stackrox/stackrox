@@ -139,6 +139,14 @@
 {{ include "srox.autoSensePodSecurityPolicies" (list $) }}
 [<- end >]
 
+[< if .Operator >]
+{{ $_ := set $env "installMethod" "rhacs-operator" }}
+[< else if not .KubectlOutput >]
+{{ $_ := set $env "installMethod" "helm" }}
+[< else >]
+{{ $_ := set $env "installMethod" "manifest" }}
+[< end >]
+
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}
 {{ $platformCfgFile := dict }}
