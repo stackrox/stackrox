@@ -53,7 +53,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 		// the deduper is not reset
 		time.Sleep(30 * time.Second)
 
-		// Simulate a blit in the Network connection
+		// Simulate a blip in the Network connection
 		testContext.RestartFakeCentralConnection()
 
 		// Wait for reconciliation to finish
