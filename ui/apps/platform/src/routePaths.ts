@@ -174,7 +174,10 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     [vulnManagementRiskAcceptancePath]: {
-        resourceAccessRequirements: everyResource([]),
+        resourceAccessRequirements: everyResource([
+            'VulnerabilityManagementApprovals',
+            'VulnerabilityManagementRequests',
+        ]),
     },
     [vulnManagementPath]: {
         resourceAccessRequirements: everyResource([]),
