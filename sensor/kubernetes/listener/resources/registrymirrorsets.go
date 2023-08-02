@@ -38,7 +38,7 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 
 func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy, action central.ResourceAction) *component.ResourceEvent {
 	if icsp.GetUID() == "" {
-		log.Warnf("Ignoring ImageContentSourcePolicy - missing UID [%v]: %#v", action.String(), icsp)
+		log.Warnf("Ignoring ImageContentSourcePolicy - missing UID: %q", icsp.GetName())
 		return nil
 	}
 
@@ -55,7 +55,7 @@ func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operator
 
 func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet, action central.ResourceAction) *component.ResourceEvent {
 	if idms.GetUID() == "" {
-		log.Warnf("Ignoring ImageDigestMirrorSet - missing UID [%v]: %#v", action.String(), idms)
+		log.Warnf("Ignoring ImageDigestMirrorSet - missing UID: %q", idms.GetName())
 		return nil
 	}
 
@@ -72,7 +72,7 @@ func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.Ima
 
 func (r *registryMirrorDispatcher) handleImageTagMirrorSet(itms *configV1.ImageTagMirrorSet, action central.ResourceAction) *component.ResourceEvent {
 	if itms.GetUID() == "" {
-		log.Warnf("Ignoring ImageTagMirrorSet - missing UID [%v]: %#v", action.String(), itms)
+		log.Warnf("Ignoring ImageTagMirrorSet - missing UID: %v", itms.GetName())
 		return nil
 	}
 
