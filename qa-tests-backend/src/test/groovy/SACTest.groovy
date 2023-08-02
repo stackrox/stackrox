@@ -17,6 +17,7 @@ import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.BaseService
+import services.ClusterService
 import services.DeploymentService
 import services.ImageService
 import services.NamespaceService
@@ -144,6 +145,8 @@ class SACTest extends BaseSpecification {
                                                      noaccess],
                 "aggregatedToken"                 : [createRole(remoteQaTest2.id, ["Deployment": READ_ACCESS]),
                                                      createRole(remoteQaTest1.id, ["Deployment": NO_ACCESS]),
+                                                     noaccess],
+                "getClusterToken"                 : [createRole(remoteQaTest1.id, ["Cluster": READ_ACCESS]),
                                                      noaccess],
         ]
     }
@@ -647,6 +650,29 @@ class SACTest extends BaseSpecification {
         def result = DeploymentService.listDeployments()
         assert result.find { it.name == DEPLOYMENT_QA2.name }
         assert !result.find { it.name == DEPLOYMENT_QA1.name }
+    }
+    
+    @Unroll
+    def "Verify using the #tokenName token gets numResults results when retrieving the current cluster"() {
+        when:
+        useToken(tokenName)
+        def clusters = ClusterService.getClusters()
+        def count = 0
+        clusters.forEach {
+            cluster ->
+                if (cluster.getName() == DEFAULT_CLUSTER_NAME) { count++ }
+        }
+
+        then:
+        "The number of valid results should be the expected one"
+        assert count >= numResults
+
+        where:
+        "Data inputs are: "
+        tokenName         | numResults
+        NOACCESSTOKEN     | 0
+        "getClusterToken" | 1
+        ALLACCESSTOKEN    | 1
     }
 
     private static List<DeploymentOuterClass.ListDeployment> listDeployments() {
