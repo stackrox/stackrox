@@ -8,7 +8,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	reportMetadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -27,7 +26,6 @@ func initialize() {
 	schema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
 	utils.CrashOnError(err)
 	rg = New(reportConfigDS.Singleton(),
-		reportMetadataDS.Singleton(),
 		reportSnapshotDS.Singleton(),
 		deploymentDS.Singleton(),
 		watchedImageDS.Singleton(),

@@ -19,12 +19,20 @@ func ValidateReportRequest(request *ReportRequest) error {
 		return errors.New("Report configuration ID is empty")
 	}
 
-	if request.ReportMetadata == nil || request.ReportMetadata.ReportStatus == nil {
-		return errors.New("Report request does not have a valid report metadata with report status")
+	if request.Collection == nil {
+		return errors.New("Report request does not have a valid non-nil collection.")
 	}
 
-	if request.ReportConfig.GetId() != request.ReportMetadata.GetReportConfigId() {
-		return errors.New("Mismatch between report config ids in ReportConfig and ReportMetadata")
+	if request.ReportSnapshot.GetReportId() == "" {
+		return errors.New("Report ID is empty")
+	}
+
+	if request.ReportSnapshot == nil || request.ReportSnapshot.ReportStatus == nil {
+		return errors.New("Report request does not have a valid report snapshot with report status")
+	}
+
+	if request.ReportConfig.GetId() != request.ReportSnapshot.GetReportConfigurationId() {
+		return errors.New("Mismatch between report config ids in ReportConfig and ReportSnapshot")
 	}
 
 	return nil

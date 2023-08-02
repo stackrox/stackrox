@@ -65,6 +65,21 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
 }
 
+// GetManyNotifiers mocks base method.
+func (m *MockDataStore) GetManyNotifiers(ctx context.Context, notifierIDs []string) ([]*storage.Notifier, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyNotifiers", ctx, notifierIDs)
+	ret0, _ := ret[0].([]*storage.Notifier)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManyNotifiers indicates an expected call of GetManyNotifiers.
+func (mr *MockDataStoreMockRecorder) GetManyNotifiers(ctx, notifierIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetManyNotifiers), ctx, notifierIDs)
+}
+
 // GetNotifier mocks base method.
 func (m *MockDataStore) GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
 	m.ctrl.T.Helper()

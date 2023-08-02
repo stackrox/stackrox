@@ -107,6 +107,14 @@ func (b *datastoreImpl) GetNotifiers(ctx context.Context) ([]*storage.Notifier, 
 	return b.storage.GetAll(ctx)
 }
 
+func (b *datastoreImpl) GetManyNotifiers(ctx context.Context, notifierIDs []string) ([]*storage.Notifier, error) {
+	notifiers, _, err := b.storage.GetMany(ctx, notifierIDs)
+	if err != nil {
+		return nil, err
+	}
+	return notifiers, nil
+}
+
 func (b *datastoreImpl) GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
 	notifiers, err := b.GetNotifiers(ctx)
 	if err != nil {

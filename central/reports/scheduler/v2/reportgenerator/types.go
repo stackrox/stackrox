@@ -10,7 +10,7 @@ import (
 // ReportRequest contains information needed to generate and notify a report
 type ReportRequest struct {
 	ReportConfig   *storage.ReportConfiguration
-	ReportMetadata *storage.ReportMetadata
+	ReportSnapshot *storage.ReportSnapshot
 	Collection     *storage.ResourceCollection
 	DataStartTime  *types.Timestamp
 	Ctx            context.Context

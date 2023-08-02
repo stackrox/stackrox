@@ -15,6 +15,7 @@ type DataStore interface {
 	GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)
 	GetNotifiersFiltered(ctx context.Context, filter func(notifier *storage.Notifier) bool) ([]*storage.Notifier, error)
 	GetNotifiers(ctx context.Context) ([]*storage.Notifier, error)
+	GetManyNotifiers(ctx context.Context, notifierIDs []string) ([]*storage.Notifier, error)
 	GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error)
