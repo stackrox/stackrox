@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
@@ -16,10 +16,15 @@ import {
     Text,
     Alert,
     AlertVariant,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    SearchInput,
+    Pagination,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link, generatePath, useHistory } from 'react-router-dom';
-import { ExclamationCircleIcon, FileIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
@@ -28,13 +33,14 @@ import { vulnerabilityReportsPath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 
+import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
+import usePagination from 'hooks/patternfly/usePagination';
 import { vulnerabilityReportPath } from '../pathsForVulnerabilityReporting';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
 import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportModal from '../components/DeleteReportModal';
-import useRunReport from '../api/useRunReport';
 
 const CreateReportsButton = () => {
     return (
@@ -58,7 +64,21 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const { reports, isLoading, error: fetchError, fetchReports } = useFetchReports();
+    const [searchValue, setSearchValue] = useState('');
+    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const [query, setQuery] = useState('');
+
+    const {
+        reports,
+        totalReports,
+        isLoading,
+        error: fetchError,
+        fetchReports,
+    } = useFetchReports({
+        query,
+        page,
+        perPage,
+    });
     const { isRunning, runError, runReport } = useRunReport({
         onCompleted: fetchReports,
     });
@@ -106,6 +126,41 @@ function VulnReportsPage() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody className="pf-u-p-0">
+                            <Toolbar>
+                                <ToolbarContent>
+                                    <ToolbarItem
+                                        variant="search-filter"
+                                        className="pf-u-flex-grow-1"
+                                    >
+                                        <SearchInput
+                                            placeholder="Filter by report name"
+                                            value={searchValue}
+                                            onChange={(_event, value) => setSearchValue(value)}
+                                            onSearch={(_event, value) => {
+                                                setSearchValue(value);
+                                                setQuery(`Report Name:${value}`);
+                                            }}
+                                            onClear={() => {
+                                                setSearchValue('');
+                                                setQuery('');
+                                            }}
+                                        />
+                                    </ToolbarItem>
+                                    <ToolbarItem
+                                        variant="pagination"
+                                        alignment={{ default: 'alignRight' }}
+                                    >
+                                        <Pagination
+                                            itemCount={totalReports}
+                                            page={page}
+                                            perPage={perPage}
+                                            onSetPage={onSetPage}
+                                            onPerPageSelect={onPerPageSelect}
+                                            isCompact
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarContent>
+                            </Toolbar>
                             {isLoading && (
                                 <div className="pf-u-p-md">
                                     <Bullseye>
@@ -140,7 +195,7 @@ function VulnReportsPage() {
                                             <Td />
                                         </Tr>
                                     </Thead>
-                                    {reports.length === 0 && (
+                                    {reports.length === 0 && query === '' && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={4}>
@@ -164,6 +219,49 @@ function VulnReportsPage() {
                                                                     </FlexItem>
                                                                     <FlexItem>
                                                                         <CreateReportsButton />
+                                                                    </FlexItem>
+                                                                </Flex>
+                                                            )}
+                                                        </EmptyStateTemplate>
+                                                    </Bullseye>
+                                                </Td>
+                                            </Tr>
+                                        </Tbody>
+                                    )}
+                                    {reports.length === 0 && query !== '' && (
+                                        <Tbody>
+                                            <Tr>
+                                                <Td colSpan={8}>
+                                                    <Bullseye>
+                                                        <EmptyStateTemplate
+                                                            title="No results found"
+                                                            headingLevel="h2"
+                                                            icon={SearchIcon}
+                                                        >
+                                                            {canCreateReports && (
+                                                                <Flex
+                                                                    direction={{
+                                                                        default: 'column',
+                                                                    }}
+                                                                >
+                                                                    <FlexItem>
+                                                                        <Text>
+                                                                            No results match this
+                                                                            filter criteria. Clear
+                                                                            the filter and try
+                                                                            again.
+                                                                        </Text>
+                                                                    </FlexItem>
+                                                                    <FlexItem>
+                                                                        <Button
+                                                                            variant="link"
+                                                                            onClick={() => {
+                                                                                setSearchValue('');
+                                                                                setQuery('');
+                                                                            }}
+                                                                        >
+                                                                            Clear filter
+                                                                        </Button>
                                                                     </FlexItem>
                                                                 </Flex>
                                                             )}

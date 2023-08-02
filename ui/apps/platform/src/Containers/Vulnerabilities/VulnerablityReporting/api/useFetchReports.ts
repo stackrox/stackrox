@@ -5,13 +5,22 @@ import {
     fetchReportConfigurations,
     fetchReportStatus,
     fetchReportLastRunStatus,
+    fetchReportConfigurationsCount,
 } from 'services/ReportsService';
+
 import { ReportStatus } from 'services/ReportsService.types';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
 
+export type UseFetchReportsProps = {
+    query: string;
+    page: number;
+    perPage: number;
+};
+
 type Result = {
     reports: Report[];
+    totalReports: number;
     isLoading: boolean;
     error: string | null;
 };
@@ -22,22 +31,33 @@ type FetchReportsResult = {
 
 const defaultResult = {
     reports: [],
+    totalReports: 0,
     isLoading: false,
     error: null,
 };
 
-function useFetchReports(): FetchReportsResult {
+function useFetchReports({ query, page, perPage }: UseFetchReportsProps): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
     const fetchReports = useCallback(async () => {
         setResult({
             reports: [],
+            totalReports: 0,
             isLoading: true,
             error: null,
         });
 
         try {
-            const reportConfigurations = await fetchReportConfigurations();
+            const reportConfigurations = await fetchReportConfigurations({
+                query,
+                page,
+                perPage,
+            });
+            const { count: totalReports } = await fetchReportConfigurationsCount({
+                query,
+                page,
+                perPage,
+            });
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
                     // @TODO: The API returns a 500 when there's no report status. For now we'll do a try/catch, but
@@ -60,21 +80,23 @@ function useFetchReports(): FetchReportsResult {
             );
             setResult({
                 reports,
+                totalReports,
                 isLoading: false,
                 error: null,
             });
         } catch (error) {
             setResult({
                 reports: [],
+                totalReports: 0,
                 isLoading: false,
                 error: getErrorMessage(error),
             });
         }
-    }, []);
+    }, [query, page, perPage]);
 
     useEffect(() => {
         void fetchReports();
-    }, [fetchReports]);
+    }, [fetchReports, query, page, perPage]);
 
     return {
         ...result,
