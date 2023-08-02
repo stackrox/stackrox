@@ -14,7 +14,7 @@
     "/v1/usage/current": {
       "get": {
         "summary": "GetCurrentUsage",
-        "description": "Returns current usage, with about 5 minutes precision.",
+        "description": "Returns current usage, with about 5 minutes accuracy.",
         "operationId": "UsageService_GetCurrentUsage",
         "responses": {
           "200": {

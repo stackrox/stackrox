@@ -41,15 +41,18 @@ func (s *usageSvcSuite) TestGetMaxUsage() {
 	ts1 := protoconv.ConvertTimeToTimestamp(now.Add(1 * time.Hour))
 	ts2 := protoconv.ConvertTimeToTimestamp(now.Add(2 * time.Hour))
 
-	stored := []*storage.Usage{{
+	stored := make(chan *storage.Usage, 2)
+	stored <- &storage.Usage{
 		Timestamp:   ts,
 		NumNodes:    5,
 		NumCpuUnits: 2,
-	}, {
+	}
+	stored <- &storage.Usage{
 		Timestamp:   ts1,
 		NumNodes:    1,
 		NumCpuUnits: 100,
-	}}
+	}
+	close(stored)
 
 	exp := &v1.MaxUsageResponse{
 		MaxNodesAt:    ts,
@@ -73,15 +76,18 @@ func (s *usageSvcSuite) TestGetCurrentUsage() {
 	ts1 := protoconv.ConvertTimeToTimestamp(now.Add(1 * time.Hour))
 	ts2 := protoconv.ConvertTimeToTimestamp(now.Add(2 * time.Hour))
 
-	stored := []*storage.Usage{{
+	stored := make(chan *storage.Usage, 2)
+	stored <- &storage.Usage{
 		Timestamp:   ts,
 		NumNodes:    5,
 		NumCpuUnits: 2,
-	}, {
+	}
+	stored <- &storage.Usage{
 		Timestamp:   ts1,
 		NumNodes:    1,
 		NumCpuUnits: 100,
-	}}
+	}
+	close(stored)
 
 	exp := &v1.MaxUsageResponse{
 		MaxNodesAt:    ts,

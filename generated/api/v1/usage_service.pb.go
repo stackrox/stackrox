@@ -313,7 +313,7 @@ const _ = grpc.SupportPackageIsVersion6
 type UsageServiceClient interface {
 	// GetCurrentUsage
 	//
-	// Returns current usage, with about 5 minutes precision.
+	// Returns current usage, with about 5 minutes accuracy.
 	GetCurrentUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CurrentUsageResponse, error)
 	// GetMaxUsage
 	//
@@ -352,7 +352,7 @@ func (c *usageServiceClient) GetMaxUsage(ctx context.Context, in *UsageRequest, 
 type UsageServiceServer interface {
 	// GetCurrentUsage
 	//
-	// Returns current usage, with about 5 minutes precision.
+	// Returns current usage, with about 5 minutes accuracy.
 	GetCurrentUsage(context.Context, *Empty) (*CurrentUsageResponse, error)
 	// GetMaxUsage
 	//

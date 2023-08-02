@@ -53,10 +53,10 @@ func (mr *MockDataStoreMockRecorder) AggregateAndFlush(ctx interface{}) *gomock.
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, from, to *types.Timestamp) ([]*storage.Usage, error) {
+func (m *MockDataStore) Get(ctx context.Context, from, to *types.Timestamp) (<-chan *storage.Usage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, from, to)
-	ret0, _ := ret[0].([]*storage.Usage)
+	ret0, _ := ret[0].(<-chan *storage.Usage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -82,28 +82,16 @@ func (mr *MockDataStoreMockRecorder) GetCurrent(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrent", reflect.TypeOf((*MockDataStore)(nil).GetCurrent), ctx)
 }
 
-// Insert mocks base method.
-func (m *MockDataStore) Insert(ctx context.Context, metrics *storage.Usage) error {
+// UpdateUsage mocks base method.
+func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics source.UsageSource) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, metrics)
+	ret := m.ctrl.Call(m, "UpdateUsage", ctx, clusterID, metrics)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Insert indicates an expected call of Insert.
-func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockDataStore)(nil).Insert), ctx, metrics)
-}
-
-// UpdateUsage mocks base method.
-func (m *MockDataStore) UpdateUsage(clusterID string, metrics source.UsageSource) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateUsage", clusterID, metrics)
-}
-
 // UpdateUsage indicates an expected call of UpdateUsage.
-func (mr *MockDataStoreMockRecorder) UpdateUsage(clusterID, metrics interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpdateUsage(ctx, clusterID, metrics interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockDataStore)(nil).UpdateUsage), clusterID, metrics)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockDataStore)(nil).UpdateUsage), ctx, clusterID, metrics)
 }

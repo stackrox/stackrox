@@ -30,7 +30,7 @@ message MaxUsageResponse {
 service UsageService {
     // GetCurrentUsage
     //
-    // Returns current usage, with about 5 minutes precision.
+    // Returns current usage, with about 5 minutes accuracy.
     rpc GetCurrentUsage(v1.Empty) returns (CurrentUsageResponse) {
         option (google.api.http) = {
             get: "/v1/usage/current"

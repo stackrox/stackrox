@@ -12,7 +12,7 @@ var (
 // Singleton returns the singleton providing access to the usage store.
 func Singleton() DataStore {
 	once.Do(func() {
-		ds = New(nil)
+		ds = New()
 	})
 	return ds
 }

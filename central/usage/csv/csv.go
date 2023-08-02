@@ -18,7 +18,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func writeCSV(metrics []*storage.Usage, iow io.Writer) error {
+func writeCSV(metrics <-chan *storage.Usage, iow io.Writer) error {
 	csvWriter := csv.NewWriter(iow)
 	csvWriter.UseCRLF = true
 
@@ -26,8 +26,8 @@ func writeCSV(metrics []*storage.Usage, iow io.Writer) error {
 	if err := csvWriter.Write(record); err != nil {
 		return errors.Wrap(err, "failed to write CSV header")
 	}
-	for _, m := range metrics {
-		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.Timestamp, zeroTime).UTC().Format(time.RFC3339)
+	for m := range metrics {
+		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.GetTimestamp(), zeroTime).UTC().Format(time.RFC3339)
 		record[1] = fmt.Sprint(m.GetNumNodes())
 		record[2] = fmt.Sprint(m.GetNumCpuUnits())
 		if err := csvWriter.Write(record); err != nil {

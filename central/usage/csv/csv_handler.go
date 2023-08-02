@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-var bom = ([]byte)("\uFEFF")
+var utf8BOM = ([]byte)("\uFEFF") // to please Windows CSV editors.
 
 func writeError(w http.ResponseWriter, code int, err error, description string) {
 	w.Header().Set("Content-Type", "text/plain")
@@ -37,25 +37,25 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 		w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
 		w.Header().Set("Content-Disposition", `attachment; filename="usage.csv"`)
 
-		if n, err := w.Write(bom); err != nil || n != len(bom) {
+		if n, err := w.Write(utf8BOM); err != nil || n != len(utf8BOM) {
 			writeError(w, http.StatusInternalServerError, err, "failed to write BOM header")
 			return
 		}
-		if err = writeCSV(metrics, w); err != nil {
+		if err := writeCSV(metrics, w); err != nil {
 			writeError(w, http.StatusInternalServerError, err, "failed to send CSV data")
 			return
 		}
 	}
 }
 
-func getTimeParameter(r url.Values, param string, def time.Time) (*types.Timestamp, error) {
+func getTimeParameter(r url.Values, param string, defaultValue time.Time) (*types.Timestamp, error) {
 	if v := r.Get(param); v != "" {
 		var err error
-		if def, err = time.Parse(time.RFC3339Nano, v); err != nil {
+		if defaultValue, err = time.Parse(time.RFC3339Nano, v); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse %q parameter", param)
 		}
 	}
-	return protoconv.ConvertTimeToTimestamp(def), nil
+	return protoconv.ConvertTimeToTimestamp(defaultValue), nil
 }
 
 func parseRequest(r *http.Request) (*types.Timestamp, *types.Timestamp, error) {

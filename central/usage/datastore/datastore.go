@@ -12,23 +12,23 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	// Persistent storage
+	// Persistent storage access:
 
-	// Get returns the metrics from the persistent storage.
-	Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) ([]*storage.Usage, error)
-	// Insert updates the persistent storage with the provided metrics.
-	Insert(ctx context.Context, metrics *storage.Usage) error
+	// Get returns the channel, from which the metrics could be read.
+	Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) (<-chan *storage.Usage, error)
 
-	// In-memory storage
+	// In-memory storage access:
 
 	// AggregateAndFlush returns the aggregated metrics from the
 	// in-memory storage and resets the storage.
 	AggregateAndFlush(ctx context.Context) (*storage.Usage, error)
+	// GetCurrent returns the currently known usage.
 	GetCurrent(ctx context.Context) (*storage.Usage, error)
-	UpdateUsage(clusterID string, metrics source.UsageSource)
+	// UpdateUsage updates the in-memory storage with the cluster metrics.
+	UpdateUsage(ctx context.Context, clusterID string, metrics source.UsageSource) error
 }
 
 // New initializes a datastore implementation instance.
-func New(_ any) DataStore {
+func New() DataStore {
 	return nil
 }
