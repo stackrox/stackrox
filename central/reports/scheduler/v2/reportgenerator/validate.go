@@ -6,6 +6,7 @@ import (
 
 // ValidateReportRequest validates the report request. It performs some basic nil checks, empty checks
 // and checks if report configuration ID is same in both report configuration and report metadata.
+// These are basic sanity checks and not checking user errors.
 func ValidateReportRequest(request *ReportRequest) error {
 	if request == nil {
 		return errors.New("Report request is nil.")

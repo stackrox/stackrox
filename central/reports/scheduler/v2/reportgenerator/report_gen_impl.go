@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -56,7 +57,7 @@ type reportGeneratorImpl struct {
 }
 
 func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
-	// First do some basic validation checks on the request
+	// First do some basic validation checks on the request.
 	err := ValidateReportRequest(req)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Invalid report request"), req)
@@ -78,7 +79,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 	}
 
 	// Change report status to PREPARING
-	err = rg.upsertReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_PREPARING)
+	err = rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_PREPARING)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to PREPARING"), req)
 		return
@@ -92,7 +93,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 
 	// Change report status to SUCCESS
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.upsertReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_SUCCESS)
+	err = rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_SUCCESS)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to SUCCESS"), req)
 		return
@@ -368,28 +369,28 @@ func (rg *reportGeneratorImpl) getWatchedImages(ctx context.Context) ([]string, 
 	return results, nil
 }
 
-func (rg *reportGeneratorImpl) upsertReportStatus(ctx context.Context, snapshot *storage.ReportSnapshot, status storage.ReportStatus_RunState) error {
+func (rg *reportGeneratorImpl) updateReportStatus(ctx context.Context, snapshot *storage.ReportSnapshot, status storage.ReportStatus_RunState) error {
 	snapshot.ReportStatus.RunState = status
 	return rg.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
 	if req == nil || req.ReportConfig == nil {
-		log.Error("Request does not have non-nil report configuration")
-		return
-	}
-	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
-		log.Error("Request does not have non-nil report metadata with a non-nil report status")
+		utils.Should(errors.New("Request does not have non-nil report configuration"))
 		return
 	}
 	if req.Ctx == nil {
-		log.Error("Request does not have valid non-nil context")
+		utils.Should(errors.New("Request does not have valid non-nil context"))
+		return
+	}
+	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
+		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
 		return
 	}
 	log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
 	req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
-	err := rg.upsertReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_FAILURE)
+	err := rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_FAILURE)
 	if err != nil {
 		log.Errorf("Error changing report status to FAILURE for report config '%s', report ID '%s': %s",
 			req.ReportConfig.GetName(), req.ReportSnapshot.GetReportId(), err)
