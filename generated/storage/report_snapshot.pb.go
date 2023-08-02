@@ -127,7 +127,7 @@ func (ReportStatus_RunMethod) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_9484322b1a5ce4fe, []int{3, 2}
 }
 
-// ReportSnapshot stores the snapshot of a completed report job. It stores a projection of ReportConfiguration, collection,
+// ReportSnapshot stores the snapshot of a report job. It stores a projection of ReportConfiguration, collection,
 // vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
 type ReportSnapshot struct {
 	ReportId              string                    `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,type(uuid)"`
