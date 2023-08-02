@@ -406,19 +406,19 @@ type MatchResource func(resource *central.MsgFromSensor) bool
 type AssertFuncAny func(resource interface{}) error
 
 // LastResourceState same as LastResourceStateWithTimeout with a 3s default timeout.
-func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
-	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, defaultWaitTimeout)
+func (c *TestContext) LastResourceState(t *testing.T, matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
+	c.LastResourceStateWithTimeout(t, matchResourceFn, assertFn, message, defaultWaitTimeout)
 }
 
 // LastResourceStateWithTimeout filters all messages by `matchResourceFn` and checks that the last message matches `assertFn`. Timeouts after `timeout`.
-func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
+func (c *TestContext) LastResourceStateWithTimeout(t *testing.T, matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.New("no resource found for matching function")
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			msg := GetLastMessageMatching(messages, matchResourceFn)
@@ -473,19 +473,19 @@ func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
 }
 
 // WaitForDeploymentEvent waits until sensor process a given deployment
-func (c *TestContext) WaitForDeploymentEvent(name string) {
-	c.WaitForDeploymentEventWithTimeout(name, defaultWaitTimeout)
+func (c *TestContext) WaitForDeploymentEvent(t *testing.T, name string) {
+	c.WaitForDeploymentEventWithTimeout(t, name, defaultWaitTimeout)
 }
 
 // WaitForDeploymentEventWithTimeout waits until sensor process a given deployment
-func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout time.Duration) {
+func (c *TestContext) WaitForDeploymentEventWithTimeout(t *testing.T, name string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.Errorf("the deployment %s was not sent", name)
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for deployment: %s", lastErr)
+			t.Fatalf("timeout reached waiting for deployment: %s", lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
@@ -499,13 +499,13 @@ func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout tim
 }
 
 // FirstDeploymentStateMatchesWithTimeout checks that the first deployment received with name matches the assertion function.
-func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
+func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(t *testing.T, name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	for {
 		select {
 		case <-timer.C:
-			c.t.Errorf("timeout reached waiting for state: (%s): no deployment found", message)
+			t.Errorf("timeout reached waiting for state: (%s): no deployment found", message)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -526,20 +526,20 @@ func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assert
 }
 
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
-func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
-	c.LastDeploymentStateWithTimeout(name, assertion, message, defaultWaitTimeout)
+func (c *TestContext) LastDeploymentState(t *testing.T, name string, assertion AssertFunc, message string) {
+	c.LastDeploymentStateWithTimeout(t, name, assertion, message, defaultWaitTimeout)
 }
 
 // LastDeploymentStateWithTimeout checks that a deployment reaches a state asserted by `assertion`. If the deployment does not reach
 // that state until `timeout` the test fails.
-func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
+func (c *TestContext) LastDeploymentStateWithTimeout(t *testing.T, name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.New("no deployment found")
 	for {
 		select {
 		case <-timer.C:
-			c.t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -556,13 +556,13 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 }
 
 // DeploymentCreateReceived checks if a deployment object was received with CREATE action.
-func (c *TestContext) DeploymentCreateReceived(name string) {
-	c.FirstDeploymentReceivedWithAction(name, central.ResourceAction_CREATE_RESOURCE)
+func (c *TestContext) DeploymentCreateReceived(t *testing.T, name string) {
+	c.FirstDeploymentReceivedWithAction(t, name, central.ResourceAction_CREATE_RESOURCE)
 }
 
 // FirstDeploymentReceivedWithAction checks if a deployment object was received with specific action type.
-func (c *TestContext) FirstDeploymentReceivedWithAction(name string, expectedAction central.ResourceAction) {
-	c.FirstDeploymentStateMatchesWithTimeout(name, func(_ *storage.Deployment, action central.ResourceAction) error {
+func (c *TestContext) FirstDeploymentReceivedWithAction(t *testing.T, name string, expectedAction central.ResourceAction) {
+	c.FirstDeploymentStateMatchesWithTimeout(t, name, func(_ *storage.Deployment, action central.ResourceAction) error {
 		if action != expectedAction {
 			return errors.Errorf("event action is %s, but expected %s", action, expectedAction)
 		}
@@ -591,20 +591,20 @@ func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchReso
 type AlertAssertFunc func(alertResults *central.AlertResults) error
 
 // LastViolationState checks the violation state similarly to `LastViolationStateWithTimeout` with a default 3 seconds timeout.
-func (c *TestContext) LastViolationState(name string, assertion AlertAssertFunc, message string) {
-	c.LastViolationStateWithTimeout(name, assertion, message, defaultWaitTimeout)
+func (c *TestContext) LastViolationState(t *testing.T, name string, assertion AlertAssertFunc, message string) {
+	c.LastViolationStateWithTimeout(t, name, assertion, message, defaultWaitTimeout)
 }
 
 // LastViolationStateWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
 // until `timeout` the test fails.
-func (c *TestContext) LastViolationStateWithTimeout(name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
+func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	var lastErr error
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
+			t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			alerts := GetAllAlertsForDeploymentName(messages, name)
@@ -618,7 +618,6 @@ func (c *TestContext) LastViolationStateWithTimeout(name string, assertion Alert
 			}
 		}
 	}
-
 }
 
 // LastViolationStateByID checks the violation state by deployment ID

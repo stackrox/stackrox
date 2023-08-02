@@ -46,7 +46,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 		require.NoError(t, err)
 
 		// After first deployment, should see an alert for deployment
-		testContext.LastViolationState(DeploymentWithViolation.Name, hasRequiredLabelAlert, "Deployment should have alerts")
+		testContext.LastViolationState(t, DeploymentWithViolation.Name, hasRequiredLabelAlert, "Deployment should have alerts")
 
 		// We need to wait some virtual time until all the deployment updates happen before restarting. Otherwise,
 		// the deployment will continue to receive updates (e.g. image SHA update) and the test will pass even if
@@ -60,7 +60,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 		testContext.WaitForSyncEvent(2 * time.Minute)
 
 		// Should see the alert *again* on a connection restart
-		testContext.LastViolationState(DeploymentWithViolation.Name, hasRequiredLabelAlert, "Deployment should have alerts")
+		testContext.LastViolationState(t, DeploymentWithViolation.Name, hasRequiredLabelAlert, "Deployment should have alerts")
 	}))
 
 }

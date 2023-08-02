@@ -156,7 +156,7 @@ func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 		helper.WithPermutation(),
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(nginxDeploymentName,
+			testC.LastDeploymentState(t, nginxDeploymentName,
 				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -174,7 +174,7 @@ func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 				),
 				"'PortConfig' for Cluster IP service test not found",
 			)
-			testC.LastViolationState(nginxDeploymentName,
+			testC.LastViolationState(t, nginxDeploymentName,
 				assertAlertNotTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -232,9 +232,9 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 			helper.WithResources(c.orderedResources),
 			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
-				testC.LastDeploymentState(nginxDeploymentName,
+				testC.LastDeploymentState(t, nginxDeploymentName,
 					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-				testC.LastViolationState(nginxDeploymentName,
+				testC.LastViolationState(t, nginxDeploymentName,
 					assertAlertTriggered(
 						&storage.Alert{
 							Policy: &storage.Policy{
@@ -305,9 +305,9 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 			helper.WithResources(c.orderedResources),
 			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
-				testC.LastDeploymentState(nginxDeploymentName,
+				testC.LastDeploymentState(t, nginxDeploymentName,
 					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-				testC.LastViolationState(nginxDeploymentName,
+				testC.LastViolationState(t, nginxDeploymentName,
 					assertAlertTriggered(
 						&storage.Alert{
 							Policy: &storage.Policy{
@@ -342,7 +342,7 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 		}),
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(nginxDeploymentName,
+			testC.LastDeploymentState(t, nginxDeploymentName,
 				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -353,7 +353,7 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 				),
 				"PortConfig",
 			)
-			testC.LastViolationState(nginxDeploymentName,
+			testC.LastViolationState(t, nginxDeploymentName,
 				assertAlertNotTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -405,7 +405,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 				})
 			require.NoError(t, err)
 
-			testC.LastDeploymentState(nginxDeploymentName,
+			testC.LastDeploymentState(t, nginxDeploymentName,
 				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -424,7 +424,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 				),
 				"'PortConfig' for Multiple Deployment Updates test not found",
 			)
-			testC.LastViolationState(nginxDeploymentName,
+			testC.LastViolationState(t, nginxDeploymentName,
 				assertAlertTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -438,7 +438,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 
 			require.NoError(t, deleteService())
 
-			testC.LastDeploymentState(nginxDeploymentName,
+			testC.LastDeploymentState(t, nginxDeploymentName,
 				assertLastDeploymentMissingPortExposure([]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
@@ -457,7 +457,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 				),
 				"'PortConfig' for Multiple Deployment Updates test found",
 			)
-			testC.LastViolationState(nginxDeploymentName,
+			testC.LastViolationState(t, nginxDeploymentName,
 				assertAlertNotTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -515,9 +515,9 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 			helper.WithResources(c.orderedResources),
 			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 				// Test context already takes care of creating and destroying resources
-				testC.LastDeploymentState(nginxPodName,
+				testC.LastDeploymentState(t, nginxPodName,
 					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-				testC.LastViolationState(nginxPodName,
+				testC.LastViolationState(t, nginxPodName,
 					assertAlertTriggered(
 						&storage.Alert{
 							Policy: &storage.Policy{
