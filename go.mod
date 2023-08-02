@@ -132,12 +132,12 @@ require (
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.2
 	helm.sh/helm/v3 v3.12.2
-	k8s.io/api v0.27.4
+	k8s.io/api v0.28.0-rc.0
 	k8s.io/apiextensions-apiserver v0.27.4
-	k8s.io/apimachinery v0.27.4
+	k8s.io/apimachinery v0.28.0-rc.0
 	k8s.io/apiserver v0.27.4
 	k8s.io/cli-runtime v0.27.4
-	k8s.io/client-go v0.27.4
+	k8s.io/client-go v0.28.0-rc.0
 	k8s.io/kubectl v0.27.4
 	k8s.io/kubelet v0.26.7
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
