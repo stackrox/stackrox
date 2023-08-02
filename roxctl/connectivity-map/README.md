@@ -48,7 +48,7 @@ $ roxctl connectivity-map  tests/roxctl/bats-tests/test-data/np-guard/netpols-an
 
 The output contains a list of permitted connectivity lines. Each connectivity line is of the format `src => dst : connnectivity-attributes`.
 The `src, dst` can be any of the analyzed cluster workloads or an IP address range.
-A cluster workload is of the format: `namespace/name[kind]` , such as: `default/backend[Deployment]`.
+A cluster workload is of the format: `namespace/name[kind]`, for example: `default/backend[Deployment]`.
 If both `src` and `dst` are cluster workloads, it means that both `src` is allowed to send traffic to `dst` and that `dst` is allowed to receive traffic from `src` over the specified connectivity attributes.
 
 If one of `src` or `dst` are IP address ranges, it means that only one direction of this connection (either egress from workload or ingress to workload) is explicitly permitted by network policies.
