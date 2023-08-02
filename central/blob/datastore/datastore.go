@@ -10,12 +10,16 @@ import (
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
 	bufferedBlobDataLimitInBytes = 5 * 1024 * 1024
+	adminSAC                     = sac.ForResource(resources.Administration)
 )
 
 // Datastore provides access to the blob store
@@ -83,15 +87,27 @@ func (d *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string
 
 // Search blobs
 func (d *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error) {
+	scopeChecker := adminSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS)
+	if !scopeChecker.IsAllowed() {
+		return nil, errox.NotAuthorized
+	}
 	return d.searcher.Search(ctx, query)
 }
 
 // SearchIDs searches and return blob IDs
 func (d *datastoreImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	scopeChecker := adminSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS)
+	if !scopeChecker.IsAllowed() {
+		return nil, errox.NotAuthorized
+	}
 	return d.searcher.SearchIDs(ctx, q)
 }
 
 // SearchMetadata searches and return blob metadata only
 func (d *datastoreImpl) SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	scopeChecker := adminSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS)
+	if !scopeChecker.IsAllowed() {
+		return nil, errox.NotAuthorized
+	}
 	return d.searcher.SearchMetadata(ctx, q)
 }
