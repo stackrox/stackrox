@@ -4,7 +4,7 @@
 Run qa-tests-backend in a IBM CLOUD POWERVS Openshift cluster provided via automation-flavors/powervs.
 """
 import os
-from base_qa_e2e_test import make_qa_e2e_test_runner
+from base_qa_e2e_test import make_qa_e2e_test_runner_midstream
 from clusters import AutomationFlavorsCluster
 
 # set required test parameters
@@ -14,4 +14,4 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["USE_MIDSTREAM_IMAGES"] = "true"
 os.environ["REMOTE_CLUSTER_ARCH"] = "ppc64le"
 
-make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
+make_qa_e2e_test_runner_midstream(cluster=AutomationFlavorsCluster()).run()
