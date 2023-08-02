@@ -141,6 +141,7 @@ func (p *Pipeline) sendIndicatorEvent() {
 		if !p.processFilter.Add(indicator) {
 			continue
 		}
+		// TODO(ROX-18818): Pass context to indicators detection
 		p.detector.ProcessIndicator(indicator)
 		p.indicators <- message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{

@@ -50,11 +50,11 @@ type Detector interface {
 	common.SensorComponent
 	common.CentralGRPCConnAware
 
-	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
+	ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction)
 	ReprocessDeployments(deploymentIDs ...string)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
-	ProcessPolicySync(sync *central.PolicySync) error
+	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
 	ProcessReassessPolicies() error
 	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
@@ -140,6 +140,7 @@ type outputResult struct {
 	results   *central.AlertResults
 	timestamp int64
 	action    central.ResourceAction
+	context   context.Context
 }
 
 // serializeDeployTimeOutput serializes all messages that are going to be output. This allows us to guarantee the ordering
@@ -194,8 +195,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 			select {
 			case <-d.serializerStopper.Flow().StopRequested():
 				return
-				// TODO(ROX-17326): Add context to detector messages
-			case d.output <- createAlertResultsMsg(context.TODO(), result.action, alertResults):
+			case d.output <- createAlertResultsMsg(result.context, result.action, alertResults):
 			}
 		}
 	}
@@ -223,7 +223,7 @@ func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessPolicySync reconciles policies and flush all deployments through the detector
-func (d *detectorImpl) ProcessPolicySync(sync *central.PolicySync) error {
+func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error {
 	// Note: Assume the version of the policies received from central is never
 	// older than sensor's version. Convert to latest if this proves wrong.
 	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
@@ -232,7 +232,7 @@ func (d *detectorImpl) ProcessPolicySync(sync *central.PolicySync) error {
 	// Take deployment lock and flush
 	concurrency.WithLock(&d.deploymentDetectionLock, func() {
 		for _, deployment := range d.deploymentStore.GetAll() {
-			d.processDeploymentNoLock(deployment, central.ResourceAction_UPDATE_RESOURCE)
+			d.processDeploymentNoLock(ctx, deployment, central.ResourceAction_UPDATE_RESOURCE)
 		}
 	})
 
@@ -343,6 +343,7 @@ func (d *detectorImpl) runDetector() {
 				},
 				timestamp: scanOutput.deployment.GetStateTimestamp(),
 				action:    scanOutput.action,
+				context:   scanOutput.context,
 			}:
 			}
 		}
@@ -388,8 +389,9 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 				},
 			}
 
-			// TODO(ROX-17326): Add context to detector message
-			expiringMessage := message.NewExpiring(context.TODO(), msg)
+			// These messages are coming from compliance, and since compliance supports offline mode as well
+			// it should be ok to leave these messages without expiration.
+			expiringMessage := message.New(msg)
 
 			select {
 			case <-d.auditStopper.Flow().StopRequested():
@@ -411,11 +413,11 @@ func (d *detectorImpl) markDeploymentForProcessing(id string) {
 	}
 }
 
-func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction) {
+func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
 
-	d.processDeploymentNoLock(deployment, action)
+	d.processDeploymentNoLock(ctx, deployment, action)
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
@@ -432,7 +434,7 @@ func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment)
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(networkPolicies)
 }
 
-func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {
+func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.baselineEval.RemoveDeployment(deployment.GetId())
@@ -445,6 +447,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 			case <-d.alertStopSig.Done():
 				return
 			case d.deploymentAlertOutputChan <- outputResult{
+				context: ctx,
 				results: &central.AlertResults{DeploymentId: deployment.GetId()},
 				action:  action,
 			}:
@@ -453,7 +456,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	case central.ResourceAction_CREATE_RESOURCE:
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
+		go d.enricher.blockingScan(ctx, deployment, d.getNetworkPoliciesApplied(deployment), action)
 	case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
@@ -461,7 +464,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 			return
 		}
 		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
+		go d.enricher.blockingScan(ctx, deployment, d.getNetworkPoliciesApplied(deployment), action)
 	}
 }
 
@@ -522,7 +525,7 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	select {
 	case <-d.alertStopSig.Done():
 		return
-		// TODO(ROX-17326): Add context to detector messages
+		// TODO(ROX-18818): Add context to indicator alerts
 	case d.output <- createAlertResultsMsg(context.TODO(), central.ResourceAction_CREATE_RESOURCE, alertResults):
 	}
 }

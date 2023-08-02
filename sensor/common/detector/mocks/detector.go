@@ -67,15 +67,15 @@ func (mr *MockDetectorMockRecorder) Notify(e interface{}) *gomock.Call {
 }
 
 // ProcessDeployment mocks base method.
-func (m *MockDetector) ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction) {
+func (m *MockDetector) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessDeployment", deployment, action)
+	m.ctrl.Call(m, "ProcessDeployment", ctx, deployment, action)
 }
 
 // ProcessDeployment indicates an expected call of ProcessDeployment.
-func (mr *MockDetectorMockRecorder) ProcessDeployment(deployment, action interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessDeployment(ctx, deployment, action interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), deployment, action)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), ctx, deployment, action)
 }
 
 // ProcessIndicator mocks base method.
@@ -117,17 +117,17 @@ func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(ctx, flow interface{}) *g
 }
 
 // ProcessPolicySync mocks base method.
-func (m *MockDetector) ProcessPolicySync(sync *central.PolicySync) error {
+func (m *MockDetector) ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessPolicySync", sync)
+	ret := m.ctrl.Call(m, "ProcessPolicySync", ctx, sync)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessPolicySync indicates an expected call of ProcessPolicySync.
-func (mr *MockDetectorMockRecorder) ProcessPolicySync(sync interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessPolicySync(ctx, sync interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPolicySync", reflect.TypeOf((*MockDetector)(nil).ProcessPolicySync), sync)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPolicySync", reflect.TypeOf((*MockDetector)(nil).ProcessPolicySync), ctx, sync)
 }
 
 // ProcessReassessPolicies mocks base method.
