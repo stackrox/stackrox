@@ -52,7 +52,7 @@ func getTimeParameter(r url.Values, param string, def time.Time) (*types.Timesta
 	if v := r.Get(param); v != "" {
 		var err error
 		if def, err = time.Parse(time.RFC3339Nano, v); err != nil {
-			return nil, errors.Wrapf(err, "failed to parse '%s' parameter", param)
+			return nil, errors.Wrapf(err, "failed to parse %q parameter", param)
 		}
 	}
 	return protoconv.ConvertTimeToTimestamp(def), nil

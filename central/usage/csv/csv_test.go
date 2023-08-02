@@ -26,8 +26,7 @@ func TestCSV(t *testing.T) {
 			NumCpuUnits: 4,
 		},
 	}
-	var data []byte
-	buf := bytes.NewBuffer(data)
+	buf := bytes.NewBuffer(nil)
 	err := writeCSV(metrics, buf)
 
 	assert.NoError(t, err)
