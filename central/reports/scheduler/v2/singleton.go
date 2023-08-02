@@ -1,6 +1,7 @@
 package v2
 
 import (
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -21,6 +22,7 @@ func initialize() {
 		reportConfigDS.Singleton(),
 		reportSnapshotDS.Singleton(),
 		collectionDatastore,
+		notifierDS.Singleton(),
 		reportGen.Singleton(),
 	)
 }

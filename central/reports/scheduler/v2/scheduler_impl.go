@@ -11,10 +11,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reports/common"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -44,6 +45,7 @@ type scheduler struct {
 	reportConfigDatastore reportConfigDS.DataStore
 	reportSnapshotStore   reportSnapshotDS.DataStore
 	collectionDatastore   collectionDS.DataStore
+	notifierDatastore     notifierDS.DataStore
 	reportGenerator       reportGen.ReportGenerator
 
 	reportRequestsQueue *list.List
@@ -80,7 +82,8 @@ type scheduler struct {
 
 // New instantiates a new cron scheduler and supports adding and removing report requests
 func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
-	collectionDatastore collectionDS.DataStore, reportGenerator reportGen.ReportGenerator) Scheduler {
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
+	reportGenerator reportGen.ReportGenerator) Scheduler {
 
 	cronScheduler := cron.New()
 	cronScheduler.Start()
@@ -88,18 +91,19 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore rep
 	if err != nil {
 		panic(err)
 	}
-	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, reportGenerator,
-		cronScheduler, ourSchema)
+	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, notifierDatastore,
+		reportGenerator, cronScheduler, ourSchema)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
-	collectionDatastore collectionDS.DataStore, reportGenerator reportGen.ReportGenerator,
-	cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
+	reportGenerator reportGen.ReportGenerator, cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
 	s := &scheduler{
 		reportConfigToEntryIDs: make(map[string]cron.EntryID),
 		reportConfigDatastore:  reportConfigDatastore,
 		reportSnapshotStore:    reportSnapshotStore,
 		collectionDatastore:    collectionDatastore,
+		notifierDatastore:      notifierDatastore,
 		reportGenerator:        reportGenerator,
 		reportRequestsQueue:    list.New(),
 		readyForReports:        concurrency.NewSignal(),
@@ -297,8 +301,8 @@ func (s *scheduler) appendToReportsQueue(req *reportGen.ReportRequest) {
 func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
 	return func() {
 		log.Infof("Submitting scheduled report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
-		reportReq, err := common.ValidateAndGenerateReportRequest(reportConfig.GetId(), reportConfig.GetCreator(),
-			storage.ReportStatus_EMAIL, storage.ReportStatus_SCHEDULED)
+		reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigDatastore, s.collectionDatastore, s.notifierDatastore,
+			reportConfig.GetId(), reportConfig.GetCreator(), storage.ReportStatus_EMAIL, storage.ReportStatus_SCHEDULED)
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
