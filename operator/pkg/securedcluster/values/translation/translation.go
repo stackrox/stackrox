@@ -120,6 +120,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddChild("meta", getMetaValues(sc))
 	v.AddAllFrom(translation.GetMisc(sc.Spec.Misc))
 
+	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
+
 	return v.Build()
 }
 

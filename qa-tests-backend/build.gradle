@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.12')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.13')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
@@ -119,7 +119,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.22")
     }
 
-    implementation 'org.javers:javers-core:7.3.0'
+    implementation 'org.javers:javers-core:7.3.1'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.16.0'

@@ -85,6 +85,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
     def store_artifacts(self, test_outputs=None):
         if test_outputs is not None:
             self.data_to_store = test_outputs + self.data_to_store
+
         for source in self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
             if self.artifact_destination_prefix:
@@ -97,11 +98,24 @@ class StoreArtifacts(RunWithBestEffortMixin):
                 args,
                 timeout=PostTestsConstants.STORE_TIMEOUT,
             )
+
         for source in self.dirs_to_store_to_osci_artifacts:
-            shutil.copytree(
-                source,
-                os.path.join(os.environ["ARTIFACT_DIR"], os.path.basename(source)),
-            )
+            copied = False
+            unique_counter = 1
+            while not copied and unique_counter < 50:
+                try:
+                    dst = os.path.join(
+                        os.environ["ARTIFACT_DIR"], os.path.basename(source)
+                    )
+                    if unique_counter > 1:
+                        dst = dst + "-" + str(unique_counter)
+                    shutil.copytree(source, dst)
+                    copied = True
+                except FileExistsError:
+                    unique_counter += 1
+
+            if not copied:
+                raise RuntimeError(f"Could not copy {source} to artifacts")
 
 
 # pylint: disable=too-many-instance-attributes

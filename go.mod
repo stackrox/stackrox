@@ -14,7 +14,7 @@ require (
 	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/RoaringBitmap/roaring v1.3.0
 	github.com/VividCortex/ewma v1.2.0
-	github.com/adhocore/gronx v1.6.4
+	github.com/adhocore/gronx v1.6.5
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/aws/aws-sdk-go v1.44.289
 	github.com/cenkalti/backoff/v3 v3.2.2
@@ -102,7 +102,7 @@ require (
 	github.com/stackrox/scanner v0.0.0-20230411230651-f2265de65ce4
 	github.com/stretchr/testify v1.8.4
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
-	github.com/tidwall/gjson v1.14.3
+	github.com/tidwall/gjson v1.15.0
 	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/travelaudience/go-promhttp v1.0.1
 	github.com/vbauerster/mpb/v4 v4.12.2
@@ -119,9 +119,9 @@ require (
 	golang.org/x/sys v0.10.0
 	golang.org/x/text v0.11.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.11.0
+	golang.org/x/tools v0.11.1
 	golang.stackrox.io/grpc-http1 v0.2.9
-	google.golang.org/api v0.133.0
+	google.golang.org/api v0.134.0
 	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130
 	google.golang.org/grpc v1.57.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9

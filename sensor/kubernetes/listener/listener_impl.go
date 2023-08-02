@@ -13,14 +13,21 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	// See https://groups.google.com/forum/#!topic/kubernetes-sig-api-machinery/PbSCXdLDno0
 	// Kubernetes scheduler no longer uses a resync period and it seems like its usage doesn't apply to us
-	noResyncPeriod              = 0
-	clusterOperatorResourceName = "clusteroperators"
-	clusterOperatorGroupVersion = "config.openshift.io/v1"
+	noResyncPeriod = 0
+
+	osConfigGroupVersion                = "config.openshift.io/v1"
+	osClusterOperatorsResourceName      = "clusteroperators"
+	osImageDigestMirrorSetsResourceName = "imagedigestmirrorsets"
+	osImageTagMirrorSetsResourceName    = "imagetagmirrorsets"
+
+	osOperatorAlphaGroupVersion              = "operator.openshift.io/v1alpha1"
+	osImageContentSourcePoliciesResourceName = "imagecontentsourcepolicies"
 )
 
 type listenerImpl struct {
@@ -82,15 +89,21 @@ func (k *listenerImpl) Stop(_ error) {
 	k.storeProvider.CleanupStores()
 }
 
-func clusterOperatorCRDExists(client client.Interface) (bool, error) {
-	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(clusterOperatorGroupVersion)
-	if err != nil {
-		return false, err
-	}
-	for _, apiResource := range resourceList.APIResources {
-		if apiResource.Name == clusterOperatorResourceName {
-			return true, nil
+func serverResourcesForGroup(client client.Interface, group string) (*metav1.APIResourceList, error) {
+	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(group)
+	return resourceList, err
+}
+
+// resourceExists returns true if resource exists in list.  Use with output from
+// `serverResourcesForGroup` to verify a resource exists prior to starting an
+// Informer to prevent client-go from spamming the k8s API and logs.
+func resourceExists(list *metav1.APIResourceList, resource string) bool {
+	for _, apiResource := range list.APIResources {
+		if apiResource.Name == resource {
+			return true
 		}
 	}
-	return false, nil
+
+	log.Warnf("Resource %q does not exist...", resource)
+	return false
 }

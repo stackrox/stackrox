@@ -1,6 +1,7 @@
 package processsignal
 
 import (
+	"context"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -50,7 +51,7 @@ func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
 	return processes
 }
 
-func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storage.ProcessIndicator) *enricher {
+func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store) *enricher {
 	evictfunc := func(key string, value *containerWrap) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
@@ -66,11 +67,15 @@ func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storag
 	e := &enricher{
 		lru:                  lru,
 		clusterEntities:      clusterEntities,
-		indicators:           indicators,
+		indicators:           make(chan *storage.ProcessIndicator),
 		metadataCallbackChan: callbackChan,
 	}
-	go e.processLoop()
+	go e.processLoop(ctx)
 	return e
+}
+
+func (e *enricher) getEnrichedC() <-chan *storage.ProcessIndicator {
+	return e.indicators
 }
 
 func (e *enricher) Add(indicator *storage.ProcessIndicator) {
@@ -92,11 +97,15 @@ func (e *enricher) Add(indicator *storage.ProcessIndicator) {
 	metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
 }
 
-func (e *enricher) processLoop() {
+func (e *enricher) processLoop(ctx context.Context) {
+	defer close(e.indicators)
 	ticker := time.NewTicker(enrichInterval)
 	expirationTicker := time.NewTicker(pruneInterval)
 	for {
 		select {
+		case <-ctx.Done():
+			log.Debugf("process indicator enricher stopped: %s", ctx.Err())
+			return
 		// unresolved indicators
 		case <-ticker.C:
 			for _, containerID := range e.lru.Keys() {

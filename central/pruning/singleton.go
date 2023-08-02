@@ -16,6 +16,7 @@ import (
 	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	snapshotDataStore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
@@ -47,7 +48,8 @@ func Singleton() GarbageCollector {
 			serviceAccountDataStore.Singleton(),
 			k8sRoleDataStore.Singleton(),
 			k8srolebindingStore.Singleton(),
-			logimbueStore.Singleton())
+			logimbueStore.Singleton(),
+			snapshotDataStore.Singleton())
 	})
 	return gc
 }

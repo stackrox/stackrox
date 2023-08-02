@@ -38,6 +38,7 @@ func (h *alertHandlerImpl) Stop(_ error) {
 }
 
 func (h *alertHandlerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReady.Signal()
