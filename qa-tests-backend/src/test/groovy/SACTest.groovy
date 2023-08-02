@@ -654,7 +654,7 @@ class SACTest extends BaseSpecification {
     }
 
     @Unroll
-    def "Verify using the #tokenName token gets numResults results when retrieving the current cluster"() {
+    def "Verify using the #tokenName token gets #numResults results when retrieving the current cluster"() {
         when:
         useToken(tokenName)
         def clusters = ClusterService.getClusters()
@@ -666,7 +666,7 @@ class SACTest extends BaseSpecification {
 
         then:
         "The number of valid results should be the expected one"
-        assert count >= numResults
+        assert count == numResults
 
         where:
         "Data inputs are: "
