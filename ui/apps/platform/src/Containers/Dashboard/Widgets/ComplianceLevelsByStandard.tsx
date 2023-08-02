@@ -20,6 +20,7 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { SearchFilter } from 'types/search';
@@ -37,7 +38,6 @@ import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import { complianceBasePath, urlEntityListTypes } from 'routePaths';
 import { standardLabels } from 'messages/standards';
 import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLevelsByStandardChart';
-import WidgetCard from './WidgetCard';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
