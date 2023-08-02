@@ -152,3 +152,31 @@ END
   log "Making sure the ${version_tag} operator deployment is available..."
   retry 3 5 kubectl -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.v${version_tag}" --for condition=available --timeout 5s
 }
+
+function nurse_deployment_downstream() {
+  local -r operator_ns="$1"
+  local -r version_tag=$(kubectl get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}" | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' )
+
+  # Just waiting turns out to be the quickest and most reliable way of propagating the change.
+  # Deleting the deployment sometimes tends to never get reconciled, with evidence of the
+  # reconciliation failing with "not found" errors. OTOH simply leaving an unhealthy deployment around
+  # means it will get updated eventually (and usually in under a minute).
+
+  # We check the CSV status first, because it is hard to wait for the deployment in a non-racy way:
+  # the deployment .status is set separately from the .spec, so the .status reflects the status of
+  # the _old_ .spec until the deployment controller runs the first reconciliation.
+  # We use kuttl because CSV has a Condition type incompatible with `kubectl wait`.
+  log "Waiting for the ${version_tag} CSV to finish installing."
+  "${KUTTL}" assert --timeout 300 --namespace "${operator_ns}" /dev/stdin <<-END
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: rhacs-operator.v${version_tag}
+status:
+  phase: Succeeded
+END
+
+  # Double-check that the deployment itself is healthy.
+  log "Making sure the ${version_tag} operator deployment is available..."
+  retry 3 5 kubectl -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.v${version_tag}" --for condition=available --timeout 5s
+}
