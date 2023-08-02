@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/pebble"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -72,6 +73,11 @@ func (c *clientSetImpl) Dynamic() dynamic.Interface {
 
 // OpenshiftRoute implements the client interface.
 func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
+	return nil
+}
+
+// OpenshiftOperator implements the client interface.
+func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 	return nil
 }
 
