@@ -12,8 +12,8 @@ tests:
       expect: |
         .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
-        .rolebindings["rhacs-sensor-auth-reader"] | assertThat(. != null)
-        .servicemonitors["sensor-monitor-stackrox-secured-cluster-services-stackrox"] | [
+        .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. != null)
+        .servicemonitors["sensor-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
@@ -47,8 +47,8 @@ tests:
       expect: |
         .roles["secured-cluster-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. == null)
-        .rolebindings["rhacs-sensor-auth-reader"] | assertThat(. == null)
-        .servicemonitors["sensor-monitor-stackrox-secured-cluster-services-stackrox"] | assertThat(. == null)
+        .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. == null)
+        .servicemonitors["sensor-monitor-stackrox"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"
       expect: |
