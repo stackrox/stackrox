@@ -45,3 +45,39 @@ def make_qa_e2e_test_runner(cluster):
             store_qa_tests_data=True,
         ),
     )
+
+def make_qa_e2e_test_runner_midstream(cluster):
+    return ClusterTestSetsRunner(
+        cluster=cluster,
+        sets=[
+            {
+                "name": "QA tests part I",
+                "test": QaE2eTestPart1(),
+                "post_test": PostClusterTest(
+                    check_stackrox_logs=True,
+                    artifact_destination_prefix="part-1",
+                ),
+            },
+            {
+                "name": "QA tests part II",
+                "test": QaE2eTestPart2(),
+                "post_test": PostClusterTest(
+                    check_stackrox_logs=True,
+                    artifact_destination_prefix="part-2",
+                ),
+                "always_run": False,
+            },
+            {
+                "name": "DB backup and restore",
+                "test": QaE2eDBBackupRestoreTest(),
+                "post_test": CheckStackroxLogs(
+                    check_for_errors_in_stackrox_logs=True,
+                    artifact_destination_prefix="db-test",
+                ),
+                "always_run": False,
+            },
+        ],
+        final_post=FinalPost(
+            store_qa_tests_data=True,
+        ),
+    )
