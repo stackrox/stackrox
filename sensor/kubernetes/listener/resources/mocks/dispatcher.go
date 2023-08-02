@@ -269,6 +269,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForRBAC() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForRBAC", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForRBAC))
 }
 
+// ForRegistryMirrors mocks base method.
+func (m *MockDispatcherRegistry) ForRegistryMirrors() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForRegistryMirrors")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForRegistryMirrors indicates an expected call of ForRegistryMirrors.
+func (mr *MockDispatcherRegistryMockRecorder) ForRegistryMirrors() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForRegistryMirrors", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForRegistryMirrors))
+}
+
 // ForSecrets mocks base method.
 func (m *MockDispatcherRegistry) ForSecrets() resources.Dispatcher {
 	m.ctrl.T.Helper()
