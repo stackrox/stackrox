@@ -13,11 +13,17 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	// Persistent storage
+
+	// Get returns the metrics from the persistent storage.
 	Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) ([]*storage.Usage, error)
+	// Insert updates the persistent storage with the provided metrics.
 	Insert(ctx context.Context, metrics *storage.Usage) error
 
 	// In-memory storage
-	CutMetrics(ctx context.Context) (*storage.Usage, error)
+
+	// AggregateAndFlush returns the aggregated metrics from the
+	// in-memory storage and resets the storage.
+	AggregateAndFlush(ctx context.Context) (*storage.Usage, error)
 	GetCurrent(ctx context.Context) (*storage.Usage, error)
 	UpdateUsage(clusterID string, metrics source.UsageSource)
 }

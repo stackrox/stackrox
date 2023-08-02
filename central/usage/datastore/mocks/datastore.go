@@ -37,19 +37,19 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// CutMetrics mocks base method.
-func (m *MockDataStore) CutMetrics(ctx context.Context) (*storage.Usage, error) {
+// AggregateAndFlush mocks base method.
+func (m *MockDataStore) AggregateAndFlush(ctx context.Context) (*storage.Usage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CutMetrics", ctx)
+	ret := m.ctrl.Call(m, "AggregateAndFlush", ctx)
 	ret0, _ := ret[0].(*storage.Usage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CutMetrics indicates an expected call of CutMetrics.
-func (mr *MockDataStoreMockRecorder) CutMetrics(ctx interface{}) *gomock.Call {
+// AggregateAndFlush indicates an expected call of AggregateAndFlush.
+func (mr *MockDataStoreMockRecorder) AggregateAndFlush(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CutMetrics", reflect.TypeOf((*MockDataStore)(nil).CutMetrics), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AggregateAndFlush", reflect.TypeOf((*MockDataStore)(nil).AggregateAndFlush), ctx)
 }
 
 // Get mocks base method.
