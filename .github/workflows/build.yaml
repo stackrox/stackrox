@@ -54,8 +54,8 @@ jobs:
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
             # Exclude "arm64", "ppc64le"
-            matrix="$(jq '.pre_build_go_binaries.exclude = { "name": "race-condition-debug", "arch": "arm64" }' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += { "name": "race-condition-debug", "arch": "ppc64le" }' <<< "$matrix")"
+            matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
