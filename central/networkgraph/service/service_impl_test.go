@@ -396,17 +396,17 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		"foo/depA <- foo/depB",
 		"foo/depA <- bar/depD",
 		"foo/depA <- bar/depE",
-		"foo/depA <- masked namespace #1/masked deployment #1",
-		"foo/depA <- masked namespace #1/masked deployment #2",
+		"foo/depA <- masked namespace #1/masked deployment #2", // depX
+		"foo/depA <- masked namespace #1/masked deployment #3", // depZ
 		"foo/depA <- mycluster__net1",
 		"foo/depA <- " + es2ID.String(),
 		"foo/depA <- " + es3ID.String(), // non-existent es5 mapped to supernet es3
 		"foo/depB <- foo/depA",
 		"foo/depB <- baz/depF",
-		"foo/depB <- masked namespace #1/masked deployment #1",
-		"foo/depB <- masked namespace #2/masked deployment #3",
+		"foo/depB <- masked namespace #1/masked deployment #2", // depX
+		"foo/depB <- masked namespace #2/masked deployment #1", // depW
 		"foo/depC <- foo/depA",
-		"foo/depC <- masked namespace #2/masked deployment #3",
+		"foo/depC <- masked namespace #2/masked deployment #1", // depW
 		"foo/depC <- " + networkgraph.InternetExternalSourceID,
 		"bar/depD <- foo/depA",
 		"bar/depE <- foo/depB",
