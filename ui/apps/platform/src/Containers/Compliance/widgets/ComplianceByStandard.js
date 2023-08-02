@@ -15,7 +15,7 @@ import {
     IMPORTANT_HIGH_SEVERITY_COLOR,
     MODERATE_MEDIUM_SEVERITY_COLOR,
     noViolationsColor,
-} from 'constants/visuals/colors';
+} from 'constants/severityColors';
 import { COMPLIANCE_STANDARDS } from 'queries/standard';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
