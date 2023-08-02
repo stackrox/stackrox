@@ -5,6 +5,7 @@ import "github.com/stackrox/rox/sensor/common"
 // OfflineAware is meant to replace common.Notifiable for non-components, so that a pkg unrelated to Sensor
 // is not forced to import sensor code.
 type OfflineAware interface {
+	ComponentName() string
 	GoOnline()
 	GoOffline()
 }
