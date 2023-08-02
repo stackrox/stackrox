@@ -4,7 +4,6 @@ import (
 	openapi_v2 "github.com/google/gnostic/openapiv2"
 	"github.com/pkg/errors"
 	"k8s.io/kubectl/pkg/util/openapi"
-	openAPIValidation "k8s.io/kubectl/pkg/util/openapi/validation"
 	"k8s.io/kubectl/pkg/validation"
 )
 
@@ -17,7 +16,7 @@ func ValidatorFromOpenAPIDoc(openAPIDoc *openapi_v2.Document) (validation.Schema
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing OpenAPI schema document into resources")
 	}
-	schemaValidator := openAPIValidation.NewSchemaValidation(openAPIResources)
+	schemaValidator := validation.NewSchemaValidation(openAPIResources)
 
 	return validation.ConjunctiveSchema{
 		schemaValidator,
