@@ -39,35 +39,35 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy, action central.ResourceAction) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		r.registryStore.DeleteImageContentSourcePolicy(icsp.GetUID())
-		log.Debugf("Deleted ImageContentSourcePolicy from registy store: %q (%v)", icsp.GetName(), icsp.GetUID())
+		log.Debugf("Deleted ImageContentSourcePolicy from registry store: %q (%v)", icsp.GetName(), icsp.GetUID())
 		return nil
 	}
 
 	r.registryStore.UpsertImageContentSourcePolicy(icsp)
-	log.Debugf("Upserted ImageContentSourcePolicy into registy store: %q (%v)", icsp.GetName(), icsp.GetUID())
+	log.Debugf("Upserted ImageContentSourcePolicy into registry store: %q (%v)", icsp.GetName(), icsp.GetUID())
 	return nil
 }
 
 func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet, action central.ResourceAction) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		r.registryStore.DeleteImageDigestMirrorSet(idms.GetUID())
-		log.Debugf("Deleted ImageDigestMirrorSet from registy store: %q (%v)", idms.GetName(), idms.GetUID())
+		log.Debugf("Deleted ImageDigestMirrorSet from registry store: %q (%v)", idms.GetName(), idms.GetUID())
 		return nil
 	}
 
 	r.registryStore.UpsertImageDigestMirrorSet(idms)
-	log.Debugf("Upserted ImageDigestMirrorSet into registy store: %q (%v)", idms.GetName(), idms.GetUID())
+	log.Debugf("Upserted ImageDigestMirrorSet into registry store: %q (%v)", idms.GetName(), idms.GetUID())
 	return nil
 }
 
 func (r *registryMirrorDispatcher) handleImageTagMirrorSet(itms *configV1.ImageTagMirrorSet, action central.ResourceAction) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		r.registryStore.DeleteImageTagMirrorSet(itms.GetUID())
-		log.Debugf("Deleted ImageTagMirrorSet from registy store: %q (%v)", itms.GetName(), itms.GetUID())
+		log.Debugf("Deleted ImageTagMirrorSet from registry store: %q (%v)", itms.GetName(), itms.GetUID())
 		return nil
 	}
 
 	r.registryStore.UpsertImageTagMirrorSet(itms)
-	log.Debugf("Upserted ImageTagMirrorSet into registy store: %q (%v)", itms.GetName(), itms.GetUID())
+	log.Debugf("Upserted ImageTagMirrorSet into registry store: %q (%v)", itms.GetName(), itms.GetUID())
 	return nil
 }
