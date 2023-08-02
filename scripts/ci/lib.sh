@@ -160,15 +160,15 @@ get_central_diagnostics() {
 push_image_manifest_lists() {
     info "Pushing main, roxctl and central-db images as manifest lists"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_image_manifest_lists <push_context> <brand>"
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
     fi
 
     local push_context="$1"
     local brand="$2"
+    local architectures="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
-    local architectures="amd64,arm64,ppc64le"
 
     local registry
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
