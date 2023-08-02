@@ -169,12 +169,12 @@ func TestProcessPipelineOffline(t *testing.T) {
 			metadataWg.Add(2)
 
 			p.Notify(tc.initialState)
-			processSignal(p, tc.initialSignal.signal, mockStore, containerMetadata1, metadataWg)
+			tc.initialSignal.signalProcessingRoutine(p, tc.initialSignal.signal, mockStore, containerMetadata1, metadataWg)
 
 			p.Notify(tc.laterState)
-			processSignal(p, tc.laterSignal.signal, mockStore, containerMetadata2, metadataWg)
+			tc.laterSignal.signalProcessingRoutine(p, tc.laterSignal.signal, mockStore, containerMetadata2, metadataWg)
 
-			// Wait for metadata to arrive - either directly or from ticker
+			// Wait for metadata to arrive - either directly or through the ticker
 			metadataWg.Wait()
 
 			// Events contains processed signals. They may arrive in any order
