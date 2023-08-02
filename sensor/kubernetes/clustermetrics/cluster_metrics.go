@@ -31,12 +31,20 @@ type ClusterMetrics interface {
 
 // New returns a new cluster metrics Sensor component.
 func New(k8sClient kubernetes.Interface) ClusterMetrics {
+	return NewWithInterval(k8sClient, defaultInterval)
+}
+
+// NewWithInterval returns a new cluster metrics Sensor component.
+func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+	ticker := time.NewTicker(pollInterval)
+	ticker.Stop()
 	return &clusterMetricsImpl{
 		output:          make(chan *message.ExpiringMessage),
 		stopper:         concurrency.NewStopper(),
-		pollingInterval: defaultInterval,
+		pollingInterval: pollInterval,
 		pollingTimeout:  defaultTimeout,
 		k8sClient:       k8sClient,
+		pollTicker:      ticker,
 	}
 }
 
@@ -46,19 +54,28 @@ type clusterMetricsImpl struct {
 	pollingInterval time.Duration
 	pollingTimeout  time.Duration
 	k8sClient       kubernetes.Interface
+	pollTicker      *time.Ticker
 }
 
 func (cm *clusterMetricsImpl) Start() error {
-	go cm.Poll()
+	go cm.Poll(cm.pollTicker.C)
 	return nil
 }
 
 func (cm *clusterMetricsImpl) Stop(_ error) {
+	cm.pollTicker.Stop()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()
 }
 
-func (cm *clusterMetricsImpl) Notify(common.SensorComponentEvent) {}
+func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		cm.pollTicker.Reset(cm.pollingInterval)
+	case common.SensorComponentEventOfflineMode:
+		cm.pollTicker.Stop()
+	}
+}
 
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
@@ -74,17 +91,16 @@ func (cm *clusterMetricsImpl) ResponsesC() <-chan *message.ExpiringMessage {
 
 func (cm *clusterMetricsImpl) ProcessIndicator(_ *storage.ProcessIndicator) {}
 
-func (cm *clusterMetricsImpl) Poll() {
+func (cm *clusterMetricsImpl) Poll(tickerC <-chan time.Time) {
 	defer cm.stopper.Flow().ReportStopped()
 
 	cm.runPipeline()
-	ticker := time.NewTicker(cm.pollingInterval)
 	go func() {
 		for {
 			select {
 			case <-cm.stopper.Flow().StopRequested():
 				return
-			case <-ticker.C:
+			case <-tickerC:
 				cm.runPipeline()
 			}
 		}
