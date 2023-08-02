@@ -9,7 +9,7 @@ import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { vulnSeverityIconColors } from 'constants/visuals/colors';
+import { vulnerabilitySeverityColorMap } from 'constants/severityColors';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
 
@@ -95,7 +95,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
                 return {
                     // severity, // generic Sunburst does not expect this data-specific property
                     name: `${cve} -- ${summary}`,
-                    color: vulnSeverityIconColors[severity],
+                    color: vulnerabilitySeverityColorMap[severity],
                     labelColor: 'var(--base-600)',
                     textColor: 'var(--base-600)',
                     value: cvss,
@@ -108,7 +108,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
         return vulnerabilitySeverities.map((severity) => {
             return {
                 name: vulnerabilitySeverityLabels[severity],
-                color: vulnSeverityIconColors[severity],
+                color: vulnerabilitySeverityColorMap[severity],
                 children: getChildren(vulns, severity),
                 textColor: 'var(--base-600)',
                 value: 0,

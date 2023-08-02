@@ -73,7 +73,7 @@ func (s *postgresMigrationSuite) TestDeploymentMigration() {
 	s.NoError(legacyStore.UpsertMany(s.ctx, deployments))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

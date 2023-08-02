@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
+	installationStore "github.com/stackrox/rox/central/installation/store"
+	"github.com/stackrox/rox/central/metrics/info"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -37,17 +40,19 @@ var (
 type serviceImpl struct {
 	central.UnimplementedSensorServiceServer
 
-	manager  connection.Manager
-	pf       pipeline.Factory
-	clusters clusterDataStore.DataStore
+	manager      connection.Manager
+	pf           pipeline.Factory
+	clusters     clusterDataStore.DataStore
+	installation installationStore.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore) Service {
+func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
 	return &serviceImpl{
-		manager:  manager,
-		pf:       pf,
-		clusters: clusters,
+		manager:      manager,
+		pf:           pf,
+		clusters:     clusters,
+		installation: installation,
 	}
 }
 
@@ -88,10 +93,13 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if sensorSupportsHello {
+		installInfo, err := info.FetchInstallInfo(context.Background(), s.installation)
+		utils.Should(err)
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
 			ClusterId:      cluster.GetId(),
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
+			CentralId:      installInfo.GetId(),
 		}
 
 		if err := safe.RunE(func() error {

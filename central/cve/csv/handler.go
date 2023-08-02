@@ -6,18 +6,17 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterCveCsv "github.com/stackrox/rox/central/cve/cluster/csv"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/sync"
@@ -55,12 +54,14 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*csvCommon.SearchWrapper{
-			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema.OptionsMap,
+				resolver.ImageComponentDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeDataStore),
-			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap,
+				resolver.ClusterDataStore),
 		},
 	)
 }

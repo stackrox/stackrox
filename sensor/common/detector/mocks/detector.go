@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -104,15 +105,15 @@ func (mr *MockDetectorMockRecorder) ProcessMessage(msg interface{}) *gomock.Call
 }
 
 // ProcessNetworkFlow mocks base method.
-func (m *MockDetector) ProcessNetworkFlow(flow *storage.NetworkFlow) {
+func (m *MockDetector) ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessNetworkFlow", flow)
+	m.ctrl.Call(m, "ProcessNetworkFlow", ctx, flow)
 }
 
 // ProcessNetworkFlow indicates an expected call of ProcessNetworkFlow.
-func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(flow interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(ctx, flow interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), flow)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), ctx, flow)
 }
 
 // ProcessPolicySync mocks base method.

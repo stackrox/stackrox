@@ -2,10 +2,10 @@ import React from 'react';
 import { HashLink as Link } from 'react-router-hash-link';
 import { Tooltip, Truncate } from '@patternfly/react-core';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
-import { SecurityIcon } from '@patternfly/react-icons';
 
+import { CriticalSeverityIcon, ImportantSeverityIcon } from 'Components/PatternFly/SeverityIcons';
+import { noViolationsColor } from 'constants/severityColors';
 import { ImageName } from 'types/image.proto';
-import { severityColors } from 'constants/visuals/colors';
 import { vulnManagementPath } from 'routePaths';
 
 type VulnCounts = {
@@ -13,19 +13,39 @@ type VulnCounts = {
     fixable: number;
 };
 
+type ImageVulnerabilityCounter = {
+    important: VulnCounts;
+    critical: VulnCounts;
+};
+
 export type ImageData = {
     images: {
         id: string;
         name: Partial<ImageName>;
         priority: number;
-        imageVulnerabilityCounter: {
-            important: VulnCounts;
-            critical: VulnCounts;
-        };
+        imageVulnerabilityCounter: ImageVulnerabilityCounter;
     }[];
 };
 
 export type CveStatusOption = 'Fixable' | 'All';
+
+function countCritical(
+    imageVulnerabilityCounter: ImageVulnerabilityCounter,
+    cveStatusOption: CveStatusOption
+) {
+    return cveStatusOption === 'Fixable'
+        ? imageVulnerabilityCounter.critical.fixable
+        : imageVulnerabilityCounter.critical.total;
+}
+
+function countImportant(
+    imageVulnerabilityCounter: ImageVulnerabilityCounter,
+    cveStatusOption: CveStatusOption
+) {
+    return cveStatusOption === 'Fixable'
+        ? imageVulnerabilityCounter.important.fixable
+        : imageVulnerabilityCounter.important.total;
+}
 
 export type ImagesAtMostRiskProps = {
     imageData: ImageData;
@@ -85,9 +105,13 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                             {priority}
                         </Td>
                         <Td dataLabel={columnNames.criticalCves}>
-                            <SecurityIcon
+                            <CriticalSeverityIcon
                                 className="pf-u-display-inline pf-u-mr-xs"
-                                color={severityColors.CRITICAL_SEVERITY}
+                                color={
+                                    countCritical(imageVulnerabilityCounter, cveStatusOption) === 0
+                                        ? noViolationsColor
+                                        : undefined
+                                }
                             />
                             <span>
                                 {cveStatusOption === 'Fixable'
@@ -96,9 +120,13 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                             </span>
                         </Td>
                         <Td className="pf-u-pr-0" dataLabel={columnNames.importantCves}>
-                            <SecurityIcon
+                            <ImportantSeverityIcon
                                 className="pf-u-display-inline pf-u-mr-xs"
-                                color={severityColors.HIGH_SEVERITY}
+                                color={
+                                    countImportant(imageVulnerabilityCounter, cveStatusOption) === 0
+                                        ? noViolationsColor
+                                        : undefined
+                                }
                             />
                             {cveStatusOption === 'Fixable'
                                 ? `${imageVulnerabilityCounter.important.fixable} fixable`

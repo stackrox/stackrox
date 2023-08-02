@@ -18,7 +18,6 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +29,7 @@ var (
 		VersionAfter:   &storage.Version{SeqNum: int32(startingSeqNum + 1)}, // 147
 		Run: func(databases *types.Databases) error {
 			legacyStore := legacy.New(dackboxhelper.GetMigrationDackBox(), dackboxhelper.GetMigrationKeyFence(), true)
-			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.DBCtx, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving nodes from rocksdb to postgres")
 			}
@@ -41,14 +40,14 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
-	ctx := sac.WithAllAccess(context.Background())
+func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
 	store := pgStore.New(postgresDB, true)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNodesStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNodeCvesStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNodeComponentsStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNodeComponentEdgesStmt)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableNodeComponentsCvesEdgesStmt)
+
 	return walk(ctx, legacyStore, func(obj *storage.Node) error {
 		nodeConverter.FillV2NodeVulnerabilities(obj)
 		if err := store.Upsert(ctx, obj); err != nil {

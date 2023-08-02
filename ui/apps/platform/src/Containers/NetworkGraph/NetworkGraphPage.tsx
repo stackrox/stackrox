@@ -351,7 +351,8 @@ function NetworkGraphPage() {
                 {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
                 {models.activeModel.nodes.length > 0 &&
                     models.extraneousModel.nodes.length > 0 &&
-                    !isLoading && (
+                    !isLoading &&
+                    hasClusterNamespaceSelected && (
                         <NetworkGraphContainer
                             models={models}
                             edgeState={edgeState}

@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
@@ -184,10 +186,135 @@ func (s *UpdaterTestSuite) TestNamespaceMismatch() {
 	})
 }
 
+func (s *UpdaterTestSuite) TestExpiredMessages() {
+	states := []common.SensorComponentEvent{
+		common.SensorComponentEventCentralReachable,
+		common.SensorComponentEventOfflineMode,
+	}
+	s.addDaemonSet(makeDaemonSet())
+	s.addNodes(4)
+	s.addDeployment(makeAdmissionControlDeployment())
+	updater := s.createNewUpdater(updateInterval)
+	s.Require().NoError(updater.Start())
+	defer updater.Stop(nil)
+	var expiredMessages []*message.ExpiringMessage
+	for _, state := range states {
+		updater.Notify(state)
+		if expiredMsg := s.assertOfflineMode(state, updater, updateInterval); expiredMsg != nil {
+			expiredMessages = append(expiredMessages, expiredMsg)
+		}
+	}
+	updater.Notify(common.SensorComponentEventCentralReachable)
+	// All the messages received until now should be expired at this point
+	for _, msg := range expiredMessages {
+		select {
+		case <-msg.Context.Done():
+			continue
+		case <-time.After(time.Second):
+			s.Fail("the messages that were attempted to be sent while offline should be expired")
+		}
+	}
+	// The last message should not be expired
+	select {
+	case msg := <-updater.ResponsesC():
+		select {
+		case <-msg.Context.Done():
+			s.Fail("the last message should not be cancelled")
+		case <-time.After(10 * updateInterval):
+			break
+		}
+	case <-time.After(10 * time.Second):
+		s.Fail("timeout waiting for sensor message")
+	}
+
+}
+
+func (s *UpdaterTestSuite) TestNotExpiredMessage() {
+	s.addDaemonSet(makeDaemonSet())
+	s.addNodes(4)
+	s.addDeployment(makeAdmissionControlDeployment())
+
+	updater := s.createNewUpdater(updateInterval)
+	fakeTicker := make(chan time.Time)
+	defer close(fakeTicker)
+	go updater.run(fakeTicker)
+	updater.Notify(common.SensorComponentEventCentralReachable)
+	fakeTicker <- time.Now()
+	select {
+	case msg := <-updater.ResponsesC():
+		select {
+		case <-msg.Context.Done():
+			s.Fail("the message in ResponsesC should not be cancelled")
+		case <-time.After(10 * updateInterval):
+			break
+		}
+	case <-time.After(updateTimeout):
+		s.Fail("timeout waiting for sensor message")
+	}
+}
+
+func (s *UpdaterTestSuite) TestExpiredMessage() {
+	s.addDaemonSet(makeDaemonSet())
+	s.addNodes(4)
+	s.addDeployment(makeAdmissionControlDeployment())
+
+	updater := s.createNewUpdater(updateInterval)
+	fakeTicker := make(chan time.Time)
+	defer close(fakeTicker)
+	go updater.run(fakeTicker)
+	updater.Notify(common.SensorComponentEventCentralReachable)
+	fakeTicker <- time.Now()
+	var msg *message.ExpiringMessage
+	select {
+	case msg = <-updater.ResponsesC():
+		break
+	case <-time.After(updateTimeout):
+		s.Fail("timeout waiting for sensor message")
+	}
+	updater.Notify(common.SensorComponentEventOfflineMode)
+	updater.Notify(common.SensorComponentEventCentralReachable)
+	select {
+	case <-msg.Context.Done():
+		break
+	case <-time.After(10 * updateInterval):
+		s.Fail("the message in ResponsesC should be cancelled")
+	}
+}
+
+func (s *UpdaterTestSuite) createNewUpdater(interval time.Duration) *updaterImpl {
+	updaterComponent := NewUpdater(s.client, interval)
+	updater, ok := updaterComponent.(*updaterImpl)
+	s.Require().True(ok, "NewUpdater should return a struct of type *updaterImpl")
+	return updater
+}
+
+func (s *UpdaterTestSuite) assertOfflineMode(state common.SensorComponentEvent, updater *updaterImpl, interval time.Duration) *message.ExpiringMessage {
+	switch state {
+	case common.SensorComponentEventCentralReachable:
+		select {
+		case <-time.After(updateTimeout):
+			s.Fail("timeout waiting for sensor message")
+		case msg := <-updater.ResponsesC():
+			return msg
+		}
+	case common.SensorComponentEventOfflineMode:
+		select {
+		case <-time.After(10 * interval):
+			return nil
+		// Depending on our luck with the internal ticker, we could have a message already waiting in ResponsesC.
+		// If that's the case, we return it here and later assert that the message is cancelled.
+		case msg := <-updater.ResponsesC():
+			return msg
+		}
+	}
+	return nil
+}
+
 func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo {
 	timer := time.NewTimer(updateTimeout)
 	updater := NewUpdater(s.client, updateInterval)
 
+	updater.Notify(common.SensorComponentEventCentralReachable)
 	err := updater.Start()
 	s.Require().NoError(err)
 	defer updater.Stop(nil)
@@ -230,6 +357,33 @@ func makeDaemonSet() appsV1.DaemonSet {
 
 func (s *UpdaterTestSuite) addDaemonSet(ds appsV1.DaemonSet) {
 	_, err := s.client.AppsV1().DaemonSets(ds.ObjectMeta.Namespace).Create(context.Background(), &ds, metaV1.CreateOptions{})
+	s.Require().NoError(err)
+}
+
+func makeAdmissionControlDeployment() appsV1.Deployment {
+	return appsV1.Deployment{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      "admission-control",
+			Namespace: "stackrox-mock-ns",
+		},
+		Spec: appsV1.DeploymentSpec{
+			Template: coreV1.PodTemplateSpec{
+				Spec: coreV1.PodSpec{
+					Containers: []coreV1.Container{
+						{Name: "admission-control", Image: "mock/ac-image:v456"},
+					},
+				},
+			},
+		},
+		Status: appsV1.DeploymentStatus{
+			Replicas:      2,
+			ReadyReplicas: 2,
+		},
+	}
+}
+
+func (s *UpdaterTestSuite) addDeployment(d appsV1.Deployment) {
+	_, err := s.client.AppsV1().Deployments(d.ObjectMeta.Namespace).Create(context.Background(), &d, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -38,6 +39,8 @@ type centralCommunicationImpl struct {
 
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
+
+	isReconnect bool
 }
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -86,6 +89,13 @@ func communicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 	}
 }
 
+func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorState {
+	if s.isReconnect {
+		return central.SensorHello_RECONNECT
+	}
+	return central.SensorHello_STARTUP
+}
+
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
@@ -111,6 +121,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
+		SensorState:              s.getSensorState(),
 	}
 	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {
@@ -207,6 +218,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	}
 
 	managedcentral.Set(centralHello.GetManagedCentral())
+	centralid.Set(centralHello.GetCentralId())
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {

@@ -87,6 +87,10 @@ type SecuredClusterSpec struct {
 	// Overlays
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
+
+	// Monitoring configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.

@@ -36,6 +36,9 @@ data:
           - source_labels: [__meta_kubernetes_pod_name]
             action: replace
             target_label: pod
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: node_name
 
       - job_name: stackrox
         tls_config:
@@ -54,6 +57,9 @@ data:
           - source_labels: [__meta_kubernetes_namespace]
             action: replace
             target_label: namespace
+          - source_labels: [__meta_kubernetes_endpoint_node_name]
+            action: replace
+            target_label: node_name
 
   rules_alerts_kubernetes.yml: |-
     groups:
