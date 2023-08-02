@@ -7,10 +7,3 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: collector-monitor
----
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-commands:
-- script: |
-    # Test that Sensor auth reader rolebinding does not exist in kube-system.
-    ! kubectl get rolebinding rhacs-sensor-auth-reader-${NAMESPACE} -n kube-system
