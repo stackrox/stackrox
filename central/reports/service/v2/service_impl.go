@@ -6,10 +6,10 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
-	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -46,10 +46,10 @@ var (
 
 type serviceImpl struct {
 	apiV2.UnimplementedReportServiceServer
-	metadataDatastore metadataDS.DataStore
-	reportConfigStore reportConfigDS.DataStore
-	snapshotDatastore snapshotDS.DataStore
-	scheduler         schedulerV2.Scheduler
+	reportConfigStore   reportConfigDS.DataStore
+	snapshotDatastore   snapshotDS.DataStore
+	collectionDatastore collectionDS.DataStore
+	scheduler           schedulerV2.Scheduler
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -71,12 +71,12 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 	if req == nil || req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
 	}
-	rep, found, err := s.metadataDatastore.Get(ctx, req.GetId())
+	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report not found for id %s", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
@@ -91,7 +91,7 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
 			Limit(1)).ProtoQuery()
-	results, err := s.metadataDatastore.SearchReportMetadatas(ctx, query)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -136,35 +136,25 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
-	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetReportConfigId())
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding report configuration %s", req.GetReportConfigId())
-	}
-	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", req.GetReportConfigId())
-	}
-	reportReq := &reportGen.ReportRequest{
-		ReportConfig: config,
-		ReportMetadata: &storage.ReportMetadata{
-			ReportConfigId: req.GetReportConfigId(),
-			Requester:      slimUser,
-			ReportStatus: &storage.ReportStatus{
-				RunState:          storage.ReportStatus_WAITING,
-				ReportRequestType: storage.ReportStatus_ON_DEMAND,
-			},
-		},
-	}
+
+	var notificationMethod storage.ReportStatus_NotificationMethod
 	if req.GetReportNotificationMethod() == apiV2.NotificationMethod_EMAIL {
-		reportReq.ReportMetadata.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
+		notificationMethod = storage.ReportStatus_EMAIL
 	} else {
-		reportReq.ReportMetadata.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-		// Scope the downloadable reports to the access scope of user demanding the report
-		reportReq.Ctx = ctx
+		notificationMethod = storage.ReportStatus_DOWNLOAD
 	}
+
+	reportReq, err := common.ValidateAndGenerateReportRequest(req.GetReportConfigId(), slimUser,
+		notificationMethod, storage.ReportStatus_ON_DEMAND)
+	if err != nil {
+		return nil, err
+	}
+
 	reportID, err := s.scheduler.SubmitReportRequest(reportReq, false)
 	if err != nil {
 		return nil, err
 	}
+
 	return &apiV2.RunReportResponse{
 		ReportConfigId: req.GetReportConfigId(),
 		ReportId:       reportID,
@@ -176,29 +166,16 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, err
 	}
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Report ID is empty")
+		return nil, errors.Wrap(errox.InvalidArgs, "Report job ID is empty")
 	}
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
-	metadata, found, err := s.metadataDatastore.Get(ctx, req.GetId())
+
+	err := common.ValidateCancelReportRequest(req.GetId(), slimUser)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding report ID '%s'.", req.GetId())
-	}
-	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report ID '%s' does not exist", req.GetId())
-	}
-
-	runState := metadata.GetReportStatus().GetRunState()
-	if runState == storage.ReportStatus_SUCCESS || runState == storage.ReportStatus_FAILURE {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report ID '%s' has already completed execution.", req.GetId())
-	} else if runState == storage.ReportStatus_PREPARING {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report ID '%s' is currently being prepared.", req.GetId())
-	}
-
-	if slimUser.GetId() != metadata.GetRequester().GetId() {
-		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be cancelled by a user who did not request the report.")
+		return nil, err
 	}
 
 	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
@@ -206,7 +183,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, err
 	}
 	if !cancelled {
-		return nil, errors.Wrapf(errox.InvariantViolation, "Cannot cancel. Report ID '%s' no longer queued."+
+		return nil, errors.Wrapf(errox.InvariantViolation, "Cannot cancel. Report job ID '%s' no longer queued."+
 			"It might already be preparing", req.GetId())
 	}
 
