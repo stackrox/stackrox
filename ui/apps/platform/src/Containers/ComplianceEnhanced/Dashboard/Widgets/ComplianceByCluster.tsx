@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Chart, ChartAxis, ChartBar, ChartGroup, ChartLabelProps } from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
     defaultChartBarWidth,
@@ -10,7 +11,6 @@ import {
 } from 'utils/chartUtils';
 
 import { getBarColor } from './ColorsForCompliance';
-import WidgetCard from '../../../Dashboard/Widgets/WidgetCard';
 
 const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceByClusterData) => {
     return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
