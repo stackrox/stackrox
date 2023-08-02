@@ -49,19 +49,6 @@ func TestProcessEvent(t *testing.T) {
 		d.ProcessEvent(itmsA, nil, action)
 	})
 
-	t.Run("no upserts if UID empty", func(t *testing.T) {
-		rs := registry.NewRegistryStore(nil)
-		d := newRegistryMirrorDispatcher(rs)
-		action := central.ResourceAction_UNSET_ACTION_RESOURCE
-		d.ProcessEvent(&operatorV1Alpha1.ImageContentSourcePolicy{}, nil, action)
-		d.ProcessEvent(&configV1.ImageDigestMirrorSet{}, nil, action)
-		d.ProcessEvent(&configV1.ImageTagMirrorSet{}, nil, action)
-		icspRules, idmsRules, itmsRules := rs.GetAllMirrorSets()
-		assert.Len(t, icspRules, 0)
-		assert.Len(t, idmsRules, 0)
-		assert.Len(t, itmsRules, 0)
-	})
-
 	t.Run("upsert followed by delete removes appropriate resource", func(t *testing.T) {
 		rs := registry.NewRegistryStore(nil)
 		d := newRegistryMirrorDispatcher(rs)

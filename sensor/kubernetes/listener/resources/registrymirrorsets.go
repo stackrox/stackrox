@@ -37,13 +37,8 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 }
 
 func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy, action central.ResourceAction) *component.ResourceEvent {
-	if icsp.GetUID() == "" {
-		log.Warnf("Ignoring ImageContentSourcePolicy - missing UID: %q", icsp.GetName())
-		return nil
-	}
-
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		r.registryStore.DeleteImageContentSourcePolicy(string(icsp.GetUID()))
+		r.registryStore.DeleteImageContentSourcePolicy(icsp.GetUID())
 		log.Debugf("Deleted ImageContentSourcePolicy from registy store: %q (%v)", icsp.GetName(), icsp.GetUID())
 		return nil
 	}
@@ -54,13 +49,8 @@ func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operator
 }
 
 func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet, action central.ResourceAction) *component.ResourceEvent {
-	if idms.GetUID() == "" {
-		log.Warnf("Ignoring ImageDigestMirrorSet - missing UID: %q", idms.GetName())
-		return nil
-	}
-
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		r.registryStore.DeleteImageDigestMirrorSet(string(idms.GetUID()))
+		r.registryStore.DeleteImageDigestMirrorSet(idms.GetUID())
 		log.Debugf("Deleted ImageDigestMirrorSet from registy store: %q (%v)", idms.GetName(), idms.GetUID())
 		return nil
 	}
@@ -71,13 +61,8 @@ func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.Ima
 }
 
 func (r *registryMirrorDispatcher) handleImageTagMirrorSet(itms *configV1.ImageTagMirrorSet, action central.ResourceAction) *component.ResourceEvent {
-	if itms.GetUID() == "" {
-		log.Warnf("Ignoring ImageTagMirrorSet - missing UID: %v", itms.GetName())
-		return nil
-	}
-
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		r.registryStore.DeleteImageTagMirrorSet(string(itms.GetUID()))
+		r.registryStore.DeleteImageTagMirrorSet(itms.GetUID())
 		log.Debugf("Deleted ImageTagMirrorSet from registy store: %q (%v)", itms.GetName(), itms.GetUID())
 		return nil
 	}

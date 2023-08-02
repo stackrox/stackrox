@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -59,9 +61,9 @@ type Store struct {
 	centralRegistryIntegrations registries.Set
 
 	// holds the mirror sets used for managing registry mirrors.
-	icspRules      map[string]*operatorV1Alpha1.ImageContentSourcePolicy
-	idmsRules      map[string]*configV1.ImageDigestMirrorSet
-	itmsRules      map[string]*configV1.ImageTagMirrorSet
+	icspRules      map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy
+	idmsRules      map[types.UID]*configV1.ImageDigestMirrorSet
+	itmsRules      map[types.UID]*configV1.ImageTagMirrorSet
 	mirrorSetMutex sync.RWMutex
 }
 
@@ -84,9 +86,9 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		globalRegistries:            registries.NewSet(regFactory),
 		centralRegistryIntegrations: registries.NewSet(regFactory),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
-		icspRules:                   make(map[string]*operatorV1Alpha1.ImageContentSourcePolicy),
-		idmsRules:                   make(map[string]*configV1.ImageDigestMirrorSet),
-		itmsRules:                   make(map[string]*configV1.ImageTagMirrorSet),
+		icspRules:                   make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy),
+		idmsRules:                   make(map[types.UID]*configV1.ImageDigestMirrorSet),
+		itmsRules:                   make(map[types.UID]*configV1.ImageTagMirrorSet),
 	}
 
 	if checkTLS != nil {
@@ -107,9 +109,9 @@ func (rs *Store) Cleanup() {
 	rs.globalRegistries = registries.NewSet(rs.factory)
 	rs.centralRegistryIntegrations = registries.NewSet(rs.factory)
 	rs.clusterLocalRegistryHosts = set.NewStringSet()
-	rs.icspRules = make(map[string]*operatorV1Alpha1.ImageContentSourcePolicy)
-	rs.idmsRules = make(map[string]*configV1.ImageDigestMirrorSet)
-	rs.itmsRules = make(map[string]*configV1.ImageTagMirrorSet)
+	rs.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
+	rs.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
+	rs.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {
@@ -356,11 +358,11 @@ func (rs *Store) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageCont
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
-	rs.icspRules[string(icsp.GetUID())] = icsp
+	rs.icspRules[icsp.GetUID()] = icsp
 }
 
 // DeleteImageContentSourcePolicy will delete an ImageContentSourcePolicy from the store if it exists.
-func (rs *Store) DeleteImageContentSourcePolicy(uid string) {
+func (rs *Store) DeleteImageContentSourcePolicy(uid types.UID) {
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
@@ -372,11 +374,11 @@ func (rs *Store) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet)
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
-	rs.idmsRules[string(idms.GetUID())] = idms
+	rs.idmsRules[idms.GetUID()] = idms
 }
 
 // DeleteImageDigestMirrorSet will delete an ImageDigestMirrorSet from the store if it exists.
-func (rs *Store) DeleteImageDigestMirrorSet(uid string) {
+func (rs *Store) DeleteImageDigestMirrorSet(uid types.UID) {
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
@@ -388,11 +390,11 @@ func (rs *Store) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) {
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
-	rs.itmsRules[string(itms.GetUID())] = itms
+	rs.itmsRules[itms.GetUID()] = itms
 }
 
 // DeleteImageTagMirrorSet will delete an ImageTagMirrorSet from the store if it exists.
-func (rs *Store) DeleteImageTagMirrorSet(uid string) {
+func (rs *Store) DeleteImageTagMirrorSet(uid types.UID) {
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
@@ -406,20 +408,5 @@ func (rs *Store) GetAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePolic
 	rs.mirrorSetMutex.RLock()
 	defer rs.mirrorSetMutex.RUnlock()
 
-	icspRules := make([]*operatorV1Alpha1.ImageContentSourcePolicy, 0, len(rs.icspRules))
-	for _, rule := range rs.icspRules {
-		icspRules = append(icspRules, rule)
-	}
-
-	idmsRules := make([]*configV1.ImageDigestMirrorSet, 0, len(rs.idmsRules))
-	for _, rule := range rs.idmsRules {
-		idmsRules = append(idmsRules, rule)
-	}
-
-	itmsRules := make([]*configV1.ImageTagMirrorSet, 0, len(rs.itmsRules))
-	for _, rule := range rs.itmsRules {
-		itmsRules = append(itmsRules, rule)
-	}
-
-	return icspRules, idmsRules, itmsRules
+	return maputil.Values(rs.icspRules), maputil.Values(rs.idmsRules), maputil.Values(rs.itmsRules)
 }
