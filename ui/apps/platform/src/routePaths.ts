@@ -134,7 +134,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource([]),
     },
     [integrationsPath]: {
-        resourceAccessRequirements: everyResource(['Integration']),
+        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     [listeningEndpointsBasePath]: {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
@@ -152,7 +152,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         ]),
     },
     [riskPath]: {
-        resourceAccessRequirements: everyResource(['Alert', 'Deployment', 'DeploymentExtension']),
+        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [searchPath]: {
         resourceAccessRequirements: everyResource([]),
