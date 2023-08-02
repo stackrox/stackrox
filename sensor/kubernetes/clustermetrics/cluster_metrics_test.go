@@ -87,7 +87,7 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 }
 
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
-	metricsComponent := New(s.client, interval)
+	metricsComponent := NewWithInterval(s.client, interval)
 	metrics, ok := metricsComponent.(*clusterMetricsImpl)
 	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
 	return metrics
@@ -114,7 +114,7 @@ func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponent
 
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
-	clusterMetricsStream := New(s.client, 0)
+	clusterMetricsStream := New(s.client)
 
 	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
