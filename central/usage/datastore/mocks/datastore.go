@@ -82,6 +82,20 @@ func (mr *MockDataStoreMockRecorder) GetCurrent(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrent", reflect.TypeOf((*MockDataStore)(nil).GetCurrent), ctx)
 }
 
+// Insert mocks base method.
+func (m *MockDataStore) Insert(ctx context.Context, metrics *storage.Usage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Insert", ctx, metrics)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Insert indicates an expected call of Insert.
+func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockDataStore)(nil).Insert), ctx, metrics)
+}
+
 // UpdateUsage mocks base method.
 func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics source.UsageSource) error {
 	m.ctrl.T.Helper()
