@@ -4,11 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stretchr/testify/assert"
@@ -291,4 +295,30 @@ func TestRegistryStore_GenImgIntName(t *testing.T) {
 			assert.Equal(t, test.expected, actual)
 		})
 	}
+}
+
+func TestDataRaceAtCleanup(t *testing.T) {
+	testNamespace := "test-ns"
+	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+	regStore.store[testNamespace] = registries.NewSet(regStore.factory)
+	wg := sync.WaitGroup{}
+	doneSignal := concurrency.NewSignal()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-doneSignal.Done():
+				return
+			default:
+				// random reads
+				regStore.getRegistries(testNamespace)
+				regStore.IsLocal(&storage.ImageName{})
+			}
+		}
+	}()
+	time.Sleep(10 * time.Millisecond)
+	regStore.Cleanup()
+	doneSignal.Signal()
+	wg.Wait()
 }
