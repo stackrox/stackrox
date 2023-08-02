@@ -1,4 +1,4 @@
-package common
+package validation
 
 import (
 	"context"
@@ -17,11 +17,11 @@ import (
 var allAccessCtx = sac.WithAllAccess(context.Background())
 
 // ValidateAndGenerateReportRequest validates the report configuration for which report is requested and generates a report request
-func ValidateAndGenerateReportRequest(configID string, requester *storage.SlimUser,
+func ValidateAndGenerateReportRequest(reportConfigStore reportConfigDS.DataStore, collectionStore collectionDS.DataStore,
+	notifierStore notifierDS.DataStore, configID string, requester *storage.SlimUser,
 	notificationMethod storage.ReportStatus_NotificationMethod,
 	requestType storage.ReportStatus_RunMethod) (*reportGen.ReportRequest, error) {
-	reportConfigDatastore := reportConfigDS.Singleton()
-	config, found, err := reportConfigDatastore.GetReportConfiguration(allAccessCtx, configID)
+	config, found, err := reportConfigStore.GetReportConfiguration(allAccessCtx, configID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
 	}
@@ -29,8 +29,7 @@ func ValidateAndGenerateReportRequest(configID string, requester *storage.SlimUs
 		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
 	}
 
-	collectionDatastore, _ := collectionDS.Singleton()
-	collection, found, err := collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
+	collection, found, err := collectionStore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding collection ID '%s'", config.GetResourceScope().GetCollectionId())
 	}
@@ -38,12 +37,11 @@ func ValidateAndGenerateReportRequest(configID string, requester *storage.SlimUs
 		return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", config.GetResourceScope().GetCollectionId())
 	}
 
-	notifierDatastore := notifierDS.Singleton()
-	notifierIDs := make([]string, len(config.GetNotifiers()))
+	notifierIDs := make([]string, 0, len(config.GetNotifiers()))
 	for _, notifierConf := range config.GetNotifiers() {
 		notifierIDs = append(notifierIDs, notifierConf.GetEmailConfig().GetNotifierId())
 	}
-	protoNotifiers, err := notifierDatastore.GetManyNotifiers(allAccessCtx, notifierIDs)
+	protoNotifiers, err := notifierStore.GetManyNotifiers(allAccessCtx, notifierIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding attached notifiers")
 	}
@@ -59,8 +57,7 @@ func ValidateAndGenerateReportRequest(configID string, requester *storage.SlimUs
 }
 
 // ValidateCancelReportRequest validates if the given requester can cancel the report job with job ID = reportID.
-func ValidateCancelReportRequest(reportID string, requester *storage.SlimUser) error {
-	reportSnapshotStore := reportSnapshotDS.Singleton()
+func ValidateCancelReportRequest(reportSnapshotStore reportSnapshotDS.DataStore, reportID string, requester *storage.SlimUser) error {
 	snapshot, found, err := reportSnapshotStore.Get(allAccessCtx, reportID)
 	if err != nil {
 		return errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", reportID)

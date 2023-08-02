@@ -5,10 +5,11 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	"github.com/stackrox/rox/central/reports/common"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,6 +50,7 @@ type serviceImpl struct {
 	reportConfigStore   reportConfigDS.DataStore
 	snapshotDatastore   snapshotDS.DataStore
 	collectionDatastore collectionDS.DataStore
+	notifierDatastore   notifierDS.DataStore
 	scheduler           schedulerV2.Scheduler
 }
 
@@ -144,8 +146,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		notificationMethod = storage.ReportStatus_DOWNLOAD
 	}
 
-	reportReq, err := common.ValidateAndGenerateReportRequest(req.GetReportConfigId(), slimUser,
-		notificationMethod, storage.ReportStatus_ON_DEMAND)
+	reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigStore, s.collectionDatastore, s.notifierDatastore,
+		req.GetReportConfigId(), slimUser, notificationMethod, storage.ReportStatus_ON_DEMAND)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +175,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	err := common.ValidateCancelReportRequest(req.GetId(), slimUser)
+	err := validation.ValidateCancelReportRequest(s.snapshotDatastore, req.GetId(), slimUser)
 	if err != nil {
 		return nil, err
 	}
