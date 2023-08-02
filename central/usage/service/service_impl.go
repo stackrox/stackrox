@@ -54,15 +54,15 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetCurrentUsage(ctx context.Context, _ *v1.Empty) (*v1.CurrentUsageResponse, error) {
-	current := &v1.CurrentUsageResponse{
-		Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().UTC())}
-	if m, err := s.datastore.GetCurrent(ctx); err != nil {
+	m, err := s.datastore.GetCurrent(ctx)
+	if err != nil {
 		return nil, errors.Wrap(err, "datastore failed to get current usage metrics")
-	} else if m != nil {
-		current.NumNodes = m.NumNodes
-		current.NumCpuUnits = m.NumCpuUnits
 	}
-	return current, nil
+	return &v1.CurrentUsageResponse{
+		Timestamp:   protoconv.ConvertTimeToTimestamp(time.Now().UTC()),
+		NumNodes:    m.GetNumNodes(),
+		NumCpuUnits: m.GetNumCpuUnits(),
+	}, nil
 }
 
 func (s *serviceImpl) GetMaxUsage(ctx context.Context, req *v1.UsageRequest) (*v1.MaxUsageResponse, error) {

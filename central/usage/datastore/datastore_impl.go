@@ -47,11 +47,9 @@ func (ds *dataStoreImpl) GetCurrent(ctx context.Context) (*storage.Usage, error)
 	}
 	ids, err := getClusterIDs(ctx, ds.clustore)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get cluster IDs for current usage")
 	}
-
-	m := ds.cache.FilterCurrent(ids)
-	return m, nil
+	return ds.cache.FilterCurrent(ids), nil
 }
 
 // CutMetrics returns collected metrics for the known clusters. Resets the cache
@@ -62,7 +60,7 @@ func (ds *dataStoreImpl) CutMetrics(ctx context.Context) (*storage.Usage, error)
 	}
 	ids, err := getClusterIDs(ctx, ds.clustore)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get cluster IDs for usage snapshot")
 	}
 	return ds.cache.CutMetrics(ids), nil
 }
