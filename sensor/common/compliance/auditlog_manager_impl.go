@@ -52,6 +52,7 @@ func (a *auditLogCollectionManagerImpl) Stop(_ error) {
 }
 
 func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		a.centralReady.Signal()
