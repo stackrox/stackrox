@@ -2,6 +2,7 @@ package reportgenerator
 
 import (
 	"github.com/graph-gophers/graphql-go"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
@@ -32,6 +33,7 @@ func New(reportConfigDatastore reportConfigDS.DataStore,
 	collectionQueryResolver collectionDS.QueryResolver,
 	notifierDatastore notifierDS.DataStore,
 	notificationProcessor notifier.Processor,
+	blobDatastore blobDS.Datastore,
 	schema *graphql.Schema,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
@@ -44,6 +46,7 @@ func New(reportConfigDatastore reportConfigDS.DataStore,
 		collectionQueryResolver,
 		notifierDatastore,
 		notificationProcessor,
+		blobDatastore,
 		schema,
 	)
 }
@@ -57,6 +60,7 @@ func newReportGeneratorImpl(reportConfigDatastore reportConfigDS.DataStore,
 	collectionQueryResolver collectionDS.QueryResolver,
 	notifierDatastore notifierDS.DataStore,
 	notificationProcessor notifier.Processor,
+	blobStore blobDS.Datastore,
 	schema *graphql.Schema,
 ) *reportGeneratorImpl {
 	return &reportGeneratorImpl{
@@ -69,6 +73,7 @@ func newReportGeneratorImpl(reportConfigDatastore reportConfigDS.DataStore,
 		collectionQueryResolver: collectionQueryResolver,
 		notifierDatastore:       notifierDatastore,
 		notificationProcessor:   notificationProcessor,
+		blobStore:               blobStore,
 
 		Schema: schema,
 	}

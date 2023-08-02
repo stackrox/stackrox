@@ -14,16 +14,16 @@ import {
 } from '@patternfly/react-core';
 import { Switch, Route, useHistory, useLocation, Redirect } from 'react-router-dom';
 
-import {
-    dashboardPath,
-    vulnManagementApprovedDeferralsPath,
-    vulnManagementApprovedFalsePositivesPath,
-    vulnManagementPath,
-    vulnManagementPendingApprovalsPath,
-} from 'routePaths';
+import { dashboardPath, vulnManagementPath } from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
+
+import {
+    vulnManagementApprovedDeferralsPath,
+    vulnManagementApprovedFalsePositivesPath,
+    vulnManagementPendingApprovalsPath,
+} from './pathsForRiskAcceptance';
 import PendingApprovals from './PendingApprovals';
 import ApprovedDeferrals from './ApprovedDeferrals';
 import ApprovedFalsePositives from './ApprovedFalsePositives';

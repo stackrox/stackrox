@@ -2,7 +2,6 @@ import React from 'react';
 import {
     PageSection,
     Title,
-    Divider,
     Flex,
     FlexItem,
     Button,
@@ -15,22 +14,27 @@ import {
     EmptyStateBody,
     EmptyStateVariant,
     Text,
+    Alert,
+    AlertVariant,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link, generatePath } from 'react-router-dom';
+import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon } from '@patternfly/react-icons';
 
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+
+import { vulnerabilityReportPath } from '../pathsForVulnerabilityReporting';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
 import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportModal from '../components/DeleteReportModal';
+import useRunReport from '../api/useRunReport';
 
 const CreateReportsButton = () => {
     return (
@@ -41,6 +45,8 @@ const CreateReportsButton = () => {
 };
 
 function VulnReportsPage() {
+    const history = useHistory();
+
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
@@ -53,6 +59,9 @@ function VulnReportsPage() {
         hasNotifierIntegrationReadAccess;
 
     const { reports, isLoading, error: fetchError, fetchReports } = useFetchReports();
+    const { isRunning, runError, runReport } = useRunReport({
+        onCompleted: fetchReports,
+    });
 
     const {
         openDeleteModal,
@@ -62,15 +71,13 @@ function VulnReportsPage() {
         onDelete,
         deleteError,
     } = useDeleteModal({
-        onCompleted: () => {
-            fetchReports();
-        },
+        onCompleted: fetchReports,
     });
 
     return (
         <>
             <PageTitle title="Vulnerability reporting" />
-            <Divider component="div" />
+            {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex
                     direction={{ default: 'row' }}
@@ -175,11 +182,11 @@ function VulnReportsPage() {
                                         ) as string;
                                         const rowActions = [
                                             {
-                                                title: (
-                                                    <Link to={`${vulnReportURL}?action=edit`}>
-                                                        Edit report
-                                                    </Link>
-                                                ),
+                                                title: 'Edit report',
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                    history.push(`${vulnReportURL}?action=edit`);
+                                                },
                                             },
                                             {
                                                 isSeparator: true,
@@ -188,20 +195,22 @@ function VulnReportsPage() {
                                                 title: 'Send report now',
                                                 onClick: (event) => {
                                                     event.preventDefault();
+                                                    runReport(report.id, 'EMAIL');
                                                 },
                                             },
                                             {
                                                 title: 'Generate download',
                                                 onClick: (event) => {
                                                     event.preventDefault();
+                                                    runReport(report.id, 'DOWNLOAD');
                                                 },
                                             },
                                             {
-                                                title: (
-                                                    <Link to={`${vulnReportURL}?action=clone`}>
-                                                        Clone report
-                                                    </Link>
-                                                ),
+                                                title: 'Clone report',
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                    history.push(`${vulnReportURL}?action=clone`);
+                                                },
                                             },
                                             {
                                                 isSeparator: true,
@@ -251,7 +260,10 @@ function VulnReportsPage() {
                                                         />
                                                     </Td>
                                                     <Td isActionCell>
-                                                        <ActionsColumn items={rowActions} />
+                                                        <ActionsColumn
+                                                            items={rowActions}
+                                                            isDisabled={isRunning}
+                                                        />
                                                     </Td>
                                                 </Tr>
                                             </Tbody>

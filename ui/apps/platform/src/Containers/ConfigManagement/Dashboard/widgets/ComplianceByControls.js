@@ -4,7 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
-import { COMPLIANCE_FAIL_COLOR, COMPLIANCE_PASS_COLOR } from 'constants/visuals/colors';
+import { COMPLIANCE_FAIL_COLOR, COMPLIANCE_PASS_COLOR } from 'constants/severityColors';
 import { standardLabels } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'utils/URLService';

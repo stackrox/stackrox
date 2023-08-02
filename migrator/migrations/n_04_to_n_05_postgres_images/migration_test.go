@@ -140,7 +140,7 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 	}
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify Count
 	count, err := newStore.Count(s.ctx)

@@ -469,6 +469,20 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 		log.Errorf("error fetching image %q: %v", id, err)
 		return img, false
 	}
+
+	// Special case: in the case we want to refetch cached values but retain the image names, we have to
+	// first fetch the existing image, if it exists, merge the image names, and then return the modified
+	// image. Currently, the scope of the option is to only be used by services which take in an external, "fresh"
+	// image via API (e.g. by using roxctl). The option was created to not have an effect on performance for the
+	// existing ForceRefetch and ForceRefetechCachedValuesOnly options and their related components,
+	// i.e. the reprocessing loop.
+	if option == UseImageNamesRefetchCachedValues {
+		img.SignatureVerificationData = nil
+		img.Signature = nil
+		img.Names = utils.UniqueImageNames(existingImage.GetNames(), img.GetNames())
+		return img, false
+	}
+
 	return existingImage, exists
 }
 

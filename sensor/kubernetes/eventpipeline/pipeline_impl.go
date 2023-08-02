@@ -115,9 +115,9 @@ func (p *eventPipeline) Stop(_ error) {
 	p.stopSig.Signal()
 }
 
-func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
-	log.Infof("Received notify: %s", event)
-	switch event {
+func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	switch e {
 	case common.SensorComponentEventCentralReachable:
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {

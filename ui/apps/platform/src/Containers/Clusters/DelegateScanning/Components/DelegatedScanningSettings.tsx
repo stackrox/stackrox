@@ -10,22 +10,24 @@ import {
 } from '@patternfly/react-core';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import { EnabledSelections } from 'types/dedicatedRegistryConfig.proto';
+import {
+    EnabledSelections,
+    DelegatedRegistryCluster,
+} from 'services/DelegatedRegistryConfigService';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { ClusterScopeObject } from 'services/RolesService';
 
 type DelegatedScanningSettingsProps = {
     enabledFor: EnabledSelections;
     onChangeEnabledFor: (newEnabledState: EnabledSelections) => void;
-    clusters: ClusterScopeObject[];
-    selectedClusterId: string;
+    clusters?: DelegatedRegistryCluster[];
+    selectedClusterId?: string;
     setSelectedClusterId: (newClusterId: string) => void;
 };
 
 function DelegatedScanningSettings({
     enabledFor,
     onChangeEnabledFor,
-    clusters,
+    clusters = [],
     selectedClusterId,
     setSelectedClusterId,
 }: DelegatedScanningSettingsProps) {

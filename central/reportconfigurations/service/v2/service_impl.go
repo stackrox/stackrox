@@ -8,7 +8,7 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reportconfigurations/service/common"
-	"github.com/stackrox/rox/central/reports/manager"
+	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/errox"
@@ -29,7 +29,7 @@ var (
 type serviceImpl struct {
 	apiV2.UnimplementedReportConfigurationServiceServer
 
-	manager             manager.Manager
+	scheduler           schedulerV2.Scheduler
 	reportConfigStore   datastore.DataStore
 	collectionDatastore collectionDS.DataStore
 	notifierDatastore   notifierDS.DataStore
@@ -73,10 +73,11 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 	if err != nil {
 		return nil, err
 	}
-	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
-	// if err := s.manager.Upsert(ctx, createdReportConfig); err != nil {
-	//	 return nil, err
-	// }
+
+	err = s.scheduler.UpsertReportSchedule(createdReportConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := convertProtoReportConfigurationToV2(createdReportConfig, s.collectionDatastore, s.notifierDatastore)
 	if err != nil {
@@ -95,12 +96,12 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 
 	protoReportConfig := convertV2ReportConfigurationToProto(request)
 
-	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
-	// if err := s.manager.Upsert(ctx, protoReportConfig); err != nil {
-	//	return nil, err
-	//}
-
 	err := s.reportConfigStore.UpdateReportConfiguration(ctx, protoReportConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.scheduler.UpsertReportSchedule(protoReportConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +174,6 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 		return nil, err
 	}
 
-	// TODO ROX-16567 : Integrate with report manager when new reporting is implemented
-	// return &v1.Empty{}, s.manager.Remove(ctx, id.GetId())
+	s.scheduler.RemoveReportSchedule(id.GetId())
 	return &apiV2.Empty{}, nil
 }

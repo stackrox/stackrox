@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory, useParams, Link, generatePath } from 'react-router-dom';
+import { useHistory, useParams, generatePath } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -21,14 +21,21 @@ import {
 } from '@patternfly/react-core';
 import { CaretDownIcon, DownloadIcon, HistoryIcon, HomeIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityReportPath, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
+import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
+import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
-import useDeleteModal from '../hooks/useDeleteModal';
+
+import { vulnerabilityReportPath } from '../pathsForVulnerabilityReporting';
 import DeleteReportModal from '../components/DeleteReportModal';
+import ReportParametersDetails from '../components/ReportParametersDetails';
+import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
+import ScheduleDetails from '../components/ScheduleDetails';
+import RunHistory from './RunHistory';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -101,6 +108,8 @@ function ViewVulnReportPage() {
         reportId: reportConfiguration.id,
     }) as string;
 
+    const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
+
     return (
         <>
             <PageTitle title="View vulnerability report" />
@@ -135,12 +144,13 @@ function ViewVulnReportPage() {
                             dropdownItems={[
                                 <DropdownItem
                                     key="Edit report"
-                                    component={
-                                        <Link to={`${vulnReportPageURL}?action=edit`}>
-                                            Edit report
-                                        </Link>
-                                    }
-                                />,
+                                    component="button"
+                                    onClick={() => {
+                                        history.push(`${vulnReportPageURL}?action=edit`);
+                                    }}
+                                >
+                                    Edit report
+                                </DropdownItem>,
                                 <DropdownSeparator key="separator" />,
                                 <DropdownItem
                                     key="Send report now"
@@ -158,12 +168,13 @@ function ViewVulnReportPage() {
                                 </DropdownItem>,
                                 <DropdownItem
                                     key="Clone report"
-                                    component={
-                                        <Link to={`${vulnReportPageURL}?action=clone`}>
-                                            Clone report
-                                        </Link>
-                                    }
-                                />,
+                                    component="button"
+                                    onClick={() => {
+                                        history.push(`${vulnReportPageURL}?action=clone`);
+                                    }}
+                                >
+                                    Clone report
+                                </DropdownItem>,
                                 <DropdownSeparator key="Separator" />,
                                 <DropdownItem
                                     key="Delete report"
@@ -181,21 +192,41 @@ function ViewVulnReportPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }} isCenterAligned>
-                <Tabs defaultActiveKey={0} aria-label="Report details tabs" role="region">
+            <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
+                <Tabs
+                    className="pf-u-background-color-100"
+                    defaultActiveKey={0}
+                    aria-label="Report details tabs"
+                    role="region"
+                >
                     <Tab
                         eventKey={0}
                         title={<TabTitle icon={<HomeIcon />}>Configuration details</TabTitle>}
                         aria-label="Configuration details tab"
                     >
-                        <div />
+                        <PageSection
+                            variant="light"
+                            padding={{ default: 'noPadding' }}
+                            className="pf-u-py-lg pf-u-px-lg"
+                        >
+                            <ReportParametersDetails formValues={reportFormValues} />
+                            <Divider component="div" className="pf-u-py-md" />
+                            <DeliveryDestinationsDetails formValues={reportFormValues} />
+                            <Divider component="div" className="pf-u-py-md" />
+                            <ScheduleDetails formValues={reportFormValues} />
+                        </PageSection>
                     </Tab>
                     <Tab
                         eventKey={1}
                         title={<TabTitle icon={<HistoryIcon />}>Run history</TabTitle>}
                         aria-label="Run history tab"
                     >
-                        <div />
+                        <PageSection
+                            padding={{ default: 'noPadding' }}
+                            className="pf-u-py-lg pf-u-px-lg"
+                        >
+                            <RunHistory reportId={reportId} />
+                        </PageSection>
                     </Tab>
                     <Tab
                         eventKey={2}

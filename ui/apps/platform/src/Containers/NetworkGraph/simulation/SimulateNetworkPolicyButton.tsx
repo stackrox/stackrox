@@ -27,7 +27,7 @@ function SimulateNetworkPolicyButton({ simulation, isDisabled }: SimulateNetwork
             isDisabled={isDisabled || simulation.isOn}
             onClick={enableNetworkPolicySimulation}
         >
-            Simulate network policy
+            Network policy generator
         </Button>
     );
 }

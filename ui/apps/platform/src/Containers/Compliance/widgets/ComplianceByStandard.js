@@ -14,43 +14,25 @@ import {
     CRITICAL_SEVERITY_COLOR,
     IMPORTANT_HIGH_SEVERITY_COLOR,
     MODERATE_MEDIUM_SEVERITY_COLOR,
-} from 'constants/visuals/colors';
+    noViolationsColor,
+} from 'constants/severityColors';
 import { COMPLIANCE_STANDARDS } from 'queries/standard';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
 
-const passColor = COMPLIANCE_PASS_COLOR;
-const warningColor = MODERATE_MEDIUM_SEVERITY_COLOR;
-const cautionColor = IMPORTANT_HIGH_SEVERITY_COLOR;
-const skippedColor = 'var(--base-400)'; // same as NAColor in ComplianceByControls
-const alertColor = CRITICAL_SEVERITY_COLOR;
+import { getColor } from './colorsForCompliance';
 
 const linkColor = 'var(--base-600)';
 const textColor = 'var(--base-600)';
 
-const getColor = (value) => {
-    if (value === 100) {
-        return passColor;
-    }
-    if (value >= 70) {
-        return warningColor;
-    }
-    if (value >= 50) {
-        return cautionColor;
-    }
-    if (Number.isNaN(value)) {
-        return skippedColor;
-    }
-    return alertColor;
-};
-
+// Consistent with getColor helper function.
 const sunburstLegendData = [
-    { title: '100%', color: passColor },
-    { title: '> 70%', color: warningColor },
-    { title: '> 50%', color: cautionColor },
-    { title: '< 50%', color: alertColor },
-    { title: 'Skipped', color: skippedColor },
+    { title: '100%', color: COMPLIANCE_PASS_COLOR },
+    { title: '> 70%', color: MODERATE_MEDIUM_SEVERITY_COLOR },
+    { title: '> 50%', color: IMPORTANT_HIGH_SEVERITY_COLOR },
+    { title: '< 50%', color: CRITICAL_SEVERITY_COLOR },
+    { title: 'Skipped', color: noViolationsColor },
 ];
 
 const processSunburstData = (match, location, data, standard) => {

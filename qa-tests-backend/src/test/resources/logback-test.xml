@@ -1,8 +1,7 @@
 <configuration>
-    <withJansi>true</withJansi>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%replace(%replace(%thread){"^(Time-limited test|Test worker)", ""}){"^(.*worker|Thread)-(\d+)", "thread-$2 | "}%d{HH:mm:ss} | %-5level | %-25logger{0} | %m%n%rEx{full,
+            <pattern>%d{HH:mm:ss} | %-5level | %-25.-25mdc{specification} | %-25.-25logger{0} | %m%n%rEx{full,
                 com.sun,
                 com.jayway.restassured.internal,
                 groovy.lang,
@@ -23,6 +22,41 @@
         </encoder>
     </appender>
 
+    <appender name="SPEC-FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+
+        <discriminator>
+            <key>logFileName</key>
+            <defaultValue>global</defaultValue>
+        </discriminator>
+
+        <sift>
+            <appender name="FILE-${logFileName}" class="ch.qos.logback.core.FileAppender">
+                <file>build/spec-logs/${logFileName}.log</file>
+
+                <encoder>
+                    <pattern>%d{HH:mm:ss} | %-5level | %-25.-25logger{0} | %m%n%rEx{full,
+                        com.sun,
+                        com.jayway.restassured.internal,
+                        groovy.lang,
+                        io.grpc.stub,
+                        io.fabric8.kubernetes.client.dsl.internal,
+                        java.base,
+                        java.lang,
+                        java.util.concurrent,
+                        okhttp3.internal,
+                        org.codehaus.groovy,
+                        org.gradle,
+                        org.junit.internal,
+                        org.spockframework,
+                        sun.reflect,
+                        worker.org.gradle,
+                    }
+                    </pattern>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
     <logger name="services" level="DEBUG"/>
     <logger name="orchestratormanager" level="DEBUG"/>
     <logger name="util" level="DEBUG"/>
@@ -33,5 +67,6 @@
     <!-- control the level of output here -->
     <root level="ERROR">
         <appender-ref ref="STDOUT"/>
+        <appender-ref ref="SPEC-FILE"/>
     </root>
 </configuration>

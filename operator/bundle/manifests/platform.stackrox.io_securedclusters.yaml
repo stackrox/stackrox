@@ -383,6 +383,20 @@ spec:
                       interfere with other workloads.
                     type: boolean
                 type: object
+              monitoring:
+                description: Monitoring configuration.
+                properties:
+                  openshift:
+                    description: OpenShiftMonitoring defines settings related to OpenShift
+                      Monitoring
+                    properties:
+                      enabled:
+                        default: false
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                type: object
               overlays:
                 description: Overlays
                 items:

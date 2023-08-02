@@ -11,7 +11,6 @@ import Widget from 'Components/Widget';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
-import ResourceTabs from 'Components/ResourceTabs';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
@@ -23,7 +22,9 @@ import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
+
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 function processData(data, entityId) {
     const defaultValue = {

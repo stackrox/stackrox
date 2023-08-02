@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/normalize"
-	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +29,7 @@ var (
 			if err != nil {
 				return err
 			}
-			if err := move(databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
+			if err := move(databases.DBCtx, databases.GormDB, databases.PostgresDB, legacyStore); err != nil {
 				return errors.Wrap(err,
 					"moving process_indicators from rocksdb to postgres")
 			}
@@ -42,10 +41,10 @@ var (
 	log       = loghelper.LogWrapper{}
 )
 
-func move(gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
-	ctx := sac.WithAllAccess(context.Background())
+func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {
 	store := pgStore.New(postgresDB)
 	pgutils.CreateTableFromModel(context.Background(), gormDB, frozenSchema.CreateTableProcessIndicatorsStmt)
+
 	var processIndicators []*storage.ProcessIndicator
 	err := walk(ctx, legacyStore, func(obj *storage.ProcessIndicator) error {
 		normalize.Indicator(obj)

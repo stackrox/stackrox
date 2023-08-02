@@ -2,13 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Flex, Title, Truncate } from '@patternfly/react-core';
 import { TableComposable, Tbody, Tr, Td } from '@patternfly/react-table';
-import { SecurityIcon } from '@patternfly/react-icons';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
+import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';
 import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
-import { violationsBasePath } from 'routePaths';
-import { severityColors } from 'constants/visuals/colors';
 import { getDateTime } from 'utils/dateUtils';
+import { violationsBasePath } from 'routePaths';
 import NoDataEmptyState from './NoDataEmptyState';
 
 export type MostRecentViolationsProps = {
@@ -45,13 +44,11 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                 name = <Truncate content={alert.resource.name} />;
                             }
 
+                            const PolicySeverityIcon = policySeverityIconMap[policy.severity];
                             return (
                                 <Tr key={id}>
                                     <Td className="pf-u-p-0" dataLabel="Severity icon">
-                                        <SecurityIcon
-                                            className="pf-u-display-inline"
-                                            color={severityColors[policy.severity]}
-                                        />
+                                        <PolicySeverityIcon className="pf-u-display-inline" />
                                     </Td>
                                     <Td dataLabel="Violation name">
                                         <Link to={`${violationsBasePath}/${id}`}>

@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     generateNameWithDate,
     getHelperElementByLabel,
@@ -590,11 +589,9 @@ describe('Notifier Integrations', () => {
 
             // Step 3, check valid form and save
             getInputByLabel('Receiver port').clear().type('1').blur();
-            if (hasFeatureFlag('ROX_SYSLOG_EXTRA_FIELDS')) {
-                cy.get('button:contains("Add new extra field")').click();
-                getInputByLabel('Key').type('vehicle');
-                getInputByLabel('Value').type('vanagon').blur();
-            }
+            cy.get('button:contains("Add new extra field")').click();
+            getInputByLabel('Key').type('vehicle');
+            getInputByLabel('Value').type('vanagon').blur();
 
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
