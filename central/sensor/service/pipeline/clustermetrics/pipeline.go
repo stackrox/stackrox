@@ -67,7 +67,7 @@ func (p *pipelineImpl) Run(
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.infoMetric.SetClusterMetrics(clusterID, clusterMetrics)
-	_ = p.usageStore.UpdateUsage(clusterID, clusterMetrics)
+	p.usageStore.UpdateUsage(clusterID, clusterMetrics)
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 	return nil
 }
