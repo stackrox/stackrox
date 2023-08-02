@@ -10,10 +10,10 @@ package storage;
 
 // Next Tag: 7
 message Blob {
-    string name                              = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Blob Name,hidden"'];
+    string name                              = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Blob Name"'];
     uint32 oid                               = 2;
     string checksum                          = 3;
-    int64  length                            = 4 [(gogoproto.moretags) = 'search:"Blob Length,hidden"'];
+    int64  length                            = 4 [(gogoproto.moretags) = 'search:"Blob Length"'];
     google.protobuf.Timestamp last_updated   = 5;
-    google.protobuf.Timestamp modified_time  = 6 [(gogoproto.moretags) = 'search:"Blob Modified On,hidden"'];
+    google.protobuf.Timestamp modified_time  = 6 [(gogoproto.moretags) = 'search:"Blob Modified On"'];
 }

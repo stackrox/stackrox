@@ -19,7 +19,7 @@ type searcherImpl struct {
 
 func (s *searcherImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
 	results, err := s.formattedSearcher.Search(ctx, q)
-	if err != nil || len(results) == 0 {
+	if err != nil {
 		return nil, err
 	}
 	ids := search.ResultsToIDs(results)
@@ -27,11 +27,7 @@ func (s *searcherImpl) SearchIDs(ctx context.Context, q *v1.Query) ([]string, er
 }
 
 func (s *searcherImpl) SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
-	blobs, err := s.storage.GetMetadataByQuery(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return blobs, nil
+	return s.storage.GetMetadataByQuery(ctx, q)
 }
 
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -48,6 +44,5 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	authSearcher := searchAuth.WithAuthFilter(searcher, resources.Administration)
-	scopedSafeSearcher := postgres.WithScoping(authSearcher)
-	return scopedSafeSearcher
+	return postgres.WithScoping(authSearcher)
 }

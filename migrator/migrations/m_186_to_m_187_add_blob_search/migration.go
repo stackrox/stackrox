@@ -76,7 +76,7 @@ func convert(db *gorm.DB) (err error) {
 	if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(afterSchema.CreateTableBlobsStmt.GormModel).Create(&convertedBlobs).Error; err != nil {
 		return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedBlobs))
 	}
-	log.Infof("Converted %d objects", count)
+	log.Infof("Converted %d blobs", count)
 	return nil
 }
 

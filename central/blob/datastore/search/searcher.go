@@ -27,9 +27,8 @@ type Searcher interface {
 
 // New returns a new instance of Searcher for the given storage and indexer.
 func New(blobStore store.Store, indexer index.Indexer) Searcher {
-	ds := &searcherImpl{
+	return &searcherImpl{
 		storage:           blobStore,
 		formattedSearcher: formatSearcher(indexer),
 	}
-	return ds
 }
