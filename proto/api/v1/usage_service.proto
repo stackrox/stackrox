@@ -9,37 +9,41 @@ import "google/protobuf/timestamp.proto";
 option go_package = "v1";
 
 message UsageRequest {
-  google.protobuf.Timestamp from = 1;
-  google.protobuf.Timestamp to = 2;
+    google.protobuf.Timestamp from = 1;
+    google.protobuf.Timestamp to   = 2;
 }
 
 message CurrentUsageResponse {
-  google.protobuf.Timestamp timestamp = 1;
+    google.protobuf.Timestamp timestamp = 1;
 
-  int64 num_nodes = 2;
-  int64 num_cpu_units = 3;
+    int64 num_nodes                     = 2;
+    int64 num_cpu_units                 = 3;
 }
 
 message MaxUsageResponse {
-  google.protobuf.Timestamp max_nodes_at = 1;
-  int64 max_nodes = 2;
-  google.protobuf.Timestamp max_cpu_units_at = 3;
-  int64 max_cpu_units = 4;
+    google.protobuf.Timestamp max_nodes_at     = 1;
+    int64 max_nodes                            = 2;
+    google.protobuf.Timestamp max_cpu_units_at = 3;
+    int64 max_cpu_units                        = 4;
 }
 
 service UsageService {
-  // GetCurrentUsage
-  //
-  // Returns current usage, with about 5 minutes precision.
-  rpc GetCurrentUsage(v1.Empty) returns (CurrentUsageResponse) {
-    option (google.api.http) = {get: "/v1/usage/current"};
-  }
+    // GetCurrentUsage
+    //
+    // Returns current usage, with about 5 minutes precision.
+    rpc GetCurrentUsage(v1.Empty) returns (CurrentUsageResponse) {
+        option (google.api.http) = {
+            get: "/v1/usage/current"
+        };
+    }
 
-  // GetMaxUsage
-  //
-  // Returns maximum, i.e. peak, usage for the given time frame together
-  // with the time when this maximum was observed.
-  rpc GetMaxUsage(UsageRequest) returns (MaxUsageResponse) {
-    option (google.api.http) = {get: "/v1/usage/max"};
-  }
+    // GetMaxUsage
+    //
+    // Returns maximum, i.e. peak, usage for the given time frame together
+    // with the time when this maximum was observed.
+    rpc GetMaxUsage(UsageRequest) returns (MaxUsageResponse) {
+        option (google.api.http) = {
+            get: "/v1/usage/max"
+        };
+    }
 }
