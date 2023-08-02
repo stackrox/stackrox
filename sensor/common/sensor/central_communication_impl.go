@@ -227,7 +227,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	if len(centralCaps) != 0 {
 		centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
 		log.Infof("Central responded with the following capabilities: [%s]",
-			strings.Join(centralCaps, ","))
+			strings.Join(centralCaps, ", "))
 	}
 
 	if hello.HelmManagedConfigInit != nil {

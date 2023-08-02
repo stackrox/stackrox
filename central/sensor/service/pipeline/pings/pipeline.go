@@ -29,7 +29,7 @@ func newPingPipeline() pipeline.Fragment {
 type pipelineImpl struct{}
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
-	return []centralsensor.CentralCapability{centralsensor.PingCap}
+	return []centralsensor.CentralCapability{centralsensor.ReceivePingCap}
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

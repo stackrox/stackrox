@@ -23,7 +23,7 @@ import "storage/image.proto";
 
 package central;
 
-// next available tag: 17
+// next available tag: 19
 message MsgFromSensor {
     string hash_key                                                     = 7;
     string dedupe_key                                                   = 8;
@@ -51,7 +51,7 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
-// next available tag: 25
+// next available tag: 26
 message MsgToSensor {
     oneof msg {
         SensorEnforcement              enforcement                        =  1;

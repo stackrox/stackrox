@@ -68,8 +68,8 @@ func (p *pingComponent) run() {
 		select {
 		case <-p.ticker.C:
 			// Since Start() is called before the initial sync between Central and Sensor has been finalized, we cannot
-			// get away with not initializing or stopping the ticker.
-			if centralcaps.Has(centralsensor.PingCap) {
+			// get away with not initializing nor stopping the ticker.
+			if centralcaps.Has(centralsensor.ReceivePingCap) {
 				log.Debug("Sending ping message to Central.")
 				p.responsesC <- message.New(&central.MsgFromSensor{
 					Msg: &central.MsgFromSensor_Ping{Ping: &central.SensorPing{}},

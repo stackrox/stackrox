@@ -52,7 +52,7 @@ func (NodeInventoryACK_Action) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_9d0a66b7b73dbb5d, []int{4, 0}
 }
 
-// next available tag: 17
+// next available tag: 19
 type MsgFromSensor struct {
 	HashKey           string `protobuf:"bytes,7,opt,name=hash_key,json=hashKey,proto3" json:"hash_key,omitempty"`
 	DedupeKey         string `protobuf:"bytes,8,opt,name=dedupe_key,json=dedupeKey,proto3" json:"dedupe_key,omitempty"`
@@ -605,7 +605,7 @@ func (m *ReprocessDeployments) Clone() *ReprocessDeployments {
 	return cloned
 }
 
-// next available tag: 25
+// next available tag: 26
 type MsgToSensor struct {
 	// Types that are valid to be assigned to Msg:
 	//	*MsgToSensor_Enforcement

@@ -61,8 +61,6 @@ func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
 		return p.processReprocessDeployment(msg.GetReprocessDeployment())
 	case msg.GetInvalidateImageCache() != nil:
 		return p.processInvalidateImageCache(msg.GetInvalidateImageCache())
-	case msg.GetPong() != nil:
-		log.Infof("Received Pong message from Central.")
 	}
 	return nil
 }

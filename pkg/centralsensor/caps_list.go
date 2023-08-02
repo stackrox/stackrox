@@ -42,6 +42,6 @@ const (
 )
 
 const (
-	// PingCap identifies the capability for a Central to receive ping messages.
-	PingCap CentralCapability = "CentralPing"
+	// ReceivePingCap identifies the capability for a Central to receive ping messages.
+	ReceivePingCap CentralCapability = "ReceivePingCap"
 )

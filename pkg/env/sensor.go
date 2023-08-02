@@ -43,6 +43,6 @@ var (
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
 	DelegatedScanningDisabled = RegisterBooleanSetting("ROX_DELEGATED_SCANNING_DISABLED", false)
 
-	// PingInterval defines in which interval Sensor should send ping messages to Central.
+	// PingInterval defines the time between each Sensor ping message to Central (in seconds).
 	PingInterval = registerDurationSetting("ROX_SENSOR_PING_INTERVAL", 30*time.Second)
 )
