@@ -27,10 +27,9 @@ func newPostgresGatherer(db postgres.DB, adminConfig *postgres.Config) *postgres
 // Gather returns telemetry information about the Postgres database used by this central
 func (d *postgresGatherer) Gather(ctx context.Context) *data.DatabaseStats {
 	errorList := errorhelpers.NewErrorList("postgres telemetry gather")
-
 	dbStats := globaldb.CollectPostgresStats(ctx, d.db)
 	dbStats.Type = "postgres"
-	
+
 	dbStats.DatabaseDetails = globaldb.CollectPostgresDatabaseSizes(d.adminConfig)
 
 	// Check Postgres remaining capacity
