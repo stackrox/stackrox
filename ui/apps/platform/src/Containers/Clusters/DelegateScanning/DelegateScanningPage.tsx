@@ -123,10 +123,66 @@ function DelegateScanningPage() {
         setDedicatedRegistryConfig(newState);
     }
 
-    function onChangeCluster(newClusterId) {
+    function onChangeDefaultCluster(newClusterId) {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
         newState.defaultClusterId = newClusterId;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function addRegistryRow() {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        newState.registries.push({ path: '', clusterId: delegatedRegistryConfig.defaultClusterId });
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function deleteRow(rowIndex) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        const newRegistries = delegatedRegistryConfig.registries.filter((_, i) => i !== rowIndex);
+
+        newState.registries = newRegistries;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function handlePathChange(rowIndex: number, value: string) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        const newRegistries = delegatedRegistryConfig.registries.map((registry, i) => {
+            if (i === rowIndex) {
+                return {
+                    path: value,
+                    clusterId: registry.clusterId,
+                };
+            }
+
+            return registry;
+        });
+
+        newState.registries = newRegistries;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function handleClusterChange(rowIndex: number, value: string) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        const newRegistries = delegatedRegistryConfig.registries.map((registry, i) => {
+            if (i === rowIndex) {
+                return {
+                    path: registry.path,
+                    clusterId: value,
+                };
+            }
+
+            return registry;
+        });
+
+        newState.registries = newRegistries;
 
         setDedicatedRegistryConfig(newState);
     }
@@ -208,10 +264,17 @@ function DelegateScanningPage() {
                                 onChangeEnabledFor={onChangeEnabledFor}
                                 clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
-                                setSelectedClusterId={onChangeCluster}
+                                setSelectedClusterId={onChangeDefaultCluster}
                             />
                             <DelegatedRegistriesList
                                 registries={delegatedRegistryConfig.registries}
+                                clusters={delegatedRegistryClusters}
+                                selectedClusterId={delegatedRegistryConfig.defaultClusterId}
+                                handlePathChange={handlePathChange}
+                                handleClusterChange={handleClusterChange}
+                                addRegistryRow={addRegistryRow}
+                                deleteRow={deleteRow}
+                                key="delegated-registries-list"
                             />
                         </>
                     )}
