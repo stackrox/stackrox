@@ -223,12 +223,13 @@ teardown() {
 }
 
 @test "roxctl-development connectivity-map generates empty connlist netpols blocks ingress connections from Routes" {
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-route.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/frontend-netpols.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-route.yaml"
-  run roxctl-development connectivity-map "${test_data}/np-guard/security-frontend-demo"
+  frontend_sec_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/frontend-security"
+  assert_file_exist "${frontend_sec_dir}/asset-cache-deployment.yaml"
+  assert_file_exist "${frontend_sec_dir}/asset-cache-route.yaml"
+  assert_file_exist "${frontend_sec_dir}/frontend-netpols.yaml"
+  assert_file_exist "${frontend_sec_dir}/webapp-deployment.yaml"
+  assert_file_exist "${frontend_sec_dir}/webapp-route.yaml"
+  run roxctl-development connectivity-map "${frontend_sec_dir}"
   assert_success
   # netpols deny connections between the existing deployments; and blocks ingress from external ips or ingress-controller
   # the output contains only WARN and INFO messages
@@ -237,26 +238,28 @@ teardown() {
   assert_output --partial 'Route resource frontend/asset-cache specified workload frontend/asset-cache[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload.'
 }
 
+# following const is used as the directory path of the next tests
+acs_security_demos_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/acs-security-demos"
 @test "roxctl-development connectivity-map generates connlist for acs-security-demo" {
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/catalog/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/notification/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/shipping/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/route.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/route.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/gateway/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/mastercard-processor/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/visa-processor/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/acs_netpols.yaml"
-  run roxctl-development connectivity-map "${test_data}/np-guard/acs-security-demos" 
+  assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/notification/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/shipping/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/gateway/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/mastercard-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/visa-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/acs_netpols.yaml"
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" 
   assert_success
   
   echo "$output" > "$ofile"
@@ -279,25 +282,25 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
 }
 
 @test "roxctl-development connectivity-map generates connlist for acs-security-demo md format" {
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/catalog/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/checkout/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/notification/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/recommendation/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/reports/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/backend/shipping/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/asset-cache/route.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/configmap.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/frontend/webapp/route.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/gateway/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/mastercard-processor/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/payments/visa-processor/deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/acs-security-demos/acs_netpols.yaml"
-  run roxctl-development connectivity-map "${test_data}/np-guard/acs-security-demos" --output-format=md
+  assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/notification/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/shipping/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/gateway/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/mastercard-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/visa-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/acs_netpols.yaml"
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" --output-format=md
   assert_success
   
   echo "$output" > "$ofile"
