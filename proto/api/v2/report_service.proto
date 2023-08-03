@@ -13,7 +13,7 @@ import "api/v2/user.proto";
 package v2;
 
 message GetReportHistoryRequest {
-    string   report_config_id  = 1;
+    string   id                 = 1;
     RawQuery report_param_query = 2;
 }
 
@@ -98,7 +98,7 @@ service ReportService {
     // GetReportHistory returns the full history for a report configuration with the specified ID.
     rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
         option (google.api.http) = {
-            get: "/v2/reports/history/{report_config_id}"
+            get: "/v2/reports/configurations/{id}/history"
         };
     }
 
