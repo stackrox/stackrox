@@ -49,6 +49,11 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 			EnvVar:  env.ActiveVulnMgmt.EnvVar(),
 			Enabled: env.ActiveVulnMgmt.BooleanSetting(),
 		},
+		{
+			Name:    "Vulnerability Reporting Enhancements",
+			EnvVar:  env.VulnReportingEnhancements.EnvVar(),
+			Enabled: env.VulnReportingEnhancements.BooleanSetting(),
+		},
 	}
 	resp.FeatureFlags = append(resp.FeatureFlags, extraFlags...)
 	sort.Slice(resp.FeatureFlags, func(i, j int) bool {
