@@ -123,7 +123,7 @@ func (s *ReportConfigurationServiceTestSuite) TestUpdateReportConfiguration() {
 	}
 }
 
-func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
+func (s *ReportConfigurationServiceTestSuite) TestListReportConfigurations() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {
 		desc      string
@@ -153,7 +153,7 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.GetReportConfigurationsResponse{
+			expectedResp := &apiV2.ListReportConfigurationsResponse{
 				ReportConfigs: []*apiV2.ReportConfiguration{fixtures.GetValidV2ReportConfigWithMultipleNotifiers()},
 			}
 
@@ -164,7 +164,7 @@ func (s *ReportConfigurationServiceTestSuite) TestGetReportConfigurations() {
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[1])
 			s.mockGetCollectionCall(expectedResp.ReportConfigs[0])
 
-			configs, err := s.service.GetReportConfigurations(allAccessContext, tc.query)
+			configs, err := s.service.ListReportConfigurations(allAccessContext, tc.query)
 			s.NoError(err)
 			s.Equal(expectedResp, configs)
 		})

@@ -103,6 +103,8 @@ get_spec_log_url() {
     url="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/origin-ci-test"
     if is_in_PR_context; then
         url="${url}/pr-logs/pull/stackrox_stackrox/${PULL_NUMBER}"
+    else
+        url="${url}/logs"
     fi
     url="${url}/${JOB_NAME}/${BUILD_ID}/artifacts/${JOB_NAME_SAFE}/stackrox-e2e/artifacts"
     url="${url}/${log##"${ARTIFACT_DIR}"/}"

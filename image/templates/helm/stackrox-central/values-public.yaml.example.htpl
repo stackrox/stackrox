@@ -133,7 +133,7 @@
 #     - effect: NoExecute
 #       key: infra
 #       value: reserved
-#   
+#
 #   If scheduling needs specific affinities, you can specify the corresponding affinities here.
 #   affinity:
 #     nodeAffinity:
@@ -531,3 +531,8 @@
 # # the default "stackrox-central-services". This has been observed to work in some cases,
 # # but is not generally supported.
 # allowNonstandardReleaseName: false
+
+# monitoring:
+#   # Enables integration with OpenShift platform monitoring.
+#   openshift:
+#     enabled: true

@@ -364,6 +364,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// suddenly broke.
 		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+		// Reset the exponential back-off if the connection successes
+		exponential.Reset()
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {

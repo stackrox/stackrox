@@ -44,6 +44,7 @@ type DispatcherRegistry interface {
 	ForServiceAccounts() Dispatcher
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
+	ForRegistryMirrors() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -89,6 +90,7 @@ func NewDispatcherRegistry(
 		nodeDispatcher:            newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:  newServiceAccountDispatcher(serviceAccountStore),
 		clusterOperatorDispatcher: newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
+		osRegistryMirrorDispather: newRegistryMirrorDispatcher(),
 
 		traceWriter: traceWriter,
 
@@ -113,6 +115,7 @@ type registryImpl struct {
 	nodeDispatcher            *nodeDispatcher
 	serviceAccountDispatcher  *serviceAccountDispatcher
 	clusterOperatorDispatcher *clusterOperatorDispatcher
+	osRegistryMirrorDispather *registryMirrorDispatcher
 	traceWriter               io.Writer
 
 	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
@@ -295,4 +298,8 @@ func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorScanDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForRegistryMirrors() Dispatcher {
+	return wrapDispatcher(d.osRegistryMirrorDispather, d.traceWriter)
 }

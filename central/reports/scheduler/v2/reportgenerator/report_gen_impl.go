@@ -387,8 +387,10 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
 		return
 	}
-	log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
-	req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
+	if reportErr != nil {
+		log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
+		req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
+	}
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
 	err := rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_FAILURE)
 	if err != nil {

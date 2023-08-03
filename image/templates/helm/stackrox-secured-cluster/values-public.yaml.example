@@ -460,3 +460,8 @@
 #    # can be used in conjunction with both data obtained from the API server, or data set
 #    # via `overrideAPIResources`.
 #    extraAPIResources: []
+#
+#monitoring:
+#  # Enables integration with OpenShift platform monitoring.
+#  openshift:
+#    enabled: true

@@ -20,8 +20,8 @@ import { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 
-import WidgetCard from './WidgetCard';
 import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';

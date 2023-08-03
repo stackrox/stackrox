@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -46,7 +47,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_SETTINGS, "complianceoperatorscansettingv2", (*storage.ComplianceOperatorScanSettingV2)(nil)))
-		RegisterTable(schema, CreateTableComplianceOperatorScanSettingV2Stmt)
+		RegisterTable(schema, CreateTableComplianceOperatorScanSettingV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_SETTINGS, schema)
 		return schema
 	}()

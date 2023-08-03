@@ -65,7 +65,7 @@ const routeComponentMap: Record<string, ElementType> = {
     [collectionsPath]: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
     [compliancePath]: asyncComponent(() => import('Containers/Compliance/Page')),
     [complianceEnhancedBasePath]: asyncComponent(
-        () => import('Containers/ComplianceEnhanced/CompliancePage')
+        () => import('Containers/ComplianceEnhanced/Dashboard/ComplianceDashboardPage')
     ),
     [configManagementPath]: asyncComponent(() => import('Containers/ConfigManagement/Page')),
     [dashboardPath]: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),

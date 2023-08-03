@@ -43,7 +43,7 @@ message ReportSnapshot {
     ReportStatus                    report_status               = 8;
     repeated NotifierConfiguration  notifiers                   = 9;
     SlimUser                        user                        = 10;
-    bool                            download_available          = 11;
+    bool                            is_download_available       = 11;
 }
 
 message ReportStatus {

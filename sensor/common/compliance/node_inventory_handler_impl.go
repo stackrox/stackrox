@@ -76,6 +76,7 @@ func (c *nodeInventoryHandlerImpl) Stop(_ error) {
 }
 
 func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReady.Signal()

@@ -29,7 +29,7 @@ var (
 
 		// V2 API authorization
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v2.ReportConfigurationService/GetReportConfigurations",
+			"/v2.ReportConfigurationService/ListReportConfigurations",
 			"/v2.ReportConfigurationService/GetReportConfiguration",
 			"/v2.ReportConfigurationService/CountReportConfigurations",
 		},

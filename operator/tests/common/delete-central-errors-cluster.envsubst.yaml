@@ -26,3 +26,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: stackrox-${NAMESPACE}-scanner-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-central-auth-reader-${NAMESPACE}
+  namespace: kube-system
