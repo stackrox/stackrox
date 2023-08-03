@@ -161,7 +161,7 @@ export function fetchReportConfiguration(reportId: string): Promise<ReportConfig
 
 export function fetchReportStatus(id: string): Promise<ReportStatus | null> {
     return axios
-        .get<{ status: ReportStatus | null }>(`/v2/reports/status/${id}`)
+        .get<{ status: ReportStatus | null }>(`/v2/reports/${id}/status`)
         .then((response) => {
             return response.data?.status;
         });
