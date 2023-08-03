@@ -265,6 +265,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		m.resetContext()

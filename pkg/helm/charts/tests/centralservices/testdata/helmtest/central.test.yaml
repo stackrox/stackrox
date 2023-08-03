@@ -17,6 +17,9 @@ values:
     dbServiceTLS:
       cert: ""
       key: ""
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - name: "central with default settings"
   expect: |

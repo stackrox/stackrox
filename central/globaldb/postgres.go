@@ -217,11 +217,17 @@ func CollectPostgresStats(ctx context.Context, db postgres.DB) *stats.DatabaseSt
 // CollectPostgresDatabaseSizes -- collect database sizing stats for Postgres
 func CollectPostgresDatabaseSizes(postgresConfig *postgres.Config) []*stats.DatabaseDetailsStats {
 	detailsSlice := make([]*stats.DatabaseDetailsStats, 0)
+	var databases []string
+	var err error
 
-	databases, err := pgadmin.GetAllDatabases(postgresConfig)
-	if err != nil {
-		log.Errorf("unable to get the databases: %v", err)
-		return detailsSlice
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		databases, err = pgadmin.GetAllDatabases(postgresConfig)
+		if err != nil {
+			log.Errorf("unable to get the databases: %v", err)
+			return detailsSlice
+		}
+	} else {
+		databases = append(databases, postgresConfig.ConnConfig.Database)
 	}
 
 	for _, database := range databases {
@@ -250,15 +256,15 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 		metrics.PostgresDBSize.With(databaseLabel).Set(float64(dbStat.DatabaseSize))
 	}
 
-	totalSize, err := pgadmin.GetTotalPostgresSize(postgresConfig)
-	if err != nil {
-		log.Errorf("error fetching total database size: %v", err)
-		return
-	}
-	metrics.PostgresTotalSize.Set(float64(totalSize))
-
-	// Check Postgres remaining capacity
 	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		totalSize, err := pgadmin.GetTotalPostgresSize(postgresConfig)
+		if err != nil {
+			log.Errorf("error fetching total database size: %v", err)
+			return
+		}
+		metrics.PostgresTotalSize.Set(float64(totalSize))
+
+		// Check Postgres remaining capacity
 		availableDBBytes, err := pgadmin.GetRemainingCapacity(postgresConfig)
 		if err != nil {
 			if !loggedCapacityCalculationError {
@@ -330,22 +336,6 @@ func getMaxConnections(ctx context.Context, db postgres.DB) {
 	}
 
 	metrics.PostgresMaximumConnections.Set(float64(connectionCount))
-}
-
-func processConnectionCountRow(metric *prometheus.GaugeVec, rows *postgres.Rows) {
-	for rows.Next() {
-		var (
-			databaseName    string
-			connectionCount int
-		)
-		if err := rows.Scan(&databaseName, &connectionCount); err != nil {
-			log.Errorf("error scanning row for connection data: %v", err)
-			return
-		}
-
-		databaseLabel := prometheus.Labels{"database": databaseName}
-		metric.With(databaseLabel).Set(float64(connectionCount))
-	}
 }
 
 func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig *postgres.Config) {

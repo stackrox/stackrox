@@ -1,3 +1,7 @@
+values:
+  monitoring:
+    openshift:
+      enabled: false
 server:
   visibleSchemas:
   - openshift-4.1.0

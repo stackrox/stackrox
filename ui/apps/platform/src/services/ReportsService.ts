@@ -98,9 +98,54 @@ export function runReport(reportId: string): Promise<Empty> {
 
 // The following functions are built around the new VM Reporting Enhancements
 
-export function fetchReportConfigurations(): Promise<ReportConfiguration[]> {
+// @TODO: Same logic is used in fetchReportConfigurations. Maybe consider something more DRY
+export function fetchReportConfigurationsCount({
+    query,
+    page,
+    perPage,
+}: {
+    query: string;
+    page: number;
+    perPage: number;
+}): Promise<{ count: number }> {
+    const params = queryString.stringify(
+        {
+            query,
+            pagination: {
+                limit: perPage,
+                offset: page - 1,
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
     return axios
-        .get<{ reportConfigs: ReportConfiguration[] }>('/v2/reports/configurations')
+        .get<{ count: number }>(`/v2/reports/configuration-count?${params}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function fetchReportConfigurations({
+    query,
+    page,
+    perPage,
+}: {
+    query: string;
+    page: number;
+    perPage: number;
+}): Promise<ReportConfiguration[]> {
+    const params = queryString.stringify(
+        {
+            query,
+            pagination: {
+                limit: perPage,
+                offset: page - 1,
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<{ reportConfigs: ReportConfiguration[] }>(`/v2/reports/configurations?${params}`)
         .then((response) => {
             return response?.data?.reportConfigs ?? [];
         });

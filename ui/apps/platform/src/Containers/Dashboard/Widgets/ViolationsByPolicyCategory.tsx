@@ -15,10 +15,10 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { PolicySeverity } from 'types/policy.proto';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import useAlertGroups from '../hooks/useAlertGroups';
-import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
 import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';

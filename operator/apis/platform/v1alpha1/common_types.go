@@ -199,3 +199,23 @@ const (
 	// ExposeEndpointDisabled means that component should not expose monitoring port.
 	ExposeEndpointDisabled ExposeEndpoint = "Disabled"
 )
+
+// GlobalMonitoring defines settings related to global monitoring. Contrary to
+// `Monitoring`, the corresponding Helm flag lives in the global scope `.monitoring`.
+type GlobalMonitoring struct {
+	OpenShiftMonitoring *OpenShiftMonitoring `json:"openshift,omitempty"`
+}
+
+// OpenShiftMonitoring defines settings related to OpenShift Monitoring
+type OpenShiftMonitoring struct {
+	//+kubebuilder:validation:Default=true
+	//+kubebuilder:default=true
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled bool `json:"enabled"`
+}
+
+// IsOpenShiftMonitoringEnabled returns true if OpenShiftMonitoring is enabled.
+// This function is nil safe.
+func (m *GlobalMonitoring) IsOpenShiftMonitoringEnabled() bool {
+	return m != nil && m.OpenShiftMonitoring != nil && m.OpenShiftMonitoring.Enabled
+}

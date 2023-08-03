@@ -1,0 +1,41 @@
+name: Build and push Scanner images
+
+on:
+  workflow_call:
+  push:
+    tags:
+    - '*-nightly-*'
+    branches:
+    - master
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.59
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Build Scanner and ScannerDB images
+      run: make -C scanner images
+
+# TODO: Push Scanner and ScannerDB images

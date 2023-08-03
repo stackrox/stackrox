@@ -106,7 +106,7 @@ message EmailNotifierConfiguration  {
     repeated string        mailing_lists  = 2;
 }
 
-message GetReportConfigurationsResponse {
+message ListReportConfigurationsResponse {
     repeated ReportConfiguration report_configs = 1;
 }
 
@@ -133,7 +133,7 @@ service ReportConfigurationService {
     }
 
     // ListReportConfigurations returns report configurations matching given query
-    rpc GetReportConfigurations (RawQuery) returns (GetReportConfigurationsResponse) {
+    rpc ListReportConfigurations (RawQuery) returns (ListReportConfigurationsResponse) {
         option (google.api.http) = {
             get: "/v2/reports/configurations"
         };
