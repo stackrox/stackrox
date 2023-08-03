@@ -110,6 +110,7 @@ func run() error {
 
 func dbCheck(source map[string]string, adminConfig *postgres.Config) error {
 	// Create the central database if necessary
+	log.WriteToStderrf("checking if the database %q exists", pgconfig.GetActiveDB())
 	exists, err := pgadmin.CheckIfDBExists(adminConfig, pgconfig.GetActiveDB())
 	if err != nil {
 		log.WriteToStderrf("Could not check for central database: %v", err)
