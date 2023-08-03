@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message EventsResponse {
+    repeated Event events      = 1;
+    Pagination     pagination  = 2;
+}
+
+message GetEventsRequest {
+    google.protobuf.Timestamp from      = 1;
+    map<string, string> labels_to_match = 2;
+}
+
+// Events are emitted by Central. They are used to create transparency for users
+// for asynchronous, background tasks.
+// Currently, events only cover logs emitted by Central.
+message Event {
+    // UUID of the event.
+    string id                            = 1;
+
+    // Message associated with the event. The message may include detailed information
+    // as well as potential actions that can be taken for this particular event.
+    string message                       = 2;
+
+    // Contain labels associated with the event. Labels may contain information such as:
+    // - the specific component where the event was created.
+    // - additional metadata associated with the event (e.g. in case of an event related
+    //   to images, the image reference).
+    map<string, string> labels           = 3;
+
+    // Specifies the time the event has been created.
+    google.protobuf.Timestamp created_at = 4;
+}
+
+service EventService {
+    // GetEvents returns the list of events. The events may be filtered by
+    // timestamp or labels.
+    rpc GetEvents(GetEventsRequest) returns (EventsResponse) {
+        option (google.api.http) = {
+            get: "/v1/events"
+        };
+    }
+
+    // GetEvent retrieves an event by ID.
+    rpc GetEvent(ResourceByID) returns (Event) {
+        option(google.api.http) = {
+            get: "/v1/events/{id}"
+        };
+    }
+}
