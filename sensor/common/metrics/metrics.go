@@ -3,6 +3,8 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/branding"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
@@ -148,9 +150,11 @@ var (
 	})
 
 	telemetryLabels = prometheus.Labels{
-		"sensor_version": version.GetMainVersion(),
+		"branding":       branding.GetProductNameShort(),
+		"build":          buildinfo.BuildFlavor,
 		"hosting":        getHosting(),
 		"install_method": env.InstallMethod.Setting(),
+		"sensor_version": version.GetMainVersion(),
 	}
 	telemetrySecuredNodes = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
