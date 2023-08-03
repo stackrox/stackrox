@@ -11,8 +11,8 @@ import (
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -36,13 +36,13 @@ type serviceImpl struct {
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		apiV2.RegisterReportConfigurationServiceServer(grpcServer, s)
 	}
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		return apiV2.RegisterReportConfigurationServiceHandler(ctx, mux, conn)
 	}
 	return nil
