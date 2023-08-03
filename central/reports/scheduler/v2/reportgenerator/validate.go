@@ -28,9 +28,6 @@ func ValidateReportRequest(request *ReportRequest) error {
 		if request.ReportSnapshot.ReportStatus == nil {
 			errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
 		}
-		if request.ReportSnapshot.GetReportId() == "" {
-			errorList.AddError(errors.New("Report ID is empty"))
-		}
 		if request.ReportConfig.GetId() != request.ReportSnapshot.GetReportConfigurationId() {
 			errorList.AddError(errors.New("Mismatch between report config ids in ReportConfig and ReportSnapshot"))
 		}
