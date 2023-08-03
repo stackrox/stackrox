@@ -113,13 +113,18 @@ setup_deployment_env() {
         ci_export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
     fi
 
-    ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
-    ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
+    REGISTRY_USERNAME="$QUAY_RHACS_ENG_RO_USERNAME"
+    REGISTRY_PASSWORD="$QUAY_RHACS_ENG_RO_PASSWORD"
     if [[ "$REGISTRY" =~ ^brew.registry.redhat.io ]]; then
         ci_export MAIN_IMAGE_TAG "1.0.0"
+        REGISTRY_USERNAME="$REDHAT_USERNAME"
+        REGISTRY_PASSWORD="$REDHAT_PASSWORD"
     elif [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
         ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
+
+    ci_export REGISTRY_USERNAME "$REGISTRY_USERNAME"
+    ci_export REGISTRY_PASSWORD "$REGISTRY_PASSWORD"
 
     if [[ "$REGISTRY" =~ ^brew.registry.redhat.io ]]; then
         ci_export MAIN_IMAGE_REPO "${REGISTRY}/rhacs-main"
