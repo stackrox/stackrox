@@ -476,6 +476,8 @@ jobs:
       if: matrix.name == 'race-condition-debug'
       run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
+    - uses: ./.github/actions/handle-tagged-build
+
     - name: Build and push manifest lists
       # Skip for external contributions.
       if: |
