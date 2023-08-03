@@ -248,7 +248,7 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 
 	if !exists {
 		// If the blob does not exist, report error.
-		return nil, errors.Wrapf(errox.InvariantViolation, "Report data not found")
+		return nil, errors.Errorf("Report is not available to download for job %q", req.GetReportJobId())
 	}
 
 	return &apiV2.DownloadReportResponse{Data: buf.Bytes()}, nil
