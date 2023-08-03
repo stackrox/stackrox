@@ -648,12 +648,18 @@ wait_for_api() {
 
     info "Central deployment is ready."
     info "Waiting for Central API endpoint"
-    API_HOSTNAME=localhost
-    API_PORT=8000
-    LOAD_BALANCER="${LOAD_BALANCER:-}"
-    if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-        API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
+
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        API_HOSTNAME=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host')
         API_PORT=443
+    else
+        API_HOSTNAME=localhost
+        API_PORT=8000
+        LOAD_BALANCER="${LOAD_BALANCER:-}"
+        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
+            API_PORT=443
+        fi
     fi
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"
