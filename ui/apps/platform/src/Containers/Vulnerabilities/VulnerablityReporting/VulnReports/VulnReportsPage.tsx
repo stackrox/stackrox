@@ -25,21 +25,22 @@ import {
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
+import isEmpty from 'lodash/isEmpty';
 
+import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportsPath } from 'routePaths';
+import useURLPagination from 'hooks/useURLPagination';
+import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
+import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-
-import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
-import usePagination from 'hooks/patternfly/usePagination';
-import { vulnerabilityReportPath } from '../pathsForVulnerabilityReporting';
+import useURLSearch from 'hooks/useURLSearch';
 import HelpIconTh from './HelpIconTh';
 import LastRunStatusState from './LastRunStatusState';
 import LastRunState from './LastRunState';
-import useDeleteModal from '../hooks/useDeleteModal';
 import DeleteReportModal from '../components/DeleteReportModal';
 
 const CreateReportsButton = () => {
@@ -49,6 +50,8 @@ const CreateReportsButton = () => {
         </Link>
     );
 };
+
+const reportNameSearchKey = 'Report Name';
 
 function VulnReportsPage() {
     const history = useHistory();
@@ -64,9 +67,11 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const [searchValue, setSearchValue] = useState('');
-    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
-    const [query, setQuery] = useState('');
+    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const [searchValue, setSearchValue] = useState(() => {
+        return (searchFilter?.[reportNameSearchKey] as string) || '';
+    });
 
     const {
         reports,
@@ -75,7 +80,7 @@ function VulnReportsPage() {
         error: fetchError,
         fetchReports,
     } = useFetchReports({
-        query,
+        searchFilter,
         page,
         perPage,
     });
@@ -138,11 +143,11 @@ function VulnReportsPage() {
                                             onChange={(_event, value) => setSearchValue(value)}
                                             onSearch={(_event, value) => {
                                                 setSearchValue(value);
-                                                setQuery(`Report Name:${value}`);
+                                                setSearchFilter({ [reportNameSearchKey]: value });
                                             }}
                                             onClear={() => {
                                                 setSearchValue('');
-                                                setQuery('');
+                                                setSearchFilter({});
                                             }}
                                         />
                                     </ToolbarItem>
@@ -154,8 +159,10 @@ function VulnReportsPage() {
                                             itemCount={totalReports}
                                             page={page}
                                             perPage={perPage}
-                                            onSetPage={onSetPage}
-                                            onPerPageSelect={onPerPageSelect}
+                                            onSetPage={(_, newPage) => setPage(newPage)}
+                                            onPerPageSelect={(_, newPerPage) =>
+                                                setPerPage(newPerPage)
+                                            }
                                             isCompact
                                         />
                                     </ToolbarItem>
@@ -195,7 +202,7 @@ function VulnReportsPage() {
                                             <Td />
                                         </Tr>
                                     </Thead>
-                                    {reports.length === 0 && query === '' && (
+                                    {reports.length === 0 && isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={4}>
@@ -228,7 +235,7 @@ function VulnReportsPage() {
                                             </Tr>
                                         </Tbody>
                                     )}
-                                    {reports.length === 0 && query !== '' && (
+                                    {reports.length === 0 && !isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={8}>
@@ -257,7 +264,7 @@ function VulnReportsPage() {
                                                                             variant="link"
                                                                             onClick={() => {
                                                                                 setSearchValue('');
-                                                                                setQuery('');
+                                                                                setSearchFilter({});
                                                                             }}
                                                                         >
                                                                             Clear filter

@@ -9,11 +9,12 @@ import {
 } from 'services/ReportsService';
 
 import { ReportStatus } from 'services/ReportsService.types';
+import { SearchFilter } from 'types/search';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
 
 export type UseFetchReportsProps = {
-    query: string;
+    searchFilter: SearchFilter;
     page: number;
     perPage: number;
 };
@@ -36,7 +37,17 @@ const defaultResult = {
     error: null,
 };
 
-function useFetchReports({ query, page, perPage }: UseFetchReportsProps): FetchReportsResult {
+export function getRequestQueryString(searchFilter: SearchFilter): string {
+    return Object.entries(searchFilter)
+        .map(([key, val]) => `${key}:${Array.isArray(val) ? val.join(',') : val ?? ''}`)
+        .join('+');
+}
+
+function useFetchReports({
+    searchFilter,
+    page,
+    perPage,
+}: UseFetchReportsProps): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
     const fetchReports = useCallback(async () => {
@@ -49,12 +60,12 @@ function useFetchReports({ query, page, perPage }: UseFetchReportsProps): FetchR
 
         try {
             const reportConfigurations = await fetchReportConfigurations({
-                query,
+                query: getRequestQueryString(searchFilter),
                 page,
                 perPage,
             });
             const { count: totalReports } = await fetchReportConfigurationsCount({
-                query,
+                query: getRequestQueryString(searchFilter),
                 page,
                 perPage,
             });
@@ -92,11 +103,11 @@ function useFetchReports({ query, page, perPage }: UseFetchReportsProps): FetchR
                 error: getErrorMessage(error),
             });
         }
-    }, [query, page, perPage]);
+    }, [searchFilter, page, perPage]);
 
     useEffect(() => {
         void fetchReports();
-    }, [fetchReports, query, page, perPage]);
+    }, [fetchReports, searchFilter, page, perPage]);
 
     return {
         ...result,
