@@ -530,9 +530,13 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 				s.Fail("Must not receive messages to central in offline mode")
 			}
 		case <-time.After(500 * time.Millisecond):
-			s.T().Logf("Haven't received anything for 500ms on centralC (state: %s)", state)
+			s.T().Logf("Timeout waiting for a message on centralC (state: %s)", state)
 			if state == common.SensorComponentEventCentralReachable {
 				s.Fail("CentralC msg didn't arrive within deadline")
+				// The message was sent, so we must wait until it finally arrives,
+				// otherwise the next iteration may receive it
+				s.T().Logf("Timeout happened on %s state, so we must wait for the message", state)
+				<-centralC
 			}
 		}
 
