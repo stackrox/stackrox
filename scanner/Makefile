@@ -8,7 +8,6 @@ export PATH
 SILENT ?= @
 
 SHELL = /bin/bash
-BASE_DIR = $(CURDIR)
 
 TAG := # make sure tag is never injectable as an env var
 
@@ -21,11 +20,8 @@ endif
 endif
 
 ifeq ($(TAG),)
-	TAG = $(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+	TAG = $(shell $(MAKE) -C ../ tag)
 endif
-
-GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION | cut -c 3-)
-BUILD_IMAGE := docker.io/library/golang:$(shell echo ${GO_VERSION})
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
@@ -45,14 +41,6 @@ endif
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd/scanner
-
-comma:= ,
-empty:=
-space:= $(empty) $(empty)
-
-LOCAL_VOLUME_ARGS := -v $(CURDIR):/src:delegated -v $(GOPATH):/go:delegated
-GOPATH_WD_OVERRIDES := -w /src
-IMAGE_BUILD_FLAGS := -e $(subst $(space),$(comma),$(BUILD_FLAGS)),GOPATH=/go
 
 ###############################################################
 ###### Binaries we depend on (need to be defined on top) ######
@@ -104,14 +92,6 @@ db-image:
 ## Tests ##
 ###########
 
-####################
-## Generated Srcs ##
-####################
-
-###########
-## Style ##
-###########
-
 ###########
 ## Tools ##
 ###########
@@ -129,8 +109,8 @@ ifdef CI
 		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
 		exit 1 ; \
 	}
-	go mod verify
 endif
+	$(SILENT)go mod verify
 	$(SILENT)touch deps
 
 .PHONY: ossls-notice
@@ -139,12 +119,11 @@ ossls-notice: deps $(OSSLS_BIN)
 	$(SILENT)$(OSSLS_BIN) version
 	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
 
+SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 .PHONY: copy-scripts
-copy-scripts: ../image/rhel/static-bin/restore-all-dir-contents ../image/rhel/static-bin/import-additional-cas ../image/rhel/static-bin/save-dir-contents
+copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	$(SILENT)echo "+ $@"
-	$(SILENT)cp ../image/rhel/static-bin/restore-all-dir-contents image/scanner/scripts
-	$(SILENT)cp ../image/rhel/static-bin/import-additional-cas image/scanner/scripts
-	$(SILENT)cp ../image/rhel/static-bin/save-dir-contents image/scanner/scripts
+	$(SILENT)cp $^ image/scanner/scripts
 
 ###########
 ## Clean ##

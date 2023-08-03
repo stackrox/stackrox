@@ -1,4 +1,4 @@
-name: Build and Push Scanner
+name: Build and push Scanner images
 
 on:
   workflow_call:
