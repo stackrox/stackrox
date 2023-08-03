@@ -2,7 +2,6 @@ package userpki
 
 import (
 	"context"
-	"time"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -13,14 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-const (
-	cacheSize          = 500
-	rateLimitFrequency = 5 * time.Minute
-	logBurstSize       = 5
-)
-
 var (
-	log = logging.NewRateLimitLogger(logging.LoggerForModule(), cacheSize, 1, rateLimitFrequency, logBurstSize)
+	log = logging.LoggerForModule()
 )
 
 // NewExtractor returns an IdentityExtractor that will map identities based
@@ -80,7 +73,12 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			}
 			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
-				log.WarnL(ri.Hostname, "Token validation failed for hostname %v: %v", ri.Hostname, err)
+				logging.GetRateLimitedLogger().WarnL(
+					ri.Hostname,
+					"Token validation failed for hostname %v: %v",
+					ri.Hostname,
+					err,
+				)
 				return nil, err
 			}
 			identity.resolvedRoles = resolvedRoles

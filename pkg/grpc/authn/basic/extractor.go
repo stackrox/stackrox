@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -14,16 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
-)
-
-const (
-	cacheSize          = 500
-	rateLimitFrequency = 5 * time.Minute
-	logBurstSize       = 5
-)
-
-var (
-	log = logging.NewRateLimitLogger(logging.LoggerForModule(), cacheSize, 1, rateLimitFrequency, logBurstSize)
 )
 
 // Extractor is the identity extractor for the basic auth identity.
@@ -62,13 +51,18 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
-		log.WarnL(ri.Hostname, "failed to parse basic auth token from %q: %v", ri.Hostname, err)
+		logging.GetRateLimitedLogger().WarnL(
+			ri.Hostname,
+			"failed to parse basic auth token from %q: %v",
+			ri.Hostname,
+			err,
+		)
 		return nil, errors.New("failed to parse basic auth token")
 	}
 
 	id, err := e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
 	if errors.Is(err, errox.NotAuthorized) {
-		log.WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
+		logging.GetRateLimitedLogger().WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
 		return nil, err
 	}
 	return id, err
