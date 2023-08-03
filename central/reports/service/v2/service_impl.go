@@ -199,34 +199,56 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 
 func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadReportRequest) (*apiV2.DownloadReportResponse, error) {
 	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report id")
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report job id")
 	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
 	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", req.GetId())
 	}
+
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Report not found for id %s", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%s'.", req.GetId())
 	}
+
+	if slimUser.GetId() != rep.GetRequester().GetId() {
+		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be downloaded by a user who did not request the report.")
+	}
+
 	status := rep.GetReportStatus()
-
 	if status.GetReportNotificationMethod() != storage.ReportStatus_DOWNLOAD {
-		return nil, errors.Wrapf(errox.NotFound, "Report download is not requested for job id %q", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report download is not requested for job id %q", req.GetId())
 	}
 
+	if status.GetRunState() == storage.ReportStatus_FAILURE {
+		return nil, errors.Errorf("Report job %q has failed and hence no report to download", req.GetId())
+	}
 	if status.GetRunState() != storage.ReportStatus_SUCCESS {
-		return nil, errors.Wrapf(errox.NotFound, "Report job %q is not ready for download", req.GetId())
+		return nil, errors.Errorf("Report job %q is not ready for download", req.GetId())
 	}
 
+	// Fetch data
 	buf := bytes.NewBuffer(nil)
+
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)),
+	)
+
 	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(req.GetId(), rep.GetReportConfigurationId()), buf)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to fetch report data")
 	}
 
 	if !exists {
-		// If the blob does not exist, return no reader.
-		return nil, errors.Wrapf(errox.NotFound, "Report data not found")
+		// If the blob does not exist, report error.
+		return nil, errors.Wrapf(errox.InvariantViolation, "Report data not found")
 	}
 
 	return &apiV2.DownloadReportResponse{Data: buf.Bytes()}, nil

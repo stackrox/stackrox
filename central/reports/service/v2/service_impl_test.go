@@ -2,12 +2,14 @@ package v2
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	"github.com/pkg/errors"
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	reportConfigDSMocks "github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/common"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
@@ -453,4 +455,164 @@ func (suite *ReportServiceTestSuite) TestCancelReport() {
 			}
 		})
 	}
+}
+
+func (suite *ReportServiceTestSuite) TestDownloadReport() {
+	reportSnapshot := fixtures.GetReportSnapshot()
+	reportSnapshot.ReportId = uuid.NewV4().String()
+	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
+	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	user := reportSnapshot.GetRequester()
+	blob, blobData := fixtures.GetBlobWithData()
+
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
+
+	userContext := authn.ContextWithIdentity(suite.ctx, mockID, suite.T())
+	testCases := []struct {
+		desc    string
+		req     *apiV2.DownloadReportRequest
+		ctx     context.Context
+		mockGen func()
+		isError bool
+	}{
+		{
+			desc: "Empty Report ID",
+			req: &apiV2.DownloadReportRequest{
+				Id: "",
+			},
+			ctx:     userContext,
+			isError: true,
+		},
+		{
+			desc: "User info not present in context",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx:     suite.ctx,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Report ID not found",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(nil, false, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Download requester id and report requester user id mismatch",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.Requester = &storage.SlimUser{
+					Id:   reportSnapshot.Requester.Id + "-1",
+					Name: reportSnapshot.Requester.Name + "-1",
+				}
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Report was not generated",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Report is not ready yet",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Blob get error",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(reportSnapshot, true, nil).Times(1)
+				suite.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, errors.New(""))
+			},
+			isError: true,
+		},
+		{
+			desc: "Blob does not exist",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(reportSnapshot, true, nil).Times(1)
+				suite.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, nil)
+			},
+			isError: true,
+		},
+		{
+			desc: "Report downloaded",
+			req: &apiV2.DownloadReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(reportSnapshot, true, nil).Times(1)
+				suite.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
+					func(_ context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
+						c, err := writer.Write(blobData.Bytes())
+						suite.NoError(err)
+						suite.Equal(c, blobData.Len())
+						return blob, true, nil
+					})
+			},
+			isError: false,
+		},
+	}
+	for _, tc := range testCases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			if tc.mockGen != nil {
+				tc.mockGen()
+			}
+			response, err := suite.service.DownloadReport(tc.ctx, tc.req)
+			if tc.isError {
+				suite.Error(err)
+			} else {
+				suite.NoError(err)
+				suite.Equal(&apiV2.DownloadReportResponse{Data: blobData.Bytes()}, response)
+			}
+		})
+	}
+
 }
