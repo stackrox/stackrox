@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -158,15 +157,12 @@ storage type to apiV2 type conversions
 
 // convertProtoReportConfigurationToV2 converts storage.ReportConfiguration to v2.ReportConfiguration
 func convertProtoReportConfigurationToV2(config *storage.ReportConfiguration,
-	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore) (*apiV2.ReportConfiguration, error) {
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore) *apiV2.ReportConfiguration {
 	if config == nil {
-		return nil, nil
+		return nil
 	}
 
-	resourceScope, err := convertProtoResourceScopeToV2(config.GetResourceScope(), collectionDatastore)
-	if err != nil {
-		return nil, err
-	}
+	resourceScope := convertProtoResourceScopeToV2(config.GetResourceScope(), collectionDatastore)
 
 	ret := &apiV2.ReportConfiguration{
 		Id:            config.GetId(),
@@ -184,14 +180,13 @@ func convertProtoReportConfigurationToV2(config *storage.ReportConfiguration,
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		converted, err := ConvertProtoNotifierConfigToV2(notifier, notifierDatastore)
-		if err != nil {
-			return nil, err
+		converted := ConvertProtoNotifierConfigToV2(notifier, notifierDatastore)
+		if converted != nil {
+			ret.Notifiers = append(ret.Notifiers, converted)
 		}
-		ret.Notifiers = append(ret.Notifiers, converted)
 	}
 
-	return ret, nil
+	return ret
 }
 
 // ConvertProtoVulnReportFiltersToV2 converts storaage.VulnerabilityReportFilters to apiV2.VulnerabilityReportFilters
@@ -233,22 +228,23 @@ func ConvertProtoVulnReportFiltersToV2(filters *storage.VulnerabilityReportFilte
 }
 
 func convertProtoResourceScopeToV2(scope *storage.ResourceScope,
-	collectionDatastore collectionDS.DataStore) (*apiV2.ResourceScope, error) {
+	collectionDatastore collectionDS.DataStore) *apiV2.ResourceScope {
 	if scope == nil {
-		return nil, nil
+		return nil
 	}
 
 	ret := &apiV2.ResourceScope{}
 	if scope.GetScopeReference() != nil {
-		var collectionName string
+		collectionName := ""
 		collection, found, err := collectionDatastore.Get(allAccessCtx, scope.GetCollectionId())
 		if err != nil {
-			return nil, err
+			log.Errorf("Error getting attached collection ID '%s': %s", scope.GetCollectionId(), err)
+		} else if !found {
+			log.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
 		}
-		if !found {
-			return nil, errors.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
+		if collection != nil {
+			collectionName = collection.GetName()
 		}
-		collectionName = collection.GetName()
 
 		ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
 			CollectionScope: &apiV2.CollectionReference{
@@ -257,14 +253,14 @@ func convertProtoResourceScopeToV2(scope *storage.ResourceScope,
 			},
 		}
 	}
-	return ret, nil
+	return ret
 }
 
 // ConvertProtoNotifierConfigToV2 converts storage.NotifierConfiguration to apiV2.NotifierConfiguration
 func ConvertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguration,
-	notifierDatastore notifierDS.DataStore) (*apiV2.NotifierConfiguration, error) {
+	notifierDatastore notifierDS.DataStore) *apiV2.NotifierConfiguration {
 	if notifierConfig == nil {
-		return nil, nil
+		return nil
 	}
 
 	ret := &apiV2.NotifierConfiguration{}
@@ -278,18 +274,17 @@ func ConvertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 			EmailConfig: emailConfig,
 		}
 
-		var notifierName string
 		notifier, found, err := notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetEmailConfig().GetNotifierId())
 		if err != nil {
-			return nil, err
+			log.Errorf("Error getting attached notifier ID '%s': %s", notifierConfig.GetEmailConfig().GetNotifierId(), err)
+		} else if !found {
+			log.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
 		}
-		if !found {
-			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
+		if notifier != nil {
+			ret.NotifierName = notifier.GetName()
 		}
-		notifierName = notifier.GetName()
-		ret.NotifierName = notifierName
 	}
-	return ret, nil
+	return ret
 }
 
 // ConvertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule

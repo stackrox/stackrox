@@ -79,10 +79,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, err
 	}
 
-	resp, err := convertProtoReportConfigurationToV2(createdReportConfig, s.collectionDatastore, s.notifierDatastore)
-	if err != nil {
-		return nil, errors.Wrap(err, "Report config created, but encountered error generating the response")
-	}
+	resp := convertProtoReportConfigurationToV2(createdReportConfig, s.collectionDatastore, s.notifierDatastore)
 	return resp, nil
 }
 
@@ -125,11 +122,10 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *apiV2.
 	v2Configs := make([]*apiV2.ReportConfiguration, 0, len(reportConfigs))
 
 	for _, config := range reportConfigs {
-		converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error converting storage report configuration with id %s to response", config.GetId())
+		converted := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
+		if converted != nil {
+			v2Configs = append(v2Configs, converted)
 		}
-		v2Configs = append(v2Configs, converted)
 	}
 	return &apiV2.GetReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
 }
@@ -146,10 +142,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *apiV2.Reso
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", id)
 	}
 
-	converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error converting storage report configuration with id %s to response", config.GetId())
-	}
+	converted := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
 	return converted, nil
 }
 

@@ -262,8 +262,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 			}
 
 			expected := c.resultGen()
-			converted, err := convertProtoReportConfigurationToV2(reportConfig, collectionDatastore, notifierDatastore)
-			assert.NoError(t, err)
+			converted := convertProtoReportConfigurationToV2(reportConfig, collectionDatastore, notifierDatastore)
 			assert.Equal(t, expected, converted)
 		})
 	}
