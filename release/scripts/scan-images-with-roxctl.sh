@@ -7,6 +7,15 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 scan_images_with_roxctl() {
+    if [[ "${STACKROX_CI_INSTANCE_CENTRAL_HOST}" == "disabled" ]]; then
+        if is_GITHUB_ACTIONS; then
+            echo "::warning ::Image scan with roxctl is disabled"
+        else
+            info "Image scan with roxctl is disabled"
+        fi
+        return 0
+    fi
+
     info "Will scan anticipated release images with roxctl"
 
     local images=()
