@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	reportConfigDSMocks "github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
@@ -37,6 +38,7 @@ type ReportServiceTestSuite struct {
 	reportSnapshotStore *reportSnapshotDSMocks.MockDataStore
 	collectionStore     *collectionDSMocks.MockDataStore
 	notifierStore       *notifierDSMocks.MockDataStore
+	blobStore           *blobDSMocks.MockDatastore
 	scheduler           *schedulerMocks.MockScheduler
 	service             Service
 }
@@ -55,7 +57,8 @@ func (suite *ReportServiceTestSuite) SetupSuite() {
 	suite.collectionStore = collectionDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifierStore = notifierDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.scheduler = schedulerMocks.NewMockScheduler(suite.mockCtrl)
-	suite.service = New(suite.reportConfigStore, suite.reportSnapshotStore, suite.collectionStore, suite.notifierStore, suite.scheduler)
+	suite.blobStore = blobDSMocks.NewMockDatastore(suite.mockCtrl)
+	suite.service = New(suite.reportConfigStore, suite.reportSnapshotStore, suite.collectionStore, suite.notifierStore, suite.scheduler, suite.blobStore)
 }
 
 func (suite *ReportServiceTestSuite) TestGetReportStatus() {
