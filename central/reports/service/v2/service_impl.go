@@ -40,11 +40,11 @@ var (
 			"/v2.ReportService/GetReportStatus",
 			"/v2.ReportService/GetLastReportStatusConfigID",
 			"/v2.ReportService/GetReportHistory",
-			"/v2.ReportService/DownloadReport",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v2.ReportService/RunReport",
 			"/v2.ReportService/CancelReport",
+			"/v2.ReportService/DownloadReport",
 		},
 	})
 )
@@ -198,7 +198,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 }
 
 func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadReportRequest) (*apiV2.DownloadReportResponse, error) {
-	if req == nil || req.GetId() == "" {
+	if req == nil || req.GetReportJobId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report job id")
 	}
 
@@ -207,13 +207,13 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
+	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetReportJobId())
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", req.GetId())
+		return nil, errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", req.GetReportJobId())
 	}
 
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%s'.", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%s'.", req.GetReportJobId())
 	}
 
 	if slimUser.GetId() != rep.GetRequester().GetId() {
@@ -222,14 +222,14 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 
 	status := rep.GetReportStatus()
 	if status.GetReportNotificationMethod() != storage.ReportStatus_DOWNLOAD {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Report download is not requested for job id %q", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report download is not requested for job id %q", req.GetReportJobId())
 	}
 
 	if status.GetRunState() == storage.ReportStatus_FAILURE {
-		return nil, errors.Errorf("Report job %q has failed and hence no report to download", req.GetId())
+		return nil, errors.Errorf("Report job %q has failed and hence no report to download", req.GetReportJobId())
 	}
 	if status.GetRunState() != storage.ReportStatus_SUCCESS {
-		return nil, errors.Errorf("Report job %q is not ready for download", req.GetId())
+		return nil, errors.Errorf("Report job %q is not ready for download", req.GetReportJobId())
 	}
 
 	// Fetch data
@@ -241,7 +241,7 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 			sac.ResourceScopeKeys(resources.Administration)),
 	)
 
-	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(req.GetId(), rep.GetReportConfigurationId()), buf)
+	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(req.GetReportJobId(), rep.GetReportConfigurationId()), buf)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to fetch report data")
 	}

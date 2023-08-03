@@ -312,15 +312,15 @@ func request_ReportService_DownloadReport_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["id"]
+	val, ok = pathParams["report_job_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "report_job_id")
 	}
 
-	protoReq.Id, err = runtime.String(val)
+	protoReq.ReportJobId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "report_job_id", err)
 	}
 
 	msg, err := client.DownloadReport(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -339,15 +339,15 @@ func local_request_ReportService_DownloadReport_0(ctx context.Context, marshaler
 		_   = err
 	)
 
-	val, ok = pathParams["id"]
+	val, ok = pathParams["report_job_id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "report_job_id")
 	}
 
-	protoReq.Id, err = runtime.String(val)
+	protoReq.ReportJobId, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "report_job_id", err)
 	}
 
 	msg, err := server.DownloadReport(ctx, &protoReq)
@@ -674,7 +674,7 @@ var (
 
 	pattern_ReportService_CancelReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "cancel", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ReportService_DownloadReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "download"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_DownloadReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "report_job_id", "download"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

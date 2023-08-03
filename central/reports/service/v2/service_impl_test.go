@@ -483,7 +483,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Empty Report ID",
 			req: &apiV2.DownloadReportRequest{
-				Id: "",
+				ReportJobId: "",
 			},
 			ctx:     userContext,
 			isError: true,
@@ -491,7 +491,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "User info not present in context",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx:     suite.ctx,
 			mockGen: func() {},
@@ -500,7 +500,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Report ID not found",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
@@ -512,7 +512,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Download requester id and report requester user id mismatch",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
@@ -529,7 +529,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Report was not generated",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
@@ -543,7 +543,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Report is not ready yet",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
@@ -557,7 +557,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Blob get error",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
@@ -570,7 +570,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Blob does not exist",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
@@ -583,7 +583,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		{
 			desc: "Report downloaded",
 			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
+				ReportJobId: reportSnapshot.GetReportId(),
 			},
 			ctx: userContext,
 			mockGen: func() {
