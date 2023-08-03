@@ -91,7 +91,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 
 			s.Require().NoError(err)
 
-			testC.LastDeploymentState("nginx-deployment",
+			testC.LastDeploymentState(t, "nginx-deployment",
 				assertDeploymentContainerImages("docker.io/library/nginx:1.14.2"),
 				"nginx deployment should have a single container with nginx:1.14.2 image")
 
@@ -117,7 +117,7 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 
 			s.Require().NoError(err)
 
-			testC.LastDeploymentState("nginx-rogue",
+			testC.LastDeploymentState(t, "nginx-rogue",
 				assertDeploymentContainerImages("docker.io/library/nginx:1.14.1"),
 				"nginx standalone pod should have a single container with nginx:1.14.1 image")
 
@@ -144,14 +144,14 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 			require.NoError(t, err)
 			id = string(k8sDeployment.GetUID())
 			// Check the deployment is processed
-			testC.WaitForDeploymentEvent("nginx-deployment")
+			testC.WaitForDeploymentEvent(t, "nginx-deployment")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 
 			// Delete the deployment
 			require.NoError(t, deleteDep())
 
 			// Check deployment and action
-			testC.LastDeploymentStateWithTimeout("nginx-deployment", func(_ *storage.Deployment, action central.ResourceAction) error {
+			testC.LastDeploymentStateWithTimeout(t, "nginx-deployment", func(_ *storage.Deployment, action central.ResourceAction) error {
 				if action != central.ResourceAction_REMOVE_RESOURCE {
 					return errors.New("ResourceAction should be REMOVE_RESOURCE")
 				}
@@ -177,14 +177,14 @@ func (s *PodHierarchySuite) Test_DeletePod() {
 			require.NoError(t, err)
 			id = string(k8sPod.GetUID())
 			// Check the pod is processed
-			testC.WaitForDeploymentEvent("nginx-rogue")
+			testC.WaitForDeploymentEvent(t, "nginx-rogue")
 			testC.GetFakeCentral().ClearReceivedBuffer()
 
 			// Delete the pod
 			require.NoError(t, deletePod())
 
 			// Check pod and action
-			testC.LastDeploymentStateWithTimeout("nginx-rogue", func(_ *storage.Deployment, action central.ResourceAction) error {
+			testC.LastDeploymentStateWithTimeout(t, "nginx-rogue", func(_ *storage.Deployment, action central.ResourceAction) error {
 				if action != central.ResourceAction_REMOVE_RESOURCE {
 					return errors.New("ResourceAction should be REMOVE_RESOURCE")
 				}
