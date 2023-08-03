@@ -319,6 +319,11 @@ var (
 	CurrentSequenceNumber = newFieldLabel("Current Sequence Number")
 	LastPersistedTime     = newFieldLabel("Last Persisted")
 
+	// Blob store fields
+	BlobName             = newFieldLabel("Blob Name")
+	BlobLength           = newFieldLabel("Blob Length")
+	BlobModificationTime = newFieldLabel("Blob Modified On")
+
 	// Report Metadata fields
 	ReportState              = newFieldLabel("Report State")
 	ReportQueuedTime         = newFieldLabel("Report Init Time")
