@@ -511,6 +511,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	servers, _ := s.getFakeServersAndStates()
 	manager := s.getManager(servers, nil)
 	manager.auditEventMsgs = make(chan *sensor.MsgFromCompliance)
+	defer close(manager.auditEventMsgs)
 	manager.receivedInitialStateFromCentral.Set(true)
 	s.NoError(manager.Start())
 
@@ -524,10 +525,12 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), s.getAsProtoTime(time.Now().Add(1*time.Second)))
 		select {
 		case <-centralC:
+			s.T().Logf("Received message on centralC (state: %s)", state)
 			if state == common.SensorComponentEventOfflineMode {
 				s.Fail("Must not receive messages to central in offline mode")
 			}
 		case <-time.After(500 * time.Millisecond):
+			s.T().Logf("Haven't received anything for 500ms on centralC (state: %s)", state)
 			if state == common.SensorComponentEventCentralReachable {
 				s.Fail("CentralC msg didn't arrive within deadline")
 			}
