@@ -31,25 +31,19 @@ message CollectionSnapshot {
 }
 
 message ReportSnapshot {
-
-    string                    id                           = 1;
-    string                    name                         = 2;
-    string                    description                  = 3;
+    string                          report_config_id            = 1;
+    string                          report_job_id               = 2;
+    string                          name                        = 3;
+    string                          description                 = 4;
     oneof                     filter {
-        VulnerabilityReportFilters  vuln_report_filters   = 5;
+        VulnerabilityReportFilters  vuln_report_filters         = 5;
     }
-    CollectionSnapshot         collection_snapshot        = 6;
-    ReportSchedule             schedule                   = 7;
-    ReportStatus               report_status              = 8;
-    repeated NotifierSnapshot notifiers                   = 9;
-    SlimUser                  user                        = 10;
-}
-
-message NotifierSnapshot {
-    oneof notifier_config {
-        EmailNotifierConfiguration email_config = 1;
-    }
-    string notifier_name = 2;
+    CollectionSnapshot              collection_snapshot         = 6;
+    ReportSchedule                  schedule                    = 7;
+    ReportStatus                    report_status               = 8;
+    repeated NotifierConfiguration  notifiers                   = 9;
+    SlimUser                        user                        = 10;
+    bool                            is_download_available       = 11;
 }
 
 message ReportStatus {
@@ -65,10 +59,10 @@ message ReportStatus {
         SCHEDULED = 1;
     }
 
-    RunState                   run_state       = 1;
-    google.protobuf.Timestamp  completed_at        = 2;
-    string                     error_msg       = 3;
-    ReportMethod               report_request_type   = 4;
+    RunState                   run_state                  = 1;
+    google.protobuf.Timestamp  completed_at               = 2;
+    string                     error_msg                  = 3;
+    ReportMethod               report_request_type        = 4;
     NotificationMethod         report_notification_method = 5;
 }
 

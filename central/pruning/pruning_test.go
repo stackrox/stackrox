@@ -631,8 +631,7 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		test := testCase{
 			day: day,
 			reportSnapshot: &storage.ReportSnapshot{
-				Name:     fmt.Sprintf("test_report_%d_days", day),
-				ReportId: uuid.NewV4().String(),
+				Name: fmt.Sprintf("test_report_%d_days", day),
 				ReportStatus: &storage.ReportStatus{
 					CompletedAt: timeBeforeDays(day),
 				},
@@ -655,7 +654,7 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		if err != nil {
 			assert.Errorf(s.T(), err, "Adding report config failed")
 		}
-		err = reportds.AddReportSnapshot(s.ctx, test.reportSnapshot)
+		test.reportSnapshot.ReportId, err = reportds.AddReportSnapshot(s.ctx, test.reportSnapshot)
 		if err != nil {
 			assert.Errorf(s.T(), err, "Adding report snapshot failed")
 		}
@@ -668,7 +667,6 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		} else {
 			assert.Empty(s.T(), repsPruning)
 		}
-
 	}
 }
 

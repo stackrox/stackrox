@@ -96,12 +96,11 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	}
 
 	if features.VulnMgmtReportingEnhancements.Enabled() {
-		entityOptionsMap[v1.SearchCategory_REPORT_METADATA] = schema.ReportMetadataSchema.OptionsMap
 		entityOptionsMap[v1.SearchCategory_REPORT_SNAPSHOT] = schema.ReportSnapshotsSchema.OptionsMap
 
 		reportConfigurationSearchOptions := search.CombineOptionsMaps(
 			schema.ReportConfigurationsSchema.OptionsMap,
-			schema.ReportMetadataSchema.OptionsMap,
+			schema.ReportSnapshotsSchema.OptionsMap,
 		)
 		entityOptionsMap[v1.SearchCategory_REPORT_CONFIGURATIONS] = reportConfigurationSearchOptions
 	}

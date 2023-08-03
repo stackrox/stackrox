@@ -89,8 +89,8 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
-	s.reportGenerator = newReportGeneratorImpl(nil, nil, nil,
-		s.resolver.DeploymentDataStore, s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
+	s.reportGenerator = newReportGeneratorImpl(nil, nil, s.resolver.DeploymentDataStore,
+		s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
 		nil, nil, s.blobStore, s.schema)
 }
 

@@ -64,11 +64,16 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	// Test AddReportSnapshot: error without write access
 	snap := fixtures.GetReportSnapshot()
 	snap.ReportConfigurationId = configID
-	err = s.datastore.AddReportSnapshot(noAccessCtx, snap)
+	_, err = s.datastore.AddReportSnapshot(noAccessCtx, snap)
 	s.Error(err)
 
 	// Test AddReportSnapshot: no error with write access
-	err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	snap.ReportId, err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	s.NoError(err)
+
+	// Test UpdateReportSnapshot: no error with write access
+	snap.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	err = s.datastore.UpdateReportSnapshot(s.ctx, snap)
 	s.NoError(err)
 
 	// Test Get: no result without read access
@@ -98,7 +103,7 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	failedReportSnap := fixtures.GetReportSnapshot()
 	failedReportSnap.ReportStatus.RunState = storage.ReportStatus_FAILURE
 	failedReportSnap.ReportConfigurationId = configID
-	err = s.datastore.AddReportSnapshot(s.ctx, failedReportSnap)
+	failedReportSnap.ReportId, err = s.datastore.AddReportSnapshot(s.ctx, failedReportSnap)
 	s.NoError(err)
 
 	results, err = s.datastore.Search(s.ctx, search.MatchFieldQuery(search.ReportState.String(), storage.ReportStatus_FAILURE.String(), false))
