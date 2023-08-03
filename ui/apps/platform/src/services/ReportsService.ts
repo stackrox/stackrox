@@ -180,7 +180,7 @@ export function fetchReportHistory(id: string): Promise<ReportSnapshot[]> {
         .get<ReportHistoryResponse>(`/v2/reports/configurations/${id}/history`)
         .then((response) => {
             return response.data?.reportSnapshots ?? [];
-    });
+        });
 }
 
 export function createReportConfiguration(
