@@ -1,7 +1,7 @@
 package usage
 
 import (
-	"github.com/stackrox/rox/central/usage/datastore"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )

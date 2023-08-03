@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/usage/datastore"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -35,7 +35,7 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
-		w.Header().Set("Content-Disposition", `attachment; filename="usage.csv"`)
+		w.Header().Set("Content-Disposition", `attachment; filename="secured_units_usage.csv"`)
 
 		if n, err := w.Write(utf8BOM); err != nil || n != len(utf8BOM) {
 			writeError(w, http.StatusInternalServerError, err, "failed to write BOM header")

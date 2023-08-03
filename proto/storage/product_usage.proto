@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package storage;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "storage";
+
+message SecuredUnits {
+    string id                           = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    google.protobuf.Timestamp timestamp = 2;
+    int64 num_nodes                     = 3;
+    int64 num_cpu_units                 = 4;
+}

@@ -6,10 +6,10 @@ import (
 	clusterTelemetry "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/info"
+	usageDS "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	usageDS "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 

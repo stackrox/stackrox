@@ -8,42 +8,45 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "v1";
 
-message UsageRequest {
+message TimeRange {
     google.protobuf.Timestamp from = 1;
     google.protobuf.Timestamp to   = 2;
 }
 
-message CurrentUsageResponse {
-    google.protobuf.Timestamp timestamp = 1;
-
-    int64 num_nodes                     = 2;
-    int64 num_cpu_units                 = 3;
+message SecuredUnits {
+    int64 num_nodes                     = 1;
+    int64 num_cpu_units                 = 2;
 }
 
-message MaxUsageResponse {
+message CurrentProductUsageResponse {
+    google.protobuf.Timestamp timestamp = 1;
+    SecuredUnits secured_units          = 2;
+}
+
+message MaxSecuredUnitsUsageResponse {
     google.protobuf.Timestamp max_nodes_at     = 1;
     int64 max_nodes                            = 2;
     google.protobuf.Timestamp max_cpu_units_at = 3;
     int64 max_cpu_units                        = 4;
 }
 
-service UsageService {
-    // GetCurrentUsage
+service ProductUsageService {
+    // GetCurrentProductUsage
     //
     // Returns current usage, with about 5 minutes accuracy.
-    rpc GetCurrentUsage(v1.Empty) returns (CurrentUsageResponse) {
+    rpc GetCurrentProductUsage(v1.Empty) returns (CurrentProductUsageResponse) {
         option (google.api.http) = {
-            get: "/v1/usage/current"
+            get: "/v1/product/usage/current"
         };
     }
 
-    // GetMaxUsage
+    // GetMaxSecuredUnitsUsage
     //
     // Returns maximum, i.e. peak, usage for the given time frame together
     // with the time when this maximum was observed.
-    rpc GetMaxUsage(UsageRequest) returns (MaxUsageResponse) {
+    rpc GetMaxSecuredUnitsUsage(TimeRange) returns (MaxSecuredUnitsUsageResponse) {
         option (google.api.http) = {
-            get: "/v1/usage/max"
+            get: "/v1/product/usage/max_secured_units"
         };
     }
 }

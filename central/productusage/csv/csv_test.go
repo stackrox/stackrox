@@ -14,13 +14,13 @@ import (
 func TestCSV(t *testing.T) {
 	ts1, _ := time.Parse(time.RFC3339Nano, "2023-07-24T10:13:21.702316Z")
 	ts2, _ := time.Parse(time.RFC3339Nano, "2023-07-24T15:13:21.702316Z")
-	metrics := make(chan *storage.Usage, 2)
-	metrics <- &storage.Usage{
+	metrics := make(chan *storage.SecuredUnits, 2)
+	metrics <- &storage.SecuredUnits{
 		Timestamp:   protoconv.ConvertTimeToTimestamp(ts1),
 		NumNodes:    1,
 		NumCpuUnits: 2,
 	}
-	metrics <- &storage.Usage{
+	metrics <- &storage.SecuredUnits{
 		Timestamp:   protoconv.ConvertTimeToTimestamp(ts2),
 		NumNodes:    3,
 		NumCpuUnits: 4,
@@ -38,7 +38,8 @@ func TestGetTimeParam(t *testing.T) {
 		from, _ := time.Parse(time.RFC3339Nano, "2023-07-24T10:13:21.702316Z")
 		formValues := url.Values{
 			"from": {from.Format(time.RFC3339Nano)},
-			"to":   {"not a time"}}
+			"to":   {"not a time"},
+		}
 		v, err := getTimeParameter(formValues, "from", zeroTime)
 		assert.NoError(t, err)
 		assert.Equal(t, from.Unix(), v.GetSeconds())
@@ -46,7 +47,8 @@ func TestGetTimeParam(t *testing.T) {
 	})
 	t.Run("bad from", func(t *testing.T) {
 		formValues := url.Values{
-			"from": {"not a time"}}
+			"from": {"not a time"},
+		}
 		_, err := getTimeParameter(formValues, "from", zeroTime)
 		assert.Error(t, err)
 		now := time.Now()

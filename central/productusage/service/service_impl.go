@@ -2,17 +2,15 @@ package usage
 
 import (
 	"context"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/usage/datastore"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
@@ -20,13 +18,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.UsageService/GetCurrentUsage",
-			"/v1.UsageService/GetMaxUsage",
+			"/v1.ProductUsageService/GetCurrentProductUsage",
+			"/v1.ProductUsageService/GetMaxSecuredUnitsUsage",
 		}})
 )
 
 type serviceImpl struct {
-	v1.UnimplementedUsageServiceServer
+	v1.UnimplementedProductUsageServiceServer
 
 	datastore datastore.DataStore
 }
@@ -40,12 +38,12 @@ func New(datastore datastore.DataStore) Service {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterUsageServiceServer(grpcServer, s)
+	v1.RegisterProductUsageServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return errors.Wrap(v1.RegisterUsageServiceHandler(ctx, mux, conn), "failed to register the usage service handler")
+	return errors.Wrap(v1.RegisterProductUsageServiceHandler(ctx, mux, conn), "failed to register the usage service handler")
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -53,25 +51,25 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, errors.Wrapf(authorizer.Authorized(ctx, fullMethodName), "failed to authorize a call to %s", fullMethodName)
 }
 
-func (s *serviceImpl) GetCurrentUsage(ctx context.Context, _ *v1.Empty) (*v1.CurrentUsageResponse, error) {
-	current := &v1.CurrentUsageResponse{
-		Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().UTC()),
-	}
-	if m, err := s.datastore.GetCurrent(ctx); err != nil {
+func (s *serviceImpl) GetCurrentProductUsage(ctx context.Context, _ *v1.Empty) (*v1.CurrentProductUsageResponse, error) {
+	m, err := s.datastore.GetCurrentUsage(ctx)
+	if err != nil {
 		return nil, errors.Wrap(err, "datastore failed to get current usage metrics")
-	} else if m != nil {
-		current.NumNodes = m.NumNodes
-		current.NumCpuUnits = m.NumCpuUnits
 	}
-	return current, nil
+	return &v1.CurrentProductUsageResponse{
+		Timestamp: m.GetTimestamp(),
+		SecuredUnits: &v1.SecuredUnits{
+			NumNodes:    m.GetNumNodes(),
+			NumCpuUnits: m.GetNumCpuUnits(),
+		}}, nil
 }
 
-func (s *serviceImpl) GetMaxUsage(ctx context.Context, req *v1.UsageRequest) (*v1.MaxUsageResponse, error) {
+func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeRange) (*v1.MaxSecuredUnitsUsageResponse, error) {
 	metrics, err := s.datastore.Get(ctx, req.GetFrom(), req.GetTo())
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get usage")
 	}
-	max := &v1.MaxUsageResponse{}
+	max := &v1.MaxSecuredUnitsUsageResponse{}
 	for m := range metrics {
 		if n := m.GetNumNodes(); n >= max.MaxNodes {
 			max.MaxNodes = n

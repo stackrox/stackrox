@@ -4,6 +4,7 @@ import (
 	"context"
 
 	hashManager "github.com/stackrox/rox/central/hash/manager"
+	usageDS "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
@@ -31,7 +32,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
-	usageDS "github.com/stackrox/rox/central/usage/datastore"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 )

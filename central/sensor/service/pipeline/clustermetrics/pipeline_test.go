@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	infoMocks "github.com/stackrox/rox/central/metrics/info/mocks"
+	usageMocks "github.com/stackrox/rox/central/productusage/datastore/securedunits/mocks"
 	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
-	usageMocks "github.com/stackrox/rox/central/usage/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"

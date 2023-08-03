@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	types "github.com/gogo/protobuf/types"
-	source "github.com/stackrox/rox/central/usage/source"
+	source "github.com/stackrox/rox/central/productusage/source"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -38,10 +38,10 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AggregateAndFlush mocks base method.
-func (m *MockDataStore) AggregateAndFlush(ctx context.Context) (*storage.Usage, error) {
+func (m *MockDataStore) AggregateAndFlush(ctx context.Context) (*storage.SecuredUnits, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AggregateAndFlush", ctx)
-	ret0, _ := ret[0].(*storage.Usage)
+	ret0, _ := ret[0].(*storage.SecuredUnits)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -53,10 +53,10 @@ func (mr *MockDataStoreMockRecorder) AggregateAndFlush(ctx interface{}) *gomock.
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, from, to *types.Timestamp) (<-chan *storage.Usage, error) {
+func (m *MockDataStore) Get(ctx context.Context, from, to *types.Timestamp) (<-chan *storage.SecuredUnits, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, from, to)
-	ret0, _ := ret[0].(<-chan *storage.Usage)
+	ret0, _ := ret[0].(<-chan *storage.SecuredUnits)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -67,23 +67,23 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, from, to interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, from, to)
 }
 
-// GetCurrent mocks base method.
-func (m *MockDataStore) GetCurrent(ctx context.Context) (*storage.Usage, error) {
+// GetCurrentUsage mocks base method.
+func (m *MockDataStore) GetCurrentUsage(ctx context.Context) (*storage.SecuredUnits, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrent", ctx)
-	ret0, _ := ret[0].(*storage.Usage)
+	ret := m.ctrl.Call(m, "GetCurrentUsage", ctx)
+	ret0, _ := ret[0].(*storage.SecuredUnits)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCurrent indicates an expected call of GetCurrent.
-func (mr *MockDataStoreMockRecorder) GetCurrent(ctx interface{}) *gomock.Call {
+// GetCurrentUsage indicates an expected call of GetCurrentUsage.
+func (mr *MockDataStoreMockRecorder) GetCurrentUsage(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrent", reflect.TypeOf((*MockDataStore)(nil).GetCurrent), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUsage", reflect.TypeOf((*MockDataStore)(nil).GetCurrentUsage), ctx)
 }
 
 // Insert mocks base method.
-func (m *MockDataStore) Insert(ctx context.Context, metrics *storage.Usage) error {
+func (m *MockDataStore) Insert(ctx context.Context, metrics *storage.SecuredUnits) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Insert", ctx, metrics)
 	ret0, _ := ret[0].(error)
@@ -97,7 +97,7 @@ func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Ca
 }
 
 // UpdateUsage mocks base method.
-func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics source.UsageSource) error {
+func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics source.SecuredUnitsSource) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUsage", ctx, clusterID, metrics)
 	ret0, _ := ret[0].(error)

@@ -18,7 +18,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func writeCSV(metrics <-chan *storage.Usage, iow io.Writer) error {
+func writeCSV(metrics <-chan *storage.SecuredUnits, iow io.Writer) error {
 	csvWriter := csv.NewWriter(iow)
 	csvWriter.UseCRLF = true
 

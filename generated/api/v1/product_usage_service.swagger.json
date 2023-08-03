@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/usage_service.proto",
+    "title": "api/v1/product_usage_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,16 +11,16 @@
     "application/json"
   ],
   "paths": {
-    "/v1/usage/current": {
+    "/v1/product/usage/current": {
       "get": {
-        "summary": "GetCurrentUsage",
+        "summary": "GetCurrentProductUsage",
         "description": "Returns current usage, with about 5 minutes accuracy.",
-        "operationId": "UsageService_GetCurrentUsage",
+        "operationId": "ProductUsageService_GetCurrentProductUsage",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1CurrentUsageResponse"
+              "$ref": "#/definitions/v1CurrentProductUsageResponse"
             }
           },
           "default": {
@@ -31,20 +31,20 @@
           }
         },
         "tags": [
-          "UsageService"
+          "ProductUsageService"
         ]
       }
     },
-    "/v1/usage/max": {
+    "/v1/product/usage/max_secured_units": {
       "get": {
-        "summary": "GetMaxUsage",
+        "summary": "GetMaxSecuredUnitsUsage",
         "description": "Returns maximum, i.e. peak, usage for the given time frame together\nwith the time when this maximum was observed.",
-        "operationId": "UsageService_GetMaxUsage",
+        "operationId": "ProductUsageService_GetMaxSecuredUnitsUsage",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1MaxUsageResponse"
+              "$ref": "#/definitions/v1MaxSecuredUnitsUsageResponse"
             }
           },
           "default": {
@@ -71,7 +71,7 @@
           }
         ],
         "tags": [
-          "UsageService"
+          "ProductUsageService"
         ]
       }
     }
@@ -113,24 +113,19 @@
         }
       }
     },
-    "v1CurrentUsageResponse": {
+    "v1CurrentProductUsageResponse": {
       "type": "object",
       "properties": {
         "timestamp": {
           "type": "string",
           "format": "date-time"
         },
-        "numNodes": {
-          "type": "string",
-          "format": "int64"
-        },
-        "numCpuUnits": {
-          "type": "string",
-          "format": "int64"
+        "securedUnits": {
+          "$ref": "#/definitions/v1SecuredUnits"
         }
       }
     },
-    "v1MaxUsageResponse": {
+    "v1MaxSecuredUnitsUsageResponse": {
       "type": "object",
       "properties": {
         "maxNodesAt": {
@@ -146,6 +141,19 @@
           "format": "date-time"
         },
         "maxCpuUnits": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1SecuredUnits": {
+      "type": "object",
+      "properties": {
+        "numNodes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "numCpuUnits": {
           "type": "string",
           "format": "int64"
         }
