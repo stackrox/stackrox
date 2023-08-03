@@ -358,6 +358,7 @@ func (s *scheduler) queueScheduledReports() {
 	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
 	if err != nil {
 		log.Errorf("Error finding scheduled reports: %s", err)
+		return
 	}
 	for _, rc := range reportConfigs {
 		if rc.GetSchedule() != nil {
