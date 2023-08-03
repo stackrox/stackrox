@@ -46,9 +46,7 @@ class BaseSpecification extends Specification {
 
     static final String RUN_ID
 
-    public static final String UNRESTRICTED_SCOPE_ID = isPostgresRun() ?
-        "ffffffff-ffff-fff4-f5ff-ffffffffffff" :
-        "io.stackrox.authz.accessscope.unrestricted"
+    public static final String UNRESTRICTED_SCOPE_ID = "ffffffff-ffff-fff4-f5ff-ffffffffffff"
 
     static {
         String idStr
@@ -423,10 +421,6 @@ class BaseSpecification extends Specification {
                 "gcr-image-pull-secret",
                 Constants.ORCHESTRATOR_NAMESPACE)
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
-    }
-
-    static Boolean isPostgresRun() {
-        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
     }
 
     static Boolean isRaceBuild() {

@@ -10,7 +10,6 @@ from ci_tests import SensorIntegrationOCP
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
-os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 ClusterTestRunner(

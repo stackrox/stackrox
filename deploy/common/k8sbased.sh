@@ -152,7 +152,7 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
-    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
+    if [[ -n "${CENTRAL_DB_IMAGE}" ]]; then
         add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
     fi
 
@@ -174,16 +174,12 @@ function launch_central {
 
     if [[ -n $STORAGE_CLASS ]]; then
         add_storage_args "--storage-class=$STORAGE_CLASS"
-        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            add_storage_args "--db-storage-class=$STORAGE_CLASS"
-        fi
+        add_storage_args "--db-storage-class=$STORAGE_CLASS"
     fi
 
     if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
 	      add_storage_args "--size=${STORAGE_SIZE}"
-        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            add_storage_args "--db-size=${STORAGE_SIZE}"
-        fi
+          add_storage_args "--db-size=${STORAGE_SIZE}"
     fi
 
     if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
@@ -350,10 +346,8 @@ function launch_central {
 
       if [[ "${is_local_dev}" == "true" ]]; then
           kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-          if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-          fi
-      elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+          kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+      else
           ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then

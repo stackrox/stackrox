@@ -11,7 +11,6 @@ from clusters import GKECluster
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
 
-os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
 make_qa_e2e_test_runner(cluster=GKECluster("qa-e2e-test")).run()
