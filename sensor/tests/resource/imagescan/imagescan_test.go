@@ -65,7 +65,7 @@ func (s *ImageScanSuite) SetupSuite() {
 	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	customConfig := helper.DefaultCentralConfig()
 	customConfig.InitialSystemPolicies = Policies
-	testContext, err := helper.NewContextWithConfig(t, customConfig)
+	testContext, err := helper.NewContextWithConfig(s.T(), customConfig)
 	s.Require().NoError(err)
 	s.testContext = testContext
 }
@@ -75,7 +75,7 @@ func (s *ImageScanSuite) TearDownTest() {
 }
 
 func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
-	s.testContext.RunTest(
+	s.testContext.RunTest(s.T(),
 		helper.WithResources([]helper.K8sResourceInfo{Pod}),
 		helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, resource map[string]k8s.Object) {
 			var image *storage.ContainerImage
