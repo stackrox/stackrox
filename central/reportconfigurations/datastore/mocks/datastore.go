@@ -67,6 +67,21 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
+// Exists mocks base method.
+func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
+}
+
 // GetReportConfiguration mocks base method.
 func (m *MockDataStore) GetReportConfiguration(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error) {
 	m.ctrl.T.Helper()
