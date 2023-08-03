@@ -49,22 +49,22 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 	//
 	// Using a NetworkPolicy here will make sure that no deployments that were removed while the connection
 	// was down will be reprocessed and sent when the NetworkPolicy event gets resynced.
-	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
 
-		testContext.WaitForSyncEvent(2 * time.Minute)
-		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment1, nil)
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
+		_, err = c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, NginxDeployment1, nil)
 		require.NoError(t, err)
-		deleteDeployment2, err := c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NginxDeployment2, nil)
+		deleteDeployment2, err := c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, NginxDeployment2, nil)
 		require.NoError(t, err)
 
-		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, NetpolBlockEgress, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, NetpolBlockEgress, nil)
 		require.NoError(t, err)
 
 		testContext.StopCentralGRPC()
 
 		obj := &appsV1.Deployment{}
-		_, err = c.ApplyResource(ctx, helper.DefaultNamespace, &NginxDeployment3, obj, nil)
+		_, err = c.ApplyResource(t, ctx, helper.DefaultNamespace, &NginxDeployment3, obj, nil)
 		require.NoError(t, err)
 
 		require.NoError(t, deleteDeployment2())
@@ -80,12 +80,12 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		//   SYNC nginx-deployment-3
 		//   No event for nginx-deployment-2 (was deleted while connection was down)
 		// This reconciliation state will make Central delete Nginx2, keep Nginx1 and create Nginx3
-		testContext.WaitForSyncEvent(2 * time.Minute)
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
 		testContext.FirstDeploymentReceivedWithAction(t, NginxDeployment1.Name, central.ResourceAction_SYNC_RESOURCE)
 		testContext.FirstDeploymentReceivedWithAction(t, NginxDeployment3.Name, central.ResourceAction_SYNC_RESOURCE)
 
 		// This assertion will fail if events are not properly cleared from the internal queues and in-memory stores
-		testContext.DeploymentNotReceived(NginxDeployment2.Name)
+		testContext.DeploymentNotReceived(t, NginxDeployment2.Name)
 	}))
 
 }

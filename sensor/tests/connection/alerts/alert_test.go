@@ -37,12 +37,12 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 	c, err := helper.NewContextWithConfig(t, config)
 	require.NoError(t, err)
 
-	c.RunTest(helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
 
-		testContext.WaitForSyncEvent(2 * time.Minute)
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
-		_, err = c.ApplyResourceAndWaitNoObject(ctx, helper.DefaultNamespace, DeploymentWithViolation, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, DeploymentWithViolation, nil)
 		require.NoError(t, err)
 
 		// After first deployment, should see an alert for deployment
@@ -57,7 +57,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 		testContext.RestartFakeCentralConnection()
 
 		// Wait for reconciliation to finish
-		testContext.WaitForSyncEvent(2 * time.Minute)
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		// Should see the alert *again* on a connection restart
 		testContext.LastViolationState(t, DeploymentWithViolation.Name, hasRequiredLabelAlert, "Deployment should have alerts")

@@ -65,7 +65,7 @@ func (s *ImageScanSuite) SetupSuite() {
 	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	customConfig := helper.DefaultCentralConfig()
 	customConfig.InitialSystemPolicies = Policies
-	testContext, err := helper.NewContextWithConfig(s.T(), customConfig)
+	testContext, err := helper.NewContextWithConfig(t, customConfig)
 	s.Require().NoError(err)
 	s.testContext = testContext
 }
