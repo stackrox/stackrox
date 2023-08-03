@@ -7,6 +7,7 @@ import (
 
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -40,11 +41,12 @@ func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
 
 // ClientSet is a test version of kubernetes.ClientSet
 type ClientSet struct {
-	dynamic         dynamic.Interface
-	k8s             kubernetes.Interface
-	openshiftApps   appVersioned.Interface
-	openshiftConfig configVersioned.Interface
-	openshiftRoute  routeVersioned.Interface
+	dynamic           dynamic.Interface
+	k8s               kubernetes.Interface
+	openshiftApps     appVersioned.Interface
+	openshiftConfig   configVersioned.Interface
+	openshiftRoute    routeVersioned.Interface
+	openshiftOperator operatorVersioned.Interface
 }
 
 // MakeOutOfClusterClient creates a k8s client that uses host configuration to connect to a cluster.
@@ -86,6 +88,12 @@ func (c *ClientSet) OpenshiftConfig() configVersioned.Interface {
 // This is not used in tests!
 func (c *ClientSet) OpenshiftRoute() routeVersioned.Interface {
 	return c.openshiftRoute
+}
+
+// OpenshiftOperator returns the OpenshiftOperator interface
+// This is not used in tests!
+func (c *ClientSet) OpenshiftOperator() operatorVersioned.Interface {
+	return c.openshiftOperator
 }
 
 // Dynamic returns the Dynamic interface

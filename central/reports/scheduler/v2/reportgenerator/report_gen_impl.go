@@ -18,7 +18,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
-	reportMetadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -36,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -44,7 +44,6 @@ var (
 
 type reportGeneratorImpl struct {
 	reportConfigDatastore   reportConfigDS.DataStore
-	reportMetadataStore     reportMetadataDS.DataStore
 	reportSnapshotStore     reportSnapshotDS.DataStore
 	deploymentDatastore     deploymentDS.DataStore
 	watchedImageDatastore   watchedImageDS.DataStore
@@ -58,14 +57,11 @@ type reportGeneratorImpl struct {
 }
 
 func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
-	// First do some basic validation checks on the request
+	// First do some basic validation checks on the request.
 	err := ValidateReportRequest(req)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Invalid report request"), req)
 		return
-	}
-	if req.Collection == nil {
-		rg.logAndUpsertError(errors.New("Request does not have a valid non-nil collection"), req)
 	}
 	if req.Ctx == nil {
 		log.Error("Request does not have valid non-nil context")
@@ -83,7 +79,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 	}
 
 	// Change report status to PREPARING
-	err = rg.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_PREPARING)
+	err = rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_PREPARING)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to PREPARING"), req)
 		return
@@ -96,13 +92,12 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 	}
 
 	// Change report status to SUCCESS
-	req.ReportMetadata.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_SUCCESS)
+	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	err = rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_SUCCESS)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to SUCCESS"), req)
 		return
 	}
-	rg.takeReportSnapshot(req)
 }
 
 /* Report generation helper functions */
@@ -132,9 +127,10 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		return errors.Wrap(err, "error formatting the report email text")
 	}
 
-	switch req.ReportMetadata.ReportStatus.ReportNotificationMethod {
+	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
-		if err = rg.saveReportData(req.Ctx, req.ReportMetadata.ReportConfigId, req.ReportMetadata.ReportId, zippedCSVData); err != nil {
+		if err = rg.saveReportData(req.Ctx, req.ReportSnapshot.GetReportConfigurationId(),
+			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
 			return errors.Wrap(err, "error persisting blob")
 		}
 	case storage.ReportStatus_EMAIL:
@@ -340,7 +336,7 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(ctx context.Con
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
 			Limit(1)).
 		ProtoQuery()
-	results, err := rg.reportMetadataStore.SearchReportMetadatas(ctx, query)
+	results, err := rg.reportSnapshotStore.SearchReportSnapshots(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding last successful scheduled report time")
 	}
@@ -373,76 +369,34 @@ func (rg *reportGeneratorImpl) getWatchedImages(ctx context.Context) ([]string, 
 	return results, nil
 }
 
-func (rg *reportGeneratorImpl) upsertReportStatus(ctx context.Context, metadata *storage.ReportMetadata, status storage.ReportStatus_RunState) error {
-	metadata.ReportStatus.RunState = status
-	return rg.reportMetadataStore.UpdateReportMetadata(ctx, metadata)
+func (rg *reportGeneratorImpl) updateReportStatus(ctx context.Context, snapshot *storage.ReportSnapshot, status storage.ReportStatus_RunState) error {
+	snapshot.ReportStatus.RunState = status
+	return rg.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
 	if req == nil || req.ReportConfig == nil {
-		log.Error("Request does not have non-nil report configuration")
-		return
-	}
-	if req.ReportMetadata == nil || req.ReportMetadata.ReportStatus == nil {
-		log.Error("Request does not have non-nil report metadata with a non-nil report status")
+		utils.Should(errors.New("Request does not have non-nil report configuration"))
 		return
 	}
 	if req.Ctx == nil {
-		log.Error("Request does not have valid non-nil context")
+		utils.Should(errors.New("Request does not have valid non-nil context"))
 		return
 	}
-	log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
-	req.ReportMetadata.ReportStatus.ErrorMsg = reportErr.Error()
-	req.ReportMetadata.ReportStatus.CompletedAt = types.TimestampNow()
-	err := rg.upsertReportStatus(req.Ctx, req.ReportMetadata, storage.ReportStatus_FAILURE)
+	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
+		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
+		return
+	}
+	if reportErr != nil {
+		log.Errorf("Error while running report for config '%s': %s", req.ReportConfig.GetName(), reportErr)
+		req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
+	}
+	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	err := rg.updateReportStatus(req.Ctx, req.ReportSnapshot, storage.ReportStatus_FAILURE)
 	if err != nil {
 		log.Errorf("Error changing report status to FAILURE for report config '%s', report ID '%s': %s",
-			req.ReportConfig.GetName(), req.ReportMetadata.GetReportId(), err)
+			req.ReportConfig.GetName(), req.ReportSnapshot.GetReportId(), err)
 	}
-
-	rg.takeReportSnapshot(req)
-}
-
-func (rg *reportGeneratorImpl) takeReportSnapshot(req *ReportRequest) {
-	snapshot := generateReportSnapshot(req.ReportConfig, req.ReportMetadata, req.Collection.GetName())
-	err := rg.reportSnapshotStore.AddReportSnapshot(req.Ctx, snapshot)
-	if err != nil {
-		log.Errorf("Error storing snapshot for report config '%s', report ID '%s': %s",
-			req.ReportConfig.GetName(), req.ReportMetadata.GetReportId(), err)
-	}
-}
-
-func generateReportSnapshot(config *storage.ReportConfiguration, metadata *storage.ReportMetadata, collectionName string) *storage.ReportSnapshot {
-	snapshot := &storage.ReportSnapshot{
-		ReportId:              metadata.GetReportId(),
-		ReportConfigurationId: config.GetId(),
-		Name:                  config.GetName(),
-		Description:           config.GetDescription(),
-		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Filter: &storage.ReportSnapshot_VulnReportFilters{
-			VulnReportFilters: config.GetVulnReportFilters(),
-		},
-		Collection: &storage.CollectionSnapshot{
-			Id:   config.GetResourceScope().GetCollectionId(),
-			Name: collectionName,
-		},
-		Schedule:     config.GetSchedule(),
-		ReportStatus: metadata.GetReportStatus(),
-		Requester:    metadata.GetRequester(),
-	}
-
-	notifierSnaps := make([]*storage.NotifierSnapshot, 0, len(config.GetNotifiers()))
-	for _, notifierConf := range config.GetNotifiers() {
-		notifierSnaps = append(notifierSnaps, &storage.NotifierSnapshot{
-			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-				EmailConfig: &storage.EmailNotifierSnapshot{
-					MailingLists: notifierConf.GetEmailConfig().GetMailingLists(),
-				},
-			},
-		})
-	}
-	snapshot.Notifiers = notifierSnaps
-	return snapshot
 }
 
 func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,

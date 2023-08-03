@@ -1,0 +1,17 @@
+gomod:
+  mod-file: ../go.mod
+
+patterns:
+- "*AUTHOR*"
+- "*COPYING*"
+- "*LICENSE*"
+- "*LICENCE*"
+- "*NOTICE*"
+- '~^.*(?i:notice|licen[cs]e).*\.(?i:txt|md)$'
+- "package.json"
+
+excludePatterns:
+- "*.go"
+- "*.js"
+- "*.ts"
+- "*.sh"

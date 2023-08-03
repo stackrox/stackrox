@@ -8,6 +8,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
@@ -38,7 +39,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		RegisterTable(schema, CreateTableComplianceOperatorProfileV2Stmt)
+		RegisterTable(schema, CreateTableComplianceOperatorProfileV2Stmt, features.ComplianceEnhancements.Enabled)
 		return schema
 	}()
 )

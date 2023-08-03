@@ -3,13 +3,11 @@ package fixtures
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // GetReportSnapshot returns a valid report snapshot object
 func GetReportSnapshot() *storage.ReportSnapshot {
 	return &storage.ReportSnapshot{
-		ReportId:              uuid.NewV4().String(),
 		ReportConfigurationId: "config-1",
 		Name:                  "App Team 1 Report",
 		Description:           "Report for CVEs in app team 1's infrastructure",
@@ -27,7 +25,7 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 			},
 		},
 		ReportStatus: &storage.ReportStatus{
-			RunState:                 storage.ReportStatus_SUCCESS,
+			RunState:                 storage.ReportStatus_PREPARING,
 			QueuedAt:                 timestamp.TimestampNow(),
 			CompletedAt:              timestamp.TimestampNow(),
 			ErrorMsg:                 "",
@@ -37,7 +35,8 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 		Notifiers: []*storage.NotifierSnapshot{
 			{
 				NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-					EmailConfig: &storage.EmailNotifierSnapshot{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						NotifierId:   "email-notifier-yahoo",
 						MailingLists: []string{"foo@yahoo.com"},
 					},
 				},
@@ -45,7 +44,8 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 			},
 			{
 				NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-					EmailConfig: &storage.EmailNotifierSnapshot{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						NotifierId:   "email-notifier-gmail",
 						MailingLists: []string{"bar@gmail.com"},
 					},
 				},

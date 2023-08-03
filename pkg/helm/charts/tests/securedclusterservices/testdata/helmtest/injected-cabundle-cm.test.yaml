@@ -1,3 +1,7 @@
+values:
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - server:
     visibleSchemas:

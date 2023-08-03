@@ -94,11 +94,12 @@ kind: RoleBinding
 metadata:
   name: central-prometheus-k8s
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: rhacs-central-auth-reader
-  namespace: kube-system
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    # Test that Central auth reader rolebinding exists in kube-system.
+    kubectl get rolebinding rhacs-central-auth-reader-${NAMESPACE} -n kube-system
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

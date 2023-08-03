@@ -391,7 +391,7 @@ spec:
                       Monitoring
                     properties:
                       enabled:
-                        default: false
+                        default: true
                         type: boolean
                     required:
                     - enabled

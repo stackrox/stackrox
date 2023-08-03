@@ -6,7 +6,6 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	reportMetadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -25,7 +24,6 @@ type ReportGenerator interface {
 
 // New will create a new instance of the ReportGenerator
 func New(reportConfigDatastore reportConfigDS.DataStore,
-	reportMetadataStore reportMetadataDS.DataStore,
 	reportSnapshotStore reportSnapshotDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	watchedImageDatastore watchedImageDS.DataStore,
@@ -38,7 +36,6 @@ func New(reportConfigDatastore reportConfigDS.DataStore,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
 		reportConfigDatastore,
-		reportMetadataStore,
 		reportSnapshotStore,
 		deploymentDatastore,
 		watchedImageDatastore,
@@ -52,7 +49,6 @@ func New(reportConfigDatastore reportConfigDS.DataStore,
 }
 
 func newReportGeneratorImpl(reportConfigDatastore reportConfigDS.DataStore,
-	reportMetadataStore reportMetadataDS.DataStore,
 	reportSnapshotStore reportSnapshotDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	watchedImageDatastore watchedImageDS.DataStore,
@@ -65,7 +61,6 @@ func newReportGeneratorImpl(reportConfigDatastore reportConfigDS.DataStore,
 ) *reportGeneratorImpl {
 	return &reportGeneratorImpl{
 		reportConfigDatastore:   reportConfigDatastore,
-		reportMetadataStore:     reportMetadataStore,
 		reportSnapshotStore:     reportSnapshotStore,
 		deploymentDatastore:     deploymentDatastore,
 		watchedImageDatastore:   watchedImageDatastore,

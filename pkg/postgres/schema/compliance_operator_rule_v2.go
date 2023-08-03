@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
@@ -24,7 +25,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorRuleV2)(nil)), "compliance_operator_rule_v2")
-		RegisterTable(schema, CreateTableComplianceOperatorRuleV2Stmt)
+		RegisterTable(schema, CreateTableComplianceOperatorRuleV2Stmt, features.ComplianceEnhancements.Enabled)
 		return schema
 	}()
 )

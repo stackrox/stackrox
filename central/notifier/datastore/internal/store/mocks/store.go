@@ -95,6 +95,22 @@ func (mr *MockStoreMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
 }
 
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.Notifier, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMany", ctx, identifiers)
+	ret0, _ := ret[0].([]*storage.Notifier)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, identifiers interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, identifiers)
+}
+
 // Upsert mocks base method.
 func (m *MockStore) Upsert(ctx context.Context, obj *storage.Notifier) error {
 	m.ctrl.T.Helper()
