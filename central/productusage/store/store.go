@@ -10,6 +10,6 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	Upsert(ctx context.Context, obj *storage.Usage) error
-	Walk(ctx context.Context, fn func(obj *storage.Usage) error) error
+	Upsert(ctx context.Context, obj *storage.SecuredUnits) error
+	Walk(ctx context.Context, fn func(obj *storage.SecuredUnits) error) error
 }

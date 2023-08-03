@@ -36,7 +36,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, obj *storage.Usage) error {
+func (m *MockStore) Upsert(ctx context.Context, obj *storage.SecuredUnits) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
@@ -50,7 +50,7 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockStore) Walk(ctx context.Context, fn func(*storage.Usage) error) error {
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.SecuredUnits) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)

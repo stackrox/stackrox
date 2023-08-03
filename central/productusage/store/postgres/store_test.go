@@ -15,97 +15,97 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type UsagesStoreSuite struct {
+type SecuredUnitsStoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestUsagesStore(t *testing.T) {
-	suite.Run(t, new(UsagesStoreSuite))
+func TestSecuredUnitsStore(t *testing.T) {
+	suite.Run(t, new(SecuredUnitsStoreSuite))
 }
 
-func (s *UsagesStoreSuite) SetupSuite() {
+func (s *SecuredUnitsStoreSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.store = New(s.testDB.DB)
 }
 
-func (s *UsagesStoreSuite) SetupTest() {
+func (s *SecuredUnitsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE usages CASCADE")
-	s.T().Log("usages", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE secured_units CASCADE")
+	s.T().Log("secured_units", tag)
 	s.NoError(err)
 }
 
-func (s *UsagesStoreSuite) TearDownSuite() {
+func (s *SecuredUnitsStoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *UsagesStoreSuite) TestStore() {
+func (s *SecuredUnitsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
-	usage := &storage.Usage{}
-	s.NoError(testutils.FullInit(usage, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	securedUnits := &storage.SecuredUnits{}
+	s.NoError(testutils.FullInit(securedUnits, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundUsage, exists, err := store.Get(ctx, usage.GetId())
+	foundSecuredUnits, exists, err := store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundUsage)
+	s.Nil(foundSecuredUnits)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, usage))
-	foundUsage, exists, err = store.Get(ctx, usage.GetId())
+	s.NoError(store.Upsert(ctx, securedUnits))
+	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(usage, foundUsage)
+	s.Equal(securedUnits, foundSecuredUnits)
 
-	usageCount, err := store.Count(ctx)
+	securedUnitsCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, usageCount)
-	usageCount, err = store.Count(withNoAccessCtx)
+	s.Equal(1, securedUnitsCount)
+	securedUnitsCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
-	s.Zero(usageCount)
+	s.Zero(securedUnitsCount)
 
-	usageExists, err := store.Exists(ctx, usage.GetId())
+	securedUnitsExists, err := store.Exists(ctx, securedUnits.GetId())
 	s.NoError(err)
-	s.True(usageExists)
-	s.NoError(store.Upsert(ctx, usage))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, usage), sac.ErrResourceAccessDenied)
+	s.True(securedUnitsExists)
+	s.NoError(store.Upsert(ctx, securedUnits))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, securedUnits), sac.ErrResourceAccessDenied)
 
-	foundUsage, exists, err = store.Get(ctx, usage.GetId())
+	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(usage, foundUsage)
+	s.Equal(securedUnits, foundSecuredUnits)
 
-	s.NoError(store.Delete(ctx, usage.GetId()))
-	foundUsage, exists, err = store.Get(ctx, usage.GetId())
+	s.NoError(store.Delete(ctx, securedUnits.GetId()))
+	foundSecuredUnits, exists, err = store.Get(ctx, securedUnits.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundUsage)
-	s.ErrorIs(store.Delete(withNoAccessCtx, usage.GetId()), sac.ErrResourceAccessDenied)
+	s.Nil(foundSecuredUnits)
+	s.ErrorIs(store.Delete(withNoAccessCtx, securedUnits.GetId()), sac.ErrResourceAccessDenied)
 
-	var usages []*storage.Usage
-	var usageIDs []string
+	var securedUnitss []*storage.SecuredUnits
+	var securedUnitsIDs []string
 	for i := 0; i < 200; i++ {
-		usage := &storage.Usage{}
-		s.NoError(testutils.FullInit(usage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		usages = append(usages, usage)
-		usageIDs = append(usageIDs, usage.GetId())
+		securedUnits := &storage.SecuredUnits{}
+		s.NoError(testutils.FullInit(securedUnits, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		securedUnitss = append(securedUnitss, securedUnits)
+		securedUnitsIDs = append(securedUnitsIDs, securedUnits.GetId())
 	}
 
-	s.NoError(store.UpsertMany(ctx, usages))
+	s.NoError(store.UpsertMany(ctx, securedUnitss))
 
-	usageCount, err = store.Count(ctx)
+	securedUnitsCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, usageCount)
+	s.Equal(200, securedUnitsCount)
 
-	s.NoError(store.DeleteMany(ctx, usageIDs))
+	s.NoError(store.DeleteMany(ctx, securedUnitsIDs))
 
-	usageCount, err = store.Count(ctx)
+	securedUnitsCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(0, usageCount)
+	s.Equal(0, securedUnitsCount)
 }

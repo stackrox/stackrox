@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	baseTable = "usages"
-	storeName = "Usage"
+	baseTable = "secured_units"
+	storeName = "SecuredUnits"
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -32,13 +32,13 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.UsagesSchema
+	schema         = pkgSchema.SecuredUnitsSchema
 	targetResource = resources.Administration
 )
 
-type storeType = storage.Usage
+type storeType = storage.SecuredUnits
 
-// Store is the interface to interact with the storage for storage.Usage
+// Store is the interface to interact with the storage for storage.SecuredUnits
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -62,8 +62,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoUsages,
-		copyFromUsages,
+		insertIntoSecuredUnits,
+		copyFromSecuredUnits,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -85,7 +85,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoUsages(batch *pgx.Batch, obj *storage.Usage) error {
+func insertIntoSecuredUnits(batch *pgx.Batch, obj *storage.SecuredUnits) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -98,13 +98,13 @@ func insertIntoUsages(batch *pgx.Batch, obj *storage.Usage) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO usages (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO secured_units (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromUsages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Usage) error {
+func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SecuredUnits) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -146,7 +146,7 @@ func copyFromUsages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"usages"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secured_units"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -169,11 +169,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableUsages(ctx, db)
+	dropTableSecuredUnits(ctx, db)
 }
 
-func dropTableUsages(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS usages CASCADE")
+func dropTableSecuredUnits(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secured_units CASCADE")
 
 }
 
