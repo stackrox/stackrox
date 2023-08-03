@@ -243,7 +243,7 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 
 	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(req.GetReportJobId(), rep.GetReportConfigurationId()), buf)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to fetch report data")
+		return nil, errors.Wrap(errox.InvariantViolation, "Failed to fetch report data")
 	}
 
 	if !exists {
