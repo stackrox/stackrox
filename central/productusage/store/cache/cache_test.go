@@ -3,15 +3,15 @@ package cache
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/usage/source"
-	"github.com/stackrox/rox/central/usage/source/mocks"
+	"github.com/stackrox/rox/central/productusage/source"
+	"github.com/stackrox/rox/central/productusage/source/mocks"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-func makeSource(ctrl *gomock.Controller, n int64, c int64) source.UsageSource {
-	s := mocks.NewMockUsageSource(ctrl)
+func makeSource(ctrl *gomock.Controller, n int64, c int64) source.SecuredUnitsSource {
+	s := mocks.NewMockSecuredUnitsSource(ctrl)
 	s.EXPECT().GetNodeCount().AnyTimes().Return(n)
 	s.EXPECT().GetCpuCapacity().AnyTimes().Return(c)
 	return s
@@ -60,9 +60,13 @@ func TestAggregateAndFlush(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	inject(ctrl, c)
+	bm := c.AggregateAndFlush()
+	assert.Equal(t, int64(3), bm.NumNodes)
+	assert.Equal(t, int64(30), bm.NumCpuUnits)
 
 	ids := set.NewStringSet()
-	bm := c.AggregateAndFlush()
+	c.Cleanup(ids)
+	bm = c.AggregateAndFlush()
 	assert.Equal(t, int64(0), bm.NumNodes)
 	assert.Equal(t, int64(0), bm.NumCpuUnits)
 

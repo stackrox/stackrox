@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
-	"go.etcd.io/etcd/proxy/grpcproxy/cache"
 )
 
 // DataStore is the datastore for usage.
