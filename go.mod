@@ -131,14 +131,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.2
-	helm.sh/helm/v3 v3.11.3
-	k8s.io/api v0.26.7
-	k8s.io/apiextensions-apiserver v0.26.3
+	helm.sh/helm/v3 v3.12.2
+	k8s.io/api v0.27.2
+	k8s.io/apiextensions-apiserver v0.27.2
 	k8s.io/apimachinery v0.27.4
-	k8s.io/apiserver v0.26.7
-	k8s.io/cli-runtime v0.26.7
-	k8s.io/client-go v0.26.7
-	k8s.io/kubectl v0.26.7
+	k8s.io/apiserver v0.27.2
+	k8s.io/cli-runtime v0.27.2
+	k8s.io/client-go v0.27.2
+	k8s.io/kubectl v0.27.2
 	k8s.io/kubelet v0.26.7
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/controller-runtime v0.14.6
@@ -156,8 +156,8 @@ require (
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.0 // indirect
-	github.com/Masterminds/squirrel v1.5.3 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
+	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
@@ -389,7 +389,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.26.7 // indirect
+	k8s.io/component-base v0.27.2 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect
@@ -405,8 +405,8 @@ require (
 	nhooyr.io/websocket v1.8.7 // indirect
 	oras.land/oras-go v1.2.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
-	sigs.k8s.io/kustomize/api v0.12.1 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
+	sigs.k8s.io/kustomize/api v0.13.2 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
