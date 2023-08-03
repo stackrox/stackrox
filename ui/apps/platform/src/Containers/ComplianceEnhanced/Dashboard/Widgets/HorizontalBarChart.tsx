@@ -58,7 +58,7 @@ function HorizontalBarChart({ passingRateData }: HorizontalBarChartProps) {
                             key={name}
                             barWidth={defaultChartBarWidth}
                             data={[{ x: name, y: passing }]}
-                            labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}%`}
+                            labels={({ datum }) => `${parseInt(datum.y, 10)}%`}
                             style={{
                                 data: {
                                     fill: ({ datum }) => getBarColor(datum.y),
