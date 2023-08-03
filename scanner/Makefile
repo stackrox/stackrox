@@ -20,7 +20,7 @@ endif
 endif
 
 ifeq ($(TAG),)
-	TAG = $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
+	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
 endif
 
 UNAME_S := $(shell uname -s)
