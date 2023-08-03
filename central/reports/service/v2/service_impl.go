@@ -108,14 +108,14 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-	if req == nil || req.GetReportConfigId() == "" {
+	if req == nil || req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
 	}
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	conjuncQuery := search.ConjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetReportConfigId()).ProtoQuery(), parsedQuery)
+	conjuncQuery := search.ConjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(), parsedQuery)
 	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjuncQuery)
 	if err != nil {
 		return nil, err

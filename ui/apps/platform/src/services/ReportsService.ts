@@ -176,9 +176,11 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
 }
 
 export function fetchReportHistory(id: string): Promise<ReportSnapshot[]> {
-    return axios.get<ReportHistoryResponse>(`/v2/reports/history/${id}`).then((response) => {
-        return response.data?.reportSnapshots ?? [];
-    });
+    return axios
+        .get<ReportHistoryResponse>(`/v2/reports/configurations/${id}/history`)
+        .then((response) => {
+            return response.data?.reportSnapshots ?? [];
+        });
 }
 
 export function createReportConfiguration(

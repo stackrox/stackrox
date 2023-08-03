@@ -91,7 +91,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 	suite.reportSnapshotStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
-		ReportConfigId:   "test_report_config",
+		Id:               "test_report_config",
 		ReportParamQuery: emptyQuery,
 	}
 
@@ -101,7 +101,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 	assert.Equal(suite.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
 	req = &apiV2.GetReportHistoryRequest{
-		ReportConfigId:   "",
+		Id:               "",
 		ReportParamQuery: emptyQuery,
 	}
 
@@ -110,7 +110,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 
 	query := &apiV2.RawQuery{Query: "Report Name:test_report"}
 	req = &apiV2.GetReportHistoryRequest{
-		ReportConfigId:   "test_report_config",
+		Id:               "test_report_config",
 		ReportParamQuery: query,
 	}
 
