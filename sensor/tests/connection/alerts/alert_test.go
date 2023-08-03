@@ -42,7 +42,7 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
-		_, err = c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, DeploymentWithViolation, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, DeploymentWithViolation, nil)
 		require.NoError(t, err)
 
 		// After first deployment, should see an alert for deployment

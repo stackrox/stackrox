@@ -331,7 +331,7 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
 		obj := objByKind(resources[i].Kind)
-		removeFn, err := c.ApplyResourceAndWait(t, context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
+		removeFn, err := c.ApplyResourceAndWait(context.Background(), t, DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
 			return errors.Errorf("fail to apply resource: %s", err)
 		}
@@ -726,14 +726,14 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 // ApplyResourceAndWaitNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
 // Use this if there is no need to get or manipulate the data in the YAML file.
-func (c *TestContext) ApplyResourceAndWaitNoObject(t *testing.T, ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
+func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, t *testing.T, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
-	return c.ApplyResourceAndWait(t, ctx, ns, &resource, obj, retryFn)
+	return c.ApplyResourceAndWait(ctx, t, ns, &resource, obj, retryFn)
 }
 
 // ApplyResourceAndWait calls ApplyResource and waits for the resource if it's "waitable" (e.g. Deployment or Pod).
-func (c *TestContext) ApplyResourceAndWait(t *testing.T, ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
-	fn, err := c.ApplyResource(t, ctx, ns, resource, obj, retryFn)
+func (c *TestContext) ApplyResourceAndWait(ctx context.Context, t *testing.T, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+	fn, err := c.ApplyResource(ctx, t, ns, resource, obj, retryFn)
 	if err != nil {
 		return nil, err
 	}
@@ -752,7 +752,7 @@ func (c *TestContext) ApplyResourceAndWait(t *testing.T, ctx context.Context, ns
 // with the properties from the resource definition. In case the creation fails (due to the client
 // API rejecting the definition), a `RetryCallback` function can be provided to manipulate the
 // object prior to the retry.
-func (c *TestContext) ApplyResource(t *testing.T, ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+func (c *TestContext) ApplyResource(ctx context.Context, t *testing.T, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
 	if resource.Obj != nil {
 		var ok bool
 		obj, ok = resource.Obj.(k8s.Object)

@@ -361,7 +361,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
 	// Adding retries on creation helped a lot, but it's still not enough.
 	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-		deleteDep, err := testC.ApplyResourceAndWaitNoObject(t, context.Background(), helper.DefaultNamespace, NginxDeployment, nil)
+		deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, NginxDeployment, nil)
 		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
 
@@ -376,7 +376,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 		}
 		setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
 
-		deleteService, err := testC.ApplyResourceAndWaitNoObject(t, context.Background(), helper.DefaultNamespace, nginxServiceNodePort, func(err error, obj k8s.Object) error {
+		deleteService, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, nginxServiceNodePort, func(err error, obj k8s.Object) error {
 			// Only checking services
 			if _, ok := obj.(*v1.Service); !ok {
 				return nil

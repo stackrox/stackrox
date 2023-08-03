@@ -53,18 +53,18 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		ctx := context.Background()
 
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
-		_, err = c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, NginxDeployment1, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, NginxDeployment1, nil)
 		require.NoError(t, err)
-		deleteDeployment2, err := c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, NginxDeployment2, nil)
+		deleteDeployment2, err := c.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, NginxDeployment2, nil)
 		require.NoError(t, err)
 
-		_, err = c.ApplyResourceAndWaitNoObject(t, ctx, helper.DefaultNamespace, NetpolBlockEgress, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, NetpolBlockEgress, nil)
 		require.NoError(t, err)
 
 		testContext.StopCentralGRPC()
 
 		obj := &appsV1.Deployment{}
-		_, err = c.ApplyResource(t, ctx, helper.DefaultNamespace, &NginxDeployment3, obj, nil)
+		_, err = c.ApplyResource(ctx, t, helper.DefaultNamespace, &NginxDeployment3, obj, nil)
 		require.NoError(t, err)
 
 		require.NoError(t, deleteDeployment2())

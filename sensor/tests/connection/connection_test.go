@@ -94,7 +94,7 @@ func Test_SensorReconnects(t *testing.T) {
 		assert.False(t, testContext.SensorStopped())
 
 		// We applied the resource _after_ Sensor restarted. Now we should check that this deployment will be sent to Central.
-		_, err = c.ApplyResourceAndWaitNoObject(t, context.Background(), helper.DefaultNamespace, NginxDeployment1, nil)
+		_, err = c.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, NginxDeployment1, nil)
 		require.NoError(t, err)
 	}))
 }
