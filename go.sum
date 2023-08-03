@@ -1246,6 +1246,8 @@ github.com/openshift/api v0.0.0-20230502160752-c71432710382 h1:oIlUAGCdktBKMjCMt
 github.com/openshift/api v0.0.0-20230502160752-c71432710382/go.mod h1:ctXNyWanKEjGj8sss1KjjHQ3ENKFm33FFnS5BKaIPh4=
 github.com/openshift/client-go v0.0.0-20230120202327-72f107311084 h1:66uaqNwA+qYyQDwsMWUfjjau8ezmg1dzCqub13KZOcE=
 github.com/openshift/client-go v0.0.0-20230120202327-72f107311084/go.mod h1:M3h9m001PWac3eAudGG3isUud6yBjr5XpzLYLLTlHKo=
+github.com/openshift/runtime-utils v0.0.0-20220926190846-5c488b20a19f h1:ubRzazPtplWWNWWX07v4ww74S9QL+B2RAxHJ8O00m7o=
+github.com/openshift/runtime-utils v0.0.0-20220926190846-5c488b20a19f/go.mod h1:l9/qeKZuAmYUMl0yicJlbkPGDsIycGhwxOvOAWyaP0E=
 github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492/go.mod h1:Ngi6UdF0k5OKD5t5wlmGhe/EDKPoUM3BXZSSfIuJbis=
 github.com/opentracing/basictracer-go v1.0.0/go.mod h1:QfBfYuafItcjQuMwinw9GhYKwFXS9KnPs5lxoYwgW74=
 github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=

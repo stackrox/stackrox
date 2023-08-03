@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	configV1 "github.com/openshift/api/config/v1"
@@ -84,4 +86,13 @@ func TestProcessEvent(t *testing.T) {
 			assert.Panics(t, func() { d.ProcessEvent(nil, nil, 0) })
 		}
 	})
+}
+
+func TestDoWrite(t *testing.T) {
+	path := "/Users/dcaravel/dev/stackrox/stackrox-mirror-filesys/dignore/containers/registries.conf"
+
+	err := os.MkdirAll(filepath.Dir(path), 0755)
+	if err != nil {
+		t.Error(err)
+	}
 }
