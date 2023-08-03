@@ -418,6 +418,467 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	s.Equal(expected, flowStrings)
 }
 
+func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterministicMasking() {
+	// Test setup:
+	// Query selects namespace foo and bar (visible)
+	// Namespace baz is visible but not selected
+	// Namespace far is not visible but selected
+	// User has no network flow access in namespace bar
+	// Namespace foo has deployments:
+	// - depA has incoming flows from depB, depD, depE, deployment depX and depZ in a secret namespace,
+	//   and deployment depY that was recently deleted, and external sources es1 and es2.
+	// - depB has incoming flows from depA and deployment depX in a secret namespace, and depW in another secret namespace
+	// - depC has incoming flows from depA and depW, and deleted external source es4.
+	// - depG and depH are orchestrator components.
+	// Namespace bar:
+	// - depD has incoming flows from depA and depE, and external source es3.
+	// - depE has incoming flows from depD and depB
+	// Namespace baz:
+	// - depF has incoming flows from depB, and external source es3
+	// Namespace far (invisible):
+	// - depQ (invisible) has incoming flows from external source es1 and es3.
+	// External Sources:
+	// - es1 has incoming flow from deployments depA and depD.
+	// - es3 has incoming flow from deployment depD and external source es1.
+	// EXPECT:
+	//   - all flows within namespace foo
+	//   - flows to/from namespace foo and bar
+	//   - flows between deployments in namespace foo and bar and masked deployments depX, depZ, and depW
+	//   - flows es1 - depA, es2 - depA
+	// The difference with the previous test is that here, the calls to GetMatchingFlows and
+	// SearchListDeployments have the same results, in a different order.
+
+	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
+
+	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKey(resources.Deployment.Resource),
+		sac.ClusterScopeKey("mycluster"),
+	})
+
+	ctxHasClusterWideNetworkFlowAccessMatcher := sacTestutils.ContextWithAccess(
+		sac.ScopeSuffix{
+			sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKey(resources.NetworkGraph.Resource),
+			sac.ClusterScopeKey("mycluster"),
+		})
+
+	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/20")
+	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/16")
+	es1cID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/8")
+	es2ID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/23")
+	es3ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/16")
+	es4ID, _ := externalsrcs.NewClusterScopedID("mycluster", "10.10.10.10/8")
+	es5ID, _ := externalsrcs.NewClusterScopedID("mycluster", "36.188.144.0/30")
+
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "35.187.144.0/20", false)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false)
+	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false)
+	es2 := testutils.GetExtSrcNetworkEntityInfo(es2ID.String(), "2", "35.187.144.0/23", false)
+	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false)
+
+	fooBarDeploymentsOrdered := []*storage.ListDeployment{
+		{
+			Id:        "depA",
+			Name:      "depA",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depB",
+			Name:      "depB",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depC",
+			Name:      "depC",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depD",
+			Name:      "depD",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depE",
+			Name:      "depE",
+			Namespace: "bar",
+		},
+	}
+
+	fooBarDeploymentsShuffled := []*storage.ListDeployment{
+		{
+			Id:        "depE",
+			Name:      "depE",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depC",
+			Name:      "depC",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depA",
+			Name:      "depA",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depD",
+			Name:      "depD",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depB",
+			Name:      "depB",
+			Namespace: "foo",
+		},
+	}
+
+	s.Require().ElementsMatch(fooBarDeploymentsOrdered, fooBarDeploymentsShuffled)
+
+	fooBarBazDeploymentsOrdered := []*storage.ListDeployment{
+		{
+			Id:        "depA",
+			Name:      "depA",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depB",
+			Name:      "depB",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depC",
+			Name:      "depC",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depD",
+			Name:      "depD",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depE",
+			Name:      "depE",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depF",
+			Name:      "depF",
+			Namespace: "baz",
+		},
+	}
+
+	fooBarBazDeploymentsShuffled := []*storage.ListDeployment{
+		{
+			Id:        "depE",
+			Name:      "depE",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depC",
+			Name:      "depC",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depA",
+			Name:      "depA",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depF",
+			Name:      "depF",
+			Namespace: "baz",
+		},
+		{
+			Id:        "depD",
+			Name:      "depD",
+			Namespace: "bar",
+		},
+		{
+			Id:        "depB",
+			Name:      "depB",
+			Namespace: "foo",
+		},
+	}
+
+	s.Require().ElementsMatch(fooBarBazDeploymentsOrdered, fooBarBazDeploymentsShuffled)
+
+	maskedDeploymentsOrdered := []*storage.ListDeployment{
+		{
+			Id:        "depQ",
+			Name:      "depQ",
+			Namespace: "far",
+		},
+		{
+			Id:        "depW",
+			Name:      "depW",
+			Namespace: "supersecretns",
+		},
+		{
+			Id:        "depX",
+			Name:      "depX",
+			Namespace: "secretns",
+		},
+		{
+			Id:        "depZ",
+			Name:      "depZ",
+			Namespace: "secretns",
+		},
+		// depY was deleted
+	}
+
+	maskedDeploymentsShuffled := []*storage.ListDeployment{
+		{
+			Id:        "depZ",
+			Name:      "depZ",
+			Namespace: "secretns",
+		},
+		{
+			Id:        "depQ",
+			Name:      "depQ",
+			Namespace: "far",
+		},
+		{
+			Id:        "depX",
+			Name:      "depX",
+			Namespace: "secretns",
+		},
+		{
+			Id:        "depW",
+			Name:      "depW",
+			Namespace: "supersecretns",
+		},
+		// depY was deleted
+	}
+
+	s.Require().ElementsMatch(maskedDeploymentsOrdered, maskedDeploymentsShuffled)
+
+	flowsOrdered := []*storage.NetworkFlow{
+		depFlow("depA", "depB"),
+		depFlow("depA", "depD"),
+		depFlow("depA", "depE"),
+		depFlow("depA", "depG"),
+		depFlow("depA", "depH"),
+		depFlow("depA", "depX"),
+		depFlow("depA", "depY"),
+		depFlow("depA", "depZ"),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1bID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1cID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depB", "depA"),
+		depFlow("depB", "depF"),
+		depFlow("depB", "depG"),
+		depFlow("depB", "depH"),
+		depFlow("depB", "depW"),
+		depFlow("depB", "depX"),
+		depFlow("depC", "depA"),
+		depFlow("depC", "depW"),
+		anyFlow("depC", storage.NetworkEntityInfo_DEPLOYMENT, es4ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depD", "depA"),
+		depFlow("depD", "depE"),
+		depFlow("depD", "depF"),
+		depFlow("depD", "depZ"),
+		anyFlow("depD", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depE", "depB"),
+		depFlow("depE", "depD"),
+		depFlow("depE", "depX"),
+		depFlow("depF", "depB"),
+		anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depG", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depH", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, networkgraph.InternetExternalSourceID, storage.NetworkEntityInfo_INTERNET),
+		anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
+		anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+		anyFlow(es2.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+		anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+		anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+	}
+
+	flowsShuffled := []*storage.NetworkFlow{
+		depFlow("depC", "depW"),
+		anyFlow("depG", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1cID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depD", "depZ"),
+		depFlow("depB", "depA"),
+		depFlow("depA", "depD"),
+		depFlow("depD", "depA"),
+		depFlow("depD", "depE"),
+		depFlow("depD", "depF"),
+		depFlow("depA", "depE"),
+		anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depB", "depG"),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1bID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depA", "depG"),
+		anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+		anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depB", "depF"),
+		depFlow("depE", "depX"),
+		depFlow("depB", "depH"),
+		anyFlow("depD", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depE", "depB"),
+		depFlow("depC", "depA"),
+		depFlow("depA", "depZ"),
+		anyFlow("depH", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		depFlow("depE", "depD"),
+		depFlow("depA", "depX"),
+		depFlow("depB", "depW"),
+		anyFlow(es2.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+		anyFlow("depC", storage.NetworkEntityInfo_DEPLOYMENT, es4ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+		anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, networkgraph.InternetExternalSourceID, storage.NetworkEntityInfo_INTERNET),
+		depFlow("depA", "depB"),
+		anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
+		depFlow("depA", "depY"),
+		depFlow("depA", "depH"),
+		depFlow("depB", "depX"),
+		depFlow("depF", "depB"),
+		anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+	}
+
+	s.Require().ElementsMatch(flowsOrdered, flowsShuffled)
+
+	expected := []string{
+		"foo/depA <- foo/depB",
+		"foo/depA <- bar/depD",
+		"foo/depA <- bar/depE",
+		"foo/depA <- masked namespace #1/masked deployment #2",
+		"foo/depA <- masked namespace #1/masked deployment #3",
+		"foo/depA <- mycluster__net1",
+		"foo/depA <- " + es2ID.String(),
+		"foo/depA <- " + es3ID.String(), // non-existent es5 mapped to supernet es3
+		"foo/depB <- foo/depA",
+		"foo/depB <- baz/depF",
+		"foo/depB <- masked namespace #1/masked deployment #2",
+		"foo/depB <- masked namespace #2/masked deployment #1",
+		"foo/depC <- foo/depA",
+		"foo/depC <- masked namespace #2/masked deployment #1",
+		"foo/depC <- " + networkgraph.InternetExternalSourceID,
+		"bar/depD <- foo/depA",
+		"bar/depE <- foo/depB",
+		"baz/depF <- foo/depB",
+		"mycluster__net1 <- foo/depA",
+	}
+	sort.Strings(expected)
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: {
+					resources.Deployment.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz"}},
+						},
+					},
+					resources.NetworkGraph.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "baz", "far"}},
+						},
+					},
+				},
+			}))
+
+	ts := types.TimestampNow()
+	req := &v1.NetworkGraphRequest{
+		ClusterId: "mycluster",
+		Query:     "Namespace: foo,bar,far",
+		Scope: &v1.NetworkGraphScope{
+			Query: "Orchestrator Component:false",
+		},
+		Since: ts,
+	}
+
+	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b, es1c, es2, es3})
+	s.NoError(err)
+
+	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(5, nil)
+	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
+		fooBarDeploymentsOrdered, nil)
+
+	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
+
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+			return networkgraph.FilterFlowsByPredicate(flowsOrdered, pred), types.TimestampNow(), nil
+		})
+
+	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
+	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
+
+	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
+		fooBarBazDeploymentsOrdered, nil)
+
+	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
+		maskedDeploymentsOrdered, nil)
+
+	graph, err := s.tested.GetNetworkGraph(ctx, req)
+	s.Require().NotNil(graph)
+	s.Require().NoError(err)
+
+	var flowStrings []string
+	for _, node := range graph.GetNodes() {
+		for succIdx := range node.GetOutEdges() {
+			succ := graph.GetNodes()[succIdx]
+			src, dst := node.GetEntity(), succ.GetEntity()
+
+			flowStrings = append(flowStrings, flowAsString(src, dst))
+		}
+	}
+
+	sort.Strings(flowStrings)
+	s.Equal(expected, flowStrings)
+
+	// Second run, change only the order of the elements in SearchListDeployments
+	// and ...
+
+	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(5, nil)
+	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
+		fooBarDeploymentsShuffled, nil)
+
+	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
+
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+			return networkgraph.FilterFlowsByPredicate(flowsShuffled, pred), types.TimestampNow(), nil
+		})
+
+	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
+	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
+
+	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
+		fooBarBazDeploymentsShuffled, nil)
+
+	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
+		maskedDeploymentsShuffled, nil)
+
+	graph, err = s.tested.GetNetworkGraph(ctx, req)
+	s.Require().NotNil(graph)
+	s.Require().NoError(err)
+
+	var flowStringsSecondPass []string
+	for _, node := range graph.GetNodes() {
+		for succIdx := range node.GetOutEdges() {
+			succ := graph.GetNodes()[succIdx]
+			src, dst := node.GetEntity(), succ.GetEntity()
+
+			flowStringsSecondPass = append(flowStringsSecondPass, flowAsString(src, dst))
+		}
+	}
+	sort.Strings(flowStringsSecondPass)
+	s.Equal(expected, flowStringsSecondPass)
+}
+
 func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withListenPorts bool) {
 	// Test setup:
 	// Query selects namespace foo and bar (visible)
