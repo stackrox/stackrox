@@ -9,6 +9,12 @@
 set -Eeo pipefail
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 
+### STACKROX MODIFIED - Fast shutdown to kill and rollback in-flight transactions.
+shutdown() {
+  pg_ctl -D /var/lib/postgresql/data/pgdata stop -m fast
+}
+trap shutdown SIGINT SIGTERM
+
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
@@ -353,7 +359,13 @@ _main() {
 		fi
 	fi
 
-	exec "$@"
+	### STACKROX MODIFIED - Start Postgres as a child process and
+	### prevent multiple pods on the same node from using this instance.
+	### Note: this may not be needed with ReadWriteOncePod.
+	flock /var/lib/postgresql/data/pglock "$@" &
+	child=$!
+	echo "Waiting for child process $child to exit"
+	wait "$child"
 }
 
 if ! _is_sourced; then
