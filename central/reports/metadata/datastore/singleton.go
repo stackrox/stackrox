@@ -2,10 +2,11 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/reports/snapshot/datastore/search"
-	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
+	"github.com/stackrox/rox/central/reports/metadata/datastore/search"
+	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -14,12 +15,14 @@ var (
 )
 
 func initialize() {
+	var err error
 	storage := pgStore.New(globaldb.GetPostgres())
 	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
-	ds = New(storage, search.New(storage, indexer))
+	ds, err = New(storage, search.New(storage, indexer))
+	utils.CrashOnError(err)
 }
 
-// Singleton returns a singleton instance of ReportSnapshot datastore
+// Singleton returns a singleton instance of ReportMetadata datastore
 func Singleton() DataStore {
 	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil

@@ -9,7 +9,7 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -25,7 +25,7 @@ type Service interface {
 func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	scheduler schedulerV2.Scheduler) Service {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
 	return &serviceImpl{

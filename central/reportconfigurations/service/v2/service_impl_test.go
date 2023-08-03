@@ -11,7 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -44,8 +44,8 @@ type upsertTestCase struct {
 
 func (s *ReportConfigurationServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip test when reporting enhancements are disabled")
 		s.T().SkipNow()
 	}

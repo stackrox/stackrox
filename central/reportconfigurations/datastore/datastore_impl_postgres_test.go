@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -100,9 +100,9 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore()
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
 
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip Reporting 2.0 tests")
 		s.T().SkipNow()
 	}
@@ -121,9 +121,9 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
 
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip Reporting 2.0 tests")
 		s.T().SkipNow()
 	}

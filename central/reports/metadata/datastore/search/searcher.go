@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/reports/snapshot/datastore/index"
-	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
+	"github.com/stackrox/rox/central/reports/metadata/datastore/index"
+	pgStore "github.com/stackrox/rox/central/reports/metadata/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -20,14 +20,14 @@ var (
 	}
 )
 
-// Searcher provides search functionality on existing ReportSnapshots.
+// Searcher provides search functionality on existing ReportMetadatas.
 //
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 	Count(ctx context.Context, query *v1.Query) (int, error)
 	SearchResults(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error)
-	SearchReportSnapshots(context.Context, *v1.Query) ([]*storage.ReportSnapshot, error)
+	SearchReportMetadatas(context.Context, *v1.Query) ([]*storage.ReportMetadata, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
