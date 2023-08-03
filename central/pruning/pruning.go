@@ -23,18 +23,22 @@ import (
 	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -85,7 +89,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	serviceAccts serviceAccountDataStore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
-	logimbueStore logimbueDataStore.Store) GarbageCollector {
+	logimbueStore logimbueDataStore.Store,
+	reportSnapshotDS snapshotDS.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -107,6 +112,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		logimbueStore:   logimbueStore,
 		stopper:         concurrency.NewStopper(),
 		postgres:        globaldb.GetPostgres(),
+		reportSnapshot:  reportSnapshotDS,
 	}
 }
 
@@ -132,6 +138,7 @@ type garbageCollectorImpl struct {
 	k8sRoleBindings roleBindingDataStore.DataStore
 	logimbueStore   logimbueDataStore.Store
 	stopper         concurrency.Stopper
+	reportSnapshot  snapshotDS.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -156,6 +163,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
+	if features.VulnMgmtReportingEnhancements.Enabled() {
+		g.removeOldReportHistory(pvtConfig)
+	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -544,6 +554,16 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 		if err := g.images.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
 			log.Error(err)
 		}
+	}
+}
+
+func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {
+	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
+	query := search.NewQueryBuilder().AddDays(search.ReportCompletionTime, int64(reportHistoryRetentionConfig)).ProtoQuery()
+	err := pgSearch.RunDeleteRequestForSchema(pruningCtx, pkgSchema.ReportSnapshotsSchema, query, g.postgres)
+
+	if err != nil {
+		log.Errorf("Delete query for report snapshot history unsuccessful: %s", err)
 	}
 }
 

@@ -108,7 +108,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	return &apiV2.Empty{}, nil
 }
 
-func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *apiV2.RawQuery) (*apiV2.GetReportConfigurationsResponse, error) {
+func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2.RawQuery) (*apiV2.ListReportConfigurationsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -131,7 +131,7 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *apiV2.
 		}
 		v2Configs = append(v2Configs, converted)
 	}
-	return &apiV2.GetReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
+	return &apiV2.ListReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
 }
 
 func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {

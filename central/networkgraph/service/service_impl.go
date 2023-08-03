@@ -540,6 +540,44 @@ func filterFlowsAndMaskScopeAlienDeployments(
 	// Step 2: Mask deployments a user is not allowed to see.
 	masker := newFlowGraphMasker()
 
+	// Step 2.1: Register deployments a user is not allowed to see for masking.
+	for _, flow := range flows {
+		skipFlow := false
+		entities := []*storage.NetworkEntityInfo{flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()}
+		for _, entity := range entities {
+			// no masking or skipping required for non-deployment type entities.
+			if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
+				continue
+			}
+
+			// no masking or skipping required for deployments already in the set.
+			if deploymentsMap[entity.GetId()] != nil {
+				continue
+			}
+
+			// no masking or skipping required for neighboring deployments.
+			if visibleNeighboringDeployments.Contains(entity.GetId()) {
+				continue
+			}
+
+			invisibleDeployment := existingButInvisibleDeploymentsMap[entity.GetId()]
+			if invisibleDeployment == nil {
+				skipFlow = true // deployment has been deleted or does not satisfy scope.
+				break
+			}
+
+			// To avoid information leak we always show all masked neighbors
+			masker.RegisterDeploymentForMasking(invisibleDeployment)
+		}
+		if skipFlow {
+			continue
+		}
+	}
+
+	// Step 2.2: Pre-compute deployment masking information.
+	masker.MaskDeploymentsAndNamespaces()
+
+	// Step 2.3: Replace deployments a user is not allowed to see with their masked counterparts.
 	for _, flow := range flows {
 		skipFlow := false
 		entities := []*storage.NetworkEntityInfo{flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()}

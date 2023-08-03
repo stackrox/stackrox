@@ -102,6 +102,8 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 func (rs *Store) Cleanup() {
 	rs.mutex.Lock()
 	defer rs.mutex.Unlock()
+	rs.clusterLocalRegistryHostsMutex.Lock()
+	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
