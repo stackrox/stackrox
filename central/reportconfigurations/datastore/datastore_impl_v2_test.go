@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
+	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -28,7 +28,7 @@ type ReportConfigurationDatastoreV2Tests struct {
 
 	testDB              *pgtest.TestPostgres
 	datastore           DataStore
-	reportMetadataStore metadataDS.DataStore
+	reportSnapshotStore reportSnapshotDS.DataStore
 	ctx                 context.Context
 }
 
@@ -43,8 +43,7 @@ func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.NoError(err)
-	s.reportMetadataStore, err = metadataDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.NoError(err)
+	s.reportSnapshotStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -101,23 +100,23 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	time6, err := types.TimestampProto(time.Now().Add(-6 * time.Hour))
 	s.NoError(err)
 
-	reportMetadatas := []*storage.ReportMetadata{
-		generateReportMetadata(configID3, time1),
-		generateReportMetadata(configID2, time2),
-		generateReportMetadata(configID2, time3),
-		generateReportMetadata(configID1, time4),
-		generateReportMetadata(configID3, time5),
-		generateReportMetadata(configID1, time6),
+	reportSnapshots := []*storage.ReportSnapshot{
+		generateReportSnapshot(configID3, time1),
+		generateReportSnapshot(configID2, time2),
+		generateReportSnapshot(configID2, time3),
+		generateReportSnapshot(configID1, time4),
+		generateReportSnapshot(configID3, time5),
+		generateReportSnapshot(configID1, time6),
 	}
 
-	for _, metadata := range reportMetadatas {
-		_, err = s.reportMetadataStore.AddReportMetadata(s.ctx, metadata)
+	for _, snap := range reportSnapshots {
+		_, err = s.reportSnapshotStore.AddReportSnapshot(s.ctx, snap)
 		s.NoError(err)
 	}
 
 	// Test query with report metadata fields
 	query1 := search.NewQueryBuilder().
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
+		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true))).ProtoQuery()
 
@@ -134,7 +133,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 
 	// Test a query with combination of report config and report metadata fields
 	query2 := search.NewQueryBuilder().
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
+		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.CollectionID, "collection-2").
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true))).ProtoQuery()
@@ -151,11 +150,10 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	s.Equal(expectedSortedConfigIDs, configIDs)
 }
 
-func generateReportMetadata(configID string, completionTime *types.Timestamp) *storage.ReportMetadata {
-	metadata := fixtures.GetReportMetadata()
-	metadata.ReportId = ""
+func generateReportSnapshot(configID string, completionTime *types.Timestamp) *storage.ReportSnapshot {
+	metadata := fixtures.GetReportSnapshot()
 	metadata.ReportStatus.CompletedAt = completionTime
-	metadata.ReportConfigId = configID
+	metadata.ReportConfigurationId = configID
 
 	return metadata
 }
