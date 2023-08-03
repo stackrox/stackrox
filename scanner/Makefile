@@ -20,7 +20,7 @@ endif
 endif
 
 ifeq ($(TAG),)
-	TAG = $(shell $(MAKE) -C ../ tag)
+	TAG = $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
 endif
 
 UNAME_S := $(shell uname -s)
@@ -37,6 +37,12 @@ GOARCH := amd64
 ifeq ($(UNAME_M),arm64)
 	ARCH := aarch64
 	GOARCH := arm64
+endif
+
+GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
+EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
+ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
+$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
 endif
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
@@ -96,12 +102,7 @@ db-image:
 ## Tools ##
 ###########
 
-.PHONY: verify-go
-verify-go:
-	$(SILENT)echo "+ $@"
-	$(SILENT)grep -q "$(shell cat ../EXPECTED_GO_VERSION)" <(go version)
-
-deps: verify-go ../go.mod
+deps: ../go.mod
 	$(SILENT)echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
