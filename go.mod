@@ -27,7 +27,7 @@ require (
 	github.com/dexidp/dex v0.0.0-20230320125501-2bb4896d120e
 	github.com/docker/distribution v2.8.2+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
-	github.com/docker/docker v23.0.6+incompatible
+	github.com/docker/docker v24.0.0+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/driftprogramming/pgxpoolmock v1.1.0
@@ -46,7 +46,7 @@ require (
 	github.com/google/certificate-transparency-go v1.1.6
 	github.com/google/gnostic v0.6.9
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
+	github.com/google/go-containerregistry v0.16.1
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -158,7 +158,8 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/squirrel v1.5.3 // indirect
-	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/Microsoft/hcsshim v0.10.0-rc.7 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
@@ -177,16 +178,19 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2 // indirect
+	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/containerd/containerd v1.7.0 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
+	github.com/containerd/ttrpc v1.2.1 // indirect
+	github.com/containerd/typeurl/v2 v2.1.0 // indirect
 	github.com/containers/storage v1.45.3 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20221212123742-001c36b64ec3 // indirect
 	github.com/digitorus/timestamp v0.0.0-20221019182153-ef3b63b79b31 // indirect
-	github.com/docker/cli v23.0.1+incompatible // indirect
+	github.com/docker/cli v24.0.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
@@ -300,7 +304,6 @@ require (
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/sys/mount v0.3.3 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
-	github.com/moby/sys/symlink v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -310,7 +313,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0-rc.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
@@ -360,7 +363,7 @@ require (
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
-	github.com/vbatts/tar-split v0.11.2 // indirect
+	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
