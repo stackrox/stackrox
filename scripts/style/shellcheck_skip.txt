@@ -30,6 +30,7 @@ scale/launch_workload.sh
 scale/profiler/launch-profiler.sh
 scale/profiler/port-forward.sh
 scale/signatures/deploy.sh
+scanner/image/db/scripts/docker-entrypoint.sh
 scripts/certification/run.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh

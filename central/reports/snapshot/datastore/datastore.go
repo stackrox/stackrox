@@ -26,7 +26,9 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ReportSnapshot, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ReportSnapshot, error)
 
-	AddReportSnapshot(ctx context.Context, report *storage.ReportSnapshot) error
+	// AddReportSnapshot adds the given snapshot to database. The implementation should generate and return the ReportId
+	AddReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) (string, error)
+	UpdateReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) error
 	DeleteReportSnapshot(ctx context.Context, id string) error
 
 	Walk(ctx context.Context, fn func(report *storage.ReportSnapshot) error) error

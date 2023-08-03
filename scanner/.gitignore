@@ -1,0 +1,19 @@
+# IDE
+.idea
+.vscode
+
+# Mac OS hidden file
+.DS_Store
+
+# Makefile cruft
+deps
+/.gobin/
+
+# nohup output when running port-forwards
+nohup.out
+
+# Vim swap files
+*.swp
+
+# Go mod
+vendor

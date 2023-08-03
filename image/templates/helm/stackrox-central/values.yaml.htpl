@@ -369,3 +369,7 @@ central:
 #    # via `overrideAPIResources`.
 #    extraAPIResources: []
 #
+#monitoring:
+#  # Enables integration with OpenShift platform monitoring.
+#  openshift:
+#    enabled: true

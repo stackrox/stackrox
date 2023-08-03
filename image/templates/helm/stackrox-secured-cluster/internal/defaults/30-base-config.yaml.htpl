@@ -76,7 +76,7 @@ admissionControl:
     timeout: 20
     enforceOnUpdates: false
   replicas: 3
-  
+
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
