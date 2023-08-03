@@ -123,6 +123,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
+					cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
 					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
 					c.umh.ObserveSending()
 					c.cache = msg.Clone()
