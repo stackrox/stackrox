@@ -49,10 +49,10 @@ func Run(databases *types.Databases) error {
 		return nil
 	}
 	if dbSeqNum > currSeqNum {
-		return fmt.Errorf("DB sequence number %d is greater than the latest one we have (%d). This means "+
-			"the migration binary is likely out of date", dbSeqNum, currSeqNum)
+		log.WriteToStderrf("DB sequence number %d is greater than the latest one we have (%d). This means "+
+			"we are in a rollback.", dbSeqNum, currSeqNum)
 	}
-	if dbSeqNum != currSeqNum {
+	if dbSeqNum <= currSeqNum {
 		log.WriteToStderrf("Found DB at version %d, which is less than what we expect (%d). Running migrations...", dbSeqNum, currSeqNum)
 		if err := runMigrations(databases, dbSeqNum); err != nil {
 			return err
