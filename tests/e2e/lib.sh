@@ -197,17 +197,30 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
-
-    env - \
-      centralAdminPasswordBase64="$centralAdminPasswordBase64" \
-      centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
-      centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
-      central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
-      central_exposure_route_enabled="$central_exposure_route_enabled" \
-      customize_envVars="$customize_envVars" \
-    envsubst \
-      < tests/e2e/yaml/central-cr.envsubst.yaml \
-      > /tmp/central-cr.yaml
+    
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        env - \
+        centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+        centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+        centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
+        central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
+        central_exposure_route_enabled="$central_exposure_route_enabled" \
+        customize_envVars="$customize_envVars" \
+        envsubst \
+        < tests/e2e/yaml/central-cr-midstream.envsubst.yaml \
+        > /tmp/central-cr.yaml
+    else
+        env - \
+        centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+        centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+        centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
+        central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
+        central_exposure_route_enabled="$central_exposure_route_enabled" \
+        customize_envVars="$customize_envVars" \
+        envsubst \
+        < tests/e2e/yaml/central-cr.envsubst.yaml \
+        > /tmp/central-cr.yaml
+    fi
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 

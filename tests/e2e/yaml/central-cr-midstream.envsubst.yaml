@@ -1,0 +1,57 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  # Match the values set by deploy/ scripts.
+  central:
+    adminPasswordSecret:
+      name: central-admin-pass
+    defaultTLSSecret:
+      name: central-default-tls-secret
+    exposure:
+      loadBalancer:
+        enabled: $central_exposure_loadBalancer_enabled
+      route:
+        enabled: $central_exposure_route_enabled
+    declarativeConfiguration:
+      configMaps:
+      - name: "declarative-configurations"
+    db:
+      isEnabled: Default
+      persistence:
+        persistentVolumeClaim:
+          claimName: central-db
+      resources:
+        limits:
+          cpu: 8
+          memory: 16Gi
+        requests:
+          cpu: 1
+          memory: 1Gi
+    persistence:
+      persistentVolumeClaim:
+        claimName: stackrox-db
+  customize:
+    envVars:$customize_envVars
+  scanner:
+    analyzer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-admin-pass
+data:
+  password: $centralAdminPasswordBase64
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: central-default-tls-secret
+data:
+  tls.key: $centralDefaultTlsSecretKeyBase64
+  tls.crt: $centralDefaultTlsSecretCertBase64
