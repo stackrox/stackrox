@@ -21,7 +21,6 @@ qa-tests-backend/test-images/fail-compliance/ssh/run-ssh.sh
 qa-tests-backend/test-images/trigger-policy-violations/most/run-csh.sh
 qa-tests-backend/test-images/trigger-policy-violations/most/trigger-violations.sh
 release/scripts/vuln_check.sh
-scanner/image/db/scripts/docker-entrypoint.sh
 scale/chaos/deploy.sh
 scale/dev/cluster.sh
 scale/dev/launch_central.sh
@@ -31,6 +30,7 @@ scale/launch_workload.sh
 scale/profiler/launch-profiler.sh
 scale/profiler/port-forward.sh
 scale/signatures/deploy.sh
+scanner/image/db/scripts/docker-entrypoint.sh
 scripts/certification/run.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
