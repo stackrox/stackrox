@@ -64,12 +64,6 @@
 {{ end }}
 [< end >]
 
-{{ if $._rox.central.db.external }}
-{{ if (or (not $._rox.central.db.source.connectionString) (not $._rox.central.db.password.value)) }}
-    {{ include "srox.fail" (printf "You have chosen to bring your own Central DB. Please provide its source and password for connection.") }}
-{{ end }}
-{{ end }}
-
 {{/* Initialize global prefix */}}
 {{- include "srox.initGlobalPrefix" (list $) -}}
 
