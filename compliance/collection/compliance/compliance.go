@@ -205,7 +205,6 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		case *sensor.MsgToCompliance_Ack:
 			switch t.Ack.GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
 				c.umh.HandleACK()
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
 				c.umh.HandleNACK()
