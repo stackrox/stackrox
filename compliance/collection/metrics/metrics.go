@@ -176,11 +176,16 @@ func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
 	}).Observe(float64(cmsg.Size()))
 }
 
+// InventoryTransmission names the way in which a NodeInventory was obtained
 type InventoryTransmission string
 
 const (
-	InventoryTransmissionScan               InventoryTransmission = "scanning"
-	InventoryTransmissionResendingCacheHit  InventoryTransmission = "resending cached"
+	// InventoryTransmissionScan means that we requested a new scan from NodeInventory container
+	InventoryTransmissionScan InventoryTransmission = "scanning"
+	// InventoryTransmissionResendingCacheHit means that we reply to NACK and send NodeInventory from compliance cache
+	InventoryTransmissionResendingCacheHit InventoryTransmission = "resending cached"
+	// InventoryTransmissionResendingCacheMiss means that we reply to NACK and schedule a rescan due to empty cache.
+	// This will result in additional observation of `InventoryTransmissionScan`
 	InventoryTransmissionResendingCacheMiss InventoryTransmission = "scanning and resending "
 )
 
