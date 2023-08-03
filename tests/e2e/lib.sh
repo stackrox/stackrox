@@ -174,6 +174,9 @@ deploy_central_via_operator() {
 
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        LOAD_BALANCER="route"
+    fi
     case "${LOAD_BALANCER}" in
     "lb") central_exposure_loadBalancer_enabled="true" ;;
     "route") central_exposure_route_enabled="true" ;;
