@@ -3,6 +3,7 @@ import { generateNameWithDate, getInputByLabel } from '../../helpers/formHelpers
 import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAccessRole.json';
 
 import withAuth from '../../helpers/basicAuth';
+import { assertCannotFindThePage } from '../../helpers/visit';
 
 import {
     assertAccessControlEntitiesPage,
@@ -28,7 +29,7 @@ import { selectors, accessModalSelectors } from './accessControl.selectors';
 describe('Access Control Auth providers', () => {
     withAuth();
 
-    it('displays alert if no permission', () => {
+    it('cannot find the page if no permission', () => {
         const staticResponseForPermissions = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
         };
@@ -37,10 +38,7 @@ describe('Access Control Auth providers', () => {
             staticResponseForPermissions
         );
 
-        cy.get(selectors.alertTitle).should(
-            'contain', // instead of have.text because of "Info alert:" for screen reader
-            'You do not have permission to view auth providers.'
-        );
+        assertCannotFindThePage();
     });
 
     it('list has table head cells', () => {
