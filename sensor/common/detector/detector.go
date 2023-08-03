@@ -52,7 +52,7 @@ type Detector interface {
 
 	ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction)
 	ReprocessDeployments(deploymentIDs ...string)
-	ProcessIndicator(indicator *storage.ProcessIndicator)
+	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
 	ProcessReassessPolicies() error
@@ -472,8 +472,8 @@ func (d *detectorImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
 	d.enricher.imageSvc = v1.NewImageServiceClient(cc)
 }
 
-func (d *detectorImpl) ProcessIndicator(pi *storage.ProcessIndicator) {
-	go d.processIndicator(pi)
+func (d *detectorImpl) ProcessIndicator(ctx context.Context, pi *storage.ProcessIndicator) {
+	go d.processIndicator(ctx, pi)
 }
 
 func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
@@ -496,7 +496,7 @@ func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, a
 	return message.NewExpiring(ctx, msgFromSensor)
 }
 
-func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
+func (d *detectorImpl) processIndicator(ctx context.Context, pi *storage.ProcessIndicator) {
 	deployment := d.deploymentStore.Get(pi.GetDeploymentId())
 	if deployment == nil {
 		log.Debugf("Deployment has already been removed: %+v", pi)
@@ -525,8 +525,7 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	select {
 	case <-d.alertStopSig.Done():
 		return
-		// TODO(ROX-18818): Add context to indicator alerts
-	case d.output <- createAlertResultsMsg(context.TODO(), central.ResourceAction_CREATE_RESOURCE, alertResults):
+	case d.output <- createAlertResultsMsg(ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
 	}
 }
 
