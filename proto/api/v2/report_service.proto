@@ -89,6 +89,10 @@ message DownloadReportResponse {
     bytes data = 1;
 }
 
+message DeleteReportRequest {
+    string report_job_id = 1;
+}
+
 service ReportService {
     // GetReportStatus returns report status for the given report id
     rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
@@ -131,6 +135,12 @@ service ReportService {
     rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse) {
         option (google.api.http) = {
             get: "/v2/reports/jobs/{report_job_id}/download"
+        };
+    }
+
+    rpc DeleteReport(DeleteReportRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/reports/jobs/{report_job_id}/delete"
         };
     }
 }

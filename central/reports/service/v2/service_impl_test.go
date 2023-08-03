@@ -616,3 +616,115 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 	}
 
 }
+
+func (suite *ReportServiceTestSuite) TestDeleteReport() {
+	reportSnapshot := fixtures.GetReportSnapshot()
+	reportSnapshot.ReportId = uuid.NewV4().String()
+	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
+	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	user := reportSnapshot.GetRequester()
+
+	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
+
+	userContext := authn.ContextWithIdentity(suite.ctx, mockID, suite.T())
+	testCases := []struct {
+		desc    string
+		req     *apiV2.DeleteReportRequest
+		ctx     context.Context
+		mockGen func()
+		isError bool
+	}{
+		{
+			desc: "Empty Report ID",
+			req: &apiV2.DeleteReportRequest{
+				ReportJobId: "",
+			},
+			ctx:     userContext,
+			isError: true,
+		},
+		{
+			desc: "User info not present in context",
+			req: &apiV2.DeleteReportRequest{
+				ReportJobId: reportSnapshot.GetReportId(),
+			},
+			ctx:     suite.ctx,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Report ID not found",
+			req: &apiV2.DeleteReportRequest{
+				ReportJobId: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(nil, false, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Delete requester user id and report requester user id mismatch",
+			req: &apiV2.DeleteReportRequest{
+				ReportJobId: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.Requester = &storage.SlimUser{
+					Id:   reportSnapshot.Requester.Id + "-1",
+					Name: reportSnapshot.Requester.Name + "-1",
+				}
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Delete blob failed",
+			req: &apiV2.DeleteReportRequest{
+				ReportJobId: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(reportSnapshot, true, nil).Times(1)
+				suite.blobStore.EXPECT().Delete(gomock.Any(), blobName).Times(1).Return(errors.New(""))
+			},
+			isError: true,
+		},
+		{
+			desc: "Report deleted",
+			req: &apiV2.DeleteReportRequest{
+				ReportJobId: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				suite.reportSnapshotStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(reportSnapshot, true, nil).Times(1)
+				suite.blobStore.EXPECT().Delete(gomock.Any(), blobName).Times(1).Return(nil)
+			},
+			isError: false,
+		},
+	}
+	for _, tc := range testCases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			if tc.mockGen != nil {
+				tc.mockGen()
+			}
+			response, err := suite.service.DeleteReport(tc.ctx, tc.req)
+			if tc.isError {
+				suite.Error(err)
+			} else {
+				suite.NoError(err)
+				suite.Equal(&apiV2.Empty{}, response)
+			}
+		})
+	}
+
+}

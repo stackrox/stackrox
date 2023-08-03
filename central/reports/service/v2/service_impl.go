@@ -45,6 +45,7 @@ var (
 			"/v2.ReportService/RunReport",
 			"/v2.ReportService/CancelReport",
 			"/v2.ReportService/DownloadReport",
+			"/v2.ReportService/DeleteReport",
 		},
 	})
 )
@@ -252,4 +253,33 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 	}
 
 	return &apiV2.DownloadReportResponse{Data: buf.Bytes()}, nil
+}
+
+func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportRequest) (*apiV2.Empty, error) {
+	if req == nil || req.GetReportJobId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report job id")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetReportJobId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", req.GetReportJobId())
+	}
+
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%s'.", req.GetReportJobId())
+	}
+
+	if slimUser.GetId() != rep.GetRequester().GetId() {
+		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be deleted by a user who did not request the report.")
+	}
+
+	if err = s.blobStore.Delete(ctx, common.GetReportBlobPath(req.GetReportJobId(), rep.GetReportConfigurationId())); err != nil {
+		return nil, errox.InvariantViolation.Newf("Failed to delete downloadable report %q", req.GetReportJobId())
+	}
+	return &apiV2.Empty{}, nil
 }
