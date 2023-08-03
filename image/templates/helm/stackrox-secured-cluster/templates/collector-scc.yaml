@@ -20,7 +20,7 @@ fsGroup:
   type: RunAsAny
 groups: []
 priority: 0
-readOnlyRootFilesystem: true
+readOnlyRootFilesystem: false
 runAsUser:
   type: RunAsAny
 seLinuxContext:
