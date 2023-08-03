@@ -83,6 +83,7 @@ func init() {
 		&storage.ReportSnapshot{}:                               resources.WorkflowAdministration,
 		&storage.Risk{}:                                         resources.DeploymentExtension,
 		&storage.Role{}:                                         resources.Access,
+		&storage.SecuredUnits{}:                                 resources.Administration,
 		&storage.SensorUpgradeConfig{}:                          resources.Administration,
 		&storage.ServiceIdentity{}:                              resources.Administration,
 		&storage.SignatureIntegration{}:                         resources.Integration,
@@ -90,7 +91,6 @@ func init() {
 		&storage.StoredLicenseKey{}:                             resources.Access,
 		&storage.TelemetryConfiguration{}:                       resources.Administration,
 		&storage.TokenMetadata{}:                                resources.Integration,
-		&storage.Usage{}:                                        resources.Administration,
 		&storage.User{}:                                         resources.Access,
 		// Tests
 		&storage.TestStruct{}:              resources.Namespace,
