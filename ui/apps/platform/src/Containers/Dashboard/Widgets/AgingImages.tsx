@@ -23,7 +23,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
-import WidgetCard from './WidgetCard';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import AgingImagesChart, {
     TimeRangeCounts,
     TimeRangeTupleIndex,
