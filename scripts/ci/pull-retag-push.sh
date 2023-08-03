@@ -18,3 +18,5 @@ DEST="$2"
 docker pull "${SRC}" | cat
 docker tag "${SRC}" "${DEST}"
 docker push "${DEST}" | cat
+# No need to keep the old images
+docker rmi "${SRC}" "${DEST}"
