@@ -36,7 +36,7 @@ func (i *injectorImpl) gather(ctx context.Context) {
 	// Store the average values to smooth short (< 2 periods) peaks and drops.
 	averageMetrics := average(i.previousMetrics, newMetrics)
 	averageMetrics.Timestamp = newMetrics.Timestamp
-	if err := i.ds.Insert(ctx, averageMetrics); err != nil {
+	if err := i.ds.Upsert(ctx, averageMetrics); err != nil {
 		log.Debug("Failed to store a usage snapshot: ", err)
 	}
 	i.previousMetrics = newMetrics
