@@ -14,7 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Telemetry collection enabled by default for self-managed installations. Opt-out is available on bundle generation, or at any time via the System Configuration UI.
 - A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central (defaults to `false`). When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
 - A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added that when set to `true` will enable processing registry mirrors during image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
-- ROX-17702: Usage metrics collection API: `/v1/usage/current`, `/v1/usage/max`. New `/api/usage/csv` endpoint.
+- ROX-17702: Usage metrics collection API: `/v1/product/usage/current`, `/v1/product/usage/max`. New `/api/product/usage/csv` endpoint.
 
 ### Removed Features
 
