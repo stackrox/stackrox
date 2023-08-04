@@ -93,7 +93,7 @@ service ReportService {
     // GetReportStatus returns report status for the given report id
     rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
-            get: "/v2/reports/status/{id}"
+            get: "/v2/reports/jobs/{id}/status"
         };
     }
     // GetReportStatusConfigID returns report status for a report config id
@@ -123,7 +123,7 @@ service ReportService {
     // If a report is already being prepared, it won't be cancelled.
     rpc CancelReport(ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            delete: "/v2/reports/cancel/{id}"
+            delete: "/v2/reports/jobs/{id}/cancel"
         };
     }
 

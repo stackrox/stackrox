@@ -664,7 +664,7 @@ func RegisterReportServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 }
 
 var (
-	pattern_ReportService_GetReportStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "status", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_GetReportStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "status"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ReportService_GetLastReportStatusConfigID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "last-status", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
@@ -672,7 +672,7 @@ var (
 
 	pattern_ReportService_RunReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "reports", "run"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ReportService_CancelReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "cancel", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_CancelReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "cancel"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ReportService_DownloadReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "report_job_id", "download"}, "", runtime.AssumeColonVerbOpt(false)))
 )

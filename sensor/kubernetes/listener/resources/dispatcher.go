@@ -81,16 +81,16 @@ func NewDispatcherRegistry(
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater, k8sAPI),
-		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
-		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
-		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:          newSecretDispatcher(registryStore),
-		networkPolicyDispatcher:   newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
-		nodeDispatcher:            newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
-		serviceAccountDispatcher:  newServiceAccountDispatcher(serviceAccountStore),
-		clusterOperatorDispatcher: newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
-		osRegistryMirrorDispather: newRegistryMirrorDispatcher(),
+		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
+		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
+		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
+		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
+		secretDispatcher:           newSecretDispatcher(registryStore),
+		networkPolicyDispatcher:    newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
+		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
+		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),
+		clusterOperatorDispatcher:  newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
+		osRegistryMirrorDispatcher: newRegistryMirrorDispatcher(registryStore),
 
 		traceWriter: traceWriter,
 
@@ -106,17 +106,17 @@ func NewDispatcherRegistry(
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
 
-	rbacDispatcher            *rbac.Dispatcher
-	namespaceDispatcher       *namespaceDispatcher
-	serviceDispatcher         *serviceDispatcher
-	osRouteDispatcher         *routeDispatcher
-	secretDispatcher          *secretDispatcher
-	networkPolicyDispatcher   *networkPolicyDispatcher
-	nodeDispatcher            *nodeDispatcher
-	serviceAccountDispatcher  *serviceAccountDispatcher
-	clusterOperatorDispatcher *clusterOperatorDispatcher
-	osRegistryMirrorDispather *registryMirrorDispatcher
-	traceWriter               io.Writer
+	rbacDispatcher             *rbac.Dispatcher
+	namespaceDispatcher        *namespaceDispatcher
+	serviceDispatcher          *serviceDispatcher
+	osRouteDispatcher          *routeDispatcher
+	secretDispatcher           *secretDispatcher
+	networkPolicyDispatcher    *networkPolicyDispatcher
+	nodeDispatcher             *nodeDispatcher
+	serviceAccountDispatcher   *serviceAccountDispatcher
+	clusterOperatorDispatcher  *clusterOperatorDispatcher
+	osRegistryMirrorDispatcher *registryMirrorDispatcher
+	traceWriter                io.Writer
 
 	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
 	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
@@ -301,5 +301,5 @@ func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
 }
 
 func (d *registryImpl) ForRegistryMirrors() Dispatcher {
-	return wrapDispatcher(d.osRegistryMirrorDispather, d.traceWriter)
+	return wrapDispatcher(d.osRegistryMirrorDispatcher, d.traceWriter)
 }

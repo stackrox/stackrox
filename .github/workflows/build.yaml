@@ -167,7 +167,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.8
+        uses: joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go build environment for release
         if: |
@@ -538,7 +538,7 @@ jobs:
         run: go mod tidy
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.8
+        uses: joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
