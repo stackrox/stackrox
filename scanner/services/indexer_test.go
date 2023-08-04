@@ -140,7 +140,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			wantErr: "missing image URL",
 		},
 		{
-			name: "when empty container image URL",
+			name: "when invalid container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
 					HashId: "/v4/containerimage/foobar",
@@ -154,7 +154,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			wantErr: "image URL does not start with",
 		},
 		{
-			name: "when empty container image URL",
+			name: "when invalid image reference in container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
 					HashId: "/v4/containerimage/foobar",
