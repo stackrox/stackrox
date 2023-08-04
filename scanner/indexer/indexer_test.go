@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseImageURL(t *testing.T) {
+func TestParseContainerImageURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     string
