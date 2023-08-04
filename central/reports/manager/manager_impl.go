@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -23,6 +24,9 @@ type managerImpl struct {
 }
 
 func (m *managerImpl) Remove(ctx context.Context, id string) error {
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		return nil
+	}
 	if ok, err := reportsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -33,6 +37,9 @@ func (m *managerImpl) Remove(ctx context.Context, id string) error {
 }
 
 func (m *managerImpl) Upsert(ctx context.Context, reportConfig *storage.ReportConfiguration) error {
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		return nil
+	}
 	if ok, err := reportsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -45,6 +52,9 @@ func (m *managerImpl) Upsert(ctx context.Context, reportConfig *storage.ReportCo
 }
 
 func (m *managerImpl) RunReport(ctx context.Context, reportConfig *storage.ReportConfiguration) error {
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		return nil
+	}
 	/*
 	 * Multiple on demand reports cannot be executed concurrently.
 	 * An on demand report may be submitted while other scheduled reports are being run and will be
@@ -64,9 +74,15 @@ func (m *managerImpl) RunReport(ctx context.Context, reportConfig *storage.Repor
 }
 
 func (m *managerImpl) Start() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		return
+	}
 	m.scheduler.Start()
 }
 
 func (m *managerImpl) Stop() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		return
+	}
 	m.scheduler.Stop()
 }

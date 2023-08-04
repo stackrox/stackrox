@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -113,7 +112,7 @@ func (s *EnhancedReportingTestSuite) TestSaveReportData() {
 
 	// Save report
 	reportID := "reportid"
-	s.Require().NoError(s.reportGenerator.saveReportData(s.ctx, configID, reportID, buf))
+	s.Require().NoError(s.reportGenerator.saveReportData(configID, reportID, buf))
 	newBuf, _, exists, err := s.blobStore.GetBlobWithDataInBuffer(s.ctx, common.GetReportBlobPath(configID, reportID))
 	s.Require().NoError(err)
 	s.Require().True(exists)
@@ -121,7 +120,7 @@ func (s *EnhancedReportingTestSuite) TestSaveReportData() {
 
 	// Save empty report
 	reportID = "anotherid"
-	s.Require().NoError(s.reportGenerator.saveReportData(s.ctx, configID, reportID, nil))
+	s.Require().NoError(s.reportGenerator.saveReportData(configID, reportID, nil))
 	newBuf, _, exists, err = s.blobStore.GetBlobWithDataInBuffer(s.ctx, common.GetReportBlobPath(configID, reportID))
 	s.Require().NoError(err)
 	s.Require().True(exists)
@@ -129,7 +128,6 @@ func (s *EnhancedReportingTestSuite) TestSaveReportData() {
 }
 
 func (s *EnhancedReportingTestSuite) TestGetReportData() {
-	ctx := resolvers.SetAuthorizerOverride(s.ctx, allow.Anonymous())
 	clusters := []string{"c1", "c2"}
 	namespaces := []string{"ns1", "ns2"}
 	deployments, images := testDeploymentsWithImages(clusters, namespaces, 1)
@@ -266,7 +264,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			s.NoError(err)
 
 			reportConfig := testReportConfig(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes)
-			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(ctx, reportConfig, tc.collection, nil)
+			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(reportConfig, tc.collection, nil)
 			s.NoError(err)
 			reportData := extractVulnReportData(deployedImgResults, watchedImgResults)
 			s.ElementsMatch(tc.expected.deploymentNames, reportData.deploymentNames)

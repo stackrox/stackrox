@@ -1,8 +1,6 @@
 package reportgenerator
 
 import (
-	"context"
-
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -13,7 +11,6 @@ type ReportRequest struct {
 	ReportSnapshot *storage.ReportSnapshot
 	Collection     *storage.ResourceCollection
 	DataStartTime  *types.Timestamp
-	Ctx            context.Context
 }
 
 type reportEmailFormat struct {
