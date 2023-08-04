@@ -48,8 +48,8 @@ service ComplianceProfileService {
         };
     }
 
-    // GetComplianceProfiles returns profiles matching given query
-    rpc GetComplianceProfiles (RawQuery) returns (ListComplianceProfilesResponse) {
+    // ListComplianceProfiles returns profiles matching given query
+    rpc ListComplianceProfiles (RawQuery) returns (ListComplianceProfilesResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/profiles"
         };
