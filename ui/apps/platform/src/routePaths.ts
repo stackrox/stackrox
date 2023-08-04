@@ -211,7 +211,16 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         ]),
     },
     [vulnManagementPath]: {
-        resourceAccessRequirements: everyResource([]),
+        resourceAccessRequirements: everyResource([
+            'Alert', // for Cluster and Deployment and Namespace
+            'Cluster',
+            'Deployment',
+            'Image',
+            'Namespace',
+            'Node',
+            'WatchedImage', // for Image
+            'WorkflowAdministration', // TODO obsolete because of policies for Cluster and Namespace?
+        ]),
     },
     [vulnerabilitiesWorkloadCvesPath]: {
         featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
