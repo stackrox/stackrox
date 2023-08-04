@@ -11,7 +11,7 @@ Accepted.
 
 Local scanning is the scenario where the container image is pulled and indexed (aka. analyzed) in the secured cluster and sent to Central for vulnerability reporting (aka. scanned).
 
-![Diagram of Central, Sensor and Scanners in both central and secured cluster, showing local scanning flows and related events and API calls.](images/local-scanning-diagram.png)
+![Diagram of Central, Sensor and Scanners in both central and secured cluster, showing local scanning flows and related events and API calls.](images/local-scanning-diagram.svg)
 
 Currently, Sensor and Central coordinate the calls to Scanner and Scanner Slim. The local image scanning leverages `GetImageComponents()` in Scanner V2 Slim and `GetImageVulnerabilities()` in Central Scanner V2. Both APIs have similar semantics to Scanner V4's Indexer and Matcher services:
 
