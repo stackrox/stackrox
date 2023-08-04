@@ -20,11 +20,11 @@ In Scanner V2, Sensor and Central coordinate the calls to Scanner and Scanner Sl
 | GetImageComponents      | Indexer/CreateIndexReport  | Retrieve the inventory of artifacts and details on the image content. |
 | GetImageVulnerabilities | Matcher/GetVulnerabilities | Retrieve the matching vulnerabilities for the components provided.    |
 
-Although `GetImageVulnerabilities` and `Matcher/GetVulnerabilities` are similar, there is a crucial difference between them. `Matcher/GetVulnerabilities` was specifically designed to retrieve the index report to be scanned from a separate service or storage, similar to how [Clair is implemented](https://github.com/quay/clair/blob/main/httptransport/matcher_v1.go#L116). On the other hand, `GetImageVulnerabilities` accepts a list of components in its payload. In order to fully utilize the clear separation between Indexer and Matcher in Scanner V4's design, changes need to be made to Central. This includes Sensor's ability to handle Index Reports and Scanner V4's capability to retrieve or access reports that are generated in the secured cluster.
+Although `GetImageVulnerabilities` and `Matcher/GetVulnerabilities` are similar, there is a crucial difference between them. `Matcher/GetVulnerabilities` was specifically designed to retrieve the index report to be scanned from a separate service or storage, similar to how [Clair is implemented](https://github.com/quay/clair/blob/main/httptransport/matcher_v1.go#L116). On the other hand, `GetImageVulnerabilities` accepts a list of components in its payload. In order to fully utilize the clear separation between Indexer and Matcher in Scanner V4's design, changes need to be made to Scanner V4, Central and Sensor. This includes Central and Sensor ability to handle Index Reports, and also Scanner V4's capability to access reports that are generated in the secured cluster.
 
 ## Decision
 
-Scanner V4's Matcher will accept a new parameter in `GetVulnerabilitiesRequest` to support local scanning. This parameter will allow clients to provide the `v4.IndexReport` for scanning. The Matcher will then verify if the report components are available. If not, it will retrieve them from the `Indexer`.
+Scanner V4's Matcher will accept a new parameter in `GetVulnerabilitiesRequest` to support local scanning. This parameter will allow clients to provide the `v4.IndexReport` for scanning. The Matcher will then verify if the report components are available in the request. If not, it will retrieve them from the `Indexer`.
 
 Example:
 
