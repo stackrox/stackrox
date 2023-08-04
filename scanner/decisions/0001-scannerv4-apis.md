@@ -1,6 +1,6 @@
 # 0001 - ScannerV4 APIs definition
 
-- **Status:** Accepted
+- **Status:** Updated by [#0002](0002-local-scanning-with-scanner-v4.md)
 - **Created:** [2023-05-09 Tue]
 
 ## Context
