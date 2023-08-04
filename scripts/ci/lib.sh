@@ -195,13 +195,6 @@ push_image_manifest_lists() {
     for image in "${amd64_image_set[@]}"; do
         "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
     done
-    if [[ "$push_context" == "merge-to-master" ]]; then
-        # Scanner images do not utilize a 'latest' tag
-        amd64_image_set=("collector" "collector-slim")
-        for image in "${amd64_image_set[@]}"; do
-            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "amd64" | cat
-        done
-    fi
 }
 
 push_main_image_set() {
