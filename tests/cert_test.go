@@ -24,7 +24,6 @@ func TestInternalCert(t *testing.T) {
 	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)
 	require.NoError(t, err)
 	defer utils.IgnoreError(conn.Close)
-
 	certs := conn.ConnectionState().PeerCertificates
 	require.NotEmpty(t, certs)
 	leaf := certs[0]
