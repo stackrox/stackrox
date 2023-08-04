@@ -87,14 +87,17 @@ function evaluateItem(resourceItem: ResourceItem, hasReadAccess: HasReadAccess) 
     return hasReadAccess(resourceItem);
 }
 
+// Given array or resource names, higher-order functions return predicate function.
+// You can also compose every with some, if requirements ever become so complicated.
+
 export function everyResource(resourceItems: ResourceItem[]): ResourcePredicate {
     return (hasReadAccess: HasReadAccess) =>
         resourceItems.every((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
 }
 
-export function someResource(resourceNames: ResourceName[]): ResourcePredicate {
+export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
     return (hasReadAccess: HasReadAccess) =>
-        resourceNames.some((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
+        resourceItems.some((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
 }
 
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
