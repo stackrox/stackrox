@@ -185,6 +185,14 @@ message RunReportResponse {
     string report_id        = 2;
 }
 
+message DownloadReportRequest {
+    string id = 1;
+}
+
+message DownloadReportResponse {
+    bytes data = 1;
+}
+
 service ReportService {
     // PostReportConfiguration creates a report configuration
     rpc PostReportConfiguration (ReportConfiguration) returns (ReportConfiguration) {
@@ -264,6 +272,13 @@ service ReportService {
     rpc CancelReport(ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v2/reports/jobs/{id}/cancel"
+        };
+    }
+
+    // Downloads a generated report for the given report id
+    rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/jobs/{id}/download"
         };
     }
 }

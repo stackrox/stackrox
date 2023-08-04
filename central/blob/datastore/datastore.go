@@ -23,6 +23,8 @@ var (
 )
 
 // Datastore provides access to the blob store
+//
+//go:generate mockgen-wrapper
 type Datastore interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
