@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/reportconfigurations/search"
-	"github.com/stackrox/rox/central/reportconfigurations/store"
-	pgStore "github.com/stackrox/rox/central/reportconfigurations/store/postgres"
+	"github.com/stackrox/rox/central/reports/config/search"
+	"github.com/stackrox/rox/central/reports/config/store"
+	pgStore "github.com/stackrox/rox/central/reports/config/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"

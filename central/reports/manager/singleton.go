@@ -6,7 +6,7 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/scheduler"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"

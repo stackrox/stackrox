@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	"github.com/stackrox/rox/central/reportconfigurations/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/reports/manager/mocks"
 	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"

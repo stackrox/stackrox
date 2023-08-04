@@ -2,7 +2,7 @@ package service
 
 import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )

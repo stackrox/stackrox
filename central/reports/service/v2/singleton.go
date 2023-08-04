@@ -2,7 +2,7 @@ package v2
 
 import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
