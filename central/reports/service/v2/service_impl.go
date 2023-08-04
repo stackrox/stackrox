@@ -35,6 +35,19 @@ var (
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// V2 API authorization
+		user.With(permissions.View(resources.WorkflowAdministration)): {
+			"/v2.ReportService/ListReportConfigurations",
+			"/v2.ReportService/GetReportConfiguration",
+			"/v2.ReportService/CountReportConfigurations",
+		},
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
+			"/v2.ReportService/PostReportConfiguration",
+			"/v2.ReportService/UpdateReportConfiguration",
+		},
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+			"/v2.ReportService/DeleteReportConfiguration",
+		},
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v2.ReportService/GetReportStatus",
 			"/v2.ReportService/GetLastReportStatusConfigID",

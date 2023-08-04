@@ -20,7 +20,8 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Access), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Integration),
+			permissions.View(resources.Access), permissions.View(resources.Image)): {
 			"/v1.ReportService/RunReport",
 		},
 	})

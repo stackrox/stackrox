@@ -7,14 +7,39 @@ import (
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/config/datastore"
-	"github.com/stackrox/rox/central/reports/config/service/common"
 	"github.com/stackrox/rox/central/reports/manager"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+var (
+	// authorizer is used for authorizing report configuration grpc service calls.
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(permissions.View(resources.WorkflowAdministration)): {
+			"/v1.ReportConfigurationService/GetReportConfigurations",
+			"/v1.ReportConfigurationService/GetReportConfiguration",
+			"/v1.ReportConfigurationService/CountReportConfigurations",
+		},
+		or.Or(
+			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Access)),
+			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration))): {
+			"/v1.ReportConfigurationService/PostReportConfiguration",
+			"/v1.ReportConfigurationService/UpdateReportConfiguration",
+		},
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+			"/v1.ReportConfigurationService/DeleteReportConfiguration",
+		},
+	})
 )
 
 type serviceImpl struct {
@@ -122,5 +147,5 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, common.Authorizer.Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
