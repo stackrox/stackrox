@@ -24,7 +24,7 @@ import (
 const (
 	// default path to store registries config
 	defaultRegistriesPath = "/var/cache/stackrox/mirrors/registries.conf"
-	J
+
 	// default delay before writing the updated registries config
 	defaultDelay = time.Millisecond * 300
 )
