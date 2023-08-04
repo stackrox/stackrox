@@ -967,7 +967,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 	}
 }
 
-func (suite *ReportServiceTestSuite) TestDownloadReport() {
+func (s *ReportServiceTestSuite) TestDownloadReport() {
 	reportSnapshot := fixtures.GetReportSnapshot()
 	reportSnapshot.ReportId = uuid.NewV4().String()
 	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
@@ -976,13 +976,13 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 	user := reportSnapshot.GetRequester()
 	blob, blobData := fixtures.GetBlobWithData()
 
-	mockID := mockIdentity.NewMockIdentity(suite.mockCtrl)
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
 	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
 	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
 
-	userContext := authn.ContextWithIdentity(suite.ctx, mockID, suite.T())
+	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 	testCases := []struct {
 		desc    string
 		req     *apiV2.DownloadReportRequest
@@ -1003,7 +1003,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			req: &apiV2.DownloadReportRequest{
 				Id: reportSnapshot.GetReportId(),
 			},
-			ctx:     suite.ctx,
+			ctx:     s.ctx,
 			mockGen: func() {},
 			isError: true,
 		},
@@ -1014,7 +1014,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(nil, false, nil).Times(1)
 			},
 			isError: true,
@@ -1031,7 +1031,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 					Id:   reportSnapshot.Requester.Id + "-1",
 					Name: reportSnapshot.Requester.Name + "-1",
 				}
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
 			isError: true,
@@ -1045,7 +1045,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			mockGen: func() {
 				snap := reportSnapshot.Clone()
 				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
 			isError: true,
@@ -1059,7 +1059,7 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			mockGen: func() {
 				snap := reportSnapshot.Clone()
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
 			isError: true,
@@ -1071,9 +1071,9 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
-				suite.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, errors.New(""))
+				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, errors.New(""))
 			},
 			isError: true,
 		},
@@ -1084,9 +1084,9 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
-				suite.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, nil)
+				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, nil)
 			},
 			isError: true,
 		},
@@ -1097,13 +1097,13 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				suite.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
-				suite.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
+				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
 					func(_ context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
 						c, err := writer.Write(blobData.Bytes())
-						suite.NoError(err)
-						suite.Equal(c, blobData.Len())
+						s.NoError(err)
+						s.Equal(c, blobData.Len())
 						return blob, true, nil
 					})
 			},
@@ -1111,16 +1111,16 @@ func (suite *ReportServiceTestSuite) TestDownloadReport() {
 		},
 	}
 	for _, tc := range testCases {
-		suite.T().Run(tc.desc, func(t *testing.T) {
+		s.T().Run(tc.desc, func(t *testing.T) {
 			if tc.mockGen != nil {
 				tc.mockGen()
 			}
-			response, err := suite.service.DownloadReport(tc.ctx, tc.req)
+			response, err := s.service.DownloadReport(tc.ctx, tc.req)
 			if tc.isError {
-				suite.Error(err)
+				s.Error(err)
 			} else {
-				suite.NoError(err)
-				suite.Equal(&apiV2.DownloadReportResponse{Data: blobData.Bytes()}, response)
+				s.NoError(err)
+				s.Equal(&apiV2.DownloadReportResponse{Data: blobData.Bytes()}, response)
 			}
 		})
 	}
