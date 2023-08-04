@@ -711,6 +711,10 @@ spec:
           stage.
         displayName: Collection
         path: perNode.collector.collection
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:EBPF
+        - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
+        - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: The image flavor to use for collector. "Regular" images are bigger
           in size, but contain probes for most kernels. If you use the "Slim" image
           flavor, you must ensure that your Central instance is connected to the internet,
