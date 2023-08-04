@@ -198,5 +198,13 @@ func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmiss
 }
 
 func init() {
-	prometheus.MustRegister(numberOfRHELPackages, numberOfContentSets, scanDuration, callToNodeInventoryDuration, rescanInterval, scansTotal, protobufMessageSize)
+	prometheus.MustRegister(
+		callToNodeInventoryDuration,
+		inventoryTransmissions,
+		numberOfRHELPackages,
+		numberOfContentSets,
+		protobufMessageSize,
+		rescanInterval,
+		scanDuration,
+		scansTotal)
 }
