@@ -3,6 +3,7 @@ package gorm
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
@@ -56,8 +57,11 @@ func getConfig() (*gormConfig, error) {
 
 	log.WriteToStderrf("connect to gorm: %q", centralConfig.CentralDB.Source)
 
+	source := centralConfig.CentralDB.Source
 	// Add the password to the source to pass to get the pool config
-	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
+	if !strings.HasPrefix(source, "postgres") {
+		source = fmt.Sprintf("%s password=%s", source, password)
+	}
 	source = pgutils.PgxpoolDsnToPgxDsn(source)
 	gConfig = &gormConfig{source: source, password: string(password)}
 	return gConfig, nil

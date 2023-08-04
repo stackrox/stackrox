@@ -13,7 +13,7 @@ data:
     centralDB:
       {{- if ._rox.central.db.external }}
       external: true
-      source: {{ ._rox.central.db.source.connectionString }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      source: {{ ._rox.central.db.source.connectionString }}
       {{- else }}
       external: false
       source: >
