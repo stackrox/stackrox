@@ -64,8 +64,10 @@ settings=(
     --values init-bundle.yaml
     --set clusterName=secured-cluster-test
     --set image.collector.registry="$image_registry"
+    --set image.collector.name="collector"
     --set image.collector.tag="$TAG"
     --set image.main.registry="$image_registry"
+    --set image.main.name="main"
     --set image.main.tag="$TAG"
 )
 
