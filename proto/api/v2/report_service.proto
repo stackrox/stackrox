@@ -193,6 +193,10 @@ message DownloadReportResponse {
     bytes data = 1;
 }
 
+message DeleteReportRequest {
+    string id = 1;
+}
+
 service ReportService {
     // PostReportConfiguration creates a report configuration
     rpc PostReportConfiguration (ReportConfiguration) returns (ReportConfiguration) {
@@ -279,6 +283,12 @@ service ReportService {
     rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse) {
         option (google.api.http) = {
             get: "/v2/reports/jobs/{id}/download"
+        };
+    }
+
+    rpc DeleteReport(DeleteReportRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/reports/jobs/{id}/delete"
         };
     }
 }
