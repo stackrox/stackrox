@@ -194,7 +194,7 @@ message DownloadReportResponse {
 }
 
 message DeleteReportRequest {
-    string report_job_id = 1;
+    string id = 1;
 }
 
 service ReportService {
@@ -288,7 +288,7 @@ service ReportService {
 
     rpc DeleteReport(DeleteReportRequest) returns (Empty) {
         option (google.api.http) = {
-            delete: "/v2/reports/jobs/{report_job_id}/delete"
+            delete: "/v2/reports/jobs/{id}/delete"
         };
     }
 }
