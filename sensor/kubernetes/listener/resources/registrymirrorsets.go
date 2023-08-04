@@ -5,18 +5,29 @@ import (
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/registrymirrors"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
+const (
+	registriesPath = "/var/cache/stackrox/mirrors/registries.conf"
+)
+
 type registryMirrorDispatcher struct {
 	registryStore *registry.Store
+	mirrorService registrymirrors.Service
 }
 
-func newRegistryMirrorDispatcher(registryStore *registry.Store) *registryMirrorDispatcher {
+func newRegistryMirrorDispatcher(registryStore *registry.Store, mirrorService registrymirrors.Service) *registryMirrorDispatcher {
+	if mirrorService == nil {
+		mirrorService = registrymirrors.NewDelayedService(registrymirrors.NewFileService(registriesPath))
+	}
+
 	return &registryMirrorDispatcher{
 		registryStore: registryStore,
+		mirrorService: mirrorService,
 	}
 }
 
@@ -37,6 +48,8 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 }
 
 func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy, action central.ResourceAction) *component.ResourceEvent {
+	defer r.updateRegistryMirrorConfig()
+
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		r.registryStore.DeleteImageContentSourcePolicy(icsp.GetUID())
 		log.Debugf("Deleted ImageContentSourcePolicy from registry store: %q (%v)", icsp.GetName(), icsp.GetUID())
@@ -49,6 +62,8 @@ func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operator
 }
 
 func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet, action central.ResourceAction) *component.ResourceEvent {
+	defer r.updateRegistryMirrorConfig()
+
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		r.registryStore.DeleteImageDigestMirrorSet(idms.GetUID())
 		log.Debugf("Deleted ImageDigestMirrorSet from registry store: %q (%v)", idms.GetName(), idms.GetUID())
@@ -61,6 +76,8 @@ func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.Ima
 }
 
 func (r *registryMirrorDispatcher) handleImageTagMirrorSet(itms *configV1.ImageTagMirrorSet, action central.ResourceAction) *component.ResourceEvent {
+	defer r.updateRegistryMirrorConfig()
+
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		r.registryStore.DeleteImageTagMirrorSet(itms.GetUID())
 		log.Debugf("Deleted ImageTagMirrorSet from registry store: %q (%v)", itms.GetName(), itms.GetUID())
@@ -70,4 +87,14 @@ func (r *registryMirrorDispatcher) handleImageTagMirrorSet(itms *configV1.ImageT
 	r.registryStore.UpsertImageTagMirrorSet(itms)
 	log.Debugf("Upserted ImageTagMirrorSet into registry store: %q (%v)", itms.GetName(), itms.GetUID())
 	return nil
+}
+
+// updateRegistryMirrorConfig updates the consolidated registry mirror config from all the rules
+// captured so far.
+func (r *registryMirrorDispatcher) updateRegistryMirrorConfig() {
+	// When using the delayed registry mirror service the returned error is always nil.
+	// Log the error anyway in case that changes in the future.
+	if err := r.mirrorService.UpdateConfig(r.registryStore.GetAllMirrorSets()); err != nil {
+		log.Errorf("Error updating registry mirror config: %v", err)
+	}
 }

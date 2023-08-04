@@ -7,6 +7,7 @@ import (
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/registrymirrors"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +17,8 @@ func TestProcessEvent(t *testing.T) {
 	icspA := &operatorV1Alpha1.ImageContentSourcePolicy{ObjectMeta: v1.ObjectMeta{Name: "icspA", UID: "UIDicspA"}}
 	itmsA := &configV1.ImageDigestMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "itmsA", UID: "UIDitmsA"}}
 	idmsA := &configV1.ImageTagMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "idmsA", UID: "UIDidmsA"}}
+
+	fakeMirrorService := &FakeMirrorService{}
 
 	// Ensure all actions (except delete) result in upserts
 	tt := []struct {
@@ -29,7 +32,7 @@ func TestProcessEvent(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.action.String(), func(t *testing.T) {
 			rs := registry.NewRegistryStore(nil)
-			d := newRegistryMirrorDispatcher(rs)
+			d := newRegistryMirrorDispatcher(rs, fakeMirrorService)
 			d.ProcessEvent(icspA, nil, tc.action)
 			d.ProcessEvent(idmsA, nil, tc.action)
 			d.ProcessEvent(itmsA, nil, tc.action)
@@ -42,7 +45,7 @@ func TestProcessEvent(t *testing.T) {
 
 	t.Run("no panic when removing non existant resource", func(t *testing.T) {
 		rs := registry.NewRegistryStore(nil)
-		d := newRegistryMirrorDispatcher(rs)
+		d := newRegistryMirrorDispatcher(rs, fakeMirrorService)
 		action := central.ResourceAction_REMOVE_RESOURCE
 		d.ProcessEvent(icspA, nil, action)
 		d.ProcessEvent(idmsA, nil, action)
@@ -51,7 +54,7 @@ func TestProcessEvent(t *testing.T) {
 
 	t.Run("upsert followed by delete removes appropriate resource", func(t *testing.T) {
 		rs := registry.NewRegistryStore(nil)
-		d := newRegistryMirrorDispatcher(rs)
+		d := newRegistryMirrorDispatcher(rs, fakeMirrorService)
 		action := central.ResourceAction_CREATE_RESOURCE
 		d.ProcessEvent(icspA, nil, action)
 		d.ProcessEvent(idmsA, nil, action)
@@ -80,8 +83,21 @@ func TestProcessEvent(t *testing.T) {
 	t.Run("unknown type panics for non-release builds", func(t *testing.T) {
 		if !buildinfo.ReleaseBuild {
 			rs := registry.NewRegistryStore(nil)
-			d := newRegistryMirrorDispatcher(rs)
+			d := newRegistryMirrorDispatcher(rs, fakeMirrorService)
 			assert.Panics(t, func() { d.ProcessEvent(nil, nil, 0) })
 		}
 	})
+}
+
+type FakeMirrorService struct {
+}
+
+var _ registrymirrors.Service = (*FakeMirrorService)(nil)
+
+func (*FakeMirrorService) PullSources(srcImage string) ([]string, error) {
+	return nil, nil
+}
+
+func (*FakeMirrorService) UpdateConfig(icspRules []*operatorV1Alpha1.ImageContentSourcePolicy, idmsRules []*configV1.ImageDigestMirrorSet, itmsRules []*configV1.ImageTagMirrorSet) error {
+	return nil
 }
