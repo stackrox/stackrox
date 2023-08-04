@@ -82,7 +82,7 @@ message RunReportResponse {
 }
 
 message DownloadReportRequest {
-    string report_job_id = 1;
+    string id = 1;
 }
 
 message DownloadReportResponse {
@@ -130,7 +130,7 @@ service ReportService {
     // Downloads a generated report for the given report id
     rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse) {
         option (google.api.http) = {
-            get: "/v2/reports/jobs/{report_job_id}/download"
+            get: "/v2/reports/jobs/{id}/download"
         };
     }
 }
