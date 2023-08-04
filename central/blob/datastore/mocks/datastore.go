@@ -10,7 +10,9 @@ import (
 	io "io"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -113,6 +115,51 @@ func (m *MockDatastore) GetMetadata(ctx context.Context, name string) (*storage.
 func (mr *MockDatastoreMockRecorder) GetMetadata(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetadata", reflect.TypeOf((*MockDatastore)(nil).GetMetadata), ctx, name)
+}
+
+// Search mocks base method.
+func (m *MockDatastore) Search(ctx context.Context, query *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, query)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockDatastoreMockRecorder) Search(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDatastore)(nil).Search), ctx, query)
+}
+
+// SearchIDs mocks base method.
+func (m *MockDatastore) SearchIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchIDs", ctx, q)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchIDs indicates an expected call of SearchIDs.
+func (mr *MockDatastoreMockRecorder) SearchIDs(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchIDs", reflect.TypeOf((*MockDatastore)(nil).SearchIDs), ctx, q)
+}
+
+// SearchMetadata mocks base method.
+func (m *MockDatastore) SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchMetadata", ctx, q)
+	ret0, _ := ret[0].([]*storage.Blob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchMetadata indicates an expected call of SearchMetadata.
+func (mr *MockDatastoreMockRecorder) SearchMetadata(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchMetadata", reflect.TypeOf((*MockDatastore)(nil).SearchMetadata), ctx, q)
 }
 
 // Upsert mocks base method.

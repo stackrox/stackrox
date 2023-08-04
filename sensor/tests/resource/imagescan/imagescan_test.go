@@ -75,13 +75,13 @@ func (s *ImageScanSuite) TearDownTest() {
 }
 
 func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
-	s.testContext.RunTest(
+	s.testContext.RunTest(s.T(),
 		helper.WithResources([]helper.K8sResourceInfo{Pod}),
 		helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, resource map[string]k8s.Object) {
 			var image *storage.ContainerImage
 			// Image should be received by central
 			fmt.Println("lvm: waiting for pod")
-			tc.LastDeploymentStateWithTimeout("myapp", func(dp *storage.Deployment, _ central.ResourceAction) error {
+			tc.LastDeploymentStateWithTimeout(t, "myapp", func(dp *storage.Deployment, _ central.ResourceAction) error {
 				if len(dp.GetContainers()) != 1 {
 					return errors.Errorf("expected 1 container found %d", len(dp.GetContainers()))
 				}
@@ -95,7 +95,7 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 			}, "myapp should have started the container and have an imageID", 2*time.Minute)
 
 			// There should be no violation yet, because there are no components provided for this image
-			tc.LastViolationState("myapp", func(result *central.AlertResults) error {
+			tc.LastViolationState(t, "myapp", func(result *central.AlertResults) error {
 				if checkIfAlertsHaveViolation(result, Policies[0].GetName()) {
 					return errors.New("violation found for deployment")
 				}
@@ -128,7 +128,7 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 			})
 
 			// Violation should eventually happen for myapp, since the image scanned has rpm installed
-			tc.LastViolationStateWithTimeout("myapp", func(result *central.AlertResults) error {
+			tc.LastViolationStateWithTimeout(t, "myapp", func(result *central.AlertResults) error {
 				if !checkIfAlertsHaveViolation(result, Policies[0].GetName()) {
 					return errors.New("violation not found for deployment")
 				}
