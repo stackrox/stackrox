@@ -145,7 +145,21 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     [configManagementPath]: {
-        resourceAccessRequirements: everyResource([]),
+        resourceAccessRequirements: everyResource([
+            'Alert',
+            'Cluster',
+            'Compliance',
+            'Deployment',
+            'Image',
+            'K8sRole',
+            'K8sRoleBinding',
+            'K8sSubject',
+            'Namespace',
+            'Node',
+            'Secret',
+            'ServiceAccount',
+            'WorkflowAdministration',
+        ]),
     },
     [dashboardPath]: {
         resourceAccessRequirements: everyResource([]),
