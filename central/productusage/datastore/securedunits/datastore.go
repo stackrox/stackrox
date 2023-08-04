@@ -16,8 +16,8 @@ type DataStore interface {
 
 	// Get returns the channel, from which the metrics could be read.
 	Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) (<-chan *storage.SecuredUnits, error)
-	// Insert puts metrics to the persistent storage.
-	Insert(ctx context.Context, metrics *storage.SecuredUnits) error
+	// Upsert puts metrics to the persistent storage.
+	Upsert(ctx context.Context, metrics *storage.SecuredUnits) error
 
 	// In-memory storage access:
 

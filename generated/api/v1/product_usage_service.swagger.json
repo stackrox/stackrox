@@ -13,8 +13,8 @@
   "paths": {
     "/v1/product/usage/current": {
       "get": {
-        "summary": "GetCurrentProductUsage",
-        "description": "Returns current usage, with about 5 minutes accuracy.",
+        "summary": "GetCurrentProductUsage returns the current product usage metrics values.",
+        "description": "The usage metrics are composed today of the secured units metrics. They\nare collected from all connected clusters every 5 minutes, so the\nreturned result includes data for the connected clusters accurate to\nabout these 5 minutes, and potentially some outdated data for the\ndisconnected clusters.",
         "operationId": "ProductUsageService_GetCurrentProductUsage",
         "responses": {
           "200": {
@@ -37,8 +37,8 @@
     },
     "/v1/product/usage/max_secured_units": {
       "get": {
-        "summary": "GetMaxSecuredUnitsUsage",
-        "description": "Returns maximum, i.e. peak, usage for the given time frame together\nwith the time when this maximum was observed.",
+        "summary": "GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units\nusage observed during a given time range, together with the time when\nthis maximum was aggregated and stored.",
+        "description": "The usage metrics are continously collected from all the connected\nclusters. The maximum values are kept for some period of time in memory,\nand then, periodically, are averaged with the previously collected\nmaximum values and stored to the database. Storing average with the\nprevious record allows for smoothing short peaks and drops.\nThe last data from disconnected clusters are taken into account.",
         "operationId": "ProductUsageService_GetMaxSecuredUnitsUsage",
         "responses": {
           "200": {
@@ -116,14 +116,11 @@
     "v1CurrentProductUsageResponse": {
       "type": "object",
       "properties": {
-        "timestamp": {
-          "type": "string",
-          "format": "date-time"
-        },
         "securedUnits": {
           "$ref": "#/definitions/v1SecuredUnits"
         }
-      }
+      },
+      "description": "CurrentProductUsageResponse holds the values of the currently observable\nproduct usage metrics."
     },
     "v1MaxSecuredUnitsUsageResponse": {
       "type": "object",
@@ -144,7 +141,8 @@
           "type": "string",
           "format": "int64"
         }
-      }
+      },
+      "description": "MaxSecuredUnitsUsageResponse holds the maximum values of the secured nodes\nand CPU Units (as reported by Kubernetes) with the time at which these\nvalues were aggregated, with the aggregation period accuracy (1h)."
     },
     "v1SecuredUnits": {
       "type": "object",
@@ -157,7 +155,8 @@
           "type": "string",
           "format": "int64"
         }
-      }
+      },
+      "description": "SecuredUnits are the values of the product usage metrics collected from\nsecured clusters."
     }
   }
 }

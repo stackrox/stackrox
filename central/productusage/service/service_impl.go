@@ -57,7 +57,6 @@ func (s *serviceImpl) GetCurrentProductUsage(ctx context.Context, _ *v1.Empty) (
 		return nil, errors.Wrap(err, "datastore failed to get current usage metrics")
 	}
 	return &v1.CurrentProductUsageResponse{
-		Timestamp: m.GetTimestamp(),
 		SecuredUnits: &v1.SecuredUnits{
 			NumNodes:    m.GetNumNodes(),
 			NumCpuUnits: m.GetNumCpuUnits(),

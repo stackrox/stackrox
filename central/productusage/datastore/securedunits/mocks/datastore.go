@@ -82,20 +82,6 @@ func (mr *MockDataStoreMockRecorder) GetCurrentUsage(ctx interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUsage", reflect.TypeOf((*MockDataStore)(nil).GetCurrentUsage), ctx)
 }
 
-// Insert mocks base method.
-func (m *MockDataStore) Insert(ctx context.Context, metrics *storage.SecuredUnits) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Insert", ctx, metrics)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Insert indicates an expected call of Insert.
-func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockDataStore)(nil).Insert), ctx, metrics)
-}
-
 // UpdateUsage mocks base method.
 func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics source.SecuredUnitsSource) error {
 	m.ctrl.T.Helper()
@@ -108,4 +94,18 @@ func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metri
 func (mr *MockDataStoreMockRecorder) UpdateUsage(ctx, clusterID, metrics interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockDataStore)(nil).UpdateUsage), ctx, clusterID, metrics)
+}
+
+// Upsert mocks base method.
+func (m *MockDataStore) Upsert(ctx context.Context, metrics *storage.SecuredUnits) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upsert", ctx, metrics)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upsert indicates an expected call of Upsert.
+func (mr *MockDataStoreMockRecorder) Upsert(ctx, metrics interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), ctx, metrics)
 }

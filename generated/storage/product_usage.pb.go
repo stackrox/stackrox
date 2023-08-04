@@ -24,14 +24,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// SecuredUnits represents a record of an aggregated secured clusters usage
+// metrics. The metrics are aggregated periodically, and put into the database.
 type SecuredUnits struct {
-	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
-	Timestamp            *types.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	NumNodes             int64            `protobuf:"varint,3,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
-	NumCpuUnits          int64            `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
-	XXX_unrecognized     []byte           `json:"-"`
-	XXX_sizecache        int32            `json:"-"`
+	// id is not used to retrieve data, but serves mostly for compatibility with
+	// the current implementation of the query generator.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
+	// timestamp stores the moment at which the values of the metrics below are
+	// aggregated.
+	Timestamp *types.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// num_nodes is the maximum number of secured nodes, observed across all
+	// registered clusters during last aggregation period.
+	NumNodes int64 `protobuf:"varint,3,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
+	// num_cpu_units is the maximum number of secured CPU units (which are the
+	// units reported by Kubernetes), observed across all registered clusters
+	// during last aggregation period.
+	NumCpuUnits          int64    `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *SecuredUnits) Reset()         { *m = SecuredUnits{} }
