@@ -4,7 +4,7 @@ import (
 	"context"
 
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"

@@ -3,8 +3,8 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/reportconfigurations/index"
-	"github.com/stackrox/rox/central/reportconfigurations/store"
+	"github.com/stackrox/rox/central/reports/config/index"
+	"github.com/stackrox/rox/central/reports/config/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
