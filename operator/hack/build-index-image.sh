@@ -23,6 +23,7 @@ OPTION:
   --clean-output-dir   Delete '{base-dir}/build/index' directory.
   --use-http           Use plain HTTP for container image registries.
   --skip-build         Skip the actual \"docker build\" command.
+  --skip-tls-verify    Skip TLS certificate verification for container image registries while pulling bundles
 " >&2
 }
 
@@ -42,6 +43,7 @@ RUN_BUILD=1
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
 USE_HTTP=""
+SKIP_TLS_VERIFY=""
 
 function read_arguments() {
     while [[ -n "${1:-}" ]]; do
@@ -60,6 +62,8 @@ function read_arguments() {
                 CLEAN_OUTPUT_DIR="true";;
             "--use-http")
                 USE_HTTP="--use-http";;
+            "--skip-tls-verify")
+                SKIP_TLS_VERIFY="--skip-tls-verify";;
             "--skip-build")
                 RUN_BUILD=0;;
             *)
@@ -128,7 +132,7 @@ mkdir -p "${BUILD_INDEX_DIR}"
 
 # With "--binary-image", we are setting the exact base image version. By default, "latest" would be used.
 "${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_VERSION}" "${BUILD_INDEX_DIR}"
-"${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} > "${BUILD_INDEX_DIR}/index.yaml"
+"${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} > "${BUILD_INDEX_DIR}/index.yaml"
 
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
 YQ_FILTER_CHANNEL_DOCUMENT='.schema=="olm.channel" and .name=="latest"'
@@ -142,7 +146,7 @@ EOF
 )
 
 "${YQ}" --inplace --prettyPrint "with(select(${YQ_FILTER_CHANNEL_DOCUMENT}); .entries += ${YQ_NEW_BUNDLE_ENTRY})" "${BUILD_INDEX_DIR}/index.yaml"
-"${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} >> "${BUILD_INDEX_DIR}/index.yaml"
+"${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} ${SKIP_TLS_VERIFY} >> "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" validate "${BUILD_INDEX_DIR}"
 
 if (( RUN_BUILD )); then
