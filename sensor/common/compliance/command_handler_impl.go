@@ -27,7 +27,7 @@ type commandHandlerImpl struct {
 
 	scrapeIDToState map[string]*scrapeState
 
-	stopper concurrency.Stopper
+	stopper          concurrency.Stopper
 	centralReachable *atomic.Bool
 }
 
@@ -52,9 +52,9 @@ func (c *commandHandlerImpl) Stop(_ error) {
 func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		c.centralReachable.CompareAndSwap(false, true)
+		c.centralReachable.Store(true)
 	case common.SensorComponentEventOfflineMode:
-		c.centralReachable.CompareAndSwap(true, false)
+		c.centralReachable.Store(false)
 	}
 }
 
@@ -215,8 +215,11 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 			ScrapeUpdate: update,
 		},
 	}):
+		log.Infof("Inside select: Update channel has length: %i", len(c.updates))
 		return
 	}
+	log.Infof("Outside select: Update channel has length: %i", len(c.updates))
+	return
 }
 
 // Helper functions.

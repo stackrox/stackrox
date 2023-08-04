@@ -20,7 +20,7 @@ type CommandHandler interface {
 // NewCommandHandler returns a new instance of a CommandHandler using the input image and Orchestrator.
 func NewCommandHandler(complianceService Service) CommandHandler {
 	reachable := &atomic.Bool{}
-	reachable.Store(true)
+	reachable.Store(false)
 
 	return &commandHandlerImpl{
 		service: complianceService,
@@ -30,7 +30,7 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 
 		scrapeIDToState: make(map[string]*scrapeState),
 
-		stopper: concurrency.NewStopper(),
+		stopper:          concurrency.NewStopper(),
 		centralReachable: reachable,
 	}
 }
