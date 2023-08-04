@@ -85,4 +85,4 @@ curl --silent --location "https://github.com/cloud-bulldozer/kube-burner/release
 
 tar -zxvf "./kube-burner/kube-burner-${KUBE_BURNER_VERSION}.tar.gz" --directory ./kube-burner
 
-./scripts/repeate-kube-burner.sh ./kube-burner/kube-burner "STACKROX_DIR"/.github/workflows/other-configs/cluster-density-kube-burner.yml &
+"$STACKROX_DIR"/.github/workflows/scripts/repeate-kube-burner.sh ./kube-burner/kube-burner "$STACKROX_DIR"/.github/workflows/other-configs/cluster-density-kube-burner.yml &
