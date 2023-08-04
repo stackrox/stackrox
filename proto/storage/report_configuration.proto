@@ -8,6 +8,7 @@ import "storage/schedule.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/user.proto";
+import "storage/role.proto";
 
 package storage;
 
@@ -33,6 +34,7 @@ message ReportConfiguration {
     ResourceScope                   resource_scope              = 11;
     repeated NotifierConfiguration  notifiers                   = 12;
     SlimUser                        creator                     = 13 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    repeated SimpleAccessScope      access_scopes               = 14 [(gogoproto.moretags) = 'sql:"ignore_pk,ignore_unique"'];
 }
 
 message ReportLastRunStatus {
