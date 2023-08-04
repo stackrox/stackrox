@@ -298,7 +298,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		return nil, err
 	}
 
-	reportID, err := s.scheduler.SubmitReportRequest(reportReq, false)
+	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
 		return nil, err
 	}

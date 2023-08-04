@@ -764,7 +764,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 					Return(collection, true, nil).Times(1)
 				s.notifierDataStore.EXPECT().GetManyNotifiers(gomock.Any(), notifierIDs).
 					Return(notifiers, nil).Times(1)
-				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), false).
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
 					Return("reportID", nil).Times(1)
 			},
 			isError: false,
@@ -787,7 +787,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 					Return(collection, true, nil).Times(1)
 				s.notifierDataStore.EXPECT().GetManyNotifiers(gomock.Any(), notifierIDs).
 					Return(notifiers, nil).Times(1)
-				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), false).
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
 					Return("reportID", nil).Times(1)
 			},
 			isError: false,
@@ -916,8 +916,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
 				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(false, errors.New("Datastore error")).
-					Times(1)
+					Return(false, errors.New("Datastore error")).Times(1)
 			},
 			isError: true,
 		},
@@ -931,8 +930,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
 				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(false, nil).
-					Times(1)
+					Return(false, nil).Times(1)
 			},
 			isError: true,
 		},
@@ -946,8 +944,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
 				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), gomock.Any()).
-					Return(true, nil).
-					Times(1)
+					Return(true, nil).Times(1)
 			},
 			isError: false,
 		},
