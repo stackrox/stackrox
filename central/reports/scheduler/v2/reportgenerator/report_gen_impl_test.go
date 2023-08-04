@@ -20,7 +20,7 @@ import (
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -62,8 +62,8 @@ type vulnReportData struct {
 }
 
 func (s *EnhancedReportingTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}
@@ -89,8 +89,8 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
-	s.reportGenerator = newReportGeneratorImpl(nil, nil, nil,
-		s.resolver.DeploymentDataStore, s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
+	s.reportGenerator = newReportGeneratorImpl(nil, nil, s.resolver.DeploymentDataStore,
+		s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
 		nil, nil, s.blobStore, s.schema)
 }
 

@@ -60,7 +60,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -605,8 +605,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 }
 
 func (s *PruningTestSuite) TestReportHistoryPruning() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}
@@ -631,8 +631,7 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		test := testCase{
 			day: day,
 			reportSnapshot: &storage.ReportSnapshot{
-				Name:     fmt.Sprintf("test_report_%d_days", day),
-				ReportId: uuid.NewV4().String(),
+				Name: fmt.Sprintf("test_report_%d_days", day),
 				ReportStatus: &storage.ReportStatus{
 					CompletedAt: timeBeforeDays(day),
 				},
@@ -655,7 +654,7 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		if err != nil {
 			assert.Errorf(s.T(), err, "Adding report config failed")
 		}
-		err = reportds.AddReportSnapshot(s.ctx, test.reportSnapshot)
+		test.reportSnapshot.ReportId, err = reportds.AddReportSnapshot(s.ctx, test.reportSnapshot)
 		if err != nil {
 			assert.Errorf(s.T(), err, "Adding report snapshot failed")
 		}
@@ -668,7 +667,6 @@ func (s *PruningTestSuite) TestReportHistoryPruning() {
 		} else {
 			assert.Empty(s.T(), repsPruning)
 		}
-
 	}
 }
 

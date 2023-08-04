@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -49,6 +50,7 @@ type Store interface {
 	Exists(ctx context.Context, name string) (bool, error)
 
 	Get(ctx context.Context, name string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -94,10 +96,12 @@ func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetName(),
+		obj.GetLength(),
+		pgutils.NilOrTime(obj.GetModifiedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO blobs (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO blobs (Name, Length, ModifiedTime, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Length = EXCLUDED.Length, ModifiedTime = EXCLUDED.ModifiedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -112,6 +116,8 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 
 	copyCols := []string{
 		"name",
+		"length",
+		"modifiedtime",
 		"serialized",
 	}
 
@@ -128,6 +134,8 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetName(),
+			obj.GetLength(),
+			pgutils.NilOrTime(obj.GetModifiedTime()),
 			serialized,
 		})
 

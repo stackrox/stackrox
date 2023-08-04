@@ -98,19 +98,50 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	return store
 }
 
-// Cleanup deletes all entries from store
+// Cleanup deletes all entries from store.
 func (rs *Store) Cleanup() {
+	// Separate cleanup methods are used to ensure only one lock is obtained at a time
+	// to avoid accidental deadlock.
+	rs.cleanupRegistries()
+	rs.cleanupClusterLocalRegistryHosts()
+	rs.cleanupDelegatedRegistryConfig()
+	rs.cleanupMirrorSets()
+}
+
+func (rs *Store) cleanupRegistries() {
+	// These Sets have an internal mutex for controlling access.
+	rs.centralRegistryIntegrations.Clear()
+	rs.globalRegistries.Clear()
+
 	rs.mutex.Lock()
 	defer rs.mutex.Unlock()
+
+	rs.store = make(map[string]registries.Set)
+}
+
+func (rs *Store) cleanupClusterLocalRegistryHosts() {
 	rs.clusterLocalRegistryHostsMutex.Lock()
 	defer rs.clusterLocalRegistryHostsMutex.Unlock()
 	rs.mirrorSetMutex.Lock()
 	defer rs.mirrorSetMutex.Unlock()
 
-	rs.store = make(map[string]registries.Set)
-	rs.globalRegistries = registries.NewSet(rs.factory)
-	rs.centralRegistryIntegrations = registries.NewSet(rs.factory)
 	rs.clusterLocalRegistryHosts = set.NewStringSet()
+	rs.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
+	rs.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
+	rs.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
+}
+
+func (rs *Store) cleanupDelegatedRegistryConfig() {
+	rs.delegatedRegistryConfigMutex.Lock()
+	defer rs.delegatedRegistryConfigMutex.Unlock()
+
+	rs.delegatedRegistryConfig = nil
+}
+
+func (rs *Store) cleanupMirrorSets() {
+	rs.mirrorSetMutex.Lock()
+	defer rs.mirrorSetMutex.Unlock()
+
 	rs.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
 	rs.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
 	rs.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)

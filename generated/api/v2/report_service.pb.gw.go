@@ -142,7 +142,7 @@ func local_request_ReportService_GetLastReportStatusConfigID_0(ctx context.Conte
 }
 
 var (
-	filter_ReportService_GetReportHistory_0 = &utilities.DoubleArray{Encoding: map[string]int{"report_config_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_ReportService_GetReportHistory_0 = &utilities.DoubleArray{Encoding: map[string]int{"id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_ReportService_GetReportHistory_0(ctx context.Context, marshaler runtime.Marshaler, client ReportServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -156,15 +156,15 @@ func request_ReportService_GetReportHistory_0(ctx context.Context, marshaler run
 		_   = err
 	)
 
-	val, ok = pathParams["report_config_id"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "report_config_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ReportConfigId, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "report_config_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -190,15 +190,15 @@ func local_request_ReportService_GetReportHistory_0(ctx context.Context, marshal
 		_   = err
 	)
 
-	val, ok = pathParams["report_config_id"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "report_config_id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ReportConfigId, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "report_config_id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -567,15 +567,15 @@ func RegisterReportServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 }
 
 var (
-	pattern_ReportService_GetReportStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "status", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_GetReportStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "status"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ReportService_GetLastReportStatusConfigID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "last-status", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ReportService_GetReportHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "history", "report_config_id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_GetReportHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "configurations", "id", "history"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ReportService_RunReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "reports", "run"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ReportService_CancelReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "reports", "cancel", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ReportService_CancelReport_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "cancel"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

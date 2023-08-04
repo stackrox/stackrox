@@ -38,6 +38,11 @@ tests:
     env.openshift: 4
   tests: *enabled-test
 
+- name: "When enabled via default value"
+  set:
+    env.openshift: 4
+  tests: *enabled-test
+
 - name: "When disabled"
   set:
     monitoring.openshift.enabled: false
@@ -63,6 +68,11 @@ tests:
 - name: "Disable override when on explicit OpenShift 3 environment"
   set:
     monitoring.openshift.enabled: true
+    env.openshift: 3
+  tests: *disabled-test
+
+- name: "Disable override with default value when on explicit OpenShift 3 environment"
+  set:
     env.openshift: 3
   tests: *disabled-test
 

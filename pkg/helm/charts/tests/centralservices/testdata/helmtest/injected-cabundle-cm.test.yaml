@@ -2,6 +2,9 @@ values:
   central:
     persistence:
       none: true
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - server:
     visibleSchemas:

@@ -3,15 +3,15 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
 import "storage/user.proto";
 import "storage/report_configuration.proto";
-import "storage/report.proto";
 import "storage/schedule.proto";
 
 package storage;
 
-// ReportSnapshot stores the snapshot of a completed report job. It stores a projection of ReportConfiguration, collection,
+// ReportSnapshot stores the snapshot of a report job. It stores a projection of ReportConfiguration, collection,
 // vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
 message ReportSnapshot {
     enum ReportType {
@@ -40,11 +40,35 @@ message CollectionSnapshot {
 
 message NotifierSnapshot {
     oneof notifier_config {
-        EmailNotifierSnapshot email_config = 1;
+        EmailNotifierConfiguration email_config = 1;
     }
     string notifier_name = 2;
 }
 
-message EmailNotifierSnapshot {
-    repeated string mailing_lists = 1;
+message ReportStatus {
+    enum RunState {
+        WAITING = 0;
+        PREPARING = 1;
+        SUCCESS = 2;
+        FAILURE = 3;
+    }
+
+    enum NotificationMethod {
+        EMAIL = 0;
+        DOWNLOAD = 1;
+    }
+
+    enum RunMethod {
+        ON_DEMAND = 0;
+        SCHEDULED = 1;
+    }
+
+    RunState                   run_state                  = 1 [(gogoproto.moretags) = 'search:"Report State"'];
+    google.protobuf.Timestamp  queued_at                  = 2 [(gogoproto.moretags) = 'search:"Report Init Time"'];
+    google.protobuf.Timestamp  completed_at               = 3 [(gogoproto.moretags) = 'search:"Report Completion Time"'];
+    string                     error_msg                  = 4;
+    RunMethod                  report_request_type        = 5 [(gogoproto.moretags) = 'search:"Report Request Type"'];
+    NotificationMethod         report_notification_method = 6 [(gogoproto.moretags) = 'search:"Report Notification Method"'];
 }
+
+

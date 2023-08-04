@@ -8,7 +8,7 @@ import (
 
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,8 +31,8 @@ type ReportMetadataDatastoreTestSuite struct {
 }
 
 func (s *ReportMetadataDatastoreTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}
@@ -64,11 +64,16 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	// Test AddReportSnapshot: error without write access
 	snap := fixtures.GetReportSnapshot()
 	snap.ReportConfigurationId = configID
-	err = s.datastore.AddReportSnapshot(noAccessCtx, snap)
+	_, err = s.datastore.AddReportSnapshot(noAccessCtx, snap)
 	s.Error(err)
 
 	// Test AddReportSnapshot: no error with write access
-	err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	snap.ReportId, err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	s.NoError(err)
+
+	// Test UpdateReportSnapshot: no error with write access
+	snap.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	err = s.datastore.UpdateReportSnapshot(s.ctx, snap)
 	s.NoError(err)
 
 	// Test Get: no result without read access
@@ -98,7 +103,7 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	failedReportSnap := fixtures.GetReportSnapshot()
 	failedReportSnap.ReportStatus.RunState = storage.ReportStatus_FAILURE
 	failedReportSnap.ReportConfigurationId = configID
-	err = s.datastore.AddReportSnapshot(s.ctx, failedReportSnap)
+	failedReportSnap.ReportId, err = s.datastore.AddReportSnapshot(s.ctx, failedReportSnap)
 	s.NoError(err)
 
 	results, err = s.datastore.Search(s.ctx, search.MatchFieldQuery(search.ReportState.String(), storage.ReportStatus_FAILURE.String(), false))

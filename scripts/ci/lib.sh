@@ -160,15 +160,15 @@ get_central_diagnostics() {
 push_image_manifest_lists() {
     info "Pushing main, roxctl and central-db images as manifest lists"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_image_manifest_lists <push_context> <brand>"
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
     fi
 
     local push_context="$1"
     local brand="$2"
+    local architectures="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
-    local architectures="amd64,arm64,ppc64le"
 
     local registry
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
@@ -189,6 +189,16 @@ push_image_manifest_lists() {
               "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
           fi
     done
+
+    # Push manifest lists for scanner and collector for amd64 only
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
+    for image in "${amd64_image_set[@]}"; do
+         "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
+          if [[ "$push_context" == "merge-to-master" ]]; then
+              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "amd64" | cat
+          fi
+    done
+
 }
 
 push_main_image_set() {

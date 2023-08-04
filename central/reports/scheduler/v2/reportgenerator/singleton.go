@@ -8,11 +8,10 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	reportMetadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -27,7 +26,6 @@ func initialize() {
 	schema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
 	utils.CrashOnError(err)
 	rg = New(reportConfigDS.Singleton(),
-		reportMetadataDS.Singleton(),
 		reportSnapshotDS.Singleton(),
 		deploymentDS.Singleton(),
 		watchedImageDS.Singleton(),
@@ -42,7 +40,7 @@ func initialize() {
 
 // Singleton returns a singleton instance of ReportGenerator
 func Singleton() ReportGenerator {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
 	once.Do(initialize)
