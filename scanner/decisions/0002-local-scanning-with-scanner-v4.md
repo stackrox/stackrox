@@ -13,14 +13,14 @@ Local scanning is the scenario where the container image is pulled and indexed (
 
 ![Diagram of Central, Sensor and Scanners in both central and secured cluster, showing local scanning flows and related events and API calls.](images/local-scanning-diagram.png)
 
-In Scanner V2, Sensor and Central coordinate the calls to Scanner and Scanner Slim. The local image scanning leverages `GetImageComponents()` in Scanner V2 Slim and `GetImageVulnerabilities()` in Central Scanner V2. Both APIs have similar semantics to Scanner V4's Indexer and Matcher services:
+Currently, Sensor and Central coordinate the calls to Scanner and Scanner Slim. The local image scanning leverages `GetImageComponents()` in Scanner V2 Slim and `GetImageVulnerabilities()` in Central Scanner V2. Both APIs have similar semantics to Scanner V4's Indexer and Matcher services:
 
 | Scanner V2              | Scanner V4                 | Description                                                           |
 |-------------------------|----------------------------|-----------------------------------------------------------------------|
 | GetImageComponents      | Indexer/CreateIndexReport  | Retrieve the inventory of artifacts and details on the image content. |
 | GetImageVulnerabilities | Matcher/GetVulnerabilities | Retrieve the matching vulnerabilities for the components provided.    |
 
-Although `GetImageVulnerabilities` and `Matcher/GetVulnerabilities` are similar, there is a crucial difference between them. `Matcher/GetVulnerabilities` was specifically designed to retrieve the index report to be scanned from a separate service or storage, similar to how [Clair is implemented](https://github.com/quay/clair/blob/main/httptransport/matcher_v1.go#L116). On the other hand, `GetImageVulnerabilities` accepts a list of components in its payload. In order to fully utilize the clear separation between Indexer and Matcher in Scanner V4's design, changes need to be made to Scanner V4, Central and Sensor. This includes Central and Sensor ability to handle Index Reports, and also Scanner V4's capability to access reports that are generated in the secured cluster.
+Although `GetImageVulnerabilities` and `Matcher/GetVulnerabilities` are similar, they have a crucial difference. `Matcher/GetVulnerabilities` was specifically designed to retrieve the index report to be scanned from a separate service or storage, similar to how [Clair is implemented](https://github.com/quay/clair/blob/main/httptransport/matcher_v1.go#L116). On the other hand, `GetImageVulnerabilities` accepts a list of components in its payload. To fully utilize the clear separation between Indexer and Matcher in Scanner V4's design, changes need to be made to Scanner V4, Central, and Sensor. This includes Central and Sensor's ability to handle Index Reports and also Scanner V4's capability to access reports that are generated in the secured cluster.
 
 ## Decision
 
@@ -54,14 +54,11 @@ Finally, Index Reports generated in the secured cluster will not be stored in th
 
 ## Consequences
 
-This method eliminates the need to store Index Reports in the central cluster for images obtained from the secured cluster. Instead, it distributes the workload of adding, storing, and retrieving Index Reports in the central Scanner's database across a large number of secured clusters connected to the Central.
- 
-The new Matcher API opens the door for Scanner in Matcher mode to provide vulnerability matching with multi-tenancy, where multiple Central instances could connect to a single Matcher instance to create vulnerability reports on demand.
- 
-The Node Scanning can be migrated to Scanner V4 using the new Matcher API and local scanning workflow, as long as it sends Index Reports to Central.
+1. This method eliminates the need to store Index Reports in the central cluster for images obtained from the secured cluster. Instead, it distributes the workload of adding, storing, and retrieving Index Reports in the central Scanner's database across a large number of secured clusters connected to the Central.
+2. Re-scanning continues to rely on Deployment Resyncs.  That means images are only rescanned after a resync deployment message is sent to Sensor, and the image cache has expired.
+3. The new Matcher API opens the door for Scanner in Matcher mode to provide vulnerability matching with multi-tenancy, where multiple Central instances could connect to a single Matcher instance to create vulnerability reports on demand.
+4. The Node Scanning can be migrated to Scanner V4 using the new Matcher API and local scanning workflow, as long as it sends Index Reports to Central.
+5. In the event that the Central cluster is updated to a version with Scanner V4 enabled, but the secured cluster is still running Sensor based on Scanner V2, it's still feasible to detect vulnerabilities if there is at least one instance of Scanner V2 present in the Central cluster. This allows for a seamless transition to Scanner V4 while maintaining backward compatibility.
+6. The changes in the protos minimize the dependency on Scanner V2 protos, making it easy to remove them in the future.
 
-In the event that the Central cluster is updated to a version with Scanner V4 enabled, but the secured cluster is still running Sensor based on Scanner V2, it's still feasible to detect vulnerabilities if there is at least one instance of Scanner V2 present in the Central cluster. This allows for a seamless transition to Scanner V4 while maintaining backward compatibility.
-
-The changes in the protos minimize the dependency on Scanner V2 protos, making it easy to remove them in the future.
-
-[^1]: [In Sensor the [client interface](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/sensor/common/scannerclient/grpc_client.go#L24) is used by `LocalScan`, while in Central the Scanner V4 intergration will support the [image vulnerability getter](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/pkg/scanners/types/types.go#L33).
+[^1]: [In Sensor the [client interface](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/sensor/common/scannerclient/grpc_client.go#L24) is used by `LocalScan`, while in Central the Scanner V4 integration will support the [image vulnerability getter](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/pkg/scanners/types/types.go#L33).
