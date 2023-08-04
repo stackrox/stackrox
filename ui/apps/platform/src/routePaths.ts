@@ -142,6 +142,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         ]),
     },
     [complianceEnhancedBasePath]: {
+        featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     [configManagementPath]: {
