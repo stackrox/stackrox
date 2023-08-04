@@ -28,7 +28,7 @@ var (
 		"Component",
 		"CVE",
 		"Fixable",
-		"Component Upgrade",
+		"CVE Fixed In",
 		"Severity",
 		"Discovered At",
 		"Reference",
