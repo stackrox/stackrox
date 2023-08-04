@@ -293,7 +293,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		return nil, err
 	}
 
-	reportID, err := s.scheduler.SubmitReportRequest(reportReq, false)
+	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, err
 	}
 
-	cancelled, err := s.scheduler.CancelReportRequest(req.GetId())
+	cancelled, err := s.scheduler.CancelReportRequest(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}

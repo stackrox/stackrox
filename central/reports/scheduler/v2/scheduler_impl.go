@@ -240,12 +240,12 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 
 // CancelReportRequest cancels a report request that is still waiting in queue. A user can only cancel a report requested by them.
 // If the report is already being prepared or has completed execution, it cannot be cancelled.
-func (s *scheduler) CancelReportRequest(reportID string) (bool, error) {
+func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
 	removed := s.tryRemoveFromRequestQueue(reportID)
 	if !removed {
 		return false, nil
 	}
-	err := s.reportSnapshotStore.DeleteReportSnapshot(scheduledCtx, reportID)
+	err := s.reportSnapshotStore.DeleteReportSnapshot(ctx, reportID)
 	if err != nil {
 		return false, errors.Wrapf(err, "Error deleting report ID '%s' from storage", reportID)
 	}
@@ -270,7 +270,7 @@ func (s *scheduler) CanSubmitReportRequest(user *storage.SlimUser, reportConfig 
 // SubmitReportRequest submits a report execution request. The report request can be either for an on demand report or a scheduled report.
 // If there is already a pending report request submitted by the same user for the same report config, this request will be denied.
 // However, there can be multiple pending report requests for same configuration by different users.
-func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error) {
+func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.ReportRequest, reSubmission bool) (string, error) {
 	err := reportGen.ValidateReportRequest(request)
 	if err != nil {
 		return "", err
@@ -278,7 +278,7 @@ func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubm
 
 	request.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
 	request.ReportSnapshot.ReportStatus.QueuedAt = types.TimestampNow()
-	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(request.ReportSnapshot, reSubmission)
+	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
 	if err != nil {
 		return "", err
 	}
@@ -303,7 +303,7 @@ func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) fun
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
-		_, err = s.SubmitReportRequest(reportReq, false)
+		_, err = s.SubmitReportRequest(scheduledCtx, reportReq, false)
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
@@ -329,7 +329,7 @@ func (s *scheduler) queuePendingReports() {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 			continue
 		}
-		_, err = s.SubmitReportRequest(reportReq, true)
+		_, err = s.SubmitReportRequest(scheduledCtx, reportReq, true)
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 		}
@@ -379,7 +379,7 @@ func findAndRemoveFromQueue(reportRequestsQueue *list.List, pred func(req *repor
 // Validate report snapshot and store it to db if validation succeeds.
 // Will return report_id if successful.
 // Validation will check if the user requesting the report doesn't already have a pending report for the same config
-func (s *scheduler) validateAndPersistSnapshot(snapshot *storage.ReportSnapshot, reSubmission bool) (string, error) {
+func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot, reSubmission bool) (string, error) {
 	s.dbLock.Lock()
 	defer s.dbLock.Unlock()
 
@@ -396,9 +396,9 @@ func (s *scheduler) validateAndPersistSnapshot(snapshot *storage.ReportSnapshot,
 
 	var err error
 	if !reSubmission {
-		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(scheduledCtx, snapshot)
+		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(ctx, snapshot)
 	} else {
-		err = s.reportSnapshotStore.UpdateReportSnapshot(scheduledCtx, snapshot)
+		err = s.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
 	}
 
 	if err != nil {
