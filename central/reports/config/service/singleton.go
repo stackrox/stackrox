@@ -2,7 +2,7 @@ package service
 
 import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/pkg/sync"

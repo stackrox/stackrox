@@ -52,6 +52,143 @@ func (NotificationMethod) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_c1e2917f181293be, []int{0}
 }
 
+type ReportConfiguration_ReportType int32
+
+const (
+	ReportConfiguration_VULNERABILITY ReportConfiguration_ReportType = 0
+)
+
+var ReportConfiguration_ReportType_name = map[int32]string{
+	0: "VULNERABILITY",
+}
+
+var ReportConfiguration_ReportType_value = map[string]int32{
+	"VULNERABILITY": 0,
+}
+
+func (x ReportConfiguration_ReportType) String() string {
+	return proto.EnumName(ReportConfiguration_ReportType_name, int32(x))
+}
+
+func (ReportConfiguration_ReportType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{0, 0}
+}
+
+type VulnerabilityReportFilters_Fixability int32
+
+const (
+	VulnerabilityReportFilters_BOTH        VulnerabilityReportFilters_Fixability = 0
+	VulnerabilityReportFilters_FIXABLE     VulnerabilityReportFilters_Fixability = 1
+	VulnerabilityReportFilters_NOT_FIXABLE VulnerabilityReportFilters_Fixability = 2
+)
+
+var VulnerabilityReportFilters_Fixability_name = map[int32]string{
+	0: "BOTH",
+	1: "FIXABLE",
+	2: "NOT_FIXABLE",
+}
+
+var VulnerabilityReportFilters_Fixability_value = map[string]int32{
+	"BOTH":        0,
+	"FIXABLE":     1,
+	"NOT_FIXABLE": 2,
+}
+
+func (x VulnerabilityReportFilters_Fixability) String() string {
+	return proto.EnumName(VulnerabilityReportFilters_Fixability_name, int32(x))
+}
+
+func (VulnerabilityReportFilters_Fixability) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{1, 0}
+}
+
+type VulnerabilityReportFilters_VulnerabilitySeverity int32
+
+const (
+	VulnerabilityReportFilters_UNKNOWN_VULNERABILITY_SEVERITY   VulnerabilityReportFilters_VulnerabilitySeverity = 0
+	VulnerabilityReportFilters_LOW_VULNERABILITY_SEVERITY       VulnerabilityReportFilters_VulnerabilitySeverity = 1
+	VulnerabilityReportFilters_MODERATE_VULNERABILITY_SEVERITY  VulnerabilityReportFilters_VulnerabilitySeverity = 2
+	VulnerabilityReportFilters_IMPORTANT_VULNERABILITY_SEVERITY VulnerabilityReportFilters_VulnerabilitySeverity = 3
+	VulnerabilityReportFilters_CRITICAL_VULNERABILITY_SEVERITY  VulnerabilityReportFilters_VulnerabilitySeverity = 4
+)
+
+var VulnerabilityReportFilters_VulnerabilitySeverity_name = map[int32]string{
+	0: "UNKNOWN_VULNERABILITY_SEVERITY",
+	1: "LOW_VULNERABILITY_SEVERITY",
+	2: "MODERATE_VULNERABILITY_SEVERITY",
+	3: "IMPORTANT_VULNERABILITY_SEVERITY",
+	4: "CRITICAL_VULNERABILITY_SEVERITY",
+}
+
+var VulnerabilityReportFilters_VulnerabilitySeverity_value = map[string]int32{
+	"UNKNOWN_VULNERABILITY_SEVERITY":   0,
+	"LOW_VULNERABILITY_SEVERITY":       1,
+	"MODERATE_VULNERABILITY_SEVERITY":  2,
+	"IMPORTANT_VULNERABILITY_SEVERITY": 3,
+	"CRITICAL_VULNERABILITY_SEVERITY":  4,
+}
+
+func (x VulnerabilityReportFilters_VulnerabilitySeverity) String() string {
+	return proto.EnumName(VulnerabilityReportFilters_VulnerabilitySeverity_name, int32(x))
+}
+
+func (VulnerabilityReportFilters_VulnerabilitySeverity) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{1, 1}
+}
+
+type VulnerabilityReportFilters_ImageType int32
+
+const (
+	VulnerabilityReportFilters_DEPLOYED VulnerabilityReportFilters_ImageType = 0
+	VulnerabilityReportFilters_WATCHED  VulnerabilityReportFilters_ImageType = 1
+)
+
+var VulnerabilityReportFilters_ImageType_name = map[int32]string{
+	0: "DEPLOYED",
+	1: "WATCHED",
+}
+
+var VulnerabilityReportFilters_ImageType_value = map[string]int32{
+	"DEPLOYED": 0,
+	"WATCHED":  1,
+}
+
+func (x VulnerabilityReportFilters_ImageType) String() string {
+	return proto.EnumName(VulnerabilityReportFilters_ImageType_name, int32(x))
+}
+
+func (VulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{1, 2}
+}
+
+type ReportSchedule_IntervalType int32
+
+const (
+	ReportSchedule_UNSET   ReportSchedule_IntervalType = 0
+	ReportSchedule_WEEKLY  ReportSchedule_IntervalType = 1
+	ReportSchedule_MONTHLY ReportSchedule_IntervalType = 2
+)
+
+var ReportSchedule_IntervalType_name = map[int32]string{
+	0: "UNSET",
+	1: "WEEKLY",
+	2: "MONTHLY",
+}
+
+var ReportSchedule_IntervalType_value = map[string]int32{
+	"UNSET":   0,
+	"WEEKLY":  1,
+	"MONTHLY": 2,
+}
+
+func (x ReportSchedule_IntervalType) String() string {
+	return proto.EnumName(ReportSchedule_IntervalType_name, int32(x))
+}
+
+func (ReportSchedule_IntervalType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{2, 0}
+}
+
 type ReportStatus_RunState int32
 
 const (
@@ -80,7 +217,7 @@ func (x ReportStatus_RunState) String() string {
 }
 
 func (ReportStatus_RunState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{5, 0}
+	return fileDescriptor_c1e2917f181293be, []int{14, 0}
 }
 
 type ReportStatus_ReportMethod int32
@@ -105,7 +242,1109 @@ func (x ReportStatus_ReportMethod) String() string {
 }
 
 func (ReportStatus_ReportMethod) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{5, 1}
+	return fileDescriptor_c1e2917f181293be, []int{14, 1}
+}
+
+type ReportConfiguration struct {
+	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=v2.ReportConfiguration_ReportType" json:"type,omitempty"`
+	// Types that are valid to be assigned to Filter:
+	//	*ReportConfiguration_VulnReportFilters
+	Filter               isReportConfiguration_Filter `protobuf_oneof:"filter"`
+	Schedule             *ReportSchedule              `protobuf:"bytes,6,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	ResourceScope        *ResourceScope               `protobuf:"bytes,7,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
+	Notifiers            []*NotifierConfiguration     `protobuf:"bytes,8,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *ReportConfiguration) Reset()         { *m = ReportConfiguration{} }
+func (m *ReportConfiguration) String() string { return proto.CompactTextString(m) }
+func (*ReportConfiguration) ProtoMessage()    {}
+func (*ReportConfiguration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{0}
+}
+func (m *ReportConfiguration) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportConfiguration.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportConfiguration.Merge(m, src)
+}
+func (m *ReportConfiguration) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportConfiguration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportConfiguration proto.InternalMessageInfo
+
+type isReportConfiguration_Filter interface {
+	isReportConfiguration_Filter()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isReportConfiguration_Filter
+}
+
+type ReportConfiguration_VulnReportFilters struct {
+	VulnReportFilters *VulnerabilityReportFilters `protobuf:"bytes,5,opt,name=vuln_report_filters,json=vulnReportFilters,proto3,oneof" json:"vuln_report_filters,omitempty"`
+}
+
+func (*ReportConfiguration_VulnReportFilters) isReportConfiguration_Filter() {}
+func (m *ReportConfiguration_VulnReportFilters) Clone() isReportConfiguration_Filter {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportConfiguration_VulnReportFilters)
+	*cloned = *m
+
+	cloned.VulnReportFilters = m.VulnReportFilters.Clone()
+	return cloned
+}
+
+func (m *ReportConfiguration) GetFilter() isReportConfiguration_Filter {
+	if m != nil {
+		return m.Filter
+	}
+	return nil
+}
+
+func (m *ReportConfiguration) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ReportConfiguration) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ReportConfiguration) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *ReportConfiguration) GetType() ReportConfiguration_ReportType {
+	if m != nil {
+		return m.Type
+	}
+	return ReportConfiguration_VULNERABILITY
+}
+
+func (m *ReportConfiguration) GetVulnReportFilters() *VulnerabilityReportFilters {
+	if x, ok := m.GetFilter().(*ReportConfiguration_VulnReportFilters); ok {
+		return x.VulnReportFilters
+	}
+	return nil
+}
+
+func (m *ReportConfiguration) GetSchedule() *ReportSchedule {
+	if m != nil {
+		return m.Schedule
+	}
+	return nil
+}
+
+func (m *ReportConfiguration) GetResourceScope() *ResourceScope {
+	if m != nil {
+		return m.ResourceScope
+	}
+	return nil
+}
+
+func (m *ReportConfiguration) GetNotifiers() []*NotifierConfiguration {
+	if m != nil {
+		return m.Notifiers
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ReportConfiguration) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ReportConfiguration_VulnReportFilters)(nil),
+	}
+}
+
+func (m *ReportConfiguration) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportConfiguration) Clone() *ReportConfiguration {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportConfiguration)
+	*cloned = *m
+
+	if m.Filter != nil {
+		cloned.Filter = m.Filter.Clone()
+	}
+	cloned.Schedule = m.Schedule.Clone()
+	cloned.ResourceScope = m.ResourceScope.Clone()
+	if m.Notifiers != nil {
+		cloned.Notifiers = make([]*NotifierConfiguration, len(m.Notifiers))
+		for idx, v := range m.Notifiers {
+			cloned.Notifiers[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type VulnerabilityReportFilters struct {
+	Fixability VulnerabilityReportFilters_Fixability              `protobuf:"varint,1,opt,name=fixability,proto3,enum=v2.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
+	Severities []VulnerabilityReportFilters_VulnerabilitySeverity `protobuf:"varint,2,rep,packed,name=severities,proto3,enum=v2.VulnerabilityReportFilters_VulnerabilitySeverity" json:"severities,omitempty"`
+	ImageTypes []VulnerabilityReportFilters_ImageType             `protobuf:"varint,3,rep,packed,name=image_types,json=imageTypes,proto3,enum=v2.VulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
+	// Types that are valid to be assigned to CvesSince:
+	//	*VulnerabilityReportFilters_AllVuln
+	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
+	//	*VulnerabilityReportFilters_SinceStartDate
+	CvesSince            isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
+	XXX_unrecognized     []byte                                 `json:"-"`
+	XXX_sizecache        int32                                  `json:"-"`
+}
+
+func (m *VulnerabilityReportFilters) Reset()         { *m = VulnerabilityReportFilters{} }
+func (m *VulnerabilityReportFilters) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityReportFilters) ProtoMessage()    {}
+func (*VulnerabilityReportFilters) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{1}
+}
+func (m *VulnerabilityReportFilters) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VulnerabilityReportFilters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VulnerabilityReportFilters.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VulnerabilityReportFilters) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityReportFilters.Merge(m, src)
+}
+func (m *VulnerabilityReportFilters) XXX_Size() int {
+	return m.Size()
+}
+func (m *VulnerabilityReportFilters) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityReportFilters.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VulnerabilityReportFilters proto.InternalMessageInfo
+
+type isVulnerabilityReportFilters_CvesSince interface {
+	isVulnerabilityReportFilters_CvesSince()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isVulnerabilityReportFilters_CvesSince
+}
+
+type VulnerabilityReportFilters_AllVuln struct {
+	AllVuln bool `protobuf:"varint,4,opt,name=all_vuln,json=allVuln,proto3,oneof" json:"all_vuln,omitempty"`
+}
+type VulnerabilityReportFilters_SinceLastSentScheduledReport struct {
+	SinceLastSentScheduledReport bool `protobuf:"varint,5,opt,name=since_last_sent_scheduled_report,json=sinceLastSentScheduledReport,proto3,oneof" json:"since_last_sent_scheduled_report,omitempty"`
+}
+type VulnerabilityReportFilters_SinceStartDate struct {
+	SinceStartDate *types.Timestamp `protobuf:"bytes,6,opt,name=since_start_date,json=sinceStartDate,proto3,oneof" json:"since_start_date,omitempty"`
+}
+
+func (*VulnerabilityReportFilters_AllVuln) isVulnerabilityReportFilters_CvesSince() {}
+func (m *VulnerabilityReportFilters_AllVuln) Clone() isVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters_AllVuln)
+	*cloned = *m
+
+	return cloned
+}
+func (*VulnerabilityReportFilters_SinceLastSentScheduledReport) isVulnerabilityReportFilters_CvesSince() {
+}
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) Clone() isVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters_SinceLastSentScheduledReport)
+	*cloned = *m
+
+	return cloned
+}
+func (*VulnerabilityReportFilters_SinceStartDate) isVulnerabilityReportFilters_CvesSince() {}
+func (m *VulnerabilityReportFilters_SinceStartDate) Clone() isVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters_SinceStartDate)
+	*cloned = *m
+
+	cloned.SinceStartDate = m.SinceStartDate.Clone()
+	return cloned
+}
+
+func (m *VulnerabilityReportFilters) GetCvesSince() isVulnerabilityReportFilters_CvesSince {
+	if m != nil {
+		return m.CvesSince
+	}
+	return nil
+}
+
+func (m *VulnerabilityReportFilters) GetFixability() VulnerabilityReportFilters_Fixability {
+	if m != nil {
+		return m.Fixability
+	}
+	return VulnerabilityReportFilters_BOTH
+}
+
+func (m *VulnerabilityReportFilters) GetSeverities() []VulnerabilityReportFilters_VulnerabilitySeverity {
+	if m != nil {
+		return m.Severities
+	}
+	return nil
+}
+
+func (m *VulnerabilityReportFilters) GetImageTypes() []VulnerabilityReportFilters_ImageType {
+	if m != nil {
+		return m.ImageTypes
+	}
+	return nil
+}
+
+func (m *VulnerabilityReportFilters) GetAllVuln() bool {
+	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_AllVuln); ok {
+		return x.AllVuln
+	}
+	return false
+}
+
+func (m *VulnerabilityReportFilters) GetSinceLastSentScheduledReport() bool {
+	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_SinceLastSentScheduledReport); ok {
+		return x.SinceLastSentScheduledReport
+	}
+	return false
+}
+
+func (m *VulnerabilityReportFilters) GetSinceStartDate() *types.Timestamp {
+	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_SinceStartDate); ok {
+		return x.SinceStartDate
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*VulnerabilityReportFilters) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*VulnerabilityReportFilters_AllVuln)(nil),
+		(*VulnerabilityReportFilters_SinceLastSentScheduledReport)(nil),
+		(*VulnerabilityReportFilters_SinceStartDate)(nil),
+	}
+}
+
+func (m *VulnerabilityReportFilters) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *VulnerabilityReportFilters) Clone() *VulnerabilityReportFilters {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters)
+	*cloned = *m
+
+	if m.Severities != nil {
+		cloned.Severities = make([]VulnerabilityReportFilters_VulnerabilitySeverity, len(m.Severities))
+		copy(cloned.Severities, m.Severities)
+	}
+	if m.ImageTypes != nil {
+		cloned.ImageTypes = make([]VulnerabilityReportFilters_ImageType, len(m.ImageTypes))
+		copy(cloned.ImageTypes, m.ImageTypes)
+	}
+	if m.CvesSince != nil {
+		cloned.CvesSince = m.CvesSince.Clone()
+	}
+	return cloned
+}
+
+type ReportSchedule struct {
+	IntervalType ReportSchedule_IntervalType `protobuf:"varint,1,opt,name=interval_type,json=intervalType,proto3,enum=v2.ReportSchedule_IntervalType" json:"interval_type,omitempty"`
+	Hour         int32                       `protobuf:"varint,2,opt,name=hour,proto3" json:"hour,omitempty"`
+	Minute       int32                       `protobuf:"varint,3,opt,name=minute,proto3" json:"minute,omitempty"`
+	// Types that are valid to be assigned to Interval:
+	//	*ReportSchedule_DaysOfWeek_
+	//	*ReportSchedule_DaysOfMonth_
+	Interval             isReportSchedule_Interval `protobuf_oneof:"Interval"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *ReportSchedule) Reset()         { *m = ReportSchedule{} }
+func (m *ReportSchedule) String() string { return proto.CompactTextString(m) }
+func (*ReportSchedule) ProtoMessage()    {}
+func (*ReportSchedule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{2}
+}
+func (m *ReportSchedule) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportSchedule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportSchedule.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportSchedule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSchedule.Merge(m, src)
+}
+func (m *ReportSchedule) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportSchedule) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSchedule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportSchedule proto.InternalMessageInfo
+
+type isReportSchedule_Interval interface {
+	isReportSchedule_Interval()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isReportSchedule_Interval
+}
+
+type ReportSchedule_DaysOfWeek_ struct {
+	DaysOfWeek *ReportSchedule_DaysOfWeek `protobuf:"bytes,4,opt,name=days_of_week,json=daysOfWeek,proto3,oneof" json:"days_of_week,omitempty"`
+}
+type ReportSchedule_DaysOfMonth_ struct {
+	DaysOfMonth *ReportSchedule_DaysOfMonth `protobuf:"bytes,5,opt,name=days_of_month,json=daysOfMonth,proto3,oneof" json:"days_of_month,omitempty"`
+}
+
+func (*ReportSchedule_DaysOfWeek_) isReportSchedule_Interval() {}
+func (m *ReportSchedule_DaysOfWeek_) Clone() isReportSchedule_Interval {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSchedule_DaysOfWeek_)
+	*cloned = *m
+
+	cloned.DaysOfWeek = m.DaysOfWeek.Clone()
+	return cloned
+}
+func (*ReportSchedule_DaysOfMonth_) isReportSchedule_Interval() {}
+func (m *ReportSchedule_DaysOfMonth_) Clone() isReportSchedule_Interval {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSchedule_DaysOfMonth_)
+	*cloned = *m
+
+	cloned.DaysOfMonth = m.DaysOfMonth.Clone()
+	return cloned
+}
+
+func (m *ReportSchedule) GetInterval() isReportSchedule_Interval {
+	if m != nil {
+		return m.Interval
+	}
+	return nil
+}
+
+func (m *ReportSchedule) GetIntervalType() ReportSchedule_IntervalType {
+	if m != nil {
+		return m.IntervalType
+	}
+	return ReportSchedule_UNSET
+}
+
+func (m *ReportSchedule) GetHour() int32 {
+	if m != nil {
+		return m.Hour
+	}
+	return 0
+}
+
+func (m *ReportSchedule) GetMinute() int32 {
+	if m != nil {
+		return m.Minute
+	}
+	return 0
+}
+
+func (m *ReportSchedule) GetDaysOfWeek() *ReportSchedule_DaysOfWeek {
+	if x, ok := m.GetInterval().(*ReportSchedule_DaysOfWeek_); ok {
+		return x.DaysOfWeek
+	}
+	return nil
+}
+
+func (m *ReportSchedule) GetDaysOfMonth() *ReportSchedule_DaysOfMonth {
+	if x, ok := m.GetInterval().(*ReportSchedule_DaysOfMonth_); ok {
+		return x.DaysOfMonth
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ReportSchedule) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ReportSchedule_DaysOfWeek_)(nil),
+		(*ReportSchedule_DaysOfMonth_)(nil),
+	}
+}
+
+func (m *ReportSchedule) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportSchedule) Clone() *ReportSchedule {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSchedule)
+	*cloned = *m
+
+	if m.Interval != nil {
+		cloned.Interval = m.Interval.Clone()
+	}
+	return cloned
+}
+
+// Sunday = 1, Monday = 2, .... Saturday =  7
+type ReportSchedule_DaysOfWeek struct {
+	Days                 []int32  `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ReportSchedule_DaysOfWeek) Reset()         { *m = ReportSchedule_DaysOfWeek{} }
+func (m *ReportSchedule_DaysOfWeek) String() string { return proto.CompactTextString(m) }
+func (*ReportSchedule_DaysOfWeek) ProtoMessage()    {}
+func (*ReportSchedule_DaysOfWeek) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{2, 0}
+}
+func (m *ReportSchedule_DaysOfWeek) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportSchedule_DaysOfWeek) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportSchedule_DaysOfWeek.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportSchedule_DaysOfWeek) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSchedule_DaysOfWeek.Merge(m, src)
+}
+func (m *ReportSchedule_DaysOfWeek) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportSchedule_DaysOfWeek) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSchedule_DaysOfWeek.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportSchedule_DaysOfWeek proto.InternalMessageInfo
+
+func (m *ReportSchedule_DaysOfWeek) GetDays() []int32 {
+	if m != nil {
+		return m.Days
+	}
+	return nil
+}
+
+func (m *ReportSchedule_DaysOfWeek) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportSchedule_DaysOfWeek) Clone() *ReportSchedule_DaysOfWeek {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSchedule_DaysOfWeek)
+	*cloned = *m
+
+	if m.Days != nil {
+		cloned.Days = make([]int32, len(m.Days))
+		copy(cloned.Days, m.Days)
+	}
+	return cloned
+}
+
+// 1 for 1st, 2 for 2nd .... 31 for 31st
+type ReportSchedule_DaysOfMonth struct {
+	Days                 []int32  `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ReportSchedule_DaysOfMonth) Reset()         { *m = ReportSchedule_DaysOfMonth{} }
+func (m *ReportSchedule_DaysOfMonth) String() string { return proto.CompactTextString(m) }
+func (*ReportSchedule_DaysOfMonth) ProtoMessage()    {}
+func (*ReportSchedule_DaysOfMonth) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{2, 1}
+}
+func (m *ReportSchedule_DaysOfMonth) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportSchedule_DaysOfMonth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportSchedule_DaysOfMonth.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportSchedule_DaysOfMonth) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportSchedule_DaysOfMonth.Merge(m, src)
+}
+func (m *ReportSchedule_DaysOfMonth) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportSchedule_DaysOfMonth) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportSchedule_DaysOfMonth.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportSchedule_DaysOfMonth proto.InternalMessageInfo
+
+func (m *ReportSchedule_DaysOfMonth) GetDays() []int32 {
+	if m != nil {
+		return m.Days
+	}
+	return nil
+}
+
+func (m *ReportSchedule_DaysOfMonth) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportSchedule_DaysOfMonth) Clone() *ReportSchedule_DaysOfMonth {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportSchedule_DaysOfMonth)
+	*cloned = *m
+
+	if m.Days != nil {
+		cloned.Days = make([]int32, len(m.Days))
+		copy(cloned.Days, m.Days)
+	}
+	return cloned
+}
+
+type ResourceScope struct {
+	// Types that are valid to be assigned to ScopeReference:
+	//	*ResourceScope_CollectionScope
+	ScopeReference       isResourceScope_ScopeReference `protobuf_oneof:"scope_reference"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *ResourceScope) Reset()         { *m = ResourceScope{} }
+func (m *ResourceScope) String() string { return proto.CompactTextString(m) }
+func (*ResourceScope) ProtoMessage()    {}
+func (*ResourceScope) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{3}
+}
+func (m *ResourceScope) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResourceScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResourceScope.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ResourceScope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResourceScope.Merge(m, src)
+}
+func (m *ResourceScope) XXX_Size() int {
+	return m.Size()
+}
+func (m *ResourceScope) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResourceScope.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResourceScope proto.InternalMessageInfo
+
+type isResourceScope_ScopeReference interface {
+	isResourceScope_ScopeReference()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isResourceScope_ScopeReference
+}
+
+type ResourceScope_CollectionScope struct {
+	CollectionScope *CollectionReference `protobuf:"bytes,1,opt,name=collection_scope,json=collectionScope,proto3,oneof" json:"collection_scope,omitempty"`
+}
+
+func (*ResourceScope_CollectionScope) isResourceScope_ScopeReference() {}
+func (m *ResourceScope_CollectionScope) Clone() isResourceScope_ScopeReference {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ResourceScope_CollectionScope)
+	*cloned = *m
+
+	cloned.CollectionScope = m.CollectionScope.Clone()
+	return cloned
+}
+
+func (m *ResourceScope) GetScopeReference() isResourceScope_ScopeReference {
+	if m != nil {
+		return m.ScopeReference
+	}
+	return nil
+}
+
+func (m *ResourceScope) GetCollectionScope() *CollectionReference {
+	if x, ok := m.GetScopeReference().(*ResourceScope_CollectionScope); ok {
+		return x.CollectionScope
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ResourceScope) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ResourceScope_CollectionScope)(nil),
+	}
+}
+
+func (m *ResourceScope) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ResourceScope) Clone() *ResourceScope {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ResourceScope)
+	*cloned = *m
+
+	if m.ScopeReference != nil {
+		cloned.ScopeReference = m.ScopeReference.Clone()
+	}
+	return cloned
+}
+
+type CollectionReference struct {
+	CollectionId         string   `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	CollectionName       string   `protobuf:"bytes,2,opt,name=collection_name,json=collectionName,proto3" json:"collection_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CollectionReference) Reset()         { *m = CollectionReference{} }
+func (m *CollectionReference) String() string { return proto.CompactTextString(m) }
+func (*CollectionReference) ProtoMessage()    {}
+func (*CollectionReference) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{4}
+}
+func (m *CollectionReference) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CollectionReference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CollectionReference.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CollectionReference) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CollectionReference.Merge(m, src)
+}
+func (m *CollectionReference) XXX_Size() int {
+	return m.Size()
+}
+func (m *CollectionReference) XXX_DiscardUnknown() {
+	xxx_messageInfo_CollectionReference.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CollectionReference proto.InternalMessageInfo
+
+func (m *CollectionReference) GetCollectionId() string {
+	if m != nil {
+		return m.CollectionId
+	}
+	return ""
+}
+
+func (m *CollectionReference) GetCollectionName() string {
+	if m != nil {
+		return m.CollectionName
+	}
+	return ""
+}
+
+func (m *CollectionReference) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CollectionReference) Clone() *CollectionReference {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CollectionReference)
+	*cloned = *m
+
+	return cloned
+}
+
+type NotifierConfiguration struct {
+	// Types that are valid to be assigned to NotifierConfig:
+	//	*NotifierConfiguration_EmailConfig
+	NotifierConfig       isNotifierConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
+	NotifierName         string                                 `protobuf:"bytes,2,opt,name=notifier_name,json=notifierName,proto3" json:"notifier_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
+	XXX_unrecognized     []byte                                 `json:"-"`
+	XXX_sizecache        int32                                  `json:"-"`
+}
+
+func (m *NotifierConfiguration) Reset()         { *m = NotifierConfiguration{} }
+func (m *NotifierConfiguration) String() string { return proto.CompactTextString(m) }
+func (*NotifierConfiguration) ProtoMessage()    {}
+func (*NotifierConfiguration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{5}
+}
+func (m *NotifierConfiguration) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NotifierConfiguration.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NotifierConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotifierConfiguration.Merge(m, src)
+}
+func (m *NotifierConfiguration) XXX_Size() int {
+	return m.Size()
+}
+func (m *NotifierConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotifierConfiguration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NotifierConfiguration proto.InternalMessageInfo
+
+type isNotifierConfiguration_NotifierConfig interface {
+	isNotifierConfiguration_NotifierConfig()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isNotifierConfiguration_NotifierConfig
+}
+
+type NotifierConfiguration_EmailConfig struct {
+	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,1,opt,name=email_config,json=emailConfig,proto3,oneof" json:"email_config,omitempty"`
+}
+
+func (*NotifierConfiguration_EmailConfig) isNotifierConfiguration_NotifierConfig() {}
+func (m *NotifierConfiguration_EmailConfig) Clone() isNotifierConfiguration_NotifierConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NotifierConfiguration_EmailConfig)
+	*cloned = *m
+
+	cloned.EmailConfig = m.EmailConfig.Clone()
+	return cloned
+}
+
+func (m *NotifierConfiguration) GetNotifierConfig() isNotifierConfiguration_NotifierConfig {
+	if m != nil {
+		return m.NotifierConfig
+	}
+	return nil
+}
+
+func (m *NotifierConfiguration) GetEmailConfig() *EmailNotifierConfiguration {
+	if x, ok := m.GetNotifierConfig().(*NotifierConfiguration_EmailConfig); ok {
+		return x.EmailConfig
+	}
+	return nil
+}
+
+func (m *NotifierConfiguration) GetNotifierName() string {
+	if m != nil {
+		return m.NotifierName
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*NotifierConfiguration) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*NotifierConfiguration_EmailConfig)(nil),
+	}
+}
+
+func (m *NotifierConfiguration) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NotifierConfiguration) Clone() *NotifierConfiguration {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NotifierConfiguration)
+	*cloned = *m
+
+	if m.NotifierConfig != nil {
+		cloned.NotifierConfig = m.NotifierConfig.Clone()
+	}
+	return cloned
+}
+
+type EmailNotifierConfiguration struct {
+	NotifierId           string   `protobuf:"bytes,1,opt,name=notifier_id,json=notifierId,proto3" json:"notifier_id,omitempty"`
+	MailingLists         []string `protobuf:"bytes,2,rep,name=mailing_lists,json=mailingLists,proto3" json:"mailing_lists,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EmailNotifierConfiguration) Reset()         { *m = EmailNotifierConfiguration{} }
+func (m *EmailNotifierConfiguration) String() string { return proto.CompactTextString(m) }
+func (*EmailNotifierConfiguration) ProtoMessage()    {}
+func (*EmailNotifierConfiguration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{6}
+}
+func (m *EmailNotifierConfiguration) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EmailNotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_EmailNotifierConfiguration.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *EmailNotifierConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmailNotifierConfiguration.Merge(m, src)
+}
+func (m *EmailNotifierConfiguration) XXX_Size() int {
+	return m.Size()
+}
+func (m *EmailNotifierConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_EmailNotifierConfiguration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EmailNotifierConfiguration proto.InternalMessageInfo
+
+func (m *EmailNotifierConfiguration) GetNotifierId() string {
+	if m != nil {
+		return m.NotifierId
+	}
+	return ""
+}
+
+func (m *EmailNotifierConfiguration) GetMailingLists() []string {
+	if m != nil {
+		return m.MailingLists
+	}
+	return nil
+}
+
+func (m *EmailNotifierConfiguration) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *EmailNotifierConfiguration) Clone() *EmailNotifierConfiguration {
+	if m == nil {
+		return nil
+	}
+	cloned := new(EmailNotifierConfiguration)
+	*cloned = *m
+
+	if m.MailingLists != nil {
+		cloned.MailingLists = make([]string, len(m.MailingLists))
+		copy(cloned.MailingLists, m.MailingLists)
+	}
+	return cloned
+}
+
+type ListReportConfigurationsResponse struct {
+	ReportConfigs        []*ReportConfiguration `protobuf:"bytes,1,rep,name=report_configs,json=reportConfigs,proto3" json:"report_configs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *ListReportConfigurationsResponse) Reset()         { *m = ListReportConfigurationsResponse{} }
+func (m *ListReportConfigurationsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListReportConfigurationsResponse) ProtoMessage()    {}
+func (*ListReportConfigurationsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{7}
+}
+func (m *ListReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListReportConfigurationsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListReportConfigurationsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListReportConfigurationsResponse.Merge(m, src)
+}
+func (m *ListReportConfigurationsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListReportConfigurationsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListReportConfigurationsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListReportConfigurationsResponse proto.InternalMessageInfo
+
+func (m *ListReportConfigurationsResponse) GetReportConfigs() []*ReportConfiguration {
+	if m != nil {
+		return m.ReportConfigs
+	}
+	return nil
+}
+
+func (m *ListReportConfigurationsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ListReportConfigurationsResponse) Clone() *ListReportConfigurationsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ListReportConfigurationsResponse)
+	*cloned = *m
+
+	if m.ReportConfigs != nil {
+		cloned.ReportConfigs = make([]*ReportConfiguration, len(m.ReportConfigs))
+		for idx, v := range m.ReportConfigs {
+			cloned.ReportConfigs[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type CountReportConfigurationsResponse struct {
+	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountReportConfigurationsResponse) Reset()         { *m = CountReportConfigurationsResponse{} }
+func (m *CountReportConfigurationsResponse) String() string { return proto.CompactTextString(m) }
+func (*CountReportConfigurationsResponse) ProtoMessage()    {}
+func (*CountReportConfigurationsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c1e2917f181293be, []int{8}
+}
+func (m *CountReportConfigurationsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CountReportConfigurationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CountReportConfigurationsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CountReportConfigurationsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountReportConfigurationsResponse.Merge(m, src)
+}
+func (m *CountReportConfigurationsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CountReportConfigurationsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountReportConfigurationsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountReportConfigurationsResponse proto.InternalMessageInfo
+
+func (m *CountReportConfigurationsResponse) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+func (m *CountReportConfigurationsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CountReportConfigurationsResponse) Clone() *CountReportConfigurationsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CountReportConfigurationsResponse)
+	*cloned = *m
+
+	return cloned
 }
 
 type GetReportHistoryRequest struct {
@@ -120,7 +1359,7 @@ func (m *GetReportHistoryRequest) Reset()         { *m = GetReportHistoryRequest
 func (m *GetReportHistoryRequest) String() string { return proto.CompactTextString(m) }
 func (*GetReportHistoryRequest) ProtoMessage()    {}
 func (*GetReportHistoryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{0}
+	return fileDescriptor_c1e2917f181293be, []int{9}
 }
 func (m *GetReportHistoryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -188,7 +1427,7 @@ func (m *ReportHistoryResponse) Reset()         { *m = ReportHistoryResponse{} }
 func (m *ReportHistoryResponse) String() string { return proto.CompactTextString(m) }
 func (*ReportHistoryResponse) ProtoMessage()    {}
 func (*ReportHistoryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{1}
+	return fileDescriptor_c1e2917f181293be, []int{10}
 }
 func (m *ReportHistoryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -254,7 +1493,7 @@ func (m *ReportStatusResponse) Reset()         { *m = ReportStatusResponse{} }
 func (m *ReportStatusResponse) String() string { return proto.CompactTextString(m) }
 func (*ReportStatusResponse) ProtoMessage()    {}
 func (*ReportStatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{2}
+	return fileDescriptor_c1e2917f181293be, []int{11}
 }
 func (m *ReportStatusResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -316,7 +1555,7 @@ func (m *CollectionSnapshot) Reset()         { *m = CollectionSnapshot{} }
 func (m *CollectionSnapshot) String() string { return proto.CompactTextString(m) }
 func (*CollectionSnapshot) ProtoMessage()    {}
 func (*CollectionSnapshot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{3}
+	return fileDescriptor_c1e2917f181293be, []int{12}
 }
 func (m *CollectionSnapshot) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -395,7 +1634,7 @@ func (m *ReportSnapshot) Reset()         { *m = ReportSnapshot{} }
 func (m *ReportSnapshot) String() string { return proto.CompactTextString(m) }
 func (*ReportSnapshot) ProtoMessage()    {}
 func (*ReportSnapshot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{4}
+	return fileDescriptor_c1e2917f181293be, []int{13}
 }
 func (m *ReportSnapshot) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -579,7 +1818,7 @@ func (m *ReportStatus) Reset()         { *m = ReportStatus{} }
 func (m *ReportStatus) String() string { return proto.CompactTextString(m) }
 func (*ReportStatus) ProtoMessage()    {}
 func (*ReportStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{5}
+	return fileDescriptor_c1e2917f181293be, []int{14}
 }
 func (m *ReportStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -669,7 +1908,7 @@ func (m *RunReportRequest) Reset()         { *m = RunReportRequest{} }
 func (m *RunReportRequest) String() string { return proto.CompactTextString(m) }
 func (*RunReportRequest) ProtoMessage()    {}
 func (*RunReportRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{6}
+	return fileDescriptor_c1e2917f181293be, []int{15}
 }
 func (m *RunReportRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -737,7 +1976,7 @@ func (m *RunReportResponse) Reset()         { *m = RunReportResponse{} }
 func (m *RunReportResponse) String() string { return proto.CompactTextString(m) }
 func (*RunReportResponse) ProtoMessage()    {}
 func (*RunReportResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c1e2917f181293be, []int{7}
+	return fileDescriptor_c1e2917f181293be, []int{16}
 }
 func (m *RunReportResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -795,8 +2034,24 @@ func (m *RunReportResponse) Clone() *RunReportResponse {
 
 func init() {
 	proto.RegisterEnum("v2.NotificationMethod", NotificationMethod_name, NotificationMethod_value)
+	proto.RegisterEnum("v2.ReportConfiguration_ReportType", ReportConfiguration_ReportType_name, ReportConfiguration_ReportType_value)
+	proto.RegisterEnum("v2.VulnerabilityReportFilters_Fixability", VulnerabilityReportFilters_Fixability_name, VulnerabilityReportFilters_Fixability_value)
+	proto.RegisterEnum("v2.VulnerabilityReportFilters_VulnerabilitySeverity", VulnerabilityReportFilters_VulnerabilitySeverity_name, VulnerabilityReportFilters_VulnerabilitySeverity_value)
+	proto.RegisterEnum("v2.VulnerabilityReportFilters_ImageType", VulnerabilityReportFilters_ImageType_name, VulnerabilityReportFilters_ImageType_value)
+	proto.RegisterEnum("v2.ReportSchedule_IntervalType", ReportSchedule_IntervalType_name, ReportSchedule_IntervalType_value)
 	proto.RegisterEnum("v2.ReportStatus_RunState", ReportStatus_RunState_name, ReportStatus_RunState_value)
 	proto.RegisterEnum("v2.ReportStatus_ReportMethod", ReportStatus_ReportMethod_name, ReportStatus_ReportMethod_value)
+	proto.RegisterType((*ReportConfiguration)(nil), "v2.ReportConfiguration")
+	proto.RegisterType((*VulnerabilityReportFilters)(nil), "v2.VulnerabilityReportFilters")
+	proto.RegisterType((*ReportSchedule)(nil), "v2.ReportSchedule")
+	proto.RegisterType((*ReportSchedule_DaysOfWeek)(nil), "v2.ReportSchedule.DaysOfWeek")
+	proto.RegisterType((*ReportSchedule_DaysOfMonth)(nil), "v2.ReportSchedule.DaysOfMonth")
+	proto.RegisterType((*ResourceScope)(nil), "v2.ResourceScope")
+	proto.RegisterType((*CollectionReference)(nil), "v2.CollectionReference")
+	proto.RegisterType((*NotifierConfiguration)(nil), "v2.NotifierConfiguration")
+	proto.RegisterType((*EmailNotifierConfiguration)(nil), "v2.EmailNotifierConfiguration")
+	proto.RegisterType((*ListReportConfigurationsResponse)(nil), "v2.ListReportConfigurationsResponse")
+	proto.RegisterType((*CountReportConfigurationsResponse)(nil), "v2.CountReportConfigurationsResponse")
 	proto.RegisterType((*GetReportHistoryRequest)(nil), "v2.GetReportHistoryRequest")
 	proto.RegisterType((*ReportHistoryResponse)(nil), "v2.ReportHistoryResponse")
 	proto.RegisterType((*ReportStatusResponse)(nil), "v2.ReportStatusResponse")
@@ -810,75 +2065,132 @@ func init() {
 func init() { proto.RegisterFile("api/v2/report_service.proto", fileDescriptor_c1e2917f181293be) }
 
 var fileDescriptor_c1e2917f181293be = []byte{
-	// 1087 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x55, 0xcd, 0x6e, 0xdb, 0x46,
-	0x10, 0x36, 0x65, 0xc7, 0x91, 0x56, 0xb2, 0x4c, 0xaf, 0xed, 0x96, 0x91, 0x53, 0x55, 0x20, 0x0a,
-	0x54, 0x31, 0x1a, 0x0a, 0x60, 0xd1, 0x1f, 0x04, 0x08, 0x10, 0x59, 0x52, 0x6c, 0x15, 0xb6, 0xec,
-	0x50, 0x76, 0x52, 0xe4, 0x22, 0xac, 0xc8, 0xb5, 0xcd, 0x94, 0xe4, 0x32, 0xbb, 0x4b, 0xa5, 0x42,
-	0xd0, 0x4b, 0xaf, 0xbd, 0xb5, 0x97, 0xbe, 0x45, 0x8f, 0x7d, 0x85, 0x1e, 0x0b, 0xf4, 0x05, 0x0a,
-	0xb7, 0x0f, 0x52, 0x70, 0x77, 0x45, 0x53, 0x16, 0x5c, 0x04, 0xed, 0x8d, 0xfc, 0x66, 0xe6, 0x9b,
-	0xff, 0x59, 0xb0, 0x83, 0x62, 0xbf, 0x35, 0xb1, 0x5b, 0x14, 0xc7, 0x84, 0xf2, 0x11, 0xc3, 0x74,
-	0xe2, 0xbb, 0xd8, 0x8a, 0x29, 0xe1, 0x04, 0x16, 0x26, 0x76, 0xed, 0xc3, 0x0b, 0x42, 0x2e, 0x02,
-	0xdc, 0x12, 0xc8, 0x38, 0x39, 0x6f, 0x71, 0x3f, 0xc4, 0x8c, 0xa3, 0x30, 0x96, 0x4a, 0xb5, 0x4d,
-	0xc5, 0xe0, 0x92, 0x30, 0x24, 0x91, 0x02, 0xef, 0x29, 0x90, 0x61, 0x44, 0xdd, 0xcb, 0xd1, 0xeb,
-	0x04, 0xd3, 0xa9, 0x12, 0xdd, 0x57, 0x84, 0xa9, 0x06, 0x8a, 0x22, 0xc2, 0x11, 0xf7, 0x49, 0xc4,
-	0x94, 0xf4, 0xc1, 0x7c, 0x3c, 0x2e, 0x89, 0xce, 0xfd, 0x8b, 0x84, 0x0a, 0x9d, 0xf9, 0xe8, 0x6a,
-	0x1b, 0x4a, 0x35, 0x61, 0x98, 0x4a, 0xc8, 0xc4, 0xe0, 0xfd, 0x7d, 0xcc, 0x1d, 0x61, 0x7b, 0xe0,
-	0x33, 0x4e, 0xe8, 0xd4, 0xc1, 0xaf, 0x13, 0xcc, 0x38, 0xac, 0x82, 0x82, 0xef, 0x19, 0x5a, 0x43,
-	0x6b, 0x96, 0x9c, 0x82, 0xef, 0xc1, 0x47, 0x00, 0x2a, 0x1f, 0x31, 0xa2, 0x28, 0x94, 0x21, 0x1a,
-	0x85, 0x86, 0xd6, 0x2c, 0xdb, 0x15, 0x6b, 0x62, 0x5b, 0x0e, 0x7a, 0xf3, 0x2c, 0xc5, 0x1c, 0x5d,
-	0xea, 0x9d, 0xa4, 0x6a, 0x02, 0x31, 0x9f, 0x83, 0xed, 0x1b, 0x3e, 0x58, 0x4c, 0x22, 0x86, 0xe1,
-	0x63, 0xa0, 0xcf, 0x0a, 0x19, 0xa1, 0x98, 0x5d, 0x12, 0xce, 0x0c, 0xad, 0xb1, 0xdc, 0x2c, 0xdb,
-	0x50, 0x50, 0x0a, 0xd9, 0x50, 0x89, 0x9c, 0x75, 0x3a, 0xf7, 0xcf, 0xcc, 0x27, 0x60, 0x4b, 0xa9,
-	0x70, 0xc4, 0x13, 0x96, 0xd1, 0x36, 0xc1, 0x2a, 0x13, 0x88, 0x88, 0xbf, 0x6c, 0xeb, 0x39, 0x32,
-	0xa9, 0xa9, 0xe4, 0xe6, 0x97, 0x00, 0x76, 0x48, 0x10, 0x60, 0x37, 0xad, 0xd7, 0x8c, 0x78, 0x21,
-	0x77, 0x08, 0x56, 0x22, 0x14, 0x62, 0x91, 0x6d, 0xc9, 0x11, 0xdf, 0xe6, 0x2f, 0x2b, 0xa0, 0x3a,
-	0x1f, 0x1f, 0x6c, 0x66, 0xd9, 0xc8, 0x36, 0x8c, 0x32, 0x92, 0xaa, 0xc4, 0x3b, 0x02, 0xee, 0x7b,
-	0xd0, 0x04, 0x6b, 0x4a, 0xf3, 0x15, 0x19, 0xa7, 0x6a, 0x92, 0xb9, 0x2c, 0xc1, 0xaf, 0xc8, 0xb8,
-	0x7f, 0xed, 0x74, 0xf9, 0xda, 0x29, 0x6c, 0x80, 0xb2, 0x87, 0x99, 0x4b, 0xfd, 0x38, 0x8d, 0xd7,
-	0x58, 0x91, 0x56, 0x39, 0x08, 0x9e, 0x80, 0xcd, 0x49, 0x12, 0x44, 0x23, 0x45, 0x7f, 0xee, 0x07,
-	0x1c, 0x53, 0x66, 0xdc, 0x11, 0x75, 0xa8, 0xa7, 0x75, 0x78, 0x9e, 0x04, 0x11, 0xa6, 0x68, 0xec,
-	0x07, 0x3e, 0x9f, 0xca, 0x0c, 0x9e, 0x4a, 0xad, 0x83, 0x25, 0x67, 0x23, 0x35, 0x9e, 0x03, 0xe1,
-	0x3e, 0xd8, 0x74, 0xb3, 0x12, 0x65, 0x7d, 0x32, 0x56, 0x05, 0xe3, 0x7b, 0x29, 0xe3, 0x62, 0x05,
-	0x1d, 0xe8, 0x2e, 0x56, 0xd5, 0x02, 0x45, 0xe6, 0x5e, 0x62, 0x2f, 0x09, 0xb0, 0x71, 0x57, 0x58,
-	0xe7, 0x9b, 0xac, 0x24, 0x4e, 0xa6, 0x03, 0x3f, 0xcb, 0x8a, 0xa4, 0x9a, 0x59, 0xbc, 0xa5, 0x99,
-	0x15, 0x9a, 0xfb, 0x83, 0x5f, 0x80, 0x52, 0x44, 0xb8, 0x7f, 0xee, 0xa7, 0x79, 0x97, 0xc4, 0x30,
-	0xdd, 0x4b, 0x4d, 0x06, 0x0a, 0xec, 0xe4, 0x57, 0xc4, 0xb9, 0xd6, 0x85, 0x0d, 0xb0, 0x92, 0xae,
-	0x86, 0x01, 0xae, 0x67, 0x7a, 0x18, 0xf8, 0xe1, 0x19, 0xc3, 0xd4, 0x11, 0x12, 0x68, 0x83, 0x6d,
-	0x9f, 0x8d, 0x3c, 0xf2, 0x26, 0x0a, 0x08, 0xf2, 0x46, 0x68, 0x82, 0xfc, 0x00, 0x8d, 0x03, 0x6c,
-	0x94, 0x1b, 0x5a, 0xb3, 0xe8, 0x6c, 0xfa, 0xac, 0xab, 0x64, 0xed, 0x99, 0x68, 0xaf, 0x08, 0x56,
-	0x65, 0x13, 0xcc, 0x5f, 0x97, 0x41, 0x25, 0x1f, 0x37, 0xfc, 0x1c, 0x94, 0x68, 0x12, 0x89, 0xec,
-	0xb0, 0x18, 0x94, 0xaa, 0x8c, 0x34, 0xaf, 0x64, 0x39, 0x49, 0x94, 0x7e, 0x61, 0xa7, 0x48, 0xd5,
-	0x17, 0x7c, 0x0c, 0x2a, 0x2e, 0x09, 0xe3, 0x00, 0x73, 0xec, 0x8d, 0x10, 0x57, 0x4b, 0x58, 0xb3,
-	0xe4, 0xa1, 0xb0, 0x66, 0x97, 0xc7, 0x3a, 0x9d, 0x5d, 0x1e, 0xa7, 0x9c, 0xe9, 0xb7, 0x39, 0xdc,
-	0x01, 0x25, 0x4c, 0x29, 0xa1, 0xa3, 0x90, 0x5d, 0xa8, 0xe9, 0x2a, 0x0a, 0xe0, 0x88, 0x5d, 0xc0,
-	0x23, 0xb0, 0xa9, 0x8a, 0x4e, 0xe5, 0x21, 0x18, 0xf1, 0x69, 0x8c, 0xc5, 0xa4, 0x55, 0xed, 0x0f,
-	0x16, 0xa3, 0x13, 0x3f, 0x47, 0x98, 0x5f, 0x12, 0xcf, 0xd9, 0x90, 0x96, 0xea, 0x82, 0x9c, 0x4e,
-	0x63, 0x0c, 0x4f, 0x41, 0x4d, 0xd1, 0xc9, 0x3a, 0xbb, 0xf2, 0x30, 0x85, 0xc2, 0x40, 0x4c, 0x65,
-	0x55, 0xce, 0xd0, 0x20, 0x27, 0x56, 0x74, 0x86, 0xb4, 0x5c, 0x94, 0x98, 0x4f, 0x40, 0x71, 0x56,
-	0x16, 0x58, 0x06, 0x77, 0x5f, 0xb4, 0xfb, 0xa7, 0xfd, 0xc1, 0xbe, 0xbe, 0x04, 0xd7, 0x40, 0xe9,
-	0xc4, 0xe9, 0x9d, 0xb4, 0x9d, 0xf4, 0x57, 0x4b, 0x65, 0xc3, 0xb3, 0x4e, 0xa7, 0x37, 0x1c, 0xea,
-	0x85, 0xf4, 0xe7, 0x69, 0xbb, 0x7f, 0x78, 0xe6, 0xf4, 0xf4, 0x65, 0xf3, 0x93, 0x59, 0x2b, 0x24,
-	0x63, 0x6a, 0x78, 0x3c, 0x18, 0x75, 0x7b, 0x47, 0xed, 0x41, 0x57, 0xf2, 0x0c, 0x3b, 0x07, 0xbd,
-	0xee, 0xd9, 0x61, 0xaf, 0xab, 0x6b, 0xe6, 0x8f, 0x1a, 0xd0, 0x9d, 0x44, 0xed, 0xc5, 0xec, 0x40,
-	0xbe, 0xfb, 0xb6, 0xff, 0x7b, 0x11, 0x0a, 0xff, 0xb1, 0x08, 0x2f, 0xc1, 0x46, 0x2e, 0xa6, 0xec,
-	0xf2, 0xbd, 0x6b, 0x50, 0x3b, 0xa0, 0xa4, 0x34, 0xb3, 0xf3, 0x53, 0x94, 0x40, 0xdf, 0xdb, 0x7d,
-	0x08, 0xe0, 0xa2, 0x47, 0x58, 0x02, 0x77, 0x7a, 0x47, 0xed, 0xfe, 0xa1, 0xbe, 0x04, 0x2b, 0xa0,
-	0xd8, 0x3d, 0x7e, 0x31, 0x38, 0x3c, 0x6e, 0x77, 0x75, 0xcd, 0xfe, 0x61, 0x05, 0xac, 0xa9, 0xb1,
-	0x90, 0x2f, 0x0e, 0x74, 0xc1, 0x7a, 0xf6, 0xb0, 0xa8, 0x69, 0x57, 0x7b, 0xcb, 0x48, 0x42, 0x5d,
-	0xbc, 0x37, 0xed, 0x77, 0x6b, 0xc6, 0xc2, 0x26, 0xab, 0x34, 0xcc, 0x8f, 0xbe, 0xff, 0xe3, 0xef,
-	0x9f, 0x0a, 0x75, 0x78, 0xff, 0xfa, 0x69, 0x63, 0xad, 0x57, 0x64, 0xcc, 0x5a, 0x6f, 0x7d, 0xef,
-	0xbb, 0x96, 0xbc, 0x07, 0x90, 0x80, 0x9d, 0x7d, 0xcc, 0x0f, 0x11, 0x9b, 0x73, 0xa4, 0x32, 0xec,
-	0xfe, 0x7f, 0x87, 0x01, 0x62, 0xfc, 0xa1, 0xf4, 0x25, 0xfc, 0xc2, 0xb7, 0x40, 0xbf, 0xf9, 0x5c,
-	0xc2, 0x9d, 0x94, 0xf3, 0x96, 0x47, 0xb4, 0x96, 0x5b, 0xe7, 0x1b, 0x4f, 0x9f, 0xd9, 0x12, 0x1e,
-	0x1f, 0xc0, 0x8f, 0xf3, 0x1e, 0xe7, 0x9e, 0x6f, 0x95, 0xec, 0xa5, 0x72, 0x74, 0x0a, 0x4a, 0x59,
-	0xbf, 0xe1, 0x96, 0x20, 0xbe, 0x31, 0x92, 0xb5, 0xed, 0x1b, 0xa8, 0x72, 0x55, 0x13, 0xae, 0xb6,
-	0xcc, 0xf5, 0xbc, 0x2b, 0x9a, 0x44, 0x8f, 0xb4, 0x5d, 0xf8, 0x0c, 0x54, 0x3a, 0x28, 0x72, 0x71,
-	0xa0, 0x88, 0x17, 0x8b, 0x56, 0x4a, 0x91, 0x5e, 0x18, 0xf3, 0xe9, 0xac, 0x4a, 0xbb, 0xb7, 0xb4,
-	0xc5, 0x15, 0x44, 0x7b, 0xd6, 0x6f, 0x57, 0x75, 0xed, 0xf7, 0xab, 0xba, 0xf6, 0xe7, 0x55, 0x5d,
-	0xfb, 0xf9, 0xaf, 0xfa, 0x12, 0x30, 0x7c, 0x62, 0x31, 0x8e, 0xdc, 0x6f, 0x28, 0xf9, 0x56, 0x9e,
-	0x27, 0x0b, 0xc5, 0xbe, 0x35, 0xb1, 0x5f, 0x16, 0x26, 0xf6, 0xd7, 0xcb, 0xe3, 0x55, 0x81, 0x7d,
-	0xfa, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x15, 0xd3, 0xb5, 0x66, 0x5d, 0x09, 0x00, 0x00,
+	// 1990 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0xdb, 0x6e, 0xe3, 0xc6,
+	0x19, 0xd6, 0xc1, 0x07, 0xe9, 0x97, 0x2c, 0xd3, 0xe3, 0xf5, 0xae, 0x2c, 0x6f, 0x6c, 0x2d, 0xb3,
+	0xe9, 0x3a, 0x46, 0x57, 0x06, 0xd4, 0x34, 0x4d, 0x03, 0xa4, 0x88, 0x2c, 0x69, 0x57, 0x6c, 0x64,
+	0xc9, 0x19, 0xc9, 0xeb, 0x6c, 0x6e, 0x08, 0x9a, 0x1c, 0xdb, 0xcc, 0x52, 0xa4, 0xc2, 0xa1, 0xb4,
+	0x11, 0x82, 0xde, 0xf4, 0x09, 0x8a, 0xb6, 0x17, 0x7d, 0x88, 0x02, 0xbd, 0xe8, 0x45, 0x5f, 0xa1,
+	0x40, 0x6f, 0x0a, 0xf4, 0x05, 0x8a, 0x6d, 0x5f, 0xa0, 0x6f, 0x50, 0xcc, 0x81, 0x14, 0x65, 0x4b,
+	0xb6, 0x7b, 0xb8, 0xe3, 0xfc, 0xa7, 0x6f, 0xfe, 0xc3, 0xfc, 0xff, 0x4f, 0xd8, 0x31, 0x86, 0xf6,
+	0xe1, 0xb8, 0x7a, 0xe8, 0x93, 0xa1, 0xe7, 0x07, 0x3a, 0x25, 0xfe, 0xd8, 0x36, 0x49, 0x65, 0xe8,
+	0x7b, 0x81, 0x87, 0x52, 0xe3, 0x6a, 0x69, 0xef, 0xd2, 0xf3, 0x2e, 0x1d, 0x72, 0xc8, 0x29, 0xe7,
+	0xa3, 0x8b, 0xc3, 0xc0, 0x1e, 0x10, 0x1a, 0x18, 0x83, 0xa1, 0x10, 0x2a, 0x6d, 0x4a, 0x0b, 0xa6,
+	0x37, 0x18, 0x78, 0xae, 0x24, 0x6e, 0x4b, 0x22, 0x25, 0x86, 0x6f, 0x5e, 0xe9, 0xdf, 0x8e, 0x88,
+	0x3f, 0x91, 0xac, 0xc7, 0xd2, 0x20, 0x93, 0x30, 0x5c, 0xd7, 0x0b, 0x8c, 0xc0, 0xf6, 0x5c, 0x2a,
+	0xb9, 0x1b, 0x52, 0x71, 0x44, 0x89, 0x2f, 0x48, 0xea, 0x1f, 0xd3, 0xb0, 0x89, 0xf9, 0xf5, 0xea,
+	0x9e, 0x7b, 0x61, 0x5f, 0x8e, 0x7c, 0xae, 0x81, 0x0a, 0x90, 0xb2, 0xad, 0x62, 0xb2, 0x9c, 0xdc,
+	0xcf, 0xe2, 0x94, 0x6d, 0x21, 0x04, 0x4b, 0xae, 0x31, 0x20, 0xc5, 0x14, 0xa7, 0xf0, 0x6f, 0x54,
+	0x86, 0x9c, 0x45, 0xa8, 0xe9, 0xdb, 0x43, 0xa6, 0x52, 0x4c, 0x73, 0x56, 0x9c, 0x84, 0x3e, 0x86,
+	0xa5, 0x60, 0x32, 0x24, 0xc5, 0xa5, 0x72, 0x72, 0xbf, 0x50, 0x55, 0x2b, 0xe3, 0x6a, 0x65, 0x0e,
+	0x98, 0xa4, 0xf5, 0x27, 0x43, 0x82, 0xb9, 0x3c, 0x3a, 0x81, 0xcd, 0xf1, 0xc8, 0x71, 0x75, 0x19,
+	0xb8, 0x0b, 0xdb, 0x09, 0x88, 0x4f, 0x8b, 0xcb, 0xe5, 0xe4, 0x7e, 0xae, 0xba, 0xcb, 0xcc, 0xbc,
+	0x1a, 0x39, 0x2e, 0xf1, 0x8d, 0x73, 0xdb, 0xb1, 0x83, 0x89, 0xd0, 0x7f, 0x21, 0xa4, 0x5a, 0x09,
+	0xbc, 0xc1, 0x94, 0x67, 0x88, 0xa8, 0x02, 0x19, 0x6a, 0x5e, 0x11, 0x6b, 0xe4, 0x90, 0xe2, 0x0a,
+	0x37, 0x83, 0xa6, 0xb7, 0xe9, 0x49, 0x0e, 0x8e, 0x64, 0xd0, 0x27, 0x50, 0xf0, 0x09, 0xf5, 0x46,
+	0xbe, 0x49, 0x74, 0x6a, 0x7a, 0x43, 0x52, 0x5c, 0xe5, 0x5a, 0x1b, 0x42, 0x4b, 0x70, 0x7a, 0x8c,
+	0x81, 0xd7, 0xfc, 0xf8, 0x11, 0xfd, 0x04, 0xb2, 0xae, 0x17, 0xd8, 0x17, 0x36, 0xbb, 0x71, 0xa6,
+	0x9c, 0xde, 0xcf, 0x55, 0xb7, 0x99, 0x52, 0x47, 0x12, 0x67, 0x5c, 0xc7, 0x53, 0x59, 0x75, 0x0f,
+	0x60, 0x1a, 0x08, 0xb4, 0x01, 0x6b, 0xaf, 0x4e, 0xdb, 0x9d, 0x26, 0xae, 0x1d, 0x69, 0x6d, 0xad,
+	0xff, 0x5a, 0x49, 0x1c, 0x65, 0x60, 0x45, 0x44, 0x42, 0xfd, 0xd7, 0x32, 0x94, 0x16, 0x47, 0x00,
+	0x69, 0x00, 0x17, 0xf6, 0x77, 0x92, 0xc5, 0x93, 0x58, 0xa8, 0x7e, 0x78, 0x7b, 0xd4, 0x2a, 0x2f,
+	0x22, 0x05, 0x1c, 0x53, 0x46, 0x7d, 0x00, 0x4a, 0xc6, 0xc4, 0xb7, 0x03, 0x9b, 0xd0, 0x62, 0xaa,
+	0x9c, 0xde, 0x2f, 0x54, 0x3f, 0xba, 0xc3, 0xd4, 0x0c, 0xab, 0x27, 0xb4, 0x27, 0x38, 0x66, 0x07,
+	0x69, 0x90, 0xb3, 0x07, 0xc6, 0x25, 0xd1, 0x59, 0xb6, 0x69, 0x31, 0xcd, 0xcd, 0xee, 0xdf, 0x61,
+	0x56, 0x63, 0x1a, 0xbc, 0x48, 0xc0, 0x0e, 0x3f, 0x29, 0xda, 0x81, 0x8c, 0xe1, 0x38, 0x3a, 0xcb,
+	0x38, 0x2f, 0xb3, 0x4c, 0x2b, 0x81, 0x57, 0x0d, 0xc7, 0x61, 0x86, 0x50, 0x0b, 0xca, 0xd4, 0x76,
+	0x4d, 0xa2, 0x3b, 0x06, 0x65, 0xef, 0xcf, 0x0d, 0xf4, 0x30, 0xc3, 0x96, 0x2c, 0x2e, 0x5e, 0x54,
+	0x4c, 0xe9, 0x31, 0x97, 0x6c, 0x1b, 0x34, 0xe8, 0x11, 0x37, 0x2a, 0x09, 0x4b, 0xdc, 0x01, 0xbd,
+	0x00, 0x45, 0x58, 0xa2, 0x81, 0xe1, 0x07, 0xba, 0x65, 0x04, 0x61, 0x1d, 0x95, 0x2a, 0xe2, 0xcd,
+	0x55, 0xc2, 0x47, 0x5c, 0xe9, 0x87, 0x8f, 0xb8, 0x95, 0xc0, 0x05, 0xae, 0xd5, 0x63, 0x4a, 0x0d,
+	0x23, 0x20, 0xea, 0x47, 0x00, 0xd3, 0x48, 0xa3, 0x0c, 0x2c, 0x1d, 0x75, 0xfb, 0x2d, 0x25, 0x81,
+	0x72, 0xb0, 0xfa, 0x42, 0xfb, 0xaa, 0x76, 0xd4, 0x6e, 0x2a, 0x49, 0xb4, 0x0e, 0xb9, 0x4e, 0xb7,
+	0xaf, 0x87, 0x84, 0x94, 0xfa, 0x97, 0x24, 0x6c, 0xcd, 0x8d, 0x2a, 0x52, 0x61, 0xf7, 0xb4, 0xf3,
+	0x45, 0xa7, 0x7b, 0xd6, 0xd1, 0x67, 0xca, 0x45, 0xef, 0x35, 0x5f, 0x35, 0x31, 0xaf, 0x1b, 0xb4,
+	0x0b, 0xa5, 0x76, 0xf7, 0x6c, 0x11, 0x3f, 0x89, 0xde, 0x87, 0xbd, 0xe3, 0x6e, 0xa3, 0x89, 0x6b,
+	0xfd, 0xe6, 0x22, 0xa1, 0x14, 0x7a, 0x0a, 0x65, 0xed, 0xf8, 0xa4, 0x8b, 0xfb, 0xb5, 0x4e, 0x7f,
+	0x91, 0x54, 0x9a, 0x99, 0xaa, 0x63, 0xad, 0xaf, 0xd5, 0x6b, 0xed, 0x45, 0x42, 0x4b, 0xea, 0x0f,
+	0x20, 0x1b, 0xe5, 0x12, 0xe5, 0x21, 0xd3, 0x68, 0x9e, 0xb4, 0xbb, 0xaf, 0x9b, 0x0d, 0x11, 0x86,
+	0xb3, 0x5a, 0xbf, 0xde, 0x6a, 0x36, 0x94, 0xe4, 0x51, 0x1e, 0xc0, 0x1c, 0x13, 0xaa, 0xf3, 0x10,
+	0xaa, 0xbf, 0x4a, 0x43, 0x61, 0xf6, 0xb9, 0xa2, 0x06, 0xac, 0xd9, 0x6e, 0x40, 0xfc, 0xb1, 0xe1,
+	0xf0, 0x4a, 0x92, 0xa5, 0xbe, 0x77, 0xf3, 0x65, 0x57, 0x34, 0x29, 0xc7, 0xeb, 0x27, 0x6f, 0xc7,
+	0x4e, 0xac, 0xb5, 0x5d, 0x79, 0x23, 0x9f, 0xb7, 0xb6, 0x65, 0xcc, 0xbf, 0xd1, 0x43, 0x58, 0x19,
+	0xd8, 0xee, 0x28, 0x20, 0xbc, 0xab, 0x2d, 0x63, 0x79, 0x42, 0x35, 0xc8, 0x5b, 0xc6, 0x84, 0xea,
+	0xde, 0x85, 0xfe, 0x96, 0x90, 0x37, 0xbc, 0xe2, 0x72, 0xd5, 0xf7, 0xe6, 0x00, 0x36, 0x8c, 0x09,
+	0xed, 0x5e, 0x9c, 0x11, 0xf2, 0xa6, 0x95, 0xc0, 0x60, 0x45, 0x27, 0x76, 0xe9, 0xd0, 0xc4, 0xc0,
+	0x73, 0x83, 0xab, 0x78, 0x57, 0x9b, 0x6b, 0xe3, 0x98, 0x49, 0xb5, 0x12, 0x38, 0x67, 0x4d, 0x8f,
+	0xa5, 0x32, 0xc0, 0x14, 0x81, 0xb9, 0xc0, 0x98, 0xc5, 0x64, 0x39, 0xcd, 0x5c, 0x60, 0xdf, 0xa5,
+	0x27, 0x90, 0x8b, 0xe9, 0xcf, 0x13, 0x51, 0xab, 0x90, 0x8f, 0xc7, 0x05, 0x65, 0x61, 0xf9, 0xb4,
+	0xd3, 0x6b, 0xf6, 0x95, 0x04, 0x02, 0x58, 0x39, 0x6b, 0x36, 0xbf, 0x68, 0xb3, 0xfa, 0xc8, 0xc1,
+	0xea, 0x71, 0xb7, 0xd3, 0x6f, 0xb5, 0x5f, 0x2b, 0xa9, 0x23, 0x80, 0x4c, 0xa8, 0xa3, 0x5e, 0xc1,
+	0xda, 0x4c, 0x2b, 0x44, 0x0d, 0x50, 0x4c, 0xcf, 0x71, 0x88, 0xc9, 0x7a, 0x9b, 0xec, 0x9b, 0x49,
+	0xee, 0xde, 0x23, 0xe6, 0x5e, 0x3d, 0xe2, 0x61, 0x72, 0x41, 0x7c, 0xe2, 0x9a, 0xa4, 0x95, 0xc0,
+	0xeb, 0x53, 0x15, 0x6e, 0xe5, 0x68, 0x03, 0xd6, 0xb9, 0xaa, 0xee, 0x87, 0x52, 0xaa, 0x09, 0x9b,
+	0x73, 0x94, 0xd1, 0xfb, 0xb0, 0x16, 0xc3, 0x8b, 0x06, 0x56, 0x7e, 0x4a, 0xd4, 0x2c, 0xf4, 0x0c,
+	0x62, 0x08, 0x7a, 0x6c, 0x8a, 0x15, 0xa6, 0xe4, 0x8e, 0x31, 0x20, 0xea, 0x6f, 0x93, 0xb0, 0x35,
+	0xb7, 0x4b, 0xa3, 0x3a, 0xe4, 0xc9, 0xc0, 0xb0, 0x1d, 0xdd, 0xe4, 0x64, 0xe9, 0x13, 0x4f, 0x59,
+	0x93, 0xd1, 0xe7, 0x6a, 0xb1, 0x94, 0x71, 0x2d, 0x41, 0x65, 0x97, 0x0d, 0x9b, 0x7d, 0xfc, 0x16,
+	0xf9, 0x90, 0xc8, 0xee, 0xc0, 0x7c, 0x8f, 0x84, 0x04, 0x98, 0x7a, 0x0e, 0xa5, 0xc5, 0x20, 0x68,
+	0x0f, 0x72, 0x91, 0x42, 0x14, 0x00, 0x08, 0x49, 0x9a, 0xc5, 0x60, 0x99, 0xb6, 0xed, 0x5e, 0xea,
+	0x8e, 0x4d, 0x03, 0xd1, 0xc4, 0xb3, 0x38, 0x2f, 0x89, 0x6d, 0x46, 0x53, 0xcf, 0xa1, 0xcc, 0x3e,
+	0xe6, 0x0c, 0x67, 0x8a, 0x09, 0x1d, 0x7a, 0x2e, 0x25, 0xe8, 0x67, 0x6c, 0x24, 0xf2, 0x79, 0x2c,
+	0x2e, 0x26, 0x6a, 0x49, 0xa6, 0x76, 0x8e, 0x26, 0x1b, 0x8c, 0x53, 0x22, 0x55, 0x7f, 0x0a, 0x4f,
+	0xea, 0xde, 0xc8, 0xbd, 0x1d, 0xe4, 0x01, 0x2c, 0x9b, 0x4c, 0x88, 0x3b, 0xb2, 0x8c, 0xc5, 0x41,
+	0x25, 0xf0, 0xe8, 0x25, 0x91, 0x8a, 0x2d, 0x9b, 0x06, 0x9e, 0x3f, 0xc1, 0xe4, 0xdb, 0x11, 0xa1,
+	0xc1, 0x8d, 0x45, 0xe5, 0x53, 0x40, 0xf2, 0x96, 0x43, 0xc3, 0x37, 0x06, 0x62, 0x3b, 0xe2, 0xa1,
+	0xce, 0x55, 0xf3, 0xfc, 0xa6, 0xc6, 0xdb, 0x2f, 0x19, 0x0d, 0x2b, 0x42, 0xee, 0x84, 0x89, 0x71,
+	0x8a, 0xfa, 0x0a, 0xb6, 0xae, 0x61, 0xc8, 0x5b, 0x7d, 0x06, 0x4a, 0xb8, 0xc3, 0xb9, 0xc6, 0x90,
+	0x5e, 0x79, 0x41, 0xe8, 0x7c, 0x7c, 0x8b, 0x90, 0x2c, 0xbc, 0xee, 0xcf, 0x9c, 0xa9, 0xfa, 0x39,
+	0x3c, 0x90, 0x22, 0x81, 0x11, 0x8c, 0xa6, 0xce, 0xee, 0xc3, 0x0a, 0xe5, 0x14, 0x59, 0x50, 0x4a,
+	0xcc, 0x98, 0x90, 0x94, 0x7c, 0xf5, 0x13, 0x40, 0xd3, 0xfa, 0x0f, 0x0d, 0xdf, 0x67, 0x49, 0x53,
+	0xff, 0xb0, 0x14, 0xb5, 0xcd, 0x50, 0x6d, 0x3f, 0xf2, 0x46, 0x24, 0x72, 0x5a, 0x37, 0x85, 0x78,
+	0xc6, 0x34, 0x0b, 0xa9, 0x20, 0x73, 0xa8, 0x7f, 0xe3, 0x9d, 0x33, 0x31, 0x61, 0x39, 0x27, 0x88,
+	0x3f, 0xf7, 0xce, 0xb5, 0x29, 0x68, 0x7a, 0xf1, 0x66, 0xb8, 0x74, 0x73, 0x33, 0xfc, 0xff, 0x6f,
+	0x78, 0x2f, 0x61, 0x33, 0xde, 0x7b, 0xa4, 0xb3, 0x72, 0x48, 0x3f, 0x9c, 0x6d, 0x3f, 0x51, 0xaa,
+	0x90, 0x79, 0x33, 0xaa, 0xf1, 0x55, 0x71, 0xf5, 0x1e, 0xab, 0xe2, 0x8f, 0xa3, 0x20, 0xc9, 0x64,
+	0x66, 0x16, 0x24, 0x33, 0xef, 0xc7, 0x4e, 0xb3, 0x7b, 0x62, 0xf6, 0xfe, 0x7b, 0x22, 0x2a, 0xc3,
+	0x12, 0x5b, 0xe0, 0x8b, 0x30, 0xad, 0xe9, 0x9e, 0x63, 0x0f, 0x4e, 0x29, 0xf1, 0x31, 0xe7, 0xa0,
+	0x2a, 0x6c, 0xd9, 0x54, 0xb7, 0xbc, 0xb7, 0xae, 0xe3, 0x19, 0x96, 0x6e, 0x8c, 0x0d, 0xdb, 0x31,
+	0xce, 0x1d, 0x52, 0xcc, 0xb1, 0x5d, 0x07, 0x6f, 0xda, 0xb4, 0x21, 0x79, 0xb5, 0x90, 0x15, 0x5b,
+	0x2e, 0xff, 0x94, 0x86, 0x7c, 0xfc, 0xde, 0xe8, 0x63, 0xc8, 0xfa, 0x23, 0x97, 0x7b, 0x17, 0x8e,
+	0xd8, 0xed, 0xeb, 0xce, 0x55, 0xf0, 0xc8, 0x65, 0x5f, 0x04, 0x67, 0x7c, 0xf9, 0x85, 0x3e, 0x83,
+	0xbc, 0xe9, 0x0d, 0x86, 0x0e, 0x09, 0x88, 0xa5, 0x1b, 0x81, 0x7c, 0x84, 0xb7, 0xec, 0x4b, 0x38,
+	0x17, 0xc9, 0xd7, 0x02, 0xb4, 0x03, 0x59, 0xe2, 0xfb, 0x9e, 0xaf, 0x0f, 0xe8, 0xa5, 0xac, 0xae,
+	0x0c, 0x27, 0x1c, 0xd3, 0x4b, 0x74, 0x0c, 0x9b, 0x32, 0xe8, 0xbe, 0x68, 0x04, 0x7a, 0xec, 0x47,
+	0xe3, 0xbd, 0x9b, 0xb7, 0xe3, 0x87, 0x63, 0x12, 0x5c, 0x79, 0x16, 0xde, 0x10, 0x9a, 0xb2, 0x83,
+	0xf0, 0xc9, 0xd7, 0x87, 0x92, 0x34, 0x27, 0xe2, 0x6c, 0xf2, 0xa8, 0xeb, 0x03, 0xae, 0xc0, 0xab,
+	0xb2, 0x20, 0x6a, 0xa8, 0x13, 0x63, 0x4b, 0x73, 0x45, 0xa1, 0x79, 0x93, 0xa3, 0x7e, 0x0e, 0x99,
+	0x30, 0x2c, 0x62, 0xb3, 0xd1, 0xfa, 0x5a, 0xe7, 0xa5, 0x92, 0x40, 0x6b, 0x90, 0x3d, 0xc1, 0xcd,
+	0x93, 0x1a, 0x66, 0x47, 0x3e, 0x60, 0x7b, 0xa7, 0xf5, 0x7a, 0xb3, 0xd7, 0x53, 0x52, 0x7c, 0x13,
+	0xac, 0x69, 0xed, 0x53, 0xdc, 0x54, 0xd2, 0xea, 0x0f, 0xc3, 0x54, 0x08, 0x8b, 0x4c, 0xb1, 0xdb,
+	0xd1, 0x1b, 0xcd, 0xe3, 0x5a, 0xa7, 0x21, 0xec, 0xf4, 0xd8, 0xb2, 0x74, 0xda, 0x66, 0x0b, 0x93,
+	0xfa, 0xeb, 0x24, 0x28, 0x78, 0x24, 0xdf, 0x45, 0xd8, 0x20, 0xef, 0xff, 0xda, 0x6f, 0x0f, 0x42,
+	0xea, 0xbf, 0x0c, 0xc2, 0xd7, 0xb0, 0x11, 0xbb, 0x53, 0xd4, 0xf9, 0xee, 0x7b, 0xa9, 0x1d, 0xc8,
+	0x4a, 0xc9, 0xa8, 0xfd, 0x64, 0x04, 0x41, 0xb3, 0x0e, 0x9e, 0x03, 0xba, 0x89, 0xc8, 0xd6, 0x98,
+	0xe6, 0x71, 0x4d, 0x6b, 0x2b, 0x09, 0xbe, 0x5d, 0x76, 0xcf, 0x3a, 0xed, 0x6e, 0xad, 0xa1, 0x24,
+	0xab, 0xbf, 0xcf, 0xb2, 0x85, 0x85, 0x97, 0x85, 0xf8, 0x15, 0x47, 0x3e, 0x3c, 0x3a, 0xf1, 0xe6,
+	0xce, 0x3d, 0xb4, 0x68, 0xac, 0x95, 0x16, 0x31, 0xd4, 0x0f, 0x7e, 0xf9, 0xb7, 0x7f, 0xfe, 0x26,
+	0xb5, 0xa7, 0x96, 0xa6, 0xff, 0xfc, 0xf4, 0xd0, 0x9c, 0x99, 0x73, 0x9f, 0x26, 0x0f, 0xd0, 0x1b,
+	0xd8, 0x3e, 0x1d, 0xb2, 0x1f, 0x88, 0xff, 0x08, 0x35, 0x2b, 0x96, 0x8d, 0x61, 0x30, 0x51, 0x0f,
+	0x38, 0xce, 0xd3, 0xd2, 0xde, 0x62, 0x9c, 0xc3, 0xef, 0x6d, 0xeb, 0x17, 0x0c, 0xcc, 0x87, 0xe2,
+	0xa2, 0xc1, 0x8e, 0x66, 0xc6, 0x61, 0xe9, 0x29, 0x3b, 0xdd, 0xb5, 0x04, 0xa8, 0x2a, 0xc7, 0x7e,
+	0x8c, 0x6e, 0xf1, 0x11, 0x4d, 0x60, 0x7b, 0xe1, 0xa0, 0xbf, 0x06, 0xfa, 0x81, 0xe8, 0xcb, 0x77,
+	0x6c, 0x05, 0xea, 0x33, 0x8e, 0xfa, 0x04, 0x2d, 0xf6, 0xf8, 0x39, 0x5f, 0x14, 0x90, 0x03, 0x0f,
+	0xa3, 0x45, 0x61, 0x36, 0xb0, 0x4a, 0xfc, 0xc7, 0xfd, 0x68, 0xa2, 0x35, 0x16, 0xe7, 0xf1, 0x6e,
+	0x34, 0x11, 0x5f, 0x64, 0xc0, 0x76, 0x83, 0xb0, 0x76, 0x75, 0x3f, 0xc0, 0x58, 0x0a, 0x25, 0xc4,
+	0xc1, 0x9d, 0x10, 0x26, 0xac, 0x47, 0x0e, 0xc9, 0x76, 0x7c, 0xd3, 0x70, 0xf1, 0xc6, 0xa8, 0x09,
+	0x03, 0xf7, 0x94, 0xe3, 0xec, 0xa2, 0xc7, 0x71, 0x9c, 0x6f, 0xbc, 0x73, 0x61, 0xfd, 0x50, 0x0c,
+	0x2c, 0xe4, 0xc1, 0xce, 0x4b, 0x12, 0xb0, 0x5f, 0xdf, 0xb8, 0x11, 0xf9, 0x04, 0x1b, 0xff, 0x3b,
+	0x20, 0xfb, 0xfb, 0x7e, 0x2e, 0xb0, 0x84, 0x57, 0xdf, 0x83, 0x72, 0x7d, 0x9f, 0x43, 0x3b, 0xcc,
+	0xe6, 0x82, 0x2d, 0xaf, 0x14, 0x9b, 0x37, 0xd7, 0x76, 0x33, 0xf5, 0x90, 0x23, 0x7e, 0x88, 0x9e,
+	0xdd, 0x11, 0xca, 0xc3, 0x2b, 0x09, 0xd4, 0x87, 0x6c, 0xd4, 0x90, 0xd0, 0x03, 0x6e, 0xf8, 0x5a,
+	0xcf, 0x2c, 0x6d, 0x5d, 0xa3, 0x4a, 0xa8, 0x12, 0x87, 0x7a, 0xa0, 0xae, 0xc7, 0xa1, 0xfc, 0x91,
+	0xcb, 0x1e, 0xda, 0x97, 0x90, 0xaf, 0x1b, 0xae, 0x49, 0x1c, 0x69, 0xf8, 0xd6, 0xf4, 0xcb, 0x28,
+	0x1d, 0x2c, 0x48, 0x8b, 0xc9, 0x0d, 0x1d, 0x55, 0xfe, 0xfc, 0x6e, 0x37, 0xf9, 0xd7, 0x77, 0xbb,
+	0xc9, 0xbf, 0xbf, 0xdb, 0x4d, 0xfe, 0xee, 0x1f, 0xbb, 0x09, 0x28, 0xda, 0x5e, 0x85, 0x06, 0x86,
+	0xf9, 0xc6, 0xf7, 0xbe, 0x13, 0xf3, 0xb3, 0x62, 0x0c, 0xed, 0xca, 0xb8, 0xfa, 0x75, 0x6a, 0x5c,
+	0xfd, 0x2a, 0x7d, 0xbe, 0xc2, 0x69, 0x3f, 0xfa, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0xac, 0x46,
+	0x32, 0x0f, 0x79, 0x14, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -893,6 +2205,18 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ReportServiceClient interface {
+	// PostReportConfiguration creates a report configuration
+	PostReportConfiguration(ctx context.Context, in *ReportConfiguration, opts ...grpc.CallOption) (*ReportConfiguration, error)
+	// UpdateReportConfiguration updates a report configuration
+	UpdateReportConfiguration(ctx context.Context, in *ReportConfiguration, opts ...grpc.CallOption) (*Empty, error)
+	// ListReportConfigurations returns report configurations matching given query
+	ListReportConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListReportConfigurationsResponse, error)
+	// CountReportConfigurations returns the number of report configurations.
+	CountReportConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountReportConfigurationsResponse, error)
+	// GetReportConfiguration returns the report configuration with given ID
+	GetReportConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportConfiguration, error)
+	// DeleteReportConfiguration removes the report configuration with given ID
+	DeleteReportConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// GetReportStatus returns report status for the given report id
 	GetReportStatus(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportStatusResponse, error)
 	// GetReportStatusConfigID returns report status for a report config id
@@ -913,6 +2237,60 @@ type reportServiceClient struct {
 
 func NewReportServiceClient(cc grpc.ClientConnInterface) ReportServiceClient {
 	return &reportServiceClient{cc}
+}
+
+func (c *reportServiceClient) PostReportConfiguration(ctx context.Context, in *ReportConfiguration, opts ...grpc.CallOption) (*ReportConfiguration, error) {
+	out := new(ReportConfiguration)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/PostReportConfiguration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) UpdateReportConfiguration(ctx context.Context, in *ReportConfiguration, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/UpdateReportConfiguration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) ListReportConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListReportConfigurationsResponse, error) {
+	out := new(ListReportConfigurationsResponse)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/ListReportConfigurations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) CountReportConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountReportConfigurationsResponse, error) {
+	out := new(CountReportConfigurationsResponse)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/CountReportConfigurations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) GetReportConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportConfiguration, error) {
+	out := new(ReportConfiguration)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/GetReportConfiguration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) DeleteReportConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v2.ReportService/DeleteReportConfiguration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *reportServiceClient) GetReportStatus(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportStatusResponse, error) {
@@ -962,6 +2340,18 @@ func (c *reportServiceClient) CancelReport(ctx context.Context, in *ResourceByID
 
 // ReportServiceServer is the server API for ReportService service.
 type ReportServiceServer interface {
+	// PostReportConfiguration creates a report configuration
+	PostReportConfiguration(context.Context, *ReportConfiguration) (*ReportConfiguration, error)
+	// UpdateReportConfiguration updates a report configuration
+	UpdateReportConfiguration(context.Context, *ReportConfiguration) (*Empty, error)
+	// ListReportConfigurations returns report configurations matching given query
+	ListReportConfigurations(context.Context, *RawQuery) (*ListReportConfigurationsResponse, error)
+	// CountReportConfigurations returns the number of report configurations.
+	CountReportConfigurations(context.Context, *RawQuery) (*CountReportConfigurationsResponse, error)
+	// GetReportConfiguration returns the report configuration with given ID
+	GetReportConfiguration(context.Context, *ResourceByID) (*ReportConfiguration, error)
+	// DeleteReportConfiguration removes the report configuration with given ID
+	DeleteReportConfiguration(context.Context, *ResourceByID) (*Empty, error)
 	// GetReportStatus returns report status for the given report id
 	GetReportStatus(context.Context, *ResourceByID) (*ReportStatusResponse, error)
 	// GetReportStatusConfigID returns report status for a report config id
@@ -980,6 +2370,24 @@ type ReportServiceServer interface {
 type UnimplementedReportServiceServer struct {
 }
 
+func (*UnimplementedReportServiceServer) PostReportConfiguration(ctx context.Context, req *ReportConfiguration) (*ReportConfiguration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostReportConfiguration not implemented")
+}
+func (*UnimplementedReportServiceServer) UpdateReportConfiguration(ctx context.Context, req *ReportConfiguration) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateReportConfiguration not implemented")
+}
+func (*UnimplementedReportServiceServer) ListReportConfigurations(ctx context.Context, req *RawQuery) (*ListReportConfigurationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListReportConfigurations not implemented")
+}
+func (*UnimplementedReportServiceServer) CountReportConfigurations(ctx context.Context, req *RawQuery) (*CountReportConfigurationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountReportConfigurations not implemented")
+}
+func (*UnimplementedReportServiceServer) GetReportConfiguration(ctx context.Context, req *ResourceByID) (*ReportConfiguration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReportConfiguration not implemented")
+}
+func (*UnimplementedReportServiceServer) DeleteReportConfiguration(ctx context.Context, req *ResourceByID) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteReportConfiguration not implemented")
+}
 func (*UnimplementedReportServiceServer) GetReportStatus(ctx context.Context, req *ResourceByID) (*ReportStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReportStatus not implemented")
 }
@@ -998,6 +2406,114 @@ func (*UnimplementedReportServiceServer) CancelReport(ctx context.Context, req *
 
 func RegisterReportServiceServer(s *grpc.Server, srv ReportServiceServer) {
 	s.RegisterService(&_ReportService_serviceDesc, srv)
+}
+
+func _ReportService_PostReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportConfiguration)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).PostReportConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/PostReportConfiguration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).PostReportConfiguration(ctx, req.(*ReportConfiguration))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_UpdateReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportConfiguration)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).UpdateReportConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/UpdateReportConfiguration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).UpdateReportConfiguration(ctx, req.(*ReportConfiguration))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_ListReportConfigurations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RawQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).ListReportConfigurations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/ListReportConfigurations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).ListReportConfigurations(ctx, req.(*RawQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_CountReportConfigurations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RawQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).CountReportConfigurations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/CountReportConfigurations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).CountReportConfigurations(ctx, req.(*RawQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_GetReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).GetReportConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/GetReportConfiguration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).GetReportConfiguration(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_DeleteReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).DeleteReportConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ReportService/DeleteReportConfiguration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).DeleteReportConfiguration(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ReportService_GetReportStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1095,6 +2611,30 @@ var _ReportService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ReportServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "PostReportConfiguration",
+			Handler:    _ReportService_PostReportConfiguration_Handler,
+		},
+		{
+			MethodName: "UpdateReportConfiguration",
+			Handler:    _ReportService_UpdateReportConfiguration_Handler,
+		},
+		{
+			MethodName: "ListReportConfigurations",
+			Handler:    _ReportService_ListReportConfigurations_Handler,
+		},
+		{
+			MethodName: "CountReportConfigurations",
+			Handler:    _ReportService_CountReportConfigurations_Handler,
+		},
+		{
+			MethodName: "GetReportConfiguration",
+			Handler:    _ReportService_GetReportConfiguration_Handler,
+		},
+		{
+			MethodName: "DeleteReportConfiguration",
+			Handler:    _ReportService_DeleteReportConfiguration_Handler,
+		},
+		{
 			MethodName: "GetReportStatus",
 			Handler:    _ReportService_GetReportStatus_Handler,
 		},
@@ -1117,6 +2657,722 @@ var _ReportService_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v2/report_service.proto",
+}
+
+func (m *ReportConfiguration) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportConfiguration) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Notifiers) > 0 {
+		for iNdEx := len(m.Notifiers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Notifiers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintReportService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if m.ResourceScope != nil {
+		{
+			size, err := m.ResourceScope.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.Schedule != nil {
+		{
+			size, err := m.Schedule.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.Filter != nil {
+		{
+			size := m.Filter.Size()
+			i -= size
+			if _, err := m.Filter.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if m.Type != 0 {
+		i = encodeVarintReportService(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ReportConfiguration_VulnReportFilters) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportConfiguration_VulnReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.VulnReportFilters != nil {
+		{
+			size, err := m.VulnReportFilters.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *VulnerabilityReportFilters) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VulnerabilityReportFilters) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.CvesSince != nil {
+		{
+			size := m.CvesSince.Size()
+			i -= size
+			if _, err := m.CvesSince.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.ImageTypes) > 0 {
+		dAtA5 := make([]byte, len(m.ImageTypes)*10)
+		var j4 int
+		for _, num := range m.ImageTypes {
+			for num >= 1<<7 {
+				dAtA5[j4] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j4++
+			}
+			dAtA5[j4] = uint8(num)
+			j4++
+		}
+		i -= j4
+		copy(dAtA[i:], dAtA5[:j4])
+		i = encodeVarintReportService(dAtA, i, uint64(j4))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Severities) > 0 {
+		dAtA7 := make([]byte, len(m.Severities)*10)
+		var j6 int
+		for _, num := range m.Severities {
+			for num >= 1<<7 {
+				dAtA7[j6] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j6++
+			}
+			dAtA7[j6] = uint8(num)
+			j6++
+		}
+		i -= j6
+		copy(dAtA[i:], dAtA7[:j6])
+		i = encodeVarintReportService(dAtA, i, uint64(j6))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Fixability != 0 {
+		i = encodeVarintReportService(dAtA, i, uint64(m.Fixability))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VulnerabilityReportFilters_AllVuln) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters_AllVuln) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i--
+	if m.AllVuln {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x20
+	return len(dAtA) - i, nil
+}
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i--
+	if m.SinceLastSentScheduledReport {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x28
+	return len(dAtA) - i, nil
+}
+func (m *VulnerabilityReportFilters_SinceStartDate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters_SinceStartDate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SinceStartDate != nil {
+		{
+			size, err := m.SinceStartDate.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ReportSchedule) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportSchedule) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSchedule) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Interval != nil {
+		{
+			size := m.Interval.Size()
+			i -= size
+			if _, err := m.Interval.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if m.Minute != 0 {
+		i = encodeVarintReportService(dAtA, i, uint64(m.Minute))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Hour != 0 {
+		i = encodeVarintReportService(dAtA, i, uint64(m.Hour))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.IntervalType != 0 {
+		i = encodeVarintReportService(dAtA, i, uint64(m.IntervalType))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ReportSchedule_DaysOfWeek_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSchedule_DaysOfWeek_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.DaysOfWeek != nil {
+		{
+			size, err := m.DaysOfWeek.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ReportSchedule_DaysOfMonth_) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSchedule_DaysOfMonth_) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.DaysOfMonth != nil {
+		{
+			size, err := m.DaysOfMonth.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ReportSchedule_DaysOfWeek) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportSchedule_DaysOfWeek) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSchedule_DaysOfWeek) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Days) > 0 {
+		dAtA12 := make([]byte, len(m.Days)*10)
+		var j11 int
+		for _, num1 := range m.Days {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA12[j11] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j11++
+			}
+			dAtA12[j11] = uint8(num)
+			j11++
+		}
+		i -= j11
+		copy(dAtA[i:], dAtA12[:j11])
+		i = encodeVarintReportService(dAtA, i, uint64(j11))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ReportSchedule_DaysOfMonth) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportSchedule_DaysOfMonth) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportSchedule_DaysOfMonth) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Days) > 0 {
+		dAtA14 := make([]byte, len(m.Days)*10)
+		var j13 int
+		for _, num1 := range m.Days {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA14[j13] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j13++
+			}
+			dAtA14[j13] = uint8(num)
+			j13++
+		}
+		i -= j13
+		copy(dAtA[i:], dAtA14[:j13])
+		i = encodeVarintReportService(dAtA, i, uint64(j13))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ResourceScope) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResourceScope) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResourceScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ScopeReference != nil {
+		{
+			size := m.ScopeReference.Size()
+			i -= size
+			if _, err := m.ScopeReference.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ResourceScope_CollectionScope) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResourceScope_CollectionScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.CollectionScope != nil {
+		{
+			size, err := m.CollectionScope.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *CollectionReference) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CollectionReference) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CollectionReference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.CollectionName) > 0 {
+		i -= len(m.CollectionName)
+		copy(dAtA[i:], m.CollectionName)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.CollectionName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.CollectionId) > 0 {
+		i -= len(m.CollectionId)
+		copy(dAtA[i:], m.CollectionId)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.CollectionId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NotifierConfiguration) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NotifierConfiguration) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NotifierConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.NotifierName) > 0 {
+		i -= len(m.NotifierName)
+		copy(dAtA[i:], m.NotifierName)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.NotifierName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.NotifierConfig != nil {
+		{
+			size := m.NotifierConfig.Size()
+			i -= size
+			if _, err := m.NotifierConfig.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NotifierConfiguration_EmailConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NotifierConfiguration_EmailConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EmailConfig != nil {
+		{
+			size, err := m.EmailConfig.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *EmailNotifierConfiguration) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EmailNotifierConfiguration) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EmailNotifierConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.MailingLists) > 0 {
+		for iNdEx := len(m.MailingLists) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.MailingLists[iNdEx])
+			copy(dAtA[i:], m.MailingLists[iNdEx])
+			i = encodeVarintReportService(dAtA, i, uint64(len(m.MailingLists[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.NotifierId) > 0 {
+		i -= len(m.NotifierId)
+		copy(dAtA[i:], m.NotifierId)
+		i = encodeVarintReportService(dAtA, i, uint64(len(m.NotifierId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListReportConfigurationsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListReportConfigurationsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListReportConfigurationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ReportConfigs) > 0 {
+		for iNdEx := len(m.ReportConfigs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ReportConfigs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintReportService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CountReportConfigurationsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CountReportConfigurationsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CountReportConfigurationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Count != 0 {
+		i = encodeVarintReportService(dAtA, i, uint64(m.Count))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *GetReportHistoryRequest) Marshal() (dAtA []byte, err error) {
@@ -1595,6 +3851,343 @@ func encodeVarintReportService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *ReportConfiguration) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 1 + sovReportService(uint64(m.Type))
+	}
+	if m.Filter != nil {
+		n += m.Filter.Size()
+	}
+	if m.Schedule != nil {
+		l = m.Schedule.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.ResourceScope != nil {
+		l = m.ResourceScope.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if len(m.Notifiers) > 0 {
+		for _, e := range m.Notifiers {
+			l = e.Size()
+			n += 1 + l + sovReportService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ReportConfiguration_VulnReportFilters) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.VulnReportFilters != nil {
+		l = m.VulnReportFilters.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *VulnerabilityReportFilters) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Fixability != 0 {
+		n += 1 + sovReportService(uint64(m.Fixability))
+	}
+	if len(m.Severities) > 0 {
+		l = 0
+		for _, e := range m.Severities {
+			l += sovReportService(uint64(e))
+		}
+		n += 1 + sovReportService(uint64(l)) + l
+	}
+	if len(m.ImageTypes) > 0 {
+		l = 0
+		for _, e := range m.ImageTypes {
+			l += sovReportService(uint64(e))
+		}
+		n += 1 + sovReportService(uint64(l)) + l
+	}
+	if m.CvesSince != nil {
+		n += m.CvesSince.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *VulnerabilityReportFilters_AllVuln) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2
+	return n
+}
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2
+	return n
+}
+func (m *VulnerabilityReportFilters_SinceStartDate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SinceStartDate != nil {
+		l = m.SinceStartDate.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *ReportSchedule) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.IntervalType != 0 {
+		n += 1 + sovReportService(uint64(m.IntervalType))
+	}
+	if m.Hour != 0 {
+		n += 1 + sovReportService(uint64(m.Hour))
+	}
+	if m.Minute != 0 {
+		n += 1 + sovReportService(uint64(m.Minute))
+	}
+	if m.Interval != nil {
+		n += m.Interval.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ReportSchedule_DaysOfWeek_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DaysOfWeek != nil {
+		l = m.DaysOfWeek.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *ReportSchedule_DaysOfMonth_) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DaysOfMonth != nil {
+		l = m.DaysOfMonth.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *ReportSchedule_DaysOfWeek) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Days) > 0 {
+		l = 0
+		for _, e := range m.Days {
+			l += sovReportService(uint64(e))
+		}
+		n += 1 + sovReportService(uint64(l)) + l
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ReportSchedule_DaysOfMonth) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Days) > 0 {
+		l = 0
+		for _, e := range m.Days {
+			l += sovReportService(uint64(e))
+		}
+		n += 1 + sovReportService(uint64(l)) + l
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ResourceScope) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ScopeReference != nil {
+		n += m.ScopeReference.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ResourceScope_CollectionScope) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CollectionScope != nil {
+		l = m.CollectionScope.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *CollectionReference) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CollectionId)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	l = len(m.CollectionName)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NotifierConfiguration) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NotifierConfig != nil {
+		n += m.NotifierConfig.Size()
+	}
+	l = len(m.NotifierName)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NotifierConfiguration_EmailConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EmailConfig != nil {
+		l = m.EmailConfig.Size()
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	return n
+}
+func (m *EmailNotifierConfiguration) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.NotifierId)
+	if l > 0 {
+		n += 1 + l + sovReportService(uint64(l))
+	}
+	if len(m.MailingLists) > 0 {
+		for _, s := range m.MailingLists {
+			l = len(s)
+			n += 1 + l + sovReportService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListReportConfigurationsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ReportConfigs) > 0 {
+		for _, e := range m.ReportConfigs {
+			l = e.Size()
+			n += 1 + l + sovReportService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CountReportConfigurationsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Count != 0 {
+		n += 1 + sovReportService(uint64(m.Count))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *GetReportHistoryRequest) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1810,6 +4403,1619 @@ func sovReportService(x uint64) (n int) {
 }
 func sozReportService(x uint64) (n int) {
 	return sovReportService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ReportConfiguration: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ReportConfiguration: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= ReportConfiguration_ReportType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &VulnerabilityReportFilters{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Filter = &ReportConfiguration_VulnReportFilters{v}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Schedule == nil {
+				m.Schedule = &ReportSchedule{}
+			}
+			if err := m.Schedule.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceScope", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ResourceScope == nil {
+				m.ResourceScope = &ResourceScope{}
+			}
+			if err := m.ResourceScope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notifiers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Notifiers = append(m.Notifiers, &NotifierConfiguration{})
+			if err := m.Notifiers[len(m.Notifiers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VulnerabilityReportFilters: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Fixability", wireType)
+			}
+			m.Fixability = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Fixability |= VulnerabilityReportFilters_Fixability(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType == 0 {
+				var v VulnerabilityReportFilters_VulnerabilitySeverity
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VulnerabilityReportFilters_VulnerabilitySeverity(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Severities = append(m.Severities, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthReportService
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthReportService
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Severities) == 0 {
+					m.Severities = make([]VulnerabilityReportFilters_VulnerabilitySeverity, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v VulnerabilityReportFilters_VulnerabilitySeverity
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowReportService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VulnerabilityReportFilters_VulnerabilitySeverity(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Severities = append(m.Severities, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severities", wireType)
+			}
+		case 3:
+			if wireType == 0 {
+				var v VulnerabilityReportFilters_ImageType
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VulnerabilityReportFilters_ImageType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.ImageTypes = append(m.ImageTypes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthReportService
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthReportService
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.ImageTypes) == 0 {
+					m.ImageTypes = make([]VulnerabilityReportFilters_ImageType, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v VulnerabilityReportFilters_ImageType
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowReportService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VulnerabilityReportFilters_ImageType(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.ImageTypes = append(m.ImageTypes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageTypes", wireType)
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllVuln", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CvesSince = &VulnerabilityReportFilters_AllVuln{b}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SinceLastSentScheduledReport", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CvesSince = &VulnerabilityReportFilters_SinceLastSentScheduledReport{b}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SinceStartDate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &types.Timestamp{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.CvesSince = &VulnerabilityReportFilters_SinceStartDate{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ReportSchedule) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ReportSchedule: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ReportSchedule: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IntervalType", wireType)
+			}
+			m.IntervalType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.IntervalType |= ReportSchedule_IntervalType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hour", wireType)
+			}
+			m.Hour = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Hour |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Minute", wireType)
+			}
+			m.Minute = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Minute |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DaysOfWeek", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ReportSchedule_DaysOfWeek{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Interval = &ReportSchedule_DaysOfWeek_{v}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DaysOfMonth", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ReportSchedule_DaysOfMonth{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Interval = &ReportSchedule_DaysOfMonth_{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ReportSchedule_DaysOfWeek) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DaysOfWeek: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DaysOfWeek: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType == 0 {
+				var v int32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Days = append(m.Days, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthReportService
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthReportService
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.Days) == 0 {
+					m.Days = make([]int32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v int32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowReportService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= int32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Days = append(m.Days, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Days", wireType)
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ReportSchedule_DaysOfMonth) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DaysOfMonth: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DaysOfMonth: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType == 0 {
+				var v int32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Days = append(m.Days, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthReportService
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthReportService
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.Days) == 0 {
+					m.Days = make([]int32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v int32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowReportService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= int32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Days = append(m.Days, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Days", wireType)
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResourceScope) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResourceScope: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResourceScope: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectionScope", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &CollectionReference{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.ScopeReference = &ResourceScope_CollectionScope{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CollectionReference) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CollectionReference: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CollectionReference: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CollectionId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectionName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CollectionName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NotifierConfiguration) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NotifierConfiguration: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NotifierConfiguration: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EmailConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &EmailNotifierConfiguration{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.NotifierConfig = &NotifierConfiguration_EmailConfig{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NotifierName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NotifierName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EmailNotifierConfiguration) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EmailNotifierConfiguration: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EmailNotifierConfiguration: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NotifierId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NotifierId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MailingLists", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MailingLists = append(m.MailingLists, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListReportConfigurationsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListReportConfigurationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportConfigs", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ReportConfigs = append(m.ReportConfigs, &ReportConfiguration{})
+			if err := m.ReportConfigs[len(m.ReportConfigs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CountReportConfigurationsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CountReportConfigurationsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CountReportConfigurationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
+			}
+			m.Count = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Count |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *GetReportHistoryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
