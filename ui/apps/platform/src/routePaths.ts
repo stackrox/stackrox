@@ -125,7 +125,21 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     [compliancePath]: {
-        resourceAccessRequirements: everyResource(['Compliance']),
+        resourceAccessRequirements: everyResource([
+            'Alert', // for Deployment
+            'Cluster',
+            'Compliance',
+            'Deployment',
+            'Image', // for Deployment and Namespace
+            'K8sRole', // for Cluster
+            'K8sRoleBinding', // for Cluster
+            'K8sSubject', // for Cluster
+            'Namespace',
+            'NetworkPolicy', // for Namespace
+            'Node',
+            'Secret', // for Deployment and Namespace
+            'ServiceAccount', // for Cluster and Deployment
+        ]),
     },
     [complianceEnhancedBasePath]: {
         resourceAccessRequirements: everyResource(['Compliance']),
