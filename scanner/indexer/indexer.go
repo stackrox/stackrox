@@ -113,7 +113,6 @@ func (i *indexerImpl) IndexContainerImage(
 	}
 	zlog.Info(ctx).
 		Str("image_reference", imgRef.String()).
-		Str("registry", imgRef.Context().RegistryStr()).
 		Int("layers_count", len(imgLayers)).
 		Msg("retrieving layers to populate container image manifest")
 	for _, layer := range imgLayers {
