@@ -3,6 +3,7 @@ package v2
 import (
 	"context"
 
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
@@ -24,7 +25,7 @@ type Service interface {
 // New returns a new instance of the service.
 func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
-	scheduler schedulerV2.Scheduler) Service {
+	scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore) Service {
 	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
@@ -34,5 +35,6 @@ func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotD
 		collectionDatastore: collectionDatastore,
 		notifierDatastore:   notifierDatastore,
 		scheduler:           scheduler,
+		blobStore:           blobStore,
 	}
 }
