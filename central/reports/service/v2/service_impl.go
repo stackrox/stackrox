@@ -60,6 +60,7 @@ var (
 			"/v2.ReportService/RunReport",
 			"/v2.ReportService/CancelReport",
 			"/v2.ReportService/DownloadReport",
+			"/v2.ReportService/DeleteReport",
 		},
 	})
 )
@@ -393,4 +394,51 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 	}
 
 	return &apiV2.DownloadReportResponse{Data: buf.Bytes()}, nil
+}
+
+func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportRequest) (*apiV2.Empty, error) {
+	if req == nil || req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report job id")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error finding report snapshot with job ID %q.", req.GetId())
+	}
+
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%q'.", req.GetId())
+	}
+
+	if slimUser.GetId() != rep.GetRequester().GetId() {
+		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be deleted by a user who did not request the report.")
+	}
+
+	status := rep.GetReportStatus()
+	if status.GetReportNotificationMethod() != storage.ReportStatus_DOWNLOAD {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report job id %q did not generate a downloadable report and hence no report to delete.", req.GetId())
+	}
+
+	blobName := common.GetReportBlobPath(req.GetId(), rep.GetReportConfigurationId())
+	switch status.GetRunState() {
+	case storage.ReportStatus_FAILURE:
+		return nil, errors.Errorf("Report job %q has failed and no downloadable report to delete", req.GetId())
+	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
+		return nil, errors.Errorf("Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
+	}
+
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)),
+	)
+	if err = s.blobStore.Delete(ctx, blobName); err != nil {
+		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to delete downloadable report %q", req.GetId())
+	}
+	return &apiV2.Empty{}, nil
 }
