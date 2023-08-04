@@ -310,7 +310,7 @@ func (c *TestContext) run(t *testing.T, tr *testRun) {
 		c.runBare(t, tr.testCase)
 	} else {
 		if tr.permutation {
-			c.runWithResourcesPermutation(tr, t)
+			c.runWithResourcesPermutation(t, tr)
 		} else {
 			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
 				t.Fatalf(err.Error())
@@ -359,7 +359,7 @@ func (c *TestContext) runBare(t *testing.T, testCase TestCallback) {
 
 // runWithResourcesPermutation runs the test cases using `resources` similarly to `runWithResources` but it will run the
 // test case for each possible permutation of `resources` slice.
-func (c *TestContext) runWithResourcesPermutation(tr *testRun, t *testing.T) {
+func (c *TestContext) runWithResourcesPermutation(t *testing.T, tr *testRun) {
 	runPermutation(tr.resources, 0, func(f []K8sResourceInfo) {
 		newF := make([]K8sResourceInfo, len(f))
 		copy(newF, f)
