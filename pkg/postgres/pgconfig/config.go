@@ -32,7 +32,11 @@ func GetPostgresConfig() (map[string]string, *postgres.Config, error) {
 		return nil, nil, errors.Wrapf(err, "pgsql: could not load password file %q", DBPasswordFile)
 	}
 	// Add the password to the source to pass to get the pool config
-	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
+	source := centralConfig.CentralDB.Source
+	// Add the password to the source to pass to get the pool config
+	if !strings.HasPrefix(source, "postgres") {
+		source = fmt.Sprintf("%s password=%s", source, password)
+	}
 
 	config, err := postgres.ParseConfig(source)
 	if err != nil {
