@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/reportconfigurations/search"
-	pgStore "github.com/stackrox/rox/central/reportconfigurations/store/postgres"
+	"github.com/stackrox/rox/central/reports/config/search"
+	pgStore "github.com/stackrox/rox/central/reports/config/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
