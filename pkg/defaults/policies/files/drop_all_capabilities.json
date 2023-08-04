@@ -1,0 +1,59 @@
+{
+  "id": "dd478ad6-b9c9-4abf-92e0-847408aecb8d",
+  "name": "Drop All Capabilities",
+  "description": "Alert when a deployment does not drop all capabilities.",
+  "rationale": "Since capabilities permit privileged operations, it is a recommended best practice to drop all capabilities that a deployment can have, and then add only the capabilities that the deployment needs.",
+  "remediation": "Ensure that the deployment manifest has drop: ALL in its security context.",
+  "disabled": true,
+  "categories": [
+    "DevOps Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on stackrox namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Drop Capabilities",
+          "values": [
+            {
+              "value": "ALL"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
