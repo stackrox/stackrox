@@ -75,4 +75,12 @@ helm install "${settings[@]}"
 echo "::add-mask::$ROX_ADMIN_PASSWORD"
 kubectl -n stackrox create secret generic access-rhacs --from-literal="username=${ROX_ADMIN_USERNAME}" --from-literal="password=${ROX_ADMIN_PASSWORD}" --from-literal="central_url=https://${CENTRAL_IP}":443
 
+export KUBE_BURNER_VERSION=1.4.3
 
+mkdir -p ./kube-burner
+
+url --silent --location "https://github.com/cloud-bulldozer/kube-burner/releases/download/v${KUBE_BURNER_VERSION}/kube-burner-${KUBE_BURNER_VERSION}-$(uname -s)-$(uname -m).tar.gz" --output "./kube-burner/kube-burner-${KUBE_BURNER_VERSION}.tar.gz"
+
+tar -zxvf "./kube-burner/kube-burner-${KUBE_BURNER_VERSION}.tar.gz" --directory ./kube-burner
+
+./scripts/repeate-kube-burner.sh ./kube-burner/kube-burner "STACKROX_DIR"/.github/workflows/other-configs/cluster-density-kube-burner.yml &
