@@ -56,7 +56,7 @@ Finally, Index Reports generated in the secured cluster will not be stored in th
 
 1. This method eliminates the need to store Index Reports in the central cluster for images obtained from the secured cluster. Instead, it distributes the workload of adding, storing, and retrieving Index Reports in the central Scanner's database across a large number of secured clusters connected to the Central.
 2. Re-scanning continues to rely on Deployment Resyncs.  That means images are only rescanned after a resync deployment message is sent to Sensor, and the image cache has expired.
-3. The new Matcher API opens the door for Scanner in Matcher mode to provide vulnerability matching with multi-tenancy, where multiple Central instances could connect to a single Matcher instance to create vulnerability reports on demand.
+3. The new Matcher API opens the door for Scanner in Matcher mode to provide vulnerability matching with multi-tenancy, where multiple Central instances could connect to a fleet of Matcher instances behind a load balancer backed by a DB to create vulnerability reports.
 4. The Node Scanning can be migrated to Scanner V4 using the new Matcher API and local scanning workflow, as long as it sends Index Reports to Central.
 5. In the event that the Central cluster is updated to a version with Scanner V4 enabled, but the secured cluster is still running Sensor based on Scanner V2, it's still feasible to detect vulnerabilities if there is at least one instance of Scanner V2 present in the Central cluster. This allows for a seamless transition to Scanner V4 while maintaining backward compatibility.
 6. The changes in the protos minimize the dependency on Scanner V2 protos, making it easy to remove them in the future.
