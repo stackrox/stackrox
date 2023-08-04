@@ -215,11 +215,8 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 			ScrapeUpdate: update,
 		},
 	}):
-		log.Infof("Inside select: Update channel has length: %i", len(c.updates))
 		return
 	}
-	log.Infof("Outside select: Update channel has length: %i", len(c.updates))
-	return
 }
 
 // Helper functions.
