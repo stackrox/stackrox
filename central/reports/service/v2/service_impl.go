@@ -17,8 +17,8 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -64,7 +64,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		return apiV2.RegisterReportServiceHandler(ctx, mux, conn)
 	}
 	return nil
@@ -113,14 +113,14 @@ func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-	if req == nil || req.GetReportConfigId() == "" {
+	if req == nil || req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
 	}
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	conjuncQuery := search.ConjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetReportConfigId()).ProtoQuery(), parsedQuery)
+	conjuncQuery := search.ConjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(), parsedQuery)
 	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjuncQuery)
 	if err != nil {
 		return nil, err

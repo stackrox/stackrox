@@ -8,7 +8,7 @@ import (
 
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,8 +31,8 @@ type ReportMetadataDatastoreTestSuite struct {
 }
 
 func (s *ReportMetadataDatastoreTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}

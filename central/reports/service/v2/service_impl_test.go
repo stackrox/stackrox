@@ -15,7 +15,7 @@ import (
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -46,8 +46,8 @@ type ReportServiceTestSuite struct {
 }
 
 func (suite *ReportServiceTestSuite) SetupSuite() {
-	suite.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	suite.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		suite.T().Skip("Skip test when reporting enhancements are disabled")
 		suite.T().SkipNow()
 	}
@@ -96,7 +96,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 	suite.reportSnapshotStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
-		ReportConfigId:   "test_report_config",
+		Id:               "test_report_config",
 		ReportParamQuery: emptyQuery,
 	}
 
@@ -106,7 +106,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 	assert.Equal(suite.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
 	req = &apiV2.GetReportHistoryRequest{
-		ReportConfigId:   "",
+		Id:               "",
 		ReportParamQuery: emptyQuery,
 	}
 
@@ -115,7 +115,7 @@ func (suite *ReportServiceTestSuite) TestGetReportHistory() {
 
 	query := &apiV2.RawQuery{Query: "Report Name:test_report"}
 	req = &apiV2.GetReportHistoryRequest{
-		ReportConfigId:   "test_report_config",
+		Id:               "test_report_config",
 		ReportParamQuery: query,
 	}
 
