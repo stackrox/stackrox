@@ -101,7 +101,7 @@ func (i *indexerImpl) IndexContainerImage(
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
-		return nil, fmt.Errorf("parsing image URL: %w", err)
+		return nil, fmt.Errorf("parsing image URL %q: %w", imageURL, err)
 	}
 	imgLayers, err := getContainerImageLayers(ctx, imgRef, o)
 	if err != nil {
