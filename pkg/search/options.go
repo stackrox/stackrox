@@ -293,6 +293,7 @@ var (
 	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
+	UserID                      = newFieldLabel("User ID")
 	UserName                    = newFieldLabel("User Name")
 
 	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")

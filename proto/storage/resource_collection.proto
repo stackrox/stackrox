@@ -21,8 +21,8 @@ message ResourceCollection {
   string description                                       = 3;
   google.protobuf.Timestamp created_at                     = 4;
   google.protobuf.Timestamp last_updated                   = 5;
-  SlimUser created_by                                      = 6;
-  SlimUser updated_by                                      = 7;
+  SlimUser created_by                                      = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+  SlimUser updated_by                                      = 7 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
   // `resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint.
   repeated ResourceSelector resource_selectors             = 8;
   repeated EmbeddedResourceCollection embedded_collections = 9;
