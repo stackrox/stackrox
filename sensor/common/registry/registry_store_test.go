@@ -316,7 +316,6 @@ func TestDataRaceAtCleanup(_ *testing.T) {
 				regStore.IsLocal(&storage.ImageName{})
 				regStore.GetMatchingCentralRegistryIntegrations(&storage.ImageName{})
 				_, _ = regStore.GetGlobalRegistryForImage(&storage.ImageName{})
-				regStore.GetAllMirrorSets()
 			}
 		}
 	}()
