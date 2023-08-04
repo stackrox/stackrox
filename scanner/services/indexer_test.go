@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
@@ -67,7 +66,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 	s.Equal(&v4.IndexReport{HashId: hashID}, r)
 }
 
-func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
+func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError() {
 	s.setupMock(0, &claircore.IndexReport{}, nil)
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
@@ -76,11 +75,15 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupMock(0, nil, errors.New(`indexer said "ouch"`))
-	req := createRequest(hashID, imageURL, "")
+	iURL := "https://foobar:443/image:sha256@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106"
+	s.indexerMock.
+		EXPECT().
+		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(0)).
+		Return(&claircore.IndexReport{}, nil)
+	req := createRequest(hashID, iURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
-	s.ErrorContains(err, "ouch")
-	s.Nil(r)
+	s.NoError(err)
+	s.Equal(&v4.IndexReport{HashId: hashID}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
