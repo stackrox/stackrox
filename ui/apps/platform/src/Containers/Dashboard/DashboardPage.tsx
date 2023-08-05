@@ -1,5 +1,8 @@
 import React, { CSSProperties } from 'react';
 import { Divider, Flex, FlexItem, Gallery, PageSection, Text, Title } from '@patternfly/react-core';
+
+import usePermissions from 'hooks/usePermissions';
+
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
@@ -15,6 +18,12 @@ import ComplianceLevelsByStandard from './Widgets/ComplianceLevelsByStandard';
 const minWidgetWidth = 510;
 
 function DashboardPage() {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAlert = hasReadAccess('Alert');
+    const hasReadAccessForCompliance = hasReadAccess('Compliance');
+    const hasReadAccessForDeployment = hasReadAccess('Deployment');
+    const hasReadAccessForImage = hasReadAccess('Image');
+
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
@@ -53,12 +62,12 @@ function DashboardPage() {
                     hasGutter
                     minWidths={{ default: `${minWidgetWidth}px` }}
                 >
-                    <ViolationsByPolicySeverity />
-                    <ImagesAtMostRisk />
-                    <DeploymentsAtMostRisk />
-                    <AgingImages />
-                    <ViolationsByPolicyCategory />
-                    <ComplianceLevelsByStandard />
+                    {hasReadAccessForAlert && <ViolationsByPolicySeverity />}
+                    {hasReadAccessForImage && <ImagesAtMostRisk />}
+                    {hasReadAccessForDeployment && <DeploymentsAtMostRisk />}
+                    {hasReadAccessForImage && <AgingImages />}
+                    {hasReadAccessForAlert && <ViolationsByPolicyCategory />}
+                    {hasReadAccessForCompliance && <ComplianceLevelsByStandard />}
                 </Gallery>
             </PageSection>
         </>
