@@ -18,8 +18,10 @@ import {
     Tab,
     TabTitleText,
     TabTitleIcon,
+    TabAction,
+    Popover,
 } from '@patternfly/react-core';
-import { CaretDownIcon, DownloadIcon, HistoryIcon, HomeIcon } from '@patternfly/react-icons';
+import { CaretDownIcon, ClipboardCheckIcon, HelpIcon, HomeIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
@@ -35,7 +37,7 @@ import DeleteReportModal from '../components/DeleteReportModal';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
-import RunHistory from './RunHistory';
+import ReportJobs from './ReportJobs';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -218,22 +220,41 @@ function ViewVulnReportPage() {
                     </Tab>
                     <Tab
                         eventKey={1}
-                        title={<TabTitle icon={<HistoryIcon />}>Run history</TabTitle>}
-                        aria-label="Run history tab"
+                        title={<TabTitle icon={<ClipboardCheckIcon />}>All report jobs</TabTitle>}
+                        aria-label="Report jobs tab"
+                        actions={
+                            <>
+                                <Popover
+                                    aria-label="All report jobs help text"
+                                    headerContent={<div>All report jobs</div>}
+                                    bodyContent={
+                                        <div>
+                                            This function displays the requested jobs from different
+                                            users and includes their statuses accordingly. While the
+                                            function provides the ability to monitor and audit your
+                                            active and past requested jobs, we suggest configuring
+                                            the &quot;Vulnerability report retention limit&quot;
+                                            based on your needs in order to ensure optimal user
+                                            experience. All the report jobs will be kept in your
+                                            system until they exceed the limit set by you.
+                                        </div>
+                                    }
+                                    enableFlip
+                                    position="top"
+                                >
+                                    <TabAction aria-label="Help for report jobs tab">
+                                        <HelpIcon />
+                                    </TabAction>
+                                </Popover>
+                            </>
+                        }
                     >
                         <PageSection
                             padding={{ default: 'noPadding' }}
                             className="pf-u-py-lg pf-u-px-lg"
                         >
-                            <RunHistory reportId={reportId} />
+                            <ReportJobs reportId={reportId} />
                         </PageSection>
-                    </Tab>
-                    <Tab
-                        eventKey={2}
-                        title={<TabTitle icon={<DownloadIcon />}>Downloadable report</TabTitle>}
-                        aria-label="Downloadable report tab"
-                    >
-                        <div />
                     </Tab>
                 </Tabs>
             </PageSection>

@@ -103,7 +103,8 @@ export type ReportHistoryResponse = {
 };
 
 export type ReportSnapshot = {
-    id: string;
+    reportConfigId: string;
+    reportJobId: string;
     name: string;
     description: string;
     vulnReportFilters: VulnerabilityReportFilters;
@@ -112,6 +113,7 @@ export type ReportSnapshot = {
     reportStatus: ReportStatus;
     notifiers: NotifierConfiguration[];
     user: SlimUser;
+    isDownloadAvailable: boolean;
 };
 
 export type CollectionSnapshot = {
