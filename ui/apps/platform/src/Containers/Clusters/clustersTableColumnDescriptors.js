@@ -19,7 +19,7 @@ import OperatorIndicator from './Components/OperatorIndicator';
 
 export function getColumnsForClusters({
     clusterIdToRetentionInfo,
-    hasReadWriteAccessForCluster,
+    hasWriteAccessForCluster,
     metadata,
     rowActions,
 }) {
@@ -120,7 +120,7 @@ export function getColumnsForClusters({
         },
     ];
 
-    if (hasReadWriteAccessForCluster) {
+    if (hasWriteAccessForCluster) {
         clusterColumns.push({
             Header: '',
             accessor: '',

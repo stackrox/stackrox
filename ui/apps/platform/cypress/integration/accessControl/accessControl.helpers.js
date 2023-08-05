@@ -151,8 +151,6 @@ export function assertAccessControlEntityPage(entitiesKey) {
 
     // Negative assertion.
 
-    cy.get('h1').should('not.exist');
-
     entitiesKeys.forEach((entitiesKeyAsserted) => {
         const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
 
@@ -166,7 +164,7 @@ export function assertAccessControlEntityDoesNotExist(entitiesKey) {
     cy.get('h2').should('not.exist');
     cy.get('li.pf-c-breadcrumb__item:nth-child(2)').should('not.exist');
 
-    cy.get('.pf-c-empty-state h4').should(
+    cy.get('.pf-c-empty-state h1').should(
         'have.text',
         `${entityTitleMap[entitiesKey]} does not exist`
     );
@@ -198,8 +196,6 @@ export function visitAccessControlEntitiesWithStaticResponseForPermissions(
 ) {
     const entitiesPath = getEntitiesPath(entitiesKey);
     visitWithStaticResponseForPermissions(entitiesPath, staticResponseForPermissions);
-
-    cy.get(`h1:contains("${containerTitle}")`);
 }
 
 /**

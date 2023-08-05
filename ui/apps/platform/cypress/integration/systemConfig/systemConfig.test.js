@@ -65,13 +65,17 @@ describe('System Configuration', () => {
     });
 
     it('should not render Edit button if READ_ACCESS to resource', () => {
-        const staticResponseForPermissions = {
-            fixture: 'auth/mypermissionsMinimalAccess.json',
-        };
+        cy.fixture('auth/mypermissionsMinimalAccess.json').then(({ resourceToAccess }) => {
+            const staticResponseForPermissions = {
+                body: {
+                    resourceToAccess: { ...resourceToAccess, Administration: 'READ_ACCESS' },
+                },
+            };
 
-        visitSystemConfigurationWithStaticResponseForPermissions(staticResponseForPermissions);
+            visitSystemConfigurationWithStaticResponseForPermissions(staticResponseForPermissions);
 
-        cy.get('button:contains("Edit")').should('not.exist');
+            cy.get('button:contains("Edit")').should('not.exist');
+        });
     });
 
     it('should allow the user to set data retention to "never delete"', () => {

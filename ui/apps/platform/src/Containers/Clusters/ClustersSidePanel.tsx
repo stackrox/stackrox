@@ -11,6 +11,7 @@ import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
+import usePermissions from 'hooks/usePermissions';
 import {
     fetchClusterWithRetentionInformation,
     saveCluster,
@@ -60,6 +61,9 @@ type MessageState = {
 };
 
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
     const metadata = useMetadata();
     const { analyticsTrack } = useAnalytics();
 
@@ -291,19 +295,20 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     // @TODO: improve error handling when adding support for new clusters
     const isForm = wizardStep === 'FORM';
 
-    const panelButtons = isBlocked ? (
-        <div />
-    ) : (
-        <Button
-            variant={isForm ? 'secondary' : 'primary'}
-            isSmall
-            className="pf-u-mr-md"
-            onClick={onNext}
-            disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
-        >
-            {isForm ? 'Next' : 'Finish'}
-        </Button>
-    );
+    const panelButtons =
+        !hasWriteAccessForCluster || isBlocked ? (
+            <div />
+        ) : (
+            <Button
+                variant={isForm ? 'secondary' : 'primary'}
+                isSmall
+                className="pf-u-mr-md"
+                onClick={onNext}
+                disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
+            >
+                {isForm ? 'Next' : 'Finish'}
+            </Button>
+        );
 
     return (
         <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
