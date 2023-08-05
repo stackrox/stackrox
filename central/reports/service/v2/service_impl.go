@@ -296,7 +296,7 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 
 	err = verifyNoUserSearchLabels(parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(

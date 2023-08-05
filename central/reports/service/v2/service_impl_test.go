@@ -666,15 +666,8 @@ func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
 		Id:               "",
 		ReportParamQuery: emptyQuery,
 	}
-
 	_, err = s.service.GetMyReportHistory(s.getContextForUser(userA), req)
 	assert.Error(s.T(), err)
-
-	query := &apiV2.RawQuery{Query: "Report Name:test_report"}
-	req = &apiV2.GetReportHistoryRequest{
-		Id:               "test_report_config",
-		ReportParamQuery: query,
-	}
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return(nil, nil).AnyTimes()
