@@ -8,6 +8,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 
+import common.Constants
 import objects.Deployment
 import services.CVEService
 import services.ClusterService
@@ -18,11 +19,16 @@ import util.ApplicationHealth
 import util.ChaosMonkey
 import util.Timer
 
+import org.spockframework.runtime.model.parallel.ResourceAccessMode
+import spock.lang.ResourceLock
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Timeout
 import spock.lang.Unroll
 
+// @ResourceLock() - Ensures that no tests that modify scanner integrations run
+// in parallel with this test.
+@ResourceLock(value = Constants.RESOURCE_SCANNER_INTEGRATION, mode = ResourceAccessMode.READ)
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private String clusterId
@@ -43,10 +49,11 @@ class AdmissionControllerTest extends BaseSpecification {
     static final private String BUSYBOX_BYPASS           = "busybox-bypass"
     static final private String BUSYBOX_LATEST_TAG_IMAGE = "quay.io/rhacs-eng/qa-multi-arch-busybox:latest"
 
+    private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
     private final static String LATEST_TAG = "Latest tag"
-    private final static String LATEST_TAG_FOR_TEST = "Latest tag (test)"
+    private final static String LATEST_TAG_FOR_TEST = "Latest tag ${CLONED_POLICY_SUFFIX}"
     private final static String SEVERITY = "Fixable Severity at least Important"
-    private final static String SEVERITY_FOR_TEST = "Fixable Severity at least Important (test)"
+    private final static String SEVERITY_FOR_TEST = "Fixable Severity at least Important ${CLONED_POLICY_SUFFIX}"
 
     static final private Deployment NGINX_DEPLOYMENT = new Deployment()
             .setName(NGINX)
@@ -83,7 +90,7 @@ class AdmissionControllerTest extends BaseSpecification {
         for (policy : [Services.getPolicyByName(LATEST_TAG), Services.getPolicyByName(SEVERITY)]) {
             def scopedPolicyForTest = policy.toBuilder()
                 .clearId()
-                .setName(policy.getName() + " (test)")
+                .setName(policy.getName() + " ${CLONED_POLICY_SUFFIX}")
                 .clearScope()
                 .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
                 .clearEnforcementActions()

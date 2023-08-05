@@ -38,6 +38,15 @@ class PolicyService extends BaseService {
         return policyID
     }
 
+    static PolicyOuterClass.Policy createAndFetchPolicy(PolicyOuterClass.Policy policy) {
+        return getPolicyClient().postPolicy(
+                PolicyServiceOuterClass.PostPolicyRequest.newBuilder().
+                        setPolicy(policy).
+                        setEnableStrictValidation(true).
+                        build()
+        )
+    }
+
     static deletePolicy(String policyID) {
         try {
             getPolicyClient().deletePolicy(
