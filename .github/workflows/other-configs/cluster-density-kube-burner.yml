@@ -28,19 +28,19 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
 
-      - objectTemplate: /home/jvirtane/projects/performance-scale-tests/tests/kube-burner/cluster-density/templates/deployment.yml
+      - objectTemplate: STACKROX_DIR/.github/workflows/other-configs/templates/deployment.yml
         replicas: 5
         inputVars:
           podReplicas: 2
 
-      - objectTemplate: /home/jvirtane/projects/performance-scale-tests/tests/kube-burner/cluster-density/templates/service.yml
+      - objectTemplate: STACKROX_DIR/.github/workflows/other-configs/templates/service.yml
         replicas: 5
 
-      - objectTemplate: /home/jvirtane/projects/performance-scale-tests/tests/kube-burner/cluster-density/templates/route.yml
+      - objectTemplate: STACKROX_DIR/.github/workflows/other-configs/templates/route.yml
         replicas: 1
 
-      - objectTemplate: /home/jvirtane/projects/performance-scale-tests/tests/kube-burner/cluster-density/templates/secret.yml
+      - objectTemplate: STACKROX_DIR/.github/workflows/other-configs/templates/secret.yml
         replicas: 10
 
-      - objectTemplate: /home/jvirtane/projects/performance-scale-tests/tests/kube-burner/cluster-density/templates/configmap.yml
+      - objectTemplate: STACKROX_DIR/.github/workflows/other-configs/templates/configmap.yml
         replicas: 10
