@@ -41,3 +41,5 @@ echo "rox_password=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
 echo "cluster_name=${NAME//./-}" >> "$GITHUB_OUTPUT"
 
 printf "Long-running GKE cluster %s has been patched.\nAccess it by running \`./scripts/release-tools/setup-central-access.sh %s\` from your local machine." "${NAME//./-}" "${NAME//./-}" >> "$GITHUB_STEP_SUMMARY"
+
+echo "central-password='${ROX_ADMIN_PASSWORD}'" >> "$GITHUB_OUTPUT"
