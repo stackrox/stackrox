@@ -43,6 +43,10 @@ export type RunHistoryProps = {
 function RunHistory({ reportId }: RunHistoryProps) {
     const { reportSnapshots, isLoading, error } = useFetchReportHistory({
         id: reportId,
+        // @TODO: Replace these with actual variables
+        query: '',
+        page: 1,
+        perPage: 10,
     });
     const expandedRowSet = useSet<string>();
 

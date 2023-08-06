@@ -3,12 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
     fetchReportConfigurations,
-    fetchReportStatus,
-    fetchReportLastRunStatus,
     fetchReportConfigurationsCount,
+    fetchReportHistory,
 } from 'services/ReportsService';
 
-import { ReportStatus } from 'services/ReportsService.types';
 import { SearchFilter } from 'types/search';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
@@ -71,21 +69,20 @@ function useFetchReports({
             });
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
-                    // @TODO: The API returns a 500 when there's no report status. For now we'll do a try/catch, but
-                    // we should wait for backend to change this to a 404 or a 200 with a proper message
-                    let reportStatus: ReportStatus | null = null;
-                    try {
-                        reportStatus = await fetchReportStatus(reportConfiguration.id);
-                    } catch (error) {
-                        reportStatus = null;
-                    }
-                    const reportLastRunStatus = await fetchReportLastRunStatus(
-                        reportConfiguration.id
+                    // Query for the current user's last report job
+                    const query = getRequestQueryString({
+                        'Run state': ['PENDING', 'WAITING'],
+                    });
+                    // @TODO: Replace this API with the myhistory API when backend adds it in
+                    const reportSnapshot = await fetchReportHistory(
+                        reportConfiguration.id,
+                        query,
+                        1,
+                        1
                     );
                     return {
                         ...reportConfiguration,
-                        reportStatus,
-                        reportLastRunStatus,
+                        reportSnapshot: reportSnapshot?.[0] || null,
                     };
                 })
             );

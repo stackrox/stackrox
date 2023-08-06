@@ -39,8 +39,7 @@ import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import useURLSearch from 'hooks/useURLSearch';
 import HelpIconTh from './HelpIconTh';
-import LastRunStatusState from './LastRunStatusState';
-import LastRunState from './LastRunState';
+import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteReportModal from '../components/DeleteReportModal';
 
 const CreateReportsButton = () => {
@@ -192,12 +191,54 @@ function VulnReportsPage() {
                                     <Thead noWrap>
                                         <Tr>
                                             <Th>Report</Th>
-                                            <HelpIconTh tooltip="A set of user-configured rules for selecting deployments as part of the report scope">
+                                            <HelpIconTh
+                                                popoverTitle="Collection"
+                                                popoverContent={
+                                                    <div>
+                                                        A set of user-configured rules for selecting
+                                                        deployments as part of the report scope
+                                                    </div>
+                                                }
+                                            >
                                                 Collection
                                             </HelpIconTh>
-                                            <Th>Last run status</Th>
-                                            <HelpIconTh tooltip="The report that was last run by a schedule or an on-demand action including 'send report now' and 'generate a downloadable report'">
-                                                Last run
+                                            <Th>Description</Th>
+                                            <HelpIconTh
+                                                popoverTitle="My active job status"
+                                                popoverContent={
+                                                    <Flex
+                                                        direction={{ default: 'column' }}
+                                                        spaceItems={{ default: 'spaceItemsMd' }}
+                                                    >
+                                                        <FlexItem>
+                                                            <p>
+                                                                The status of your last requested
+                                                                job from the active job queue. An
+                                                                active job queue includes any
+                                                                requested job with the status of
+                                                                preparing or waiting until completed
+                                                            </p>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <p>Preparing:</p>
+                                                            <p>
+                                                                Your last requested job is still
+                                                                being processed
+                                                            </p>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <p>Waiting:</p>
+                                                            <p>
+                                                                Your last requested job is in the
+                                                                queue and waiting to be processed
+                                                                since other users requested their
+                                                                jobs before you.
+                                                            </p>
+                                                        </FlexItem>
+                                                    </Flex>
+                                                }
+                                            >
+                                                My active job status
                                             </HelpIconTh>
                                             <Td />
                                         </Tr>
@@ -285,6 +326,12 @@ function VulnReportsPage() {
                                                 reportId: report.id,
                                             }
                                         ) as string;
+                                        const isReportStatusPending = !!(
+                                            report.reportSnapshot?.reportStatus.runState ===
+                                                'PREPARING' ||
+                                            report.reportSnapshot?.reportStatus.runState ===
+                                                'WAITING'
+                                        );
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -292,16 +339,24 @@ function VulnReportsPage() {
                                                     event.preventDefault();
                                                     history.push(`${vulnReportURL}?action=edit`);
                                                 },
+                                                isDisabled: isReportStatusPending,
                                             },
                                             {
                                                 isSeparator: true,
                                             },
                                             {
                                                 title: 'Send report now',
+                                                description:
+                                                    report.notifiers.length === 0
+                                                        ? 'No delivery destinations set'
+                                                        : '',
                                                 onClick: (event) => {
                                                     event.preventDefault();
                                                     runReport(report.id, 'EMAIL');
                                                 },
+                                                isDisabled:
+                                                    isReportStatusPending ||
+                                                    report.notifiers.length === 0,
                                             },
                                             {
                                                 title: 'Generate download',
@@ -309,6 +364,7 @@ function VulnReportsPage() {
                                                     event.preventDefault();
                                                     runReport(report.id, 'DOWNLOAD');
                                                 },
+                                                isDisabled: isReportStatusPending,
                                             },
                                             {
                                                 title: 'Clone report',
@@ -322,7 +378,13 @@ function VulnReportsPage() {
                                             },
                                             {
                                                 title: (
-                                                    <span className="pf-u-danger-color-100">
+                                                    <span
+                                                        className={
+                                                            !isReportStatusPending
+                                                                ? 'pf-u-danger-color-100'
+                                                                : ''
+                                                        }
+                                                    >
                                                         Delete report
                                                     </span>
                                                 ),
@@ -330,6 +392,7 @@ function VulnReportsPage() {
                                                     event.preventDefault();
                                                     openDeleteModal(report.id);
                                                 },
+                                                isDisabled: isReportStatusPending,
                                             },
                                         ];
                                         return (
@@ -352,16 +415,12 @@ function VulnReportsPage() {
                                                                 .collectionName
                                                         }
                                                     </Td>
+                                                    <Td>{report.description || '-'}</Td>
                                                     <Td>
-                                                        <LastRunStatusState
+                                                        <MyActiveJobStatus
                                                             reportStatus={
-                                                                report.reportLastRunStatus
+                                                                report.reportSnapshot?.reportStatus
                                                             }
-                                                        />
-                                                    </Td>
-                                                    <Td>
-                                                        <LastRunState
-                                                            reportStatus={report.reportStatus}
                                                         />
                                                     </Td>
                                                     <Td isActionCell>
