@@ -301,7 +301,7 @@ class GCRImageIntegration implements ImageIntegration {
                 project: "stackrox-ci",
                 endpoint: "us.gcr.io",
                 includeScanner: true,
-                serviceAccount: "gcr", //Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
                 skipTestIntegration: false,
         ]
         Map args = defaultArgs + customArgs
