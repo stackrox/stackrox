@@ -103,18 +103,18 @@ func (mr *MockSchedulerMockRecorder) Stop() *gomock.Call {
 }
 
 // SubmitReportRequest mocks base method.
-func (m *MockScheduler) SubmitReportRequest(request *reportgenerator.ReportRequest, reSubmission bool) (string, error) {
+func (m *MockScheduler) SubmitReportRequest(ctx context.Context, request *reportgenerator.ReportRequest, reSubmission bool) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitReportRequest", request, reSubmission)
+	ret := m.ctrl.Call(m, "SubmitReportRequest", ctx, request, reSubmission)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitReportRequest indicates an expected call of SubmitReportRequest.
-func (mr *MockSchedulerMockRecorder) SubmitReportRequest(request, reSubmission interface{}) *gomock.Call {
+func (mr *MockSchedulerMockRecorder) SubmitReportRequest(ctx, request, reSubmission interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockScheduler)(nil).SubmitReportRequest), request, reSubmission)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockScheduler)(nil).SubmitReportRequest), ctx, request, reSubmission)
 }
 
 // UpsertReportSchedule mocks base method.

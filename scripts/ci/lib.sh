@@ -184,21 +184,17 @@ push_image_manifest_lists() {
 
     registry_rw_login "$registry"
     for image in "${main_image_set[@]}"; do
-         "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
-          if [[ "$push_context" == "merge-to-master" ]]; then
-              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
-          fi
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+        if [[ "$push_context" == "merge-to-master" ]]; then
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
+        fi
     done
 
     # Push manifest lists for scanner and collector for amd64 only
     local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
     for image in "${amd64_image_set[@]}"; do
-         "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
-          if [[ "$push_context" == "merge-to-master" ]]; then
-              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "amd64" | cat
-          fi
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
     done
-
 }
 
 push_main_image_set() {

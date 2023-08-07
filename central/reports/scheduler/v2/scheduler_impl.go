@@ -10,9 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
@@ -21,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,7 +33,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
+	scheduledCtx = sac.WithAllAccess(context.Background())
 )
 
 type scheduler struct {
@@ -130,8 +128,8 @@ func (s *scheduler) Start() {
 		log.Error("Scheduler already running")
 		return
 	}
-	s.queuePendingReports(scheduledCtx)
-	s.queueScheduledReports(scheduledCtx)
+	s.queuePendingReports()
+	s.queueScheduledReports()
 	go s.runReports()
 }
 
@@ -266,22 +264,21 @@ func (s *scheduler) tryRemoveFromRequestQueue(reportID string) bool {
 }
 
 func (s *scheduler) CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error) {
-	return s.doesUserHavePendingReport(scheduledCtx, reportConfig.GetId(), user.GetId())
+	return s.doesUserHavePendingReport(reportConfig.GetId(), user.GetId())
 }
 
 // SubmitReportRequest submits a report execution request. The report request can be either for an on demand report or a scheduled report.
 // If there is already a pending report request submitted by the same user for the same report config, this request will be denied.
 // However, there can be multiple pending report requests for same configuration by different users.
-func (s *scheduler) SubmitReportRequest(request *reportGen.ReportRequest, reSubmission bool) (string, error) {
+func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.ReportRequest, reSubmission bool) (string, error) {
 	err := reportGen.ValidateReportRequest(request)
 	if err != nil {
 		return "", err
 	}
-	request.Ctx = selectContext(request)
 
 	request.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
 	request.ReportSnapshot.ReportStatus.QueuedAt = types.TimestampNow()
-	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(request.Ctx, request.ReportSnapshot, reSubmission)
+	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
 	if err != nil {
 		return "", err
 	}
@@ -306,52 +303,47 @@ func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) fun
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
-		_, err = s.SubmitReportRequest(reportReq, false)
+		_, err = s.SubmitReportRequest(scheduledCtx, reportReq, false)
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
 	}
 }
 
-func (s *scheduler) queuePendingReports(ctx context.Context) {
+func (s *scheduler) queuePendingReports() {
 	pendingReportsQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ReportQueuedTime))).
 		ProtoQuery()
-	pendingReports, err := s.reportSnapshotStore.SearchReportSnapshots(ctx, pendingReportsQuery)
+	pendingReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, pendingReportsQuery)
 	if err != nil {
 		log.Errorf("Error finding pending reports: %s", err)
 		return
 	}
 
 	for _, snap := range pendingReports {
-		reportConfig, found, err := s.reportConfigDatastore.GetReportConfiguration(ctx, snap.GetReportConfigurationId())
+		reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigDatastore, s.collectionDatastore, s.notifierDatastore,
+			snap.GetReportConfigurationId(), snap.GetRequester(), snap.GetReportStatus().GetReportNotificationMethod(),
+			snap.GetReportStatus().GetReportRequestType())
 		if err != nil {
-			log.Errorf("Error rescheduling pending report for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
+			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 			continue
 		}
-		if !found {
-			log.Warnf("Report configuration with ID %s had pending reports but the configuration no longer exists",
-				snap.GetReportConfigurationId())
-			continue
-		}
-		_, err = s.SubmitReportRequest(&reportGen.ReportRequest{
-			ReportConfig:   reportConfig,
-			ReportSnapshot: snap,
-		}, true)
+		_, err = s.SubmitReportRequest(scheduledCtx, reportReq, true)
 		if err != nil {
-			log.Errorf("Error rescheduling pending report job for report config '%s': %s", snap.GetReportConfigurationId(), err)
+			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 		}
 	}
 }
 
-func (s *scheduler) queueScheduledReports(ctx context.Context) {
+func (s *scheduler) queueScheduledReports() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).
 		ProtoQuery()
-	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(ctx, query)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
 	if err != nil {
 		log.Errorf("Error finding scheduled reports: %s", err)
+		return
 	}
 	for _, rc := range reportConfigs {
 		if rc.GetSchedule() != nil {
@@ -392,7 +384,7 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	defer s.dbLock.Unlock()
 
 	if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-		userHasAnotherReport, err := s.doesUserHavePendingReport(ctx, snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+		userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
 		if err != nil {
 			return "", err
 		}
@@ -415,13 +407,13 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	return snapshot.GetReportId(), nil
 }
 
-func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID string, userID string) (bool, error) {
+func (s *scheduler) doesUserHavePendingReport(configID string, userID string) (bool, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, configID).
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
 		ProtoQuery()
-	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(ctx, query)
+	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, query)
 	if err != nil {
 		return false, err
 	}
@@ -431,11 +423,4 @@ func (s *scheduler) doesUserHavePendingReport(ctx context.Context, configID stri
 		}
 	}
 	return false, nil
-}
-
-func selectContext(req *reportGen.ReportRequest) context.Context {
-	if req.Ctx == nil {
-		return scheduledCtx
-	}
-	return req.Ctx
 }

@@ -41,6 +41,7 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
 func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
+	// TODO ROX-18773 : Add SAC query filter on deploymentsQuery to scope the results by report requester.
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
 	if err != nil {
 		return nil, err
