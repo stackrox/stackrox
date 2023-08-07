@@ -33,31 +33,26 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// TODO:
-// - change PullSources to return ACS specific pull sources
-// - Test PullSources when no registries.conf exists - that error does not mean failure in our scenario
-
 // Store defines an interface for interacting with registry mirrors.
 type Store interface {
 	Cleanup()
 
-	UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy)
-	DeleteImageContentSourcePolicy(uid types.UID)
+	UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error
+	DeleteImageContentSourcePolicy(uid types.UID) error
 
-	UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet)
-	DeleteImageDigestMirrorSet(uid types.UID)
+	UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) error
+	DeleteImageDigestMirrorSet(uid types.UID) error
 
-	UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet)
-	DeleteImageTagMirrorSet(uid types.UID)
+	UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) error
+	DeleteImageTagMirrorSet(uid types.UID) error
 
 	// PullSources will return image references in the order they should be attempted when pulling the image.
-	// An empty slice indicates that there are no mirrors given the source image and config. The
-	// returned slice may (or may not) include srcImage based on the mirroring rules. Source image must be
-	// fully qualified (include the registry hostname).
+	// The returned slice may (or may not) include the source image based on the registries config.
+	// Source image must be fully qualified (include the registry hostname).
 	PullSources(srcImage string) ([]string, error)
 }
 
-// FileStore stores/reads the consolidated mirror config from a filesystem.
+// FileStore stores/reads the consolidated registries config from a filesystem.
 type FileStore struct {
 	configPath    string
 	systemContext *ciTypes.SystemContext
@@ -77,7 +72,7 @@ var _ Store = (*FileStore)(nil)
 
 type fileStoreOption func(*FileStore)
 
-// WithConfigPath sets the path to read/write the consolidated mirroring config.
+// WithConfigPath sets the path to read/write the consolidated registries config.
 func WithConfigPath(path string) fileStoreOption {
 	return func(s *FileStore) { s.configPath = path }
 }
@@ -105,6 +100,7 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 	return s
 }
 
+// Cleanup resets the store which includes in-memory and disk resources.
 func (s *FileStore) Cleanup() {
 	s.ruleRWMutex.Lock()
 	defer s.ruleRWMutex.Unlock()
@@ -112,6 +108,11 @@ func (s *FileStore) Cleanup() {
 	s.icspRules = make(map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy)
 	s.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
 	s.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
+
+	if err := os.Remove(s.configPath); err != nil && !os.IsNotExist(err) {
+		log.Warnf("Failed to cleanup registry mirror config at %q: %v", s.configPath, err)
+	}
+	sysregistriesv2.InvalidateCache()
 }
 
 func (s *FileStore) updateConfig() error {
@@ -123,7 +124,7 @@ func (s *FileStore) updateConfig() error {
 }
 
 func (s *FileStore) updateConfigDelayed() error {
-	// Using a different mutex to protect timer vs. rulesMutex to avoid deadlock.
+	// Using a different mutex to protect timer vs. rules to avoid deadlock.
 	s.timerMutex.Lock()
 	defer s.timerMutex.Unlock()
 
@@ -189,18 +190,27 @@ func (s *FileStore) updateConfigNow() error {
 	return nil
 }
 
+// PullSources will return image references in the order they should be attempted when pulling the image.
+// The returned slice may (or may not) include the source image based on the registries config.
+// Source image must be fully qualified (include the registry hostname).
 func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	// FindRegistry will parse the registries config file and cache it for future usage.
 	reg, err := sysregistriesv2.FindRegistry(s.systemContext, srcImage)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not find registry")
+	// Using errors.Is instead of os.IsNotExist because the return from FindRegistry
+	// wraps the error in a type that os.IsNotExist ignores.
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, errors.Wrap(err, "failed finding registry")
 	}
 
-	// This assumes srcImage is a fully qualified references (contains a hostname). If not then
+	if reg == nil {
+		return []string{srcImage}, nil
+	}
+
+	// ParseNamed assumes srcImage is a fully qualified references (contains a hostname). If not then
 	// reference.ParseNormalizedNamed should be used instead.
 	ref, err := reference.ParseNamed(srcImage)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create reference")
+		return nil, errors.Wrap(err, "could not create image reference")
 	}
 
 	pullSrcs, err := reg.PullSourcesFromReference(ref)
@@ -210,16 +220,21 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 
 	srcs := make([]string, 0, len(pullSrcs))
 	for _, src := range pullSrcs {
-		srcs = append(srcs, src.Reference.String())
+		ref := src.Reference.String()
+		if ref == srcImage && reg.Blocked {
+			// The registries config states the src registry should not be contacted.
+			continue
+		}
+		srcs = append(srcs, ref)
 	}
 
 	return srcs, nil
 }
 
 // UpsertImageContentSourcePolicy will store a new/updated ImageContentSourcePolicy.
-func (s *FileStore) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) {
+func (s *FileStore) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error {
 	s.upsertImageContentSourcePolicyWithLock(icsp)
-	s.updateConfig()
+	return s.updateConfig()
 }
 func (s *FileStore) upsertImageContentSourcePolicyWithLock(icsp *operatorV1Alpha1.ImageContentSourcePolicy) {
 	s.ruleRWMutex.Lock()
@@ -229,9 +244,9 @@ func (s *FileStore) upsertImageContentSourcePolicyWithLock(icsp *operatorV1Alpha
 }
 
 // DeleteImageContentSourcePolicy will delete an ImageContentSourcePolicy from the store if it exists.
-func (s *FileStore) DeleteImageContentSourcePolicy(uid types.UID) {
+func (s *FileStore) DeleteImageContentSourcePolicy(uid types.UID) error {
 	s.deleteImageContentSourcePolicyWithLock(uid)
-	s.updateConfig()
+	return s.updateConfig()
 }
 
 func (s *FileStore) deleteImageContentSourcePolicyWithLock(uid types.UID) {
@@ -242,9 +257,9 @@ func (s *FileStore) deleteImageContentSourcePolicyWithLock(uid types.UID) {
 }
 
 // UpsertImageDigestMirrorSet will store a new/updated ImageDigestMirrorSet.
-func (s *FileStore) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) {
+func (s *FileStore) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) error {
 	s.upsertImageDigestMirrorSetWithLock(idms)
-	s.updateConfig()
+	return s.updateConfig()
 }
 
 func (s *FileStore) upsertImageDigestMirrorSetWithLock(idms *configV1.ImageDigestMirrorSet) {
@@ -255,9 +270,9 @@ func (s *FileStore) upsertImageDigestMirrorSetWithLock(idms *configV1.ImageDiges
 }
 
 // DeleteImageDigestMirrorSet will delete an ImageDigestMirrorSet from the store if it exists.
-func (s *FileStore) DeleteImageDigestMirrorSet(uid types.UID) {
+func (s *FileStore) DeleteImageDigestMirrorSet(uid types.UID) error {
 	s.deleteImageDigestMirrorSetWithLock(uid)
-	s.updateConfig()
+	return s.updateConfig()
 }
 
 func (s *FileStore) deleteImageDigestMirrorSetWithLock(uid types.UID) {
@@ -268,9 +283,9 @@ func (s *FileStore) deleteImageDigestMirrorSetWithLock(uid types.UID) {
 }
 
 // UpsertImageTagMirrorSet will store a new/updated ImageTagMirrorSet.
-func (s *FileStore) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) {
+func (s *FileStore) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) error {
 	s.upsertImageTagMirrorSetWithLock(itms)
-	s.updateConfig()
+	return s.updateConfig()
 }
 
 func (s *FileStore) upsertImageTagMirrorSetWithLock(itms *configV1.ImageTagMirrorSet) {
@@ -281,9 +296,9 @@ func (s *FileStore) upsertImageTagMirrorSetWithLock(itms *configV1.ImageTagMirro
 }
 
 // DeleteImageTagMirrorSet will delete an ImageTagMirrorSet from the store if it exists.
-func (s *FileStore) DeleteImageTagMirrorSet(uid types.UID) {
+func (s *FileStore) DeleteImageTagMirrorSet(uid types.UID) error {
 	s.deleteImageTagMirrorSetWithLock(uid)
-	s.updateConfig()
+	return s.updateConfig()
 }
 
 func (s *FileStore) deleteImageTagMirrorSetWithLock(uid types.UID) {

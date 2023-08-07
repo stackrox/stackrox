@@ -84,13 +84,16 @@ type FakeMirrorStore struct {
 
 var _ registrymirror.Store = (*FakeMirrorStore)(nil)
 
-func (*FakeMirrorStore) Cleanup()                                                       {}
-func (*FakeMirrorStore) DeleteImageContentSourcePolicy(uid types.UID)                   {}
-func (*FakeMirrorStore) DeleteImageDigestMirrorSet(uid types.UID)                       {}
-func (*FakeMirrorStore) DeleteImageTagMirrorSet(uid types.UID)                          {}
-func (*FakeMirrorStore) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) {}
-func (*FakeMirrorStore) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet)       {}
-func (*FakeMirrorStore) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) {
+func (*FakeMirrorStore) Cleanup()                                           {}
+func (*FakeMirrorStore) DeleteImageContentSourcePolicy(uid types.UID) error { return nil }
+func (*FakeMirrorStore) DeleteImageDigestMirrorSet(uid types.UID) error     { return nil }
+func (*FakeMirrorStore) DeleteImageTagMirrorSet(uid types.UID) error        { return nil }
+func (*FakeMirrorStore) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) error {
+	return nil
+}
+func (*FakeMirrorStore) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) error { return nil }
+func (*FakeMirrorStore) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error {
+	return nil
 }
 func (*FakeMirrorStore) PullSources(srcImage string) ([]string, error) {
 	return nil, nil
