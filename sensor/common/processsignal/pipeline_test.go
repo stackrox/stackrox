@@ -151,7 +151,7 @@ func TestProcessPipelineOffline(t *testing.T) {
 			defer deleteStore(containerMetadata2.DeploymentID, mockStore)
 
 			// Detector can be called in any order, so no assertions regarding the order of events.
-			mockDetector.EXPECT().ProcessIndicator(gomock.Any()).
+			mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).
 				MinTimes(2).
 				MaxTimes(2).
 				DoAndReturn(func(ind *storage.ProcessIndicator) {
@@ -274,7 +274,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	signal := storage.ProcessSignal{
 		ContainerId: containerID,
 	}
-	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
 	p.Process(&signal)
@@ -288,7 +288,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
-	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
 	p.Process(&signal)
@@ -302,7 +302,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
-	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
 	p.Process(&signal)
@@ -310,7 +310,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	msg = <-actualEvents
 	assert.NotNil(t, msg)
 	assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
-	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
 	p.Process(&signal)
