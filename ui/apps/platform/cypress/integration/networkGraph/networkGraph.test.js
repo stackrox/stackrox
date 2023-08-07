@@ -7,6 +7,10 @@ import {
     checkNetworkGraphEmptyState,
     selectCluster,
     selectNamespace,
+    selectDeployment,
+    selectFilter,
+    clearAllSavedCidrBlocks,
+    updateAndCloseCidrModal,
 } from './networkGraph.helpers';
 import { networkGraphSelectors } from './networkGraph.selectors';
 
@@ -91,5 +95,80 @@ describe('Network Graph smoke tests', () => {
 
         // close the Legend
         cy.get('.pf-c-popover__content [aria-label="Close"]').click();
+    });
+
+    it('should correctly display entities when scope and filters are applied', () => {
+        visitNetworkGraph();
+
+        // Apply a namespace filter for 'stackrox'
+        selectNamespace('stackrox');
+
+        // Verify that 'stackrox' and 'kube-system' namespaces are present
+        cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
+        cy.get(networkGraphSelectors.relatedNamespaceGroupNode('kube-system'));
+
+        // Verify that central, central-db, scanner, scanner-db, sensor are present
+        ['central', 'central-db', 'scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment));
+        });
+
+        // Apply a deployment filter for 'central-db'
+        selectDeployment('central-db');
+
+        // Verify that central, central-db are present and that scanner, sensor, sensor-db are not present
+        ['central', 'central-db'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment));
+        });
+        ['scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
+        });
+
+        // Remove the central-db selection from the scope filter
+        selectDeployment('central-db');
+        // Apply a general filter of "Deployment Label" for 'app=central-db'
+        selectFilter('Deployment Label', 'app=central-db');
+
+        ['central', 'central-db'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment));
+        });
+        ['scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
+        });
+
+        // Verify that the correct namespaces are displayed
+        cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
+        cy.get(networkGraphSelectors.relatedNamespaceGroupNode('kube-system')).should('not.exist');
+    });
+
+    it('should allow the addition and deletion of CIDR blocks', () => {
+        visitNetworkGraph();
+
+        // open the CIDR block modal and add a block
+        cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).type('{selectall}redhat.com');
+        cy.get(networkGraphSelectors.cidrBlockEntryCidrInputAt(0)).type('{selectall}10.0.0.0/24');
+
+        updateAndCloseCidrModal();
+
+        // Check that the values are still there
+        cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).should(
+            'have.value',
+            'redhat.com'
+        );
+        cy.get(networkGraphSelectors.cidrBlockEntryCidrInputAt(0)).should(
+            'have.value',
+            '10.0.0.0/24'
+        );
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(1)).should('not.exist');
+
+        // Delete the CIDR block
+        cy.get(networkGraphSelectors.cidrBlockEntryDeleteButtonAt(0)).click();
+
+        updateAndCloseCidrModal();
+
+        // Check that the values are removed
+        cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).should('not.exist');
     });
 });
