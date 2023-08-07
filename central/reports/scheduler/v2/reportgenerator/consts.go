@@ -10,6 +10,7 @@ const (
                              isFixable
                              discoveredAtImage
 		                     link
+                             cvss
                          }`
 
 	deployedImagesReportQuery = `query getDeployedImagesReportData($scopequery: String, 

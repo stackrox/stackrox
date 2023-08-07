@@ -30,6 +30,7 @@ var (
 		"Fixable",
 		"CVE Fixed In",
 		"Severity",
+		"CVSS",
 		"Discovered At",
 		"Reference",
 	}
@@ -43,6 +44,7 @@ type ImageVulnerability struct {
 	IsFixable         bool          `json:"isFixable,omitempty"`
 	DiscoveredAtImage *graphql.Time `json:"discoveredAtImage,omitempty"`
 	Link              string        `json:"link,omitempty"`
+	Cvss              float64       `json:"cvss,omitempty"`
 }
 
 // ImageComponent data for vuln report
@@ -103,6 +105,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
 							discoveredTs,
 							v.Link,
+							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 						})
 					}
 				}
@@ -130,6 +133,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
 						discoveredTs,
 						v.Link,
+						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 					})
 				}
 			}
