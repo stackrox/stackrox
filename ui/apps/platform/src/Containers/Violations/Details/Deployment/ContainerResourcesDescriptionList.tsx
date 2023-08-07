@@ -2,10 +2,17 @@ import React, { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import { ContainerResources } from 'types/deployment.proto';
 
-function ContainerResources({ resources }): ReactElement {
+export type ContainerResourcesDescriptionListProps = {
+    resources: ContainerResources;
+};
+
+function ContainerResourcesDescriptionList({
+    resources,
+}: ContainerResourcesDescriptionListProps): ReactElement {
     return (
-        <DescriptionList isHorizontal>
+        <DescriptionList isCompact isHorizontal>
             <DescriptionListItem term="CPU request (cores)" desc={resources.cpuCoresRequest} />
             <DescriptionListItem term="CPU limit (cores)" desc={resources.cpuCoresLimit} />
             <DescriptionListItem term="Memory request (MB)" desc={resources.memoryMbRequest} />
@@ -14,4 +21,4 @@ function ContainerResources({ resources }): ReactElement {
     );
 }
 
-export default ContainerResources;
+export default ContainerResourcesDescriptionList;

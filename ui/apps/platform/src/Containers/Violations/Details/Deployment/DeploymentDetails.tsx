@@ -12,67 +12,15 @@ import {
 import { TableComposable, Caption, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
 import { fetchNetworkPoliciesInNamespace } from 'services/NetworkService';
-import { portExposureLabels } from 'messages/common';
-import ObjectDescriptionList from 'Components/ObjectDescriptionList';
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
-import { Alert as AlertViolation } from '../types/violationTypes';
-import DeploymentOverview from './Deployment/DeploymentOverview';
-import SecurityContext from './Deployment/SecurityContext';
-import ContainerConfiguration from './Deployment/ContainerConfiguration';
+import { Alert as AlertViolation } from '../../types/violationTypes';
+import DeploymentOverview from './DeploymentOverview';
+import SecurityContext from './SecurityContext';
+import ContainerConfiguration from './ContainerConfiguration';
 import NetworkPolicyModal from './NetworkPolicyModal';
-
-type PortExposure = 'EXTERNAL' | 'NODE' | 'HOST' | 'INTERNAL' | 'UNSET';
-
-type Port = {
-    exposure: PortExposure;
-    exposureInfos: {
-        externalHostnames: string[];
-        externalIps: string[];
-        level: PortExposure;
-        nodePort: number;
-        serviceClusterIp: string;
-        serviceId: string;
-        serviceName: string;
-        servicePort: number;
-    }[];
-    containerPort: number;
-    exposedPort: number;
-    name: string;
-    protocol: string;
-};
-
-type FormattedPort = {
-    exposure: string;
-    exposureInfos: {
-        externalHostnames: string[];
-        externalIps: string[];
-        level: string;
-        nodePort: number;
-        serviceClusterIp: string;
-        serviceId: string;
-        serviceName: string;
-        servicePort: number;
-    }[];
-    containerPort: number;
-    exposedPort: number;
-    name: string;
-    protocol: string;
-};
-
-export const formatDeploymentPorts = (ports: Port[] = []): FormattedPort[] => {
-    const formattedPorts = [] as FormattedPort[];
-    ports.forEach(({ exposure, exposureInfos, ...rest }) => {
-        const formattedPort = { ...rest } as FormattedPort;
-        formattedPort.exposure = portExposureLabels[exposure] || portExposureLabels.UNSET;
-        formattedPort.exposureInfos = exposureInfos.map(({ level, ...restInfo }) => {
-            return { ...restInfo, level: portExposureLabels[level] };
-        });
-        formattedPorts.push(formattedPort);
-    });
-    return formattedPorts;
-};
+import PortDescriptionList from './PortDescriptionList';
 
 const compareNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
     return a.name.localeCompare(b.name);
@@ -144,14 +92,21 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                     <FlexItem>
                         <Card isFlat aria-label="Port configuration">
                             <CardBody>
-                                {relatedDeploymentPorts.length > 0
-                                    ? formatDeploymentPorts(relatedDeploymentPorts).map(
-                                          (port, idx) => (
-                                              // eslint-disable-next-line react/no-array-index-key
-                                              <ObjectDescriptionList data={port} key={idx} />
-                                          )
-                                      )
-                                    : 'None'}
+                                {relatedDeploymentPorts.length === 0
+                                    ? 'None'
+                                    : relatedDeploymentPorts.map((port, i) => {
+                                          /* eslint-disable react/no-array-index-key */
+                                          return (
+                                              <React.Fragment key={i}>
+                                                  <Title
+                                                      headingLevel="h4"
+                                                      className="pf-u-mb-md"
+                                                  >{`ports[${i}]`}</Title>
+                                                  <PortDescriptionList port={port} />
+                                              </React.Fragment>
+                                          );
+                                          /* eslint-enable react/no-array-index-key */
+                                      })}
                             </CardBody>
                         </Card>
                     </FlexItem>
@@ -228,7 +183,25 @@ const DeploymentDetails = ({ alertDeployment }: DeploymentDetailsProps) => {
                         <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
-                        <ContainerConfiguration deployment={relatedDeployment} />
+                        <Card isFlat aria-label="Container configuration">
+                            <CardBody>
+                                {Array.isArray(relatedDeployment?.containers) &&
+                                relatedDeployment?.containers.length !== 0
+                                    ? relatedDeployment?.containers.map((container, i) => (
+                                          <React.Fragment key={container.id}>
+                                              <Title
+                                                  headingLevel="h4"
+                                                  className="pf-u-mb-md"
+                                              >{`containers[${i}]`}</Title>
+                                              <ContainerConfiguration
+                                                  key={container.id}
+                                                  container={container}
+                                              />
+                                          </React.Fragment>
+                                      ))
+                                    : 'None'}
+                            </CardBody>
+                        </Card>
                     </FlexItem>
                 </Flex>
             </Flex>

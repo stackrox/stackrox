@@ -14,7 +14,7 @@ import {
 import { fetchAlert } from 'services/AlertsService';
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
-import DeploymentDetails from './DeploymentDetails';
+import DeploymentDetails from './Deployment/DeploymentDetails';
 import EnforcementDetails from './EnforcementDetails';
 import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
