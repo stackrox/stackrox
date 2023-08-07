@@ -22,7 +22,8 @@ func initialize() {
 	// blocking main routine
 	go scheduler.Start()
 	collectionDatastore, _ := collectionDS.Singleton()
-	svc = New(reportConfigDS.Singleton(), snapshotDS.Singleton(), collectionDatastore, notifierDS.Singleton(), scheduler, blobDS.Singleton())
+	svc = New(reportConfigDS.Singleton(), snapshotDS.Singleton(), collectionDatastore, notifierDS.Singleton(), scheduler,
+		blobDS.Singleton(), validation.Singleton())
 }
 
 // Singleton provides the instance of the service to register.

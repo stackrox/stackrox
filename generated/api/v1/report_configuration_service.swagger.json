@@ -718,6 +718,12 @@
         "sinceStartDate": {
           "type": "string",
           "format": "date-time"
+        },
+        "accessScopeRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SimpleAccessScopeRules"
+          }
         }
       }
     },
