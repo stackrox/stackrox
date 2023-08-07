@@ -23,7 +23,7 @@ OPTION:
   --clean-output-dir   Delete '{base-dir}/build/index' directory.
   --use-http           Use plain HTTP for container image registries.
   --skip-build         Skip the actual \"docker build\" command.
-  --skip-tls-verify    Skip TLS certificate verification for container image registries while pulling bundles
+  --skip-tls-verify    Skip TLS certificate verification for container image registries while pulling bundles.
 " >&2
 }
 
