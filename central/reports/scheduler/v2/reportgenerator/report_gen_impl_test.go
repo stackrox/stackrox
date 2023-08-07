@@ -46,7 +46,6 @@ type EnhancedReportingTestSuite struct {
 	resolver        *resolvers.Resolver
 	schema          *graphql.Schema
 
-	collectionDatastore     collectionDS.DataStore
 	watchedImageDatastore   watchedImageDS.DataStore
 	collectionQueryResolver collectionDS.QueryResolver
 
@@ -83,15 +82,15 @@ func (s *EnhancedReportingTestSuite) SetupSuite() {
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
 	index := collectionPostgres.NewIndexer(s.testDB.DB)
-	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore, index))
+	_, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore, index))
 	s.NoError(err)
 
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
-	s.reportGenerator = newReportGeneratorImpl(nil, nil, s.resolver.DeploymentDataStore,
-		s.watchedImageDatastore, s.collectionDatastore, s.collectionQueryResolver,
-		nil, nil, s.blobStore, s.schema)
+	s.reportGenerator = newReportGeneratorImpl(nil, s.resolver.DeploymentDataStore,
+		s.watchedImageDatastore, s.collectionQueryResolver,
+		nil, s.blobStore, s.schema)
 }
 
 func (s *EnhancedReportingTestSuite) TearDownSuite() {
@@ -257,11 +256,8 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
-			err := s.collectionDatastore.AddCollection(s.ctx, tc.collection)
-			s.NoError(err)
-
-			reportConfig := testReportConfig(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes)
-			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(reportConfig, tc.collection, nil)
+			reportSnap := testReportSnapshot(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes)
+			deployedImgResults, watchedImgResults, err := s.reportGenerator.getReportData(reportSnap, tc.collection, nil)
 			s.NoError(err)
 			reportData := extractVulnReportData(deployedImgResults, watchedImgResults)
 			s.ElementsMatch(tc.expected.deploymentNames, reportData.deploymentNames)
@@ -440,10 +436,10 @@ func testCollection(collectionName, cluster, namespace, deployment string) *stor
 	return collection
 }
 
-func testReportConfig(collectionID string, fixability storage.VulnerabilityReportFilters_Fixability, severities []storage.VulnerabilitySeverity,
-	imageTypes []storage.VulnerabilityReportFilters_ImageType) *storage.ReportConfiguration {
-	config := fixtures.GetValidReportConfigWithMultipleNotifiers()
-	config.Filter = &storage.ReportConfiguration_VulnReportFilters{
+func testReportSnapshot(collectionID string, fixability storage.VulnerabilityReportFilters_Fixability, severities []storage.VulnerabilitySeverity,
+	imageTypes []storage.VulnerabilityReportFilters_ImageType) *storage.ReportSnapshot {
+	snap := fixtures.GetReportSnapshot()
+	snap.Filter = &storage.ReportSnapshot_VulnReportFilters{
 		VulnReportFilters: &storage.VulnerabilityReportFilters{
 			Fixability: fixability,
 			Severities: severities,
@@ -453,12 +449,11 @@ func testReportConfig(collectionID string, fixability storage.VulnerabilityRepor
 			},
 		},
 	}
-	config.ResourceScope = &storage.ResourceScope{
-		ScopeReference: &storage.ResourceScope_CollectionId{
-			CollectionId: collectionID,
-		},
+	snap.Collection = &storage.CollectionSnapshot{
+		Id:   collectionID,
+		Name: collectionID,
 	}
-	return config
+	return snap
 }
 
 func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, watchedImgResults []common.WatchedImagesResult) *vulnReportData {
