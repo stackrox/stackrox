@@ -412,6 +412,10 @@ poll_for_system_test_images() {
                 # images timeout out below.
             fi
             ;;
+        *-downstream)
+            # For now, we assume the downstream images always exist.
+            return
+            ;;
         *)
             reqd_images=("main" "roxctl")
             ;;
