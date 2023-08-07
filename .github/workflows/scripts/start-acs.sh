@@ -34,14 +34,11 @@ done
 sleep 60
 
 ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)
-#echo "::set-output name=central-password::$ROX_ADMIN_PASSWORD"
 #echo "::add-mask::$ROX_ADMIN_PASSWORD"
 CENTRAL_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
 kubectl -n stackrox create secret generic access-rhacs --from-literal="username=${ROX_ADMIN_USERNAME}" --from-literal="password=${ROX_ADMIN_PASSWORD}" --from-literal="central_url=https://${CENTRAL_IP}"
 echo "rox_password=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
 echo "cluster_name=${NAME//./-}" >> "$GITHUB_OUTPUT"
+echo "central-ip=${CENTRAL_IP}" >> "$GITHUB_OUTPUT"
 
 printf "Long-running GKE cluster %s has been patched.\nAccess it by running \`./scripts/release-tools/setup-central-access.sh %s\` from your local machine." "${NAME//./-}" "${NAME//./-}" >> "$GITHUB_STEP_SUMMARY"
-
-echo "central-ip=${CENTRAL_IP}" >> "$GITHUB_OUTPUT"
-echo "central-password=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
