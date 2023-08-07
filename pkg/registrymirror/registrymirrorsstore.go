@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	// default path to store registries config
+	// default path to store registries config.
 	defaultRegistriesPath = "/var/cache/stackrox/mirrors/registries.conf"
 
-	// default delay before writing the updated registries config
+	// default delay before writing the updated registries config.
 	defaultDelay = time.Millisecond * 300
 )
 
@@ -54,9 +54,7 @@ type Store interface {
 
 // FileStore stores/reads the consolidated registries config from a filesystem.
 type FileStore struct {
-	configPath    string
-	systemContext *ciTypes.SystemContext
-	updateDelay   time.Duration
+	configPath string
 
 	// holds the mirror sets used for managing registry mirrors.
 	icspRules   map[types.UID]*operatorV1Alpha1.ImageContentSourcePolicy
@@ -64,12 +62,17 @@ type FileStore struct {
 	itmsRules   map[types.UID]*configV1.ImageTagMirrorSet
 	ruleRWMutex sync.RWMutex
 
-	timer      *time.Timer
-	timerMutex sync.Mutex
+	// timer is used when performing delayed writes to filesystem.
+	timer       *time.Timer
+	timerMutex  sync.Mutex
+	updateDelay time.Duration
+
+	systemContext *ciTypes.SystemContext
 }
 
 var _ Store = (*FileStore)(nil)
 
+// fileStoreOption is used to provide functional options to the fileStore.
 type fileStoreOption func(*FileStore)
 
 // WithConfigPath sets the path to read/write the consolidated registries config.
@@ -110,7 +113,7 @@ func (s *FileStore) Cleanup() {
 	s.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
 
 	if err := os.Remove(s.configPath); err != nil && !os.IsNotExist(err) {
-		log.Warnf("Failed to cleanup registry mirror config at %q: %v", s.configPath, err)
+		log.Warnf("Failed to cleanup registries config at %q: %v", s.configPath, err)
 	}
 	sysregistriesv2.InvalidateCache()
 }
@@ -142,9 +145,9 @@ func (s *FileStore) updateConfigDelayed() error {
 }
 
 func (s *FileStore) updateConfigNow() error {
-	// Populate config.
 	icspRules, idmsRules, itmsRules := s.getAllMirrorSets()
 
+	// Populate config.
 	config := new(sysregistriesv2.V2RegistriesConf)
 	err := registries.EditRegistriesConfig(config, nil, nil, icspRules, idmsRules, itmsRules)
 	if err != nil {
@@ -177,6 +180,7 @@ func (s *FileStore) updateConfigNow() error {
 		return errors.Wrap(err, "could not write bytes to file")
 	}
 
+	// Close file before defer to ensure close errors are surfaced.
 	if err := f.Close(); err != nil {
 		return errors.Wrap(err, "could not close file")
 	}
@@ -184,7 +188,7 @@ func (s *FileStore) updateConfigNow() error {
 	// Invalidate the registries cache so that the updated file will be read on next invocation of PullSources.
 	sysregistriesv2.InvalidateCache()
 
-	log.Debugf("Successfully updated the registry mirror config at %q with %v icspRules, %v idmsRules, %v itmsRules",
+	log.Debugf("Successfully updated the registries config at %q with %v icspRules, %v idmsRules, %v itmsRules",
 		s.configPath, len(icspRules), len(idmsRules), len(itmsRules))
 
 	return nil
@@ -206,8 +210,8 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 		return []string{srcImage}, nil
 	}
 
-	// ParseNamed assumes srcImage is a fully qualified references (contains a hostname). If not then
-	// reference.ParseNormalizedNamed should be used instead.
+	// ParseNamed assumes srcImage is a fully qualified references (contains a hostname), will produce error
+	// otherwise. In the future if support for short names is needed, use reference.ParseNormalizedNamed instead.
 	ref, err := reference.ParseNamed(srcImage)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create image reference")
