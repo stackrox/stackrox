@@ -3,8 +3,10 @@ package reportgenerator
 import (
 	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -29,6 +31,8 @@ func initialize() {
 		collectionQueryRes,
 		notifierProcessor.Singleton(),
 		blobDS.Singleton(),
+		clusterDS.Singleton(),
+		namespaceDS.Singleton(),
 		schema,
 	)
 }

@@ -14,9 +14,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -51,6 +53,8 @@ type reportGeneratorImpl struct {
 	collectionQueryResolver collectionDS.QueryResolver
 	notificationProcessor   notifier.Processor
 	blobStore               blobDS.Datastore
+	clusterDatastore        clusterDS.DataStore
+	namespaceDatastore      namespaceDS.DataStore
 
 	Schema *graphql.Schema
 }
@@ -217,7 +221,15 @@ func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime *types.Timestamp) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		timestamp.FromProtobuf(dataStartTime).GoTime())
-	rQuery, err := qb.BuildQuery(reportGenCtx)
+	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	rQuery, err := qb.BuildQuery(reportGenCtx, allClusters, allNamespaces)
 	if err != nil {
 		return nil, errors.Wrap(err, "error building report query")
 	}

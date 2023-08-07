@@ -338,7 +338,7 @@ func (s *scheduler) queuePendingReports() {
 
 		collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
 		if err != nil {
-			log.Errorf("Error finding collection ID '%s': %s ", snap.GetCollection().GetId())
+			log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
 			continue
 		}
 		if !found {

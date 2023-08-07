@@ -25,6 +25,7 @@ import (
 // 2) Populating notifiers and collection in report snapshot
 var allAccessCtx = sac.WithAllAccess(context.Background())
 
+// Validator validates the requests to report service and generates job request for RunReport service
 type Validator struct {
 	reportConfigDatastore reportConfigDS.DataStore
 	snapshotDatastore     snapshotDS.DataStore
@@ -240,9 +241,6 @@ func generateReportSnapshot(config *storage.ReportConfiguration, collection *sto
 		Name:                  config.GetName(),
 		Description:           config.GetDescription(),
 		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Filter: &storage.ReportSnapshot_VulnReportFilters{
-			VulnReportFilters: config.GetVulnReportFilters(),
-		},
 		Collection: &storage.CollectionSnapshot{
 			Id:   config.GetResourceScope().GetCollectionId(),
 			Name: collection.GetName(),

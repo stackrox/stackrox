@@ -3,7 +3,9 @@ package reportgenerator
 import (
 	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -28,6 +30,8 @@ func New(
 	collectionQueryResolver collectionDS.QueryResolver,
 	notificationProcessor notifier.Processor,
 	blobDatastore blobDS.Datastore,
+	clusterDatastore clusterDS.DataStore,
+	namespaceDatastore namespaceDS.DataStore,
 	schema *graphql.Schema,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
@@ -37,6 +41,8 @@ func New(
 		collectionQueryResolver,
 		notificationProcessor,
 		blobDatastore,
+		clusterDatastore,
+		namespaceDatastore,
 		schema,
 	)
 }
@@ -48,6 +54,8 @@ func newReportGeneratorImpl(
 	collectionQueryResolver collectionDS.QueryResolver,
 	notificationProcessor notifier.Processor,
 	blobStore blobDS.Datastore,
+	clusterDatastore clusterDS.DataStore,
+	namespaceDatastore namespaceDS.DataStore,
 	schema *graphql.Schema,
 ) *reportGeneratorImpl {
 	return &reportGeneratorImpl{
@@ -56,6 +64,8 @@ func newReportGeneratorImpl(
 		watchedImageDatastore:   watchedImageDatastore,
 		collectionQueryResolver: collectionQueryResolver,
 		notificationProcessor:   notificationProcessor,
+		clusterDatastore:        clusterDatastore,
+		namespaceDatastore:      namespaceDatastore,
 		blobStore:               blobStore,
 
 		Schema: schema,
