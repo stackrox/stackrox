@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
 import { Flex, FlexItem } from '@patternfly/react-core';
+import { InProgressIcon, PendingIcon } from '@patternfly/react-icons';
 
 import { ReportStatus } from 'services/ReportsService.types';
-import { InProgressIcon, PendingIcon } from '@patternfly/react-icons';
 
 type MyActiveJobProps = {
     reportStatus: ReportStatus | undefined;
