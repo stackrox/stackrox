@@ -84,12 +84,7 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 				Id:   "uid",
 				Name: "name",
 			}
-
-			mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-			mockID.EXPECT().UID().Return(creator.Id).Times(1)
-			mockID.EXPECT().FullName().Return(creator.Name).Times(1)
-			mockID.EXPECT().FriendlyName().Return(creator.Name).Times(1)
-			ctx := authn.ContextWithIdentity(allAccessContext, mockID, s.T())
+			ctx := s.getContextForUser(creator)
 
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
@@ -635,6 +630,57 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
 }
 
+func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
+	userA := &storage.SlimUser{
+		Id:   "user-a",
+		Name: "user-a",
+	}
+
+	reportSnapshot := &storage.ReportSnapshot{
+		ReportId:              "test_report",
+		ReportConfigurationId: "test_report_config",
+		Name:                  "Report",
+		ReportStatus: &storage.ReportStatus{
+			ErrorMsg:                 "Error msg",
+			ReportNotificationMethod: 1,
+		},
+		Requester: &storage.SlimUser{
+			Id: "user-a",
+		},
+	}
+
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
+	emptyQuery := &apiV2.RawQuery{Query: ""}
+	req := &apiV2.GetReportHistoryRequest{
+		Id:               "test_report_config",
+		ReportParamQuery: emptyQuery,
+	}
+
+	res, err := s.service.GetMyReportHistory(s.getContextForUser(userA), req)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportJobId(), "test_report")
+	assert.Equal(s.T(), res.ReportSnapshots[0].GetReportStatus().GetErrorMsg(), "Error msg")
+
+	req = &apiV2.GetReportHistoryRequest{
+		Id:               "",
+		ReportParamQuery: emptyQuery,
+	}
+	_, err = s.service.GetMyReportHistory(s.getContextForUser(userA), req)
+	assert.Error(s.T(), err)
+
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		Return(nil, nil).AnyTimes()
+	emptyQuery = &apiV2.RawQuery{Query: ""}
+	req = &apiV2.GetReportHistoryRequest{
+		Id:               "test_report_config",
+		ReportParamQuery: emptyQuery,
+	}
+
+	_, err = s.service.GetMyReportHistory(s.ctx, req)
+	assert.Error(s.T(), err)
+}
+
 func (s *ReportServiceTestSuite) TestAuthz() {
 	status := &storage.ReportStatus{
 		ErrorMsg: "Error msg",
@@ -671,11 +717,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		Id:   "uid",
 		Name: "name",
 	}
-	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
-	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
+	userContext := s.getContextForUser(user)
 
 	testCases := []struct {
 		desc    string
@@ -817,12 +859,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 	reportSnapshot.ReportId = uuid.NewV4().String()
 	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
 	user := reportSnapshot.GetRequester()
-
-	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
-	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
+	userContext := s.getContextForUser(user)
 
 	testCases := []struct {
 		desc    string
@@ -971,15 +1008,10 @@ func (s *ReportServiceTestSuite) TestDownloadReport() {
 	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
 	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 	user := reportSnapshot.GetRequester()
+	userContext := s.getContextForUser(user)
 	blob, blobData := fixtures.GetBlobWithData()
-
-	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
 	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
 
-	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 	testCases := []struct {
 		desc    string
 		req     *apiV2.DownloadReportRequest
@@ -1131,14 +1163,9 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
 	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 	user := reportSnapshot.GetRequester()
-
-	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
-	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
-	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	userContext := s.getContextForUser(user)
 	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
 
-	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 	testCases := []struct {
 		desc    string
 		req     *apiV2.DeleteReportRequest
@@ -1261,5 +1288,12 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			}
 		})
 	}
+}
 
+func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
 }

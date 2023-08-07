@@ -14,6 +14,7 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
@@ -55,6 +57,7 @@ var (
 			"/v2.ReportService/GetReportStatus",
 			"/v2.ReportService/GetLastReportStatusConfigID",
 			"/v2.ReportService/GetReportHistory",
+			"/v2.ReportService/GetMyReportHistory",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v2.ReportService/RunReport",
@@ -262,8 +265,47 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	conjuncQuery := search.ConjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(), parsedQuery)
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjuncQuery)
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
+		parsedQuery,
+	)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots := convertProtoReportSnapshotstoV2(results)
+	res := apiV2.ReportHistoryResponse{
+		ReportSnapshots: snapshots,
+	}
+	return &res, nil
+}
+
+func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	if req == nil || req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	err = verifyNoUserSearchLabels(parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.ReportConfigID, req.GetId()).
+			AddExactMatches(search.UserID, slimUser.GetId()).ProtoQuery(),
+		parsedQuery,
+	)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -441,4 +483,17 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to delete downloadable report %q", req.GetId())
 	}
 	return &apiV2.Empty{}, nil
+}
+
+func verifyNoUserSearchLabels(q *v1.Query) error {
+	unexpectedLabels := set.NewStringSet(search.UserID.String(), search.UserName.String())
+	var err error
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && unexpectedLabels.Contains(mfQ.MatchFieldQuery.GetField()) {
+			err = errors.New("query contains user search labels")
+			return
+		}
+	})
+	return err
 }

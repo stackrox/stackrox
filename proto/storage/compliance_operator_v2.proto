@@ -87,7 +87,7 @@ message ComplianceOperatorScanSettingV2 {
     google.protobuf.Timestamp     created_time = 12;
     google.protobuf.Timestamp     last_updated_time = 13;
     // Most recent user to update the scan settings
-    SlimUser                      created_by = 14;
+    SlimUser                      created_by = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
 // Next Tag: 15

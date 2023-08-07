@@ -421,11 +421,12 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			schema.Children = append(schema.Children, childSchema)
 			handleStruct(
 				context{
-					searchDisabled: ctx.searchDisabled || searchOpts.Ignored,
-					ignorePK:       opts.IgnorePrimaryKey,
-					ignoreUnique:   opts.IgnoreUniqueConstraint,
-					ignoreFKs:      opts.IgnoreChildFKs,
-					ignoreIndex:    opts.IgnoreChildIndexes,
+					searchDisabled:     ctx.searchDisabled || searchOpts.Ignored,
+					ignorePK:           opts.IgnorePrimaryKey,
+					ignoreUnique:       opts.IgnoreUniqueConstraint,
+					ignoreFKs:          opts.IgnoreChildFKs,
+					ignoreIndex:        opts.IgnoreChildIndexes,
+					ignoreSearchLabels: opts.IgnoreSearchLabels,
 				},
 				childSchema,
 				structField.Type.Elem().Elem())
