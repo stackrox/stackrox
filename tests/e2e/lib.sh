@@ -295,8 +295,6 @@ deploy_sensor_via_operator() {
         SUPPORT_URL="https://install.stackrox.io/collector/support-packages/ppc64le/2.3.0/support-pkg-2.3.0-latest.zip"
         wget $SUPPORT_URL
         roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg-2.3.0-latest.zip
-        #Recreate central pod
-        kubectl -n stackrox delete pod -l app=central --grace-period=0
     fi
 
     kubectl -n stackrox exec deploy/central -- \
