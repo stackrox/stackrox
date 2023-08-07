@@ -7,6 +7,9 @@ resources:
 - ../scorecard-versioned
 
 # These patches remove the unnecessary "cert" volume and its manager container volumeMount.
+# The patch is only required for OLM-based installations because OLM creates and mounts these volumes itself.
+# In other words, the patch will NOT be executed for non-OLM-based installations.
+# Should be kept in sync with operator/config/default/manager_webhook_patch.yaml.
 patchesJson6902:
 - target:
     group: apps

@@ -33,6 +33,8 @@ patchesStrategicMerge:
 # through a ComponentConfig type
 #- manager_config_patch.yaml
 
+# Order is important for manager deployment patches with volumes and volumeMounts
+# because the first volumeMount is removed for OLM installation (see operator/config/manifests/kustomization.yaml).
 - manager_webhook_patch.yaml
 - webhookcainjection_patch.yaml
 
