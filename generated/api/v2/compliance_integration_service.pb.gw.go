@@ -260,9 +260,9 @@ func RegisterComplianceIntegrationServiceHandlerClient(ctx context.Context, mux 
 }
 
 var (
-	pattern_ComplianceIntegrationService_ListComplianceIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v2", "complianceintegrations"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceIntegrationService_ListComplianceIntegrations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v2", "compliance", "integrations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceIntegrationService_GetComplianceIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v2", "complianceintegrations", "cluster_id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceIntegrationService_GetComplianceIntegration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v2", "compliance", "integration", "cluster_id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
