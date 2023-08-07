@@ -20,15 +20,15 @@ import { ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
+import useURLPagination from 'hooks/useURLPagination';
+import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-import useURLPagination from 'hooks/useURLPagination';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
-import useFetchReportHistory from '../api/useFetchReportHistory';
 import ReportJobStatus from './ReportJobStatus';
 import JobDetails from './JobDetails';
 

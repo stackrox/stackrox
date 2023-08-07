@@ -10,7 +10,6 @@ import {
 } from '@patternfly/react-core';
 
 import { getDateTime } from 'utils/dateUtils';
-
 import { ReportStatus } from 'services/ReportsService.types';
 import { getReportStatusText } from '../utils';
 
