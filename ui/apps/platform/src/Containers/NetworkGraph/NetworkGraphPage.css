@@ -16,10 +16,6 @@
     min-width: 430px !important;
 }
 
-/* minimize the space used by the kabob menu as much as possible so that other columns do not become squished / truncated */
-.pf-c-drawer__panel .pf-c-table.pf-m-compact tr:not(.pf-c-table__expandable-row)>*:last-child {
-    padding-right: 0 !important;
-}
 .pf-c-drawer__panel .pf-c-dropdown__toggle.pf-m-plain:not(.pf-m-text) {
     padding-left: var(--pf-global--spacer--xs) !important;
     padding-right: var(--pf-global--spacer--xs) !important;
