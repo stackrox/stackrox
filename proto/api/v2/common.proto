@@ -11,3 +11,29 @@ message ResourceByID {
 
 message Empty {
 }
+
+message Schedule {
+    enum IntervalType {
+        UNSET           = 0;
+        WEEKLY          = 1;
+        MONTHLY         = 2;
+    }
+
+    // Sunday = 1, Monday = 2, .... Saturday =  7
+    message DaysOfWeek {
+        repeated int32 days = 1;
+    }
+    // 1 for 1st, 2 for 2nd .... 31 for 31st
+    message DaysOfMonth {
+        repeated int32 days = 1;
+    }
+
+    IntervalType interval_type      = 1;
+    int32        hour               = 2;
+    int32        minute             = 3;
+
+    oneof Interval {
+        DaysOfWeek days_of_week     = 4;
+        DaysOfMonth days_of_month   = 5;
+    }
+}
