@@ -319,6 +319,8 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 		standardsByClusterID[clusterAndStandard.ClusterID] = append(standardsByClusterID[clusterAndStandard.ClusterID], standard)
 	}
 
+	log.Info("standardsByClusterID ", standardsByClusterID)
+
 	var runs []*runInstance
 	// Step 2: For each cluster, instantiate domains and scrape promises, and create runs.
 	for clusterID, standardImpls := range standardsByClusterID {
