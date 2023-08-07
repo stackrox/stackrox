@@ -79,15 +79,15 @@ func (mr *MockDetectorMockRecorder) ProcessDeployment(ctx, deployment, action in
 }
 
 // ProcessIndicator mocks base method.
-func (m *MockDetector) ProcessIndicator(indicator *storage.ProcessIndicator) {
+func (m *MockDetector) ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessIndicator", indicator)
+	m.ctrl.Call(m, "ProcessIndicator", ctx, indicator)
 }
 
 // ProcessIndicator indicates an expected call of ProcessIndicator.
-func (mr *MockDetectorMockRecorder) ProcessIndicator(indicator interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessIndicator(ctx, indicator interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicator", reflect.TypeOf((*MockDetector)(nil).ProcessIndicator), indicator)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicator", reflect.TypeOf((*MockDetector)(nil).ProcessIndicator), ctx, indicator)
 }
 
 // ProcessMessage mocks base method.
