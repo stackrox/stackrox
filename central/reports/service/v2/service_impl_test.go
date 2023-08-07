@@ -677,7 +677,7 @@ func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
 		ReportParamQuery: emptyQuery,
 	}
 
-	res, err = s.service.GetMyReportHistory(s.ctx, req)
+	_, err = s.service.GetMyReportHistory(s.ctx, req)
 	assert.Error(s.T(), err)
 }
 
