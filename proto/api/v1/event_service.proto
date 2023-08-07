@@ -17,8 +17,14 @@ message EventsResponse {
 }
 
 message GetEventsRequest {
+    // For filtering events starting from a specific timestamp, i.e. the lower boundary.
     google.protobuf.Timestamp from      = 1;
-    map<string, string> labels_to_match = 2;
+
+    // For filtering events up until a specific timestamp, i.e. the upper boundary.
+    google.protobuf.Timestamp until     = 2;
+
+    // For filtering based on labels that should match, e.g. for events emitted from specific components.
+    map<string, string> labels_to_match = 3;
 }
 
 // Events are emitted by Central. They are used to create transparency for users
