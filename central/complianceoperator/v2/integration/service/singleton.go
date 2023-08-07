@@ -1,7 +1,8 @@
 package service
 
 import (
-	complianceDS "github.com/stackrox/rox/central/complianceoperatorintegration/datastore"
+	"github.com/stackrox/rox/central/cluster/datastore"
+	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -18,7 +19,7 @@ func Singleton() Service {
 	}
 
 	serviceInstanceInit.Do(func() {
-		serviceInstance = New(complianceDS.Singleton())
+		serviceInstance = New(complianceDS.Singleton(), datastore.Singleton())
 	})
 	return serviceInstance
 }
