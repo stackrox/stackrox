@@ -157,7 +157,7 @@ class Kubernetes implements OrchestratorMain {
         try {
             client.namespaces().create(namespace)
             log.info "Created namespace ${ns}"
-            // defaultPspForNamespace(ns)
+            defaultPspForNamespace(ns)
             provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
@@ -2434,7 +2434,7 @@ class Kubernetes implements OrchestratorMain {
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
-            // defaultPspForNamespace(ns)
+            defaultPspForNamespace(ns)
             return namespaceId
         }
     }
