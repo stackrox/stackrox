@@ -236,7 +236,9 @@ func (s *storeImpl) StoreFailure(ctx context.Context, metadata *storage.Complian
 }
 
 func (s *storeImpl) StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error {
+	log.Info("compliance store StoreComplianceDomain")
 	if err := s.domain.Upsert(ctx, domain); err != nil {
+		log.Info("compliance store StoreComplianceDomain - upsert error")
 		return err
 	}
 	cacheLock.Lock(domain.GetId())

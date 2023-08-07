@@ -279,6 +279,7 @@ func (m *manager) expandStandards(standardIDOrWildcard string) []string {
 
 func (m *manager) TriggerRuns(ctx context.Context, clusterStandardPairs ...compliance.ClusterStandardPair) ([]*v1.ComplianceRun, error) {
 	// Trigger the runs.
+	log.Info("manager TriggerRuns")
 	runs, err := m.createAndLaunchRuns(ctx, clusterStandardPairs)
 	if err != nil {
 		return nil, err
@@ -292,6 +293,7 @@ func (m *manager) TriggerRuns(ctx context.Context, clusterStandardPairs ...compl
 }
 
 func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs []compliance.ClusterStandardPair) ([]*runInstance, error) {
+	log.Info("manager createAndLaunchRuns")
 	// Check write access to all of the runs
 	clusterScopes := newClusterScopeCollector()
 	for _, clusterStandardPair := range clusterStandardPairs {
@@ -300,6 +302,8 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopes.get()) {
 		return nil, sac.ErrResourceAccessDenied
 	}
+
+	log.Info("manager createAndLaunchRuns - Compliance allowed RW for scopes ", clusterScopes.get())
 
 	// If successful, elevate privileges to read all data needed.
 	// Input Context needs to live beyond request, so use background as the underlying context instead of the one passed in.
@@ -323,6 +327,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
 		domainPB := getDomainProto(domain)
+		log.Info("manager createAndLaunchRuns - about to store domain ", domain)
 		err = m.resultsStore.StoreComplianceDomain(ctx, domainPB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain protobuf for ID %q", clusterID)

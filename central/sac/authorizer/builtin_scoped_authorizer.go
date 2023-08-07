@@ -3,6 +3,7 @@ package authorizer
 import (
 	"context"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -332,18 +333,37 @@ func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.S
 func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.ScopeTree,
 	resourceMetadata permissions.ResourceMetadata,
 	clusterID, namespaceName string) bool {
+	debug := false
+	if resourceMetadata.Resource == resources.Compliance.Resource {
+		debug = true
+	}
 
 	if effectiveAccessScope.State != effectiveaccessscope.Partial {
+		if debug {
+			log.Info("built-in SAC eas State vs partial ", effectiveAccessScope.State, " (Ex ", effectiveaccessscope.Excluded, ", Pa ", effectiveaccessscope.Partial, ", In ", effectiveaccessscope.Included, ")")
+		}
 		return effectiveAccessScope.State == effectiveaccessscope.Included
 	}
 
+	if debug {
+		log.Info("Built-in SAC eas cluster IDs ", effectiveAccessScope.GetClusterIDs())
+	}
 	clusterNode := effectiveAccessScope.GetClusterByID(clusterID)
 	if clusterNode == nil {
+		if debug {
+			log.Info("built-in SAC eas has no node for cluster ", clusterID)
+		}
 		return false
 	}
 
 	if clusterNode.State == effectiveaccessscope.Included || resourceMetadata.GetScope() == permissions.ClusterScope {
+		if debug {
+			log.Info("built-in SAC cluster allowed or cluster resource ", clusterID)
+		}
 		return true
+	}
+	if debug {
+		log.Info("built-in SAC drilling down to ns")
 	}
 	if namespaceName == "" {
 		return false

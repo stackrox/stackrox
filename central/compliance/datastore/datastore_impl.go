@@ -165,9 +165,12 @@ func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.Com
 }
 
 func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error {
+	log.Info("Compliance Datastore - StoreComplianceDomain - domain cluster ", domain.GetCluster().GetId())
 	if ok, err := complianceSAC.WriteAllowed(ctx, sac.ClusterScopeKey(domain.GetCluster().GetId())); err != nil {
+		log.Info("Compliance Datastore - StoreComplianceDomain - error")
 		return err
 	} else if !ok {
+		log.Info("Compliance Datastore - StoreComplianceDomain - NOT ALLOWED")
 		return sac.ErrResourceAccessDenied
 	}
 	return ds.storage.StoreComplianceDomain(ctx, domain)

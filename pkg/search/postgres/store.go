@@ -449,6 +449,7 @@ func (s *GenericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 			return err
 		}
 	} else if err := s.upsertAllowed(ctx, obj); err != nil {
+		log.Info("Generic store - Upsert denied")
 		return err
 	}
 
@@ -582,8 +583,10 @@ func (s *GenericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 // GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
 func GloballyScopedUpsertChecker[T any, PT unmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
+		log.Info("GloballyScopedUpsertChecker - check")
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {
+			log.Info("GloballyScopedUpsertChecker - check denied")
 			return sac.ErrResourceAccessDenied
 		}
 		return nil
