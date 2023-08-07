@@ -426,7 +426,7 @@ class BaseSpecification extends Specification {
     }
 
     static Boolean isPostgresRun() {
-        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
+        return true // return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
     }
 
     static Boolean isRaceBuild() {

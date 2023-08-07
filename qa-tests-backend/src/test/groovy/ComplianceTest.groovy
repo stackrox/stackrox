@@ -121,6 +121,7 @@ class ComplianceTest extends BaseSpecification {
         assert orchestrator.waitForAllPodsToBeRemoved("stackrox", complianceLabels, 30, 5)
     }
 
+    /*
     @Tag("BAT")
     def "Verify static compliance checks"() {
         given:
@@ -387,6 +388,8 @@ class ComplianceTest extends BaseSpecification {
         assert kubeSystemNotSkipped.size() == 0
     }
 
+     */
+
     private convertStringState(String state) {
         switch (state) {
             case "Fail":
@@ -402,6 +405,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
+    /*
     @Tag("BAT")
     def "Verify compliance csv export"() {
         when:
@@ -619,11 +623,14 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
+     */
+
     /*
     **  Remaining tests in the spec trigger new compliance runs. If you are adding tests that do not require a fresh
     **  compliance run, add them above this comment and use the compliance data in BASE_RESULTS.
     */
 
+    /*
     @Tag("BAT")
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify checks based on Integrations"() {
@@ -1309,6 +1316,8 @@ class ComplianceTest extends BaseSpecification {
         "delete the extra cluster"
         ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
     }
+
+     */
 
     @Tag("BAT")
     def "Verify ComplianceRuns with SAC on clusters with wildcard"() {

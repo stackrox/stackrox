@@ -243,6 +243,7 @@ func (m *manager) ExpandSelection(ctx context.Context, clusterIDOrWildcard, stan
 			})
 		}
 	}
+	log.Info("Expanded Compliance selection ", result)
 	return result, nil
 }
 

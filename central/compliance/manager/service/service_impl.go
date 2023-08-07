@@ -71,7 +71,7 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 }
 
 func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
-	log.Info("service TriggerRuns")
+	log.Info("service TriggerRuns [ ", req.GetSelection().GetClusterId(), " ] [ ", req.GetSelection().GetStandardId(), " ]")
 	expanded, err := s.manager.ExpandSelection(ctx, req.GetSelection().GetClusterId(), req.GetSelection().GetStandardId())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "could not expand cluster/standard selection: %v", err)
