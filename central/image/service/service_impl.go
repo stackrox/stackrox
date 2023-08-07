@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
@@ -388,6 +389,10 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	}
 
 	defer s.internalScanSemaphore.Release(1)
+
+	marshaler := jsonpb.Marshaler{}
+	result, _ := marshaler.MarshalToString(request)
+	fmt.Println(result)
 
 	var hasErrors bool
 	if request.Error != "" {
