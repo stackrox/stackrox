@@ -78,7 +78,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/openshift/api v0.0.0-20230502160752-c71432710382
 	github.com/openshift/client-go v0.0.0-20230120202327-72f107311084
-	github.com/operator-framework/helm-operator-plugins v0.0.7
+	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
 	github.com/owenrumney/go-sarif/v2 v2.2.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
@@ -133,9 +133,9 @@ require (
 	gorm.io/gorm v1.25.2
 	helm.sh/helm/v3 v3.12.1
 	k8s.io/api v0.27.4
-	k8s.io/apiextensions-apiserver v0.27.2
+	k8s.io/apiextensions-apiserver v0.27.4
 	k8s.io/apimachinery v0.27.4
-	k8s.io/apiserver v0.27.2
+	k8s.io/apiserver v0.27.4
 	k8s.io/cli-runtime v0.27.4
 	k8s.io/client-go v0.27.4
 	k8s.io/kubectl v0.27.4
@@ -234,7 +234,6 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
-	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230510103437-eeec1cb781c3 // indirect
@@ -470,6 +469,8 @@ replace (
 
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
+
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230525220651-2546d827e515
 )
 
 exclude k8s.io/client-go v12.0.0+incompatible
