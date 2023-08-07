@@ -170,12 +170,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			name:       "Include all deployments; CVEs with both fixabilities and all severities; Nil scope rules",
 			collection: testCollection("col1", "", "", ""),
 			fixability: storage.VulnerabilityReportFilters_BOTH,
-			severities: []storage.VulnerabilitySeverity{
-				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			},
+			severities: allSeverities(),
 			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
 			scopeRules: nil,
 			expected: &vulnReportData{
@@ -215,12 +210,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			name:       "Include deployments from cluster c1 and namespace ns1; CVEs with both fixabilities and all severities; Nil scope rules",
 			collection: testCollection("col3", "c1", "ns1", ""),
 			fixability: storage.VulnerabilityReportFilters_BOTH,
-			severities: []storage.VulnerabilitySeverity{
-				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			},
+			severities: allSeverities(),
 			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
 			scopeRules: nil,
 			expected: &vulnReportData{
@@ -236,12 +226,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			name:       "Include all deployments + watched images; CVEs with both fixabilities and all severities; Nil scope rules",
 			collection: testCollection("col4", "", "", ""),
 			fixability: storage.VulnerabilityReportFilters_BOTH,
-			severities: []storage.VulnerabilitySeverity{
-				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			},
+			severities: allSeverities(),
 			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
 				storage.VulnerabilityReportFilters_DEPLOYED,
 				storage.VulnerabilityReportFilters_WATCHED,
@@ -284,12 +269,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			name:       "Include all deployments + all CVEs; Empty scope rules",
 			collection: testCollection("col6", "", "", ""),
 			fixability: storage.VulnerabilityReportFilters_BOTH,
-			severities: []storage.VulnerabilitySeverity{
-				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			},
+			severities: allSeverities(),
 			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
 				storage.VulnerabilityReportFilters_DEPLOYED,
 				storage.VulnerabilityReportFilters_WATCHED,
@@ -309,12 +289,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			name:       "Include all deployments + all CVEs; Non-empty scope rules",
 			collection: testCollection("col7", "", "", ""),
 			fixability: storage.VulnerabilityReportFilters_BOTH,
-			severities: []storage.VulnerabilitySeverity{
-				storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			},
+			severities: allSeverities(),
 			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
 				storage.VulnerabilityReportFilters_DEPLOYED,
 			},
@@ -337,6 +312,50 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
 				},
+			},
+		},
+		{
+			name:       "Collection matching all deps from cluster c1; Scope allowing cluster c1 and namespace ns1",
+			collection: testCollection("col8", "c1", "", ""),
+			fixability: storage.VulnerabilityReportFilters_BOTH,
+			severities: allSeverities(),
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
+				storage.VulnerabilityReportFilters_DEPLOYED,
+			},
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{ClusterName: "c1", NamespaceName: "ns1"},
+					},
+				},
+			},
+			expected: &vulnReportData{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+				},
+			},
+		},
+		{
+			name:       "Collection matching cluster c1; Scope allowing cluster c2",
+			collection: testCollection("col9", "c1", "", ""),
+			fixability: storage.VulnerabilityReportFilters_BOTH,
+			severities: allSeverities(),
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
+				storage.VulnerabilityReportFilters_DEPLOYED,
+			},
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{
+					IncludedClusters: []string{"c2"},
+				},
+			},
+			expected: &vulnReportData{
+				deploymentNames: []string{},
+				imageNames:      []string{},
+				componentNames:  []string{},
+				cveNames:        []string{},
 			},
 		},
 	}
@@ -396,6 +415,15 @@ func testNamespaces(clusters []*storage.Cluster, namespacesPerCluster int) []*st
 		}
 	}
 	return namespaces
+}
+
+func allSeverities() []storage.VulnerabilitySeverity {
+	return []storage.VulnerabilitySeverity{
+		storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+		storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+		storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+	}
 }
 
 func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeploymentsPerNamespace int) ([]*storage.Deployment, []*storage.Image) {
