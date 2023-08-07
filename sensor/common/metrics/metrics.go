@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"strconv"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/env"
@@ -149,19 +147,31 @@ var (
 		Help:      "A gauge to track the output channel size",
 	})
 
-	info = prometheus.NewGaugeVec(
+	telemetryLabels = prometheus.Labels{
+		"sensor_version": version.GetMainVersion(),
+		"hosting":        getHosting(),
+		"install_method": env.InstallMethod.Setting(),
+	}
+	telemetrySecuredNodes = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metrics.PrometheusNamespace,
-			Subsystem: metrics.SensorSubsystem.String(),
-			Name:      "info",
-			Help:      "A metric with a constant '1' value labeled by information identifying the Central installation",
-			ConstLabels: prometheus.Labels{
-				"sensor_version": version.GetMainVersion(),
-				"hosting":        getHosting(),
-				"install_method": env.InstallMethod.Setting(),
-			},
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "secured_nodes",
+			Help:        "The number of nodes secured by Sensor",
+			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "sensor_id", "secured_nodes", "secured_vcpu"},
+		[]string{"central_id", "sensor_id"},
+	)
+
+	telemetrySecuredVCPU = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "secured_vcpu",
+			Help:        "The number of vCPUs secured by Sensor",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "sensor_id"},
 	)
 )
 
@@ -263,13 +273,14 @@ func DecOutputChannelSize() {
 	outputChannelSize.Dec()
 }
 
-// SetInfoMetric sets the cluster metrics for the info metric.
+// SetInfoMetric sets the cluster metrics for the telemetry metrics.
 func SetInfoMetric(cm *central.ClusterMetrics) {
-	info.Reset()
-	info.WithLabelValues(
+	telemetrySecuredNodes.WithLabelValues(
 		centralid.Get(),
 		clusterid.GetNoWait(),
-		strconv.FormatInt(cm.GetNodeCount(), 10),
-		strconv.FormatInt(cm.GetCpuCapacity(), 10),
-	).Set(1)
+	).Set(float64(cm.GetNodeCount()))
+	telemetrySecuredVCPU.WithLabelValues(
+		centralid.Get(),
+		clusterid.GetNoWait(),
+	).Set(float64(cm.GetCpuCapacity()))
 }
