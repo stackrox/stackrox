@@ -414,9 +414,15 @@ func (d *detectorImpl) markDeploymentForProcessing(id string) {
 }
 
 func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
+	// Don't  process the deployment if the context has already expired
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
-
 	d.processDeploymentNoLock(ctx, deployment, action)
 }
 

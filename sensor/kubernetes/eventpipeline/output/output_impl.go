@@ -77,7 +77,6 @@ func (q *outputQueueImpl) runOutputQueue() {
 			}
 		}
 
-		// TODO(ROX-17326): Don't process message in the detector if message expired
 		// The order here is important. We rely on the ReprocessDeployment being called before ProcessDeployment to remove the deployments from the deduper.
 		q.detector.ReprocessDeployments(msg.ReprocessDeployments...)
 		for _, detectorRequest := range msg.DetectorMessages {
