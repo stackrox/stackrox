@@ -12,7 +12,7 @@ import { networkGraphSelectors } from './networkGraph.selectors';
 describe('Network Graph deployment sidebar', () => {
     withAuth();
 
-    it('should render a graph when cluster and namespace are selected', () => {
+    it('should show deployment details in the sidebar', () => {
         visitNetworkGraph();
 
         checkNetworkGraphEmptyState();
@@ -67,5 +67,51 @@ describe('Network Graph deployment sidebar', () => {
         cy.get('.pf-c-expandable-section:contains("Container configurations")').find(
             '[data-testid="deployment-container-config"] .pf-c-expandable-section__toggle-text:contains("compliance")'
         );
+    });
+
+    it('should show anomalous and baseline flows in the sidebar', () => {
+        visitNetworkGraph();
+
+        checkNetworkGraphEmptyState();
+
+        selectCluster();
+        selectNamespace('stackrox');
+        selectDeployment('sensor');
+
+        // click on Collector node, too
+        cy.get(`${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label`)
+            .contains('sensor')
+            .parent()
+            .click();
+
+        // check Flows tab
+        cy.get(`${networkGraphSelectors.drawerTabs}`).contains('Flows').click();
+
+        cy.get(`${networkGraphSelectors.drawerTabs} .pf-m-current:contains("Flows")`); // now that it is clicked, make sure it is selected
+
+        // check breakdown of flows
+        // TODO: clean this callback waterfall up
+        cy.get('[data-testid="flows-table-header"]')
+            .invoke('text')
+            .then((allFlowsText) => {
+                // get the number value of all flows
+                const allFlowsCount = parseInt(allFlowsText, 10);
+                cy.get('[data-testid="anomalous-flows-header"]')
+                    .invoke('text')
+                    .then((anomalousFlowsText) => {
+                        // get the number value of anomalous flows
+                        const anomalousFlowsCount = parseInt(anomalousFlowsText, 10);
+                        cy.get('[data-testid="baseline-flows-header"]')
+                            .invoke('text')
+                            .then((baselineFlowsText) => {
+                                // get the number value of baseline flows
+                                const baselineFlowsCount = parseInt(baselineFlowsText, 10);
+
+                                expect(allFlowsCount).to.equal(
+                                    anomalousFlowsCount + baselineFlowsCount
+                                );
+                            });
+                    });
+            });
     });
 });
