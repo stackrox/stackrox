@@ -54,7 +54,7 @@ func getConfigMapFromObj(obj interface{}) *v1.ConfigMap {
 	return cm
 }
 
-func (w *k8sSettingsWatch) OnAdd(obj interface{}) {
+func (w *k8sSettingsWatch) OnAdd(obj interface{}, isInInitialList bool) {
 	cm := getConfigMapFromObj(obj)
 	if cm == nil {
 		return
