@@ -1,0 +1,54 @@
+name: Patch workflows in the upstream repository
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  patch-workflows:
+    runs-on: ubuntu-latest
+    env:
+      PATCH_FILE: "/tmp/test-gh-actions.patch"
+      BRANCH_NAME_FILE: "/tmp/branch-name"
+    steps:
+      - name: Checkout stackrox/test-gh-actions
+        uses: actions/checkout@v3
+        with:
+          repository: stackrox/test-gh-actions
+          path: test-gh-actions
+          ref: main
+          fetch-depth: 0
+      - name: Create patch
+        id: patch
+        run: |
+          cd test-gh-actions
+          git format-patch -1 HEAD --stdout -- .github scripts > "${PATCH_FILE}"
+          echo "patch-length=$(wc -l < "${PATCH_FILE}" | tr -d ' ')" >> "${GITHUB_OUTPUT}"
+          git log -1 --pretty=%B | sed 's/[^a-zA-Z0-9-]/-/g' > "${BRANCH_NAME_FILE}"
+      - name: Checkout stackrox/stackrox
+        if: steps.patch.outputs.patch-length != '0'
+        uses: actions/checkout@v3
+        with:
+          repository: stackrox/stackrox
+          path: stackrox
+          ref: master
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+      - name: Apply patch and create PR
+        if: steps.patch.outputs.patch-length != '0'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          cd stackrox
+          BRANCH=$(cat "${BRANCH_NAME_FILE}")
+
+          git config user.name "${{ github.actor }}"
+          git config user.email noreply@github.com
+
+          git switch --create "${BRANCH}"
+
+          git am "${PATCH_FILE}"
+          git push --set-upstream origin "${BRANCH}"
+          gh pr create \
+            --fill \
+            --body "Auto-generated PR to update the upstream GHA automation" \
+            --assignee ${{ github.actor }}
