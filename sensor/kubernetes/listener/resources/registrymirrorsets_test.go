@@ -84,21 +84,21 @@ type FakeMirrorStore struct {
 
 var _ registrymirror.Store = (*FakeMirrorStore)(nil)
 
-func (*FakeMirrorStore) Cleanup()                                           {}
-func (*FakeMirrorStore) DeleteImageContentSourcePolicy(uid types.UID) error { return nil }
-func (*FakeMirrorStore) DeleteImageDigestMirrorSet(uid types.UID) error     { return nil }
-func (*FakeMirrorStore) DeleteImageTagMirrorSet(uid types.UID) error        { return nil }
-func (*FakeMirrorStore) UpsertImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet) error {
+func (*FakeMirrorStore) Cleanup()                                         {}
+func (*FakeMirrorStore) DeleteImageContentSourcePolicy(_ types.UID) error { return nil }
+func (*FakeMirrorStore) DeleteImageDigestMirrorSet(_ types.UID) error     { return nil }
+func (*FakeMirrorStore) DeleteImageTagMirrorSet(_ types.UID) error        { return nil }
+func (*FakeMirrorStore) UpsertImageDigestMirrorSet(_ *configV1.ImageDigestMirrorSet) error {
 	return nil
 }
-func (*FakeMirrorStore) UpsertImageTagMirrorSet(itms *configV1.ImageTagMirrorSet) error { return nil }
-func (*FakeMirrorStore) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error {
+func (*FakeMirrorStore) UpsertImageTagMirrorSet(_ *configV1.ImageTagMirrorSet) error { return nil }
+func (*FakeMirrorStore) UpsertImageContentSourcePolicy(_ *operatorV1Alpha1.ImageContentSourcePolicy) error {
 	return nil
 }
 func (*FakeMirrorStore) PullSources(srcImage string) ([]string, error) {
 	return nil, nil
 }
-func (*FakeMirrorStore) UpdateConfig(icspRules []*operatorV1Alpha1.ImageContentSourcePolicy, idmsRules []*configV1.ImageDigestMirrorSet, itmsRules []*configV1.ImageTagMirrorSet) error {
+func (*FakeMirrorStore) UpdateConfig(_ []*operatorV1Alpha1.ImageContentSourcePolicy, _ []*configV1.ImageDigestMirrorSet, _ []*configV1.ImageTagMirrorSet) error {
 	return nil
 }
 func (*FakeMirrorStore) GetAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePolicy, []*configV1.ImageDigestMirrorSet, []*configV1.ImageTagMirrorSet) {
