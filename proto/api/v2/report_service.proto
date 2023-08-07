@@ -255,10 +255,17 @@ service ReportService {
         };
     }
 
-    // GetReportHistory returns the full history for a report configuration with the specified ID.
+    // GetReportHistory returns the full report job history for a report configuration with the specified ID.
     rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
         option (google.api.http) = {
             get: "/v2/reports/configurations/{id}/history"
+        };
+    }
+
+    // GetMyReportHistory returns the requester's report job history for a report configuration with the specified ID.
+    rpc GetMyReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/configurations/{id}/my-history"
         };
     }
 
