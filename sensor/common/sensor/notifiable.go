@@ -22,7 +22,7 @@ type notifiableImpl struct {
 }
 
 func (ni *notifiableImpl) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
+	log.Info(common.LogSensorComponentEvent(e, ni.oa.ComponentName()))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		ni.oa.GoOnline()
