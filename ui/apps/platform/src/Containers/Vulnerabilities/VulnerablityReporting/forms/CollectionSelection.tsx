@@ -13,28 +13,36 @@ import {
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
-import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { Collection, CollectionSlim, listCollections } from 'services/CollectionsService';
-import CollectionsFormModal, {
-    CollectionFormModalAction,
-} from 'Containers/Collections/CollectionFormModal';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
-import { ReportScope } from './useReportFormValues';
+import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+
+import CollectionsFormModal, {
+    CollectionFormModalAction,
+} from 'Containers/Collections/CollectionFormModal';
 
 const COLLECTION_PAGE_SIZE = 10;
 
 type CollectionSelectionProps = {
+    toggleId: string;
+    id: string;
     selectedScope: ReportScope | null;
     onChange: (selection: CollectionSlim | null) => void;
     allowCreate: boolean;
+    onBlur?: React.FocusEventHandler<HTMLInputElement>;
+    onValidateField: (field: string) => void;
 };
 
 function CollectionSelection({
+    toggleId,
+    id,
     selectedScope,
     onChange,
     allowCreate,
+    onBlur,
+    onValidateField,
 }: CollectionSelectionProps): ReactElement {
     const { isOpen, onToggle } = useSelectToggle();
     const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
@@ -128,71 +136,71 @@ function CollectionSelection({
 
     return (
         <>
-            <FormLabelGroup
-                isRequired
-                label="Configure report scope"
-                fieldId="scopeId"
-                touched={{}}
-                errors={{}}
+            <Flex
+                direction={{ default: 'row' }}
+                spaceItems={{ default: 'spaceItemsNone' }}
+                alignItems={{ default: 'alignItemsFlexEnd' }}
                 // Workaround to ensure there is enough space for the select menu when opened
                 // at the bottom of a wizard step body (May no longer be needed after upgrade to PF5)
                 className={isOpen ? 'pf-u-mb-3xl' : ''}
             >
-                <Flex
-                    direction={{ default: 'row' }}
-                    spaceItems={{ default: 'spaceItemsNone' }}
-                    alignItems={{ default: 'alignItemsFlexEnd' }}
-                >
+                <FlexItem>
+                    <Select
+                        typeAheadAriaLabel={toggleId}
+                        toggleId={toggleId}
+                        id={id}
+                        onSelect={onScopeChange}
+                        selections={selectedScope?.id}
+                        placeholderText="Select a collection"
+                        variant={SelectVariant.typeahead}
+                        isOpen={isOpen}
+                        onToggle={onToggle}
+                        onTypeaheadInputChanged={(value) => {
+                            setSearch(value);
+                            onValidateField(id);
+                        }}
+                        loadingVariant={selectLoadingVariant}
+                        onBlur={(event) => {
+                            setSearch('');
+                            onBlur?.(event);
+                        }}
+                        style={{
+                            maxHeight: '275px',
+                            overflowY: 'auto',
+                        }}
+                        validated={ValidatedOptions.default}
+                    >
+                        {sortedCollections.map((collection) => (
+                            <SelectOption
+                                key={collection.id}
+                                value={collection.id}
+                                description={collection.description}
+                            >
+                                {collection.name}
+                            </SelectOption>
+                        ))}
+                    </Select>
+                </FlexItem>
+                <FlexItem spacer={{ default: 'spacerMd' }}>
+                    <Button
+                        variant={ButtonVariant.tertiary}
+                        onClick={onOpenViewCollectionModal}
+                        isDisabled={!selectedScope}
+                    >
+                        View
+                    </Button>
+                </FlexItem>
+                {allowCreate && (
                     <FlexItem>
-                        <Select
-                            id="scopeId"
-                            onSelect={onScopeChange}
-                            selections={selectedScope?.id}
-                            placeholderText="Select a collection"
-                            variant={SelectVariant.typeahead}
-                            isOpen={isOpen}
-                            onToggle={onToggle}
-                            onTypeaheadInputChanged={setSearch}
-                            loadingVariant={selectLoadingVariant}
-                            onBlur={() => setSearch('')}
-                            style={{
-                                maxHeight: '275px',
-                                overflowY: 'auto',
-                            }}
-                            validated={ValidatedOptions.default}
-                        >
-                            {sortedCollections.map((collection) => (
-                                <SelectOption
-                                    key={collection.id}
-                                    value={collection.id}
-                                    description={collection.description}
-                                >
-                                    {collection.name}
-                                </SelectOption>
-                            ))}
-                        </Select>
-                    </FlexItem>
-                    <FlexItem spacer={{ default: 'spacerMd' }}>
                         <Button
-                            variant={ButtonVariant.tertiary}
-                            onClick={onOpenViewCollectionModal}
-                            isDisabled={!selectedScope}
+                            variant={ButtonVariant.secondary}
+                            onClick={onOpenCreateCollectionModal}
                         >
-                            View
+                            Create collection
                         </Button>
                     </FlexItem>
-                    {allowCreate && (
-                        <FlexItem>
-                            <Button
-                                variant={ButtonVariant.secondary}
-                                onClick={onOpenCreateCollectionModal}
-                            >
-                                Create collection
-                            </Button>
-                        </FlexItem>
-                    )}
-                </Flex>
-            </FormLabelGroup>
+                )}
+            </Flex>
             {isCollectionModalOpen && (
                 <CollectionsFormModal
                     hasWriteAccessForCollections={allowCreate}

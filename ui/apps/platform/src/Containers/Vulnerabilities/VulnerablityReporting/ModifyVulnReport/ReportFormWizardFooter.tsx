@@ -6,6 +6,7 @@ export type ReportFormWizardStepsProps = {
     saveText: string;
     onSave: () => void;
     isSaving: boolean;
+    isStepDisabled: (stepName: string) => boolean;
 };
 
 function ReportFormWizardFooter({
@@ -13,6 +14,7 @@ function ReportFormWizardFooter({
     saveText,
     onSave,
     isSaving,
+    isStepDisabled,
 }: ReportFormWizardStepsProps) {
     return (
         <WizardFooter>
@@ -20,10 +22,24 @@ function ReportFormWizardFooter({
                 {({ activeStep, onNext, onBack, onClose }) => {
                     const firstStepName = wizardSteps[0].name;
                     const lastStepName = wizardSteps[wizardSteps.length - 1].name;
+                    const activeStepIndex = wizardSteps.findIndex(
+                        (wizardStep) => wizardStep.name === activeStep.name
+                    );
+                    const nextStepName =
+                        activeStepIndex === wizardSteps.length - 1
+                            ? undefined
+                            : wizardSteps[activeStepIndex + 1].name;
+                    const isNextDisabled = isStepDisabled(nextStepName as string);
+
                     return (
                         <>
                             {activeStep.name !== lastStepName ? (
-                                <Button variant="primary" type="submit" onClick={onNext}>
+                                <Button
+                                    variant="primary"
+                                    type="submit"
+                                    onClick={onNext}
+                                    isDisabled={isNextDisabled}
+                                >
                                     Next
                                 </Button>
                             ) : (
