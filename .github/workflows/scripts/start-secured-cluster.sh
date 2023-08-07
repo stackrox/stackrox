@@ -47,8 +47,8 @@ curl --silent --location "https://github.com/cloud-bulldozer/kube-burner/release
 
 tar -zxvf "./kube-burner/kube-burner-${KUBE_BURNER_VERSION}.tar.gz" --directory ./kube-burner
 
-kube_burner_config_file="$STACKROX_DIR"/.github/workflows/other-configs/cluster-density-kube-burner.yml 
-kube_burner_gen_config_file="$STACKROX_DIR"/.github/workflows/other-configs/cluster-density-kube-burner_gen.yml 
+kube_burner_config_file="$STACKROX_DIR"/.github/workflows/kube-burner-configs/cluster-density-kube-burner.yml 
+kube_burner_gen_config_file="$STACKROX_DIR"/.github/workflows/kube-burner-configs/cluster-density-kube-burner_gen.yml 
 
 sed "s|STACKROX_DIR|$STACKROX_DIR|" "$kube_burner_config_file" > "$kube_burner_gen_config_file" 
 
