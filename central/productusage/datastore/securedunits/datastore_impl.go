@@ -41,12 +41,14 @@ func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *typ
 	result := make(chan *storage.SecuredUnits)
 	go func() {
 		defer close(result)
-		_ = ds.store.Walk(ctx, func(record *storage.SecuredUnits) error {
+		if err := ds.store.Walk(ctx, func(record *storage.SecuredUnits) error {
 			if record.Timestamp.Compare(from) >= 0 && record.Timestamp.Compare(to) < 0 {
 				result <- record
 			}
 			return nil
-		})
+		}); err != nil {
+			log.Info("Error while walking the product usage table:", err)
+		}
 	}()
 	return result, nil
 }

@@ -95,10 +95,13 @@ func insertIntoSecuredUnits(batch *pgx.Batch, obj *storage.SecuredUnits) error {
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
+		pgutils.NilOrTime(obj.GetTimestamp()),
+		obj.GetNumNodes(),
+		obj.GetNumCpuUnits(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO secured_units (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO secured_units (Id, Timestamp, NumNodes, NumCpuUnits, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, NumNodes = EXCLUDED.NumNodes, NumCpuUnits = EXCLUDED.NumCpuUnits, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -113,6 +116,9 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 
 	copyCols := []string{
 		"id",
+		"timestamp",
+		"numnodes",
+		"numcpuunits",
 		"serialized",
 	}
 
@@ -129,6 +135,9 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
+			pgutils.NilOrTime(obj.GetTimestamp()),
+			obj.GetNumNodes(),
+			obj.GetNumCpuUnits(),
 			serialized,
 		})
 

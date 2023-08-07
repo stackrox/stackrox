@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -36,6 +37,9 @@ const (
 
 // SecuredUnits holds the Gorm model for Postgres table `secured_units`.
 type SecuredUnits struct {
-	ID         string `gorm:"column:id;type:uuid;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID          string     `gorm:"column:id;type:uuid;primaryKey"`
+	Timestamp   *time.Time `gorm:"column:timestamp;type:timestamp;unique"`
+	NumNodes    int64      `gorm:"column:numnodes;type:bigint"`
+	NumCPUUnits int64      `gorm:"column:numcpuunits;type:bigint"`
+	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }
