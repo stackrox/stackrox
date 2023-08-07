@@ -155,8 +155,7 @@ jobs:
         with:
           repository: stackrox/infra
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
-          # TODO: remove after merging the automation part in stackrox/infra
-          ref: tm/enable-automated-demo-flavor-updates
+          ref: master
       - name: Initialize git and check remote branch exists
         id: check-existing
         run: |
