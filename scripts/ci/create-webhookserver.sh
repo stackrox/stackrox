@@ -26,7 +26,7 @@ install_webhook_server() {
     mkdir -p chart/certs
     cp "${certs_tmp_dir}/tls.crt" "${certs_tmp_dir}/tls.key" chart/certs
     if [[ "${REMOTE_CLUSTER_ARCH}" == "ppc64le" ]]; then
-        sed -i 's|quay\.io/rhacs-eng/webhookserver:1.2|quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.2-ppc64le|g' webhookserver/chart/templates/server.yaml
+        sed -i 's|quay\.io/rhacs-eng/webhookserver:1.2|quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.2-ppc64le|g' chart/templates/server.yaml
     fi
     helm -n stackrox upgrade --install webhookserver chart/
     popd
