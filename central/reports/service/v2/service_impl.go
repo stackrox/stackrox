@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 )
 
@@ -104,7 +105,12 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request, creatorID)
+	creator := &storage.SlimUser{
+		Id:   creatorID.UID(),
+		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
+	}
+
+	protoReportConfig := convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
 
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
@@ -136,14 +142,23 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request, nil)
+	currentConfig, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
+	}
 
-	err := s.reportConfigStore.UpdateReportConfiguration(ctx, protoReportConfig)
+	updatedConfig := convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
+		currentConfig.GetVulnReportFilters().GetAccessScopeRules())
+
+	err = s.reportConfigStore.UpdateReportConfiguration(ctx, updatedConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(protoReportConfig)
+	err = s.scheduler.UpsertReportSchedule(updatedConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -176,16 +191,16 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	return &apiV2.ListReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
 }
 
-func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
-	if id.GetId() == "" {
+func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
+	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
-	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
 
 	converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)

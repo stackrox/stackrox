@@ -7,8 +7,9 @@ import (
 
 // ExtractAccessScopeRules extracts simple access scope rules from the given authenticated user identity
 func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessScope_Rules {
-	accessScopeRules := make([]*storage.SimpleAccessScope_Rules, 0, len(identity.Roles()))
-	for _, role := range identity.Roles() {
+	roles := identity.Roles()
+	accessScopeRules := make([]*storage.SimpleAccessScope_Rules, 0, len(roles))
+	for _, role := range roles {
 		accessScopeRules = append(accessScopeRules, role.GetAccessScope().GetRules())
 	}
 	return accessScopeRules
