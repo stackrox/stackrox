@@ -221,10 +221,12 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	srcs := make([]string, 0, len(pullSrcs))
 	for _, src := range pullSrcs {
 		ref := src.Reference.String()
+
 		if ref == srcImage && reg.Blocked {
 			// The registries config states the src registry should not be contacted.
 			continue
 		}
+
 		srcs = append(srcs, ref)
 	}
 
