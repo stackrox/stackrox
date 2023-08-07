@@ -153,6 +153,10 @@ spec:
         ports:
           - containerPort: 8444
             name: grpc
+          {{- if ._rox.collector.exposeMonitoring }}
+          - containerPort: 9092
+            name: monitoring
+          {{- end }}
         resources:
           {{- ._rox.collector._nodeScanningResources | nindent 10 }}
         env:
@@ -161,6 +165,12 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: ROX_METRICS_PORT
+        {{- if ._rox.collector.exposeMonitoring }}
+          value: ":9092"
+        {{- else }}
+          value: "disabled"
+        {{- end }}
         {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
         volumeMounts:
          - mountPath: /host
