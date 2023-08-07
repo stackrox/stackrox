@@ -11,6 +11,7 @@ import (
 	reportConfigDSMocks "github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -68,7 +69,8 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 	s.notifierDataStore = notifierDSMocks.NewMockDataStore(s.mockCtrl)
 	s.blobStore = blobDSMocks.NewMockDatastore(s.mockCtrl)
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore)
+	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
 }
 
 func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {

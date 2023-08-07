@@ -25,7 +25,7 @@ type Service interface {
 // New returns a new instance of the service.
 func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
-	scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore) Service {
+	scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore, validator *validation.Validator) Service {
 	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
@@ -36,5 +36,6 @@ func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotD
 		notifierDatastore:   notifierDatastore,
 		scheduler:           scheduler,
 		blobStore:           blobStore,
+		validator:           validator,
 	}
 }

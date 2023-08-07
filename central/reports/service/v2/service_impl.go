@@ -73,6 +73,7 @@ type serviceImpl struct {
 	notifierDatastore   notifierDS.DataStore
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
+	validator           *validation.Validator
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -91,17 +92,17 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
+	creatorID := authn.IdentityFromContextOrNil(ctx)
+	if creatorID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	if err := s.ValidateReportConfiguration(request); err != nil {
+	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request)
-	protoReportConfig.Creator = slimUser
+	protoReportConfig := convertV2ReportConfigurationToProto(request, creatorID)
+
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
 		return nil, err
@@ -128,11 +129,11 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
-	if err := s.ValidateReportConfiguration(request); err != nil {
+	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request)
+	protoReportConfig := convertV2ReportConfigurationToProto(request, nil)
 
 	err := s.reportConfigStore.UpdateReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
@@ -304,8 +305,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if req.GetReportConfigId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
 	}
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
@@ -316,8 +317,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		notificationMethod = storage.ReportStatus_DOWNLOAD
 	}
 
-	reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigStore, s.collectionDatastore, s.notifierDatastore,
-		req.GetReportConfigId(), slimUser, notificationMethod, storage.ReportStatus_ON_DEMAND)
+	reportReq, err := s.validator.ValidateAndGenerateReportRequest(req.GetReportConfigId(), notificationMethod,
+		storage.ReportStatus_ON_DEMAND, requesterID)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +346,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	err := validation.ValidateCancelReportRequest(s.snapshotDatastore, req.GetId(), slimUser)
+	err := s.validator.ValidateCancelReportRequest(req.GetId(), slimUser)
 	if err != nil {
 		return nil, err
 	}

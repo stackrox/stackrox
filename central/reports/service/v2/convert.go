@@ -1,11 +1,17 @@
 package v2
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -21,6 +27,9 @@ var (
 		storage.Schedule_WEEKLY:  apiV2.ReportSchedule_WEEKLY,
 		storage.Schedule_MONTHLY: apiV2.ReportSchedule_MONTHLY,
 	}
+
+	// Use this context only to populate notifier and collection names before returning v2.ReportConfiguration response
+	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 /*
@@ -28,7 +37,8 @@ apiV2 type to storage type conversions
 */
 
 // convertV2ReportConfigurationToProto converts v2.ReportConfiguration to storage.ReportConfiguration
-func convertV2ReportConfigurationToProto(config *apiV2.ReportConfiguration) *storage.ReportConfiguration {
+func convertV2ReportConfigurationToProto(config *apiV2.ReportConfiguration,
+	creatorID authn.Identity) *storage.ReportConfiguration {
 	if config == nil {
 		return nil
 	}
@@ -42,9 +52,16 @@ func convertV2ReportConfigurationToProto(config *apiV2.ReportConfiguration) *sto
 		ResourceScope: convertV2ResourceScopeToProto(config.GetResourceScope()),
 	}
 
+	if creatorID != nil {
+		ret.Creator = &storage.SlimUser{
+			Id:   creatorID.UID(),
+			Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
+		}
+	}
+
 	if config.GetVulnReportFilters() != nil {
 		ret.Filter = &storage.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: convertV2VulnReportFiltersToProto(config.GetVulnReportFilters()),
+			VulnReportFilters: convertV2VulnReportFiltersToProto(config.GetVulnReportFilters(), common.ExtractAccessScopeRules(creatorID)),
 		}
 	}
 
@@ -55,13 +72,15 @@ func convertV2ReportConfigurationToProto(config *apiV2.ReportConfiguration) *sto
 	return ret
 }
 
-func convertV2VulnReportFiltersToProto(filters *apiV2.VulnerabilityReportFilters) *storage.VulnerabilityReportFilters {
+func convertV2VulnReportFiltersToProto(filters *apiV2.VulnerabilityReportFilters,
+	accessScopeRules []*storage.SimpleAccessScope_Rules) *storage.VulnerabilityReportFilters {
 	if filters == nil {
 		return nil
 	}
 
 	ret := &storage.VulnerabilityReportFilters{
-		Fixability: storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
+		Fixability:       storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
+		AccessScopeRules: accessScopeRules,
 	}
 
 	for _, severity := range filters.GetSeverities() {

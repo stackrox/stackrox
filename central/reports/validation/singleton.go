@@ -1,9 +1,8 @@
-package v2
+package validation
 
 import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
-	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/pkg/env"
@@ -11,28 +10,20 @@ import (
 )
 
 var (
-	once sync.Once
-
-	sched Scheduler
+	once      sync.Once
+	validator *Validator
 )
 
 func initialize() {
 	collectionDatastore, _ := collectionDS.Singleton()
-	sched = New(
-		reportConfigDS.Singleton(),
-		reportSnapshotDS.Singleton(),
-		collectionDatastore,
-		notifierDS.Singleton(),
-		reportGen.Singleton(),
-		validation.Singleton(),
-	)
+	validator = New(reportConfigDS.Singleton(), reportSnapshotDS.Singleton(), collectionDatastore, notifierDS.Singleton())
 }
 
-// Singleton will return a singleton instance of the v2 report scheduler
-func Singleton() Scheduler {
+// Singleton returns a singleton instance of Validator
+func Singleton() *Validator {
 	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
 	once.Do(initialize)
-	return sched
+	return validator
 }

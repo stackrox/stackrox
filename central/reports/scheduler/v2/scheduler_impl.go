@@ -45,6 +45,7 @@ type scheduler struct {
 	collectionDatastore   collectionDS.DataStore
 	notifierDatastore     notifierDS.DataStore
 	reportGenerator       reportGen.ReportGenerator
+	validator             *validation.Validator
 
 	reportRequestsQueue *list.List
 
@@ -81,7 +82,7 @@ type scheduler struct {
 // New instantiates a new cron scheduler and supports adding and removing report requests
 func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
-	reportGenerator reportGen.ReportGenerator) Scheduler {
+	reportGenerator reportGen.ReportGenerator, validator *validation.Validator) Scheduler {
 
 	cronScheduler := cron.New()
 	cronScheduler.Start()
@@ -90,12 +91,13 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore rep
 		panic(err)
 	}
 	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, notifierDatastore,
-		reportGenerator, cronScheduler, ourSchema)
+		reportGenerator, validator, cronScheduler, ourSchema)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
-	reportGenerator reportGen.ReportGenerator, cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
+	reportGenerator reportGen.ReportGenerator, validator *validation.Validator, cronScheduler *cron.Cron,
+	schema *graphql.Schema) *scheduler {
 	s := &scheduler{
 		reportConfigToEntryIDs: make(map[string]cron.EntryID),
 		reportConfigDatastore:  reportConfigDatastore,
@@ -103,6 +105,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		collectionDatastore:    collectionDatastore,
 		notifierDatastore:      notifierDatastore,
 		reportGenerator:        reportGenerator,
+		validator:              validator,
 		reportRequestsQueue:    list.New(),
 		readyForReports:        concurrency.NewSignal(),
 		runningReportConfigs:   set.NewStringSet(),
@@ -167,7 +170,7 @@ func (s *scheduler) runReports() {
 				log.Errorf("Error acquiring semaphore to run new report: %v", err)
 				continue
 			}
-			log.Infof("Executing report '%s' at %v", reportRequest.ReportConfig.GetName(), time.Now().Format(time.RFC822))
+			log.Infof("Executing report '%s' at %v", reportRequest.ReportSnapshot.GetName(), time.Now().Format(time.RFC822))
 			go s.runSingleReport(reportRequest)
 		}
 	}
@@ -178,19 +181,19 @@ func (s *scheduler) selectNextRunnableReport() *reportGen.ReportRequest {
 	defer s.schedulerLock.Unlock()
 
 	request := findAndRemoveFromQueue(s.reportRequestsQueue, func(req *reportGen.ReportRequest) bool {
-		return !s.runningReportConfigs.Contains(req.ReportConfig.GetId())
+		return !s.runningReportConfigs.Contains(req.ReportSnapshot.GetReportConfigurationId())
 	})
 	if request == nil {
 		return nil
 	}
-	s.runningReportConfigs.Add(request.ReportConfig.GetId())
+	s.runningReportConfigs.Add(request.ReportSnapshot.GetReportConfigurationId())
 	return request
 }
 
 func (s *scheduler) runSingleReport(req *reportGen.ReportRequest) {
 	defer s.readyForReports.Signal()
 	defer s.concurrencySema.Release(1)
-	defer s.removeFromRunningReportConfigs(req.ReportConfig.GetId())
+	defer s.removeFromRunningReportConfigs(req.ReportSnapshot.GetReportConfigurationId())
 
 	s.reportGenerator.ProcessReportRequest(req)
 }
@@ -298,8 +301,8 @@ func (s *scheduler) appendToReportsQueue(req *reportGen.ReportRequest) {
 func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
 	return func() {
 		log.Infof("Submitting scheduled report request for '%s' at %v", reportConfig.GetName(), time.Now().Format(time.RFC850))
-		reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigDatastore, s.collectionDatastore, s.notifierDatastore,
-			reportConfig.GetId(), reportConfig.GetCreator(), storage.ReportStatus_EMAIL, storage.ReportStatus_SCHEDULED)
+		reportReq, err := s.validator.ValidateAndGenerateReportRequest(reportConfig.GetId(), storage.ReportStatus_EMAIL,
+			storage.ReportStatus_SCHEDULED, nil)
 		if err != nil {
 			log.Errorf("Error submitting scheduled report request for '%s': %s", reportConfig.GetName(), err)
 		}
@@ -322,14 +325,30 @@ func (s *scheduler) queuePendingReports() {
 	}
 
 	for _, snap := range pendingReports {
-		reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigDatastore, s.collectionDatastore, s.notifierDatastore,
-			snap.GetReportConfigurationId(), snap.GetRequester(), snap.GetReportStatus().GetReportNotificationMethod(),
-			snap.GetReportStatus().GetReportRequestType())
+		_, found, err := s.reportConfigDatastore.GetReportConfiguration(scheduledCtx, snap.GetReportConfigurationId())
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 			continue
 		}
-		_, err = s.SubmitReportRequest(scheduledCtx, reportReq, true)
+		if !found {
+			log.Warnf("Report configuration with ID %s had pending reports but the configuration no longer exists",
+				snap.GetReportConfigurationId())
+			continue
+		}
+
+		collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
+		if err != nil {
+			log.Errorf("Error finding collection ID '%s': %s ", snap.GetCollection().GetId())
+			continue
+		}
+		if !found {
+			log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
+		}
+
+		_, err = s.SubmitReportRequest(scheduledCtx, &reportGen.ReportRequest{
+			ReportSnapshot: snap,
+			Collection:     collection,
+		}, true)
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)
 		}
