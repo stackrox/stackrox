@@ -14,7 +14,7 @@ on:
     - synchronize
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,4 +48,11 @@ jobs:
     - name: Build Scanner and ScannerDB images
       run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
 
-# TODO: Push Scanner and ScannerDB images
+    - name: Push Scanner and ScannerDB images
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        source ./scripts/ci/lib.sh
+        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
+        push_scanner_image_set

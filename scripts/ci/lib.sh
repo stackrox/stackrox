@@ -191,7 +191,7 @@ push_image_manifest_lists() {
     done
 
     # Push manifest lists for scanner and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
+    local amd64_image_set=("scanner-classic" "scanner-db-classic" "scanner-slim-classic" "scanner-db-slim-classic" "collector" "collector-slim")
     for image in "${amd64_image_set[@]}"; do
         "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
     done
@@ -271,6 +271,48 @@ push_main_image_set() {
                 _push_main_image_set "$registry" "latest-${arch}"
             fi
         fi
+    done
+}
+
+push_scanner_image_set() {
+    info "Pushing scanner and scanner-db images"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_scanner_image_set <arch>"
+    fi
+
+    local arch="$1"
+
+    local scanner_image_set=("scanner" "scanner-db")
+
+    _push_scanner_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        for image in "${scanner_image_set[@]}"; do
+            docker push "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_scanner_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${main_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    local destination_registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    local tag
+    tag="$(make --quiet --no-print-directory -C scanner tag)"
+    for registry in "${destination_registries[@]}"; do
+        registry_rw_login "$registry"
+
+        _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+        _push_main_image_set "$registry" "$tag-$arch"
     done
 }
 
@@ -356,10 +398,10 @@ push_matching_collector_scanner_images() {
     for target_registry in "${target_registries[@]}"; do
         registry_rw_login "${target_registry}"
 
-        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner-classic:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db-classic:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim-classic:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim-classic:${main_tag}-${arch}"
 
         _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}-${arch}"
         _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}-${arch}"
