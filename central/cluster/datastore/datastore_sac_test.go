@@ -122,8 +122,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID1},
+			ExpectedClusterNames: []string{testconsts.Cluster1},
 		},
 		{
 			Name: "Cluster read Cluster2",
@@ -143,8 +143,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID2),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID2},
+			ExpectedClusterNames: []string{testconsts.Cluster2},
 		},
 		{
 			Name: "Cluster read other cluster",
@@ -185,8 +185,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, clusterID2),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID1, clusterID2},
+			ExpectedClusterNames: []string{testconsts.Cluster1, testconsts.Cluster2},
 		},
 		{
 			Name: "Cluster read Cluster1 and some other cluster",
@@ -206,8 +206,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, otherClusterID),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID1},
+			ExpectedClusterNames: []string{testconsts.Cluster1},
 		},
 	}
 }

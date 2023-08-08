@@ -425,7 +425,7 @@ func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadRep
 			sac.ResourceScopeKeys(resources.Administration)),
 	)
 
-	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(req.GetId(), rep.GetReportConfigurationId()), buf)
+	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(rep.GetReportConfigurationId(), req.GetId()), buf)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvariantViolation, "Failed to fetch report data")
 	}
@@ -466,7 +466,7 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 		return nil, errors.Wrapf(errox.InvalidArgs, "Report job id %q did not generate a downloadable report and hence no report to delete.", req.GetId())
 	}
 
-	blobName := common.GetReportBlobPath(req.GetId(), rep.GetReportConfigurationId())
+	blobName := common.GetReportBlobPath(rep.GetReportConfigurationId(), req.GetId())
 	switch status.GetRunState() {
 	case storage.ReportStatus_FAILURE:
 		return nil, errors.Errorf("Report job %q has failed and no downloadable report to delete", req.GetId())

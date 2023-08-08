@@ -111,9 +111,11 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			case _, ok := <-c.umh.RetryCommand():
 				if c.cache == nil {
 					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
+					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss)
 					t.Reset(time.Second)
 				} else if ok {
 					nodeInventoriesC <- c.cache
+					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit)
 				}
 			case <-t.C:
 				log.Infof("Scanning node %q", nodeName)
@@ -121,12 +123,14 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				if err != nil {
 					log.Errorf("Error running node scan: %v", err)
 				} else {
+					cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
+					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
 					c.umh.ObserveSending()
 					c.cache = msg.Clone()
 					nodeInventoriesC <- msg
 				}
 				interval := i.Next()
-				cmetrics.ObserveRescanInterval(interval, c.nodeNameProvider.GetNodeName())
+				cmetrics.ObserveRescanInterval(interval, nodeName)
 				t.Reset(interval)
 			}
 		}
@@ -205,7 +209,6 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		case *sensor.MsgToCompliance_Ack:
 			switch t.Ack.GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				// TODO(ROX-16549): Add metric to see the ratio of Ack/Nack(?)
 				c.umh.HandleACK()
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
 				c.umh.HandleNACK()

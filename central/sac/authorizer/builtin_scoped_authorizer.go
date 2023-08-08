@@ -205,6 +205,10 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permission
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 
+	if a.resource.GetScope() == permissions.GlobalScope {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+
 	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
