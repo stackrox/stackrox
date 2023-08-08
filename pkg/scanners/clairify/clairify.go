@@ -417,7 +417,9 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 		return nil, err
 	}
 
-	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
+	scan := convertImageToImageScan(image.GetMetadata(), resp.GetImage())
+	log.Infof("%s: scan: %+v", image.GetName().String(), scan)
+	return scan, nil
 }
 
 func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
