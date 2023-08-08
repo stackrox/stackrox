@@ -6,7 +6,7 @@ import (
 )
 
 type SignerFactory struct {
-	keyStore PrivateKeyStore
+	keyStore PrivateKeyGetter
 	keyID    string
 }
 
@@ -20,7 +20,7 @@ func (f *SignerFactory) CreateSigner() (jose.Signer, error) {
 
 // CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the
 // specified RSA private key.
-func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore PrivateKeyStore, publicKeyStore PublicKeyGetter, keyID string) (*SignerFactory, Validator) {
+func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore PrivateKeyGetter, publicKeyStore PublicKeyGetter, keyID string) (*SignerFactory, Validator) {
 	validator := NewRS256Validator(publicKeyStore, issuerID, audience)
 	signerFactory := &SignerFactory{
 		keyStore: privateKeyStore,

@@ -6,10 +6,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// PrivateKeyStore stores JWT private keys.
+// PrivateKeyGetter stores JWT private keys.
 // Note: the reason we use crypto.Signer here is because crypto.PrivateKey
 // is empty interface that does not implement Public() method.
-type PrivateKeyStore interface {
+type PrivateKeyGetter interface {
 	Key(keyID string) crypto.Signer
 	UpdateKey(keyID string, key crypto.Signer)
 }
@@ -38,8 +38,8 @@ func (s *singlePrivateKeyStore) UpdateKey(keyID string, newVal crypto.Signer) {
 	}
 }
 
-// NewSinglePrivateKeyStore returns PrivateKeyStore that allows obtaining a single key with a defined id.
-func NewSinglePrivateKeyStore(key crypto.Signer, keyID string) PrivateKeyStore {
+// NewSinglePrivateKeyStore returns PrivateKeyGetter that allows obtaining a single key with a defined id.
+func NewSinglePrivateKeyStore(key crypto.Signer, keyID string) PrivateKeyGetter {
 	return &singlePrivateKeyStore{
 		keyID: keyID,
 		key:   key,

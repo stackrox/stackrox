@@ -78,11 +78,11 @@ func (j *JWKSGetter) fetch() {
 // DerivedPublicKeyStore provides public key by looking up into underlying private key store.
 type DerivedPublicKeyStore struct {
 	keyID           string
-	privateKeyStore PrivateKeyStore
+	privateKeyStore PrivateKeyGetter
 }
 
 // NewDerivedPublicKeyStore returns a PublicKeyGetter that allows obtaining a single, derived from private key with a defined id.
-func NewDerivedPublicKeyStore(privateKeyStore PrivateKeyStore, keyID string) PublicKeyGetter {
+func NewDerivedPublicKeyStore(privateKeyStore PrivateKeyGetter, keyID string) PublicKeyGetter {
 	return &DerivedPublicKeyStore{
 		keyID:           keyID,
 		privateKeyStore: privateKeyStore,
