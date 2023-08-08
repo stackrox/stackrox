@@ -1,8 +1,6 @@
 package tokens
 
 import (
-	"crypto/rsa"
-
 	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -13,14 +11,11 @@ var (
 
 // CreateIssuerFactoryAndValidator is the entrypoint of the auth tokens subsystem, creating an issuer factory that can
 // issue token for token sources, as well as a corresponding validator that validates token issued by those issuers.
-func CreateIssuerFactoryAndValidator(issuerID string, privateKey *rsa.PrivateKey, keyID string, options ...Option) (IssuerFactory, Validator, error) {
+func CreateIssuerFactoryAndValidator(issuerID string, privateKeyGetter, publicKeyGetter jwt.KeyGetter, keyID string, options ...Option) (IssuerFactory, Validator) {
 	srcs := newSourceStore()
-	signer, jwtValidator, err := jwt.CreateRS256SignerAndValidator(issuerID, nil, privateKey, keyID)
-	if err != nil {
-		return nil, nil, err
-	}
+	signerGetter, jwtValidator := jwt.CreateRS256SignerAndValidator(issuerID, nil, privateKeyGetter, publicKeyGetter, keyID)
 
-	factory := newIssuerFactory(issuerID, signer, srcs, options...)
+	factory := newIssuerFactory(issuerID, signerGetter, srcs, options...)
 	validator := newValidator(srcs, jwtValidator)
-	return factory, validator, nil
+	return factory, validator
 }

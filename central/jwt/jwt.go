@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"log"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -19,8 +21,9 @@ var (
 )
 
 const (
-	privateKeyPath    = "/run/secrets/stackrox.io/jwt/jwt-key.der"
-	privateKeyPathPEM = "/run/secrets/stackrox.io/jwt/jwt-key.pem"
+	privateKeyDir     = "/run/secrets/stackrox.io/jwt"
+	privateKeyPath    = privateKeyDir + "/jwt-key.der"
+	privateKeyPathPEM = privateKeyDir + "/jwt-key.pem"
 	issuerID          = "https://stackrox.io/jwt"
 
 	keyID = "jwtk0"
@@ -51,17 +54,34 @@ func GetPrivateKeyBytes() ([]byte, error) {
 }
 
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
+	// Load initial key so that we would immediately fail in case
+	initialPrivateKey, err := loadPrivateKey(privateKeyDir)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKeyStore := jwt.NewSingleKeyStore(initialPrivateKey, keyID)
+	publicKeyStore := jwt.NewSingleKeyStore(initialPrivateKey.Public(), keyID)
+	jwt.WatchKeyDir(privateKeyDir, loadPrivateKey, func(key *rsa.PrivateKey) {
+		privateKeyStore.UpdateKey(key)
+		publicKeyStore.UpdateKey(key.Public())
+	})
+
+	issuerFactory, validator := tokens.CreateIssuerFactoryAndValidator(issuerID, privateKeyStore, publicKeyStore, keyID)
+	return issuerFactory, validator, nil
+}
+
+// TODO: use actually dir
+func loadPrivateKey(dir string) (*rsa.PrivateKey, error) {
 	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "loading private key")
+		return nil, errors.Wrap(err, "loading private key")
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "parsing private key")
+		return nil, errors.Wrap(err, "parsing private key")
 	}
-
-	return tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)
+	return privateKey, nil
 }
 
 func initialize() {

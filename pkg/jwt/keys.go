@@ -75,12 +75,15 @@ func (j *JWKSGetter) fetch() {
 	}
 }
 
-type singleKeyStore struct {
+type SingleKeyStore struct {
 	keyID string
 	key   interface{}
+	mutex sync.RWMutex
 }
 
-func (s *singleKeyStore) Key(id string) interface{} {
+func (s *SingleKeyStore) Key(id string) interface{} {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	if id == s.keyID {
 		return s.key
 	}
@@ -88,9 +91,17 @@ func (s *singleKeyStore) Key(id string) interface{} {
 	return nil
 }
 
+func (s *SingleKeyStore) UpdateKey(newVal interface{}) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.key = newVal
+	log.Infof("Value is updated: %v", s.key)
+}
+
 // NewSingleKeyStore returns a KeyGetter that allows obtaining a single key with a defined id.
-func NewSingleKeyStore(key interface{}, keyID string) KeyGetter {
-	return &singleKeyStore{
+func NewSingleKeyStore(key interface{}, keyID string) *SingleKeyStore {
+	return &SingleKeyStore{
 		keyID: keyID,
 		key:   key,
 	}

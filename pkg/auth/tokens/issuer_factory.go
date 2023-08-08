@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	jwt2 "github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/uuid"
-	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
@@ -16,20 +16,20 @@ type IssuerFactory interface {
 	UnregisterSource(source Source) error
 }
 
-func newIssuerFactory(id string, signer jose.Signer, sources *sourceStore, globalOptions ...Option) IssuerFactory {
+func newIssuerFactory(id string, signer *jwt2.SignerGetter, sources *sourceStore, globalOptions ...Option) IssuerFactory {
 	return &issuerFactory{
-		id:      id,
-		sources: sources,
-		builder: jwt.Signed(signer),
-		options: globalOptions,
+		id:           id,
+		sources:      sources,
+		signerGetter: signer,
+		options:      globalOptions,
 	}
 }
 
 type issuerFactory struct {
-	id      string
-	sources *sourceStore
-	builder jwt.Builder
-	options []Option
+	id           string
+	sources      *sourceStore
+	options      []Option
+	signerGetter *jwt2.SignerGetter
 }
 
 func (f *issuerFactory) CreateIssuer(source Source, options ...Option) (Issuer, error) {
@@ -61,7 +61,12 @@ func (f *issuerFactory) createClaims(sourceID string, roxClaims RoxClaims) *Clai
 }
 
 func (f *issuerFactory) encode(claims *Claims) (string, error) {
-	return f.builder.Claims(&claims.Claims).Claims(&claims.RoxClaims).Claims(translateExtra(claims.Extra)).CompactSerialize()
+	signer, err := f.signerGetter.GetSigner()
+	if err != nil {
+		return "", err
+	}
+	builder := jwt.Signed(signer)
+	return builder.Claims(&claims.Claims).Claims(&claims.RoxClaims).Claims(translateExtra(claims.Extra)).CompactSerialize()
 }
 
 // translateExtra converts a map[string]json.RawMessage to a map[string]interface{} expected by go-jose.

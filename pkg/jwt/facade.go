@@ -1,26 +1,32 @@
 package jwt
 
 import (
-	"crypto/rsa"
-
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-// CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the
-// specified RSA private key.
-func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, key *rsa.PrivateKey, keyID string) (jose.Signer, Validator, error) {
-	keyStore := NewSingleKeyStore(key.Public(), keyID)
-	validator := NewRS256Validator(keyStore, issuerID, audience)
+type SignerGetter struct {
+	keyStore KeyGetter
+	keyID    string
+}
+
+func (f *SignerGetter) GetSigner() (jose.Signer, error) {
 	signingKey := jose.SigningKey{
 		Algorithm: jose.RS256,
-		Key:       key,
+		Key:       f.keyStore.Key(f.keyID),
 	}
-	signer, err := jose.NewSigner(signingKey, new(jose.SignerOptions).WithType("JWT").WithHeader("kid", keyID))
-	if err != nil {
-		return nil, nil, err
+	return jose.NewSigner(signingKey, new(jose.SignerOptions).WithType("JWT").WithHeader("kid", f.keyID))
+}
+
+// CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the
+// specified RSA private key.
+func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore, publicKeyStore KeyGetter, keyID string) (*SignerGetter, Validator) {
+	validator := NewRS256Validator(publicKeyStore, issuerID, audience)
+	signer := &SignerGetter{
+		keyStore: privateKeyStore,
+		keyID:    keyID,
 	}
-	return signer, validator, nil
+	return signer, validator
 }
 
 // CreateES256Validator creates a token validator pair with the given properties and jwks public key url
