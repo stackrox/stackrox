@@ -323,7 +323,16 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
 		domainPB := getDomainProto(domain)
-		err = m.resultsStore.StoreComplianceDomain(ctx, domainPB)
+		// Domain is indirectly scoped, and checks global permissions for write operations.
+		// Temporarily elevating the privileges to write the domain informations.
+		domainWriteCtx := sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Compliance),
+			),
+		)
+		err = m.resultsStore.StoreComplianceDomain(domainWriteCtx, domainPB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain protobuf for ID %q", clusterID)
 		}
