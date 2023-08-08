@@ -152,6 +152,44 @@ type testState struct {
 	expectedNACKCount int
 }
 
+func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
+	ch := make(chan *storage.NodeInventory)
+	defer close(ch)
+	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	s.NoError(h.Start())
+	h.Notify(common.SensorComponentEventCentralReachable)
+
+	cases := map[string]struct {
+		centralReply      central.NodeInventoryACK_Action
+		expectedACKCount  int
+		expectedNACKCount int
+	}{
+		"Central ACK should be forwarded to Compliance": {
+			centralReply:      central.NodeInventoryACK_ACK,
+			expectedACKCount:  1,
+			expectedNACKCount: 0,
+		},
+		"Central NACK should be forwarded to Compliance": {
+			centralReply:      central.NodeInventoryACK_NACK,
+			expectedACKCount:  0,
+			expectedNACKCount: 1,
+		},
+	}
+
+	for name, tc := range cases {
+		ch <- fakeNodeInventory("node-" + name)
+		s.NoError(mockCentralReply(h, tc.centralReply))
+		result := consumeAndCountCompliance(h.ComplianceC(), 1)
+		s.NoError(result.sc.Stopped().Wait())
+		s.Equal(tc.expectedACKCount, result.ACKCount)
+		s.Equal(tc.expectedNACKCount, result.NACKCount)
+	}
+
+	h.Stop(nil)
+	s.T().Logf("waiting for handler to stop")
+	s.NoError(h.Stopped().Wait())
+}
+
 // This test simulates a running Sensor loosing connection to Central, followed by a reconnect.
 // As soon as Sensor enters offline mode, it should send NACKs to Compliance.
 // In online mode, inventories are forwarded to Central, which responds with an ACK, that is passed to Compliance.
@@ -183,7 +221,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 		h.Notify(state.event)
 		ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", i))
 		if state.event == common.SensorComponentEventCentralReachable {
-			s.NoError(mockCentralAck(h))
+			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
 		}
 		result := consumeAndCountCompliance(h.ComplianceC(), 1)
 		s.NoError(result.sc.Stopped().Wait())
@@ -196,14 +234,14 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func mockCentralAck(h *nodeInventoryHandlerImpl) error {
+func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
 		err := h.ProcessMessage(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",
-				Action:    central.NodeInventoryACK_ACK,
+				Action:    ackType,
 			}},
 		})
 		return err
