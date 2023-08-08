@@ -98,6 +98,18 @@ var (
 			// The Node this scan belongs to
 			"node_name",
 		})
+
+	inventoryTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "inventory_transmissions_total",
+		Help:      "Number of node inventory scans sent to sensor",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			"transmission_type",
+		})
 )
 
 // ObserveNodeInventoryScan observes the metric.
@@ -164,8 +176,35 @@ func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
 	}).Observe(float64(cmsg.Size()))
 }
 
-// TODO(ROX-16549): Add number of retries
+// InventoryTransmission names the way in which a NodeInventory was obtained
+type InventoryTransmission string
+
+const (
+	// InventoryTransmissionScan means that we requested a new scan from NodeInventory container
+	InventoryTransmissionScan InventoryTransmission = "scanning"
+	// InventoryTransmissionResendingCacheHit means that we reply to NACK and send NodeInventory from compliance cache
+	InventoryTransmissionResendingCacheHit InventoryTransmission = "resending cached"
+	// InventoryTransmissionResendingCacheMiss means that we reply to NACK and schedule a rescan due to empty cache.
+	// This will result in additional observation of `InventoryTransmissionScan`
+	InventoryTransmissionResendingCacheMiss InventoryTransmission = "scanning and resending "
+)
+
+// ObserveNodeInventorySending observes the metric.
+func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmission) {
+	inventoryTransmissions.With(prometheus.Labels{
+		"node_name":         nodeName,
+		"transmission_type": string(sendingType),
+	}).Inc()
+}
 
 func init() {
-	prometheus.MustRegister(numberOfRHELPackages, numberOfContentSets, scanDuration, callToNodeInventoryDuration, rescanInterval, scansTotal, protobufMessageSize)
+	prometheus.MustRegister(
+		callToNodeInventoryDuration,
+		inventoryTransmissions,
+		numberOfRHELPackages,
+		numberOfContentSets,
+		protobufMessageSize,
+		rescanInterval,
+		scanDuration,
+		scansTotal)
 }
