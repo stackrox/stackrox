@@ -8,9 +8,11 @@ package scanner.v4;
 
 option go_package = "v4";
 
-message NormalizedVersion {
-    string         kind = 1;
-    repeated int32 v    = 2;
+message Contents {
+    repeated Package              packages      = 1;
+    repeated Distribution         distributions = 2;
+    repeated Repository           repositories  = 3;
+    map<string, Environment.List> environments  = 4;
 }
 
 message Package {
@@ -25,6 +27,11 @@ message Package {
     string            module             = 10;
     string            arch               = 11;
     string            cpe                = 12;
+}
+
+message NormalizedVersion {
+    string         kind = 1;
+    repeated int32 v    = 2;
 }
 
 message Distribution {

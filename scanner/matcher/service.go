@@ -25,7 +25,7 @@ func NewMatcherService(matcher *Matcher) (*matcherService, error) {
 	}, nil
 }
 
-func (s *matcherService) GetVulnerabilities(_ context.Context, _ *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
+func (s *matcherService) GetVulnerabilities(_ context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetVulnerabilities not implemented")
 }
 
