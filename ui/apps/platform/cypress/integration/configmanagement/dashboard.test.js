@@ -197,7 +197,7 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('should go to policies list from View all link in Policies widget', () => {
+    it('should go to policies list from View link in Policies widget', () => {
         const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
@@ -209,7 +209,7 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('go to controls list from View all link in CIS widget', () => {
+    it('go to controls list from View link in CIS widget', () => {
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
@@ -221,7 +221,7 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('should go to subjects (users and groups) list from View all link in Users widget', () => {
+    it('should go to subjects (users and groups) list from View link in Users widget', () => {
         const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
@@ -246,7 +246,7 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('should go to secrets list from View all link in Secrets widget', () => {
+    it('should go to secrets list from View link in Secrets widget', () => {
         const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
