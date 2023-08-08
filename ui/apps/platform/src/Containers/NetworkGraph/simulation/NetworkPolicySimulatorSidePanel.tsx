@@ -41,11 +41,18 @@ import NotifyYAMLModal from './NotifyYAMLModal';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
+import NetworkPoliciesGenerationScope, { EntityScope } from './NetworkPoliciesGenerationScope';
 
-type NetworkPolicySimulatorSidePanelProps = {
+export type NetworkPolicySimulatorSidePanelProps = {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
+    /** scopeHierarchy is the user's selected scope for the network graph */
     scopeHierarchy: NetworkScopeHierarchy;
+    /**
+     *  `networkPolicyGenerationScope` is the set of entities selected by the `scopeHierarchy`
+     *  that can have network policies generated for them
+     */
+    networkPolicyGenerationScope: EntityScope;
 };
 
 const tabs = {
@@ -57,6 +64,7 @@ function NetworkPolicySimulatorSidePanel({
     simulator,
     setNetworkPolicyModification,
     scopeHierarchy,
+    networkPolicyGenerationScope,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
@@ -167,32 +175,23 @@ function NetworkPolicySimulatorSidePanel({
         return (
             <div>
                 <Flex
-                    direction={{ default: 'row' }}
-                    alignItems={{ default: 'alignItemsFlexEnd' }}
-                    className="pf-u-p-lg pf-u-mb-0"
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                    className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
                 >
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
-                                Network Policy Simulator
+                            <Text component={TextVariants.h2}>Generated network policies</Text>
+                            <Text component={TextVariants.h3} className="pf-u-m-0">
+                                Scope of baseline:
                             </Text>
                         </TextContent>
                     </FlexItem>
+                    <NetworkPoliciesGenerationScope
+                        networkPolicyGenerationScope={networkPolicyGenerationScope}
+                    />
                 </Flex>
-                <Divider component="div" />
                 <Stack hasGutter>
-                    <StackItem className="pf-u-p-md">
-                        <Alert
-                            variant={simulator.error ? 'danger' : 'success'}
-                            isInline
-                            isPlain
-                            title={
-                                simulator.error
-                                    ? simulator.error
-                                    : `Policies generated from the baseline for cluster “${scopeHierarchy.cluster.name}”`
-                            }
-                        />
-                    </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
                         <NetworkPoliciesYAML
                             yaml={generatedYaml}
@@ -373,17 +372,20 @@ function NetworkPolicySimulatorSidePanel({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-u-p-lg pf-u-mb-0">
-                    <FlexItem>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-u-font-size-xl pf-u-mr-xl"
-                            >
-                                Simulate network policy for cluster “{scopeHierarchy.cluster.name}”
-                            </Text>
-                        </TextContent>
-                    </FlexItem>
+                <Flex
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                    className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
+                >
+                    <TextContent>
+                        <Text component={TextVariants.h2}>Generate network policies</Text>
+                        <Text component={TextVariants.h3} className="pf-u-m-0">
+                            Scope of baseline:
+                        </Text>
+                    </TextContent>
+                    <NetworkPoliciesGenerationScope
+                        networkPolicyGenerationScope={networkPolicyGenerationScope}
+                    />
                 </Flex>
             </StackItem>
             <StackItem>
@@ -416,7 +418,7 @@ function NetworkPolicySimulatorSidePanel({
                                                 component={TextVariants.h2}
                                                 className="pf-u-font-size-lg"
                                             >
-                                                Generate network policies based on the baseline
+                                                Generate network policies from the baseline
                                                 <Popover
                                                     showClose={false}
                                                     bodyContent={
@@ -460,7 +462,9 @@ function NetworkPolicySimulatorSidePanel({
                                                 Generate a set of recommended network policies based
                                                 on your cluster baseline. Cluster baseline is the
                                                 aggregation of the baselines of the deployments that
-                                                belong to the cluster.
+                                                belong to the cluster. Only deployments that are
+                                                part of the current scope will be included in
+                                                generated policies.
                                             </Text>
                                         </TextContent>
                                     </StackItem>

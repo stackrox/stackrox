@@ -33,6 +33,7 @@ import {
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
 import { deploymentTabs } from './utils/deploymentUtils';
+import { getInScopeEntities } from './utils/simulatorUtils';
 import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 // TODO: move these type defs to a central location
@@ -176,6 +177,10 @@ const TopologyComponent = ({
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {simulation.isOn && simulation.type === 'networkPolicy' && (
                         <NetworkPolicySimulatorSidePanel
+                            networkPolicyGenerationScope={getInScopeEntities(
+                                model.nodes,
+                                scopeHierarchy
+                            )}
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
                             scopeHierarchy={scopeHierarchy}
