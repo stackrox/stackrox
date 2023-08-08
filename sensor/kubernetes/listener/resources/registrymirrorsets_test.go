@@ -109,7 +109,7 @@ func (s *FakeMirrorStore) UpsertImageContentSourcePolicy(_ *operatorV1Alpha1.Ima
 	s.upsertICSPInvoked = true
 	return nil
 }
-func (*FakeMirrorStore) PullSources(srcImage string) ([]string, error) {
+func (*FakeMirrorStore) PullSources(_ string) ([]string, error) {
 	return nil, nil
 }
 func (*FakeMirrorStore) UpdateConfig(_ []*operatorV1Alpha1.ImageContentSourcePolicy, _ []*configV1.ImageDigestMirrorSet, _ []*configV1.ImageTagMirrorSet) error {
