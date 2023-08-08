@@ -68,6 +68,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                                 variant="info"
                                 isInline
                                 title="Editing MITRE ATT&CK is disabled for system default policies"
+                                component="h3"
                                 className="pf-u-mt-sm"
                             >
                                 If you need to edit MITRE ATT&CK, clone this policy or create a new

@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import {
     Alert,
-    Title,
+    Card,
+    CardBody,
+    CardHeader,
+    CardTitle,
+    Checkbox,
+    Flex,
     Form,
     FormGroup,
-    Radio,
     Divider,
-    Flex,
-    Checkbox,
-    Card,
-    CardHeader,
-    CardBody,
-    CardTitle,
-    CardActions,
-    Switch,
     Grid,
     GridItem,
+    Radio,
+    Switch,
+    Title,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 import cloneDeep from 'lodash/cloneDeep';
@@ -178,7 +177,13 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     Select which stage of a container lifecycle this policy applies. Event sources
                     can only be chosen for policies that apply at runtime.
                 </div>
-                <Alert variant="info" isInline title="Info" className="pf-u-my-md">
+                <Alert
+                    variant="info"
+                    isInline
+                    title="Lifecycle stages"
+                    component="h3"
+                    className="pf-u-my-md"
+                >
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsSm' }}
@@ -242,6 +247,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             isInline
                             variant="warning"
                             title="Policy has active violations, and the lifecycle stage cannot be changed. To update the lifecycle, clone and create a new policy."
+                            component="div"
                         />
                     )}
                     <FormGroup
@@ -321,85 +327,78 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             <GridItem span={4}>
                                 <Card className="pf-u-h-100 policy-enforcement-card">
                                     <CardHeader>
-                                        <CardTitle>Build</CardTitle>
-                                        <CardActions>
-                                            <Switch
-                                                isChecked={hasEnforcementActionForLifecycleStage(
-                                                    'BUILD',
-                                                    values.enforcementActions
-                                                )}
-                                                isDisabled={!hasBuild}
-                                                onChange={(isChecked) => {
-                                                    onChangeEnforcementActions('BUILD', isChecked);
-                                                }}
-                                                label="Enforce on Build"
-                                            />
-                                        </CardActions>
+                                        <CardTitle component="h3">Build</CardTitle>
                                     </CardHeader>
                                     <CardBody>
-                                        If enabled, your CI builds will be failed when images
-                                        violate this policy. Download the CLI to get started.
-                                        <Flex
-                                            justifyContent={{ default: 'justifyContentCenter' }}
-                                            className="pf-u-pt-md"
-                                        >
-                                            <DownloadCLIDropdown hasBuild={hasBuild} />
-                                        </Flex>
+                                        <Switch
+                                            isChecked={hasEnforcementActionForLifecycleStage(
+                                                'BUILD',
+                                                values.enforcementActions
+                                            )}
+                                            isDisabled={!hasBuild}
+                                            onChange={(isChecked) => {
+                                                onChangeEnforcementActions('BUILD', isChecked);
+                                            }}
+                                            label="Enforce on Build"
+                                        />
+                                        <p className="pf-u-pt-md pf-u-pb-md">
+                                            If enabled, your CI builds will be failed when images
+                                            violate this policy. Download the CLI to get started.
+                                        </p>
+                                        <DownloadCLIDropdown hasBuild={hasBuild} />
                                     </CardBody>
                                 </Card>
                             </GridItem>
                             <GridItem span={4}>
                                 <Card className="policy-enforcement-card">
                                     <CardHeader>
-                                        <CardTitle>Deploy</CardTitle>
-                                        <CardActions>
-                                            <Switch
-                                                isChecked={hasEnforcementActionForLifecycleStage(
-                                                    'DEPLOY',
-                                                    values.enforcementActions
-                                                )}
-                                                isDisabled={!hasDeploy}
-                                                onChange={(isChecked) => {
-                                                    onChangeEnforcementActions('DEPLOY', isChecked);
-                                                }}
-                                                label="Enforce on Deploy"
-                                            />
-                                        </CardActions>
+                                        <CardTitle component="h3">Deploy</CardTitle>
                                     </CardHeader>
                                     <CardBody>
-                                        If enabled, creation of deployments that violate this policy
-                                        will be blocked. In clusters with the admission controller
-                                        enabled, the Kubernetes API server will block deployments
-                                        that violate this policy to prevent pods from being
-                                        scheduled.
+                                        <Switch
+                                            isChecked={hasEnforcementActionForLifecycleStage(
+                                                'DEPLOY',
+                                                values.enforcementActions
+                                            )}
+                                            isDisabled={!hasDeploy}
+                                            onChange={(isChecked) => {
+                                                onChangeEnforcementActions('DEPLOY', isChecked);
+                                            }}
+                                            label="Enforce on Deploy"
+                                        />
+                                        <p className="pf-u-pt-md">
+                                            If enabled, creation of deployments that violate this
+                                            policy will be blocked. In clusters with the admission
+                                            controller enabled, the Kubernetes API server will block
+                                            deployments that violate this policy to prevent pods
+                                            from being scheduled.
+                                        </p>
                                     </CardBody>
                                 </Card>
                             </GridItem>
                             <GridItem span={4}>
                                 <Card className="policy-enforcement-card">
                                     <CardHeader>
-                                        <CardTitle>Runtime</CardTitle>
-                                        <CardActions>
-                                            <Switch
-                                                isChecked={hasEnforcementActionForLifecycleStage(
-                                                    'RUNTIME',
-                                                    values.enforcementActions
-                                                )}
-                                                isDisabled={!hasRuntime}
-                                                onChange={(isChecked) => {
-                                                    onChangeEnforcementActions(
-                                                        'RUNTIME',
-                                                        isChecked
-                                                    );
-                                                }}
-                                                label="Enforce on Runtime"
-                                            />
-                                        </CardActions>
+                                        <CardTitle component="h3">Runtime</CardTitle>
                                     </CardHeader>
                                     <CardBody>
-                                        If enabled, executions within a pod that violate this policy
-                                        will result in the pod being deleted. Actions taken through
-                                        the API server that violate this policy will be blocked.
+                                        <Switch
+                                            isChecked={hasEnforcementActionForLifecycleStage(
+                                                'RUNTIME',
+                                                values.enforcementActions
+                                            )}
+                                            isDisabled={!hasRuntime}
+                                            onChange={(isChecked) => {
+                                                onChangeEnforcementActions('RUNTIME', isChecked);
+                                            }}
+                                            label="Enforce on Runtime"
+                                        />
+                                        <p className="pf-u-pt-md">
+                                            If enabled, executions within a pod that violate this
+                                            policy will result in the pod being deleted. Actions
+                                            taken through the API server that violate this policy
+                                            will be blocked.
+                                        </p>
                                     </CardBody>
                                 </Card>
                             </GridItem>

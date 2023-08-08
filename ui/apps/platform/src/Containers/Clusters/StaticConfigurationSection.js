@@ -80,10 +80,7 @@ const StaticConfigurationSection = ({
     const isTypeOpenShift3 = selectedCluster?.type === clusterTypes.OPENSHIFT_3;
 
     return (
-        <CollapsibleSection
-            title="Static Configuration (requires deployment)"
-            titleClassName="text-xl"
-        >
+        <CollapsibleSection title="Static Configuration (requires deployment)">
             <div className="bg-base-100 pb-3 pt-1 px-3 rounded shadow">
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="name" className={labelClassName}>

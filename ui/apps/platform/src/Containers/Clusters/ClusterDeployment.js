@@ -34,7 +34,7 @@ const ClusterDeploymentPage = ({
         <div className="md:max-w-sm">
             <div className="md:pr-4">
                 {editing && clusterCheckedIn && (
-                    <Alert variant="info" isInline title={managerTypeTitle}>
+                    <Alert variant="info" isInline title={managerTypeTitle} component="h3">
                         {managerTypeText}
                     </Alert>
                 )}
