@@ -197,38 +197,38 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('should go to policies list from View All button in Policies widget', () => {
+    it('should go to policies list from View all link in Policies widget', () => {
         const entitiesKey = 'policies';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getWidget('Policy violations by severity'))
-                .find('button:contains("View All")')
+                .find('a:contains("View all")')
                 .click();
         }, entitiesKey);
     });
 
-    it('clicking the "CIS Standard Across Clusters" widget\'s "View All" button should take you to the controls list', () => {
+    it('go to controls list from View all link in CIS widget', () => {
         const entitiesKey = 'controls';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.cisStandardsAcrossClusters.widget)
-                .find('button:contains("View Standard")')
+                .find('a:contains("View standard")')
                 .click();
         }, entitiesKey);
     });
 
-    it('should go to subjects (users and groups) list from View All button in Users widget', () => {
+    it('should go to subjects (users and groups) list from View all link in Users widget', () => {
         const entitiesKey = 'subjects';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getWidget('Users with most cluster admin roles'))
-                .find('button:contains("View All")')
+                .find('a:contains("View all")')
                 .click();
         }, entitiesKey);
     });
@@ -246,14 +246,14 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('should go to secrets list from View All button in Secrets widget', () => {
+    it('should go to secrets list from View all link in Secrets widget', () => {
         const entitiesKey = 'secrets';
 
         visitConfigurationManagementDashboard();
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.getWidget('Secrets most used across deployments'))
-                .find('button:contains("View All")')
+                .find('a:contains("View all")')
                 .click();
         }, entitiesKey);
     });
