@@ -34,7 +34,11 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		referencedSchemas := map[string]*walker.Schema{
+<<<<<<< HEAD
 			"storage.Notifier": NotifiersSchema,
+=======
+			"storage.ResourceCollection": CollectionsSchema,
+>>>>>>> 0d91c4c388 (Added foreign key constraint to report config table)
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -66,6 +70,7 @@ type ReportConfigurations struct {
 	ResourceScopeCollectionID string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
 	CreatorName               string                                 `gorm:"column:creator_name;type:varchar"`
 	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
+	CollectionsRef            Collections                            `gorm:"foreignKey:resourcescope_collectionid;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
 }
 
 // ReportConfigurationsNotifiers holds the Gorm model for Postgres table `report_configurations_notifiers`.

@@ -72,7 +72,7 @@ message VulnerabilityReportFilters {
 
 message ResourceScope {
     oneof scope_reference {
-        string collection_id = 1 [(gogoproto.moretags) = 'search:"Collection ID"'];
+        string collection_id = 1 [(gogoproto.moretags) = 'search:"Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"'];
     }
 }
 
