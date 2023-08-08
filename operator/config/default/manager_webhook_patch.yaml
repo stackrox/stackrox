@@ -1,3 +1,5 @@
+# The patch is only required for non-OLM-based installations because OLM creates volumes and volumeMounts itself dynamically at runtime.
+# Should be kept in sync with operator/config/default/manager_webhook_patch.yaml which negates this patch for the OLM installation.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
