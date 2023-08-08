@@ -1,10 +1,40 @@
 package docker
 
 import (
-	"fmt"
+	"runtime"
 
+	"github.com/docker/distribution/manifest/manifestlist"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 )
+
+func handleManifestLists(r *Registry, remote, ref string, manifests []manifestlist.ManifestDescriptor) (*storage.ImageMetadata, error) {
+	if len(manifests) == 0 {
+		return nil, errors.Errorf("no valid manifests found for %s:%s", remote, ref)
+	}
+	if len(manifests) == 1 {
+		return handleManifests(r, manifests[0].MediaType, remote, manifests[0].Digest.String())
+	}
+	var amdManifest manifestlist.ManifestDescriptor
+	var foundAMD bool
+	for _, m := range manifests {
+		if m.Platform.OS != "linux" {
+			continue
+		}
+		// Matching platform for GOARCH takes priority so return immediately
+		if m.Platform.Architecture == runtime.GOARCH {
+			return handleManifests(r, m.MediaType, remote, m.Digest.String())
+		}
+		if m.Platform.Architecture == "amd64" {
+			foundAMD = true
+			amdManifest = m
+		}
+	}
+	if foundAMD {
+		return handleManifests(r, amdManifest.MediaType, remote, amdManifest.Digest.String())
+	}
+	return nil, errors.Errorf("no manifest in list matched linux and amd64 or %s architectures: %q", runtime.GOARCH, ref)
+}
 
 // HandleV2ManifestList takes in a v2 manifest list ref and returns the image metadata
 func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
@@ -12,17 +42,7 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 	if err != nil {
 		return nil, err
 	}
-	if len(manifestList.Manifests) == 1 {
-		return handleManifests(r, manifestList.Manifests[0].MediaType, remote, manifestList.Manifests[0].Digest.String())
-	}
-	for _, manifest := range manifestList.Manifests {
-		// Default to linux arch
-		// TODO(ROX-13284): Support multi-arch images.
-		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return handleManifests(r, manifest.MediaType, remote, manifest.Digest.String())
-		}
-	}
-	return nil, fmt.Errorf("could not find manifest in list for architecture linux:amd64: '%s'", ref)
+	return handleManifestLists(r, remote, ref, manifestList.Manifests)
 }
 
 // HandleV2Manifest takes in a v2 ref and returns the image metadata
@@ -58,17 +78,7 @@ func HandleOCIImageIndex(r *Registry, remote, ref string) (*storage.ImageMetadat
 	if err != nil {
 		return nil, err
 	}
-	if len(index.Manifests) == 1 {
-		return handleManifests(r, index.Manifests[0].MediaType, remote, index.Manifests[0].Digest.String())
-	}
-	for _, manifest := range index.Manifests {
-		// Default to linux arch
-		// TODO(ROX-13284): Support multi-arch images.
-		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return handleManifests(r, manifest.MediaType, remote, manifest.Digest.String())
-		}
-	}
-	return nil, fmt.Errorf("could not find manifest in index for architecture linux:amd64: %q", ref)
+	return handleManifestLists(r, remote, ref, index.Manifests)
 }
 
 // HandleOCIManifest handles fetching data if the media type is OCI
