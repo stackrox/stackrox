@@ -612,6 +612,78 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
+		{
+			name:      "Access to global resource (read-write) for unrestricted scope gives unrestricted scope for the resource and read access (case read admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, rolePkg.AccessScopeIncludeAll)},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-write) for unrestricted scope gives unrestricted scope for the resource and write access (case write admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, rolePkg.AccessScopeIncludeAll)},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-write) for cluster scope gives unrestricted scope for the resource and read access (case read admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Cluster())},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-write) for cluster scope gives unrestricted scope for the resource and write access (case write admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Cluster())},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-write) for namespace scope gives unrestricted scope for the resource and read access (case read admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Namespace())},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-write) for namespace scope gives unrestricted scope for the resource and write access (case write admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Namespace())},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-only) for unrestricted scope gives unrestricted scope for the resource and read access (case read admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeIncludeAll)},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-only) for unrestricted scope gives unrestricted scope for the resource and write access (case write admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeIncludeAll)},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-only) for cluster scope gives unrestricted scope for the resource and read access (case read admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-only) for cluster scope gives deny-all scope for the resource and write access (case write admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Cluster())},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-only) for namespace scope gives unrestricted scope for the resource and read access (case read admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())},
+			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name:      "Access to global resource (read-only) for namespace scope gives deny-all scope for the resource and write access (case write admin)",
+			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())},
+			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Administration),
+			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
+		},
 	}
 	for _, tc := range tests {
 		tc := tc

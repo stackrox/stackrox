@@ -3,6 +3,7 @@ package sac
 import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -74,14 +75,21 @@ func (c *allowedFixedScopesCheckerCore) SubScopeChecker(scopeKey ScopeKey) Scope
 }
 
 func (c *allowedFixedScopesCheckerCore) Allowed() bool {
+	resourceScope := resources.GetScopeForResource(permissions.Resource(c.targetResource))
 	switch c.checkerLevel {
 	case GlobalScopeKind:
 		return c.allowsGlobalAccess()
 	case AccessModeScopeKind:
 		return c.allowsAccessModeLevelAccess()
 	case ResourceScopeKind:
+		if resourceScope == permissions.GlobalScope {
+			return true
+		}
 		return c.allowsResourceLevelAccess()
 	case ClusterScopeKind:
+		if resourceScope == permissions.ClusterScope || resourceScope == permissions.GlobalScope {
+			return true
+		}
 		return c.allowsClusterLevelAccess()
 	case NamespaceScopeKind:
 		return true
@@ -139,6 +147,80 @@ func (c *allowedFixedScopesCheckerCore) EffectiveAccessScope(
 // endregion ScopeCheckerCore interface functions
 
 // region Public constructors
+
+// AllowFixedResourceLevelScopes returns a scope checker core that allows those scopes that
+// are in the cross product of all access and resource individual scope key lists. I.e.,
+//
+//	 AllowFixedResourceLevelScopes(
+//			AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
+//			ResourceScopeKeys(resources.CLUSTER),
+//	 )
+//
+// returns a scope checker core that allows read and write access to all cluster resources.
+func AllowFixedResourceLevelScopes(
+	accessLevelKeys []AccessModeScopeKey,
+	resourceLevelKeys []ResourceScopeKey,
+) ScopeCheckerCore {
+	return &allowedFixedScopesCheckerCore{
+		checkerLevel:  GlobalScopeKind,
+		accessKeys:    set.NewSet(accessLevelKeys...),
+		resourceKeys:  set.NewSet(resourceLevelKeys...),
+		clusterKeys:   set.NewSet[ClusterScopeKey](),
+		namespaceKeys: set.NewSet[NamespaceScopeKey](),
+	}
+}
+
+// AllowFixedClusterLevelScopes returns a scope checker core that allows those scopes that
+// are in the cross product of all access and resource individual scope key lists. I.e.,
+//
+//		 AllowFixedClusterLevelScopes(
+//				AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
+//				ResourceScopeKeys(resources.CLUSTER),
+//	         ClusterScopeKeys(clusterID1, clusterID2),
+//		 )
+//
+// returns a scope checker core that allows read and write access to all cluster resources
+// within cluster1 and cluster2.
+func AllowFixedClusterLevelScopes(
+	accessLevelKeys []AccessModeScopeKey,
+	resourceLevelKeys []ResourceScopeKey,
+	clusterLevelKeys []ClusterScopeKey,
+) ScopeCheckerCore {
+	return &allowedFixedScopesCheckerCore{
+		checkerLevel:  GlobalScopeKind,
+		accessKeys:    set.NewSet(accessLevelKeys...),
+		resourceKeys:  set.NewSet(resourceLevelKeys...),
+		clusterKeys:   set.NewSet(clusterLevelKeys...),
+		namespaceKeys: set.NewSet[NamespaceScopeKey](),
+	}
+}
+
+// AllowFixedNamespaceLevelScopes returns a scope checker core that allows those scopes that
+// are in the cross product of all access and resource individual scope key lists. I.e.,
+//
+//		 AllowFixedNamespaceLevelScopes(
+//				AccessModeScopeKeys(storage.Access_READ, storage.Access_READ_WRITE),
+//				ResourceScopeKeys(resources.CLUSTER),
+//	         ClusterScopeKeys(clusterID1, clusterID2),
+//	         NamespaceScopeKeys(namespace1, namespace2),
+//		 )
+//
+// returns a scope checker core that allows read and write access to all cluster resources within
+// cluster1 namespace1, cluster1 namespace2, cluster2 namespace1 and cluster2 namespace2.
+func AllowFixedNamespaceLevelScopes(
+	accessLevelKeys []AccessModeScopeKey,
+	resourceLevelKeys []ResourceScopeKey,
+	clusterLevelKeys []ClusterScopeKey,
+	namespaceLevelKeys []NamespaceScopeKey,
+) ScopeCheckerCore {
+	return &allowedFixedScopesCheckerCore{
+		checkerLevel:  GlobalScopeKind,
+		accessKeys:    set.NewSet(accessLevelKeys...),
+		resourceKeys:  set.NewSet(resourceLevelKeys...),
+		clusterKeys:   set.NewSet(clusterLevelKeys...),
+		namespaceKeys: set.NewSet(namespaceLevelKeys...),
+	}
+}
 
 // AllowFixedScopes returns a scope checker core that allows those scopes that
 // are in the cross product of all individual scope key lists. I.e.,
