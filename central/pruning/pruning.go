@@ -171,7 +171,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.collectClusters(pvtConfig)
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		g.removeOldReportHistory(pvtConfig)
-		g.removeOldReportBobs(pvtConfig)
+		g.removeOldReportBlobs(pvtConfig)
 	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
@@ -574,7 +574,7 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 	}
 }
 
-func (g *garbageCollectorImpl) removeOldReportBobs(config *storage.PrivateConfig) {
+func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
 	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
 	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
 	if err != nil {
@@ -586,13 +586,13 @@ func (g *garbageCollectorImpl) removeOldReportBobs(config *storage.PrivateConfig
 	blobs, err := g.blobStore.SearchMetadata(pruningCtx, query)
 	if err != nil {
 		log.Errorf("Failed to fetch downloadable report metadata: %v", err)
+		return
 	}
 	// Sort reversely by modification time
 	sort.Slice(blobs, func(i, j int) bool {
 		return blobs[i].GetModifiedTime().Compare(blobs[j].GetModifiedTime()) > 0
 	})
-	blobRetentionBytes := config.GetReportRetentionConfig().GetDownloadableReportGlobalRetentionBytes()
-	remainingQuota := int64(blobRetentionBytes)
+	remainingQuota := int64(config.GetReportRetentionConfig().GetDownloadableReportGlobalRetentionBytes())
 	var bytesFreed int64
 	var blobsRemoved int
 	var toFree bool
@@ -609,7 +609,7 @@ func (g *garbageCollectorImpl) removeOldReportBobs(config *storage.PrivateConfig
 			continue
 		}
 		bytesFreed += blob.GetLength()
-		blobsRemoved += 1
+		blobsRemoved++
 	}
 	log.Infof("Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
 }

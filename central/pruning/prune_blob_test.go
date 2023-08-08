@@ -35,12 +35,12 @@ func TestDownloadableReportPruning(t *testing.T) {
 	}
 
 	expiredBlob := &blobTemplate{
-		name:             "/central/reports/exp/1",
+		name:             "/central/reports/exp/8",
 		modTimeMinusDays: 8,
 		length:           0,
 	}
 	bigBlob := &blobTemplate{
-		name:             "/central/reports/big/2",
+		name:             "/central/reports/big/3",
 		modTimeMinusDays: 3,
 		length:           501,
 	}
@@ -153,7 +153,7 @@ func TestDownloadableReportPruning(t *testing.T) {
 				assert.True(t, toRemoveSet.Remove(name), "unexpected blob %s deleted", name)
 				return nil
 			})
-			gci.removeOldReportBobs(currConfig)
+			gci.removeOldReportBlobs(currConfig)
 			assert.Zero(t, toRemoveSet.Cardinality(), "blob should be deleted %v", toRemoveSet)
 		})
 	}

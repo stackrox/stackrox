@@ -8,6 +8,7 @@ const (
 	reportBlobPathPrefix   = "/central/reports/"
 	reportBlobPathTemplate = reportBlobPathPrefix + "%s/%s"
 
+	// ReportBlobRegex matches all downloadable report blob names
 	ReportBlobRegex = "^" + reportBlobPathPrefix + ".+"
 )
 
