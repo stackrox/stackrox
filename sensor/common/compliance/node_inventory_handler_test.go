@@ -63,6 +63,13 @@ func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
 	assertNoGoroutineLeaks(s.T())
 }
 
+func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
+	inventories := make(chan *storage.NodeInventory)
+	defer close(inventories)
+	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
+	s.Nil(h.Capabilities())
+}
+
 func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
