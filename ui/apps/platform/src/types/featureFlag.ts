@@ -3,8 +3,8 @@
 // prettier-ignore
 export type FeatureFlagEnvVar =
     | 'ROX_ACTIVE_VULN_MGMT'
+    | 'ROX_CENTRAL_EVENTS'
     | 'ROX_COMPLIANCE_ENHANCEMENTS'
     | 'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'
     | 'ROX_VULN_MGMT_WORKLOAD_CVES'
-    | 'ROX_CENTRAL_EVENTS'
     ;
