@@ -2,7 +2,7 @@ package pruning
 
 import (
 	"context"
-	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
@@ -139,10 +139,8 @@ func TestDownloadableReportPruning(t *testing.T) {
 					ModifiedTime: modTime,
 				})
 			}
-			rand.Shuffle(len(existingBlobs), func(i, j int) {
-				temp := existingBlobs[i]
-				existingBlobs[i] = existingBlobs[j]
-				existingBlobs[j] = temp
+			sort.Slice(existingBlobs, func(i, j int) bool {
+				return existingBlobs[i].GetModifiedTime().Compare(existingBlobs[j].GetModifiedTime()) > 0
 			})
 			toRemoveSet := set.NewStringSet()
 			for _, bt := range c.toRemove {

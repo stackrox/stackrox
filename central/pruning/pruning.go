@@ -2,7 +2,6 @@ package pruning
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -582,16 +581,15 @@ func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfi
 		return
 	}
 
-	query := search.NewQueryBuilder().AddRegexes(search.BlobName, common.ReportBlobRegex).ProtoQuery()
-	blobs, err := g.blobStore.SearchMetadata(pruningCtx, query)
+	// Sort reversely by modification time
+	query := search.NewQueryBuilder().AddRegexes(search.BlobName, common.ReportBlobRegex).WithPagination(
+		search.NewPagination().AddSortOption(search.NewSortOption(search.BlobModificationTime).Reversed(true)))
+	blobs, err := g.blobStore.SearchMetadata(pruningCtx, query.ProtoQuery())
 	if err != nil {
 		log.Errorf("Failed to fetch downloadable report metadata: %v", err)
 		return
 	}
-	// Sort reversely by modification time
-	sort.Slice(blobs, func(i, j int) bool {
-		return blobs[i].GetModifiedTime().Compare(blobs[j].GetModifiedTime()) > 0
-	})
+
 	remainingQuota := int64(config.GetReportRetentionConfig().GetDownloadableReportGlobalRetentionBytes())
 	var bytesFreed int64
 	var blobsRemoved int
@@ -611,7 +609,7 @@ func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfi
 		bytesFreed += blob.GetLength()
 		blobsRemoved++
 	}
-	log.Infof("Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
+	log.Infof("[Downloadable Pruning] Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
 }
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
