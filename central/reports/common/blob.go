@@ -7,6 +7,8 @@ import (
 const (
 	reportBlobPathPrefix   = "/central/reports/"
 	reportBlobPathTemplate = reportBlobPathPrefix + "%s/%s"
+
+	ReportBlobRegex = "^" + reportBlobPathPrefix + ".+"
 )
 
 // GetReportBlobPath creates the Blob path for report

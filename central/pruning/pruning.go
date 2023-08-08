@@ -2,11 +2,13 @@ package pruning
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -23,6 +25,7 @@ import (
 	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
@@ -90,7 +93,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store,
-	reportSnapshotDS snapshotDS.DataStore) GarbageCollector {
+	reportSnapshotDS snapshotDS.DataStore,
+	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -113,6 +117,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		stopper:         concurrency.NewStopper(),
 		postgres:        globaldb.GetPostgres(),
 		reportSnapshot:  reportSnapshotDS,
+		blobStore:       blobStore,
 	}
 }
 
@@ -139,6 +144,7 @@ type garbageCollectorImpl struct {
 	logimbueStore   logimbueDataStore.Store
 	stopper         concurrency.Stopper
 	reportSnapshot  snapshotDS.DataStore
+	blobStore       blobDatastore.Datastore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -165,6 +171,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.collectClusters(pvtConfig)
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		g.removeOldReportHistory(pvtConfig)
+		g.removeOldReportBobs(pvtConfig)
 	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
@@ -565,6 +572,46 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 	if err != nil {
 		log.Errorf("Delete query for report snapshot history unsuccessful: %s", err)
 	}
+}
+
+func (g *garbageCollectorImpl) removeOldReportBobs(config *storage.PrivateConfig) {
+	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
+	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
+	if err != nil {
+		log.Errorf("Failed to determine downloadable report retention %v", err)
+		return
+	}
+
+	query := search.NewQueryBuilder().AddRegexes(search.BlobName, common.ReportBlobRegex).ProtoQuery()
+	blobs, err := g.blobStore.SearchMetadata(pruningCtx, query)
+	if err != nil {
+		log.Errorf("Failed to fetch downloadable report metadata: %v", err)
+	}
+	// Sort reversely by modification time
+	sort.Slice(blobs, func(i, j int) bool {
+		return blobs[i].GetModifiedTime().Compare(blobs[j].GetModifiedTime()) > 0
+	})
+	blobRetentionBytes := config.GetReportRetentionConfig().GetDownloadableReportGlobalRetentionBytes()
+	remainingQuota := int64(blobRetentionBytes)
+	var bytesFreed int64
+	var blobsRemoved int
+	var toFree bool
+	for _, blob := range blobs {
+		if !toFree {
+			if remainingQuota > blob.GetLength() && blob.GetModifiedTime().Compare(cutOffTime) > 0 {
+				remainingQuota = remainingQuota - blob.GetLength()
+				continue
+			}
+			toFree = true
+		}
+		if err = g.blobStore.Delete(pruningCtx, blob.GetName()); err != nil {
+			log.Errorf("Failed to delete blob %+v, will try next time", blob)
+			continue
+		}
+		bytesFreed += blob.GetLength()
+		blobsRemoved += 1
+	}
+	log.Infof("Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
 }
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {

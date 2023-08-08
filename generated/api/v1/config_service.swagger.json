@@ -300,8 +300,17 @@
         "historyRetentionDurationDays": {
           "type": "integer",
           "format": "int32"
+        },
+        "downloadableReportRetentionDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "downloadableReportGlobalRetentionBytes": {
+          "type": "integer",
+          "format": "int32"
         }
-      }
+      },
+      "title": "next available tag: 4"
     },
     "storageTelemetryConfiguration": {
       "type": "object",
