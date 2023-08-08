@@ -31,14 +31,14 @@ Example:
 ```proto
 message GetVulnerabilitiesRequest {
         string hash_id = 1;
-        optional IndexReportComponents index_report;
+        IndexReportComponents index_report;
 }
 ```
 
 Notice that we don't necessarily need to embed the whole Index Report since the Matcher only needs a subset of the proto fields:
 
 ```proto
-message IndexReportComponents {
+message Contents {
     repeated Package              packages      = 5;
     repeated Distribution         distributions = 6;
     repeated Repository           repositories  = 7;
