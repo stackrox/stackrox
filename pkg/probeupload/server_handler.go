@@ -54,10 +54,6 @@ func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *p
 	}
 }
 
-func (h *probeServerHandler) ComponentName() string {
-	return "Kernel probe server handler"
-}
-
 func (h *probeServerHandler) GoOnline() {
 	h.centralReady.Signal()
 }

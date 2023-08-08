@@ -179,7 +179,7 @@ func (s *Sensor) Start() {
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)
-		s.AddNotifiable(WrapNotifiable(probeDownloadHandler))
+		s.AddNotifiable(WrapNotifiable(probeDownloadHandler, "Kernel probe server handler"))
 	}
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
