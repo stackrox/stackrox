@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/productusage/source"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -27,7 +26,7 @@ type DataStore interface {
 	// GetCurrentUsage returns the currently known usage.
 	GetCurrentUsage(ctx context.Context) (*storage.SecuredUnits, error)
 	// UpdateUsage updates the in-memory storage with the cluster metrics.
-	UpdateUsage(ctx context.Context, clusterID string, metrics source.SecuredUnitsSource) error
+	UpdateUsage(ctx context.Context, clusterID string, metrics *storage.SecuredUnits) error
 }
 
 // New initializes a datastore implementation instance.

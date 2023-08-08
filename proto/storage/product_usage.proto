@@ -1,11 +1,12 @@
 syntax = "proto3";
 
-package storage;
-
-import "gogoproto/gogo.proto";
-import "google/protobuf/timestamp.proto";
-
 option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
 
 // SecuredUnits represents a record of an aggregated secured clusters usage
 // metrics. The metrics are aggregated periodically, and put into the database.

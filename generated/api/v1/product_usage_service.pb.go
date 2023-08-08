@@ -98,9 +98,9 @@ func (m *TimeRange) Clone() *TimeRange {
 	return cloned
 }
 
-// SecuredUnits are the values of the product usage metrics collected from
-// secured clusters.
-type SecuredUnits struct {
+// SecuredUnitsUsageResponse holds the values of the currently observable
+// product usage metrics.
+type SecuredUnitsUsageResponse struct {
 	NumNodes             int64    `protobuf:"varint,1,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
 	NumCpuUnits          int64    `protobuf:"varint,2,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -108,18 +108,18 @@ type SecuredUnits struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SecuredUnits) Reset()         { *m = SecuredUnits{} }
-func (m *SecuredUnits) String() string { return proto.CompactTextString(m) }
-func (*SecuredUnits) ProtoMessage()    {}
-func (*SecuredUnits) Descriptor() ([]byte, []int) {
+func (m *SecuredUnitsUsageResponse) Reset()         { *m = SecuredUnitsUsageResponse{} }
+func (m *SecuredUnitsUsageResponse) String() string { return proto.CompactTextString(m) }
+func (*SecuredUnitsUsageResponse) ProtoMessage()    {}
+func (*SecuredUnitsUsageResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_851e532ab55b9ff5, []int{1}
 }
-func (m *SecuredUnits) XXX_Unmarshal(b []byte) error {
+func (m *SecuredUnitsUsageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SecuredUnits) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *SecuredUnitsUsageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_SecuredUnits.Marshal(b, m, deterministic)
+		return xxx_messageInfo_SecuredUnitsUsageResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -129,105 +129,42 @@ func (m *SecuredUnits) XXX_Marshal(b []byte, deterministic bool) ([]byte, error)
 		return b[:n], nil
 	}
 }
-func (m *SecuredUnits) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SecuredUnits.Merge(m, src)
+func (m *SecuredUnitsUsageResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SecuredUnitsUsageResponse.Merge(m, src)
 }
-func (m *SecuredUnits) XXX_Size() int {
+func (m *SecuredUnitsUsageResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *SecuredUnits) XXX_DiscardUnknown() {
-	xxx_messageInfo_SecuredUnits.DiscardUnknown(m)
+func (m *SecuredUnitsUsageResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SecuredUnitsUsageResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SecuredUnits proto.InternalMessageInfo
+var xxx_messageInfo_SecuredUnitsUsageResponse proto.InternalMessageInfo
 
-func (m *SecuredUnits) GetNumNodes() int64 {
+func (m *SecuredUnitsUsageResponse) GetNumNodes() int64 {
 	if m != nil {
 		return m.NumNodes
 	}
 	return 0
 }
 
-func (m *SecuredUnits) GetNumCpuUnits() int64 {
+func (m *SecuredUnitsUsageResponse) GetNumCpuUnits() int64 {
 	if m != nil {
 		return m.NumCpuUnits
 	}
 	return 0
 }
 
-func (m *SecuredUnits) MessageClone() proto.Message {
+func (m *SecuredUnitsUsageResponse) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *SecuredUnits) Clone() *SecuredUnits {
+func (m *SecuredUnitsUsageResponse) Clone() *SecuredUnitsUsageResponse {
 	if m == nil {
 		return nil
 	}
-	cloned := new(SecuredUnits)
+	cloned := new(SecuredUnitsUsageResponse)
 	*cloned = *m
 
-	return cloned
-}
-
-// CurrentProductUsageResponse holds the values of the currently observable
-// product usage metrics.
-type CurrentProductUsageResponse struct {
-	SecuredUnits         *SecuredUnits `protobuf:"bytes,1,opt,name=secured_units,json=securedUnits,proto3" json:"secured_units,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
-}
-
-func (m *CurrentProductUsageResponse) Reset()         { *m = CurrentProductUsageResponse{} }
-func (m *CurrentProductUsageResponse) String() string { return proto.CompactTextString(m) }
-func (*CurrentProductUsageResponse) ProtoMessage()    {}
-func (*CurrentProductUsageResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_851e532ab55b9ff5, []int{2}
-}
-func (m *CurrentProductUsageResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CurrentProductUsageResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CurrentProductUsageResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CurrentProductUsageResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CurrentProductUsageResponse.Merge(m, src)
-}
-func (m *CurrentProductUsageResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *CurrentProductUsageResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CurrentProductUsageResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CurrentProductUsageResponse proto.InternalMessageInfo
-
-func (m *CurrentProductUsageResponse) GetSecuredUnits() *SecuredUnits {
-	if m != nil {
-		return m.SecuredUnits
-	}
-	return nil
-}
-
-func (m *CurrentProductUsageResponse) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *CurrentProductUsageResponse) Clone() *CurrentProductUsageResponse {
-	if m == nil {
-		return nil
-	}
-	cloned := new(CurrentProductUsageResponse)
-	*cloned = *m
-
-	cloned.SecuredUnits = m.SecuredUnits.Clone()
 	return cloned
 }
 
@@ -248,7 +185,7 @@ func (m *MaxSecuredUnitsUsageResponse) Reset()         { *m = MaxSecuredUnitsUsa
 func (m *MaxSecuredUnitsUsageResponse) String() string { return proto.CompactTextString(m) }
 func (*MaxSecuredUnitsUsageResponse) ProtoMessage()    {}
 func (*MaxSecuredUnitsUsageResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_851e532ab55b9ff5, []int{3}
+	return fileDescriptor_851e532ab55b9ff5, []int{2}
 }
 func (m *MaxSecuredUnitsUsageResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -322,8 +259,7 @@ func (m *MaxSecuredUnitsUsageResponse) Clone() *MaxSecuredUnitsUsageResponse {
 
 func init() {
 	proto.RegisterType((*TimeRange)(nil), "v1.TimeRange")
-	proto.RegisterType((*SecuredUnits)(nil), "v1.SecuredUnits")
-	proto.RegisterType((*CurrentProductUsageResponse)(nil), "v1.CurrentProductUsageResponse")
+	proto.RegisterType((*SecuredUnitsUsageResponse)(nil), "v1.SecuredUnitsUsageResponse")
 	proto.RegisterType((*MaxSecuredUnitsUsageResponse)(nil), "v1.MaxSecuredUnitsUsageResponse")
 }
 
@@ -332,37 +268,36 @@ func init() {
 }
 
 var fileDescriptor_851e532ab55b9ff5 = []byte{
-	// 468 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xdf, 0x8a, 0xd3, 0x40,
-	0x14, 0xc6, 0x4d, 0xba, 0xc8, 0x76, 0xb6, 0x85, 0x65, 0x14, 0xad, 0xe9, 0xd2, 0x5d, 0x23, 0x82,
-	0x28, 0x24, 0x74, 0xc5, 0x3b, 0x6f, 0xd6, 0x22, 0x7b, 0xe5, 0x1f, 0xb2, 0x5d, 0x10, 0x6f, 0xc2,
-	0x6c, 0x7a, 0x36, 0x04, 0x9c, 0x99, 0x90, 0x39, 0x13, 0xeb, 0xad, 0xaf, 0xe0, 0x8d, 0x8f, 0xe4,
-	0xa5, 0xe0, 0x0b, 0x48, 0xf5, 0x1d, 0xbc, 0x95, 0x99, 0x49, 0x4a, 0x8a, 0xcb, 0xd6, 0xbb, 0x9e,
-	0x9e, 0xef, 0x7c, 0x67, 0xce, 0x2f, 0x1f, 0x09, 0x59, 0x59, 0xc4, 0xf5, 0x34, 0x2e, 0x2b, 0xb9,
-	0xd0, 0x19, 0xa6, 0x5a, 0xb1, 0x1c, 0x52, 0x05, 0x55, 0x5d, 0x64, 0x10, 0x95, 0x95, 0x44, 0x49,
-	0xfd, 0x7a, 0x1a, 0xd0, 0x46, 0x07, 0xbc, 0xc4, 0x4f, 0xee, 0xff, 0xe0, 0x20, 0x97, 0x32, 0xff,
-	0x00, 0xb1, 0x69, 0x31, 0x21, 0x24, 0x32, 0x2c, 0xa4, 0x50, 0x4d, 0xf7, 0xb0, 0xe9, 0xda, 0xea,
-	0x42, 0x5f, 0xc6, 0x58, 0x70, 0x50, 0xc8, 0x78, 0xe9, 0x04, 0x61, 0x4e, 0xfa, 0xf3, 0x82, 0x43,
-	0xc2, 0x44, 0x0e, 0x34, 0x22, 0x3b, 0x97, 0x95, 0xe4, 0x23, 0xef, 0xc8, 0x7b, 0xb4, 0x77, 0x1c,
-	0x44, 0x6e, 0x38, 0x6a, 0x87, 0xa3, 0x79, 0x3b, 0x9c, 0x58, 0x1d, 0x7d, 0x4c, 0x7c, 0x94, 0x23,
-	0x7f, 0xab, 0xda, 0x47, 0x19, 0xbe, 0x21, 0x83, 0x33, 0xc8, 0x74, 0x05, 0x8b, 0x73, 0x51, 0xa0,
-	0xa2, 0x63, 0xd2, 0x17, 0x9a, 0xa7, 0x42, 0x2e, 0x40, 0xd9, 0x85, 0xbd, 0x64, 0x57, 0x68, 0xfe,
-	0xda, 0xd4, 0x34, 0x24, 0x43, 0xd3, 0xcc, 0x4a, 0x9d, 0x6a, 0xa3, 0xb6, 0x3b, 0x7a, 0xc9, 0x9e,
-	0xd0, 0x7c, 0x56, 0x6a, 0x6b, 0x10, 0xce, 0xc9, 0x78, 0xa6, 0xab, 0x0a, 0x04, 0xbe, 0x75, 0xd8,
-	0xce, 0x0d, 0xb5, 0x04, 0x54, 0x29, 0x85, 0x02, 0xfa, 0x8c, 0x0c, 0x95, 0xdb, 0xd7, 0x58, 0xb8,
-	0xa3, 0xf6, 0xa3, 0x7a, 0x1a, 0x75, 0x1f, 0x92, 0x0c, 0x54, 0xa7, 0x0a, 0x57, 0x1e, 0x39, 0x78,
-	0xc5, 0x96, 0x5d, 0xc5, 0xa6, 0xef, 0x73, 0x32, 0xe0, 0x6c, 0xe9, 0xde, 0x9d, 0x32, 0xfc, 0x0f,
-	0x56, 0x84, 0xb3, 0xa5, 0x3d, 0xeb, 0x04, 0xcd, 0xd5, 0xeb, 0xe9, 0xe6, 0xa8, 0xdd, 0xb6, 0x4d,
-	0x67, 0x64, 0xdf, 0x34, 0xd7, 0x57, 0x1b, 0xfb, 0xde, 0x56, 0xfb, 0x21, 0x67, 0xcb, 0x16, 0xca,
-	0x09, 0x1a, 0x74, 0x1b, 0x26, 0xa3, 0x1d, 0x87, 0xae, 0xa3, 0x3a, 0xfe, 0xe3, 0x91, 0x5b, 0x5d,
-	0x68, 0x67, 0x2e, 0x69, 0x34, 0x27, 0x77, 0x4e, 0x01, 0xaf, 0xa0, 0x4a, 0xfb, 0x06, 0xdb, 0x4b,
-	0x13, 0xbb, 0xe0, 0xd0, 0xfc, 0xbc, 0x86, 0x7c, 0x78, 0xff, 0xf3, 0x8f, 0xdf, 0x5f, 0xfc, 0x31,
-	0xbd, 0xd7, 0x89, 0x74, 0x6c, 0x23, 0x1d, 0x67, 0x6e, 0x8c, 0x7e, 0x24, 0x77, 0x4f, 0x01, 0xaf,
-	0xe2, 0x4c, 0x87, 0xc6, 0x7e, 0x1d, 0xc9, 0xe0, 0xc8, 0x94, 0xd7, 0x7d, 0x90, 0xf0, 0x89, 0x5d,
-	0xf7, 0x90, 0x3e, 0xf8, 0x77, 0x9d, 0x01, 0xb1, 0x11, 0x82, 0x17, 0xb7, 0xbf, 0xad, 0x26, 0xde,
-	0xf7, 0xd5, 0xc4, 0xfb, 0xb9, 0x9a, 0x78, 0x5f, 0x7f, 0x4d, 0x6e, 0xbc, 0xf7, 0xeb, 0xe9, 0x3b,
-	0xef, 0xe2, 0xa6, 0x05, 0xfb, 0xf4, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x45, 0x3f, 0xfb, 0x06,
-	0x8a, 0x03, 0x00, 0x00,
+	// 460 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0x4d, 0x6b, 0x14, 0x41,
+	0x10, 0xcd, 0xcc, 0x06, 0xc9, 0x76, 0x5c, 0x90, 0xf6, 0xe0, 0x3a, 0x89, 0x6b, 0x18, 0x11, 0xbf,
+	0xb0, 0x87, 0x89, 0x57, 0x2f, 0x71, 0x91, 0x9c, 0x14, 0x99, 0x24, 0x20, 0x22, 0x0c, 0x9d, 0xd9,
+	0xca, 0x30, 0x68, 0x7f, 0x30, 0x5d, 0x3d, 0x8e, 0x57, 0x4f, 0xde, 0xbd, 0xf8, 0x93, 0x3c, 0x0a,
+	0xfe, 0x01, 0x59, 0xfd, 0x21, 0xd2, 0xdd, 0xbb, 0x4b, 0x44, 0xe3, 0x7a, 0x9b, 0xea, 0x7a, 0xaf,
+	0x5e, 0xbd, 0x9a, 0x47, 0x52, 0xae, 0x9b, 0xac, 0xcb, 0x33, 0xdd, 0xaa, 0x99, 0xad, 0xb0, 0xb4,
+	0x86, 0xd7, 0x50, 0x1a, 0x68, 0xbb, 0xa6, 0x02, 0xa6, 0x5b, 0x85, 0x8a, 0xc6, 0x5d, 0x9e, 0xec,
+	0xd6, 0x4a, 0xd5, 0x6f, 0x21, 0x73, 0x70, 0x2e, 0xa5, 0x42, 0x8e, 0x8d, 0x92, 0x26, 0x20, 0x12,
+	0xba, 0x98, 0x02, 0x42, 0xe3, 0xfb, 0xc5, 0xdb, 0xcd, 0x05, 0xc3, 0x57, 0xa7, 0xf6, 0x2c, 0xc3,
+	0x46, 0x80, 0x41, 0x2e, 0x74, 0x00, 0xa4, 0x35, 0x19, 0x1e, 0x37, 0x02, 0x0a, 0x2e, 0x6b, 0xa0,
+	0x8c, 0x6c, 0x9e, 0xb5, 0x4a, 0x8c, 0xa3, 0xbd, 0xe8, 0xee, 0xf6, 0x7e, 0xc2, 0x02, 0x99, 0x2d,
+	0xc9, 0xec, 0x78, 0x49, 0x2e, 0x3c, 0x8e, 0xde, 0x27, 0x31, 0xaa, 0x71, 0xbc, 0x16, 0x1d, 0xa3,
+	0x4a, 0x5f, 0x93, 0xeb, 0x47, 0x50, 0xd9, 0x16, 0x66, 0x27, 0xb2, 0x41, 0x73, 0xe2, 0x2c, 0x16,
+	0x60, 0xb4, 0x92, 0x06, 0xe8, 0x0e, 0x19, 0x4a, 0x2b, 0x4a, 0xa9, 0x66, 0x60, 0xbc, 0xfa, 0xa0,
+	0xd8, 0x92, 0x56, 0x3c, 0x77, 0x35, 0x4d, 0xc9, 0xc8, 0x35, 0x2b, 0x6d, 0x4b, 0xeb, 0xa8, 0x5e,
+	0x70, 0x50, 0x6c, 0x4b, 0x2b, 0xa6, 0xda, 0xfa, 0x69, 0xe9, 0x3c, 0x22, 0xbb, 0xcf, 0x78, 0x7f,
+	0xb1, 0xc2, 0x63, 0x72, 0x59, 0xf0, 0x3e, 0x28, 0x94, 0x1c, 0xff, 0xc3, 0x22, 0x11, 0xbc, 0xf7,
+	0x0b, 0x1c, 0xa0, 0xdb, 0x6f, 0xc5, 0x5e, 0xc8, 0x6f, 0x2d, 0xdb, 0x74, 0x4a, 0xae, 0xb8, 0xe6,
+	0x6a, 0x3f, 0x37, 0x7e, 0xb0, 0x76, 0xfc, 0x48, 0xf0, 0x7e, 0xb9, 0xfe, 0x01, 0x3a, 0x93, 0xbf,
+	0x0d, 0x19, 0x6f, 0x06, 0x93, 0xe7, 0x50, 0xfb, 0x1f, 0x63, 0x72, 0xf5, 0x45, 0x88, 0x88, 0x37,
+	0x77, 0x14, 0x02, 0x42, 0x7b, 0xb2, 0x73, 0x08, 0x38, 0xb5, 0x6d, 0x0b, 0x12, 0xff, 0x38, 0x01,
+	0x1d, 0xb2, 0x2e, 0x67, 0x4f, 0x5d, 0x28, 0x92, 0x1b, 0xee, 0xf3, 0xc2, 0x23, 0xa5, 0xd9, 0x87,
+	0x6f, 0x3f, 0x3f, 0xc5, 0xf7, 0xe8, 0x9d, 0x73, 0x61, 0xcc, 0x7c, 0x18, 0x33, 0x13, 0x48, 0x0f,
+	0xfd, 0x72, 0x59, 0x15, 0xb4, 0xe8, 0x3b, 0x72, 0xed, 0x10, 0xf0, 0x6f, 0x87, 0xa7, 0x23, 0x27,
+	0xb5, 0x8a, 0x56, 0xb2, 0xe7, 0xca, 0x7f, 0xfd, 0xa1, 0xf4, 0x81, 0x17, 0xbf, 0x4d, 0x6f, 0xad,
+	0x13, 0x17, 0xbc, 0x7f, 0xc2, 0xbe, 0xcc, 0x27, 0xd1, 0xd7, 0xf9, 0x24, 0xfa, 0x3e, 0x9f, 0x44,
+	0x9f, 0x7f, 0x4c, 0x36, 0xc8, 0xb8, 0x51, 0xcc, 0x20, 0xaf, 0xde, 0xb4, 0xaa, 0x0f, 0xf7, 0x66,
+	0x5c, 0x37, 0xac, 0xcb, 0x5f, 0xc5, 0x5d, 0xfe, 0x72, 0xe3, 0xf4, 0x92, 0x7f, 0x7b, 0xf4, 0x2b,
+	0x00, 0x00, 0xff, 0xff, 0xa4, 0x6d, 0xdd, 0x65, 0x6c, 0x03, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -377,14 +312,14 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ProductUsageServiceClient interface {
-	// GetCurrentProductUsage returns the current product usage metrics values.
+	// GetCurrentSecuredUnitsUsage returns the current secured units usage
+	// metrics values.
 	//
-	// The usage metrics are composed today of the secured units metrics. They
-	// are collected from all connected clusters every 5 minutes, so the
-	// returned result includes data for the connected clusters accurate to
-	// about these 5 minutes, and potentially some outdated data for the
-	// disconnected clusters.
-	GetCurrentProductUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CurrentProductUsageResponse, error)
+	// The secured units metrics are collected from all connected clusters every
+	// 5 minutes, so the returned result includes data for the connected
+	// clusters accurate to about these 5 minutes, and potentially some outdated
+	// data for the disconnected clusters.
+	GetCurrentSecuredUnitsUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SecuredUnitsUsageResponse, error)
 	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
 	// usage observed during a given time range, together with the time when
 	// this maximum was aggregated and stored.
@@ -406,9 +341,9 @@ func NewProductUsageServiceClient(cc grpc.ClientConnInterface) ProductUsageServi
 	return &productUsageServiceClient{cc}
 }
 
-func (c *productUsageServiceClient) GetCurrentProductUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CurrentProductUsageResponse, error) {
-	out := new(CurrentProductUsageResponse)
-	err := c.cc.Invoke(ctx, "/v1.ProductUsageService/GetCurrentProductUsage", in, out, opts...)
+func (c *productUsageServiceClient) GetCurrentSecuredUnitsUsage(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SecuredUnitsUsageResponse, error) {
+	out := new(SecuredUnitsUsageResponse)
+	err := c.cc.Invoke(ctx, "/v1.ProductUsageService/GetCurrentSecuredUnitsUsage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -426,14 +361,14 @@ func (c *productUsageServiceClient) GetMaxSecuredUnitsUsage(ctx context.Context,
 
 // ProductUsageServiceServer is the server API for ProductUsageService service.
 type ProductUsageServiceServer interface {
-	// GetCurrentProductUsage returns the current product usage metrics values.
+	// GetCurrentSecuredUnitsUsage returns the current secured units usage
+	// metrics values.
 	//
-	// The usage metrics are composed today of the secured units metrics. They
-	// are collected from all connected clusters every 5 minutes, so the
-	// returned result includes data for the connected clusters accurate to
-	// about these 5 minutes, and potentially some outdated data for the
-	// disconnected clusters.
-	GetCurrentProductUsage(context.Context, *Empty) (*CurrentProductUsageResponse, error)
+	// The secured units metrics are collected from all connected clusters every
+	// 5 minutes, so the returned result includes data for the connected
+	// clusters accurate to about these 5 minutes, and potentially some outdated
+	// data for the disconnected clusters.
+	GetCurrentSecuredUnitsUsage(context.Context, *Empty) (*SecuredUnitsUsageResponse, error)
 	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
 	// usage observed during a given time range, together with the time when
 	// this maximum was aggregated and stored.
@@ -451,8 +386,8 @@ type ProductUsageServiceServer interface {
 type UnimplementedProductUsageServiceServer struct {
 }
 
-func (*UnimplementedProductUsageServiceServer) GetCurrentProductUsage(ctx context.Context, req *Empty) (*CurrentProductUsageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentProductUsage not implemented")
+func (*UnimplementedProductUsageServiceServer) GetCurrentSecuredUnitsUsage(ctx context.Context, req *Empty) (*SecuredUnitsUsageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentSecuredUnitsUsage not implemented")
 }
 func (*UnimplementedProductUsageServiceServer) GetMaxSecuredUnitsUsage(ctx context.Context, req *TimeRange) (*MaxSecuredUnitsUsageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMaxSecuredUnitsUsage not implemented")
@@ -462,20 +397,20 @@ func RegisterProductUsageServiceServer(s *grpc.Server, srv ProductUsageServiceSe
 	s.RegisterService(&_ProductUsageService_serviceDesc, srv)
 }
 
-func _ProductUsageService_GetCurrentProductUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProductUsageService_GetCurrentSecuredUnitsUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProductUsageServiceServer).GetCurrentProductUsage(ctx, in)
+		return srv.(ProductUsageServiceServer).GetCurrentSecuredUnitsUsage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.ProductUsageService/GetCurrentProductUsage",
+		FullMethod: "/v1.ProductUsageService/GetCurrentSecuredUnitsUsage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductUsageServiceServer).GetCurrentProductUsage(ctx, req.(*Empty))
+		return srv.(ProductUsageServiceServer).GetCurrentSecuredUnitsUsage(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -503,8 +438,8 @@ var _ProductUsageService_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ProductUsageServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetCurrentProductUsage",
-			Handler:    _ProductUsageService_GetCurrentProductUsage_Handler,
+			MethodName: "GetCurrentSecuredUnitsUsage",
+			Handler:    _ProductUsageService_GetCurrentSecuredUnitsUsage_Handler,
 		},
 		{
 			MethodName: "GetMaxSecuredUnitsUsage",
@@ -566,7 +501,7 @@ func (m *TimeRange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SecuredUnits) Marshal() (dAtA []byte, err error) {
+func (m *SecuredUnitsUsageResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -576,12 +511,12 @@ func (m *SecuredUnits) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SecuredUnits) MarshalTo(dAtA []byte) (int, error) {
+func (m *SecuredUnitsUsageResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *SecuredUnits) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *SecuredUnitsUsageResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -599,45 +534,6 @@ func (m *SecuredUnits) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintProductUsageService(dAtA, i, uint64(m.NumNodes))
 		i--
 		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *CurrentProductUsageResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CurrentProductUsageResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CurrentProductUsageResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.SecuredUnits != nil {
-		{
-			size, err := m.SecuredUnits.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintProductUsageService(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -734,7 +630,7 @@ func (m *TimeRange) Size() (n int) {
 	return n
 }
 
-func (m *SecuredUnits) Size() (n int) {
+func (m *SecuredUnitsUsageResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -745,22 +641,6 @@ func (m *SecuredUnits) Size() (n int) {
 	}
 	if m.NumCpuUnits != 0 {
 		n += 1 + sovProductUsageService(uint64(m.NumCpuUnits))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *CurrentProductUsageResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.SecuredUnits != nil {
-		l = m.SecuredUnits.Size()
-		n += 1 + l + sovProductUsageService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -923,7 +803,7 @@ func (m *TimeRange) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SecuredUnits) Unmarshal(dAtA []byte) error {
+func (m *SecuredUnitsUsageResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -946,10 +826,10 @@ func (m *SecuredUnits) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SecuredUnits: wiretype end group for non-group")
+			return fmt.Errorf("proto: SecuredUnitsUsageResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SecuredUnits: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SecuredUnitsUsageResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -990,93 +870,6 @@ func (m *SecuredUnits) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProductUsageService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthProductUsageService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *CurrentProductUsageResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProductUsageService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: CurrentProductUsageResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CurrentProductUsageResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SecuredUnits", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProductUsageService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthProductUsageService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthProductUsageService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.SecuredUnits == nil {
-				m.SecuredUnits = &SecuredUnits{}
-			}
-			if err := m.SecuredUnits.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipProductUsageService(dAtA[iNdEx:])

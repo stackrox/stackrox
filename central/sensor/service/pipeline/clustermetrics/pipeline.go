@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -67,7 +68,10 @@ func (p *pipelineImpl) Run(
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.infoMetric.SetClusterMetrics(clusterID, clusterMetrics)
-	_ = p.usageStore.UpdateUsage(ctx, clusterID, clusterMetrics)
+	_ = p.usageStore.UpdateUsage(ctx, clusterID, &storage.SecuredUnits{
+		NumNodes:    clusterMetrics.GetNodeCount(),
+		NumCpuUnits: clusterMetrics.GetCpuCapacity(),
+	})
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 	return nil
 }

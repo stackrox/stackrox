@@ -18,7 +18,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.ProductUsageService/GetCurrentProductUsage",
+			"/v1.ProductUsageService/GetCurrentSecuredUnitsUsage",
 			"/v1.ProductUsageService/GetMaxSecuredUnitsUsage",
 		}})
 )
@@ -51,16 +51,15 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, errors.Wrapf(authorizer.Authorized(ctx, fullMethodName), "failed to authorize a call to %s", fullMethodName)
 }
 
-func (s *serviceImpl) GetCurrentProductUsage(ctx context.Context, _ *v1.Empty) (*v1.CurrentProductUsageResponse, error) {
+func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Empty) (*v1.SecuredUnitsUsageResponse, error) {
 	m, err := s.datastore.GetCurrentUsage(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "datastore failed to get current usage metrics")
 	}
-	return &v1.CurrentProductUsageResponse{
-		SecuredUnits: &v1.SecuredUnits{
-			NumNodes:    m.GetNumNodes(),
-			NumCpuUnits: m.GetNumCpuUnits(),
-		}}, nil
+	return &v1.SecuredUnitsUsageResponse{
+		NumNodes:    m.GetNumNodes(),
+		NumCpuUnits: m.GetNumCpuUnits(),
+	}, nil
 }
 
 func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeRange) (*v1.MaxSecuredUnitsUsageResponse, error) {
