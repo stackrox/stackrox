@@ -44,6 +44,7 @@ env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
+  TIMEOUT_WAIT_FOR_IMAGES_SECONDS: 3600
 
 run-name: >-
   ${{
@@ -319,6 +320,7 @@ jobs:
           image: "rhacs-eng/${{ matrix.image }}:${{ needs.variables.outputs.milestone }}"
           # Do not wait if running dry
           interval: ${{ fromJSON('["30", "0"]')[env.DRY_RUN == 'true'] }}
+          limit: ${{ fromJSON('["${{env.TIMEOUT_WAIT_FOR_IMAGES_SECONDS}}", "0"]')[env.DRY_RUN == 'true'] }}
 
   create-k8s-cluster:
     name: Create k8s cluster
