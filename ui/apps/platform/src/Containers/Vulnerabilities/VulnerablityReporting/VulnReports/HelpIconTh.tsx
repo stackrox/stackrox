@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Flex, FlexItem, Popover } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Popover } from '@patternfly/react-core';
 import { Th, ThProps } from '@patternfly/react-table';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
@@ -16,7 +16,9 @@ function HelpIconTh({ children, sort, popoverContent }: HelpIconThProps) {
                 <FlexItem>{children}</FlexItem>
                 <FlexItem>
                     <Popover aria-label="Table column info" bodyContent={popoverContent}>
-                        <OutlinedQuestionCircleIcon aria-labelledby="Show table column info" />
+                        <Button variant="plain" aria-label="Show table column info">
+                            <OutlinedQuestionCircleIcon />
+                        </Button>
                     </Popover>
                 </FlexItem>
             </Flex>
