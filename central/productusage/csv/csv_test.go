@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,13 +14,13 @@ import (
 func TestCSV(t *testing.T) {
 	ts1, _ := time.Parse(time.RFC3339Nano, "2023-07-24T10:13:21.702316Z")
 	ts2, _ := time.Parse(time.RFC3339Nano, "2023-07-24T15:13:21.702316Z")
-	metrics := make(chan *storage.SecuredUnits, 2)
-	metrics <- &storage.SecuredUnits{
+	metrics := make(chan datastore.Data, 2)
+	metrics <- &datastore.DataImpl{
 		Timestamp:   protoconv.ConvertTimeToTimestamp(ts1),
 		NumNodes:    1,
 		NumCpuUnits: 2,
 	}
-	metrics <- &storage.SecuredUnits{
+	metrics <- &datastore.DataImpl{
 		Timestamp:   protoconv.ConvertTimeToTimestamp(ts2),
 		NumNodes:    3,
 		NumCpuUnits: 4,

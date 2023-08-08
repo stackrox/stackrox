@@ -58,7 +58,7 @@ func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Emp
 	}
 	return &v1.SecuredUnitsUsageResponse{
 		NumNodes:    m.GetNumNodes(),
-		NumCpuUnits: m.GetNumCpuUnits(),
+		NumCpuUnits: m.GetNumCPUUnits(),
 	}, nil
 }
 
@@ -73,7 +73,7 @@ func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeR
 			max.MaxNodes = n
 			max.MaxNodesAt = m.GetTimestamp()
 		}
-		if ms := m.GetNumCpuUnits(); ms >= max.MaxCpuUnits {
+		if ms := m.GetNumCPUUnits(); ms >= max.MaxCpuUnits {
 			max.MaxCpuUnits = ms
 			max.MaxCpuUnitsAt = m.GetTimestamp()
 		}

@@ -27,8 +27,22 @@ type dataStoreImpl struct {
 
 var _ DataStore = (*dataStoreImpl)(nil)
 
+type DataImpl storage.SecuredUnits
+
+func (c *DataImpl) GetTimestamp() *types.Timestamp {
+	return (*storage.SecuredUnits)(c).GetTimestamp()
+}
+
+func (c *DataImpl) GetNumNodes() int64 {
+	return (*storage.SecuredUnits)(c).GetNumNodes()
+}
+
+func (c *DataImpl) GetNumCPUUnits() int64 {
+	return (*storage.SecuredUnits)(c).GetNumCpuUnits()
+}
+
 // Get returns the object, if it exists from the store.
-func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) (<-chan *storage.SecuredUnits, error) {
+func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *types.Timestamp) (<-chan Data, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get usage data")
 	}
@@ -38,12 +52,12 @@ func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *typ
 	if to == nil {
 		to = types.TimestampNow()
 	}
-	result := make(chan *storage.SecuredUnits)
+	result := make(chan Data)
 	go func() {
 		defer close(result)
 		if err := ds.store.Walk(ctx, func(record *storage.SecuredUnits) error {
 			if record.Timestamp.Compare(from) >= 0 && record.Timestamp.Compare(to) < 0 {
-				result <- record
+				result <- (*DataImpl)(record)
 			}
 			return nil
 		}); err != nil {
@@ -54,18 +68,21 @@ func (ds *dataStoreImpl) Get(ctx context.Context, from *types.Timestamp, to *typ
 }
 
 // Insert saves the current state of an object in storage.
-func (ds *dataStoreImpl) Insert(ctx context.Context, obj *storage.SecuredUnits) error {
+func (ds *dataStoreImpl) Insert(ctx context.Context, obj Data) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to insert usage data")
 	}
-	if obj.Id == "" {
-		obj.Id = uuid.NewV4().String()
+	units := storage.SecuredUnits{
+		Id:          uuid.NewV4().String(),
+		Timestamp:   obj.GetTimestamp(),
+		NumNodes:    obj.GetNumNodes(),
+		NumCpuUnits: obj.GetNumCPUUnits(),
 	}
-	return errors.Wrap(ds.store.Upsert(ctx, obj), "failed to upsert usage record")
+	return errors.Wrap(ds.store.Upsert(ctx, &units), "failed to upsert usage record")
 }
 
 // GetCurrent returns the current usage.
-func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredUnits, error) {
+func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (Data, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get current usage data")
 	}
@@ -79,7 +96,7 @@ func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredU
 
 // AggregateAndFlush returns collected metrics for the known clusters. Resets the cache
 // for the next iteration.
-func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (*storage.SecuredUnits, error) {
+func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (Data, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get the aggregate usage data")
 	}
@@ -92,10 +109,16 @@ func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (*storage.Secure
 }
 
 // UpdateUsage updates the cache with the metrics of the clusterID cluster.
-func (ds *dataStoreImpl) UpdateUsage(ctx context.Context, clusterID string, cm *storage.SecuredUnits) error {
+func (ds *dataStoreImpl) UpdateUsage(ctx context.Context, clusterID string, cm Data) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to update usage data cache")
 	}
-	ds.cache.UpdateUsage(clusterID, cm)
+	units := DataImpl{
+		Id:          uuid.NewV4().String(),
+		Timestamp:   cm.GetTimestamp(),
+		NumNodes:    cm.GetNumNodes(),
+		NumCpuUnits: cm.GetNumCPUUnits(),
+	}
+	ds.cache.UpdateUsage(clusterID, &units)
 	return nil
 }
