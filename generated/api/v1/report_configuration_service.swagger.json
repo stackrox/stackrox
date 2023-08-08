@@ -393,35 +393,6 @@
         }
       }
     },
-    "TraitsMutabilityMode": {
-      "type": "string",
-      "enum": [
-        "ALLOW_MUTATE",
-        "ALLOW_MUTATE_FORCED"
-      ],
-      "default": "ALLOW_MUTATE",
-      "description": "EXPERIMENTAL.\nNOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
-    },
-    "TraitsOrigin": {
-      "type": "string",
-      "enum": [
-        "IMPERATIVE",
-        "DEFAULT",
-        "DECLARATIVE",
-        "DECLARATIVE_ORPHANED"
-      ],
-      "default": "IMPERATIVE",
-      "description": "Origin specifies the origin of an object.\nObjects can have four different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default roles, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\n- DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.\nAdditionally, they may not reference objects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.\nThey may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.\nThey may reference all other objects.\nObjects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.\nDECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.\nObjects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.\nThey may be referenced by all other objects."
-    },
-    "TraitsVisibility": {
-      "type": "string",
-      "enum": [
-        "VISIBLE",
-        "HIDDEN"
-      ],
-      "default": "VISIBLE",
-      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
-    },
     "VulnerabilityReportFiltersFixability": {
       "type": "string",
       "enum": [
@@ -542,12 +513,6 @@
         },
         "creator": {
           "$ref": "#/definitions/storageSlimUser"
-        },
-        "accessScopes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageSimpleAccessScope"
-          }
         }
       }
     },
@@ -640,29 +605,6 @@
       },
       "title": "Next available tag: 4"
     },
-    "storageSimpleAccessScope": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "`id` is generated and cannot be changed."
-        },
-        "name": {
-          "type": "string",
-          "description": "`name` and `description` are provided by the user and can be changed."
-        },
-        "description": {
-          "type": "string"
-        },
-        "rules": {
-          "$ref": "#/definitions/SimpleAccessScopeRules"
-        },
-        "traits": {
-          "$ref": "#/definitions/storageTraits"
-        }
-      },
-      "description": "Simple access scope is a (simple) selection criteria for scoped resources.\nIt does *not* allow multi-component AND-rules nor set operations on names."
-    },
     "storageSlimUser": {
       "type": "object",
       "properties": {
@@ -671,20 +613,6 @@
         },
         "name": {
           "type": "string"
-        }
-      }
-    },
-    "storageTraits": {
-      "type": "object",
-      "properties": {
-        "mutabilityMode": {
-          "$ref": "#/definitions/TraitsMutabilityMode"
-        },
-        "visibility": {
-          "$ref": "#/definitions/TraitsVisibility"
-        },
-        "origin": {
-          "$ref": "#/definitions/TraitsOrigin"
         }
       }
     },
