@@ -49,8 +49,6 @@ var (
 	ErrNoJWTHeaders = errors.New("no headers found in the JWT")
 	// ErrInvalidAlgorithm means that the token uses an algorithm not valid for this validator.
 	ErrInvalidAlgorithm = errors.New("invalid algorithm used")
-	// ErrUnverifiableToken means that, despite all efforts, the token could not be validated.
-	ErrUnverifiableToken = errors.New("token could not be validated")
 
 	log = logging.LoggerForModule()
 )
