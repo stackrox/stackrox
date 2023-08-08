@@ -168,7 +168,7 @@ func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) err
 	}
 	if config.GetVulnReportFilters().GetCvesSince() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
-			"The valid options are 'since last successful report', 'all CVEs', and 'since a custom timestamp'")
+			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
 	}
 	return nil
 }

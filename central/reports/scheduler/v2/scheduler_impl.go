@@ -331,7 +331,7 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 		if !found {
-			log.Warnf("Report configuration with ID %s had pending reports but the configuration no longer exists",
+			log.Errorf("Report configuration with ID %s had pending reports but the configuration no longer exists",
 				snap.GetReportConfigurationId())
 			continue
 		}
