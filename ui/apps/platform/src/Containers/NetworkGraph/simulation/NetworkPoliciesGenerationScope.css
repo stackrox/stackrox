@@ -1,0 +1,39 @@
+.network-policies-generation-scope {
+  --badge-width: 2rem;
+}
+
+.network-policies-generation-scope > *:nth-child(2)  {
+  --tree-depth: 1;
+}
+
+.network-policies-generation-scope > *:nth-child(3)  {
+  --tree-depth: 2;
+}
+
+.network-policies-generation-scope > * {
+  position: relative;
+  padding-left: calc(var(--tree-depth) * var(--badge-width));
+  padding-bottom: var(--pf-global--spacer--xs);
+}
+
+.network-policies-generation-scope > *:not(:first-child):before, 
+.network-policies-generation-scope > *:not(:first-child):after  {
+  position: absolute;
+  content: "";
+  background-color: var(--pf-global--BorderColor--100);
+}
+
+.network-policies-generation-scope > *:not(:first-child):before  {
+  height: 40%;
+  width: 1px;
+  top: 0;
+  left: calc((var(--tree-depth) * var(--badge-width)) - (var(--badge-width) / 2));
+}
+
+.network-policies-generation-scope > *:not(:first-child):after  {
+  height: 1px;
+  width: calc(var(--badge-width) / 2.5);
+  left: 0;
+  bottom: calc(var(--badge-width) / 2);
+  margin-left: calc((var(--tree-depth) * var(--badge-width)) - (var(--badge-width) / 2));
+}
