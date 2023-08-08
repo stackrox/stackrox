@@ -50,7 +50,7 @@ function NetworkPoliciesGenerationScope({
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
             >
-                <DeploymentIcon title="Deployment" />
+                <DeploymentIcon aria-label="Deployment" />
                 {deploymentElement}
             </Flex>
 
@@ -58,7 +58,7 @@ function NetworkPoliciesGenerationScope({
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
             >
-                <NamespaceIcon title="Namespace" />
+                <NamespaceIcon aria-label="Namespace" />
                 {namespaceElement}
             </Flex>
 
@@ -66,7 +66,7 @@ function NetworkPoliciesGenerationScope({
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
             >
-                <ClusterIcon title="Cluster" />
+                <ClusterIcon aria-label="Cluster" />
                 <span>{cluster}</span>
             </Flex>
         </div>
