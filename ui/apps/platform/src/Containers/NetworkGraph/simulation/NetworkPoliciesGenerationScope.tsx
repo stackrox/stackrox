@@ -32,17 +32,14 @@ function NetworkPoliciesGenerationScope({
     if (granularity === 'NAMESPACE' || granularity === 'DEPLOYMENT') {
         const namespaces = uniq(deployments.map((deployment) => deployment.namespace));
         const namespaceCount = namespaces.length;
-        const namespaceText =
-            namespaceCount === 1 ? `namespace "${namespaces[0]}"` : `${namespaceCount} namespaces`;
+        const namespaceText = namespaceCount === 1 ? namespaces[0] : `${namespaceCount} namespaces`;
         namespaceElement = <span>{namespaceText}</span>;
     }
 
     if (granularity === 'DEPLOYMENT') {
         const deploymentCount = deployments.length;
         const deploymentText =
-            deploymentCount === 1
-                ? `deployment "${deployments[0].name}"`
-                : `${deploymentCount} deployments`;
+            deploymentCount === 1 ? deployments[0].name : `${deploymentCount} deployments`;
 
         deploymentElement = <span>{deploymentText}</span>;
     }
@@ -53,7 +50,7 @@ function NetworkPoliciesGenerationScope({
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
             >
-                <DeploymentIcon />
+                <DeploymentIcon title="Deployment" />
                 {deploymentElement}
             </Flex>
 
@@ -61,7 +58,7 @@ function NetworkPoliciesGenerationScope({
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
             >
-                <NamespaceIcon />
+                <NamespaceIcon title="Namespace" />
                 {namespaceElement}
             </Flex>
 
@@ -69,8 +66,8 @@ function NetworkPoliciesGenerationScope({
                 alignItems={{ default: 'alignItemsCenter' }}
                 spaceItems={{ default: 'spaceItemsSm' }}
             >
-                <ClusterIcon />
-                <span>cluster &quot;{cluster}&quot;</span>
+                <ClusterIcon title="Cluster" />
+                <span>{cluster}</span>
             </Flex>
         </div>
     );

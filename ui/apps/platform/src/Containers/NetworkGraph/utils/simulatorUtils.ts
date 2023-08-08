@@ -57,9 +57,10 @@ export function getInScopeEntities(
 ): EntityScope {
     const granularity = getGranularityFromScopeHierarchy(scopeHierarchy);
 
-    // A cluster, at least one namespace, and at least one deployment is selected. We
-    // include all deployments from the model that match a selected namespace and
-    // selected deployment name from the scope hierarchy.
+    // Include all deployments from the model that match a selected namespace and
+    // selected deployment name from the scope hierarchy. This prevents the inclusion
+    // of namespaces and deployments that are visible due to active connections between nodes
+    // and not due to the user's selection.
     const namespaceNameSet = new Set(scopeHierarchy.namespaces);
     const deploymentNameSet = new Set(scopeHierarchy.deployments);
 
