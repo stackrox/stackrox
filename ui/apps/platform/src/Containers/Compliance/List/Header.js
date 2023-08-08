@@ -10,8 +10,12 @@ import ExportButton from 'Components/ExportButton';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import { standardLabels } from 'messages/standards';
 import useCaseTypes from 'constants/useCaseTypes';
+import usePermissions from 'hooks/usePermissions';
 
 const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsExporting }) => {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+
     const standardId = findKey(standardLabels, (key) => key === standard);
 
     const headerText = standardId
@@ -33,25 +37,20 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
     return (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="w-full">{searchComponent}</div>
-            <div className="flex flex-1 justify-end">
-                <div className="border-l-2 border-base-300 mx-3" />
-                <div className="flex">
-                    <div className="flex items-center">
-                        <div className="flex">
-                            {standardId && <ScanButton text="Scan" standardId={standardId} />}
-                            <ExportButton
-                                fileName={`${headerText} Compliance Report`}
-                                id={standardId || entityType}
-                                type={standardId ? 'STANDARD' : ''}
-                                page={useCaseTypes.COMPLIANCE}
-                                pdfId="capture-list"
-                                tableOptions={tableOptions}
-                                isExporting={isExporting}
-                                setIsExporting={setIsExporting}
-                            />
-                        </div>
-                    </div>
-                </div>
+            <div className="flex flex-1 items-center justify-end pl-4">
+                {hasWriteAccessForCompliance && standardId && (
+                    <ScanButton text="Scan" standardId={standardId} />
+                )}
+                <ExportButton
+                    fileName={`${headerText} Compliance Report`}
+                    id={standardId || entityType}
+                    type={standardId ? 'STANDARD' : ''}
+                    page={useCaseTypes.COMPLIANCE}
+                    pdfId="capture-list"
+                    tableOptions={tableOptions}
+                    isExporting={isExporting}
+                    setIsExporting={setIsExporting}
+                />
             </div>
         </PageHeader>
     );
