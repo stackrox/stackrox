@@ -141,7 +141,7 @@ func (p *Pipeline) sendIndicatorEvent() {
 		if !p.processFilter.Add(indicator) {
 			continue
 		}
-		p.detector.ProcessIndicator(indicator)
+		p.detector.ProcessIndicator(p.getCurrentContext(), indicator)
 		p.indicators <- message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{

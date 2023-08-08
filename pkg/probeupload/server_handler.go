@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -28,9 +29,10 @@ type ProbeSource interface {
 	IsAvailable(ctx context.Context) (bool, error)
 }
 
-type handler struct {
+type probeServerHandler struct {
 	sources       []ProbeSource
 	errorCallback func(error)
+	centralReady  concurrency.Signal
 }
 
 // LogCallback returns an error callback that simply logs.
@@ -40,18 +42,27 @@ func LogCallback(logger logging.Logger) func(error) {
 	}
 }
 
-// NewProbeServerHandler returns an http.Handler for serving kernel probes. The handler assumes the path of kernel
+// NewProbeServerHandler returns a http.Handler for serving kernel probes. The probeServerHandler assumes the path of kernel
 // probes is rooted at `/`, i.e., wrap this via `http.StripPrefix` when serving on a sub-path.
 // The errorCallback is invoked for errors that happen during writing the response body, and thus cannot be transmitted
 // to the client via status/headers. It may be nil, in which case errors are simply ignored.
-func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) http.Handler {
-	return &handler{
+func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
+	return &probeServerHandler{
 		errorCallback: errorCallback,
 		sources:       sources,
+		centralReady:  concurrency.NewSignal(),
 	}
 }
 
-func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *probeServerHandler) GoOnline() {
+	h.centralReady.Signal()
+}
+
+func (h *probeServerHandler) GoOffline() {
+	h.centralReady.Reset()
+}
+
+func (h *probeServerHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		msg := fmt.Sprintf("invalid method %s, only %s requests are supported", req.Method, http.MethodGet)
 		log.Error(msg)
@@ -104,6 +115,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer utils.IgnoreError(data.Close)
+
+	if !h.centralReady.IsDone() {
+		log.Error("sensor is running in offline mode")
+		http.Error(w, "sensor running in offline mode", http.StatusServiceUnavailable)
+		return
+	}
 
 	hdr := w.Header()
 	if size >= 0 { // size < 0 means unknown

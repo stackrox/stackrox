@@ -307,11 +307,10 @@ var (
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespacesABReadWriteCtx,
-			// Partial cluster scope is too narrow for allowfixedscope at cluster level.
 			expectedComponentFound: map[string]bool{
-				nodeComponentID1x1:   false,
-				nodeComponentID1x2:   false,
-				nodeComponentID1s2x3: false,
+				nodeComponentID1x1:   true,
+				nodeComponentID1x2:   true,
+				nodeComponentID1s2x3: true,
 				nodeComponentID2x4:   false,
 				nodeComponentID2x5:   false,
 			},
@@ -328,13 +327,12 @@ var (
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespaceBReadWriteCtx,
-			// Partial cluster scope is too narrow for allowfixedscope at cluster level.
 			expectedComponentFound: map[string]bool{
 				nodeComponentID1x1:   false,
 				nodeComponentID1x2:   false,
-				nodeComponentID1s2x3: false,
-				nodeComponentID2x4:   false,
-				nodeComponentID2x5:   false,
+				nodeComponentID1s2x3: true,
+				nodeComponentID2x4:   true,
+				nodeComponentID2x5:   true,
 			},
 		},
 		{
@@ -352,8 +350,8 @@ var (
 			// The mixed scope context can see cluster1 and namespaceA as well as all cluster2.
 			// Therefore it should see only cluster2 vulnerabilities (and shared ones).
 			expectedComponentFound: map[string]bool{
-				nodeComponentID1x1:   false,
-				nodeComponentID1x2:   false,
+				nodeComponentID1x1:   true,
+				nodeComponentID1x2:   true,
 				nodeComponentID1s2x3: true,
 				nodeComponentID2x4:   true,
 				nodeComponentID2x5:   true,

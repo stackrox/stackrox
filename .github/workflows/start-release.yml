@@ -8,7 +8,7 @@ on:
         default: 0.0.0
         type: string
       ref:
-        description: Release base ref (for non-patch releases)
+        description: Override release branch starting ref
         required: false
         default: ""
         type: string
@@ -19,7 +19,7 @@ on:
         type: boolean
 
 env:
-  REF: ${{ fromJSON(format('["{0}","{1}"]', inputs.ref, github.event.repository.default_branch))[inputs.ref == ''] }}
+  USER_REF: ${{ inputs.ref }}
   main_branch: ${{github.event.repository.default_branch}}
   script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
   DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
@@ -31,7 +31,7 @@ run-name: >-
   ${{
     format('Start release {0} from {1}{2}',
       inputs.version,
-      fromJSON(format('["{0}","{1}"]', inputs.ref, github.event.repository.default_branch))[inputs.ref == ''],
+      fromJSON(format('["{0}","{1}"]', inputs.ref, 'the last nightly branching point'))[inputs.ref == ''],
       fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
     )
   }}
@@ -40,6 +40,31 @@ run-name: >-
 concurrency: Release automation
 
 jobs:
+  start-sha:
+    name: Find commit for release branch
+    runs-on: ubuntu-latest
+    outputs:
+      start-sha: ${{ fromJSON(format('["{0}","{1}"]', env.USER_REF, steps.find.outputs.merge_base))[env.USER_REF == ''] }}
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.repository.default_branch }}
+        fetch-depth: 0
+    - name: Print user-provided input
+      run: |
+        if [ "${{ env.USER_REF }}" != '' ]; then
+          echo "User provided the following override for the git-sha: \`${{ env.USER_REF }}\`" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "User did not provide override for the git-sha" >> "$GITHUB_STEP_SUMMARY"
+        fi
+    - name: Find merge-base for ${{ github.event.repository.default_branch }} and 'origin/nightlies'
+      id: find
+      run: |
+        MERGEBASE="$(git merge-base origin/nightlies ${{ github.event.repository.default_branch }})"
+        echo "merge_base=${MERGEBASE}" >> "$GITHUB_OUTPUT"
+        echo "Found the following git-sha as a branching point for the release branch: [\`${MERGEBASE}\`](${{github.server_url}}/${{github.repository}}/commits/${MERGEBASE})" >> "$GITHUB_STEP_SUMMARY"
+
   properties:
     name: Read repository properties
     runs-on: ubuntu-latest
@@ -94,15 +119,14 @@ jobs:
 
   branch:
     name: Prepare release branch
-    needs: [variables]
+    needs: [variables, start-sha]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code (normal release)
         if: needs.variables.outputs.patch == 0
         uses: actions/checkout@v3
         with:
-          ref: ${{ env.REF }}
-          submodules: true
+          ref: ${{ needs.start-sha.outputs.start-sha }}
       - name: Check out code (patch release)
         if: needs.variables.outputs.patch != 0
         uses: actions/checkout@v3
@@ -124,7 +148,7 @@ jobs:
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
-      - name: Switch to ${{needs.variables.outputs.branch}} branch
+      - name: Create and annotate branch ${{needs.variables.outputs.branch}}
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
           git switch --create "${{needs.variables.outputs.branch}}"
@@ -136,6 +160,11 @@ jobs:
           # TODO: tag the first commit on the release branch with the current
           #       release version when main branch versioning is changed to
           #       'next.version-dev'.
+      - name: Switch to existing ${{needs.variables.outputs.branch}} branch
+        if: steps.check-existing.outputs.branch-exists == 'true'
+        run: |
+          git fetch origin
+          git switch "${{needs.variables.outputs.branch}}"
       - name: Update the changelog
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -225,27 +254,27 @@ jobs:
 
   patch-changelog:
     name: Patch CHANGELOG.md
-    needs: [variables, branch]
+    needs: [variables, branch, start-sha]
     if: needs.variables.outputs.patch == 0
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          # Working on `inputs.ref` instead of `env.main_branch` may help
-          # to spot changes happened to CHANGELOG.md after `inputs.ref`.
-          ref: ${{ env.REF }}
+          # Working on `start-sha` instead of `env.main_branch` may help
+          # to spot changes happened to CHANGELOG.md after `start-sha`.
+          ref: ${{ needs.start-sha.outputs.start-sha }}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
-      - name: Patch CHANGELOG.md on ${{ env.REF }}
+      - name: Patch CHANGELOG.md on ${{ needs.start-sha.outputs.start-sha }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             patch-changelog \
             "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}" \
-            "$REF" \
+            "${{ needs.start-sha.outputs.start-sha }}" \
             "${{needs.variables.outputs.branch}}"
 
   milestone:

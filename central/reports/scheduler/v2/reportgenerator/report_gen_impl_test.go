@@ -58,6 +58,7 @@ type vulnReportData struct {
 	imageNames      []string
 	componentNames  []string
 	cveNames        []string
+	cvss            []float64
 }
 
 func (s *EnhancedReportingTestSuite) SetupSuite() {
@@ -271,6 +272,7 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 			s.ElementsMatch(tc.expected.imageNames, reportData.imageNames)
 			s.ElementsMatch(tc.expected.componentNames, reportData.componentNames)
 			s.ElementsMatch(tc.expected.cveNames, reportData.cveNames)
+			s.Equal(len(tc.expected.cveNames), len(reportData.cvss))
 		})
 	}
 }
@@ -468,6 +470,7 @@ func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, wat
 	imageNames := make([]string, 0)
 	componentNames := make([]string, 0)
 	cveNames := make([]string, 0)
+	cvss := make([]float64, 0)
 
 	for _, res := range deployedImgResults {
 		for _, dep := range res.Deployments {
@@ -478,6 +481,7 @@ func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, wat
 					componentNames = append(componentNames, comp.Name)
 					for _, cve := range comp.ImageVulnerabilities {
 						cveNames = append(cveNames, cve.Cve)
+						cvss = append(cvss, cve.Cvss)
 					}
 				}
 			}
@@ -491,6 +495,7 @@ func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, wat
 				componentNames = append(componentNames, comp.Name)
 				for _, cve := range comp.ImageVulnerabilities {
 					cveNames = append(cveNames, cve.Cve)
+					cvss = append(cvss, cve.Cvss)
 				}
 			}
 		}
@@ -501,5 +506,6 @@ func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, wat
 		imageNames:      imageNames,
 		componentNames:  componentNames,
 		cveNames:        cveNames,
+		cvss:            cvss,
 	}
 }

@@ -9,7 +9,7 @@ import "storage/role.proto";
 package storage;
 
 message SlimUser {
-    string id    = 1;
+    string id    = 1 [(gogoproto.moretags) = 'search:"User ID"'];
     string name  = 2 [(gogoproto.moretags) = 'search:"User Name"'];
 }
 

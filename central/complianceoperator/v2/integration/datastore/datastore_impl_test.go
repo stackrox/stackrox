@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/complianceoperatorintegration/store/postgres"
+	"github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
