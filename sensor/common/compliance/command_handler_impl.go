@@ -28,7 +28,7 @@ type commandHandlerImpl struct {
 	scrapeIDToState map[string]*scrapeState
 
 	stopper          concurrency.Stopper
-	centralReachable *atomic.Bool
+	centralReachable atomic.Bool
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -40,7 +40,6 @@ func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (c *commandHandlerImpl) Start() error {
-	c.centralReachable.Store(true)
 	go c.run()
 	return nil
 }

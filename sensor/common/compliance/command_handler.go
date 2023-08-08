@@ -31,6 +31,6 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 		scrapeIDToState: make(map[string]*scrapeState),
 
 		stopper:          concurrency.NewStopper(),
-		centralReachable: reachable,
+		centralReachable: atomic.Bool{},
 	}
 }

@@ -27,8 +27,6 @@ type CommandHandlerTestSuite struct {
 }
 
 func (s *CommandHandlerTestSuite) SetupTest() {
-	reachable := &atomic.Bool{}
-	reachable.Store(false)
 	s.mockService = mocks.NewMockService(gomock.NewController(s.T()))
 
 	s.cHandler = commandHandlerImpl{
@@ -40,11 +38,11 @@ func (s *CommandHandlerTestSuite) SetupTest() {
 		scrapeIDToState: make(map[string]*scrapeState),
 
 		stopper:          concurrency.NewStopper(),
-		centralReachable: reachable,
+		centralReachable: atomic.Bool{},
 	}
 }
 
-func (s *CommandHandlerTestSuite) StartScrape(scrapeId string, hostnames []string) {
+func (s *CommandHandlerTestSuite) startScrape(scrapeId string, hostnames []string) {
 	scrapeCommand := central.ScrapeCommand{
 		ScrapeId: scrapeId,
 		Command: &central.ScrapeCommand_StartScrape{
@@ -58,17 +56,44 @@ func (s *CommandHandlerTestSuite) StartScrape(scrapeId string, hostnames []strin
 	s.cHandler.commands <- &scrapeCommand
 }
 
-func (s *CommandHandlerTestSuite) StartCommandHandler(outputChan chan *compliance.ComplianceReturn) {
+func (s *CommandHandlerTestSuite) getScrapeUpdate() {
+	select {
+	case update:=<-s.cHandler.updates:
+		message:=update.GetMsg()
+		scrapeUpdate,ok:=message.(*central.MsgFromSensor_ScrapeUpdate)
+		s.Require().True(ok)
+		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.ScrapeId)
+	case <-time.After(time.Second * 2):
+		s.Require().Fail("Timed out waiting for update")
+	}
+}
+
+func (s *CommandHandlerTestSuite) sendComplianceReturn(outputChan chan *compliance.ComplianceReturn) {
+	outputChan <- &compliance.ComplianceReturn{
+		NodeName: "node1",
+		ScrapeId: "foo",
+		DockerData: nil,
+		CommandLines: nil,
+		Files: nil,
+		SystemdFiles: nil,
+		ContainerRuntimeInfo: nil,
+		Time: nil,
+		Evidence: nil,
+	}
+}
+
+func (s *CommandHandlerTestSuite) startCommandHandler(outputChan chan *compliance.ComplianceReturn) {
 	s.mockService.EXPECT().Output().AnyTimes().DoAndReturn(func() chan *compliance.ComplianceReturn{return outputChan})
 	s.Assert().False(s.cHandler.centralReachable.Load())
 	err := s.cHandler.Start()
 	s.Require().NoError(err)
+	s.cHandler.Notify(common.SensorComponentEventCentralReachable)
 }
 
 func (s *CommandHandlerTestSuite) TestCommandHandlerStops() {
 	outputChan:=make(chan *compliance.ComplianceReturn)
 	defer close(outputChan)
-	s.StartCommandHandler(outputChan)
+	s.startCommandHandler(outputChan)
 
 	s.Assert().True(s.cHandler.centralReachable.Load())
 	s.cHandler.Notify(common.SensorComponentEventOfflineMode)
@@ -81,10 +106,10 @@ func (s *CommandHandlerTestSuite) TestCommandHandlerStops() {
 func (s *CommandHandlerTestSuite) TestNoResponseWhenOffline() {
 	outputChan:=make(chan *compliance.ComplianceReturn)
 	defer close(outputChan)
-	s.StartCommandHandler(outputChan)
+	s.startCommandHandler(outputChan)
 	s.cHandler.Notify(common.SensorComponentEventOfflineMode)
 
-	s.StartScrape("foo", []string{"node1","node2"})
+	s.startScrape("foo", []string{"node1","node2"})
 	time.Sleep(time.Millisecond * 500)
 	s.Assert().Empty(s.cHandler.updates)
 }
@@ -92,10 +117,10 @@ func (s *CommandHandlerTestSuite) TestNoResponseWhenOffline() {
 func (s *CommandHandlerTestSuite) TestResponseWhenCentralReachable() {
 	outputChan:=make(chan *compliance.ComplianceReturn)
 	defer close(outputChan)
-	s.StartCommandHandler(outputChan)
+	s.startCommandHandler(outputChan)
 	s.cHandler.Notify(common.SensorComponentEventCentralReachable)
 
-	s.StartScrape("bar", []string{"node1","node2"})
+	s.startScrape("bar", []string{"node1","node2"})
 	select {
 	case <-s.cHandler.updates:
 		return
@@ -107,33 +132,15 @@ func (s *CommandHandlerTestSuite) TestResponseWhenCentralReachable() {
 func (s *CommandHandlerTestSuite) TestStartScrapeSucceedsComplianceMessageNotSent() {
 	outputChan:=make(chan *compliance.ComplianceReturn)
 	defer close(outputChan)
-	s.StartCommandHandler(outputChan)
+	s.startCommandHandler(outputChan)
 
-	s.StartScrape("foo", []string{"node1","node2"})
+	s.startScrape("foo", []string{"node1","node2"})
 
-	select {
-	case update:=<-s.cHandler.updates:
-		message:=update.GetMsg()
-		scrapeUpdate,ok:=message.(*central.MsgFromSensor_ScrapeUpdate)
-		s.Require().True(ok)
-		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.ScrapeId)
-	case <-time.After(time.Second * 2):
-		s.Require().Fail("Timed out waiting for update")
-	}
+	s.getScrapeUpdate()
 
 	s.cHandler.Notify(common.SensorComponentEventOfflineMode)
 
-	outputChan <- &compliance.ComplianceReturn{
-		NodeName: "node1",
-		ScrapeId: "foo",
-		DockerData: nil,
-		CommandLines: nil,
-		Files: nil,
-		SystemdFiles: nil,
-		ContainerRuntimeInfo: nil,
-		Time: nil,
-		Evidence: nil,
-	}
+	s.sendComplianceReturn(outputChan)
 
 	time.Sleep(time.Millisecond * 500)
 	scrapeState,ok:=s.cHandler.scrapeIDToState["foo"]
@@ -146,31 +153,13 @@ func (s *CommandHandlerTestSuite) TestStartScrapeSucceedsComplianceMessageNotSen
 func (s *CommandHandlerTestSuite) TestStartScrapeSucceedsComplianceMessageSent() {
 	outputChan:=make(chan *compliance.ComplianceReturn)
 	defer close(outputChan)
-	s.StartCommandHandler(outputChan)
+	s.startCommandHandler(outputChan)
 
-	s.StartScrape("foo", []string{"node1","node2"})
+	s.startScrape("foo", []string{"node1","node2"})
 
-	select {
-	case update:=<-s.cHandler.updates:
-		message:=update.GetMsg()
-		scrapeUpdate,ok:=message.(*central.MsgFromSensor_ScrapeUpdate)
-		s.Require().True(ok)
-		s.Assert().Equal("foo", scrapeUpdate.ScrapeUpdate.ScrapeId)
-	case <-time.After(time.Second * 2):
-		s.Require().Fail("Timed out waiting for update")
-	}
+	s.getScrapeUpdate()
 
-	outputChan <- &compliance.ComplianceReturn{
-		NodeName: "node1",
-		ScrapeId: "foo",
-		DockerData: nil,
-		CommandLines: nil,
-		Files: nil,
-		SystemdFiles: nil,
-		ContainerRuntimeInfo: nil,
-		Time: nil,
-		Evidence: nil,
-	}
+	s.sendComplianceReturn(outputChan)
 
 	select {
 	case <-s.cHandler.updates:
