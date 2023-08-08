@@ -31,7 +31,7 @@ Example:
 ```proto
 message GetVulnerabilitiesRequest {
         string hash_id = 1;
-        IndexReportComponents index_report;
+        Contents contents = 2;
 }
 ```
 
@@ -39,10 +39,10 @@ Notice that we don't necessarily need to embed the whole Index Report since the 
 
 ```proto
 message Contents {
-    repeated Package              packages      = 5;
-    repeated Distribution         distributions = 6;
-    repeated Repository           repositories  = 7;
-    map<string, Environment.List> environments  = 8;
+    repeated Package              packages      = 1;
+    repeated Distribution         distributions = 2;
+    repeated Repository           repositories  = 3;
+    map<string, Environment.List> environments  = 4;
 }
 ```
 
