@@ -13,7 +13,7 @@ import (
 storage type to apiV2 type conversions
 */
 
-func convertStorateIntegrationToV2(ctx context.Context, integration *storage.ComplianceIntegration, clusterStore datastore.DataStore) (*v2.ComplianceIntegration, error) {
+func convertStorageIntegrationToV2(ctx context.Context, integration *storage.ComplianceIntegration, clusterStore datastore.DataStore) (*v2.ComplianceIntegration, error) {
 	if integration == nil {
 		return nil, nil
 	}
@@ -41,7 +41,7 @@ func convertStorageProtos(ctx context.Context, integrations []*storage.Complianc
 	apiIntegrations := make([]*v2.ComplianceIntegration, 0, len(integrations))
 
 	for _, integration := range integrations {
-		converted, err := convertStorateIntegrationToV2(ctx, integration, clusterStore)
+		converted, err := convertStorageIntegrationToV2(ctx, integration, clusterStore)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage compliance operator integration with id %s to response", integration.GetId())
 		}

@@ -96,5 +96,5 @@ func (s *serviceImpl) GetComplianceIntegration(ctx context.Context, req *v2.Comp
 		return nil, errors.Wrap(err, "should only have one compliance operator per cluster.")
 	}
 
-	return convertStorateIntegrationToV2(ctx, integrations[0], s.clusterDS)
+	return convertStorageIntegrationToV2(ctx, integrations[0], s.clusterDS)
 }
