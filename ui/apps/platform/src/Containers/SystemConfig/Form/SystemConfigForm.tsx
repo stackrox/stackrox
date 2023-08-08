@@ -276,6 +276,25 @@ const SystemConfigForm = ({
                         />
                     </FormGroup>
                 </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Vulnerability report run history retention"
+                        isRequired
+                        fieldId="privateConfig.reportRetentionConfig.historyRetentionDurationDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.reportRetentionConfig.historyRetentionDurationDays"
+                            name="privateConfig.reportRetentionConfig.historyRetentionDurationDays"
+                            value={
+                                values?.privateConfig?.reportRetentionConfig
+                                    ?.historyRetentionDurationDays
+                            }
+                            onChange={onChange}
+                        />
+                    </FormGroup>
+                </GridItem>
             </Grid>
             <Title headingLevel="h3">Cluster deletion</Title>
             <Grid hasGutter md={6}>
