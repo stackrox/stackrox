@@ -44,15 +44,13 @@ function NetworkPoliciesGenerationScope({
             deploymentCount === 1 ? deployments[0].name : `${deploymentCount} deployments`;
 
         deploymentElement = (
-            <span>
-                <Button
-                    variant="link"
-                    isInline
-                    onClick={() => setModalDeployments(networkPolicyGenerationScope.deployments)}
-                >
-                    {deploymentText}
-                </Button>
-            </span>
+            <Button
+                variant="link"
+                isInline
+                onClick={() => setModalDeployments(networkPolicyGenerationScope.deployments)}
+            >
+                {deploymentText}
+            </Button>
         );
     }
 
