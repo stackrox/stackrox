@@ -15,3 +15,5 @@ kube_burner_gen_config_file="$STACKROX_DIR"/.github/workflows/kube-burner-config
 sed "s|STACKROX_DIR|$STACKROX_DIR|" "$kube_burner_config_file" > "$kube_burner_gen_config_file" 
 
 nohup "$STACKROX_DIR"/.github/workflows/scripts/repeate-kube-burner.sh ./kube-burner/kube-burner "$kube_burner_gen_config_file" &
+
+sleep 600
