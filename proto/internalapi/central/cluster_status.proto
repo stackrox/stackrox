@@ -23,3 +23,6 @@ message RawClusterHealthInfo {
     storage.AdmissionControlHealthInfo admission_control_health_info    = 2;
     storage.ScannerHealthInfo          scanner_health_info              = 3;
 }
+
+message ClusterHealthResponse {
+}
