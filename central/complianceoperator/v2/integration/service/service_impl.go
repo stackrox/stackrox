@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -92,9 +93,16 @@ func (s *serviceImpl) GetComplianceIntegration(ctx context.Context, req *v2.Comp
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve compliance integrations.")
 	}
-	if len(integrations) != 1 {
-		return nil, errors.Wrap(err, "should only have one compliance operator per cluster.")
+
+	// Multiple versions of compliance operator for a cluster is an error
+	if len(integrations) > 1 {
+		return nil, errors.New("should only have one compliance operator per cluster.")
 	}
 
-	return convertStorageIntegrationToV2(ctx, integrations[0], s.clusterDS)
+	var integrationReturned *storage.ComplianceIntegration
+	if len(integrations) > 0 {
+		integrationReturned = integrations[0]
+	}
+
+	return convertStorageIntegrationToV2(ctx, integrationReturned, s.clusterDS)
 }
