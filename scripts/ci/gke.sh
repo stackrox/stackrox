@@ -345,7 +345,7 @@ create_log_explorer_links() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>GKE Logs Explorer</h4></title>
+        <title>GKE Logs Explorer</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }
