@@ -3,10 +3,8 @@ package jwt
 import (
 	"context"
 	"crypto/rsa"
-	"encoding/pem"
 	"time"
 
-	"github.com/google/certificate-transparency-go/x509"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 )
 
@@ -51,19 +49,12 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 	if err != nil {
 		log.Errorf("Error reading JWT private key: %v. Skipping incoming update. Watch dir: %q", err, h.dir)
 		return
-	} else {
-		key, _ = val.(*rsa.PrivateKey)
-		if key == nil {
-			log.Infof("No private key found. Using previous value. Watch dir: %q", h.dir)
-			return
-		}
 	}
-	privateKeyBytes := x509.MarshalPKCS1PrivateKey(key)
-	pemBlock := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: privateKeyBytes,
-	})
-	log.Infof("Here's the key: %s", string(pemBlock))
+	key, _ = val.(*rsa.PrivateKey)
+	if key == nil {
+		log.Infof("No private key found. Using previous value. Watch dir: %q", h.dir)
+		return
+	}
 	h.updateKey(key)
 }
 

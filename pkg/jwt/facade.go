@@ -5,11 +5,13 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
+// SignerFactory produces jose.Signer on demand.
 type SignerFactory struct {
 	keyStore PrivateKeyGetter
 	keyID    string
 }
 
+// CreateSigner creates jose.Signer based on underlying private key.
 func (f *SignerFactory) CreateSigner() (jose.Signer, error) {
 	signingKey := jose.SigningKey{
 		Algorithm: jose.RS256,
