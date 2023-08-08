@@ -3,30 +3,26 @@ package cache
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/productusage/source"
-	"github.com/stackrox/rox/central/productusage/source/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
 )
 
-func makeSource(ctrl *gomock.Controller, n int64, c int64) source.SecuredUnitsSource {
-	s := mocks.NewMockSecuredUnitsSource(ctrl)
-	s.EXPECT().GetNodeCount().AnyTimes().Return(n)
-	s.EXPECT().GetCpuCapacity().AnyTimes().Return(c)
-	return s
-}
-
-func inject(ctrl *gomock.Controller, c Cache) {
-	c.UpdateUsage("test1", makeSource(ctrl, 1, 10))
-	c.UpdateUsage("test2", makeSource(ctrl, 2, 20))
+func inject(c Cache) {
+	c.UpdateUsage("test1", &storage.SecuredUnits{
+		NumNodes:    1,
+		NumCpuUnits: 10,
+	})
+	c.UpdateUsage("test2", &storage.SecuredUnits{
+		NumNodes:    2,
+		NumCpuUnits: 20,
+	})
 }
 
 func TestCleanupCurrent(t *testing.T) {
 	c := NewCache()
-	ctrl := gomock.NewController(t)
 
-	inject(ctrl, c)
+	inject(c)
 
 	ids := set.NewStringSet()
 	c.Cleanup(ids)
@@ -34,7 +30,7 @@ func TestCleanupCurrent(t *testing.T) {
 	assert.Equal(t, int64(0), bm.NumNodes)
 	assert.Equal(t, int64(0), bm.NumCpuUnits)
 
-	inject(ctrl, c)
+	inject(c)
 
 	ids.Add("test1")
 	c.Cleanup(ids)
@@ -47,7 +43,7 @@ func TestCleanupCurrent(t *testing.T) {
 	assert.Equal(t, int64(1), bm.NumNodes)
 	assert.Equal(t, int64(10), bm.NumCpuUnits)
 
-	inject(ctrl, c)
+	inject(c)
 
 	c.Cleanup(ids)
 	bm = c.GetCurrent()
@@ -57,9 +53,8 @@ func TestCleanupCurrent(t *testing.T) {
 
 func TestAggregateAndFlush(t *testing.T) {
 	c := NewCache()
-	ctrl := gomock.NewController(t)
 
-	inject(ctrl, c)
+	inject(c)
 	bm := c.AggregateAndFlush()
 	assert.Equal(t, int64(3), bm.NumNodes)
 	assert.Equal(t, int64(30), bm.NumCpuUnits)
@@ -70,7 +65,7 @@ func TestAggregateAndFlush(t *testing.T) {
 	assert.Equal(t, int64(0), bm.NumNodes)
 	assert.Equal(t, int64(0), bm.NumCpuUnits)
 
-	inject(ctrl, c)
+	inject(c)
 
 	ids.Add("test1")
 	c.Cleanup(ids)
@@ -83,7 +78,7 @@ func TestAggregateAndFlush(t *testing.T) {
 	assert.Equal(t, int64(0), bm.NumNodes)
 	assert.Equal(t, int64(0), bm.NumCpuUnits)
 
-	inject(ctrl, c)
+	inject(c)
 
 	ids.Add("test2")
 	c.Cleanup(ids)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/productusage/source"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -68,7 +67,7 @@ func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (*storage.Secure
 }
 
 // UpdateUsage updates the cache with the metrics of the clusterID cluster.
-func (ds *dataStoreImpl) UpdateUsage(ctx context.Context, clusterID string, cm source.SecuredUnitsSource) error {
+func (ds *dataStoreImpl) UpdateUsage(ctx context.Context, clusterID string, cm *storage.SecuredUnits) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to update usage data cache")
 	}

@@ -2,7 +2,6 @@ package cache
 
 import (
 	gogoTypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/productusage/source"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
@@ -22,7 +21,7 @@ type cacheImpl struct {
 type Cache interface {
 	// UpdateUsage upserts the metrics to the cache for the given cluster id,
 	// keeping maximum and last values.
-	UpdateUsage(id string, cm source.SecuredUnitsSource)
+	UpdateUsage(id string, cm *storage.SecuredUnits)
 	// Cleanup removes the records of the clusters, which are not in the ids set.
 	Cleanup(ids set.StringSet)
 	// GetCurrent returns the collected values.
@@ -40,12 +39,12 @@ func NewCache() Cache {
 	}
 }
 
-func (u *cacheImpl) UpdateUsage(id string, cm source.SecuredUnitsSource) {
-	u.nodesMap.Store(id, cm.GetNodeCount())
-	u.cpuUnitsMap.Store(id, cm.GetCpuCapacity())
+func (u *cacheImpl) UpdateUsage(id string, cm *storage.SecuredUnits) {
+	u.nodesMap.Store(id, cm.GetNumNodes())
+	u.cpuUnitsMap.Store(id, cm.GetNumCpuUnits())
 	u.lastKnown.Store(id, storage.SecuredUnits{
-		NumNodes:    cm.GetNodeCount(),
-		NumCpuUnits: cm.GetCpuCapacity(),
+		NumNodes:    cm.GetNumNodes(),
+		NumCpuUnits: cm.GetNumCpuUnits(),
 	})
 }
 

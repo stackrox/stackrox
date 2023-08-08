@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/productusage/source"
-	"github.com/stackrox/rox/central/productusage/source/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -68,11 +66,11 @@ func (suite *UsageDataStoreTestSuite) SetupTest() {
 func (suite *UsageDataStoreTestSuite) TearDownSuite() {
 }
 
-func (suite *UsageDataStoreTestSuite) makeSource(n int64, c int64) source.SecuredUnitsSource {
-	s := mocks.NewMockSecuredUnitsSource(suite.ctrl)
-	s.EXPECT().GetNodeCount().AnyTimes().Return(n)
-	s.EXPECT().GetCpuCapacity().AnyTimes().Return(c)
-	return s
+func makeSource(n int64, c int64) *storage.SecuredUnits {
+	return &storage.SecuredUnits{
+		NumNodes:    n,
+		NumCpuUnits: c,
+	}
 }
 
 func (suite *UsageDataStoreTestSuite) TestGet() {
@@ -101,11 +99,11 @@ func (suite *UsageDataStoreTestSuite) TestGetCurrent() {
 }
 
 func (suite *UsageDataStoreTestSuite) TestUpdateUsage() {
-	err := suite.datastore.UpdateUsage(suite.hasNoneCtx, "existingCluster1", suite.makeSource(1, 8))
+	err := suite.datastore.UpdateUsage(suite.hasNoneCtx, "existingCluster1", makeSource(1, 8))
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.UpdateUsage(suite.hasBadCtx, "existingCluster1", suite.makeSource(1, 8))
+	err = suite.datastore.UpdateUsage(suite.hasBadCtx, "existingCluster1", makeSource(1, 8))
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.UpdateUsage(suite.hasReadCtx, "existingCluster1", suite.makeSource(1, 8))
+	err = suite.datastore.UpdateUsage(suite.hasReadCtx, "existingCluster1", makeSource(1, 8))
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
@@ -123,13 +121,13 @@ func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	suite.NoError(err)
 	suite.Equal(int64(0), u.NumNodes)
 	suite.Equal(int64(0), u.NumCpuUnits)
-	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", suite.makeSource(1, 8))
-	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster2", suite.makeSource(2, 7))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", makeSource(1, 8))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster2", makeSource(2, 7))
 	u, err = suite.datastore.GetCurrentUsage(suite.hasReadCtx)
 	suite.NoError(err)
 	suite.Equal(int64(3), u.NumNodes)
 	suite.Equal(int64(15), u.NumCpuUnits)
-	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", suite.makeSource(2, 16))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", makeSource(2, 16))
 	u, err = suite.datastore.GetCurrentUsage(suite.hasReadCtx)
 	suite.NoError(err)
 	suite.Equal(int64(3), u.NumNodes)
@@ -141,8 +139,8 @@ func (suite *UsageDataStoreTestSuite) TestUpdateAggregateAndFlush() {
 	suite.NoError(err)
 	suite.Equal(int64(0), u.NumNodes)
 	suite.Equal(int64(0), u.NumCpuUnits)
-	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", suite.makeSource(1, 8))
-	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", suite.makeSource(2, 7))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", makeSource(1, 8))
+	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", makeSource(2, 7))
 	u, err = suite.datastore.AggregateAndFlush(suite.hasWriteCtx)
 	suite.NoError(err)
 	suite.Equal(int64(1), u.NumNodes)
