@@ -58,8 +58,8 @@ message DecommissionedClusterRetentionConfig {
 // next available tag: 4
 message ReportRetentionConfig {
     int32 history_retention_duration_days              = 1;
-    int32 downloadable_report_retention_days           = 2;
-    int32 downloadable_report_global_retention_bytes   = 3;
+    uint32 downloadable_report_retention_days          = 2;
+    uint32 downloadable_report_global_retention_bytes  = 3;
 }
 
 // next available tag:7

@@ -81,7 +81,7 @@ func TestDownloadableReportPruning(t *testing.T) {
 		description    string
 		existing       []*blobTemplate
 		toRemove       []*blobTemplate
-		retentionBytes int32
+		retentionBytes uint32
 	}{
 		{
 			description: "nothing to prune",
