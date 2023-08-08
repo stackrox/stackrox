@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"crypto"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -24,6 +25,11 @@ type KeyGetter interface {
 	// jose.JSONWebKey
 	// *jose.JSONWebKey
 	Key(id string) interface{}
+}
+
+type PrivateKeyStore interface {
+	Key() crypto.Signer
+	UpdateKey(key crypto.Signer)
 }
 
 // A JWKSGetter gets trusted keys from a JSON Web Key Set (JWKS) URL.
@@ -75,23 +81,19 @@ func (j *JWKSGetter) fetch() {
 	}
 }
 
-type SingleKeyStore struct {
+type singlePrivateKeyStore struct {
 	keyID string
-	key   interface{}
+	key   crypto.Signer
 	mutex sync.RWMutex
 }
 
-func (s *SingleKeyStore) Key(id string) interface{} {
+func (s *singlePrivateKeyStore) Key() crypto.Signer {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
-	if id == s.keyID {
-		return s.key
-	}
-	log.Error("not found")
-	return nil
+	return s.key
 }
 
-func (s *SingleKeyStore) UpdateKey(newVal interface{}) {
+func (s *singlePrivateKeyStore) UpdateKey(newVal crypto.Signer) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -99,10 +101,31 @@ func (s *SingleKeyStore) UpdateKey(newVal interface{}) {
 	log.Infof("Value is updated: %v", s.key)
 }
 
-// NewSingleKeyStore returns a KeyGetter that allows obtaining a single key with a defined id.
-func NewSingleKeyStore(key interface{}, keyID string) *SingleKeyStore {
-	return &SingleKeyStore{
+// NewSinglePrivateKeyStore returns a KeyGetter that allows obtaining a single key with a defined id.
+func NewSinglePrivateKeyStore(key crypto.Signer, keyID string) PrivateKeyStore {
+	return &singlePrivateKeyStore{
 		keyID: keyID,
 		key:   key,
 	}
+}
+
+type DerivedKeyStore struct {
+	keyID           string
+	privateKeyStore PrivateKeyStore
+}
+
+// NewDerivedKeyStore returns a KeyGetter that allows obtaining a single, derived from private key with a defined id.
+func NewDerivedKeyStore(privateKeyStore PrivateKeyStore, keyID string) *DerivedKeyStore {
+	return &DerivedKeyStore{
+		keyID:           keyID,
+		privateKeyStore: privateKeyStore,
+	}
+}
+
+func (d *DerivedKeyStore) Key(id string) interface{} {
+	if id == d.keyID {
+		return d.privateKeyStore.Key().Public()
+	}
+	log.Error("not found")
+	return nil
 }

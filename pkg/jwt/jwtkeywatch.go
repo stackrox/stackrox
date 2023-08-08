@@ -21,7 +21,7 @@ var (
 type loadKeyFunc func(dir string) (*rsa.PrivateKey, error)
 type updateKeyFunc func(key *rsa.PrivateKey)
 
-// WatchKeyDir starts watching the directory containing certificates
+// WatchKeyDir starts watching the directory containing JWT private key.
 func WatchKeyDir(dir string, loadKey loadKeyFunc, updateKey updateKeyFunc) {
 	wh := &handler{
 		dir:       dir,
@@ -68,5 +68,5 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (h *handler) OnWatchError(err error) {
-	log.Errorf("Error watching TLS certificate directory %q: %v. Not updating TLS certificates!", h.dir, err)
+	log.Errorf("Error watching JWT key directory %q: %v. Not updating JWT key value!", h.dir, err)
 }

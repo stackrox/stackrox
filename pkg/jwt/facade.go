@@ -6,21 +6,21 @@ import (
 )
 
 type SignerGetter struct {
-	keyStore KeyGetter
+	keyStore PrivateKeyStore
 	keyID    string
 }
 
 func (f *SignerGetter) GetSigner() (jose.Signer, error) {
 	signingKey := jose.SigningKey{
 		Algorithm: jose.RS256,
-		Key:       f.keyStore.Key(f.keyID),
+		Key:       f.keyStore.Key(),
 	}
 	return jose.NewSigner(signingKey, new(jose.SignerOptions).WithType("JWT").WithHeader("kid", f.keyID))
 }
 
 // CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the
 // specified RSA private key.
-func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore, publicKeyStore KeyGetter, keyID string) (*SignerGetter, Validator) {
+func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore PrivateKeyStore, publicKeyStore KeyGetter, keyID string) (*SignerGetter, Validator) {
 	validator := NewRS256Validator(publicKeyStore, issuerID, audience)
 	signer := &SignerGetter{
 		keyStore: privateKeyStore,
