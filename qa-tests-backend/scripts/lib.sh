@@ -56,7 +56,7 @@ surface_spec_logs() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Groovy Test Logs</h4></title>
+        <title>Groovy Test Logs</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }

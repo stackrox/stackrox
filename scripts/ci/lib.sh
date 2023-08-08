@@ -1515,7 +1515,7 @@ highlight_cluster_versions() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Cluster Versions</h4></title>
+        <title>Cluster Versions</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }
