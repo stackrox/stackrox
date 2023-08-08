@@ -181,11 +181,9 @@ function NetworkPolicySimulatorSidePanel({
                 >
                     <FlexItem>
                         <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-u-font-size-xl pf-u-mr-2xl"
-                            >
-                                Generated network policies from the baselines of
+                            <Text component={TextVariants.h2}>Generated network policies</Text>
+                            <Text component={TextVariants.h3} className="pf-u-m-0">
+                                Scope of baseline:
                             </Text>
                         </TextContent>
                     </FlexItem>
@@ -380,8 +378,9 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
                 >
                     <TextContent>
-                        <Text component={TextVariants.h2} className="pf-u-font-size-xl pf-u-mr-2xl">
-                            Generate network policies from the baselines of
+                        <Text component={TextVariants.h2}>Generate network policies</Text>
+                        <Text component={TextVariants.h3} className="pf-u-m-0">
+                            Scope of baseline:
                         </Text>
                     </TextContent>
                     <NetworkPoliciesGenerationScope
