@@ -103,7 +103,7 @@ spec:
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
-          value: ":9091"
+          value: ":9092"
         {{- else}}
           value: "disabled"
         {{- end }}
@@ -122,7 +122,7 @@ spec:
         name: compliance
         {{- if ._rox.collector.exposeMonitoring }}
         ports:
-        - containerPort: 9091
+        - containerPort: 9092
           name: monitoring
         {{- end }}
         resources:
@@ -154,7 +154,7 @@ spec:
           - containerPort: 8444
             name: grpc
           {{- if ._rox.collector.exposeMonitoring }}
-          - containerPort: 9092
+          - containerPort: 9094
             name: monitoring
           {{- end }}
         resources:
@@ -167,7 +167,7 @@ spec:
               fieldPath: spec.nodeName
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
-          value: ":9092"
+          value: ":9094"
         {{- else }}
           value: "disabled"
         {{- end }}

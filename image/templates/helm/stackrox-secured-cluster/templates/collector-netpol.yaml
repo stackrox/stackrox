@@ -34,9 +34,9 @@ spec:
   - ports:
     - port: 9090
       protocol: TCP
-    - port: 9091
-      protocol: TCP
     - port: 9092
+      protocol: TCP
+    - port: 9094
       protocol: TCP
   podSelector:
     matchLabels:
