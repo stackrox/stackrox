@@ -70,7 +70,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	return issuerFactory, validator, nil
 }
 
-// We pass parameter here is to satisfy WatchKeyDir interface.
+// We pass parameter here to satisfy WatchKeyDir interface.
 func loadPrivateKey(_ string) (*rsa.PrivateKey, error) {
 	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {

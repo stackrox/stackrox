@@ -5,12 +5,12 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-type SignerGetter struct {
+type SignerFactory struct {
 	keyStore PrivateKeyStore
 	keyID    string
 }
 
-func (f *SignerGetter) GetSigner() (jose.Signer, error) {
+func (f *SignerFactory) CreateSigner() (jose.Signer, error) {
 	signingKey := jose.SigningKey{
 		Algorithm: jose.RS256,
 		Key:       f.keyStore.Key(f.keyID),
@@ -20,13 +20,13 @@ func (f *SignerGetter) GetSigner() (jose.Signer, error) {
 
 // CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the
 // specified RSA private key.
-func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore PrivateKeyStore, publicKeyStore PublicKeyGetter, keyID string) (*SignerGetter, Validator) {
+func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore PrivateKeyStore, publicKeyStore PublicKeyGetter, keyID string) (*SignerFactory, Validator) {
 	validator := NewRS256Validator(publicKeyStore, issuerID, audience)
-	signer := &SignerGetter{
+	signerFactory := &SignerFactory{
 		keyStore: privateKeyStore,
 		keyID:    keyID,
 	}
-	return signer, validator
+	return signerFactory, validator
 }
 
 // CreateES256Validator creates a token validator pair with the given properties and jwks public key url
