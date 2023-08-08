@@ -36,6 +36,8 @@ spec:
       protocol: TCP
     - port: 9091
       protocol: TCP
+    - port: 9092
+      protocol: TCP
   podSelector:
     matchLabels:
       app: collector
