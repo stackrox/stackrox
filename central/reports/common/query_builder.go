@@ -45,13 +45,11 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*ReportQuery, error) {
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
-	if env.VulnReportingEnhancements.BooleanSetting() {
-		scopeQuery, err := q.buildAccessScopeQuery(clusters, namespaces)
-		if err != nil {
-			return nil, err
-		}
-		deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery)
+	scopeQuery, err := q.buildAccessScopeQuery(clusters, namespaces)
+	if err != nil {
+		return nil, err
 	}
+	deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery)
 
 	if err != nil {
 		return nil, err
