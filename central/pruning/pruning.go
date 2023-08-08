@@ -609,7 +609,7 @@ func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfi
 		bytesFreed += blob.GetLength()
 		blobsRemoved++
 	}
-	log.Infof("[Downloadable Pruning] Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
+	log.Infof("[Downloadable Report Pruning] Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
 }
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
