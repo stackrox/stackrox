@@ -17,13 +17,13 @@ type Validator interface {
 }
 
 type validator struct {
-	keyGetter KeyGetter
+	keyGetter PublicKeyGetter
 	expected  jwt.Expected
 	algorithm string
 }
 
 // NewRS256Validator validates tokens generated using RS256 (256-bit RSA).
-func NewRS256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Validator {
+func NewRS256Validator(keys PublicKeyGetter, issuer string, audience jwt.Audience) Validator {
 	return validator{
 		keyGetter: keys,
 		expected:  jwt.Expected{Issuer: issuer, Audience: audience},
@@ -32,7 +32,7 @@ func NewRS256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Val
 }
 
 // NewES256Validator validates tokens generated using ES256 (ECDSA using P-256 and SHA-256)
-func NewES256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Validator {
+func NewES256Validator(keys PublicKeyGetter, issuer string, audience jwt.Audience) Validator {
 	return validator{
 		keyGetter: keys,
 		expected:  jwt.Expected{Issuer: issuer, Audience: audience},

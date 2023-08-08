@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"crypto"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -15,8 +14,8 @@ const (
 	httpTimeout = 10 * time.Second
 )
 
-// KeyGetter is the interface that all providers of JSON Web Keys should implement.
-type KeyGetter interface {
+// PublicKeyGetter is the interface that all providers of JSON Web Keys should implement.
+type PublicKeyGetter interface {
 	// The key should be a type that go-jose understands. Valid types include:
 	// ed25519.PublicKey
 	// *rsa.PublicKey
@@ -27,11 +26,6 @@ type KeyGetter interface {
 	Key(id string) interface{}
 }
 
-type PrivateKeyStore interface {
-	Key() crypto.Signer
-	UpdateKey(key crypto.Signer)
-}
-
 // A JWKSGetter gets trusted keys from a JSON Web Key Set (JWKS) URL.
 type JWKSGetter struct {
 	url       string
@@ -39,7 +33,7 @@ type JWKSGetter struct {
 	known     map[string]*jose.JSONWebKey
 }
 
-// NewJWKSGetter creates a new KeyGetter that gets trusted keys from a JSON Web Key Set (JWKS) URL.
+// NewJWKSGetter creates a new PublicKeyGetter that gets trusted keys from a JSON Web Key Set (JWKS) URL.
 func NewJWKSGetter(url string) *JWKSGetter {
 	return &JWKSGetter{
 		url:   url,
@@ -81,51 +75,26 @@ func (j *JWKSGetter) fetch() {
 	}
 }
 
-type singlePrivateKeyStore struct {
-	keyID string
-	key   crypto.Signer
-	mutex sync.RWMutex
-}
-
-func (s *singlePrivateKeyStore) Key() crypto.Signer {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.key
-}
-
-func (s *singlePrivateKeyStore) UpdateKey(newVal crypto.Signer) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	s.key = newVal
-	log.Infof("Value is updated: %v", s.key)
-}
-
-// NewSinglePrivateKeyStore returns a KeyGetter that allows obtaining a single key with a defined id.
-func NewSinglePrivateKeyStore(key crypto.Signer, keyID string) PrivateKeyStore {
-	return &singlePrivateKeyStore{
-		keyID: keyID,
-		key:   key,
-	}
-}
-
-type DerivedKeyStore struct {
+// DerivedPublicKeyStore provides public key by looking up into underlying private key store.
+type DerivedPublicKeyStore struct {
 	keyID           string
 	privateKeyStore PrivateKeyStore
 }
 
-// NewDerivedKeyStore returns a KeyGetter that allows obtaining a single, derived from private key with a defined id.
-func NewDerivedKeyStore(privateKeyStore PrivateKeyStore, keyID string) *DerivedKeyStore {
-	return &DerivedKeyStore{
+// NewDerivedPublicKeyStore returns a PublicKeyGetter that allows obtaining a single, derived from private key with a defined id.
+func NewDerivedPublicKeyStore(privateKeyStore PrivateKeyStore, keyID string) PublicKeyGetter {
+	return &DerivedPublicKeyStore{
 		keyID:           keyID,
 		privateKeyStore: privateKeyStore,
 	}
 }
 
-func (d *DerivedKeyStore) Key(id string) interface{} {
+func (d *DerivedPublicKeyStore) Key(id string) interface{} {
 	if id == d.keyID {
-		return d.privateKeyStore.Key().Public()
+		privateKey := d.privateKeyStore.Key(d.keyID)
+		if privateKey != nil {
+			return privateKey.Public()
+		}
 	}
-	log.Error("not found")
 	return nil
 }
