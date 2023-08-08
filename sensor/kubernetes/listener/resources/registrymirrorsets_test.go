@@ -15,8 +15,8 @@ import (
 
 func TestProcessEvent(t *testing.T) {
 	icspA := &operatorV1Alpha1.ImageContentSourcePolicy{ObjectMeta: v1.ObjectMeta{Name: "icspA", UID: "UIDicspA"}}
-	itmsA := &configV1.ImageDigestMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "itmsA", UID: "UIDitmsA"}}
-	idmsA := &configV1.ImageTagMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "idmsA", UID: "UIDidmsA"}}
+	idmsA := &configV1.ImageDigestMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "itmsA", UID: "UIDitmsA"}}
+	itmsA := &configV1.ImageTagMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "idmsA", UID: "UIDidmsA"}}
 
 	// Ensure all actions (except delete) result in upserts
 	tt := []struct {
@@ -84,15 +84,29 @@ type FakeMirrorStore struct {
 
 var _ registrymirror.Store = (*FakeMirrorStore)(nil)
 
-func (*FakeMirrorStore) Cleanup()                                         {}
-func (*FakeMirrorStore) DeleteImageContentSourcePolicy(_ types.UID) error { return nil }
-func (*FakeMirrorStore) DeleteImageDigestMirrorSet(_ types.UID) error     { return nil }
-func (*FakeMirrorStore) DeleteImageTagMirrorSet(_ types.UID) error        { return nil }
-func (*FakeMirrorStore) UpsertImageDigestMirrorSet(_ *configV1.ImageDigestMirrorSet) error {
+func (*FakeMirrorStore) Cleanup() {}
+func (s *FakeMirrorStore) DeleteImageContentSourcePolicy(_ types.UID) error {
+	s.deleteICSPInvoked = true
 	return nil
 }
-func (*FakeMirrorStore) UpsertImageTagMirrorSet(_ *configV1.ImageTagMirrorSet) error { return nil }
-func (*FakeMirrorStore) UpsertImageContentSourcePolicy(_ *operatorV1Alpha1.ImageContentSourcePolicy) error {
+func (s *FakeMirrorStore) DeleteImageDigestMirrorSet(_ types.UID) error {
+	s.deleteIDMSInvoked = true
+	return nil
+}
+func (s *FakeMirrorStore) DeleteImageTagMirrorSet(_ types.UID) error {
+	s.deleteITMSInvoked = true
+	return nil
+}
+func (s *FakeMirrorStore) UpsertImageDigestMirrorSet(_ *configV1.ImageDigestMirrorSet) error {
+	s.upsertIDMSInvoked = true
+	return nil
+}
+func (s *FakeMirrorStore) UpsertImageTagMirrorSet(_ *configV1.ImageTagMirrorSet) error {
+	s.upsertITMSInvoked = true
+	return nil
+}
+func (s *FakeMirrorStore) UpsertImageContentSourcePolicy(_ *operatorV1Alpha1.ImageContentSourcePolicy) error {
+	s.upsertICSPInvoked = true
 	return nil
 }
 func (*FakeMirrorStore) PullSources(srcImage string) ([]string, error) {
