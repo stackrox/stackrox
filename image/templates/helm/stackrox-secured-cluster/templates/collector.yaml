@@ -103,7 +103,7 @@ spec:
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
-          value: ":9092"
+          value: ":9091"
         {{- else}}
           value: "disabled"
         {{- end }}
@@ -122,7 +122,7 @@ spec:
         name: compliance
         {{- if ._rox.collector.exposeMonitoring }}
         ports:
-        - containerPort: 9092
+        - containerPort: 9091
           name: monitoring
         {{- end }}
         resources:
