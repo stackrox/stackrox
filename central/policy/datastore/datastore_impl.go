@@ -10,10 +10,10 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/central/policy/store/boltdb"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/policyutils"
@@ -34,6 +34,35 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
+
+// PolicyStoreErrorList is used to encapsulate multiple errors returned from policy store methods
+type PolicyStoreErrorList struct {
+	Errors []error
+}
+
+func (p *PolicyStoreErrorList) Error() string {
+	return errorhelpers.NewErrorListWithErrors("policy store encountered errors", p.Errors).String()
+}
+
+// IDConflictError can be returned by AddPolicies when a policy exists with the same ID as a new policy
+type IDConflictError struct {
+	ErrString          string
+	ExistingPolicyName string
+}
+
+func (i *IDConflictError) Error() string {
+	return i.ErrString
+}
+
+// NameConflictError can be returned by AddPolicies when a policy exists with the same name as a new policy
+type NameConflictError struct {
+	ErrString          string
+	ExistingPolicyName string
+}
+
+func (i *NameConflictError) Error() string {
+	return i.ErrString
+}
 
 type datastoreImpl struct {
 	storage     store.Store
@@ -426,7 +455,7 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 }
 
 func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
-	var policyError *boltdb.PolicyStoreErrorList
+	var policyError *PolicyStoreErrorList
 	if errors.As(err, &policyError) {
 		return handlePolicyStoreErrorList(policyError)
 	}
@@ -439,10 +468,10 @@ func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
 	}
 }
 
-func handlePolicyStoreErrorList(policyError *boltdb.PolicyStoreErrorList) []*v1.ImportPolicyError {
+func handlePolicyStoreErrorList(policyError *PolicyStoreErrorList) []*v1.ImportPolicyError {
 	var errList []*v1.ImportPolicyError
 	for _, err := range policyError.Errors {
-		var nameErr *boltdb.NameConflictError
+		var nameErr *NameConflictError
 		if errors.As(err, &nameErr) {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: nameErr.ErrString,
@@ -454,7 +483,7 @@ func handlePolicyStoreErrorList(policyError *boltdb.PolicyStoreErrorList) []*v1.
 			continue
 		}
 
-		var idError *boltdb.IDConflictError
+		var idError *IDConflictError
 		if errors.As(err, &idError) {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: idError.ErrString,
