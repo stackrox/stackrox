@@ -47,6 +47,7 @@ function RunHistory({ reportId }: RunHistoryProps) {
         query: '',
         page: 1,
         perPage: 10,
+        showMyHistory: false,
     });
     const expandedRowSet = useSet<string>();
 

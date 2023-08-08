@@ -69,6 +69,9 @@ function useFetchReports({
             });
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
+                    const PAGE = 1;
+                    const PER_PAGE = 1;
+                    const SHOW_MY_HISTORY = true;
                     // Query for the current user's last report job
                     const query = getRequestQueryString({
                         'Run state': ['PENDING', 'WAITING'],
@@ -77,8 +80,9 @@ function useFetchReports({
                     const reportSnapshot = await fetchReportHistory(
                         reportConfiguration.id,
                         query,
-                        1,
-                        1
+                        PAGE,
+                        PER_PAGE,
+                        SHOW_MY_HISTORY
                     );
                     return {
                         ...reportConfiguration,

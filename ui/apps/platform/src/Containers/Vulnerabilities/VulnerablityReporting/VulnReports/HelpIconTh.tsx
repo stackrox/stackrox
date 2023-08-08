@@ -6,22 +6,17 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 type HelpIconThProps = {
     children: string | React.ReactNode;
     sort?: ThProps['sort'];
-    popoverTitle: string;
     popoverContent: ReactElement;
 };
 
-function HelpIconTh({ children, sort, popoverTitle, popoverContent }: HelpIconThProps) {
+function HelpIconTh({ children, sort, popoverContent }: HelpIconThProps) {
     return (
         <Th sort={sort || undefined}>
             <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
                 <FlexItem>{children}</FlexItem>
                 <FlexItem>
-                    <Popover
-                        aria-label="Table column help text"
-                        headerContent={<div>{popoverTitle}</div>}
-                        bodyContent={popoverContent}
-                    >
-                        <OutlinedQuestionCircleIcon />
+                    <Popover aria-label="Table column info" bodyContent={popoverContent}>
+                        <OutlinedQuestionCircleIcon aria-labelledby="Show table column info" />
                     </Popover>
                 </FlexItem>
             </Flex>

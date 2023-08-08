@@ -179,7 +179,8 @@ export function fetchReportHistory(
     id: string,
     query: string,
     page: number,
-    perPage: number
+    perPage: number,
+    showMyHistory: boolean
 ): Promise<ReportSnapshot[]> {
     const params = queryString.stringify(
         {
@@ -192,7 +193,9 @@ export function fetchReportHistory(
         { arrayFormat: 'repeat', allowDots: true }
     );
     return axios
-        .get<ReportHistoryResponse>(`/v2/reports/configurations/${id}/history?${params}`)
+        .get<ReportHistoryResponse>(
+            `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
+        )
         .then((response) => {
             return response.data?.reportSnapshots ?? [];
         });

@@ -10,6 +10,7 @@ export type UseFetchReportHistory = {
     query: string;
     page: number;
     perPage: number;
+    showMyHistory: boolean;
 };
 
 type Result = {
@@ -33,6 +34,7 @@ function useFetchReportHistory({
     query,
     page,
     perPage,
+    showMyHistory,
 }: UseFetchReportHistory): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
@@ -42,7 +44,7 @@ function useFetchReportHistory({
             isLoading: true,
             error: null,
         });
-        fetchReportHistory(id, query, page, perPage)
+        fetchReportHistory(id, query, page, perPage, showMyHistory)
             .then((reportSnapshots) => {
                 setResult({
                     reportSnapshots,
@@ -57,7 +59,7 @@ function useFetchReportHistory({
                     error: getAxiosErrorMessage(error),
                 });
             });
-    }, [id, page, perPage, query]);
+    }, [id, query, page, perPage, showMyHistory]);
 
     useEffect(() => {
         void fetchReportSnapshots();

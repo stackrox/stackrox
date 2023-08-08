@@ -192,7 +192,6 @@ function VulnReportsPage() {
                                         <Tr>
                                             <Th>Report</Th>
                                             <HelpIconTh
-                                                popoverTitle="Collection"
                                                 popoverContent={
                                                     <div>
                                                         A set of user-configured rules for selecting
@@ -204,7 +203,6 @@ function VulnReportsPage() {
                                             </HelpIconTh>
                                             <Th>Description</Th>
                                             <HelpIconTh
-                                                popoverTitle="My active job status"
                                                 popoverContent={
                                                     <Flex
                                                         direction={{ default: 'column' }}
@@ -326,12 +324,11 @@ function VulnReportsPage() {
                                                 reportId: report.id,
                                             }
                                         ) as string;
-                                        const isReportStatusPending = !!(
+                                        const isReportStatusPending =
                                             report.reportSnapshot?.reportStatus.runState ===
                                                 'PREPARING' ||
                                             report.reportSnapshot?.reportStatus.runState ===
-                                                'WAITING'
-                                        );
+                                                'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
