@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -52,10 +51,6 @@ func (c *Compliance) Start() {
 
 	// Set the random seed based on the current time.
 	rand.Seed(time.Now().UnixNano())
-
-	// Start the prometheus metrics server
-	metrics.NewServer(metrics.ComplianceSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
-	metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 
 	// Set up Compliance <-> Sensor connection
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
