@@ -1010,7 +1010,7 @@ func (s *ReportServiceTestSuite) TestDownloadReport() {
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
 	blob, blobData := fixtures.GetBlobWithData()
-	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
+	blobName := common.GetReportBlobPath(reportSnapshot.GetReportConfigurationId(), reportSnapshot.GetReportId())
 
 	testCases := []struct {
 		desc    string
@@ -1164,7 +1164,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
-	blobName := common.GetReportBlobPath(reportSnapshot.GetReportId(), reportSnapshot.GetReportConfigurationId())
+	blobName := common.GetReportBlobPath(reportSnapshot.GetReportConfigurationId(), reportSnapshot.GetReportId())
 
 	testCases := []struct {
 		desc    string
