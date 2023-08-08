@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	types "github.com/gogo/protobuf/types"
-	storage "github.com/stackrox/rox/generated/storage"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -37,10 +37,10 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AggregateAndFlush mocks base method.
-func (m *MockDataStore) AggregateAndFlush(ctx context.Context) (*storage.SecuredUnits, error) {
+func (m *MockDataStore) AggregateAndFlush(ctx context.Context) (datastore.Data, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AggregateAndFlush", ctx)
-	ret0, _ := ret[0].(*storage.SecuredUnits)
+	ret0, _ := ret[0].(datastore.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -52,10 +52,10 @@ func (mr *MockDataStoreMockRecorder) AggregateAndFlush(ctx interface{}) *gomock.
 }
 
 // Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, from, to *types.Timestamp) (<-chan *storage.SecuredUnits, error) {
+func (m *MockDataStore) Get(ctx context.Context, from, to *types.Timestamp) (<-chan datastore.Data, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, from, to)
-	ret0, _ := ret[0].(<-chan *storage.SecuredUnits)
+	ret0, _ := ret[0].(<-chan datastore.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -67,10 +67,10 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, from, to interface{}) *gomock.Call
 }
 
 // GetCurrentUsage mocks base method.
-func (m *MockDataStore) GetCurrentUsage(ctx context.Context) (*storage.SecuredUnits, error) {
+func (m *MockDataStore) GetCurrentUsage(ctx context.Context) (datastore.Data, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentUsage", ctx)
-	ret0, _ := ret[0].(*storage.SecuredUnits)
+	ret0, _ := ret[0].(datastore.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -82,7 +82,7 @@ func (mr *MockDataStoreMockRecorder) GetCurrentUsage(ctx interface{}) *gomock.Ca
 }
 
 // Insert mocks base method.
-func (m *MockDataStore) Insert(ctx context.Context, metrics *storage.SecuredUnits) error {
+func (m *MockDataStore) Insert(ctx context.Context, metrics datastore.Data) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Insert", ctx, metrics)
 	ret0, _ := ret[0].(error)
@@ -96,7 +96,7 @@ func (mr *MockDataStoreMockRecorder) Insert(ctx, metrics interface{}) *gomock.Ca
 }
 
 // UpdateUsage mocks base method.
-func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics *storage.SecuredUnits) error {
+func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics datastore.Data) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUsage", ctx, clusterID, metrics)
 	ret0, _ := ret[0].(error)
@@ -107,4 +107,69 @@ func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metri
 func (mr *MockDataStoreMockRecorder) UpdateUsage(ctx, clusterID, metrics interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUsage", reflect.TypeOf((*MockDataStore)(nil).UpdateUsage), ctx, clusterID, metrics)
+}
+
+// MockData is a mock of Data interface.
+type MockData struct {
+	ctrl     *gomock.Controller
+	recorder *MockDataMockRecorder
+}
+
+// MockDataMockRecorder is the mock recorder for MockData.
+type MockDataMockRecorder struct {
+	mock *MockData
+}
+
+// NewMockData creates a new mock instance.
+func NewMockData(ctrl *gomock.Controller) *MockData {
+	mock := &MockData{ctrl: ctrl}
+	mock.recorder = &MockDataMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockData) EXPECT() *MockDataMockRecorder {
+	return m.recorder
+}
+
+// GetNumCpuUnits mocks base method.
+func (m *MockData) GetNumCpuUnits() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNumCpuUnits")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetNumCpuUnits indicates an expected call of GetNumCpuUnits.
+func (mr *MockDataMockRecorder) GetNumCpuUnits() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumCpuUnits", reflect.TypeOf((*MockData)(nil).GetNumCpuUnits))
+}
+
+// GetNumNodes mocks base method.
+func (m *MockData) GetNumNodes() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNumNodes")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetNumNodes indicates an expected call of GetNumNodes.
+func (mr *MockDataMockRecorder) GetNumNodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumNodes", reflect.TypeOf((*MockData)(nil).GetNumNodes))
+}
+
+// GetTimestamp mocks base method.
+func (m *MockData) GetTimestamp() *types.Timestamp {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTimestamp")
+	ret0, _ := ret[0].(*types.Timestamp)
+	return ret0
+}
+
+// GetTimestamp indicates an expected call of GetTimestamp.
+func (mr *MockDataMockRecorder) GetTimestamp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimestamp", reflect.TypeOf((*MockData)(nil).GetTimestamp))
 }

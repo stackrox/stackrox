@@ -3,7 +3,7 @@ package injector
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -11,18 +11,19 @@ import (
 func Test_average(t *testing.T) {
 	a := average()
 	require.NotNil(t, a)
-	assert.Equal(t, int64(0), a.NumNodes)
-	assert.Equal(t, int64(0), a.NumCpuUnits)
+	assert.Equal(t, int64(0), a.GetNumNodes())
+	assert.Equal(t, int64(0), a.GetNumCPUUnits())
 
-	metrics := []*storage.SecuredUnits{{
-		NumNodes:    0,
-		NumCpuUnits: 100,
-	}, {
-		NumNodes:    10,
-		NumCpuUnits: 0,
-	}}
+	metrics := []datastore.Data{
+		&datastore.DataImpl{
+			NumNodes:    0,
+			NumCpuUnits: 100,
+		}, &datastore.DataImpl{
+			NumNodes:    10,
+			NumCpuUnits: 0,
+		}}
 	a = average(metrics...)
 	require.NotNil(t, a)
-	assert.Equal(t, int64(5), a.NumNodes)
-	assert.Equal(t, int64(50), a.NumCpuUnits)
+	assert.Equal(t, int64(5), a.GetNumNodes())
+	assert.Equal(t, int64(50), a.GetNumCPUUnits())
 }

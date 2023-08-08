@@ -35,7 +35,6 @@ func (i *injectorImpl) gather(ctx context.Context) {
 
 	// Store the average values to smooth short (< 2 periods) peaks and drops.
 	averageMetrics := average(i.previousMetrics, newMetrics)
-	averageMetrics.Timestamp = newMetrics.Timestamp
 	if err := i.ds.Insert(ctx, averageMetrics); err != nil {
 		log.Debug("Failed to store a usage snapshot: ", err)
 	}
@@ -70,7 +69,7 @@ type injectorImpl struct {
 	ds   datastore.DataStore
 	stop concurrency.Signal
 
-	previousMetrics *storage.SecuredUnits
+	previousMetrics datastore.Data
 }
 
 // NewInjector creates an injector instance.
@@ -78,7 +77,7 @@ func NewInjector(ds datastore.DataStore) Injector {
 	return &injectorImpl{
 		ds:              ds,
 		stop:            concurrency.NewSignal(),
-		previousMetrics: &storage.SecuredUnits{},
+		previousMetrics: nil,
 	}
 }
 

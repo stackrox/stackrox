@@ -70,8 +70,8 @@ func (suite *UsageDataStoreTestSuite) SetupTest() {
 func (suite *UsageDataStoreTestSuite) TearDownSuite() {
 }
 
-func makeSource(n int64, c int64) *storage.SecuredUnits {
-	return &storage.SecuredUnits{
+func makeSource(n int64, c int64) *DataImpl {
+	return &DataImpl{
 		NumNodes:    n,
 		NumCpuUnits: c,
 	}
@@ -105,15 +105,15 @@ func (suite *UsageDataStoreTestSuite) TestGet() {
 }
 
 func (suite *UsageDataStoreTestSuite) TestInsert() {
-	err := suite.datastore.Insert(suite.hasNoneCtx, &storage.SecuredUnits{})
+	err := suite.datastore.Insert(suite.hasNoneCtx, &DataImpl{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.Insert(suite.hasBadCtx, &storage.SecuredUnits{})
+	err = suite.datastore.Insert(suite.hasBadCtx, &DataImpl{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.Insert(suite.hasReadCtx, &storage.SecuredUnits{})
+	err = suite.datastore.Insert(suite.hasReadCtx, &DataImpl{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	suite.store.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Times(1).Return(nil)
-	err = suite.datastore.Insert(suite.hasWriteCtx, &storage.SecuredUnits{})
+	err = suite.datastore.Insert(suite.hasWriteCtx, &DataImpl{})
 	suite.NoError(err)
 }
 
@@ -147,34 +147,34 @@ func (suite *UsageDataStoreTestSuite) TestAggregateAndFlushPermissions() {
 func (suite *UsageDataStoreTestSuite) TestUpdateGetCurrent() {
 	u, err := suite.datastore.GetCurrentUsage(suite.hasReadCtx)
 	suite.NoError(err)
-	suite.Equal(int64(0), u.NumNodes)
-	suite.Equal(int64(0), u.NumCpuUnits)
+	suite.Equal(int64(0), u.GetNumNodes())
+	suite.Equal(int64(0), u.GetNumCPUUnits())
 	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", makeSource(1, 8))
 	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster2", makeSource(2, 7))
 	u, err = suite.datastore.GetCurrentUsage(suite.hasReadCtx)
 	suite.NoError(err)
-	suite.Equal(int64(3), u.NumNodes)
-	suite.Equal(int64(15), u.NumCpuUnits)
+	suite.Equal(int64(3), u.GetNumNodes())
+	suite.Equal(int64(15), u.GetNumCPUUnits())
 	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", makeSource(2, 16))
 	u, err = suite.datastore.GetCurrentUsage(suite.hasReadCtx)
 	suite.NoError(err)
-	suite.Equal(int64(3), u.NumNodes)
-	suite.Equal(int64(15), u.NumCpuUnits)
+	suite.Equal(int64(3), u.GetNumNodes())
+	suite.Equal(int64(15), u.GetNumCPUUnits())
 }
 
 func (suite *UsageDataStoreTestSuite) TestUpdateAggregateAndFlush() {
 	u, err := suite.datastore.AggregateAndFlush(suite.hasWriteCtx)
 	suite.NoError(err)
-	suite.Equal(int64(0), u.NumNodes)
-	suite.Equal(int64(0), u.NumCpuUnits)
+	suite.Equal(int64(0), u.GetNumNodes())
+	suite.Equal(int64(0), u.GetNumCPUUnits())
 	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "existingCluster1", makeSource(1, 8))
 	_ = suite.datastore.UpdateUsage(suite.hasWriteCtx, "unknownCluster", makeSource(2, 7))
 	u, err = suite.datastore.AggregateAndFlush(suite.hasWriteCtx)
 	suite.NoError(err)
-	suite.Equal(int64(1), u.NumNodes)
-	suite.Equal(int64(8), u.NumCpuUnits)
+	suite.Equal(int64(1), u.GetNumNodes())
+	suite.Equal(int64(8), u.GetNumCPUUnits())
 	u, err = suite.datastore.AggregateAndFlush(suite.hasWriteCtx)
 	suite.NoError(err)
-	suite.Equal(int64(0), u.NumNodes)
-	suite.Equal(int64(0), u.NumCpuUnits)
+	suite.Equal(int64(0), u.GetNumNodes())
+	suite.Equal(int64(0), u.GetNumCPUUnits())
 }

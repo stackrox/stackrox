@@ -1,18 +1,23 @@
 package injector
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+)
 
-func average(metrics ...*storage.SecuredUnits) *storage.SecuredUnits {
+func average(metrics ...datastore.Data) datastore.Data {
 	n := int64(len(metrics))
-	averageUsage := &storage.SecuredUnits{}
+	averageUsage := &datastore.DataImpl{}
 	if n == 0 {
 		return averageUsage
 	}
 	for _, m := range metrics {
-		averageUsage.NumNodes += m.NumNodes
-		averageUsage.NumCpuUnits += m.NumCpuUnits
+		averageUsage.NumNodes += m.GetNumNodes()
+		averageUsage.NumCpuUnits += m.GetNumCPUUnits()
 	}
 	averageUsage.NumNodes /= n
 	averageUsage.NumCpuUnits /= n
+	if len(metrics) != 0 {
+		averageUsage.Timestamp = metrics[len(metrics)-1].GetTimestamp()
+	}
 	return averageUsage
 }

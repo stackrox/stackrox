@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
+	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
@@ -18,7 +18,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func writeCSV(metrics <-chan *storage.SecuredUnits, iow io.Writer) error {
+func writeCSV(metrics <-chan datastore.Data, iow io.Writer) error {
 	csvWriter := csv.NewWriter(iow)
 	csvWriter.UseCRLF = true
 
@@ -29,7 +29,7 @@ func writeCSV(metrics <-chan *storage.SecuredUnits, iow io.Writer) error {
 	for m := range metrics {
 		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.GetTimestamp(), zeroTime).UTC().Format(time.RFC3339)
 		record[1] = fmt.Sprint(m.GetNumNodes())
-		record[2] = fmt.Sprint(m.GetNumCpuUnits())
+		record[2] = fmt.Sprint(m.GetNumCPUUnits())
 		if err := csvWriter.Write(record); err != nil {
 			return errors.Wrap(err, "failed to write CSV record")
 		}

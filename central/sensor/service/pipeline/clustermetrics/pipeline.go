@@ -3,6 +3,7 @@ package clustermetrics
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	clusterTelemetry "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/info"
@@ -11,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -58,6 +58,20 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetClusterMetrics() != nil
 }
 
+type usageData central.ClusterMetrics
+
+func (*usageData) GetTimestamp() *types.Timestamp {
+	return types.TimestampNow()
+}
+
+func (us *usageData) GetNumNodes() int64 {
+	return (*central.ClusterMetrics)(us).GetNodeCount()
+}
+
+func (us *usageData) GetNumCPUUnits() int64 {
+	return (*central.ClusterMetrics)(us).GetCpuCapacity()
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (p *pipelineImpl) Run(
 	ctx context.Context,
@@ -68,10 +82,7 @@ func (p *pipelineImpl) Run(
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.infoMetric.SetClusterMetrics(clusterID, clusterMetrics)
-	_ = p.usageStore.UpdateUsage(ctx, clusterID, &storage.SecuredUnits{
-		NumNodes:    clusterMetrics.GetNodeCount(),
-		NumCpuUnits: clusterMetrics.GetCpuCapacity(),
-	})
+	_ = p.usageStore.UpdateUsage(ctx, clusterID, (*usageData)(clusterMetrics))
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
