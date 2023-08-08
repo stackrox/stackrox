@@ -32,6 +32,15 @@
         "parameters": [
           {
             "name": "from",
+            "description": "For filtering events starting from a specific timestamp, i.e. the lower boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "until",
+            "description": "For filtering events up until a specific timestamp, i.e. the upper boundary.",
             "in": "query",
             "required": false,
             "type": "string",
