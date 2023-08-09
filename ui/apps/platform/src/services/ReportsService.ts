@@ -184,10 +184,12 @@ export function fetchReportHistory(
 ): Promise<ReportSnapshot[]> {
     const params = queryString.stringify(
         {
-            query,
-            pagination: {
-                limit: perPage,
-                offset: page - 1,
+            reportParamQuery: {
+                query,
+                pagination: {
+                    limit: perPage,
+                    offset: page - 1,
+                },
             },
         },
         { arrayFormat: 'repeat', allowDots: true }
