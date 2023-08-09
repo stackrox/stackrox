@@ -23,7 +23,7 @@ require (
 	github.com/containers/image/v5 v5.24.2
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/coreos/go-systemd/v22 v22.5.0
-	github.com/dave/jennifer v1.6.1
+	github.com/dave/jennifer v1.7.0
 	github.com/dexidp/dex v0.0.0-20230320125501-2bb4896d120e
 	github.com/docker/distribution v2.8.2+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
