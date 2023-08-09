@@ -1347,6 +1347,7 @@ class ComplianceTest extends BaseSpecification {
 
         then:
         "check results under SAC"
+        assert complianceRuns.keySet().size() > 0
         for (String standard : complianceRuns.keySet()) {
             def runId = complianceRuns.get(standard)
             ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard, clusterId, runId).results
