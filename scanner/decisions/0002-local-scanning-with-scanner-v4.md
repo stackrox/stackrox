@@ -48,7 +48,7 @@ message Contents {
 
 But that will be left to the implementation to decide.
 
-Sensor and Central will behave the same as today regarding handling scan requests. Scanner V4 clients will have to make minimal changes to the interfaces of current scanner clients[^1] to support both V2 and V4. In central, a new field for the `IndexreportComponents` will be added [to the `EnrichLocalImageInternalRequest`](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/proto/api/v1/image_service.proto#L62).
+Sensor and Central will behave the same as today regarding handling scan requests. Scanner V4 clients will have to make minimal changes to the interfaces of current scanner clients[^1] to support both V2 and V4. In central, a new field for the `IndexReportComponents` will be added [to the `EnrichLocalImageInternalRequest`](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/proto/api/v1/image_service.proto#L62).
 
 Finally, Index Reports generated in the secured cluster will not be stored in the central cluster. They will be stored in the secured cluster, in Scanner DB.
 
