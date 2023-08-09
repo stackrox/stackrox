@@ -42,11 +42,20 @@ func LogCallback(logger logging.Logger) func(error) {
 	}
 }
 
-// NewProbeServerHandler returns a http.Handler for serving kernel probes. The probeServerHandler assumes the path of kernel
-// probes is rooted at `/`, i.e., wrap this via `http.StripPrefix` when serving on a sub-path.
-// The errorCallback is invoked for errors that happen during writing the response body, and thus cannot be transmitted
-// to the client via status/headers. It may be nil, in which case errors are simply ignored.
+// NewProbeServerHandler returns a http.Handler for serving kernel probes.
+// It runs in Online mode by default and is meant to be used in Central.
+// The probeServerHandler assumes the path of kernel probes is rooted at `/`, i.e., wrap this via `http.StripPrefix`
+// when serving on a sub-path. The errorCallback is invoked for errors that happen during writing the response body,
+// and thus cannot be transmitted  to the client via status/headers. It may be nil, in which case errors are ignored.
 func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
+	psh := NewSensorProbeServerHandler(errorCallback, sources...)
+	psh.GoOnline() // this hadler is used in Central as well and it must be immediately online for backwards compat.
+	return psh
+}
+
+// NewSensorProbeServerHandler returns the same http.Handler as in NewProbeServerHandler to be used in Sensor.
+// The difference to NewProbeServerHandler is that it starts in offline mode
+func NewSensorProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
 	return &probeServerHandler{
 		errorCallback: errorCallback,
 		sources:       sources,

@@ -171,7 +171,7 @@ func (s *Sensor) Start() {
 	if err != nil {
 		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
 	} else {
-		probeDownloadHandler := probeupload.NewProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
+		probeDownloadHandler := probeupload.NewSensorProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
 		koCacheRoute := routes.CustomRoute{
 			Route:         "/kernel-objects/",
 			Authorizer:    idcheck.CollectorOnly(),

@@ -76,7 +76,7 @@ func Test_probeServerHandler_ServeHTTP(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			h := NewProbeServerHandler(func(err error) {
+			h := NewSensorProbeServerHandler(func(err error) {
 				assert.NoError(t, err)
 			}, tt.source)
 			h.GoOnline()
