@@ -420,8 +420,8 @@ main-build-dockerized: main-builder-image
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
-	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
-	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
+	$(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
