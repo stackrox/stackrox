@@ -140,10 +140,6 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 		}
 	}
 
-	if csvWriter.IsEmpty() {
-		return nil, nil
-	}
-
 	var buf bytes.Buffer
 	err := csvWriter.WriteBytes(&buf)
 	if err != nil {

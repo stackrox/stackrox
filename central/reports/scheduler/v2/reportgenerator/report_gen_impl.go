@@ -127,6 +127,12 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		return errors.Wrap(err, "error formatting the report email text")
 	}
 
+	if zippedCSVData == nil {
+		err = errors.Errorf("Unexpected empty downloadable report for report config=%q, id=%q", req.ReportSnapshot.GetReportConfigurationId(), req.ReportSnapshot.GetReportId())
+		utils.Should(err)
+		return err
+	}
+
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
 		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
@@ -157,10 +163,6 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 }
 
 func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *bytes.Buffer) error {
-	if data == nil {
-		data = bytes.NewBuffer([]byte{})
-	}
-
 	// Store downloadable report in blob storage
 	b := &storage.Blob{
 		Name:         common.GetReportBlobPath(configID, reportID),
