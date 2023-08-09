@@ -293,7 +293,7 @@ deploy_sensor_via_operator() {
         ROX_CENTRAL_PASS=$(kubectl -n stackrox get secret central-admin-pass -o go-template='{{index .data "password" | base64decode}}')
         SUPPORT_URL="https://install.stackrox.io/collector/support-packages/ppc64le/2.5.0/support-pkg-2.5.0-latest.zip"
         wget $SUPPORT_URL
-        roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg-2.3.0-latest.zip
+        roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg-2.5.0-latest.zip
     fi
 
     kubectl -n stackrox exec deploy/central -- \
