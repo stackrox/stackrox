@@ -104,12 +104,16 @@ export function checkNetworkGraphEmptyState() {
 }
 
 export function updateAndCloseCidrModal() {
+    cy.clock();
     cy.get(networkGraphSelectors.updateCidrBlocksButton).click();
     cy.get(
         networkGraphSelectors.cidrModalAlertWithMessage(
             'CIDR blocks have been successfully configured'
         )
     );
-    cy.get(networkGraphSelectors.manageCidrBlocksModalClose).click();
+    // Once the above alert is show, the modal automatically closes after 2000 ms. This
+    // advances the clock to save time during test runs. (Otherwise every save would add 2 seconds
+    // to our test job.)
+    cy.tick(2000);
     cy.get(networkGraphSelectors.manageCidrBlocksModal).should('not.exist');
 }

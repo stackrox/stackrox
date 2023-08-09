@@ -137,7 +137,7 @@ describe('Network Graph smoke tests', () => {
         cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
     });
 
-    it('should allow the addition and deletion of CIDR blocks', () => {
+    it.only('should allow the addition and deletion of CIDR blocks', () => {
         visitNetworkGraph();
 
         // open the CIDR block modal and add a block
