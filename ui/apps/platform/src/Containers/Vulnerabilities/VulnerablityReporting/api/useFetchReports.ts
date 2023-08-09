@@ -74,9 +74,8 @@ function useFetchReports({
                     const SHOW_MY_HISTORY = true;
                     // Query for the current user's last report job
                     const query = getRequestQueryString({
-                        'Run state': ['PENDING', 'WAITING'],
+                        'Run state': ['PREPARING', 'WAITING'],
                     });
-                    // @TODO: Replace this API with the myhistory API when backend adds it in
                     const reportSnapshot = await fetchReportHistory(
                         reportConfiguration.id,
                         query,
