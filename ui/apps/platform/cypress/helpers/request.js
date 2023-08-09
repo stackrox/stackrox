@@ -59,13 +59,14 @@ export function interceptRequests(routeMatcherMap, staticResponseMap) {
  * Wait for responses after initial page visit or subsequent interaction.
  *
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
+ * @param {TODO} waitOptions
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
-export function waitForResponses(routeMatcherMap) {
+export function waitForResponses(routeMatcherMap, waitOptions = {}) {
     if (routeMatcherMap) {
         const aliases = Object.keys(routeMatcherMap).map((alias) => `@${alias}`);
 
-        return cy.wait(aliases);
+        return cy.wait(aliases, waitOptions);
     }
 
     return [];
@@ -77,16 +78,18 @@ export function waitForResponses(routeMatcherMap) {
  * @param {() => void} interactionCallback
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {TODO} waitOptions
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
 export function interactAndWaitForResponses(
     interactionCallback,
     routeMatcherMap,
-    staticResponseMap
+    staticResponseMap,
+    waitOptions
 ) {
     interceptRequests(routeMatcherMap, staticResponseMap);
 
     interactionCallback();
 
-    return waitForResponses(routeMatcherMap);
+    return waitForResponses(routeMatcherMap, waitOptions);
 }
