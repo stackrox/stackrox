@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog
+  namespace: frontend 
+  labels:
+    app: blog
+    app.kubernetes.io/part-of: blog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog
+  template:
+    metadata:
+      labels:
+        app: blog
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: quay.io/vuln/blog:v1
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+            ]
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - all
+          imagePullPolicy: Always
+          name: blog
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: exploit
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: blog
+  name: blog-service
+  namespace: frontend 
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: blog
+  type: ClusterIP

@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: zeroday 
+  namespace: zeroday 
+  labels:
+    app: zeroday
+spec:
+  to:
+    kind: Service
+    name: zeroday-service
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
