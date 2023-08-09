@@ -26,6 +26,8 @@ import ComplianceDashboardTile from './ComplianceDashboardTile';
 
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+
     const [isFetchingStandards, setIsFetchingStandards] = useState(false);
     const [errorMessageFetching, setErrorMessageFetching] = useState('');
     const [standards, setStandards] = useState<ComplianceStandardMetadata[]>([]);
@@ -39,9 +41,6 @@ function ComplianceDashboardPage(): ReactElement {
     const darkModeClasses = `${
         isDarkMode ? 'text-base-600 hover:bg-primary-200' : 'text-base-100 hover:bg-primary-800'
     }`;
-
-    const hasWriteAccessForComplianceStandards = hasReadWriteAccess('Compliance'); // TODO confirm
-    const hasManageStandardsButton = hasWriteAccessForComplianceStandards;
 
     function clickManageStandardsButton() {
         setIsFetchingStandards(true);
@@ -89,43 +88,38 @@ function ComplianceDashboardPage(): ReactElement {
                         <ComplianceDashboardTile entityType="NAMESPACE" />
                         <ComplianceDashboardTile entityType="NODE" />
                         <ComplianceDashboardTile entityType="DEPLOYMENT" />
-                        <div className="ml-1 border-l-2 border-base-400 mr-3" />
-                        <div className="flex items-center">
+                        {hasWriteAccessForCompliance && (
+                            <ScanButton
+                                className={`flex items-center justify-center border-2 btn btn-base h-10 lg:min-w-32 xl:min-w-43 ${darkModeClasses}`}
+                                text="Scan environment"
+                                textClass="hidden lg:block"
+                                textCondensed="Scan all"
+                                clusterId="*"
+                                standardId="*"
+                            />
+                        )}
+                        {hasWriteAccessForCompliance && (
                             <div className="flex items-center">
-                                <ScanButton
-                                    className={`flex items-center justify-center border-2 btn btn-base h-10 lg:min-w-32 xl:min-w-43 ${darkModeClasses}`}
-                                    text="Scan environment"
-                                    textClass="hidden lg:block"
-                                    textCondensed="Scan all"
-                                    clusterId="*"
-                                    standardId="*"
+                                <Button
+                                    text="Manage standards"
+                                    className="btn btn-base h-10 ml-2"
+                                    onClick={() => {
+                                        clickManageStandardsButton();
+                                    }}
+                                    disabled={isFetchingStandards}
+                                    isLoading={isFetchingStandards}
                                 />
                             </div>
-                            {hasManageStandardsButton && (
-                                <div className="flex items-center">
-                                    <Button
-                                        text="Manage standards"
-                                        className="btn btn-base h-10 ml-2"
-                                        onClick={() => {
-                                            clickManageStandardsButton();
-                                        }}
-                                        disabled={isFetchingStandards}
-                                        isLoading={isFetchingStandards}
-                                    />
-                                </div>
-                            )}
-                            <div className="flex items-center">
-                                <ExportButton
-                                    fileName="Compliance Dashboard Report"
-                                    textClass="hidden lg:block"
-                                    type="ALL"
-                                    page={useCaseTypes.COMPLIANCE}
-                                    pdfId="capture-dashboard"
-                                    isExporting={isExporting}
-                                    setIsExporting={setIsExporting}
-                                />
-                            </div>
-                        </div>
+                        )}
+                        <ExportButton
+                            fileName="Compliance Dashboard Report"
+                            textClass="hidden lg:block"
+                            type="ALL"
+                            page={useCaseTypes.COMPLIANCE}
+                            pdfId="capture-dashboard"
+                            isExporting={isExporting}
+                            setIsExporting={setIsExporting}
+                        />
                     </div>
                 </div>
             </PageHeader>
