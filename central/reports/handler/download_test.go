@@ -32,7 +32,7 @@ type handlerTestSuite struct {
 	handler                 *downloadHandler
 }
 
-func TestReportService(t *testing.T) {
+func TestReportHandler(t *testing.T) {
 	suite.Run(t, new(handlerTestSuite))
 }
 
