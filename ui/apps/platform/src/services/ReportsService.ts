@@ -175,9 +175,29 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export function fetchReportHistory(id: string): Promise<ReportSnapshot[]> {
+export function fetchReportHistory(
+    id: string,
+    query: string,
+    page: number,
+    perPage: number,
+    showMyHistory: boolean
+): Promise<ReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: {
+                    limit: perPage,
+                    offset: page - 1,
+                },
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
     return axios
-        .get<ReportHistoryResponse>(`/v2/reports/configurations/${id}/history`)
+        .get<ReportHistoryResponse>(
+            `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
+        )
         .then((response) => {
             return response.data?.reportSnapshots ?? [];
         });

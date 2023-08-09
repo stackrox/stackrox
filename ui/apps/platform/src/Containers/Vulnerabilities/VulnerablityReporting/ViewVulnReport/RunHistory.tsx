@@ -1,21 +1,21 @@
 import React, { ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Bullseye, Card, Divider, Spinner } from '@patternfly/react-core';
+import { CubesIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration, ReportRequestType } from 'services/ReportsService.types';
 import { SlimUser } from 'types/user.proto';
-import { getDateTime } from 'utils/dateUtils';
+import { ReportConfiguration, ReportRequestType } from 'services/ReportsService.types';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
+import { getDateTime } from 'utils/dateUtils';
 import useSet from 'hooks/useSet';
+import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-import { CubesIcon } from '@patternfly/react-icons';
 import LastRunStatusState from '../VulnReports/LastRunStatusState';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
-import useFetchReportHistory from '../api/useFetchReportHistory';
 
 export type RunTypeProps = {
     reportRequestType: ReportRequestType;
@@ -43,6 +43,11 @@ export type RunHistoryProps = {
 function RunHistory({ reportId }: RunHistoryProps) {
     const { reportSnapshots, isLoading, error } = useFetchReportHistory({
         id: reportId,
+        // @TODO: Replace these with actual variables
+        query: '',
+        page: 1,
+        perPage: 10,
+        showMyHistory: false,
     });
     const expandedRowSet = useSet<string>();
 
