@@ -19,6 +19,7 @@ import Loader from 'Components/Loader';
 import Sunburst from 'Components/visuals/Sunburst';
 import TextSelect from 'Components/TextSelect';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import usePermissions from 'hooks/usePermissions';
 
 const passingColor = COMPLIANCE_PASS_COLOR;
 const failingColor = COMPLIANCE_FAIL_COLOR;
@@ -252,23 +253,17 @@ const ViewStandardButton = ({ standardType, searchParam, urlBuilder }) => {
         })
         .url();
 
-    const viewStandardLink = (
-        <Link to={linkTo} className="no-underline">
-            <button className="btn-sm btn-base" type="button">
-                View Standard
-            </button>
+    return (
+        <Link to={linkTo} className="no-underline btn-sm btn-base">
+            View standard
         </Link>
     );
-    return viewStandardLink;
 };
 
-const ComplianceByControls = ({
-    match,
-    location,
-    className,
-    standardOptions,
-    isConfigMangement,
-}) => {
+const ComplianceByControls = ({ match, location, className, standardOptions }) => {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+
     const searchParam = useContext(searchContext);
     const options = standardOptions.map((standard) => ({
         label: standardLabels[standard],
@@ -302,7 +297,7 @@ const ComplianceByControls = ({
 
                 const headerComponents = (
                     <div className="flex">
-                        {isConfigMangement && (
+                        {hasWriteAccessForCompliance && (
                             <ScanButton
                                 key={selectedStandard.standard}
                                 className="btn-sm btn-base mr-2"
@@ -367,12 +362,10 @@ ComplianceByControls.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     className: PropTypes.string,
     standardOptions: PropTypes.arrayOf(PropTypes.shape).isRequired,
-    isConfigMangement: PropTypes.string,
 };
 
 ComplianceByControls.defaultProps = {
     className: '',
-    isConfigMangement: 'false',
 };
 
 export default withRouter(ComplianceByControls);

@@ -93,10 +93,8 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
                         .url();
 
                     viewAllLink = (
-                        <Link to={linkTo} className="no-underline">
-                            <button className="btn-sm btn-base" type="button">
-                                View All
-                            </button>
+                        <Link to={linkTo} className="no-underline btn-sm btn-base">
+                            View all
                         </Link>
                     );
 
