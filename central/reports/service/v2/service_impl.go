@@ -269,6 +269,9 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
 		parsedQuery,
 	)
+	// Fill in pagination.
+	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
 	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
 	if err != nil {
 		return nil, err
@@ -305,6 +308,10 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 			AddExactMatches(search.UserID, slimUser.GetId()).ProtoQuery(),
 		parsedQuery,
 	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
 	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
 	if err != nil {
 		return nil, err
