@@ -219,30 +219,24 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={4}>
                                         <Card className="pf-u-m-md pf-u-p-md" isFlat>
-                                            <Flex direction={{ default: 'row' }}>
-                                                <FlexItem flex={{ default: 'flex_1' }}>
+                                            <Flex>
+                                                <FlexItem>
                                                     <JobDetails reportStatus={reportStatus} />
                                                 </FlexItem>
-                                                <Divider
-                                                    orientation={{
-                                                        default: 'vertical',
-                                                    }}
-                                                />
-                                                <FlexItem flex={{ default: 'flex_2' }}>
+                                                <Divider component="div" className="pf-u-my-md" />
+                                                <FlexItem>
                                                     <ReportParametersDetails
                                                         formValues={formValues}
                                                     />
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-u-py-md"
-                                                    />
+                                                </FlexItem>
+                                                <Divider component="div" className="pf-u-my-md" />
+                                                <FlexItem>
                                                     <DeliveryDestinationsDetails
                                                         formValues={formValues}
                                                     />
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-u-py-md"
-                                                    />
+                                                </FlexItem>
+                                                <Divider component="div" className="pf-u-my-md" />
+                                                <FlexItem>
                                                     <ScheduleDetails formValues={formValues} />
                                                 </FlexItem>
                                             </Flex>

@@ -26,6 +26,7 @@ function JobDetails({ reportStatus }: JobDetailsProps): ReactElement {
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList
+                    isFillColumns
                     columnModifier={{
                         default: '2Col',
                         md: '2Col',
