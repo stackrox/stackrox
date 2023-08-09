@@ -165,6 +165,7 @@ const SystemConfigForm = ({
                                 values?.privateConfig?.alertConfig?.allRuntimeRetentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -184,6 +185,7 @@ const SystemConfigForm = ({
                                     ?.deletedRuntimeRetentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -203,6 +205,7 @@ const SystemConfigForm = ({
                                     ?.resolvedDeployRetentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -222,6 +225,7 @@ const SystemConfigForm = ({
                                     ?.attemptedDeployRetentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -241,6 +245,7 @@ const SystemConfigForm = ({
                                     ?.attemptedRuntimeRetentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -257,6 +262,7 @@ const SystemConfigForm = ({
                             name="privateConfig.imageRetentionDurationDays"
                             value={values?.privateConfig?.imageRetentionDurationDays}
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -273,6 +279,7 @@ const SystemConfigForm = ({
                             name="privateConfig.expiredVulnReqRetentionDurationDays"
                             value={values?.privateConfig?.expiredVulnReqRetentionDurationDays}
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -292,6 +299,7 @@ const SystemConfigForm = ({
                                     ?.historyRetentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
@@ -314,6 +322,7 @@ const SystemConfigForm = ({
                                     ?.retentionDurationDays
                             }
                             onChange={onChange}
+                            min={0}
                         />
                     </FormGroup>
                 </GridItem>
