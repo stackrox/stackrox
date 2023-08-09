@@ -7,6 +7,7 @@ import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
+import usePermissions from 'hooks/usePermissions';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
 
@@ -19,6 +20,9 @@ const EntityHeader = ({
     isExporting,
     setIsExporting,
 }) => {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+
     const header = entityName || 'Loading...';
     const subHeader = entityNounSentenceCaseSingular[entityType];
     // Leave raw entity types in case customer depends on this convention for export file name.
@@ -34,29 +38,19 @@ const EntityHeader = ({
     return (
         <PageHeader classes="bg-base-100" header={header} subHeader={subHeader}>
             {searchComponent}
-            <div className="flex flex-1 justify-end">
-                <div className="flex">
-                    <div className="flex items-center">
-                        <>
-                            {scanCluster && (
-                                <ScanButton
-                                    text="Scan"
-                                    clusterId={scanCluster}
-                                    standardId={scanStandard}
-                                />
-                            )}
-                            <ExportButton
-                                fileName={exportFilename}
-                                type={entityType}
-                                page={useCaseTypes.COMPLIANCE}
-                                id={entityId}
-                                pdfId={pdfId}
-                                isExporting={isExporting}
-                                setIsExporting={setIsExporting}
-                            />
-                        </>
-                    </div>
-                </div>
+            <div className="flex flex-1 items-center justify-end pl-4">
+                {hasWriteAccessForCompliance && scanCluster && (
+                    <ScanButton text="Scan" clusterId={scanCluster} standardId={scanStandard} />
+                )}
+                <ExportButton
+                    fileName={exportFilename}
+                    type={entityType}
+                    page={useCaseTypes.COMPLIANCE}
+                    id={entityId}
+                    pdfId={pdfId}
+                    isExporting={isExporting}
+                    setIsExporting={setIsExporting}
+                />
             </div>
         </PageHeader>
     );
