@@ -5,8 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	npgconnlist "github.com/np-guard/netpol-analyzer/pkg/netpol/connlist"
-	npgeval "github.com/np-guard/netpol-analyzer/pkg/netpol/eval"
+	npguard "github.com/np-guard/netpol-analyzer/pkg/netpol/connlist"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
@@ -17,9 +16,9 @@ const (
 )
 
 type netpolAnalyzer interface {
-	ConnlistFromDirPath(dirPath string) ([]npgconnlist.Peer2PeerConnection, []npgeval.Peer, error)
-	ConnectionsListToString(conns []npgconnlist.Peer2PeerConnection) (string, error)
-	Errors() []npgconnlist.ConnlistError
+	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, []npguard.Peer, error)
+	ConnectionsListToString(conns []npguard.Peer2PeerConnection) (string, error)
+	Errors() []npguard.ConnlistError
 }
 
 func (cmd *analyzeNetpolCommand) analyzeNetpols(analyzer netpolAnalyzer) error {
