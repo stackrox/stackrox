@@ -205,10 +205,6 @@ export function getReportFormValuesFromConfiguration(
     return reportFormValues;
 }
 
-/*
- * This function
- */
-
 export function getReportStatusText(reportStatus: ReportStatus | null): string {
     let statusText = '-';
 

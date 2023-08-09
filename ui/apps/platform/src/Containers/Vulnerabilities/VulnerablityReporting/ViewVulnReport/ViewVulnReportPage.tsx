@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory, useParams, generatePath } from 'react-router-dom';
+import { Link, useHistory, useParams, generatePath } from 'react-router-dom';
 import {
     PageSection,
     Title,
@@ -24,7 +24,7 @@ import {
 import { CaretDownIcon, ClipboardCheckIcon, HelpIcon, HomeIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
-import { vulnerabilityReportsPath } from 'routePaths';
+import { systemConfigPath, vulnerabilityReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
 import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
@@ -232,7 +232,10 @@ function ViewVulnReportPage() {
                                             users and includes their statuses accordingly. While the
                                             function provides the ability to monitor and audit your
                                             active and past requested jobs, we suggest configuring
-                                            the &quot;Vulnerability report retention limit&quot;
+                                            the{' '}
+                                            <Link to={systemConfigPath}>
+                                                Vulnerability report retention limit
+                                            </Link>{' '}
                                             based on your needs in order to ensure optimal user
                                             experience. All the report jobs will be kept in your
                                             system until they exceed the limit set by you.
