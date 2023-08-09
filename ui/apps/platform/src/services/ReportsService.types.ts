@@ -90,7 +90,14 @@ export type ReportStatus = {
     reportNotificationMethod: ReportNotificationMethod;
 };
 
-export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
+export const runStates = {
+    WAITING: 'WAITING',
+    PREPARING: 'PREPARING',
+    SUCCESS: 'SUCCESS',
+    FAILURE: 'FAILURE',
+} as const;
+
+export type RunState = (typeof runStates)[keyof typeof runStates];
 
 export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
 

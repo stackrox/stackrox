@@ -14,14 +14,15 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { CubesIcon, FilterIcon } from '@patternfly/react-icons';
+import { CubesIcon, ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration } from 'services/ReportsService.types';
+import { ReportConfiguration, RunState, runStates } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
+import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
@@ -38,13 +39,17 @@ export type RunHistoryProps = {
 
 function ReportJobs({ reportId }: RunHistoryProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
-    const [filteredStatuses, setFilteredStatuses] = useState<string[]>([]);
+    const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
     const [showOnlyMyJobs, setShowOnlyMyJobs] = React.useState<boolean>(false);
     const expandedRowSet = useSet<string>();
 
+    const query = getRequestQueryString({
+        'Run state': filteredStatuses,
+    });
+
     const { reportSnapshots, isLoading, error } = useFetchReportHistory({
         id: reportId,
-        query: '',
+        query,
         page,
         perPage,
         showMyHistory: showOnlyMyJobs,
@@ -53,14 +58,6 @@ function ReportJobs({ reportId }: RunHistoryProps) {
     const handleChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
     };
-
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG />
-            </Bullseye>
-        );
-    }
 
     if (error) {
         return (
@@ -71,7 +68,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
         );
     }
 
-    if (!reportSnapshots.length) {
+    if (!isLoading && reportSnapshots.length === 0) {
         return (
             <Bullseye>
                 <EmptyStateTemplate title="No run history" headingLevel="h2" icon={CubesIcon} />
@@ -88,13 +85,19 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             ariaLabel="CVE severity checkbox select"
                             toggleIcon={<FilterIcon />}
                             selections={filteredStatuses}
-                            onChange={setFilteredStatuses}
+                            onChange={(selection) => {
+                                // transform the string[] to RunState[]
+                                const newRunStates: RunState[] = selection.filter(
+                                    (val) => runStates[val] !== undefined
+                                ) as RunState[];
+                                setFilteredStatuses(newRunStates);
+                            }}
                             placeholderText="Filter by status"
                         >
-                            <SelectOption value="PREPARING">Preparing</SelectOption>
-                            <SelectOption value="WAITING">Waiting</SelectOption>
-                            <SelectOption value="SUCCESS">Successful</SelectOption>
-                            <SelectOption value="ERROR">Error</SelectOption>
+                            <SelectOption value={runStates.PREPARING}>Preparing</SelectOption>
+                            <SelectOption value={runStates.WAITING}>Waiting</SelectOption>
+                            <SelectOption value={runStates.SUCCESS}>Successful</SelectOption>
+                            <SelectOption value={runStates.FAILURE}>Error</SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
                     <ToolbarItem className="pf-u-flex-grow-1">
@@ -125,95 +128,124 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
-            <TableComposable aria-label="Simple table" variant="compact">
-                <Thead>
-                    <Tr>
-                        <Td>{/* Header for expanded column */}</Td>
-                        <Th>Completed</Th>
-                        <Th>Status</Th>
-                        <Th>Requestor</Th>
-                    </Tr>
-                </Thead>
-                {reportSnapshots.map((reportSnapshot, rowIndex) => {
-                    const {
-                        reportConfigId,
-                        reportJobId,
-                        name,
-                        description,
-                        vulnReportFilters,
-                        collectionSnapshot,
-                        schedule,
-                        notifiers,
-                        reportStatus,
-                        user,
-                    } = reportSnapshot;
-                    const isExpanded = expandedRowSet.has(reportJobId);
-                    const reportConfiguration: ReportConfiguration = {
-                        id: reportConfigId,
-                        name,
-                        description,
-                        type: 'VULNERABILITY',
-                        vulnReportFilters,
-                        notifiers,
-                        schedule,
-                        resourceScope: {
-                            collectionScope: {
-                                collectionId: collectionSnapshot.id,
-                                collectionName: collectionSnapshot.name,
+            <Divider component="div" />
+            {error && (
+                <Bullseye className="pf-u-background-color-100">
+                    <EmptyStateTemplate
+                        title="Error loading report jobs"
+                        headingLevel="h2"
+                        icon={ExclamationCircleIcon}
+                        iconClassName="pf-u-danger-color-100"
+                    >
+                        {error}
+                    </EmptyStateTemplate>
+                </Bullseye>
+            )}
+            {isLoading && (
+                <Bullseye className="pf-u-background-color-100 pf-u-p-lg">
+                    <Spinner aria-label="Loading report jobs" />
+                </Bullseye>
+            )}
+            {!error && !isLoading && (
+                <TableComposable aria-label="Simple table" variant="compact">
+                    <Thead>
+                        <Tr>
+                            <Td>{/* Header for expanded column */}</Td>
+                            <Th>Completed</Th>
+                            <Th>Status</Th>
+                            <Th>Requestor</Th>
+                        </Tr>
+                    </Thead>
+                    {reportSnapshots.map((reportSnapshot, rowIndex) => {
+                        const {
+                            reportConfigId,
+                            reportJobId,
+                            name,
+                            description,
+                            vulnReportFilters,
+                            collectionSnapshot,
+                            schedule,
+                            notifiers,
+                            reportStatus,
+                            user,
+                        } = reportSnapshot;
+                        const isExpanded = expandedRowSet.has(reportJobId);
+                        const reportConfiguration: ReportConfiguration = {
+                            id: reportConfigId,
+                            name,
+                            description,
+                            type: 'VULNERABILITY',
+                            vulnReportFilters,
+                            notifiers,
+                            schedule,
+                            resourceScope: {
+                                collectionScope: {
+                                    collectionId: collectionSnapshot.id,
+                                    collectionName: collectionSnapshot.name,
+                                },
                             },
-                        },
-                    };
-                    const formValues = getReportFormValuesFromConfiguration(reportConfiguration);
+                        };
+                        const formValues =
+                            getReportFormValuesFromConfiguration(reportConfiguration);
 
-                    return (
-                        <Tbody key={reportJobId} isExpanded={isExpanded}>
-                            <Tr>
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(reportJobId),
-                                    }}
-                                />
-                                <Td dataLabel="Completed">
-                                    {reportStatus.completedAt
-                                        ? getDateTime(reportStatus.completedAt)
-                                        : '-'}
-                                </Td>
-                                <Td dataLabel="Status">
-                                    <ReportJobStatus reportSnapshot={reportSnapshot} />
-                                </Td>
-                                <Td dataLabel="Requester">{user.name}</Td>
-                            </Tr>
-                            <Tr isExpanded={isExpanded}>
-                                <Td colSpan={4}>
-                                    <Card className="pf-u-m-md pf-u-p-md" isFlat>
-                                        <Flex direction={{ default: 'row' }}>
-                                            <FlexItem flex={{ default: 'flex_1' }}>
-                                                <JobDetails reportStatus={reportStatus} />
-                                            </FlexItem>
-                                            <Divider
-                                                orientation={{
-                                                    default: 'vertical',
-                                                }}
-                                            />
-                                            <FlexItem flex={{ default: 'flex_2' }}>
-                                                <ReportParametersDetails formValues={formValues} />
-                                                <Divider component="div" className="pf-u-py-md" />
-                                                <DeliveryDestinationsDetails
-                                                    formValues={formValues}
+                        return (
+                            <Tbody key={reportJobId} isExpanded={isExpanded}>
+                                <Tr>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(reportJobId),
+                                        }}
+                                    />
+                                    <Td dataLabel="Completed">
+                                        {reportStatus.completedAt
+                                            ? getDateTime(reportStatus.completedAt)
+                                            : '-'}
+                                    </Td>
+                                    <Td dataLabel="Status">
+                                        <ReportJobStatus reportSnapshot={reportSnapshot} />
+                                    </Td>
+                                    <Td dataLabel="Requester">{user.name}</Td>
+                                </Tr>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td colSpan={4}>
+                                        <Card className="pf-u-m-md pf-u-p-md" isFlat>
+                                            <Flex direction={{ default: 'row' }}>
+                                                <FlexItem flex={{ default: 'flex_1' }}>
+                                                    <JobDetails reportStatus={reportStatus} />
+                                                </FlexItem>
+                                                <Divider
+                                                    orientation={{
+                                                        default: 'vertical',
+                                                    }}
                                                 />
-                                                <Divider component="div" className="pf-u-py-md" />
-                                                <ScheduleDetails formValues={formValues} />
-                                            </FlexItem>
-                                        </Flex>
-                                    </Card>
-                                </Td>
-                            </Tr>
-                        </Tbody>
-                    );
-                })}
-            </TableComposable>
+                                                <FlexItem flex={{ default: 'flex_2' }}>
+                                                    <ReportParametersDetails
+                                                        formValues={formValues}
+                                                    />
+                                                    <Divider
+                                                        component="div"
+                                                        className="pf-u-py-md"
+                                                    />
+                                                    <DeliveryDestinationsDetails
+                                                        formValues={formValues}
+                                                    />
+                                                    <Divider
+                                                        component="div"
+                                                        className="pf-u-py-md"
+                                                    />
+                                                    <ScheduleDetails formValues={formValues} />
+                                                </FlexItem>
+                                            </Flex>
+                                        </Card>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })}
+                </TableComposable>
+            )}
         </>
     );
 }
