@@ -49,7 +49,7 @@ func LogCallback(logger logging.Logger) func(error) {
 // and thus cannot be transmitted  to the client via status/headers. It may be nil, in which case errors are ignored.
 func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
 	psh := NewSensorProbeServerHandler(errorCallback, sources...)
-	psh.GoOnline() // this hadler is used in Central as well and it must be immediately online for backwards compat.
+	psh.GoOnline() // this handler is used in Central as well and it must be immediately online for backwards compat.
 	return psh
 }
 
