@@ -11,12 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test_probeServerHandler_ServeHTTP focuses on testing the probeServerHandler, but not on the impl. of ProbeSource
-func Test_probeServerHandler_ServeHTTP(t *testing.T) {
-	const (
-		validPath   = "b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62/collector-4.18.0-305.28.1.el8_4.x86_64.ko.gz"
-		invalidPath = "a/b/c/d/xyz.jpeg"
-	)
+const (
+	validPath   = "b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62/collector-4.18.0-305.28.1.el8_4.x86_64.ko.gz"
+	invalidPath = "a/b/c/d/xyz.jpeg"
+)
+
+// Test_probeServerHandler_Sensor tests the behavior of the handler from `NewSensorProbeServerHandler`.
+// It focuses on testing the probeServerHandler, but not on the impl. of ProbeSource
+func Test_probeServerHandler_Sensor(t *testing.T) {
 	tests := map[string]struct {
 		source             ProbeSource
 		isOnline           bool
@@ -86,6 +88,45 @@ func Test_probeServerHandler_ServeHTTP(t *testing.T) {
 
 			res := httptest.NewRecorder()
 			req, err := http.NewRequest(tt.reqMethod, tt.reqURL, nil)
+			assert.NoError(t, err)
+			h.ServeHTTP(res, req)
+
+			assert.Equal(t, tt.expectCode, res.Result().StatusCode)
+
+			bodyData, err := io.ReadAll(res.Result().Body)
+			assert.NoError(t, err)
+			defer func(b io.ReadCloser) {
+				assert.NoError(t, b.Close())
+			}(res.Result().Body)
+			assert.Contains(t, string(bodyData), tt.expectBodyContains)
+
+		})
+	}
+}
+
+// Test_probeServerHandler_Central tests the behavior of the handler created from `NewProbeServerHandler`.
+func Test_probeServerHandler_Central(t *testing.T) {
+	tests := map[string]struct {
+		source             ProbeSource
+		reqURL             string
+		expectCode         int
+		expectBodyContains string
+	}{
+		"NewProbeServerHandler should return a handler that is in online mode": {
+			source:             mockLoadProbe{availableProbe: validPath},
+			reqURL:             "/" + validPath,
+			expectCode:         200,
+			expectBodyContains: "",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			h := NewProbeServerHandler(func(err error) {
+				assert.NoError(t, err)
+			}, tt.source)
+
+			res := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", tt.reqURL, nil)
 			assert.NoError(t, err)
 			h.ServeHTTP(res, req)
 
