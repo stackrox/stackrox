@@ -88,7 +88,7 @@ jobs:
           # Prevent fatal error "detected dubious ownership in repository" from recent git.
           git config --global --add safe.directory "$(pwd)"
 
-      - name: Ensure no trailing whitespaces
+      - name: Ensure no trailing whitespaces  
         run: git diff --check "${{ github.event.workflow_run.head_sha }}"
 
       - name: Cache Go dependencies
