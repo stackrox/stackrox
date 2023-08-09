@@ -7,16 +7,16 @@ import (
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/registrymirror"
+	"github.com/stackrox/rox/pkg/registrymirror/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestProcessEvent(t *testing.T) {
 	icspA := &operatorV1Alpha1.ImageContentSourcePolicy{ObjectMeta: v1.ObjectMeta{Name: "icspA", UID: "UIDicspA"}}
-	idmsA := &configV1.ImageDigestMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "itmsA", UID: "UIDitmsA"}}
-	itmsA := &configV1.ImageTagMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "idmsA", UID: "UIDidmsA"}}
+	idmsA := &configV1.ImageDigestMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "idmsA", UID: "UIDidmsA"}}
+	itmsA := &configV1.ImageTagMirrorSet{ObjectMeta: v1.ObjectMeta{Name: "itmsA", UID: "UIDitmsA"}}
 
 	// Ensure all actions (except delete) result in upserts
 	tt := []struct {
@@ -29,92 +29,41 @@ func TestProcessEvent(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.action.String(), func(t *testing.T) {
-			ms := &FakeMirrorStore{}
+			ms := mocks.NewMockStore(gomock.NewController(t))
 			d := newRegistryMirrorDispatcher(ms)
 
+			ms.EXPECT().UpsertImageContentSourcePolicy(icspA)
 			d.ProcessEvent(icspA, nil, tc.action)
-			assert.True(t, ms.upsertICSPInvoked)
-			assert.False(t, ms.deleteICSPInvoked)
 
+			ms.EXPECT().UpsertImageDigestMirrorSet(idmsA)
 			d.ProcessEvent(idmsA, nil, tc.action)
-			assert.True(t, ms.upsertIDMSInvoked)
-			assert.False(t, ms.deleteIDMSInvoked)
 
+			ms.EXPECT().UpsertImageTagMirrorSet(itmsA)
 			d.ProcessEvent(itmsA, nil, tc.action)
-			assert.True(t, ms.upsertITMSInvoked)
-			assert.False(t, ms.deleteITMSInvoked)
 		})
 	}
 
 	t.Run("no panic when removing non existent resource", func(t *testing.T) {
-		ms := &FakeMirrorStore{}
+		ms := mocks.NewMockStore(gomock.NewController(t))
 		d := newRegistryMirrorDispatcher(ms)
+
 		action := central.ResourceAction_REMOVE_RESOURCE
+
+		ms.EXPECT().DeleteImageContentSourcePolicy(icspA.UID)
 		d.ProcessEvent(icspA, nil, action)
-		assert.False(t, ms.upsertICSPInvoked)
-		assert.True(t, ms.deleteICSPInvoked)
 
+		ms.EXPECT().DeleteImageDigestMirrorSet(idmsA.UID)
 		d.ProcessEvent(idmsA, nil, action)
-		assert.False(t, ms.upsertIDMSInvoked)
-		assert.True(t, ms.deleteIDMSInvoked)
 
+		ms.EXPECT().DeleteImageTagMirrorSet(itmsA.UID)
 		d.ProcessEvent(itmsA, nil, action)
-		assert.False(t, ms.upsertITMSInvoked)
-		assert.True(t, ms.deleteITMSInvoked)
 	})
 
 	t.Run("unknown type panics for non-release builds", func(t *testing.T) {
 		if !buildinfo.ReleaseBuild {
-			ms := &FakeMirrorStore{}
+			ms := mocks.NewMockStore(gomock.NewController(t))
 			d := newRegistryMirrorDispatcher(ms)
 			assert.Panics(t, func() { d.ProcessEvent(nil, nil, 0) })
 		}
 	})
-}
-
-type FakeMirrorStore struct {
-	deleteICSPInvoked bool
-	deleteIDMSInvoked bool
-	deleteITMSInvoked bool
-
-	upsertICSPInvoked bool
-	upsertIDMSInvoked bool
-	upsertITMSInvoked bool
-}
-
-var _ registrymirror.Store = (*FakeMirrorStore)(nil)
-
-func (*FakeMirrorStore) Cleanup() {}
-func (s *FakeMirrorStore) DeleteImageContentSourcePolicy(_ types.UID) error {
-	s.deleteICSPInvoked = true
-	return nil
-}
-func (s *FakeMirrorStore) DeleteImageDigestMirrorSet(_ types.UID) error {
-	s.deleteIDMSInvoked = true
-	return nil
-}
-func (s *FakeMirrorStore) DeleteImageTagMirrorSet(_ types.UID) error {
-	s.deleteITMSInvoked = true
-	return nil
-}
-func (s *FakeMirrorStore) UpsertImageDigestMirrorSet(_ *configV1.ImageDigestMirrorSet) error {
-	s.upsertIDMSInvoked = true
-	return nil
-}
-func (s *FakeMirrorStore) UpsertImageTagMirrorSet(_ *configV1.ImageTagMirrorSet) error {
-	s.upsertITMSInvoked = true
-	return nil
-}
-func (s *FakeMirrorStore) UpsertImageContentSourcePolicy(_ *operatorV1Alpha1.ImageContentSourcePolicy) error {
-	s.upsertICSPInvoked = true
-	return nil
-}
-func (*FakeMirrorStore) PullSources(_ string) ([]string, error) {
-	return nil, nil
-}
-func (*FakeMirrorStore) UpdateConfig(_ []*operatorV1Alpha1.ImageContentSourcePolicy, _ []*configV1.ImageDigestMirrorSet, _ []*configV1.ImageTagMirrorSet) error {
-	return nil
-}
-func (*FakeMirrorStore) GetAllMirrorSets() ([]*operatorV1Alpha1.ImageContentSourcePolicy, []*configV1.ImageDigestMirrorSet, []*configV1.ImageTagMirrorSet) {
-	return nil, nil, nil
 }

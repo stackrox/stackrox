@@ -14,6 +14,7 @@ import (
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/openshift/runtime-utils/pkg/registries"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -26,14 +27,19 @@ const (
 	defaultRegistriesPath = "/var/cache/stackrox/mirrors/registries.conf"
 
 	// default delay before writing the updated registries config.
-	defaultDelay = time.Millisecond * 300
+	defaultDelay = 100 * time.Millisecond
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	// ensure FileStore adheres to Store.
+	_ Store = (*FileStore)(nil)
 )
 
 // Store defines an interface for interacting with registry mirrors.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	Cleanup()
 
@@ -48,7 +54,8 @@ type Store interface {
 
 	// PullSources will return image references in the order they should be attempted when pulling the image.
 	// The returned slice may (or may not) include the source image based on the registries config.
-	// Source image must be fully qualified (include the registry hostname).
+	// Source image must include the registry hostname for mirrors to be matched, for example use:
+	// "quay.io/stackrox-io/main:latest" instead of "stackrox-io/main:latest".
 	PullSources(srcImage string) ([]string, error)
 }
 
@@ -62,15 +69,11 @@ type FileStore struct {
 	itmsRules   map[types.UID]*configV1.ImageTagMirrorSet
 	ruleRWMutex sync.RWMutex
 
-	// timer is used when performing delayed writes to filesystem.
-	timer       *time.Timer
-	timerMutex  sync.Mutex
-	updateDelay time.Duration
-
 	systemContext *ciTypes.SystemContext
-}
 
-var _ Store = (*FileStore)(nil)
+	updateDelay  time.Duration
+	cancelUpdate concurrency.Signal
+}
 
 // fileStoreOption is used to provide functional options to the fileStore.
 type fileStoreOption func(*FileStore)
@@ -99,7 +102,9 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 		opt(s)
 	}
 
-	s.systemContext = &ciTypes.SystemContext{SystemRegistriesConfPath: s.configPath}
+	s.systemContext = &ciTypes.SystemContext{
+		SystemRegistriesConfPath: s.configPath,
+	}
 	return s
 }
 
@@ -112,6 +117,7 @@ func (s *FileStore) Cleanup() {
 	s.idmsRules = make(map[types.UID]*configV1.ImageDigestMirrorSet)
 	s.itmsRules = make(map[types.UID]*configV1.ImageTagMirrorSet)
 
+	s.cancelUpdate.Signal()
 	if err := os.Remove(s.configPath); err != nil && !os.IsNotExist(err) {
 		log.Warnf("Failed to cleanup registries config at %q: %v", s.configPath, err)
 	}
@@ -127,19 +133,14 @@ func (s *FileStore) updateConfig() error {
 }
 
 func (s *FileStore) updateConfigDelayed() error {
-	// Using a different mutex to protect timer vs. rules to avoid deadlock.
-	s.timerMutex.Lock()
-	defer s.timerMutex.Unlock()
+	s.cancelUpdate.Signal()
+	s.cancelUpdate.Reset()
 
-	if s.timer != nil {
-		s.timer.Stop()
-	}
-
-	s.timer = time.AfterFunc(s.updateDelay, func() {
+	concurrency.AfterFunc(s.updateDelay, func() {
 		if err := s.updateConfigNow(); err != nil {
 			log.Errorf("Failed to update the registry mirror config: %v", err)
 		}
-	})
+	}, &s.cancelUpdate)
 
 	return nil
 }
@@ -155,8 +156,8 @@ func (s *FileStore) updateConfigNow() error {
 	}
 
 	// Encode config.
-	var newData bytes.Buffer
-	encoder := toml.NewEncoder(&newData)
+	var encodedConfig bytes.Buffer
+	encoder := toml.NewEncoder(&encodedConfig)
 	if err := encoder.Encode(config); err != nil {
 		return errors.Wrap(err, "could not encode registries config")
 	}
@@ -175,7 +176,7 @@ func (s *FileStore) updateConfigNow() error {
 	defer utils.IgnoreError(f.Close)
 
 	// Write encoded config to output file.
-	_, err = f.Write(newData.Bytes())
+	_, err = f.Write(encodedConfig.Bytes())
 	if err != nil {
 		return errors.Wrap(err, "could not write bytes to file")
 	}
@@ -194,9 +195,7 @@ func (s *FileStore) updateConfigNow() error {
 	return nil
 }
 
-// PullSources will return image references in the order they should be attempted when pulling the image.
-// The returned slice may (or may not) include the source image based on the registries config.
-// Source image must be fully qualified (include the registry hostname).
+// PullSources refer to Store interface for details.
 func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	// FindRegistry will parse the registries config file and cache it for future usage.
 	reg, err := sysregistriesv2.FindRegistry(s.systemContext, srcImage)
@@ -242,6 +241,7 @@ func (s *FileStore) UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageC
 	s.upsertImageContentSourcePolicyWithLock(icsp)
 	return s.updateConfig()
 }
+
 func (s *FileStore) upsertImageContentSourcePolicyWithLock(icsp *operatorV1Alpha1.ImageContentSourcePolicy) {
 	s.ruleRWMutex.Lock()
 	defer s.ruleRWMutex.Unlock()
@@ -251,15 +251,23 @@ func (s *FileStore) upsertImageContentSourcePolicyWithLock(icsp *operatorV1Alpha
 
 // DeleteImageContentSourcePolicy will delete an ImageContentSourcePolicy from the store if it exists.
 func (s *FileStore) DeleteImageContentSourcePolicy(uid types.UID) error {
-	s.deleteImageContentSourcePolicyWithLock(uid)
+	if deleted := s.deleteImageContentSourcePolicyWithLock(uid); !deleted {
+		return nil
+	}
+
 	return s.updateConfig()
 }
 
-func (s *FileStore) deleteImageContentSourcePolicyWithLock(uid types.UID) {
+func (s *FileStore) deleteImageContentSourcePolicyWithLock(uid types.UID) bool {
 	s.ruleRWMutex.Lock()
 	defer s.ruleRWMutex.Unlock()
 
-	delete(s.icspRules, uid)
+	if _, ok := s.icspRules[uid]; ok {
+		delete(s.icspRules, uid)
+		return true
+	}
+
+	return false
 }
 
 // UpsertImageDigestMirrorSet will store a new/updated ImageDigestMirrorSet.
@@ -277,15 +285,23 @@ func (s *FileStore) upsertImageDigestMirrorSetWithLock(idms *configV1.ImageDiges
 
 // DeleteImageDigestMirrorSet will delete an ImageDigestMirrorSet from the store if it exists.
 func (s *FileStore) DeleteImageDigestMirrorSet(uid types.UID) error {
-	s.deleteImageDigestMirrorSetWithLock(uid)
+	if deleted := s.deleteImageDigestMirrorSetWithLock(uid); !deleted {
+		return nil
+	}
+
 	return s.updateConfig()
 }
 
-func (s *FileStore) deleteImageDigestMirrorSetWithLock(uid types.UID) {
+func (s *FileStore) deleteImageDigestMirrorSetWithLock(uid types.UID) bool {
 	s.ruleRWMutex.Lock()
 	defer s.ruleRWMutex.Unlock()
 
-	delete(s.idmsRules, uid)
+	if _, ok := s.idmsRules[uid]; ok {
+		delete(s.idmsRules, uid)
+		return true
+	}
+
+	return false
 }
 
 // UpsertImageTagMirrorSet will store a new/updated ImageTagMirrorSet.
@@ -303,15 +319,23 @@ func (s *FileStore) upsertImageTagMirrorSetWithLock(itms *configV1.ImageTagMirro
 
 // DeleteImageTagMirrorSet will delete an ImageTagMirrorSet from the store if it exists.
 func (s *FileStore) DeleteImageTagMirrorSet(uid types.UID) error {
-	s.deleteImageTagMirrorSetWithLock(uid)
+	if deleted := s.deleteImageTagMirrorSetWithLock(uid); !deleted {
+		return nil
+	}
+
 	return s.updateConfig()
 }
 
-func (s *FileStore) deleteImageTagMirrorSetWithLock(uid types.UID) {
+func (s *FileStore) deleteImageTagMirrorSetWithLock(uid types.UID) bool {
 	s.ruleRWMutex.Lock()
 	defer s.ruleRWMutex.Unlock()
 
-	delete(s.itmsRules, uid)
+	if _, ok := s.itmsRules[uid]; ok {
+		delete(s.itmsRules, uid)
+		return true
+	}
+
+	return false
 }
 
 // getAllMirrorSets returns slices of all the stored mirror sets as expected by openshift/runtime-utils.

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -48,10 +49,7 @@ var (
 
 func fileContains(t *testing.T, path, text string) bool {
 	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Error(err)
-		return false
-	}
+	require.NoError(t, err)
 
 	return strings.Contains(string(b), text)
 }
@@ -60,8 +58,23 @@ func TestUpsertDelete(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "registries.conf")
 
 	s := NewFileStore(WithConfigPath(path), WithDelay(0))
-	assert.Len(t, s.icspRules, 0)
-	assert.NoFileExists(t, path)
+	require.Len(t, s.icspRules, 0)
+	require.NoFileExists(t, path)
+
+	t.Run("config should not be updated when no resource deleted", func(t *testing.T) {
+		uid := types.UID("fake")
+		err := s.DeleteImageContentSourcePolicy(uid)
+		assert.NoError(t, err)
+		require.NoFileExists(t, path)
+
+		err = s.DeleteImageDigestMirrorSet(uid)
+		assert.NoError(t, err)
+		require.NoFileExists(t, path)
+
+		err = s.DeleteImageTagMirrorSet(uid)
+		assert.NoError(t, err)
+		require.NoFileExists(t, path)
+	})
 
 	t.Run("ICSP", func(t *testing.T) {
 		source := icspA.Spec.RepositoryDigestMirrors[0].Source
@@ -115,8 +128,10 @@ func TestDelayedUpdate(t *testing.T) {
 	assert.Len(t, s.icspRules, 1)
 	assert.NoFileExists(t, path)
 
-	time.Sleep(300 * time.Millisecond)
-	assert.True(t, fileContains(t, path, icspA.Spec.RepositoryDigestMirrors[0].Source), "config missing registry")
+	waitFor := 1 * time.Second
+	checkEvery := 250 * time.Millisecond
+	conditionFn := func() bool { return fileContains(t, path, icspA.Spec.RepositoryDigestMirrors[0].Source) }
+	assert.Eventually(t, conditionFn, waitFor, checkEvery, "config missing registry")
 }
 
 func TestDataRaceAtCleanup(t *testing.T) {
@@ -125,8 +140,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	doneSignal := concurrency.NewSignal()
-	// Spawning two goroutines to trigger data race in updateConfigDelayed
-	// (comment out s.timerMutex.Lock/Unlock to see data race trigger)
+	// Spawning two goroutines to attempt to trigger data race in updateConfigDelayed
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -315,10 +329,12 @@ func TestPullSources(t *testing.T) {
 
 	t.Run("error when CRs updated to bad state (sync)", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), fileName)
+
 		s := NewFileStore(WithConfigPath(path), WithDelay(0))
 
 		err := s.UpsertImageContentSourcePolicy(icspA)
 		assert.NoError(t, err)
+
 		err = s.UpsertImageDigestMirrorSet(idmsA)
 		assert.Error(t, err)
 	})
@@ -327,6 +343,7 @@ func TestPullSources(t *testing.T) {
 		// the config update will fail and the failure logged, however because the write
 		// is async no error is returned.
 		path := filepath.Join(t.TempDir(), fileName)
+
 		s := NewFileStore(WithConfigPath(path), WithDelay(30*time.Millisecond))
 
 		err := s.UpsertImageContentSourcePolicy(icspA)
@@ -335,5 +352,20 @@ func TestPullSources(t *testing.T) {
 		err = s.UpsertImageDigestMirrorSet(idmsA)
 		time.Sleep(40 * time.Millisecond)
 		assert.NoError(t, err)
+	})
+
+	t.Run("unqualified hostname returns source image", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), fileName)
+
+		s := NewFileStore(WithConfigPath(path), WithDelay(0))
+
+		err := s.UpsertImageContentSourcePolicy(icspA)
+		assert.NoError(t, err)
+
+		src := "nginx:latest"
+		srcs, err := s.PullSources(src)
+		require.NoError(t, err)
+		require.Len(t, srcs, 1)
+		assert.Equal(t, src, srcs[0])
 	})
 }
