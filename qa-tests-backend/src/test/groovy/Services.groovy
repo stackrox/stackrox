@@ -38,6 +38,7 @@ import services.AlertService
 import services.BaseService
 import services.ImageService
 import services.NetworkPolicyService
+import services.PolicyService
 import util.Timer
 
 @CompileStatic
@@ -387,6 +388,17 @@ class Services extends BaseService {
             LOG.info "Updated enforcement of '${policyName}' to have no enforcement actions"
         }
         return policyMeta.getEnforcementActionsList()
+    }
+
+    static Policy clonePolicyAndScopeByTestNamespace(String name, String namespace) {
+        Policy policy = getPolicyByName(name)
+        Policy scopedPolicyForTest = policy.toBuilder()
+            .clearId()
+            .setName("${name} - ${namespace}")
+            .clearScope()
+            .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(namespace))
+            .build()
+        return PolicyService.createAndFetchPolicy(scopedPolicyForTest)
     }
 
     static boolean roxDetectedDeployment(String deploymentID, String name) {
