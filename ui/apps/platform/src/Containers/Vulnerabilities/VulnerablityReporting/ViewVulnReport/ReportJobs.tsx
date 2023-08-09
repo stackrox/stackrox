@@ -16,7 +16,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { CubesIcon, ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
 import { ReportConfiguration, RunState, runStates } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
@@ -26,7 +26,6 @@ import useURLPagination from 'hooks/useURLPagination';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 
-import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import ReportParametersDetails from '../components/ReportParametersDetails';
