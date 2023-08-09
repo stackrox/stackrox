@@ -9,7 +9,6 @@ import {
     selectNamespace,
     selectDeployment,
     selectFilter,
-    clearAllSavedCidrBlocks,
     updateAndCloseCidrModal,
 } from './networkGraph.helpers';
 import { networkGraphSelectors } from './networkGraph.selectors';

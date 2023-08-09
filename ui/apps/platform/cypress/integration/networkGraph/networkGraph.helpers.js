@@ -64,7 +64,9 @@ export function selectFilter(filterKey, filterValue) {
     cy.get('.react-select__value-container').click();
     cy.get(`.react-select__menu-list .react-select__option:contains("${filterKey}")`).click();
     cy.focused().type(filterValue);
-    cy.get(`.react-select__menu-list .react-select__option:contains("${filterValue}")`).click();
+    cy.get(`.react-select__menu-list .react-select__option:contains("${filterValue}")`)
+        .first()
+        .click();
     cy.get('.react-select__value-container').click();
 }
 
