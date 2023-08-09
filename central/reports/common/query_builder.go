@@ -45,6 +45,9 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*ReportQuery, error) {
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
+	if err != nil {
+		return nil, err
+	}
 	scopeQuery, err := q.buildAccessScopeQuery(clusters, namespaces)
 	if err != nil {
 		return nil, err
