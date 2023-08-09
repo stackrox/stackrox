@@ -44,7 +44,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
     const expandedRowSet = useSet<string>();
 
     const query = getRequestQueryString({
-        'Run state': filteredStatuses,
+        'Report state': filteredStatuses,
     });
 
     const { reportSnapshots, isLoading, error } = useFetchReportHistory({
