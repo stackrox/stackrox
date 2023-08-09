@@ -89,7 +89,7 @@ jobs:
           git config --global --add safe.directory "$(pwd)"
 
       - name: Ensure no trailing whitespaces  
-        run: git diff --check "${{ github.event.workflow_run.head_sha }}"
+        run: git diff --check "${{ github.event.pull_request.base.sha }}"
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
