@@ -42,12 +42,6 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
-	reportConfig "github.com/stackrox/rox/central/reports/config/datastore"
-	reportConfigSearch "github.com/stackrox/rox/central/reports/config/search"
-	reportConfigPgStore "github.com/stackrox/rox/central/reports/config/store/postgres"
-	reportDatastore "github.com/stackrox/rox/central/reports/snapshot/datastore"
-	reportSearch "github.com/stackrox/rox/central/reports/snapshot/datastore/search"
-	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
@@ -397,17 +391,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore
-}
-
-func generateReportDataStructure(db postgres.DB) (reportDatastore.DataStore, reportConfig.DataStore) {
-
-	storage := pgStore.New(db)
-	indexer := pgStore.NewIndexer(db)
-	reportSnapshotDS := reportDatastore.New(storage, reportSearch.New(storage, indexer))
-	reportConfigStorage := reportConfigPgStore.New(db)
-	reportConfig, _ := reportConfig.New(reportConfigStorage, reportConfigSearch.New(reportConfigStorage, indexer))
-
-	return reportSnapshotDS, reportConfig
 }
 
 func (s *PruningTestSuite) TestImagePruning() {
