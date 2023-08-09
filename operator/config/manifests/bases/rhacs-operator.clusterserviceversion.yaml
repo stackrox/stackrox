@@ -511,6 +511,10 @@ spec:
           stage.
         displayName: Collection
         path: perNode.collector.collection
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:EBPF
+        - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
+        - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
