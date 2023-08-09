@@ -1,5 +1,8 @@
 # StackRox Database migration
 
+## IMPORTANT
+All migrations must be backwards compatible in order to ensure a safe and successful rollback.
+
 ## Purpose of database migrations
 
 When changing the data model for stored objects, data conversions may be required. All migrations
@@ -7,8 +10,11 @@ are in the `migrations` subdirectory.
 
 Migrations are organized with sequence numbers and executed in sequence. Each migration is provided
 with a pointer to `types.Databases` where the pointed object contains all necessary database instances,
-including `Bolt`, `RocksDB`, `Postgres` and `GormDB` (datamodel for postgres). Depending on the version
-a migration is operating on, some database instances may be nil.
+including `Bolt`, `RocksDB`, `Postgres` and `GormDB` (datamodel for postgres) as well as a context `DBCtx`. 
+The context allows for the migrations to be wrapped in a transaction so they can be committed as they 
+are processed.  (Migrations moving data with `GormDB` will not be part of the outer transaction, 
+as such care should be taken when using `GormDB` to move data.)  Depending on the version a migration 
+is operating on, some database instances may be nil.
 
 A migration can read from any of the databases, make changes to the data or to the datamodel
 (database schema when working with postgres), then persist these changes to the database.
@@ -116,7 +122,7 @@ to generate current schema which can be find in each Postgres store.
 pg-schema-migration-helper --type=<prototype> --search-category ...
 ```
 
-This tool also generates conversion tools for schema, you may remove the 
+This tool also generates conversion tools for schema, you may remove them. 
 
 #### Create or upgrade the schema of a table.
 
@@ -144,7 +150,7 @@ In migrator, there are a multiple ways to access data.
 
     Raw SQL commands are always available to databases and it has good isolation from current release. It is used frequently in
     migrations before Postgres. Migrations with raw SQL command needs less maintenance but it may not be convenient
-    and it could be error-prone.
+    and it could be error-prone.  This model supports the transaction passed via the databases.DBCtx.
     We try to provide more convenient way to read and update the data.
 
 2. Gorm
@@ -193,12 +199,15 @@ In migrator, there are a multiple ways to access data.
        Serialized []byte    `gorm:"column:serialized;type:bytea"`
    }
    ```
+   Gorm cannot participate in the transaction passed via the context.  The risk and possible ramifications of that
+   should be considered before deciding to use Gorm to move the data.
 
 3. Duplicate the Postgres Store
    This method is used in version 73 and 74 to migrate all tables from RocksDB to Postgres. In addition to frozen schema,
    the store to access the data are also frozen for migration. The migrations with this method are closely associated
    with current release eg. search/delete with schema and the prototypes of the objects. This method is NOT recommended for
    4.0 and beyond.
+   This model supports the transaction passed via the databases.DBCtx.
 
 #### Conversion tool
 
