@@ -48,14 +48,14 @@ func LogCallback(logger logging.Logger) func(error) {
 // when serving on a sub-path. The errorCallback is invoked for errors that happen during writing the response body,
 // and thus cannot be transmitted  to the client via status/headers. It may be nil, in which case errors are ignored.
 func NewProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
-	psh := NewSensorProbeServerHandler(errorCallback, sources...)
+	psh := NewConnectionAwareProbeHandler(errorCallback, sources...)
 	psh.GoOnline() // this handler is used in Central as well and it must be immediately online for backwards compat.
 	return psh
 }
 
-// NewSensorProbeServerHandler returns the same http.Handler as in NewProbeServerHandler to be used in Sensor.
+// NewConnectionAwareProbeHandler returns the same http.Handler as in NewProbeServerHandler to be used in Sensor.
 // The difference to NewProbeServerHandler is that it starts in offline mode
-func NewSensorProbeServerHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
+func NewConnectionAwareProbeHandler(errorCallback func(error), sources ...ProbeSource) *probeServerHandler {
 	return &probeServerHandler{
 		errorCallback: errorCallback,
 		sources:       sources,

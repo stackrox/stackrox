@@ -16,7 +16,7 @@ const (
 	invalidPath = "a/b/c/d/xyz.jpeg"
 )
 
-// Test_probeServerHandler_Sensor tests the behavior of the handler from `NewSensorProbeServerHandler`.
+// Test_probeServerHandler_Sensor tests the behavior of the handler from `NewConnectionAwareProbeHandler`.
 // It focuses on testing the probeServerHandler, but not on the impl. of ProbeSource
 func Test_probeServerHandler_Sensor(t *testing.T) {
 	tests := map[string]struct {
@@ -78,7 +78,7 @@ func Test_probeServerHandler_Sensor(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			h := NewSensorProbeServerHandler(func(err error) {
+			h := NewConnectionAwareProbeHandler(func(err error) {
 				assert.NoError(t, err)
 			}, tt.source)
 			h.GoOnline()
