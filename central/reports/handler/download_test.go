@@ -179,7 +179,7 @@ func (s *handlerTestSuite) TestDownloadReport() {
 }
 
 func (s *handlerTestSuite) downloadAndVerify(ctx context.Context, id string, code int, expectData []byte) {
-	req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/api/reports/jobs/download/?id=%s", id), nil)
+	req, _ := http.NewRequest("GET", fmt.Sprintf("https://example.com/api/reports/jobs/download?id=%s", id), nil)
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 	s.handler.handle(w, req)

@@ -74,7 +74,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 
 	if slimUser.GetId() != rep.GetRequester().GetId() {
 		httputil.WriteGRPCStyleError(w, codes.PermissionDenied,
-			errors.New("Report cannot be downloaded by a user who did not request the report."))
+			errors.Errorf("Report cannot be downloaded by a user %q who did not request the report.", slimUser.GetId()))
 		return
 	}
 
