@@ -2,8 +2,8 @@
   "id": "dd478ad6-b9c9-4abf-92e0-847408aecb8d",
   "name": "Drop All Capabilities",
   "description": "Alert when a deployment does not drop all capabilities.",
-  "rationale": "Since capabilities permit privileged operations, it is a recommended best practice to drop all capabilities that a deployment can have, and then add only the capabilities that the deployment needs.",
-  "remediation": "Ensure that the deployment manifest has drop: ALL in the securityContext section of the Container manifest.",
+  "rationale": "Because capabilities permit privileged operations, it is a recommended best practice to drop all capabilities that a deployment can have, and then add only the capabilities that the deployment needs.",
+  "remediation": "Ensure that the deployment manifest has `drop: ALL` in the securityContext section of the container manifest.",
   "disabled": true,
   "categories": [
     "DevOps Best Practices"
