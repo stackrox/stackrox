@@ -37,37 +37,6 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// ClearAggregationResults mocks base method.
-func (m *MockStore) ClearAggregationResults(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearAggregationResults", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ClearAggregationResults indicates an expected call of ClearAggregationResults.
-func (mr *MockStoreMockRecorder) ClearAggregationResults(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAggregationResults", reflect.TypeOf((*MockStore)(nil).ClearAggregationResults), ctx)
-}
-
-// GetAggregationResult mocks base method.
-func (m *MockStore) GetAggregationResult(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAggregationResult", ctx, queryString, groupBy, unit)
-	ret0, _ := ret[0].([]*storage.ComplianceAggregation_Result)
-	ret1, _ := ret[1].([]*storage.ComplianceAggregation_Source)
-	ret2, _ := ret[2].(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// GetAggregationResult indicates an expected call of GetAggregationResult.
-func (mr *MockStoreMockRecorder) GetAggregationResult(ctx, queryString, groupBy, unit interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAggregationResult", reflect.TypeOf((*MockStore)(nil).GetAggregationResult), ctx, queryString, groupBy, unit)
-}
-
 // GetConfig mocks base method.
 func (m *MockStore) GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
 	m.ctrl.T.Helper()
@@ -142,20 +111,6 @@ func (m *MockStore) GetSpecificRunResults(ctx context.Context, clusterID, standa
 func (mr *MockStoreMockRecorder) GetSpecificRunResults(ctx, clusterID, standardID, runID, flags interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpecificRunResults", reflect.TypeOf((*MockStore)(nil).GetSpecificRunResults), ctx, clusterID, standardID, runID, flags)
-}
-
-// StoreAggregationResult mocks base method.
-func (m *MockStore) StoreAggregationResult(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domains map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreAggregationResult", ctx, queryString, groupBy, unit, results, sources, domains)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// StoreAggregationResult indicates an expected call of StoreAggregationResult.
-func (mr *MockStoreMockRecorder) StoreAggregationResult(ctx, queryString, groupBy, unit, results, sources, domains interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreAggregationResult", reflect.TypeOf((*MockStore)(nil).StoreAggregationResult), ctx, queryString, groupBy, unit, results, sources, domains)
 }
 
 // StoreComplianceDomain mocks base method.

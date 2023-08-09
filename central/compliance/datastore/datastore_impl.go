@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -26,9 +24,6 @@ var (
 type datastoreImpl struct {
 	storage store.Store
 	filter  SacFilter
-
-	storedAggregationMutex    sync.RWMutex
-	aggregationSequenceNumber uint64
 }
 
 func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
@@ -140,18 +135,6 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 		return sac.ErrResourceAccessDenied
 	}
 
-	ds.storedAggregationMutex.Lock()
-	defer ds.storedAggregationMutex.Unlock()
-
-	defer func() {
-		// Atomic because it will be atomically read outside the mutex
-		atomic.AddUint64(&ds.aggregationSequenceNumber, 1)
-	}()
-
-	if err := ds.storage.ClearAggregationResults(ctx); err != nil {
-		log.Errorf("unable to clear old stored aggregations: %v", err)
-	}
-
 	return ds.storage.StoreRunResults(ctx, results)
 }
 
@@ -171,59 +154,4 @@ func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *stor
 		return sac.ErrResourceAccessDenied
 	}
 	return ds.storage.StoreComplianceDomain(ctx, domain)
-}
-
-func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	// TODO(ROX-9134): consider storing compliance results for Unrestricted scope
-	if true {
-		return args.AggregationFunc()
-	}
-
-	// Check for a pre-computed aggregation for this query
-	results, sources, domainMap, err := ds.storage.GetAggregationResult(ctx, args.QueryString, args.GroupBy, args.Unit)
-	if err != nil {
-		// Log the error and continue.  We can skip this optimization and do the aggregation
-		log.Errorf("error getting pre-computed compliance aggregation: %v", err)
-	}
-	if results != nil && sources != nil && domainMap != nil {
-		return results, sources, domainMap, err
-	}
-
-	// Get the aggregation sequence number before performing the aggregation.  We don't need to be in a lock here.
-	aggregationSequenceNumber := atomic.LoadUint64(&ds.aggregationSequenceNumber)
-	// This performs the actual aggregation.  It must occur after getting the sequence number.
-	results, sources, domainMap, err = args.AggregationFunc()
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// Store asynchronously so the API stays responsive
-	go func() {
-		// We do need to lock here so that the compliance data can't be changed between checking the sequence number and
-		// storing the aggregation result
-		ds.storedAggregationMutex.RLock()
-		defer ds.storedAggregationMutex.RUnlock()
-		curAggSeqNum := atomic.LoadUint64(&ds.aggregationSequenceNumber)
-		// Storing aggregation results is only permitted if the compliance data hasn't changed
-		if aggregationSequenceNumber != curAggSeqNum {
-			return
-		}
-
-		err = ds.storage.StoreAggregationResult(ctx, args.QueryString, args.GroupBy, args.Unit, results, sources, domainMap)
-		if err != nil {
-			// Log the error and continue.  We can skip this optimization without issue
-			log.Errorf("error storing compliance aggregation: %v", err)
-		}
-	}()
-
-	return results, sources, domainMap, nil
-}
-
-func (ds *datastoreImpl) ClearAggregationResults(ctx context.Context) error {
-	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	return ds.storage.ClearAggregationResults(ctx)
 }

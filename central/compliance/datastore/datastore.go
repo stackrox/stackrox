@@ -24,21 +24,7 @@ type DataStore interface {
 
 	UpdateConfig(ctx context.Context, id string, hide bool) error
 	GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error)
-
-	PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
-	ClearAggregationResults(ctx context.Context) error
 }
-
-// StoredAggregationArgs encapsulates the arguments to the PerformStoredAggregation method
-type StoredAggregationArgs struct {
-	QueryString     string
-	GroupBy         []storage.ComplianceAggregation_Scope
-	Unit            storage.ComplianceAggregation_Scope
-	AggregationFunc AggregationFunc
-}
-
-// AggregationFunc is a function that returns the results of a compliance aggregation
-type AggregationFunc func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 
 // NewDataStore returns a new instance of a DataStore.
 func NewDataStore(storage store.Store, filter SacFilter) DataStore {

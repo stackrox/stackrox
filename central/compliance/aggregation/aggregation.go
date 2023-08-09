@@ -310,24 +310,15 @@ func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, grou
 		return nil, nil, nil, errors.Errorf("unit %s is not a valid scope to run aggregation on", unit)
 	}
 
-	aggregationFunc := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-		validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
-
-		return results, sources, domainMap, nil
+	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
-	aggArgs := &complianceDS.StoredAggregationArgs{
-		QueryString:     queryString,
-		GroupBy:         groupBy,
-		Unit:            unit,
-		AggregationFunc: aggregationFunc,
-	}
-	return a.compliance.PerformStoredAggregation(ctx, aggArgs)
+	results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
+
+	return results, sources, domainMap, nil
+
 }
 
 func newFlatCheck(clusterID, namespaceID, standardID, category, controlID, nodeID, deploymentID string, state storage.ComplianceState) flatCheck {

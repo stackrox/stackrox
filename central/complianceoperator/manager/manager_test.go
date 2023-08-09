@@ -158,8 +158,6 @@ func TestAddProfile(t *testing.T) {
 func TestDeleteProfile(t *testing.T) {
 	mgr := newManager(t)
 
-	mgr.compliance.(*mocks.MockDataStore).EXPECT().ClearAggregationResults(allAccessCtx).AnyTimes()
-
 	rule1Name := "rule1"
 	rule1 := &storage.ComplianceOperatorRule{
 		Id:   uuid.NewV4().String(),

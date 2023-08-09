@@ -262,12 +262,6 @@ func (m *managerImpl) DeleteProfile(deletedProfile *storage.ComplianceOperatorPr
 		return err
 	}
 
-	// ClearAggregationResults when removing a profile as we need to remove cached references
-	// to standards that will not be filtered out on the next aggregation call
-	if err := m.compliance.ClearAggregationResults(allAccessCtx); err != nil {
-		return err
-	}
-
 	// Deleting a profile is fairly involved because it involves making sure that the profile name is not referenced
 	// anywhere else as standards are indexed by name-based IDs
 	m.registryLock.Lock()

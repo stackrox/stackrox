@@ -19,9 +19,6 @@ type Store interface {
 	StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error
 	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error
 	StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error
-	StoreAggregationResult(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domains map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error
 	UpdateConfig(ctx context.Context, config *storage.ComplianceConfig) error
 	GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error)
-	GetAggregationResult(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
-	ClearAggregationResults(ctx context.Context) error
 }

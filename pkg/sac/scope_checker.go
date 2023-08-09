@@ -38,11 +38,6 @@ func NewScopeChecker(core ScopeCheckerCore) ScopeChecker {
 	}
 }
 
-// Core returns the ScopeCheckerCore wrapped by this scope checker.
-func (c scopeChecker) Core() ScopeCheckerCore {
-	return c.core
-}
-
 // SubScopeChecker returns a ScopeChecker for the given nested subscope.
 func (c scopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	curr := c.core
