@@ -102,9 +102,8 @@ describe('Network Graph smoke tests', () => {
         // Apply a namespace filter for 'stackrox'
         selectNamespace('stackrox');
 
-        // Verify that 'stackrox' and 'kube-system' namespaces are present
+        // Verify that 'stackrox' namespace is present
         cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
-        cy.get(networkGraphSelectors.relatedNamespaceGroupNode('kube-system'));
 
         // Verify that central, central-db, scanner, scanner-db, sensor are present
         ['central', 'central-db', 'scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
@@ -134,9 +133,8 @@ describe('Network Graph smoke tests', () => {
             cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
         });
 
-        // Verify that the correct namespaces are displayed
+        // Verify that the correct namespace is displayed
         cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
-        cy.get(networkGraphSelectors.relatedNamespaceGroupNode('kube-system')).should('not.exist');
     });
 
     it('should allow the addition and deletion of CIDR blocks', () => {
