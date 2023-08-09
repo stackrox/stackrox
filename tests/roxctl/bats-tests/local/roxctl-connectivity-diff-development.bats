@@ -559,6 +559,23 @@ default/frontend[Deployment],default/backend[Deployment],TCP 9090,"TCP 9090,UDP 
 0.0.0.0-255.255.255.255,default/backend[Deployment],No Connections,TCP 9090,added'
 }
 
+@test "roxctl-development connectivity-diff empty diff report for two paths with same directory " {
+  dir1="${diff_tests_dir}/netpol-analysis-example-minimal/"
+  # assert files exist in dir1
+  assert_file_exist "${dir1}/backend.yaml"
+  assert_file_exist "${dir1}/frontend.yaml"
+  assert_file_exist "${dir1}/netpols.yaml"
+  echo "Writing diff report to ${ofile}" >&3
+  run roxctl-development connectivity-diff "${dir1}" "${dir1}" 
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter WARN messages
+  assert_output --partial 'INFO:'
+  assert_output --partial 'No connections diff'
+}
+
 write_yaml_to_file() {
   image="${1}"
   templatedYaml="${2:-/dev/null}"
