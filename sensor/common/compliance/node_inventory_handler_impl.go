@@ -36,7 +36,7 @@ func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 func (c *nodeInventoryHandlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.NodeScanningCap}
+	return nil
 }
 
 // ResponsesC returns a channel with messages to Central. It must be called after Start() for the channel to be not nil
