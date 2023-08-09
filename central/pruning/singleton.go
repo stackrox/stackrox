@@ -2,6 +2,7 @@ package pruning
 
 import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -49,7 +50,8 @@ func Singleton() GarbageCollector {
 			k8sRoleDataStore.Singleton(),
 			k8srolebindingStore.Singleton(),
 			logimbueStore.Singleton(),
-			snapshotDataStore.Singleton())
+			snapshotDataStore.Singleton(),
+			blobDS.Singleton())
 	})
 	return gc
 }
