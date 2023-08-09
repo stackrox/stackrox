@@ -28,10 +28,7 @@ const DynamicConfigurationSection = ({
 
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
-        <CollapsibleSection
-            title="Dynamic Configuration (syncs with Sensor)"
-            titleClassName="text-xl"
-        >
+        <CollapsibleSection title="Dynamic Configuration (syncs with Sensor)">
             <div className="bg-base-100 pb-3 pt-1 px-3 rounded shadow">
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="dynamicConfig.registryOverride" className={labelClassName}>

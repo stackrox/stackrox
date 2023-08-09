@@ -17,7 +17,7 @@ export type MostRecentViolationsProps = {
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     return (
         <>
-            <Title headingLevel="h5" className="pf-u-mb-sm">
+            <Title headingLevel="h3" className="pf-u-mb-sm">
                 Most recent violations with critical severity
             </Title>
             {alerts.length > 0 ? (

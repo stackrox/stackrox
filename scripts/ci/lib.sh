@@ -1056,7 +1056,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
 
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.9/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.10/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
@@ -1068,6 +1068,7 @@ post_process_test_results() {
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
+            -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
             "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
@@ -1515,7 +1516,7 @@ highlight_cluster_versions() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Cluster Versions</h4></title>
+        <title>Cluster Versions</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }

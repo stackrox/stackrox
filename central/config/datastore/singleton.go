@@ -31,6 +31,10 @@ const (
 	DefaultDecommissionedClusterRetentionDays = 0
 	// DefaultReportHistoryRetentionWindow number of days to retain reports
 	DefaultReportHistoryRetentionWindow = 7
+	// DefaultDownloadableReportRetentionDays number of days to retain downloadable reports
+	DefaultDownloadableReportRetentionDays = 7
+	// DefaultDownloadableReportGlobalRetentionBytes is the maximum total upper limit in bytes for all downloadable reports
+	DefaultDownloadableReportGlobalRetentionBytes = 5 * 1024 * 1024
 )
 
 var (
@@ -84,7 +88,9 @@ func initialize() {
 
 	if privateConfig.GetReportRetentionConfig() == nil {
 		privateConfig.ReportRetentionConfig = &storage.ReportRetentionConfig{
-			HistoryRetentionDurationDays: DefaultReportHistoryRetentionWindow,
+			HistoryRetentionDurationDays:           DefaultReportHistoryRetentionWindow,
+			DownloadableReportRetentionDays:        DefaultDownloadableReportRetentionDays,
+			DownloadableReportGlobalRetentionBytes: DefaultDownloadableReportGlobalRetentionBytes,
 		}
 		needsUpsert = true
 	}

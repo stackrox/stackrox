@@ -22,6 +22,7 @@ import (
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -64,17 +65,48 @@ type jira struct {
 	unknownMap map[string]interface{}
 }
 
+type issueTypeResult struct {
+	StartAt    int                      `json:"startAt"`
+	MaxResults int                      `json:"maxResults"`
+	Total      int                      `json:"total"`
+	IssueTypes []*jiraLib.MetaIssueType `json:"values"`
+}
+
+func getIssueTypes(client *jiraLib.Client, project string) ([]*jiraLib.MetaIssueType, error) {
+	// Low level HTTP client call is used here due to the deprecation/removal of the Jira endpoint used by the Jira library
+	// to fetch the CreateMeta data, and there is no API call for the suggested endpoint to use in place of the removed one.
+	// Info here:
+	// https://confluence.atlassian.com/jiracore/createmeta-rest-endpoint-to-be-removed-975040986.html
+	urlPath := fmt.Sprintf("rest/api/2/issue/createmeta/%s/issuetypes", project)
+
+	req, err := client.NewRequest("GET", urlPath, nil)
+	if err != nil {
+		return []*jiraLib.MetaIssueType{}, err
+	}
+
+	resp, err := client.Do(req, nil)
+	if err != nil {
+		return []*jiraLib.MetaIssueType{}, err
+	}
+
+	result := &issueTypeResult{}
+	defer utils.IgnoreError(resp.Body.Close)
+	err = json.NewDecoder(resp.Body).Decode(result)
+	if err != nil {
+		return []*jiraLib.MetaIssueType{}, err
+	}
+
+	return result.IssueTypes, nil
+}
+
 func isPriorityNeeded(client *jiraLib.Client, project, issueType string) (bool, error) {
-	cmi, _, err := client.Issue.GetCreateMeta(project)
+	issueTypes, err := getIssueTypes(client, project)
 	if err != nil {
 		return false, errors.Wrapf(err, "could not get meta information for JIRA project %q", project)
 	}
-	proj := cmi.GetProjectWithKey(project)
-	if proj == nil {
-		return false, errors.Errorf("could not find project %q", project)
-	}
+
 	var validIssues []string
-	for _, issue := range proj.IssueTypes {
+	for _, issue := range issueTypes {
 		validIssues = append(validIssues, issue.Name)
 		if !strings.EqualFold(issue.Name, issueType) {
 			continue
@@ -232,14 +264,13 @@ func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 
 	url := urlfmt.FormatURL(conf.GetUrl(), urlfmt.HTTPS, urlfmt.TrailingSlash)
 
-	bat := &jiraLib.BasicAuthTransport{
-		Username:  conf.GetUsername(),
-		Password:  conf.GetPassword(),
-		Transport: proxy.RoundTripper(),
-	}
 	httpClient := &http.Client{
-		Timeout:   timeout,
-		Transport: bat,
+		Timeout: timeout,
+		Transport: &jiraLib.BasicAuthTransport{
+			Username:  conf.GetUsername(),
+			Password:  conf.GetPassword(),
+			Transport: proxy.RoundTripper(),
+		},
 	}
 
 	client, err := jiraLib.NewClient(httpClient, url)
@@ -248,7 +279,25 @@ func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	}
 	prios, _, err := client.Priority.GetList()
 	if err != nil {
-		return nil, errors.Wrap(err, "could not get the priority list")
+		errStr := err.Error()
+		if strings.HasPrefix(errStr, "401") || strings.HasPrefix(errStr, "403") {
+			httpClient := &http.Client{
+				Timeout: timeout,
+				Transport: &jiraLib.BearerAuthTransport{
+					Token:     conf.GetPassword(),
+					Transport: proxy.RoundTripper(),
+				},
+			}
+
+			client, err = jiraLib.NewClient(httpClient, url)
+			if err != nil {
+				return nil, errors.Wrap(err, "could not create JIRA client")
+			}
+			prios, _, err = client.Priority.GetList()
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "could not get the priority list")
+		}
 	}
 	jiraConf := notifier.GetJira()
 
