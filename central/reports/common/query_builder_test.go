@@ -1,7 +1,18 @@
 package common
 
 import (
+	"testing"
+
+	rolePkg "github.com/stackrox/rox/central/role"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 var clusters = []*storage.Cluster{
@@ -34,11 +45,129 @@ var securedNS = &storage.NamespaceMetadata{
 	ClusterName: "secured",
 }
 
-var vulnFilters = &storage.VulnerabilityReportFilters{
-	Fixability:      storage.VulnerabilityReportFilters_FIXABLE,
-	SinceLastReport: false,
-	Severities: []storage.VulnerabilitySeverity{
-		storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-	},
+func getMatchNoneQuery() *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchNoneQuery{
+					MatchNoneQuery: &v1.MatchNoneQuery{},
+				},
+			},
+		},
+	}
+}
+
+func TestBuildAccessScopeQuery(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockID := mockIdentity.NewMockIdentity(mockCtrl)
+	testCases := []struct {
+		name        string
+		identityGen func() authn.Identity
+		expectedQ   *v1.Query
+	}{
+		{
+			name: "Identity has no roles",
+			identityGen: func() authn.Identity {
+				mockID.EXPECT().Roles().Return(nil).Times(1)
+				return mockID
+			},
+			expectedQ: getMatchNoneQuery(),
+		},
+		{
+			name: "Identity has nil access scope",
+			identityGen: func() authn.Identity {
+				mockRole := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(nil).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+				return mockID
+			},
+			expectedQ: getMatchNoneQuery(),
+		},
+		{
+			name: "Identity has exclude all access scope",
+			identityGen: func() authn.Identity {
+				mockRole := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(rolePkg.AccessScopeExcludeAll).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+				return mockID
+			},
+			expectedQ: getMatchNoneQuery(),
+		},
+		{
+			name: "Identity has include all access scope",
+			identityGen: func() authn.Identity {
+				mockRole := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(rolePkg.AccessScopeIncludeAll).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+				return mockID
+			},
+			expectedQ: search.EmptyQuery(),
+		},
+		{
+			name: "Identity has include all access scope among multiple access scopes",
+			identityGen: func() authn.Identity {
+				accessScope := &storage.SimpleAccessScope{
+					Rules: &storage.SimpleAccessScope_Rules{
+						IncludedClusters: []string{clusters[0].Name},
+					},
+				}
+				mockRole1 := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole1.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+				mockRole2 := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole2.EXPECT().GetAccessScope().Return(rolePkg.AccessScopeIncludeAll).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole1, mockRole2}).Times(1)
+				return mockID
+			},
+			expectedQ: search.EmptyQuery(),
+		},
+		{
+			name: "Identity has access scope with nil rules; access scope is not equal to AccessScopeIncludeAll system scope",
+			identityGen: func() authn.Identity {
+				accessScope := &storage.SimpleAccessScope{}
+				mockRole := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+				return mockID
+			},
+			expectedQ: getMatchNoneQuery(),
+		},
+		{
+			name: "Identity has access scope with rules",
+			identityGen: func() authn.Identity {
+				accessScope := &storage.SimpleAccessScope{
+					Rules: &storage.SimpleAccessScope_Rules{
+						IncludedClusters: []string{clusters[0].Name},
+						IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+							{ClusterName: clusters[1].Name, NamespaceName: securedNS.Name},
+						},
+					},
+				}
+				mockRole := permissionsMocks.NewMockResolvedRole(mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+				return mockID
+			},
+			expectedQ: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].Id).ProtoQuery(),
+				search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[1].Id).ProtoQuery(),
+					search.NewQueryBuilder().AddExactMatches(search.Namespace, securedNS.Name).ProtoQuery(),
+				),
+			),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			identity := tc.identityGen()
+			scopeRules := ExtractAccessScopeRules(identity)
+			vulnReportFilters := &storage.VulnerabilityReportFilters{
+				AccessScopeRules: scopeRules,
+			}
+			qBuilder := queryBuilder{vulnFilters: vulnReportFilters}
+			scopeQuery, err := qBuilder.buildAccessScopeQuery(clusters, namespaces)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedQ, scopeQuery)
+		})
+	}
 }

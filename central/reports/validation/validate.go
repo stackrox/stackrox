@@ -33,6 +33,7 @@ type Validator struct {
 	notifierDatastore     notifierDS.DataStore
 }
 
+// New Validator instance
 func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotDatastore snapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore) *Validator {
 	return &Validator{

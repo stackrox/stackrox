@@ -51,9 +51,6 @@ func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Clust
 	}
 	deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery)
 
-	if err != nil {
-		return nil, err
-	}
 	cveQuery, err := q.buildCVEAttributesQuery()
 	if err != nil {
 		return nil, err
@@ -115,7 +112,14 @@ func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
 			scopeTree.Merge(sct)
 		}
 	}
-	return sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	scopeQuery, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	if scopeQuery == nil {
+		return search.EmptyQuery(), nil
+	}
+	return scopeQuery, nil
 }
 
 func filterVulnsByFirstOccurrenceTime(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
