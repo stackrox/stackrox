@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
@@ -111,6 +112,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 	}
 
 	protoReportConfig := convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+	log.Infof("[chsheth] Report config :%s", protoReportConfig.String())
 
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
@@ -356,6 +358,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("[chsheth] Report snapshot :%s", reportReq.ReportSnapshot.String())
 
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {

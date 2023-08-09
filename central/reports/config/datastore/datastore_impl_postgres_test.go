@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -108,6 +106,14 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 	}
 
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{
+		{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
 
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
