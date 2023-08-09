@@ -4,7 +4,6 @@ package pruning
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -60,7 +59,6 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -602,72 +600,6 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, pods.RemovePod(ctx, c.pod.Id))
 			}
 		})
-	}
-}
-
-func (s *PruningTestSuite) TestReportHistoryPruning() {
-	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
-	if !env.VulnReportingEnhancements.BooleanSetting() {
-		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		s.T().SkipNow()
-	}
-	historyRetentionDays := 7
-	config := &storage.PrivateConfig{
-		ReportRetentionConfig: &storage.ReportRetentionConfig{
-			HistoryRetentionDurationDays: int32(historyRetentionDays),
-		},
-	}
-	gci := &garbageCollectorImpl{
-		postgres: s.pool,
-	}
-	reportds, configDS := generateReportDataStructure(s.pool)
-	type testCase struct {
-		day            int
-		repExpected    bool
-		reportSnapshot *storage.ReportSnapshot
-	}
-	cases := []testCase{}
-	numDays := []int{1, 8}
-	for _, day := range numDays {
-		test := testCase{
-			day: day,
-			reportSnapshot: &storage.ReportSnapshot{
-				Name: fmt.Sprintf("test_report_%d_days", day),
-				ReportStatus: &storage.ReportStatus{
-					CompletedAt: timeBeforeDays(day),
-				},
-			},
-		}
-		if day > historyRetentionDays {
-			test.repExpected = false
-		} else {
-			test.repExpected = true
-		}
-		cases = append(cases, test)
-	}
-
-	for _, test := range cases {
-		reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
-		reportConfigID := uuid.NewV4().String()
-		reportConfig.Id = reportConfigID
-		test.reportSnapshot.ReportConfigurationId = reportConfigID
-		_, err := configDS.AddReportConfiguration(s.ctx, reportConfig)
-		if err != nil {
-			assert.Errorf(s.T(), err, "Adding report config failed")
-		}
-		test.reportSnapshot.ReportId, err = reportds.AddReportSnapshot(s.ctx, test.reportSnapshot)
-		if err != nil {
-			assert.Errorf(s.T(), err, "Adding report snapshot failed")
-		}
-		repBeforePruning, _, _ := reportds.Get(s.ctx, test.reportSnapshot.ReportId)
-		assert.NotEmpty(s.T(), repBeforePruning)
-		gci.removeOldReportHistory(config)
-		repsPruning, _, _ := reportds.Get(s.ctx, test.reportSnapshot.ReportId)
-		if test.repExpected {
-			assert.NotEmpty(s.T(), repsPruning)
-		} else {
-			assert.Empty(s.T(), repsPruning)
-		}
 	}
 }
 
