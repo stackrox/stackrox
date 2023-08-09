@@ -109,27 +109,8 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := common.Format(deployedImgData, watchedImgData)
+	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData)
 	if err != nil {
-		return err
-	}
-
-	// If it is an empty report, do not send an attachment in the final notification email and the email body
-	// will indicate that no vulns were found
-	templateStr := vulnReportEmailTemplate
-	if zippedCSVData == nil {
-		// If it is an empty report, the email body will indicate that no vulns were found
-		templateStr = noVulnsFoundEmailTemplate
-	}
-
-	messageText, err := formatMessage(req.DataStartTime, templateStr, req.ReportConfig.GetVulnReportFilters().GetImageTypes())
-	if err != nil {
-		return errors.Wrap(err, "error formatting the report email text")
-	}
-
-	if zippedCSVData == nil {
-		err = errors.Errorf("Unexpected empty downloadable report for report config=%q, id=%q", req.ReportSnapshot.GetReportConfigurationId(), req.ReportSnapshot.GetReportId())
-		utils.Should(err)
 		return err
 	}
 
@@ -139,7 +120,22 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
 			return errors.Wrap(err, "error persisting blob")
 		}
+
 	case storage.ReportStatus_EMAIL:
+		// If it is an empty report, do not send an attachment in the final notification email and the email body
+		// will indicate that no vulns were found
+		templateStr := vulnReportEmailTemplate
+		if empty {
+			// If it is an empty report, the email body will indicate that no vulns were found
+			zippedCSVData = nil
+			templateStr = noVulnsFoundEmailTemplate
+		}
+
+		messageText, err := formatMessage(req.DataStartTime, templateStr, req.ReportConfig.GetVulnReportFilters().GetImageTypes())
+		if err != nil {
+			return errors.Wrap(err, "error formatting the report email text")
+		}
+
 		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 		for _, notifierConfig := range req.ReportConfig.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierConfig.GetEmailConfig().GetNotifierId())
@@ -163,6 +159,10 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 }
 
 func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *bytes.Buffer) error {
+	if data == nil {
+		return errors.Errorf("Unexpected empty downloadable report for report config=%q, id=%q", configID, reportID)
+	}
+
 	// Store downloadable report in blob storage
 	b := &storage.Blob{
 		Name:         common.GetReportBlobPath(configID, reportID),

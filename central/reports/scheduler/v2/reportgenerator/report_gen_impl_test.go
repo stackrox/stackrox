@@ -118,6 +118,10 @@ func (s *EnhancedReportingTestSuite) TestSaveReportData() {
 	s.Require().NoError(err)
 	s.Require().True(exists)
 	s.Equal(data, newBuf.Bytes())
+
+	// Save empty report
+	reportID = "anotherid"
+	s.Require().Error(s.reportGenerator.saveReportData(configID, reportID, nil))
 }
 
 func (s *EnhancedReportingTestSuite) TestGetReportData() {
