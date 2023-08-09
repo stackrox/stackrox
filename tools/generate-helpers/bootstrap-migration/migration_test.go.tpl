@@ -56,6 +56,9 @@ func (s *migrationTestSuite) TestMigration() {
 
 	// {{template "TODO"}}: validate that the post-migration dataset has the expected content
 
+	// {{template "TODO"}}: validate that pre-migration queries and statements execute against the
+	// post-migration database to ensure backwards compatibility
+
 }
 
 // {{template "TODO"}}: remove any pending TODO

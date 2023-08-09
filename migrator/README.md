@@ -96,6 +96,9 @@ in `migrations` directory, or at the examples listed below.
 
 ## Writing postgres migration tests
 
+Follow the TODOs listed in `migration_test.go`.  This includes a recommended test to verify the pre-migration SQL statements provide
+the expected results against the post-migration database in order to verify backwards compatiblity.
+
 ### Migrator limitations
 
 Migrator upgrades the data from a previous datamodel to the current one. In the case of data manipulation migrations,
