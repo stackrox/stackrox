@@ -26,6 +26,7 @@ import sortBy from 'lodash/sortBy';
 import useRestQuery from 'hooks/useRestQuery';
 import useTabs from 'hooks/patternfly/useTabs';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 import { fetchNetworkPoliciesByClusterId } from 'services/NetworkService';
 
 import ViewActiveYAMLs from './ViewActiveYAMLs';
@@ -42,6 +43,14 @@ import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
 import NetworkPoliciesGenerationScope, { EntityScope } from './NetworkPoliciesGenerationScope';
+
+// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
+export function clearSimulationQuery(search: string): string {
+    const modifiedSearchFilter = getQueryObject(search);
+    delete modifiedSearchFilter.simulation;
+    const queryString = getQueryString(modifiedSearchFilter);
+    return queryString;
+}
 
 export type NetworkPolicySimulatorSidePanelProps = {
     simulator: NetworkPolicySimulator;
@@ -191,8 +200,8 @@ function NetworkPolicySimulatorSidePanel({
                         networkPolicyGenerationScope={networkPolicyGenerationScope}
                     />
                 </Flex>
-                <Stack hasGutter>
-                    <StackItem isFilled style={{ overflow: 'auto' }}>
+                <Flex direction={{ default: 'column' }}>
+                    <FlexItem style={{ overflow: 'auto' }}>
                         <NetworkPoliciesYAML
                             yaml={generatedYaml}
                             additionalControls={[
@@ -236,16 +245,16 @@ function NetworkPolicySimulatorSidePanel({
                                 </Flex>,
                             ]}
                         />
-                    </StackItem>
-                    <StackItem>
+                    </FlexItem>
+                    <FlexItem>
                         <NetworkSimulatorActions
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
                             openNotifyYAMLModal={openNotifyYAMLModal}
                         />
-                    </StackItem>
-                </Stack>
+                    </FlexItem>
+                </Flex>
                 <NotifyYAMLModal
                     isModalOpen={isNotifyModalOpen}
                     setIsModalOpen={setIsNotifyModalOpen}

@@ -8,7 +8,12 @@
 .pf-topology-resizable-side-bar {
     /* we use the page header min height thrice to account for: nav header + page header + secondary header */
     /* @TODO: Consider a more future-proof way of doing this. See https://github.com/stackrox/stackrox/pull/3703#discussion_r1014292340 */
-    height: calc(100vh - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight) - var(--pf-c-page__header--MinHeight));
+    height: calc(100vh - (var(--pf-c-page__header--MinHeight) * 3));
+}
+
+/* Similar to above, but for the simulation drawer when the secondary header is not visible */
+.cluster-simulation-drawer-panel {
+    height: calc(100vh - (var(--pf-c-page__header--MinHeight) * 2));
 }
 
 /* simple solution to prevent user from making sidebar too narrow */
