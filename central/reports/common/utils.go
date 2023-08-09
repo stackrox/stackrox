@@ -14,16 +14,16 @@ func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessSco
 	for _, role := range roles {
 		// Note: This mirrors the scope resolution logic in `func (c *authorizerDataCache) computeEffectiveAccessScope(...)`
 		//  defined in central/sac/authorizer/builtin_scoped_authorizer.go .
-		//  The reason for doing this that the system access scope "AccessScopeIncludeAll" which includes all clusters/namespaces
+		//  The reason for doing this is that the system access scope "AccessScopeIncludeAll" which includes all clusters/namespaces
 		//  has rules = nil. However, for any other access scope, nil/empty scope rules translate to an "exclude all" access scope.
 		accessScope := role.GetAccessScope()
-		if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
+		if accessScope == nil {
 			accessScopeRules = append(accessScopeRules, rolePkg.AccessScopeExcludeAll.GetRules())
 		} else if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
 			return nil
-		} else if accessScope.GetRules() == nil {
-			// nil/empty rules in a non-nil access scope rolePkg.AccessScopeIncludeAll.Id
-			// would mean exclude all scope
+		} else if accessScope.Id == rolePkg.AccessScopeExcludeAll.Id || accessScope.GetRules() == nil {
+			// nil/empty rules in a non-nil access scope means exclude all clusters/namespaces
+			// if the access scope is not same as rolePkg.AccessScopeIncludeAll
 			accessScopeRules = append(accessScopeRules, rolePkg.AccessScopeExcludeAll.GetRules())
 		} else {
 			accessScopeRules = append(accessScopeRules, accessScope.GetRules())
