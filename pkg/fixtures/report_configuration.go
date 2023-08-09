@@ -39,8 +39,8 @@ func GetValidReportConfiguration() *storage.ReportConfiguration {
 	}
 }
 
-// GetValidReportConfigWithMultipleNotifiers returns a valid storage report configuration object with 2 email notifier configs
-func GetValidReportConfigWithMultipleNotifiers() *storage.ReportConfiguration {
+// GetValidReportConfigWithMultipleNotifiersV1 returns a valid storage report configuration object with 2 email notifier configs for v1 workflow
+func GetValidReportConfigWithMultipleNotifiersV1() *storage.ReportConfiguration {
 	return &storage.ReportConfiguration{
 		Id:          "report1",
 		Name:        "App Team 1 Report",
@@ -85,6 +85,64 @@ func GetValidReportConfigWithMultipleNotifiers() *storage.ReportConfiguration {
 				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
 					EmailConfig: &storage.EmailNotifierConfiguration{
 						NotifierId:   "email-notifier-gmail",
+						MailingLists: []string{"bar@gmail.com"},
+					},
+				},
+			},
+		},
+	}
+}
+
+// GetValidReportConfigWithMultipleNotifiersV2 returns a valid storage report configuration object with 2 email notifier configs for v2 workflow
+func GetValidReportConfigWithMultipleNotifiersV2() *storage.ReportConfiguration {
+	return &storage.ReportConfiguration{
+		Id:          "report1",
+		Name:        "App Team 1 Report",
+		Description: "Report for CVEs in app team 1's infrastructure",
+		Type:        storage.ReportConfiguration_VULNERABILITY,
+		Filter: &storage.ReportConfiguration_VulnReportFilters{
+			VulnReportFilters: &storage.VulnerabilityReportFilters{
+				Fixability: storage.VulnerabilityReportFilters_FIXABLE,
+				Severities: []storage.VulnerabilitySeverity{storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY},
+				ImageTypes: []storage.VulnerabilityReportFilters_ImageType{
+					storage.VulnerabilityReportFilters_DEPLOYED,
+					storage.VulnerabilityReportFilters_WATCHED,
+				},
+				CvesSince: &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
+					SinceLastSentScheduledReport: true,
+				},
+			},
+		},
+		Schedule: &storage.Schedule{
+			IntervalType: storage.Schedule_WEEKLY,
+			Interval: &storage.Schedule_DaysOfWeek_{
+				DaysOfWeek: &storage.Schedule_DaysOfWeek{
+					Days: []int32{1},
+				},
+			},
+		},
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{
+				CollectionId: "collection-1",
+			},
+		},
+		Notifiers: []*storage.NotifierConfiguration{
+			{
+				Ref: &storage.NotifierConfiguration_Id{
+					Id: "email-notifier-yahoo",
+				},
+				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
+					EmailConfig: &storage.EmailNotifierConfiguration{
+						MailingLists: []string{"foo@yahoo.com"},
+					},
+				},
+			},
+			{
+				Ref: &storage.NotifierConfiguration_Id{
+					Id: "email-notifier-gmail",
+				},
+				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
+					EmailConfig: &storage.EmailNotifierConfiguration{
 						MailingLists: []string{"bar@gmail.com"},
 					},
 				},
@@ -161,8 +219,8 @@ func GetInvalidReportConfigurationDailySchedule() *storage.ReportConfiguration {
 	return rc
 }
 
-// GetInvalidReportConfigurationIncorrectEmail returns a mock report configuration with incorrect email
-func GetInvalidReportConfigurationIncorrectEmail() *storage.ReportConfiguration {
+// GetInvalidReportConfigurationIncorrectEmailV1 returns a mock report configuration with incorrect email
+func GetInvalidReportConfigurationIncorrectEmailV1() *storage.ReportConfiguration {
 	rc := GetValidReportConfiguration()
 
 	rc.NotifierConfig = &storage.ReportConfiguration_EmailConfig{

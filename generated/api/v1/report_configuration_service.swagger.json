@@ -465,6 +465,9 @@
       "properties": {
         "emailConfig": {
           "$ref": "#/definitions/storageEmailNotifierConfiguration"
+        },
+        "id": {
+          "type": "string"
         }
       }
     },

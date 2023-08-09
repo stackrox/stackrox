@@ -52,7 +52,7 @@ func (s *ReportMetadataDatastoreTestSuite) TearDownSuite() {
 }
 
 func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig.Id = ""
 	configID, err := s.reportConfigStore.AddReportConfiguration(s.ctx, reportConfig)
 	s.NoError(err)

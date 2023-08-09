@@ -119,15 +119,16 @@ func convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *stor
 		return nil
 	}
 
-	ret := &storage.NotifierConfiguration{}
+	ret := &storage.NotifierConfiguration{
+		Ref: &storage.NotifierConfiguration_Id{
+			Id: notifier.GetEmailConfig().GetNotifierId(),
+		},
+	}
 	if notifier.GetEmailConfig() != nil {
-		emailConfig := &storage.EmailNotifierConfiguration{
-			NotifierId: notifier.GetEmailConfig().GetNotifierId(),
-		}
-		emailConfig.MailingLists = append(emailConfig.MailingLists, notifier.GetEmailConfig().GetMailingLists()...)
-
 		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
-			EmailConfig: emailConfig,
+			EmailConfig: &storage.EmailNotifierConfiguration{
+				MailingLists: notifier.GetEmailConfig().GetMailingLists(),
+			},
 		}
 	}
 	return ret
