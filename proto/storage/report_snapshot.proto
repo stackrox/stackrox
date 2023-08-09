@@ -49,12 +49,11 @@ message ReportStatus {
     // TODO: @charmik adjust RunState and postgres/pruning.go
 
     enum RunState {
-        WAITING = 0;
+        WAITING   = 0;
         PREPARING = 1;
-        SUCCESS = 2;
-        FAILURE = 3;
-        GENERATED = 4;
-        DELIVERED = 5;
+        GENERATED = 2;
+        DELIVERED = 3;
+        FAILURE   = 4;
     }
 
     enum NotificationMethod {
