@@ -61,6 +61,7 @@ func ErrorFromStatus(status HTTPStatus) HTTPError {
 // WriteGRPCStyleError writes a gRPC-style error to an http response writer.
 // It's useful when you have to write an http method.
 func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
+	log.Infof("writing error %d, %v", c, err)
 	userErr := status.New(c, err.Error()).Proto()
 	m := jsonpb.Marshaler{}
 

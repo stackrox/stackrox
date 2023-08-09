@@ -12,10 +12,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	log = logging.CurrentModule().Logger()
 )
 
 func parseJobID(r *http.Request) (id string, err error) {
@@ -43,6 +48,7 @@ type downloadHandler struct {
 }
 
 func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
+	log.Infof("handler called with request %v", r)
 	if r.Method != http.MethodGet {
 		httputil.WriteErrorf(w, http.StatusMethodNotAllowed, "Only GET requests are allowed")
 		return
@@ -53,6 +59,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 		return
 	}
+	log.Infof("handler called with id %d", id)
 
 	ctx := r.Context()
 	slimUser := authn.UserFromContext(ctx)
@@ -60,12 +67,14 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		httputil.WriteGRPCStyleError(w, codes.PermissionDenied, errors.New("Could not determine user identity from provided context"))
 		return
 	}
+	log.Infof("handler called with user %v", slimUser)
 
 	rep, found, err := h.snapshotStore.Get(ctx, id)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "Error finding report snapshot with job ID %q.", id))
 		return
 	}
+	log.Infof("handler called with snapshot %v", rep)
 
 	if !found {
 		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("Error finding report snapshot with job ID '%q'.", id))
@@ -96,6 +105,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Info("Ready to fetch")
 	// Fetch data
 	buf := bytes.NewBuffer(nil)
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
@@ -116,6 +126,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 			errors.Errorf("Report is not available to downloadAndVerify for job %q", id))
 		return
 	}
+	log.Info("writing")
 
 	// Tell the browser this is a downloadAndVerify.
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="report-%s.zip"`, zip.GetSafeFilename(id)))
