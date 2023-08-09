@@ -35,5 +35,12 @@ export default function useSet<T>(initialSet: Set<T> = new Set()) {
         });
     }
 
-    return { has, toggle };
+    /**
+     * Empties the set
+     */
+    function clear() {
+        setItemSet(new Set());
+    }
+
+    return { has, toggle, clear };
 }

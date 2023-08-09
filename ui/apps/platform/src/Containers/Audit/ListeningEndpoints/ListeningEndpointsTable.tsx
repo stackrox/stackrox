@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Dispatch, SetStateAction } from 'react';
 import { Card } from '@patternfly/react-core';
 import { Tbody, Tr, Td, TableComposable, Th, Thead } from '@patternfly/react-table';
 
@@ -46,49 +46,81 @@ function EmbeddedTable({
 export type ListeningEndpointsTableProps = {
     deployments: (ListDeployment & { listeningEndpoints: ProcessListeningOnPort[] })[];
     getSortParams: GetSortParams;
+    areAllRowsExpanded: boolean;
+    setAllRowsExpanded: Dispatch<SetStateAction<boolean>>;
 };
 
-function ListeningEndpointsTable({ deployments, getSortParams }: ListeningEndpointsTableProps) {
-    const expandedRowSet = useSet<string>();
+function ListeningEndpointsTable({
+    deployments,
+    getSortParams,
+    areAllRowsExpanded,
+    setAllRowsExpanded,
+}: ListeningEndpointsTableProps) {
+    // This is used to track which table rows are in the -opposite- state
+    // of the passed expanded state for the entire table.
+    const invertedExpansionRowSet = useSet<string>();
+
     return (
         <TableComposable variant="compact" aria-label="Deployment results">
             <Thead noWrap>
                 <Tr>
-                    <Td width={10}>{/* Header for expanded column */}</Td>
+                    <Th
+                        expand={{
+                            // Possible PF bug? This boolean seems to need to be inverted based on the render output
+                            areAllExpanded: !areAllRowsExpanded,
+                            // TODO Awkward type assertion here is fixed in PF 5 https://github.com/patternfly/patternfly-react/issues/8330
+                            collapseAllAriaLabel: 'Expand or collapse all rows' as '',
+                            onToggle: () => {
+                                setAllRowsExpanded(!areAllRowsExpanded);
+                                invertedExpansionRowSet.clear();
+                            },
+                        }}
+                        width={10}
+                    >
+                        {/* Header for expanded column */}
+                    </Th>
+                    <Th width={10}>Count</Th>
                     <Th width={30} sort={getSortParams('Deployment')}>
                         Deployment
                     </Th>
                     <Th width={30} sort={getSortParams('Namespace')}>
                         Namespace
                     </Th>
-                    <Th width={30} sort={getSortParams('Cluster')}>
+                    <Th width={20} sort={getSortParams('Cluster')}>
                         Cluster
                     </Th>
                 </Tr>
             </Thead>
             {deployments.map(({ id, name, namespace, cluster, listeningEndpoints }, rowIndex) => {
-                const isExpanded = expandedRowSet.has(id);
+                // A row is expanded if
+                //   - the "are all rows expanded" toggle is on and the row is not in the toggled set
+                //   - the "are all rows expanded" toggle is off and the row is in the toggled set
+                const isExpanded = areAllRowsExpanded
+                    ? !invertedExpansionRowSet.has(id)
+                    : invertedExpansionRowSet.has(id);
+                const count = listeningEndpoints.length;
                 return (
                     <Tbody key={id} isExpanded={isExpanded}>
                         <Tr>
-                            {listeningEndpoints.length > 0 ? (
+                            {count > 0 ? (
                                 <Td
                                     expand={{
                                         rowIndex,
                                         isExpanded,
-                                        onToggle: () => expandedRowSet.toggle(id),
+                                        onToggle: () => invertedExpansionRowSet.toggle(id),
                                     }}
                                 />
                             ) : (
                                 <Td />
                             )}
+                            <Td dataLabel="Listening endpoints count">{count}</Td>
                             <Td dataLabel="Deployment">{name}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
                             <Td dataLabel="Cluster">{cluster}</Td>
                         </Tr>
                         {listeningEndpoints.length > 0 && (
                             <Tr isExpanded={isExpanded}>
-                                <Td colSpan={4}>
+                                <Td colSpan={5}>
                                     <Card className="pf-u-m-md" isFlat>
                                         <EmbeddedTable
                                             deploymentId={id}
