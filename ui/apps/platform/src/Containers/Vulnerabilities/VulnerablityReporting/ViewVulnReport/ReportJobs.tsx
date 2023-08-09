@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import {
     Bullseye,
+    Button,
     Card,
     Divider,
     Flex,
@@ -10,6 +11,7 @@ import {
     SelectOption,
     Spinner,
     Switch,
+    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -58,23 +60,6 @@ function ReportJobs({ reportId }: RunHistoryProps) {
     const handleChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
     };
-
-    if (error) {
-        return (
-            <NotFoundMessage
-                title="Error fetching report history"
-                message={error || 'No data available'}
-            />
-        );
-    }
-
-    if (!isLoading && reportSnapshots.length === 0) {
-        return (
-            <Bullseye>
-                <EmptyStateTemplate title="No run history" headingLevel="h2" icon={CubesIcon} />
-            </Bullseye>
-        );
-    }
 
     return (
         <>
@@ -156,6 +141,30 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             <Th>Requestor</Th>
                         </Tr>
                     </Thead>
+                    {reportSnapshots.length === 0 && (
+                        <Tbody>
+                            <Tr>
+                                <Td colSpan={4}>
+                                    <Bullseye>
+                                        <EmptyStateTemplate
+                                            title="No report jobs found"
+                                            headingLevel="h2"
+                                        >
+                                            <Text>Clear any search value and try again</Text>
+                                            <Button
+                                                variant="link"
+                                                onClick={() => {
+                                                    setFilteredStatuses([]);
+                                                }}
+                                            >
+                                                Clear filters
+                                            </Button>
+                                        </EmptyStateTemplate>
+                                    </Bullseye>
+                                </Td>
+                            </Tr>
+                        </Tbody>
+                    )}
                     {reportSnapshots.map((reportSnapshot, rowIndex) => {
                         const {
                             reportConfigId,
