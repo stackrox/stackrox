@@ -6,8 +6,10 @@ cd $STACKROX_DIR
 
 bundle=init-bundle.yaml
 
-curl https://mirror.openshift.com/pub/rhacs/assets/latest/bin/Linux/roxctl --output roxctl_bin
-chmod 755 roxctl_bin
+if [ ! -e roxctl_bin ]; then
+    curl https://mirror.openshift.com/pub/rhacs/assets/latest/bin/Linux/roxctl --output roxctl_bin
+    chmod 755 roxctl_bin
+fi
 
 ./roxctl_bin -e https://"$CENTRAL_IP":443 -p "$ROX_ADMIN_PASSWORD" central init-bundles generate long-running-test --output "$bundle"
 
@@ -27,6 +29,7 @@ settings=(
     --set image.main.registry="$image_registry"
     --set image.main.name="main"
     --set image.main.tag="$TAG"
+    --set centralEndpoint=https://"$CENTRAL_IP":443
 )
 
 helm install "${settings[@]}"
