@@ -1,4 +1,4 @@
-package handler
+package v2
 
 import (
 	"bytes"
@@ -29,8 +29,8 @@ func parseJobID(r *http.Request) (id string, err error) {
 	return
 }
 
-// newDownloadHandler is an HTTP handler for downloading reports
-func newDownloadHandler() http.HandlerFunc {
+// NewDownloadHandler is an HTTP handler for downloading reports
+func NewDownloadHandler() http.HandlerFunc {
 	snapshotStore := snapshotDataStore.Singleton()
 	blobStore := blobDS.Singleton()
 	handler := &downloadHandler{snapshotStore: snapshotStore, blobStore: blobStore}
