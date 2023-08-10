@@ -19,10 +19,10 @@ function EmbeddedTable({
         <TableComposable isNested aria-label="Listening endpoints for deployment">
             <Thead noWrap>
                 <Tr>
-                    <Th width={20}>Process name</Th>
-                    <Th width={10}>PID</Th>
-                    <Th width={10}>Port</Th>
-                    <Th width={10}>Protocol</Th>
+                    <Th width={30}>Exec file path</Th>
+                    <Th>PID</Th>
+                    <Th>Port</Th>
+                    <Th>Protocol</Th>
                     <Th width={30}>Pod ID</Th>
                     <Th width={20}>Container name</Th>
                 </Tr>
@@ -30,7 +30,7 @@ function EmbeddedTable({
             <Tbody>
                 {listeningEndpoints.map(({ podId, endpoint, signal, containerName }) => (
                     <Tr key={`${deploymentId}/${podId}/${endpoint.port}`}>
-                        <Td dataLabel="Process name">{signal.name}</Td>
+                        <Td dataLabel="Exec file path">{signal.execFilePath}</Td>
                         <Td dataLabel="PID">{signal.pid}</Td>
                         <Td dataLabel="Port">{endpoint.port}</Td>
                         <Td dataLabel="Protocol">{l4ProtocolLabels[endpoint.protocol]}</Td>
