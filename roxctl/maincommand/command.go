@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
+	connectivitydiff "github.com/stackrox/rox/roxctl/connectivity-diff"
 	connectivitymap "github.com/stackrox/rox/roxctl/connectivity-map"
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
@@ -80,6 +81,7 @@ func Command() *cobra.Command {
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 		connectivitymap.Command(cliEnvironment),
+		connectivitydiff.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))

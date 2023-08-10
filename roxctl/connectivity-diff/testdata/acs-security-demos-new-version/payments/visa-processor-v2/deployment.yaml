@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: visa-processor-v2
+  namespace: payments
+  labels:
+    app: visa-processor-v2
+---
+# Deployment named "visa-processor-v2"
+# Listens on :8080
+# Vulnerable to struts
+# Has SSH keys mounted
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visa-processor-v2
+  namespace: payments
+  labels:
+    app: visa-processor-v2
+    app.kubernetes.io/part-of: payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visa-processor-v2
+  template:
+    metadata:
+      labels:
+        app: visa-processor-v2
+    spec:
+      serviceAccountName: visa-processor-v2
+      containers:
+        - image: quay.io/vuln/visa-processor:v2
+          command: ["java"]
+          args:
+            [
+              "-jar",
+	            "-Dlisten=8080",
+              "/deployments/webapp-1.0-jar-with-dependencies.jar",
+            ]
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - all
+          imagePullPolicy: Always
+          name: visa-processor-v2
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+
+---
+# Service named "visa-processor-v2-service"
+# Listens on :8080
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: visa-processor-v2
+  name: visa-processor-service
+  namespace: payments
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: visa-processor-v2
+  type: ClusterIP
