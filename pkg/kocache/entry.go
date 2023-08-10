@@ -74,13 +74,13 @@ func (e *entry) IsError() bool {
 	return ok && err != nil
 }
 
-func (e *entry) Populate(client *http.Client, upstreamURL string, opts Options) {
+func (e *entry) Populate(client *http.Client, upstreamURL string, opts *options) {
 	err := e.doPopulate(client, upstreamURL, opts)
 	defer e.done.SignalWithError(err)
 	e.lastAccess.StoreAtomic(timestamp.Now())
 }
 
-func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts Options) error {
+func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts *options) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
