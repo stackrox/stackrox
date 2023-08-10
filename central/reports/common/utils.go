@@ -30,7 +30,7 @@ func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessSco
 		}
 	}
 	if len(accessScopeRulesList) == 0 {
-		return []*storage.SimpleAccessScope_Rules{rolePkg.AccessScopeExcludeAll.GetRules()}
+		accessScopeRulesList = append(accessScopeRulesList, rolePkg.AccessScopeExcludeAll.GetRules())
 	}
 	return accessScopeRulesList
 }
