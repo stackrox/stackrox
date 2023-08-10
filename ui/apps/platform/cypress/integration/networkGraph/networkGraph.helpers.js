@@ -111,7 +111,7 @@ export function updateAndCloseCidrModal() {
             'CIDR blocks have been successfully configured'
         )
     );
-    // Once the above alert is show, the modal automatically closes after 2000 ms. This
+    // Once the above alert is shown, the modal automatically closes after 2000 ms. This
     // advances the clock to save time during test runs. (Otherwise every save would add 2 seconds
     // to our test job.)
     cy.tick(2000);
