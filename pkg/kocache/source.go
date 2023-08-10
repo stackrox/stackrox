@@ -54,7 +54,7 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 
 	data, size, err := e.Contents()
 	if err != nil {
-		if errors.Is(err, errNotFound) {
+		if errors.Is(err, errProbeNotFound) {
 			log.Errorf("probe %s does not exist in upstream %s", filePath, c.upstreamBaseURL)
 			err = nil
 		}

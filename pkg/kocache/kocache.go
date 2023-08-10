@@ -24,7 +24,9 @@ const (
 )
 
 var (
-	errNotFound = errors.New("not found")
+	errCentralUnreachable  = errors.New("central is currently unreachable")
+	errKoCacheShuttingDown = errors.New("kernel object cache is shutting down")
+	errProbeNotFound       = errors.New("probe not found")
 )
 
 // options controls the behavior of the kernel object cache.
@@ -131,9 +133,9 @@ func (c *koCache) getOrAddEntry(path string) (*entry, error) {
 
 	if e == nil {
 		if !c.centralReady.Load() {
-			return nil, errors.New("central is currently unreachable")
+			return nil, errCentralUnreachable
 		} else if c.entries == nil {
-			return nil, errors.New("kernel object cache is shutting down")
+			return nil, errKoCacheShuttingDown
 		} else {
 			e = newEntry()
 			c.entries[path] = e

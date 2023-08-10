@@ -104,9 +104,9 @@ func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts *option
 	// Note that Golang's HTTP client by default follows redirects.
 	if resp.StatusCode != http.StatusOK {
 		// If the probe does not exist, we may receive 403 Forbidden due to security constraints
-		// on the storage. Convert this to errNotFound for better visibility of this scenario.
+		// on the storage. Convert this to errProbeNotFound for better visibility of this scenario.
 		if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusForbidden {
-			return errNotFound
+			return errProbeNotFound
 		}
 		return errors.Errorf("upstream HTTP request returned status %s", resp.Status)
 	}
