@@ -296,6 +296,10 @@ deactivate_metrics_server() {
             success=1
             break
         fi
+        if ! grep -q 'metrics.k8s.io' stdout.out; then
+            success=1
+            break
+        fi
         echo "metrics.k8s.io still in API resources. Will try again..."
         cat stdout.out
         sed -e 's/^/out: /' < stderr.out # (prefix output to avoid triggering prow log focus)
