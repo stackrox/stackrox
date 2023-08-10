@@ -54,7 +54,6 @@ var (
 		},
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v2.ReportService/GetReportStatus",
-			"/v2.ReportService/GetLastReportStatusConfigID",
 			"/v2.ReportService/GetReportHistory",
 			"/v2.ReportService/GetMyReportHistory",
 		},
@@ -229,29 +228,6 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
-	return &apiV2.ReportStatusResponse{Status: status}, err
-}
-
-func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatusResponse, error) {
-	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report config id")
-	}
-	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
-		WithPagination(search.NewPagination().
-			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
-			Limit(1)).ProtoQuery()
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if len(results) > 1 {
-		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
-	}
-	if len(results) == 0 {
-		return &apiV2.ReportStatusResponse{}, nil
-	}
-	status := convertPrototoV2Reportstatus(results[0].GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
 }
 
