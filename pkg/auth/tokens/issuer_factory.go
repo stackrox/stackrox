@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	roxjwt "github.com/stackrox/rox/pkg/jwt"
+	pkgJWT "github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
@@ -16,7 +16,7 @@ type IssuerFactory interface {
 	UnregisterSource(source Source) error
 }
 
-func newIssuerFactory(id string, signer *roxjwt.SignerFactory, sources *sourceStore, globalOptions ...Option) IssuerFactory {
+func newIssuerFactory(id string, signer *pkgJWT.SignerFactory, sources *sourceStore, globalOptions ...Option) IssuerFactory {
 	return &issuerFactory{
 		id:            id,
 		sources:       sources,
@@ -29,7 +29,7 @@ type issuerFactory struct {
 	id            string
 	sources       *sourceStore
 	options       []Option
-	signerFactory *roxjwt.SignerFactory
+	signerFactory *pkgJWT.SignerFactory
 }
 
 func (f *issuerFactory) CreateIssuer(source Source, options ...Option) (Issuer, error) {

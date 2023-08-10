@@ -19,8 +19,8 @@ var (
 type loadKeyFunc func(dir string) (*rsa.PrivateKey, error)
 type updateKeyFunc func(key *rsa.PrivateKey)
 
-// WatchKeyDir starts watching the directory containing JWT private key.
-func WatchKeyDir(dir string, loadKey loadKeyFunc, updateKey updateKeyFunc) {
+// WatchPrivateKeyDir starts watching the directory containing JWT private key.
+func WatchPrivateKeyDir(dir string, loadKey loadKeyFunc, updateKey updateKeyFunc) {
 	wh := &handler{
 		dir:       dir,
 		loadKey:   loadKey,
@@ -45,12 +45,11 @@ func (h *handler) OnChange(dir string) (interface{}, error) {
 }
 
 func (h *handler) OnStableUpdate(val interface{}, err error) {
-	var key *rsa.PrivateKey
 	if err != nil {
 		log.Errorf("Error reading JWT private key: %v. Skipping incoming update. Watch dir: %q", err, h.dir)
 		return
 	}
-	key, _ = val.(*rsa.PrivateKey)
+	key, _ := val.(*rsa.PrivateKey)
 	if key == nil {
 		log.Infof("No private key found. Using previous value. Watch dir: %q", h.dir)
 		return

@@ -21,8 +21,8 @@ var (
 )
 
 const (
-	privateKeyDir     = "/run/secrets/stackrox.io/jwt"
-	privateKeyPath    = privateKeyDir + "/jwt-key.der"
+	privateKeyDir     = "/var/run/secrets/stackrox.io/jwt"
+	privateKeyPathDER = privateKeyDir + "/jwt-key.der"
 	privateKeyPathPEM = privateKeyDir + "/jwt-key.pem"
 	issuerID          = "https://stackrox.io/jwt"
 
@@ -43,8 +43,8 @@ func getBytesFromPem(path string) ([]byte, error) {
 
 // GetPrivateKeyBytes returns the contents of the file containing the private key.
 func GetPrivateKeyBytes() ([]byte, error) {
-	if _, err := os.Stat(privateKeyPath); err == nil {
-		return os.ReadFile(privateKeyPath)
+	if _, err := os.Stat(privateKeyPathDER); err == nil {
+		return os.ReadFile(privateKeyPathDER)
 	} else if _, err := os.Stat(privateKeyPathPEM); err == nil {
 		// Second attempt: Try reading PEM version and convert.
 		return getBytesFromPem(privateKeyPathPEM)
@@ -62,7 +62,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	}
 	privateKeyStore := jwt.NewSinglePrivateKeyStore(initialPrivateKey, keyID)
 	publicKeyStore := jwt.NewDerivedPublicKeyStore(privateKeyStore, keyID)
-	jwt.WatchKeyDir(privateKeyDir, loadPrivateKey, func(key *rsa.PrivateKey) {
+	jwt.WatchPrivateKeyDir(privateKeyDir, loadPrivateKey, func(key *rsa.PrivateKey) {
 		privateKeyStore.UpdateKey(keyID, key)
 	})
 
@@ -70,7 +70,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	return issuerFactory, validator, nil
 }
 
-// We pass parameter here to satisfy WatchKeyDir interface.
+// We pass parameter here to satisfy WatchPrivateKeyDir interface.
 func loadPrivateKey(_ string) (*rsa.PrivateKey, error) {
 	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {
