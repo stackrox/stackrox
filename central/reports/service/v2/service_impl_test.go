@@ -12,10 +12,13 @@ import (
 	reportConfigDSMocks "github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -69,26 +72,45 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 	s.notifierDataStore = notifierDSMocks.NewMockDataStore(s.mockCtrl)
 	s.blobStore = blobDSMocks.NewMockDatastore(s.mockCtrl)
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore)
+	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
 }
 
 func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
+	creator := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
 	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
-
-			creator := &storage.SlimUser{
-				Id:   "uid",
-				Name: "name",
-			}
-			ctx := s.getContextForUser(creator)
+			mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+			ctx := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
 			if !tc.isValidationError {
+				mockID.EXPECT().UID().Return(creator.Id).AnyTimes()
+				mockID.EXPECT().FullName().Return(creator.Name).AnyTimes()
+				mockID.EXPECT().FriendlyName().Return(creator.Name).AnyTimes()
+
+				mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+
 				protoReportConfig := tc.reportConfigGen()
 				protoReportConfig.Creator = creator
+				protoReportConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{accessScope.Rules}
 				s.reportConfigDataStore.EXPECT().AddReportConfiguration(ctx, protoReportConfig).Return(protoReportConfig.GetId(), nil).Times(1)
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(ctx, protoReportConfig.GetId()).Return(protoReportConfig, true, nil).Times(1)
 			}
@@ -112,11 +134,28 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
+	creator := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+
+	accessScopeRules := []*storage.SimpleAccessScope_Rules{
+		{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
 	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
+				protoReportConfig.Creator = creator
+				protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
+					Return(protoReportConfig, true, nil).Times(1)
 				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(allAccessContext, protoReportConfig).Return(nil).Times(1)
 			}
 			result, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
@@ -717,7 +756,24 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		Id:   "uid",
 		Name: "name",
 	}
-	userContext := s.getContextForUser(user)
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
+
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+
+	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
+	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
+	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
 	testCases := []struct {
 		desc    string

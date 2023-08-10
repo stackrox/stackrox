@@ -3,9 +3,9 @@ package reportgenerator
 import (
 	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -23,51 +23,49 @@ type ReportGenerator interface {
 }
 
 // New will create a new instance of the ReportGenerator
-func New(reportConfigDatastore reportConfigDS.DataStore,
+func New(
 	reportSnapshotStore reportSnapshotDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	watchedImageDatastore watchedImageDS.DataStore,
-	collectionDatastore collectionDS.DataStore,
 	collectionQueryResolver collectionDS.QueryResolver,
-	notifierDatastore notifierDS.DataStore,
 	notificationProcessor notifier.Processor,
 	blobDatastore blobDS.Datastore,
+	clusterDatastore clusterDS.DataStore,
+	namespaceDatastore namespaceDS.DataStore,
 	schema *graphql.Schema,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
-		reportConfigDatastore,
 		reportSnapshotStore,
 		deploymentDatastore,
 		watchedImageDatastore,
-		collectionDatastore,
 		collectionQueryResolver,
-		notifierDatastore,
 		notificationProcessor,
 		blobDatastore,
+		clusterDatastore,
+		namespaceDatastore,
 		schema,
 	)
 }
 
-func newReportGeneratorImpl(reportConfigDatastore reportConfigDS.DataStore,
+func newReportGeneratorImpl(
 	reportSnapshotStore reportSnapshotDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	watchedImageDatastore watchedImageDS.DataStore,
-	collectionDatastore collectionDS.DataStore,
 	collectionQueryResolver collectionDS.QueryResolver,
-	notifierDatastore notifierDS.DataStore,
 	notificationProcessor notifier.Processor,
 	blobStore blobDS.Datastore,
+	clusterDatastore clusterDS.DataStore,
+	namespaceDatastore namespaceDS.DataStore,
 	schema *graphql.Schema,
 ) *reportGeneratorImpl {
 	return &reportGeneratorImpl{
-		reportConfigDatastore:   reportConfigDatastore,
 		reportSnapshotStore:     reportSnapshotStore,
 		deploymentDatastore:     deploymentDatastore,
 		watchedImageDatastore:   watchedImageDatastore,
-		collectionDatastore:     collectionDatastore,
 		collectionQueryResolver: collectionQueryResolver,
-		notifierDatastore:       notifierDatastore,
 		notificationProcessor:   notificationProcessor,
+		clusterDatastore:        clusterDatastore,
+		namespaceDatastore:      namespaceDatastore,
 		blobStore:               blobStore,
 
 		Schema: schema,

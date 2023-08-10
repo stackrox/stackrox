@@ -24,11 +24,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 )
 
@@ -37,6 +39,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -76,6 +80,7 @@ type serviceImpl struct {
 	notifierDatastore   notifierDS.DataStore
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
+	validator           *validation.Validator
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -94,17 +99,23 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
+	creatorID := authn.IdentityFromContextOrNil(ctx)
+	if creatorID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	if err := s.ValidateReportConfiguration(request); err != nil {
+	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request)
-	protoReportConfig.Creator = slimUser
+	creator := &storage.SlimUser{
+		Id:   creatorID.UID(),
+		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
+	}
+
+	protoReportConfig := convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+	log.Infof("[chsheth] Report config :%s", protoReportConfig.String())
+
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
 		return nil, err
@@ -131,18 +142,27 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
-	if err := s.ValidateReportConfiguration(request); err != nil {
+	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request)
+	currentConfig, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
+	}
 
-	err := s.reportConfigStore.UpdateReportConfiguration(ctx, protoReportConfig)
+	updatedConfig := convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
+		currentConfig.GetVulnReportFilters().GetAccessScopeRules())
+
+	err = s.reportConfigStore.UpdateReportConfiguration(ctx, updatedConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(protoReportConfig)
+	err = s.scheduler.UpsertReportSchedule(updatedConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -175,16 +195,16 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	return &apiV2.ListReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
 }
 
-func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
-	if id.GetId() == "" {
+func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
+	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
-	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
 
 	converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
@@ -330,8 +350,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if req.GetReportConfigId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
 	}
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
@@ -342,11 +362,13 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		notificationMethod = storage.ReportStatus_DOWNLOAD
 	}
 
-	reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigStore, s.collectionDatastore, s.notifierDatastore,
-		req.GetReportConfigId(), slimUser, notificationMethod, storage.ReportStatus_ON_DEMAND)
+	reportReq, err := s.validator.ValidateAndGenerateReportRequest(req.GetReportConfigId(), notificationMethod,
+		storage.ReportStatus_ON_DEMAND, requesterID)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("[chsheth] Report snapshot :%s", reportReq.ReportSnapshot.String())
 
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
@@ -371,7 +393,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	err := validation.ValidateCancelReportRequest(s.snapshotDatastore, req.GetId(), slimUser)
+	err := s.validator.ValidateCancelReportRequest(req.GetId(), slimUser)
 	if err != nil {
 		return nil, err
 	}

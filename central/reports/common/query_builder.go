@@ -10,6 +10,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -40,9 +42,15 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 }
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
-func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
-	// TODO ROX-18773 : Add SAC query filter on deploymentsQuery to scope the results by report requester.
+func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Cluster,
+	namespaces []*storage.NamespaceMetadata) (*ReportQuery, error) {
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
+	scopeQuery, err := q.buildAccessScopeQuery(clusters, namespaces)
+	if err != nil {
+		return nil, err
+	}
+	deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery)
+
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +92,30 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	}
 
 	return strings.Join(conjuncts, "+"), nil
+}
+
+func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
+	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
+	accessScopeRules := q.vulnFilters.GetAccessScopeRules()
+	if accessScopeRules == nil {
+		// Old(v1) report configurations would have nil access scope rules.
+		// For backward compatibility, nil access scope would mean access to all clusters and namespaces.
+		// To deny access to all clusters and namespaces, the accessScopeRules should be empty.
+		return search.EmptyQuery(), nil
+	}
+	var scopeTree *effectiveaccessscope.ScopeTree
+	for _, rules := range accessScopeRules {
+		sct, err := effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+		if err != nil {
+			return nil, err
+		}
+		if scopeTree == nil {
+			scopeTree = sct
+		} else {
+			scopeTree.Merge(sct)
+		}
+	}
+	return sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
 }
 
 func filterVulnsByFirstOccurrenceTime(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
