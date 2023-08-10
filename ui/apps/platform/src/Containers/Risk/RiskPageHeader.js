@@ -20,8 +20,7 @@ function RiskPageHeader({ isViewFiltered, searchOptions }) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
 
-    // Although request requires only WorkflowAdministration,
-    // also require require resources for Policies route.
+    // Require READ_WRITE_ACCESS to create plus READ_ACCESS to other resources for Policies route.
     const hasWriteAccessForCreatePolicy =
         hasReadWriteAccess('WorkflowAdministration') &&
         isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, policyManagementBasePath);
