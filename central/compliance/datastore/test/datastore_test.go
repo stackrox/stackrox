@@ -200,23 +200,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
 
-func (s *complianceDataStoreWithSACTestSuite) TestDoesNotUseStoredAggregationsWithSAC() {
-	noop := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-		return nil, nil, nil, nil
-	}
-	aggArgs := &datastore.StoredAggregationArgs{
-		QueryString:     "query",
-		GroupBy:         nil,
-		Unit:            storage.ComplianceAggregation_CLUSTER,
-		AggregationFunc: noop,
-	}
-	_, _, _, err := s.dataStore.PerformStoredAggregation(context.Background(), aggArgs)
-	s.Require().NoError(err)
-}
-
 func (s *complianceDataStoreWithSACTestSuite) TestUsesStoredAggregationsWithoutSAC() {
-	s.T().Skip("ROX-9134: Re-enable or delete")
-
 	queryString := "query"
 	testUnit := storage.ComplianceAggregation_CLUSTER
 	results := []*storage.ComplianceAggregation_Result{}
@@ -233,6 +217,6 @@ func (s *complianceDataStoreWithSACTestSuite) TestUsesStoredAggregationsWithoutS
 		Unit:            testUnit,
 		AggregationFunc: noop,
 	}
-	_, _, _, err := s.dataStore.PerformStoredAggregation(context.Background(), aggArgs)
+	_, _, _, err := s.dataStore.PerformStoredAggregation(s.hasReadCtx, aggArgs)
 	s.Require().NoError(err)
 }
