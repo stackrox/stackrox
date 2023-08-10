@@ -8,7 +8,6 @@ const (
 	                         severity
                              fixedByVersion
                              isFixable
-                             cvss
                              discoveredAtImage
 		                     link
                              cvss
