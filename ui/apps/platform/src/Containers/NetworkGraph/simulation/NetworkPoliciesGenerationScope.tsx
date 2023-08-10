@@ -1,22 +1,13 @@
 import React from 'react';
-import { Button, Flex } from '@patternfly/react-core';
+import { Button, Flex, Label } from '@patternfly/react-core';
+import { FilterIcon } from '@patternfly/react-icons';
 import uniq from 'lodash/uniq';
 
 import { ClusterIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 import './NetworkPoliciesGenerationScope.css';
 import DeploymentScopeModal from './DeploymentScopeModal';
-
-export type EntityScope = {
-    // `granularity` refers to the most specific entity type that has been selected by the user.
-    granularity: 'CLUSTER' | 'NAMESPACE' | 'DEPLOYMENT';
-    cluster: string;
-    namespaces: string[];
-    deployments: {
-        namespace: string;
-        name: string;
-    }[];
-};
+import { EntityScope } from '../utils/simulatorUtils';
 
 export type NetworkPoliciesGenerationScopeProps = {
     networkPolicyGenerationScope: EntityScope;
@@ -25,10 +16,9 @@ export type NetworkPoliciesGenerationScopeProps = {
 function NetworkPoliciesGenerationScope({
     networkPolicyGenerationScope,
 }: NetworkPoliciesGenerationScopeProps) {
-    const { granularity, cluster, deployments } = networkPolicyGenerationScope;
-    const [modalDeployments, setModalDeployments] = React.useState<
-        { namespace: string; name: string }[] | null
-    >(null);
+    const { granularity, cluster, deployments, hasAppliedDeploymentFilters } =
+        networkPolicyGenerationScope;
+    const [modalEntityScope, setModalEntityScope] = React.useState<EntityScope | null>(null);
 
     let deploymentElement = <span>All deployments</span>;
     let namespaceElement = <span>All namespaces</span>;
@@ -47,7 +37,7 @@ function NetworkPoliciesGenerationScope({
             <Button
                 variant="link"
                 isInline
-                onClick={() => setModalDeployments(networkPolicyGenerationScope.deployments)}
+                onClick={() => setModalEntityScope(networkPolicyGenerationScope)}
             >
                 {deploymentText}
             </Button>
@@ -56,11 +46,11 @@ function NetworkPoliciesGenerationScope({
 
     return (
         <>
-            {modalDeployments && (
+            {modalEntityScope && (
                 <DeploymentScopeModal
-                    deployments={modalDeployments}
-                    isOpen={modalDeployments !== null}
-                    onClose={() => setModalDeployments(null)}
+                    entityScope={networkPolicyGenerationScope}
+                    isOpen={modalEntityScope !== null}
+                    onClose={() => setModalEntityScope(null)}
                 />
             )}
             <div className="network-policies-generation-scope">
@@ -70,6 +60,11 @@ function NetworkPoliciesGenerationScope({
                 >
                     <DeploymentIcon aria-label="Deployment" />
                     {deploymentElement}
+                    {hasAppliedDeploymentFilters && (
+                        <Label isCompact icon={<FilterIcon />} color="grey">
+                            Filter applied
+                        </Label>
+                    )}
                 </Flex>
 
                 <Flex

@@ -50,6 +50,7 @@ import {
     graphModel,
 } from './utils/modelUtils';
 import getSimulation from './utils/getSimulation';
+import { getInScopeEntities } from './utils/simulatorUtils';
 import CIDRFormModal from './components/CIDRFormModal';
 import NetworkPolicySimulatorSidePanel, {
     clearSimulationQuery,
@@ -392,12 +393,10 @@ function NetworkGraphPage() {
                                         simulator={simulator}
                                         setNetworkPolicyModification={setNetworkPolicyModification}
                                         scopeHierarchy={scopeHierarchy}
-                                        networkPolicyGenerationScope={{
-                                            granularity: 'CLUSTER',
-                                            cluster: scopeHierarchy.cluster.name,
-                                            namespaces: [],
-                                            deployments: [],
-                                        }}
+                                        networkPolicyGenerationScope={getInScopeEntities(
+                                            [],
+                                            scopeHierarchy
+                                        )}
                                     />
                                 </DrawerPanelContent>
                             }

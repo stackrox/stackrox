@@ -1,5 +1,4 @@
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
-import { EntityScope } from '../simulation/NetworkPoliciesGenerationScope';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { CustomNodeModel } from '../types/topology.type';
 
@@ -46,6 +45,18 @@ function getGranularityFromScopeHierarchy(
     return 'DEPLOYMENT';
 }
 
+export type EntityScope = {
+    // `granularity` refers to the most specific entity type that has been selected by the user.
+    granularity: 'CLUSTER' | 'NAMESPACE' | 'DEPLOYMENT';
+    cluster: string;
+    namespaces: string[];
+    deployments: {
+        namespace: string;
+        name: string;
+    }[];
+    hasAppliedDeploymentFilters: boolean;
+};
+
 /**
  * Given the array of nodeModels returned by the network graph API and the user's
  * current scope hierarchy, return the scope of entities that should be included
@@ -64,11 +75,14 @@ export function getInScopeEntities(
     const namespaceNameSet = new Set(scopeHierarchy.namespaces);
     const deploymentNameSet = new Set(scopeHierarchy.deployments);
 
+    const hasAppliedDeploymentFilters = Object.keys(scopeHierarchy.remainingQuery).length > 0;
+
     const deploymentScope: EntityScope = {
         granularity,
         cluster: scopeHierarchy.cluster.name,
         namespaces: scopeHierarchy.namespaces,
         deployments: [],
+        hasAppliedDeploymentFilters,
     };
 
     nodeModels.forEach((node) => {

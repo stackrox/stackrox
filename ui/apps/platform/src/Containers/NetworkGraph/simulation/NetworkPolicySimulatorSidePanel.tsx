@@ -35,14 +35,14 @@ import {
     SetNetworkPolicyModification,
 } from '../hooks/useNetworkPolicySimulator';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
-import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
+import { EntityScope, getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
-import NetworkPoliciesGenerationScope, { EntityScope } from './NetworkPoliciesGenerationScope';
+import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 export function clearSimulationQuery(search: string): string {
