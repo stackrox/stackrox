@@ -1,11 +1,14 @@
 package pgsearch
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
@@ -18,6 +21,17 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if len(ctx.queryModifiers) > 0 {
 		return nil, errors.New("modifiers not supported for time query")
 	}
+	from, to, ok, err := parseTimeRange(ctx.value)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing time range")
+	}
+	if ok {
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query:  fmt.Sprintf("%s >= $$ and %s < $$", ctx.qualifiedColumnName, ctx.qualifiedColumnName),
+			Values: []interface{}{from.Format(sqlTimeStampFormat), to.Format(sqlTimeStampFormat)},
+		}, nil), nil
+	}
+
 	prefix, trimmedValue := parseNumericPrefix(ctx.value)
 	if t, ok := parseTimeString(trimmedValue); ok {
 		// If the date query is a singular datetime with no prefix, then need to create a numeric query with the min = date. max = date + 1
@@ -60,6 +74,31 @@ func timeQueryEntry(ctx *queryAndFieldContext, prefix, formattedTime string) *Qu
 		Query:  fmt.Sprintf("%s %s $$", ctx.qualifiedColumnName, prefix),
 		Values: []interface{}{formattedTime},
 	}, nil)
+}
+
+// parseTimeRange checks if the value is in the format of tr/<from millisecond>-<to millisecond> which is currently
+// the format that the TimeRangeQuery query builder outputs
+func parseTimeRange(value string) (from, to time.Time, ok bool, err error) {
+	if !strings.HasPrefix(value, search.TimeRangePrefix) {
+		return
+	}
+	value = value[len(search.TimeRangePrefix):]
+
+	fromStr, toStr := stringutils.Split2(value, "-")
+	if fromStr == "" || toStr == "" {
+		err = errors.Errorf("malformed time range query string: %s", value)
+		return
+	}
+
+	fromMillis, err := strconv.ParseInt(fromStr, 10, 64)
+	if err != nil {
+		return
+	}
+	toMillis, err := strconv.ParseInt(toStr, 10, 64)
+	if err != nil {
+		return
+	}
+	return time.UnixMilli(fromMillis).UTC(), time.UnixMilli(toMillis).UTC(), true, nil
 }
 
 func maybeParseDurationAsRange(value string) (lower, upper time.Duration, err error) {
