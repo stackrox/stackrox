@@ -38,7 +38,6 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 
 	e, err := c.getOrAddEntry(filePath)
 	if err != nil || e == nil {
-		log.Error(err)
 		return nil, 0, err
 	}
 	releaseRef := true
