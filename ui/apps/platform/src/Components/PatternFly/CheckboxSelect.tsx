@@ -12,6 +12,7 @@ export type CheckboxSelectProps = {
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
+    toggleIcon?: ReactElement;
 };
 
 function CheckboxSelect({
@@ -20,6 +21,7 @@ function CheckboxSelect({
     ariaLabel,
     children,
     placeholderText = 'Filter by value',
+    toggleIcon,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -44,6 +46,7 @@ function CheckboxSelect({
     return (
         <Select
             variant={SelectVariant.checkbox}
+            toggleIcon={toggleIcon}
             onToggle={onToggle}
             onSelect={onSelect}
             selections={selections}
