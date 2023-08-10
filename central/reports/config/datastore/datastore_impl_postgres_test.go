@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"testing"
 
+	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
+	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
+	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -15,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,9 +29,10 @@ func TestReportConfigurationPostgresDatastore(t *testing.T) {
 type ReportConfigurationPostgresDatastoreTests struct {
 	suite.Suite
 
-	testDB    *pgtest.TestPostgres
-	datastore DataStore
-	ctx       context.Context
+	testDB       *pgtest.TestPostgres
+	datastore    DataStore
+	ctx          context.Context
+	collectionDS collectionDatastore.DataStore
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
@@ -37,6 +42,10 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+
+	storageCollection := collectionPgStore.New(s.testDB.DB)
+	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
+	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TearDownSuite() {
@@ -49,7 +58,8 @@ func (s *ReportConfigurationPostgresDatastoreTests) TearDownTest() {
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore() {
 	reportConfig := fixtures.GetValidReportConfiguration()
-	// Test add
+	// Test add collection
+	s.addCollectiontoReportConfiguration(reportConfig)
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
 	s.Require().NoError(err)
 
@@ -105,6 +115,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 
+	s.addCollectiontoReportConfiguration(reportConfig)
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
 	s.Require().NoError(err)
@@ -116,6 +127,38 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 	s.Equal(reportConfig, foundReportConfig)
 }
 
+func (s *ReportConfigurationPostgresDatastoreTests) TestDeleteCollectionWithReportConfig() {
+
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	// Test add collection
+	s.addCollectiontoReportConfiguration(reportConfig)
+
+	// Add report config
+	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
+	s.Require().NoError(err)
+
+	// Test get
+	err = s.collectionDS.DeleteCollection(s.ctx, reportConfig.ResourceScope.GetCollectionId())
+	s.Require().Error(err)
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) addCollectiontoReportConfiguration(reportConfig *storage.ReportConfiguration) {
+
+	collection := storage.ResourceCollection{
+		Name: " Test Collection" + uuid.NewV4().String(),
+	}
+	err := s.collectionDS.AddCollection(s.ctx, &collection)
+	s.Require().NoError(err)
+	query := search.NewQueryBuilder().AddExactMatches(search.CollectionName, collection.GetName()).ProtoQuery()
+	collections, err := s.collectionDS.SearchCollections(s.ctx, query)
+	s.Require().NoError(err)
+	collectionID := collections[0].GetId()
+	reportConfig.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: collectionID,
+		},
+	}
+}
 func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
 
@@ -126,7 +169,8 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 	reportConfig.Notifiers = nil
-
+	// Test add collection
+	s.addCollectiontoReportConfiguration(reportConfig)
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
 	s.Require().NoError(err)

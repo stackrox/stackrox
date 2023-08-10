@@ -10,6 +10,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
+	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
+	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -17,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,6 +36,7 @@ type ReportConfigurationDatastoreV2Tests struct {
 	reportSnapshotDataStore reportSnapshotDS.DataStore
 	notifierDataStore       notifierDS.DataStore
 	ctx                     context.Context
+	collectionDS            collectionDatastore.DataStore
 }
 
 func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
@@ -45,6 +50,12 @@ func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportSnapshotDataStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.NoError(err)
+	s.reportSnapshotStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	storageCollection := collectionPgStore.New(s.testDB.DB)
+	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
+	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -70,6 +81,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 		reportConfig1.Notifiers[i].Ref = s.storeNotifier(n.GetId())
 	}
 
+	s.addCollectionToReportConfiguration(reportConfig1, "")
 	configID1, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig1)
 	s.NoError(err)
 
@@ -84,6 +96,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 		reportConfig2.Notifiers[i] = reportConfig1.Notifiers[i]
 	}
 
+	collectionID := s.addCollectionToReportConfiguration(reportConfig2, "")
 	configID2, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig2)
 	s.NoError(err)
 
@@ -94,10 +107,11 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 			CollectionId: "collection-2",
 		},
 	}
+
 	for i := range reportConfig2.GetNotifiers() {
 		reportConfig3.Notifiers[i] = reportConfig1.Notifiers[i]
 	}
-
+	s.addCollectionToReportConfiguration(reportConfig3, collectionID)
 	configID3, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig3)
 	s.NoError(err)
 
@@ -149,7 +163,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	// Test a query with combination of report config and report metadata fields
 	query2 := search.NewQueryBuilder().
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
-		AddExactMatches(search.CollectionID, "collection-2").
+		AddExactMatches(search.CollectionID, collectionID).
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true))).ProtoQuery()
 
@@ -171,6 +185,32 @@ func (s *ReportConfigurationDatastoreV2Tests) storeNotifier(name string) *storag
 	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
 	s.Require().NoError(err)
 	return &storage.NotifierConfiguration_Id{Id: id}
+}
+
+func (s *ReportConfigurationDatastoreV2Tests) addCollectionToReportConfiguration(reportConfig *storage.ReportConfiguration, collectionID string) string {
+	if collectionID != "" {
+		reportConfig.ResourceScope = &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{
+				CollectionId: collectionID,
+			},
+		}
+		return collectionID
+	}
+	collection := storage.ResourceCollection{
+		Name: " Test Collection" + uuid.NewV4().String(),
+	}
+	err := s.collectionDS.AddCollection(s.ctx, &collection)
+	s.Require().NoError(err)
+	query := search.NewQueryBuilder().AddExactMatches(search.CollectionName, collection.GetName()).ProtoQuery()
+	collections, err := s.collectionDS.SearchCollections(s.ctx, query)
+	s.Require().NoError(err)
+	newCollectionID := collections[0].GetId()
+	reportConfig.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: newCollectionID,
+		},
+	}
+	return newCollectionID
 }
 
 func generateReportSnapshot(configID string, completionTime *types.Timestamp) *storage.ReportSnapshot {

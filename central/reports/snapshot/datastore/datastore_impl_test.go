@@ -8,6 +8,9 @@ import (
 
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
+	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
+	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -30,6 +33,7 @@ type ReportSnapshotDatastoreTestSuite struct {
 	reportConfigStore reportConfigDS.DataStore
 	notifierDataStore notifierDS.DataStore
 	ctx               context.Context
+	collectionDS      collectionDatastore.DataStore
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
@@ -48,6 +52,9 @@ func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+	storageCollection := collectionPgStore.New(s.testDB.DB)
+	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
+	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
@@ -57,9 +64,16 @@ func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
 func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig.Id = ""
+
 	// Add all required notifiers to the database.
 	for i, n := range reportConfig.GetNotifiers() {
 		reportConfig.Notifiers[i].Ref = s.storeNotifier(n.GetId())
+	collectionID, err := s.collectionDS.AddTestCollection(s.ctx)
+	s.NoError(err)
+	reportConfig.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: collectionID,
+		},
 	}
 
 	configID, err := s.reportConfigStore.AddReportConfiguration(s.ctx, reportConfig)

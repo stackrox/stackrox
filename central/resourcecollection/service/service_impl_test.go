@@ -9,7 +9,10 @@ import (
 
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	reportConfigurationDS "github.com/stackrox/rox/central/reports/config/datastore"
+	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
+	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
+	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -36,6 +39,7 @@ type CollectionServiceTestSuite struct {
 	deploymentDS      *deploymentDSMocks.MockDataStore
 	resourceConfigDS  reportConfigurationDS.DataStore
 	collectionService Service
+	collectionDS      collectionDatastore.DataStore
 }
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {
@@ -47,6 +51,9 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.testDB = pgtest.ForT(suite.T())
 	suite.resourceConfigDS = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
+	storageCollection := collectionPgStore.New(suite.testDB.DB)
+	indexer := collectionPgStore.NewIndexer(suite.testDB.DB)
+	suite.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
 
 	testutils.SetExampleVersion(suite.T())
 }
@@ -323,6 +330,14 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	reportConfig := &storage.ReportConfiguration{
 		Name:    "config0",
 		ScopeId: "col0",
+	}
+
+	collectionID, err := suite.collectionDS.AddTestCollection(allAccessCtx)
+	suite.NoError(err)
+	reportConfig.ResourceScope = &storage.ResourceScope{
+		ScopeReference: &storage.ResourceScope_CollectionId{
+			CollectionId: collectionID,
+		},
 	}
 	id, err := suite.resourceConfigDS.AddReportConfiguration(allAccessCtx, reportConfig)
 	suite.NoError(err)
