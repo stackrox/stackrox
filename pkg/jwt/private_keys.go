@@ -50,7 +50,7 @@ func (s *singlePrivateKeyStore) UpdateKey(keyID string, newVal crypto.Signer) {
 	}
 }
 
-// NewSinglePrivateKeyStore returns PrivateKeyGetter that allows obtaining a single key with a defined id.
+// NewSinglePrivateKeyStore returns PrivateKeyStore that allows setting and obtaining a single key with a defined id.
 func NewSinglePrivateKeyStore(key crypto.Signer, keyID string) PrivateKeyStore {
 	return &singlePrivateKeyStore{
 		keyID: keyID,
