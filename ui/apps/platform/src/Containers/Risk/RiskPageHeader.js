@@ -8,11 +8,24 @@ import {
     orchestratorComponentsOption,
 } from 'utils/orchestratorComponents';
 import SearchFilterInput from 'Components/SearchFilterInput';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
+
 import CreatePolicyFromSearch from './CreatePolicyFromSearch';
 
 function RiskPageHeader({ isViewFiltered, searchOptions }) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+
+    // Although request requires only WorkflowAdministration,
+    // also require require resources for Policies route.
+    const hasWriteAccessForCreatePolicy =
+        hasReadWriteAccess('WorkflowAdministration') &&
+        isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, policyManagementBasePath);
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
     const autoCompleteCategory = searchCategories[entityTypes.DEPLOYMENT];
@@ -31,7 +44,7 @@ function RiskPageHeader({ isViewFiltered, searchOptions }) {
                 handleChangeSearchFilter={(filter) => setSearchFilter(filter, 'push')}
                 autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             />
-            <CreatePolicyFromSearch />
+            {hasWriteAccessForCreatePolicy && <CreatePolicyFromSearch />}
         </PageHeader>
     );
 }
