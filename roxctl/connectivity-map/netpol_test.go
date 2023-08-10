@@ -166,6 +166,13 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			outputToFile:          true,
 			outputFormat:          "json",
 		},
+		{
+			name:                  "generate connections list with ingress controller",
+			inputFolderPath:       "testdata/acs-security-demos",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+			outputToFile:          true,
+		},
 	}
 
 	for _, tt := range cases {
@@ -214,17 +221,20 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
 				defaultFile := analyzeNetpolCmd.getDefaultFileName()
+				formatSuffix := ""
 				if tt.outputFormat != "" {
 					d.Assert().Contains(defaultFile, tt.outputFormat)
+					formatSuffix = tt.outputFormat
+				} else {
+					formatSuffix = defaultOutputFormat
 				}
 				output, err := os.ReadFile(defaultFile)
 				d.Assert().NoError(err)
 
-				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath, "output."+tt.outputFormat))
-				d.NoError(err)
+				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath, "output."+formatSuffix))
+				d.Assert().NoError(err)
 				d.Equal(string(expectedOutput), string(output))
 
-				d.Assert().NoError(err)
 				d.Assert().NoError(os.Remove(defaultFile))
 			}
 		})
