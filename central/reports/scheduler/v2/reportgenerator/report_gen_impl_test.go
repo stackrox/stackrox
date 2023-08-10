@@ -121,11 +121,7 @@ func (s *EnhancedReportingTestSuite) TestSaveReportData() {
 
 	// Save empty report
 	reportID = "anotherid"
-	s.Require().NoError(s.reportGenerator.saveReportData(configID, reportID, nil))
-	newBuf, _, exists, err = s.blobStore.GetBlobWithDataInBuffer(s.ctx, common.GetReportBlobPath(configID, reportID))
-	s.Require().NoError(err)
-	s.Require().True(exists)
-	s.Zero(newBuf.Len())
+	s.Require().Error(s.reportGenerator.saveReportData(configID, reportID, nil))
 }
 
 func (s *EnhancedReportingTestSuite) TestGetReportData() {
