@@ -10,6 +10,7 @@ import {
     postCIDRBlock,
     patchCIDRBlock,
 } from 'services/NetworkService';
+import useTimeout from 'hooks/useTimeout';
 import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
 import CIDRForm, { emptyCIDRBlockRow, CIDRBlockEntity, CIDRBlockEntities } from './CIDRForm';
@@ -98,6 +99,15 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
         }
     }, [isOpen, selectedClusterId]);
 
+    const [setModalCloseTimeout, cancelTimeout] = useTimeout(onCloseHandler);
+
+    useEffect(() => {
+        // When the modal is closed, cancel any callback that would close it again
+        if (!isOpen) {
+            cancelTimeout();
+        }
+    }, [isOpen, cancelTimeout]);
+
     function updateCIDRBlocksHandler() {
         setFormCallout(emptyFormCallout);
 
@@ -145,7 +155,9 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
                         'CIDR blocks have been successfully configured. This modal will now close.',
                 });
                 // updateNetworkNodes();
-                setTimeout(onCloseHandler, 2000);
+                if (isOpen) {
+                    setModalCloseTimeout(2000);
+                }
             })
             .catch((error) => {
                 setFormCallout({
