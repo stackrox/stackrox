@@ -160,7 +160,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 
 func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *bytes.Buffer) error {
 	if data == nil {
-		return errors.Errorf("Unexpected empty downloadable report for report config=%q, id=%q", configID, reportID)
+		return errors.Errorf("No data found for report config %q and id %q", configID, reportID)
 	}
 
 	// Store downloadable report in blob storage
