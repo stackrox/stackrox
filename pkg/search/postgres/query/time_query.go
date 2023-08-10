@@ -76,6 +76,8 @@ func timeQueryEntry(ctx *queryAndFieldContext, prefix, formattedTime string) *Qu
 	}, nil)
 }
 
+// parseTimeRange checks if the value is in the format of tr/<from millisecond>-<to millisecond> which is currently
+// the format that the TimeRangeQuery query builder outputs
 func parseTimeRange(value string) (from, to time.Time, ok bool, err error) {
 	if !strings.HasPrefix(value, search.TimeRangePrefix) {
 		return
