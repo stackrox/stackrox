@@ -44,7 +44,7 @@ func NewDefinitionsHandler(centralEndpoint string) (*Handler, error) {
 
 // Notify reacts to sensor going into online/offline mode.
 func (h *Handler) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
+	log.Info(common.LogSensorComponentEvent(e, "Scanner definitions handler"))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReachable.Store(true)
