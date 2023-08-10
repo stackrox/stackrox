@@ -167,7 +167,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 			qBuilder := queryBuilder{vulnFilters: vulnReportFilters}
 			scopeQuery, err := qBuilder.buildAccessScopeQuery(clusters, namespaces)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedQ, scopeQuery)
+			assert.EqualValues(t, tc.expectedQ, scopeQuery)
 		})
 	}
 }

@@ -112,7 +112,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return err
 	}
-	
+
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
 		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
