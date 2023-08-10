@@ -11,7 +11,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import io.stackrox.proto.storage.Vulnerability
 
-import common.Constants
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.ClairV4ScannerIntegration
