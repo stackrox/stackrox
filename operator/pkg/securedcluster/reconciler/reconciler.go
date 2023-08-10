@@ -21,7 +21,7 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
-			&source.Kind{Type: &platform.Central{}},
+			source.Kind(mgr.GetCache(), &platform.Central{}),
 			reconciler.HandleSiblings(platform.SecuredClusterGVK, mgr),
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
