@@ -8,14 +8,14 @@ import (
 
 // PrivateKeyGetter allows to obtain JWT private keys.
 // Note: the reason we use crypto.Signer here is because crypto.PrivateKey
-// is empty interface that does not implement Public() method.
+// is an empty interface that does not implement the Public() method.
 type PrivateKeyGetter interface {
 	Key(keyID string) crypto.Signer
 }
 
 // PrivateKeySetter allows to set JWT private keys.
 // Note: the reason we use crypto.Signer here is because crypto.PrivateKey
-// is empty interface that does not implement Public() method.
+// is an empty interface that does not implement the Public() method.
 type PrivateKeySetter interface {
 	UpdateKey(keyID string, key crypto.Signer)
 }
