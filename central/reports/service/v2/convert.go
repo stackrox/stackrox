@@ -278,27 +278,26 @@ func ConvertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 		return nil, nil
 	}
 
-	ret := &apiV2.NotifierConfiguration{}
-	if notifierConfig.GetEmailConfig() != nil {
-		ret.NotifierConfig = &apiV2.NotifierConfiguration_EmailConfig{
+	if notifierConfig.GetEmailConfig() == nil {
+		return nil, nil
+	}
+
+	notifier, found, err := notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
+	}
+	return &apiV2.NotifierConfiguration{
+		NotifierName: notifier.GetName(),
+		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
 			EmailConfig: &apiV2.EmailNotifierConfiguration{
 				NotifierId:   notifierConfig.GetId(),
 				MailingLists: notifierConfig.GetEmailConfig().GetMailingLists(),
 			},
-		}
-
-		var notifierName string
-		notifier, found, err := notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetEmailConfig().GetNotifierId())
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
-		}
-		notifierName = notifier.GetName()
-		ret.NotifierName = notifierName
-	}
-	return ret, nil
+		},
+	}, nil
 }
 
 // ConvertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule

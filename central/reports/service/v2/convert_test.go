@@ -274,9 +274,9 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 			reportConfig := c.reportConfigGen()
 
 			for _, notifierConfig := range reportConfig.GetNotifiers() {
-				notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetEmailConfig().GetNotifierId()).
+				notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetId()).
 					Return(&storage.Notifier{
-						Id:   notifierConfig.GetEmailConfig().GetNotifierId(),
+						Id:   notifierConfig.GetId(),
 						Name: mockNotifierName,
 					}, true, nil).Times(1)
 			}

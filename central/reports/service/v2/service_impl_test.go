@@ -741,7 +741,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 	notifierIDs := make([]string, 0, len(reportConfig.GetNotifiers()))
 	notifiers := make([]*storage.Notifier, 0, len(reportConfig.GetNotifiers()))
 	for _, nc := range reportConfig.GetNotifiers() {
-		notifierIDs = append(notifierIDs, nc.GetEmailConfig().GetNotifierId())
+		notifierIDs = append(notifierIDs, nc.GetId())
 		notifiers = append(notifiers, &storage.Notifier{
 			Id:   nc.GetEmailConfig().GetNotifierId(),
 			Name: nc.GetEmailConfig().GetNotifierId(),
