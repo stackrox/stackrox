@@ -31,15 +31,10 @@ import util.Timer
 
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
-import org.spockframework.runtime.model.parallel.ResourceAccessMode
-import spock.lang.ResourceLock
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
-// @ResourceLock() - Block other tests that rely on a default scanner configuration.
-@ResourceLock(value = Constants.RESOURCE_SCANNER_INTEGRATION, mode = ResourceAccessMode.READ_WRITE)
-@Tag("Parallel")
 class ImageScanningTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-image-scanning-test"
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
