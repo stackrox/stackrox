@@ -18,7 +18,13 @@ type DataStore interface {
 	// Upsert puts metrics to the persistent storage.
 	Upsert(ctx context.Context, metrics *storage.SecuredUnits) error
 
+	//
 	// In-memory storage access:
+	//
+	// With a significant number of secured clusters, if we used the persistent
+	// storage as an intermediate location for the collected metrics, the load
+	// on the persistent storage may become noticable. The decision is to use
+	// in-memory cache to aggregate metrics and persist it only periodically.
 
 	// AggregateAndFlush returns the aggregated metrics from the
 	// in-memory storage and resets the storage.
