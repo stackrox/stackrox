@@ -136,18 +136,18 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		}
 
 		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
-		for _, notifierConfig := range req.ReportConfig.GetNotifiers() {
-			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierConfig.GetId())
+		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
+			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
 			reportNotifier, ok := nf.(notifiers.ReportNotifier)
 			if !ok {
-				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierConfig.GetId()))
+				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
 				continue
 			}
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, messageText)
 			if err != nil {
 				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
-					notifierConfig.GetId(), err))
+					notifierSnap.GetEmailConfig().GetNotifierId(), err))
 			}
 		}
 		if !errorList.Empty() {

@@ -67,27 +67,11 @@ func GetValidReportConfigWithMultipleNotifiersV1() *storage.ReportConfiguration 
 				},
 			},
 		},
-		ResourceScope: &storage.ResourceScope{
-			ScopeReference: &storage.ResourceScope_CollectionId{
-				CollectionId: "collection-1",
-			},
-		},
-		Notifiers: []*storage.NotifierConfiguration{
-			{
-				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
-					EmailConfig: &storage.EmailNotifierConfiguration{
-						NotifierId:   "email-notifier-yahoo",
-						MailingLists: []string{"foo@yahoo.com"},
-					},
-				},
-			},
-			{
-				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
-					EmailConfig: &storage.EmailNotifierConfiguration{
-						NotifierId:   "email-notifier-gmail",
-						MailingLists: []string{"bar@gmail.com"},
-					},
-				},
+		ScopeId: "collection-1",
+		NotifierConfig: &storage.ReportConfiguration_EmailConfig{
+			EmailConfig: &storage.EmailNotifierConfiguration{
+				NotifierId:   "email-notifier-yahoo",
+				MailingLists: []string{"foo@yahoo.com"},
 			},
 		},
 	}

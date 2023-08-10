@@ -285,7 +285,11 @@ func generateReportSnapshot(
 	for i, notifierConf := range config.GetNotifiers() {
 		notifierSnaps = append(notifierSnaps, &storage.NotifierSnapshot{
 			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-				EmailConfig: notifierConf.GetEmailConfig(),
+				EmailConfig: func() *storage.EmailNotifierConfiguration {
+					cfg := notifierConf.GetEmailConfig()
+					cfg.NotifierId = notifierConf.GetId()
+					return cfg
+				}(),
 			},
 			NotifierName: protoNotifiers[i].GetName(),
 		})
