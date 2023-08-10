@@ -44,6 +44,7 @@ func (s *CommandHandlerTestSuite) SetupTest() {
 
 func (s *CommandHandlerTestSuite) TearDownTest() {
 	defer assertNoGoroutineLeaks(s.T())
+	_ = s.cHandler.Stopped().Wait()
 }
 
 func (s *CommandHandlerTestSuite) startScrape(scrapeID string, hostnames []string) {
