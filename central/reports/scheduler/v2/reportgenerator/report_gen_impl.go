@@ -92,7 +92,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 
 	// Change report status to SUCCESS
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_SUCCESS)
+	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_DELIVERED)
 	if err != nil {
 		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to SUCCESS"), req)
 		return
@@ -334,7 +334,7 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.R
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, snap.GetReportConfigurationId()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String()).
+		AddExactMatches(search.ReportState, storage.ReportStatus_DELIVERED.String()).
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
 			Limit(1)).

@@ -51,7 +51,7 @@ func (s *handlerTestSuite) TestDownloadReport() {
 	reportSnapshot := fixtures.GetReportSnapshot()
 	reportSnapshot.ReportId = uuid.NewV4().String()
 	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
-	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_GENERATED
 	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
@@ -157,6 +157,25 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
+				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
+					func(_ context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
+						c, err := writer.Write(blobData.Bytes())
+						s.NoError(err)
+						s.Equal(c, blobData.Len())
+						return blob, true, nil
+					})
+			},
+			statusCode: http.StatusOK,
+		},
+		{
+			desc: "Report re-downloaded",
+			id:   reportSnapshot.GetReportId(),
+			ctx:  userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
+					Return(snap, true, nil).Times(1)
 				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
 					func(_ context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
 						c, err := writer.Write(blobData.Bytes())

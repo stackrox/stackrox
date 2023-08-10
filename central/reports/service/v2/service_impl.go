@@ -409,9 +409,9 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 	blobName := common.GetReportBlobPath(rep.GetReportConfigurationId(), req.GetId())
 	switch status.GetRunState() {
 	case storage.ReportStatus_FAILURE:
-		return nil, errors.Errorf("Report job %q has failed and no downloadable report to delete", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report job %q has failed and no downloadable report to delete", req.GetId())
 	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
-		return nil, errors.Errorf("Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
 	}
 
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
@@ -436,4 +436,17 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 		}
 	})
 	return err
+}
+
+func replaceSearchBySuccess(q *v1.Query) *v1.Query {
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if mfQ.MatchFieldQuery.GetField() == search.ReportState.String() &&
+			mfQ.MatchFieldQuery.GetValue() == apiV2.ReportStatus_SUCCESS.String() {
+
+		}
+	})
 }

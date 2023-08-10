@@ -85,12 +85,12 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if status.GetRunState() == storage.ReportStatus_FAILURE {
+	switch status.GetRunState() {
+	case storage.ReportStatus_FAILURE:
 		httputil.WriteGRPCStyleError(w, codes.FailedPrecondition,
 			errors.Errorf("Report job %q has failed and hence no report to downloadAndVerify", id))
 		return
-	}
-	if status.GetRunState() != storage.ReportStatus_SUCCESS {
+	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
 		httputil.WriteGRPCStyleError(w, codes.Unavailable,
 			errors.Errorf("Report job %q is not ready for downloadAndVerify", id))
 		return

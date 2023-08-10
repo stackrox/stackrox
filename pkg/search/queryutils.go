@@ -130,6 +130,67 @@ func filterQueriesByFunction(qs []*v1.Query, fn func(*v1.BaseQuery) bool) (filte
 	return
 }
 
+// ReplaceMatchingBaseQueries applies the given pred func to all base queries, and replaces
+// matching base queries with the given replaceQ v1 Query. It returns true if any of the base queries are replaced.
+// It will not mutate any q for which pred returns false unless the pred function mutates its argument.
+func ReplaceMatchingBaseQueries(q *v1.Query, pred func(query *v1.BaseQuery) bool, replaceQ *v1.Query) (bool, error) {
+	if replaceQ == nil {
+		return false, errors.New("Replacement query cannot be nil")
+	}
+	if q.GetQuery() == nil {
+		return false, nil
+	}
+
+	replaced := false
+	switch typedQ := q.GetQuery().(type) {
+	case *v1.Query_Disjunction:
+		r, err := replaceQueriesByFunction(typedQ.Disjunction.GetQueries(), pred, replaceQ)
+		if err != nil {
+			return false, err
+		}
+		replaced = replaced || r
+	case *v1.Query_Conjunction:
+		r, err := replaceQueriesByFunction(typedQ.Conjunction.GetQueries(), pred, replaceQ)
+		if err != nil {
+			return false, err
+		}
+		replaced = replaced || r
+	case *v1.Query_BooleanQuery:
+		r, err := replaceQueriesByFunction(typedQ.BooleanQuery.GetMust().GetQueries(), pred, replaceQ)
+		if err != nil {
+			return false, err
+		}
+		replaced = replaced || r
+		r, err = replaceQueriesByFunction(typedQ.BooleanQuery.GetMustNot().GetQueries(), pred, replaceQ)
+		if err != nil {
+			return false, err
+		}
+		replaced = replaced || r
+	case *v1.Query_BaseQuery:
+		if pred(typedQ.BaseQuery) {
+			q = replaceQ
+			return true, nil
+		}
+		return false, nil
+	default:
+		utils.Should(fmt.Errorf("unhandled query type: %T; query was %s", q, proto.MarshalTextString(q)))
+	}
+	return replaced, nil
+}
+
+// Helper function used by ReplaceMatchingBaseQueries
+func replaceQueriesByFunction(qs []*v1.Query, pred func(query *v1.BaseQuery) bool, replaceQ *v1.Query) (bool, error) {
+	replaced := false
+	for _, q := range qs {
+		r, err := ReplaceMatchingBaseQueries(q, pred, replaceQ)
+		if err != nil {
+			return false, err
+		}
+		replaced = replaced || r
+	}
+	return replaced, nil
+}
+
 // AddRawQueriesAsConjunction adds the input toAdd raw query to the input addTo raw query
 func AddRawQueriesAsConjunction(toAdd string, addTo string) string {
 	if toAdd == "" && addTo == "" {
