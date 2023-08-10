@@ -38,11 +38,11 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddCollection mocks base method.
-func (m *MockDataStore) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+func (m *MockDataStore) AddCollection(ctx context.Context, collection *storage.ResourceCollection) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddCollection", ctx, collection)
 	ret0, _ := ret[0].(error)
-	return ret0
+	return "", ret0
 }
 
 // AddCollection indicates an expected call of AddCollection.

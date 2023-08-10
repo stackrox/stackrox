@@ -168,7 +168,7 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 		return nil, err
 	}
 
-	err = s.datastore.AddCollection(ctx, collection)
+	_, err = s.datastore.AddCollection(ctx, collection)
 	if err != nil {
 		return nil, err
 	}
