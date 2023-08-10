@@ -20,6 +20,7 @@ type PrivateKeySetter interface {
 	UpdateKey(keyID string, key crypto.Signer)
 }
 
+// PrivateKeyStore allows to set and obtain JWT private keys.
 type PrivateKeyStore interface {
 	PrivateKeyGetter
 	PrivateKeySetter
