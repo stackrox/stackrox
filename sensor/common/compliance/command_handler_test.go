@@ -42,6 +42,10 @@ func (s *CommandHandlerTestSuite) SetupTest() {
 	}
 }
 
+func (s *CommandHandlerTestSuite) TearDownTest() {
+	defer assertNoGoroutineLeaks(s.T())
+}
+
 func (s *CommandHandlerTestSuite) startScrape(scrapeID string, hostnames []string) {
 	scrapeCommand := central.ScrapeCommand{
 		ScrapeId: scrapeID,
