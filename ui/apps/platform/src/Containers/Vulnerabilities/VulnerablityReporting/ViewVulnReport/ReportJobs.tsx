@@ -222,7 +222,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     event.preventDefault();
                                     return saveFile({
                                         method: 'get',
-                                        url: `/v2/reports/jobs/${reportJobId}/download`,
+                                        url: `/v2/reports/jobs/${reportJobId as string}/download`,
                                         data: null,
                                         timeout: 300000,
                                         name: `${name}-report.gz`,

@@ -1,7 +1,8 @@
-import useModal from 'hooks/useModal';
 import { useState } from 'react';
+
+import useModal from 'hooks/useModal';
 import { deleteDownloadableReport } from 'services/ReportsService';
-import { getErrorMessage } from '../errorUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseDeleteDownloadModalProps = {
     onCompleted: () => void;
@@ -36,17 +37,20 @@ function useDeleteDownloadModal({
         setDeleteDownloadError(null);
     }
 
-    async function onDeleteDownload() {
+    function onDeleteDownload() {
         setIsDeletingDownload(true);
-        try {
-            await deleteDownloadableReport(reportIdToDeleteDownload);
-            setIsDeletingDownload(false);
-            closeDeleteDownloadModal();
-            onCompleted();
-        } catch (err) {
-            setIsDeletingDownload(false);
-            setDeleteDownloadError(getErrorMessage(err));
-        }
+        deleteDownloadableReport(reportIdToDeleteDownload)
+            .then(() => {
+                closeDeleteDownloadModal();
+                onCompleted();
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                setDeleteDownloadError(message);
+            })
+            .finally(() => {
+                setIsDeletingDownload(false);
+            });
     }
 
     return {
