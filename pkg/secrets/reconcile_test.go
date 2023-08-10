@@ -16,6 +16,8 @@ type config struct {
 	Name       string
 	Channel    string `scrub:"dependent"`
 	OauthToken string `scrub:"always"`
+	Map        map[string]string
+	ScrubMap   map[string]string `scrub:"map-values"`
 }
 
 type toplevel struct {
@@ -26,6 +28,8 @@ type toplevel struct {
 	DependInt int    `scrub:"dependent"`
 	Config    config
 	ConfigPtr *config
+	Map       map[string]string
+	ScrubMap  map[string]string `scrub:"map-values"`
 }
 
 func getTopLevelClone(obj *toplevel) *toplevel {
@@ -69,8 +73,8 @@ func TestReconcileUpdatedStruct(t *testing.T) {
 		Endpoint:  "endpoint",
 		Username:  "username",
 		DependInt: -1,
-		Config:    config{"configName", "channel", tokenValue},
-		ConfigPtr: &config{"ptrConfigName", "ptrChannel", tokenPtrValue},
+		Config:    config{"configName", "channel", tokenValue, nil, nil},
+		ConfigPtr: &config{"ptrConfigName", "ptrChannel", tokenPtrValue, nil, nil},
 		Password:  passwordValue,
 	}
 

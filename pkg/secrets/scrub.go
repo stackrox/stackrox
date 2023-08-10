@@ -12,10 +12,17 @@ const (
 	scrubStructTag = "scrub"
 	// scrubTagAlways is a scrub tag type used to indicate a field is a credential
 	scrubTagAlways = "always"
+	// scrubTagMapValues is a scrub tag type used to indicate a map[string]string field that contain keys with secrets.
+	// List of scrubbed keys are listed in mapKeysToReplace.
+	scrubTagMapValues = "map-values"
 	// scrubTagDependent is a scrub tag type used to indicate a field is dependent on credentials and could be used to exfiltrate credentials
 	scrubTagDependent = "dependent"
 	// ScrubReplacementStr is a string format of a masked credential
 	ScrubReplacementStr = "******"
+)
+
+var (
+	mapKeysToReplace = []string{"client_secret"}
 )
 
 // ScrubSecretsFromStructWithReplacement hides secret keys from an object with given replacement
@@ -32,8 +39,27 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) 
 			if field.String() != "" {
 				field.Set(reflect.ValueOf(replacement))
 			}
+		case scrubTagMapValues:
+			if field.Kind() != reflect.Map {
+				utils.CrashOnError(errors.Errorf("expected map kind, got %s", field.Kind()))
+			}
+			if field.Type() != reflect.TypeOf(map[string]string{}) {
+				utils.CrashOnError(errors.Errorf("expected map[string]string, got %s", field.Type()))
+			}
+
+			if field.IsNil() {
+				return
+			}
+			for _, scrubKey := range mapKeysToReplace {
+				if val := field.MapIndex(reflect.ValueOf(scrubKey)); !val.IsValid() {
+					continue
+				}
+
+				field.SetMapIndex(reflect.ValueOf(scrubKey), reflect.ValueOf(replacement))
+			}
 		}
 	}
+
 	visitStructTags(reflect.ValueOf(obj), scrubber)
 }
 
