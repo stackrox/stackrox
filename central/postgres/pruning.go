@@ -68,18 +68,18 @@ const (
 	pruneOldReportHistory = `DELETE FROM ` + schema.ReportSnapshotsTableName + ` WHERE reportid IN
 		(
 			SELECT snapshots.reportid FROM ` + schema.ReportSnapshotsTableName + ` snapshots
-			WHERE (snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4 OR snapshots.reportstatus_runstate = 5) 
+			WHERE (snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4 OR snapshots.reportstatus_runstate = 5)
 			AND snapshots.reportstatus_completedat NOT IN
 			(
-				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest 
+				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
 				WHERE latest.reportstatus_completedat IS NOT NULL
 				AND snapshots.reportconfigurationid = latest.reportconfigurationid
 				AND latest.reportstatus_runstate = 5
 				GROUP BY latest.reportstatus_reportnotificationmethod, latest.reportstatus_reportrequesttype
-			) 
-			AND NOT EXISTS 
+			)
+			AND NOT EXISTS
 			(
-				SELECT 1 FROM ` + schema.BlobsTableName + ` blobs 
+				SELECT 1 FROM ` + schema.BlobsTableName + ` blobs
 				WHERE blobs.name not ilike '%%/snapshots.reportid'
 			)
 			AND (snapshots.reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
