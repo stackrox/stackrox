@@ -742,13 +742,13 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	})
 }
 
-type unmarshaler[T any] interface {
+type Unmarshaler[T any] interface {
 	proto.Unmarshaler
 	*T
 }
 
 // RunGetQueryForSchema executes a request for just the search against the database
-func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
+func RunGetQueryForSchema[T any, PT Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -765,7 +765,7 @@ func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema 
 	})
 }
 
-func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
+func retryableRunGetManyQueryForSchema[T any, PT Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
 	queryStr := query.AsSQL()
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
@@ -777,7 +777,7 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 }
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
-func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
+func RunGetManyQueryForSchema[T any, PT Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err
@@ -793,7 +793,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 }
 
 // RunCursorQueryForSchema creates a cursor against the database
-func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
+func RunCursorQueryForSchema[T any, PT Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
 	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
@@ -860,7 +860,7 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 // helper functions
 ///////////////////
 
-func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
+func scanRows[T any, PT Unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 	var results []*T
 	for rows.Next() {
 		msg, err := unmarshal[T, PT](rows)
@@ -872,7 +872,7 @@ func scanRows[T any, PT unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
 	return results, rows.Err()
 }
 
-func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
+func unmarshal[T any, PT Unmarshaler[T]](row pgx.Row) (*T, error) {
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, err
