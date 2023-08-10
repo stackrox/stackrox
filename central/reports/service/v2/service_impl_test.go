@@ -1219,6 +1219,126 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	}
 }
 
+func (s *ReportServiceTestSuite) TestReplaceSearchBySuccess() {
+	testCases := []struct {
+		name      string
+		query     *v1.Query
+		expectedQ *v1.Query
+	}{
+		{
+			name:      "Empty query",
+			query:     search.EmptyQuery(),
+			expectedQ: search.EmptyQuery(),
+		},
+		{
+			name:      "Match none query",
+			query:     search.MatchNoneQuery(),
+			expectedQ: search.MatchNoneQuery(),
+		},
+		{
+			name: "Simple query without Report state field",
+			query: search.NewQueryBuilder().AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
+				ProtoQuery(),
+			expectedQ: search.NewQueryBuilder().AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
+				ProtoQuery(),
+		},
+		{
+			name: "Simple query without Report state = SUCCESS",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String(), storage.ReportStatus_WAITING.String()).
+				ProtoQuery(),
+			expectedQ: search.NewQueryBuilder().
+				AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String(), storage.ReportStatus_WAITING.String()).
+				ProtoQuery(),
+		},
+		{
+			name: "Complex query without Report state field",
+			query: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, "config1", "config2").ProtoQuery(),
+			),
+			expectedQ: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, "config1", "config2").ProtoQuery(),
+			),
+		},
+		{
+			name: "Complex query without Report state = SUCCESS",
+			query: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
+					ProtoQuery(),
+			),
+			expectedQ: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
+					ProtoQuery(),
+			),
+		},
+		{
+			name: "Simple query with Report state = SUCCESS",
+			query: search.NewQueryBuilder().
+				AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String(), "SUCCESS").ProtoQuery(),
+			expectedQ: search.DisjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String()).
+					ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
+					ProtoQuery(),
+			),
+		},
+		{
+			name: "Complex query with Report state = SUCCESS",
+			query: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String(), "SUCCESS").
+					ProtoQuery(),
+			),
+			expectedQ: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.DisjunctionQuery(
+					search.NewQueryBuilder().
+						AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String()).
+						ProtoQuery(),
+					search.NewQueryBuilder().
+						AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
+						ProtoQuery(),
+				),
+			),
+		},
+	}
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			query := tc.query
+			err := replaceSearchBySuccess(tc.query)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.expectedQ, query)
+		})
+	}
+}
+
 func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
