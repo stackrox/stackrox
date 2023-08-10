@@ -68,7 +68,7 @@ const (
 	pruneOldReportHistory = `DELETE FROM ` + schema.ReportSnapshotsTableName + ` WHERE reportid IN
 		(
 			SELECT snapshots.reportid FROM ` + schema.ReportSnapshotsTableName + ` snapshots
-			WHERE (snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 5) 
+			WHERE (snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4 OR snapshots.reportstatus_runstate = 5) 
 			AND snapshots.reportstatus_completedat NOT IN
 			(
 				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest 

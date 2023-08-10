@@ -227,21 +227,6 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteDeliveredJobsInRetentionWin
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
 
-func (s *ReportHistoryPruningSuite) TestMustNotDeleteJobsNotDelivered() {
-	// All old downloads; some not delivered
-	snapshots := []*storage.ReportSnapshot{
-		newReportSnapshot(config2, "r21", 32*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_GENERATED),
-		newReportSnapshot(config2, "r22", 32*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
-		newReportSnapshot(config2, "r23", 30*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
-		newReportSnapshot(config3, "r31", 64*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_GENERATED),
-		newReportSnapshot(config3, "r32", 32*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
-		newReportSnapshot(config3, "r33", 30*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
-	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
-	expectedDeletions := set.NewStringSet("r22", "r32")
-	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
-}
-
 func (s *ReportHistoryPruningSuite) TestMustNotDeleteIfBlobsExist() {
 	// All old downloads; blob exists
 	snapshots := []*storage.ReportSnapshot{
