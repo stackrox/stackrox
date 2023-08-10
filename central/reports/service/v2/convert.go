@@ -25,6 +25,14 @@ var (
 		storage.Schedule_MONTHLY: apiV2.ReportSchedule_MONTHLY,
 	}
 
+	storageRunStateToV2 = map[storage.ReportStatus_RunState]apiV2.ReportStatus_RunState{
+		storage.ReportStatus_WAITING:   apiV2.ReportStatus_WAITING,
+		storage.ReportStatus_PREPARING: apiV2.ReportStatus_PREPARING,
+		storage.ReportStatus_GENERATED: apiV2.ReportStatus_SUCCESS,
+		storage.ReportStatus_DELIVERED: apiV2.ReportStatus_SUCCESS,
+		storage.ReportStatus_FAILURE:   apiV2.ReportStatus_FAILURE,
+	}
+
 	// Use this context only to populate notifier and collection names before returning v2.ReportConfiguration response
 	allAccessCtx = sac.WithAllAccess(context.Background())
 )
@@ -337,7 +345,7 @@ func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportSta
 	return &apiV2.ReportStatus{
 		ReportRequestType:        apiV2.ReportStatus_ReportMethod(status.GetReportRequestType()),
 		CompletedAt:              status.GetCompletedAt(),
-		RunState:                 apiV2.ReportStatus_RunState(status.GetRunState()),
+		RunState:                 storageRunStateToV2[status.GetRunState()],
 		ReportNotificationMethod: apiV2.NotificationMethod(status.GetReportNotificationMethod()),
 		ErrorMsg:                 status.GetErrorMsg(),
 	}
