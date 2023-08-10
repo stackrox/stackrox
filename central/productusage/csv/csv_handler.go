@@ -2,7 +2,6 @@ package usagecsv
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -12,30 +11,23 @@ import (
 	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-var zeroTime = time.Time{}
+var (
+	zeroTime  = time.Time{}
+	csvHeader = []string{"Timestamp", "Nodes", "CPU Units"}
+)
 
-func writeError(w http.ResponseWriter, code int, err error, description string) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(code)
-	_, _ = w.Write([]byte(errors.Wrap(err, description).Error()))
-}
-
-func makeCSVWriter(w io.Writer) csv.StreamWriter[storage.SecuredUnits] {
+func getRowConverter() func(*storage.SecuredUnits) []string {
 	record := make([]string, 3)
-	return csv.NewStreamWriter[storage.SecuredUnits](w,
-		csv.WithBOM(),
-		csv.WithCRLF(),
-		csv.WithHeader("Timestamp", "Nodes", "CPU Units"),
-		csv.WithConverter[storage.SecuredUnits](func(m *storage.SecuredUnits) ([]string, error) {
-			record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.GetTimestamp(), zeroTime).UTC().Format(time.RFC3339)
-			record[1] = fmt.Sprint(m.GetNumNodes())
-			record[2] = fmt.Sprint(m.GetNumCpuUnits())
-			return record, nil
-		}),
-	)
+	return func(m *storage.SecuredUnits) []string {
+		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.GetTimestamp(), zeroTime).UTC().Format(time.RFC3339)
+		record[1] = fmt.Sprint(m.GetNumNodes())
+		record[2] = fmt.Sprint(m.GetNumCpuUnits())
+		return record
+	}
 }
 
 // CSVHandler returns an HTTP handler function that serves usage data as CSV.
@@ -43,19 +35,21 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		from, to, err := parseRequest(r)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, err, "bad CSV usage metrics request")
+			err = errox.InvalidArgs.New("bad CSV usage metrics request").CausedBy(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		csvWriter := makeCSVWriter(w)
+		csvWriter := csv.NewHTTPCSVWriter(w,
+			"secured_units_usage.csv", getRowConverter(),
+			csvHeader,
+		)
 
-		if err := ds.Walk(r.Context(), from, to, csvWriter.AddRow); err != nil {
-			writeError(w, http.StatusInternalServerError, err, "failed to process secured units usage data")
+		if err := ds.Walk(r.Context(), from, to, csvWriter.Write); err != nil {
+			_ = csvWriter.SetHTTPError(errors.WithMessage(err,
+				"failed to retreive secured units usage data"))
 			return
 		}
-
-		w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
-		w.Header().Set("Content-Disposition", `attachment; filename="secured_units_usage.csv"`)
 		csvWriter.Flush()
 	}
 }

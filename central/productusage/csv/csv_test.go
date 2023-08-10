@@ -1,41 +1,12 @@
 package usagecsv
 
 import (
-	"bytes"
 	"net/url"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestCSV(t *testing.T) {
-	ts1, _ := time.Parse(time.RFC3339Nano, "2023-07-24T10:13:21.702316Z")
-	ts2, _ := time.Parse(time.RFC3339Nano, "2023-07-24T15:13:21.702316Z")
-	metrics := []*storage.SecuredUnits{{
-		Timestamp:   protoconv.ConvertTimeToTimestamp(ts1),
-		NumNodes:    1,
-		NumCpuUnits: 2,
-	}, {
-		Timestamp:   protoconv.ConvertTimeToTimestamp(ts2),
-		NumNodes:    3,
-		NumCpuUnits: 4,
-	}}
-
-	buf := bytes.NewBuffer(nil)
-	w := makeCSVWriter(buf)
-	var err error
-	for _, m := range metrics {
-		if err = w.AddRow(m); err != nil {
-			break
-		}
-	}
-	assert.NoError(t, err)
-	assert.NoError(t, w.Flush())
-	assert.Equal(t, "\uFEFFTimestamp,Nodes,CPU Units\r\n2023-07-24T10:13:21Z,1,2\r\n2023-07-24T15:13:21Z,3,4\r\n", buf.String())
-}
 
 func TestGetTimeParam(t *testing.T) {
 	t.Run("good from, bad to", func(t *testing.T) {
