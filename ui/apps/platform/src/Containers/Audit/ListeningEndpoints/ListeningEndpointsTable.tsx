@@ -128,7 +128,7 @@ function ListeningEndpointsTable({
                         <Tr isExpanded={isExpanded}>
                             <Td colSpan={5}>
                                 <Card className="pf-u-m-md" isFlat>
-                                    {listeningEndpoints.length > 0 ? (
+                                    {count > 0 ? (
                                         <EmbeddedTable
                                             deploymentId={id}
                                             listeningEndpoints={listeningEndpoints}

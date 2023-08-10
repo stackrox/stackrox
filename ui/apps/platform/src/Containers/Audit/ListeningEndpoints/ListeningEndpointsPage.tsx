@@ -104,7 +104,7 @@ function ListeningEndpointsPage() {
     const entityToggle = useSelectToggle();
     const autocompleteToggle = useSelectToggle();
 
-    const [areAllRowsExpanded, setAllRowsExpanded] = useState<boolean>(false);
+    const [areAllRowsExpanded, setAllRowsExpanded] = useState(false);
 
     const variables = {
         query: getRequestQueryStringForAutocomplete(searchFilter, entity, searchValue),
