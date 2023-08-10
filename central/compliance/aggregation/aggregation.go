@@ -385,13 +385,8 @@ func getAggregationKeys(groupByKey groupByKey) []*storage.ComplianceAggregation_
 func (a *aggregatorImpl) getCategoryID(controlID string) string {
 	// Controls can now be removed with the addition of the compliance operator
 	// All controls should have categories if they exist
-	if control := a.standards.Control(controlID); control == nil {
-		return ""
-	}
-
 	category := a.standards.GetCategoryByControl(controlID)
 	if category == nil {
-		utils.Should(errors.Errorf("no category found for control %q", controlID))
 		return ""
 	}
 	return category.QualifiedID()
