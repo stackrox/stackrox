@@ -17,8 +17,8 @@ var (
 )
 
 type dataStoreImpl struct {
-	clusterStore clusterStoreI
-	cache        cache.Cache
+	clusterDS clusterDataStore
+	cache     cache.Cache
 }
 
 var _ DataStore = (*dataStoreImpl)(nil)
@@ -44,7 +44,7 @@ func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredU
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get current usage data")
 	}
-	ids, err := getClusterIDs(ctx, ds.clusterStore)
+	ids, err := getClusterIDs(ctx, ds.clusterDS)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster IDs for current usage")
 	}
@@ -58,7 +58,7 @@ func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (*storage.Secure
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get the aggregate usage data")
 	}
-	ids, err := getClusterIDs(ctx, ds.clusterStore)
+	ids, err := getClusterIDs(ctx, ds.clusterDS)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster IDs for usage snapshot")
 	}

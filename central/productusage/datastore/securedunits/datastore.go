@@ -38,9 +38,9 @@ type DataStore interface {
 }
 
 // New initializes a datastore implementation instance.
-func New(clusterStore clusterStoreI) DataStore {
+func New(clusterDS clusterDataStore) DataStore {
 	return &dataStoreImpl{
-		clusterStore: clusterStore,
-		cache:        cache.NewCache(),
+		clusterDS: clusterDS,
+		cache:     cache.NewCache(),
 	}
 }

@@ -16,13 +16,13 @@ var (
 		sac.ResourceScopeKeys(resources.Cluster))
 )
 
-type clusterStoreI interface {
+type clusterDataStore interface {
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 }
 
-func getClusterIDs(ctx context.Context, store clusterStoreI) (set.StringSet, error) {
+func getClusterIDs(ctx context.Context, clusterDS clusterDataStore) (set.StringSet, error) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, clusterReader)
-	clusters, err := store.GetClusters(ctx)
+	clusters, err := clusterDS.GetClusters(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "cluster datastore failure")
 	}
