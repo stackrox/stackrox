@@ -1,6 +1,7 @@
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { PolicySeverity } from 'types/policy.proto';
 
+export const noViolationsClassName = 'pf-u-color-200';
 export const noViolationsColor = 'var(--pf-global--Color--200)';
 
 /*
