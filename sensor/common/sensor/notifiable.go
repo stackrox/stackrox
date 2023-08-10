@@ -2,15 +2,15 @@ package sensor
 
 import "github.com/stackrox/rox/sensor/common"
 
-// OfflineAware is meant to replace common.Notifiable for non-components, so that a pkg unrelated to Sensor
+// offlineAware is meant to replace common.Notifiable for non-components, so that a pkg unrelated to Sensor
 // is not forced to import sensor code.
-type OfflineAware interface {
+type offlineAware interface {
 	GoOnline()
 	GoOffline()
 }
 
-// WrapNotifiable makes OfflineAware struct implement the Notifiable interface
-func WrapNotifiable(oa OfflineAware, name string) common.Notifiable {
+// wrapNotifiable makes offlineAware struct implement the Notifiable interface
+func wrapNotifiable(oa offlineAware, name string) common.Notifiable {
 	return &notifiableImpl{
 		name: name,
 		oa:   oa,
@@ -19,7 +19,7 @@ func WrapNotifiable(oa OfflineAware, name string) common.Notifiable {
 
 type notifiableImpl struct {
 	name string
-	oa   OfflineAware
+	oa   offlineAware
 }
 
 func (ni *notifiableImpl) Notify(e common.SensorComponentEvent) {
