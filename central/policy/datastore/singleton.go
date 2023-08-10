@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -59,7 +58,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 	// Preload the default policies.
 	defaultPolicies, err := policies.DefaultPolicies()
 	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
-	utils.CrashOnError(err)
+	//utils.CrashOnError(err)
 
 	var count int
 	for _, p := range defaultPolicies {
@@ -76,10 +75,12 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		policyCategories := p.GetCategories()
 		p.Categories = []string{}
 		if err := s.Upsert(workflowAdministrationCtx, p); err != nil {
-			utils.CrashOnError(err)
+			log.Error(err)
+			//utils.CrashOnError(err)
 		}
 		if err := categoriesDS.SetPolicyCategoriesForPolicy(sac.WithAllAccess(context.Background()), p.GetId(), policyCategories); err != nil {
-			utils.CrashOnError(err)
+			log.Error(err)
+			//utils.CrashOnError(err)
 		}
 
 	}
