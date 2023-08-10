@@ -16,13 +16,13 @@ const (
 )
 
 type netpolAnalyzer interface {
-	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, error)
+	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, []npguard.Peer, error)
 	ConnectionsListToString(conns []npguard.Peer2PeerConnection) (string, error)
 	Errors() []npguard.ConnlistError
 }
 
 func (cmd *analyzeNetpolCommand) analyzeNetpols(analyzer netpolAnalyzer) error {
-	conns, err := analyzer.ConnlistFromDirPath(cmd.inputFolderPath)
+	conns, _, err := analyzer.ConnlistFromDirPath(cmd.inputFolderPath)
 	if err != nil {
 		return errors.Wrap(err, "error in connectivity analysis")
 	}
