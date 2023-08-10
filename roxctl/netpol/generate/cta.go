@@ -1,5 +1,5 @@
-// Package netpol provides primitives for command 'roxctl generate netpol'
-package netpol
+// Package generate provides primitives for command 'roxctl generate netpol'
+package generate
 
 import (
 	"os"
@@ -22,7 +22,7 @@ type netpolGenerator interface {
 	Errors() []npguard.FileProcessingError
 }
 
-func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
+func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
 	recommendedNetpols, err := synth.PoliciesFromFolderPath(cmd.inputFolderPath)
 	if err != nil {
 		return errors.Wrap(err, "error generating network policies")
@@ -37,7 +37,7 @@ func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
 			roxerr = npg.ErrErrors
 		} else {
 			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
-			if cmd.treatWarningsAsErrors && roxerr == nil {
+			if cmd.Options.TreatWarningsAsErrors && roxerr == nil {
 				roxerr = npg.ErrWarnings
 			}
 		}
@@ -45,15 +45,15 @@ func (cmd *generateNetpolCommand) generateNetpol(synth netpolGenerator) error {
 	return roxerr
 }
 
-func (cmd *generateNetpolCommand) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {
-	if _, err := os.Stat(cmd.outputFolderPath); err == nil {
-		if err := os.RemoveAll(cmd.outputFolderPath); err != nil {
-			return errors.Wrapf(err, "failed to remove output path %s", cmd.outputFolderPath)
+func (cmd *NetpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {
+	if _, err := os.Stat(cmd.Options.OutputFolderPath); err == nil {
+		if err := os.RemoveAll(cmd.Options.OutputFolderPath); err != nil {
+			return errors.Wrapf(err, "failed to remove output path %s", cmd.Options.OutputFolderPath)
 		}
-		cmd.env.Logger().WarnfLn("Removed output path %s", cmd.outputFolderPath)
+		cmd.env.Logger().WarnfLn("Removed output path %s", cmd.Options.OutputFolderPath)
 	}
-	if cmd.outputFolderPath != "" {
-		cmd.env.Logger().InfofLn("Writing generated Network Policies to %q", cmd.outputFolderPath)
+	if cmd.Options.OutputFolderPath != "" {
+		cmd.env.Logger().InfofLn("Writing generated Network Policies to %q", cmd.Options.OutputFolderPath)
 	}
 
 	var mergedPolicy string
@@ -88,12 +88,12 @@ func (cmd *generateNetpolCommand) ouputNetpols(recommendedNetpols []*v1.NetworkP
 	return nil
 }
 
-func (cmd *generateNetpolCommand) printNetpols(combinedNetpols string) {
+func (cmd *NetpolGenerateCmd) printNetpols(combinedNetpols string) {
 	cmd.env.Logger().PrintfLn(combinedNetpols)
 }
 
-func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string) error {
-	dirpath, filename := filepath.Split(cmd.outputFilePath)
+func (cmd *NetpolGenerateCmd) saveNetpolsToMergedFile(combinedNetpols string) error {
+	dirpath, filename := filepath.Split(cmd.Options.OutputFilePath)
 	if filename == "" {
 		filename = "policies.yaml"
 	}
@@ -104,7 +104,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToMergedFile(combinedNetpols string
 	return nil
 }
 
-func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.NetworkPolicy) error {
+func (cmd *NetpolGenerateCmd) saveNetpolsToFolder(recommendedNetpols []*v1.NetworkPolicy) error {
 	for _, netpol := range recommendedNetpols {
 		policyName := netpol.GetName()
 		if policyName == "" {
@@ -117,7 +117,7 @@ func (cmd *generateNetpolCommand) saveNetpolsToFolder(recommendedNetpols []*v1.N
 			return errors.Wrap(err, "error converting Network Policy object to yaml")
 		}
 
-		if err := writeFile(filename, cmd.outputFolderPath, yamlPolicy); err != nil {
+		if err := writeFile(filename, cmd.Options.OutputFolderPath, yamlPolicy); err != nil {
 			return errors.Wrap(err, "error writing policy to file")
 		}
 	}

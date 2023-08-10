@@ -1,4 +1,4 @@
-package netpol
+package generate
 
 import (
 	"os"
@@ -81,16 +81,18 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			testCmd.Flags().String("output-file", "", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
-			generateNetpolCmd := generateNetpolCommand{
-				offline:               true,
-				stopOnFirstError:      tt.stopOnFirstErr,
-				treatWarningsAsErrors: tt.strict,
-				inputFolderPath:       "", // set through construct
-				outputFolderPath:      tt.outDir,
-				outputFilePath:        tt.outFile,
-				removeOutputPath:      tt.removeOutputPath,
-				env:                   env,
-				printer:               nil,
+			generateNetpolCmd := NetpolGenerateCmd{
+				Options: NetpolGenerateOptions{
+					StopOnFirstError:      tt.stopOnFirstErr,
+					TreatWarningsAsErrors: tt.strict,
+					OutputFolderPath:      tt.outDir,
+					OutputFilePath:        tt.outFile,
+					RemoveOutputPath:      tt.removeOutputPath,
+				},
+				offline:         true,
+				inputFolderPath: "", // set through construct
+				env:             env,
+				printer:         nil,
 			}
 			if tt.outDir != "" {
 				d.Assert().NoError(testCmd.Flags().Set("output-dir", tt.outDir))
