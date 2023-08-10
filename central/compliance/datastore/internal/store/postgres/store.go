@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"io"
 	"sort"
@@ -25,13 +26,20 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	lru "github.com/stackrox/rox/pkg/expiringlru"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	runResultsCacheSize      = 1000
+	runResultsCacheRetention = 60 * time.Second
 )
 
 const aggregatedResultsCacheSize = 100
@@ -43,6 +51,9 @@ var (
 	cacheLock         = concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
 	domainCache       = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets)
 	targetResource    = resources.Compliance
+
+	runResultsCache   lru.Cache[string, *storage.ComplianceRunResults]
+	onceforRunResults sync.Once
 )
 
 type metadataIndex interface {
@@ -113,7 +124,43 @@ func (s *storeImpl) GetConfig(ctx context.Context, id string) (*storage.Complian
 	return s.config.Get(ctx, id)
 }
 
-func (s *storeImpl) getResultsFromMetadata(ctx context.Context, metadata *storage.ComplianceRunMetadata, flags types.GetFlags) (*storage.ComplianceRunResults, error) {
+func getRunResultsCache() lru.Cache[string, *storage.ComplianceRunResults] {
+	onceforRunResults.Do(func() {
+		runResultsCache = lru.NewExpirableLRU[string, *storage.ComplianceRunResults](
+			runResultsCacheSize,
+			nil,
+			runResultsCacheRetention,
+		)
+	})
+	return runResultsCache
+}
+
+func (s *storeImpl) getResultsFromMetadata(
+	ctx context.Context,
+	metadata *storage.ComplianceRunMetadata,
+	flags types.GetFlags,
+) (*storage.ComplianceRunResults, error) {
+	cacheKey := fmt.Sprintf("%s|%d", metadata.GetRunId(), flags.Hash())
+	cachedResults, found := getRunResultsCache().Get(cacheKey)
+	if found && cachedResults != nil {
+		return cachedResults, nil
+	}
+
+	result, err := s.getResultsFromMetadataFromStore(ctx, metadata, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	getRunResultsCache().Add(cacheKey, result)
+
+	return result, nil
+}
+
+func (s *storeImpl) getResultsFromMetadataFromStore(
+	ctx context.Context,
+	metadata *storage.ComplianceRunMetadata,
+	flags types.GetFlags,
+) (*storage.ComplianceRunResults, error) {
 	domain, err := s.getDomain(ctx, metadata.GetDomainId())
 	if err != nil {
 		return nil, err
