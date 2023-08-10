@@ -1,0 +1,34 @@
+# irrelevant resource : SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: daemonset-with-hostport
+  annotations:
+    kubernetes.io/description: 'Allows DaemonSets to bind to a well-known host port'
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+allowHostPorts: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: false
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: asset-cache 
+  namespace: frontend 
+  labels:
+    app: asset-cache
+spec:
+  to:
+    kind: Service
+    name: asset-cache-service
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
