@@ -222,10 +222,12 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     event.preventDefault();
                                     return saveFile({
                                         method: 'get',
-                                        url: `/v2/reports/jobs/${reportJobId as string}/download`,
+                                        url: `/api/reports/jobs/download?id=${
+                                            reportJobId as string
+                                        }`,
                                         data: null,
                                         timeout: 300000,
-                                        name: `${name}-report.gz`,
+                                        name: `${name}-report.zip`,
                                     });
                                 },
                             },
