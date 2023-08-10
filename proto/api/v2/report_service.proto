@@ -240,12 +240,6 @@ service ReportService {
             get: "/v2/reports/jobs/{id}/status"
         };
     }
-    // GetReportStatusConfigID returns report status for a report config id
-    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatusResponse) {
-        option (google.api.http) = {
-            get: "/v2/reports/last-status/{id}"
-        };
-    }
 
     // GetReportHistory returns the full report job history for a report configuration with the specified ID.
     rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
