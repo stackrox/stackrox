@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { Button, ButtonVariant, Card } from '@patternfly/react-core';
+import { Button, ButtonVariant, Card, Text } from '@patternfly/react-core';
 import { Tbody, Tr, Td, TableComposable, Th, Thead } from '@patternfly/react-table';
 
 import { riskBasePath } from 'routePaths';
@@ -81,16 +81,16 @@ function ListeningEndpointsTable({
                     >
                         {/* Header for expanded column */}
                     </Th>
-                    <Th width={10}>Count</Th>
                     <Th width={30} sort={getSortParams('Deployment')}>
                         Deployment
-                    </Th>
-                    <Th width={30} sort={getSortParams('Namespace')}>
-                        Namespace
                     </Th>
                     <Th width={20} sort={getSortParams('Cluster')}>
                         Cluster
                     </Th>
+                    <Th width={30} sort={getSortParams('Namespace')}>
+                        Namespace
+                    </Th>
+                    <Th>Count</Th>
                 </Tr>
             </Thead>
             {deployments.map(({ id, name, namespace, cluster, listeningEndpoints }, rowIndex) => {
@@ -104,18 +104,13 @@ function ListeningEndpointsTable({
                 return (
                     <Tbody key={id} isExpanded={isExpanded}>
                         <Tr>
-                            {count > 0 ? (
-                                <Td
-                                    expand={{
-                                        rowIndex,
-                                        isExpanded,
-                                        onToggle: () => invertedExpansionRowSet.toggle(id),
-                                    }}
-                                />
-                            ) : (
-                                <Td />
-                            )}
-                            <Td dataLabel="Listening endpoints count">{count}</Td>
+                            <Td
+                                expand={{
+                                    rowIndex,
+                                    isExpanded,
+                                    onToggle: () => invertedExpansionRowSet.toggle(id),
+                                }}
+                            />
                             <Td dataLabel="Deployment">
                                 <Button
                                     variant={ButtonVariant.link}
@@ -126,21 +121,26 @@ function ListeningEndpointsTable({
                                     {name}
                                 </Button>
                             </Td>
-                            <Td dataLabel="Namespace">{namespace}</Td>
                             <Td dataLabel="Cluster">{cluster}</Td>
+                            <Td dataLabel="Namespace">{namespace}</Td>
+                            <Td dataLabel="Listening endpoints count">{count}</Td>
                         </Tr>
-                        {listeningEndpoints.length > 0 && (
-                            <Tr isExpanded={isExpanded}>
-                                <Td colSpan={5}>
-                                    <Card className="pf-u-m-md" isFlat>
+                        <Tr isExpanded={isExpanded}>
+                            <Td colSpan={5}>
+                                <Card className="pf-u-m-md" isFlat>
+                                    {listeningEndpoints.length > 0 ? (
                                         <EmbeddedTable
                                             deploymentId={id}
                                             listeningEndpoints={listeningEndpoints}
                                         />
-                                    </Card>
-                                </Td>
-                            </Tr>
-                        )}
+                                    ) : (
+                                        <Text className="pf-u-p-md">
+                                            No listening endpoints reported for this deployment
+                                        </Text>
+                                    )}
+                                </Card>
+                            </Td>
+                        </Tr>
                     </Tbody>
                 );
             })}
