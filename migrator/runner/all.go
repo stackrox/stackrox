@@ -22,4 +22,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_184_to_m_185_remove_policy_vulnerability_report_resources"
 	_ "github.com/stackrox/rox/migrator/migrations/m_185_to_m_186_more_policy_migrations"
 	_ "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search"
+	_ "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections"
 )
