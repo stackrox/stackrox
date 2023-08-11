@@ -14,21 +14,43 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+type clock interface {
+	Now() time.Time
+	TimestampNow() timestamp.MicroTS
+}
+
+type systemClock struct {
+}
+
+func (d *systemClock) Now() time.Time {
+	return time.Now()
+}
+
+func (d *systemClock) TimestampNow() timestamp.MicroTS {
+	return timestamp.Now()
+}
+
 type entry struct {
 	done concurrency.ErrorSignal
 
 	references sync.WaitGroup
 	data       *ioutils.RWBuf
 
+	clock        clock
 	creationTime time.Time
 	lastAccess   timestamp.MicroTS // atomically set
 }
 
 func newEntry() *entry {
+	return newEntryWithClock(&systemClock{})
+}
+
+func newEntryWithClock(clock clock) *entry {
 	return &entry{
+		clock:        clock,
 		done:         concurrency.NewErrorSignal(),
-		creationTime: time.Now(),
-		lastAccess:   timestamp.Now(),
+		creationTime: clock.Now(),
+		lastAccess:   clock.TimestampNow(),
 	}
 }
 
@@ -47,11 +69,11 @@ func (e *entry) Contents() (io.ReaderAt, int64, error) {
 
 func (e *entry) AcquireRef() {
 	e.references.Add(1)
-	e.lastAccess.StoreAtomic(timestamp.Now())
+	e.lastAccess.StoreAtomic(e.clock.TimestampNow())
 }
 
 func (e *entry) ReleaseRef() {
-	e.lastAccess.StoreAtomic(timestamp.Now())
+	e.lastAccess.StoreAtomic(e.clock.TimestampNow())
 	e.references.Done()
 }
 
@@ -74,14 +96,14 @@ func (e *entry) IsError() bool {
 	return ok && err != nil
 }
 
-func (e *entry) Populate(client *http.Client, upstreamURL string, opts *options) {
-	err := e.doPopulate(client, upstreamURL, opts)
+func (e *entry) Populate(ctx context.Context, client httpClient, upstreamURL string, opts *options) {
+	err := e.doPopulate(ctx, client, upstreamURL, opts)
 	defer e.done.SignalWithError(err)
-	e.lastAccess.StoreAtomic(timestamp.Now())
+	e.lastAccess.StoreAtomic(e.clock.TimestampNow())
 }
 
-func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts *options) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func (e *entry) doPopulate(ctx context.Context, client httpClient, upstreamURL string, opts *options) error {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, upstreamURL, nil)

@@ -77,43 +77,60 @@ func applyDefaults(o *options) *options {
 }
 
 type koCache struct {
-	opts *options
+	opts  *options
+	clock clock
 
+	parentCtx    context.Context
 	entries      map[string]*entry
-	entriesMutex sync.Mutex
+	entriesMutex *sync.Mutex
 
-	upstreamClient  *http.Client
+	upstreamClient  httpClient
 	upstreamBaseURL string
 
-	centralReady atomic.Bool
+	centralReady *atomic.Bool
+	// onlineCtx will be canceled when connectivity to central is lost
+	onlineCtx       context.Context
+	onlineCtxCancel context.CancelCauseFunc
+}
+
+type httpClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // New returns a new kernel object cache whose lifetime is bound by the given context, using the given
 // HTTP client and base URL for upstream requests.
-func New(ctx context.Context, upstreamClient *http.Client, upstreamBaseURL string, opts ...func(o *options)) *koCache {
+func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL string, opts ...func(o *options)) *koCache {
 	opt := applyDefaults(&options{})
 	for _, option := range opts {
 		option(opt)
 	}
+	onlineCtx, onlineCtxCancel := context.WithCancelCause(parentCtx)
 	cache := &koCache{
 		opts:            opt,
+		clock:           &systemClock{},
+		parentCtx:       parentCtx,
 		entries:         make(map[string]*entry),
+		entriesMutex:    &sync.Mutex{},
 		upstreamClient:  upstreamClient,
 		upstreamBaseURL: strings.TrimSuffix(upstreamBaseURL, "/"),
-		centralReady:    atomic.Bool{},
+		centralReady:    &atomic.Bool{},
+		onlineCtx:       onlineCtx,
+		onlineCtxCancel: onlineCtxCancel,
 	}
 	cache.centralReady.Store(opt.StartOnline)
 
-	go cache.cleanupLoop(ctx)
+	go cache.cleanupLoop(parentCtx)
 	return cache
 }
 
 func (c *koCache) GoOnline() {
 	c.centralReady.Store(true)
+	c.onlineCtx, c.onlineCtxCancel = context.WithCancelCause(c.parentCtx)
 }
 
 func (c *koCache) GoOffline() {
 	c.centralReady.Store(false)
+	c.onlineCtxCancel(errCentralUnreachable)
 }
 
 func (c *koCache) getOrAddEntry(path string) (*entry, error) {
@@ -137,9 +154,9 @@ func (c *koCache) getOrAddEntry(path string) (*entry, error) {
 		} else if c.entries == nil {
 			return nil, errKoCacheShuttingDown
 		} else {
-			e = newEntry()
+			e = newEntryWithClock(c.clock)
 			c.entries[path] = e
-			go e.Populate(c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
+			go e.Populate(c.onlineCtx, c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 		}
 	}
 	e.AcquireRef()
