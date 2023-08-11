@@ -37,11 +37,9 @@ func (s *ReportMetadataDatastoreTestSuite) SetupSuite() {
 		s.T().SkipNow()
 	}
 
-	var err error
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.reportConfigStore, err = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.NoError(err)
+	s.reportConfigStore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
