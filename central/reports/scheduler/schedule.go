@@ -358,7 +358,7 @@ func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConf
 	collection *storage.ResourceCollection) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
 		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
-	rQuery, err := qb.BuildQuery(ctx)
+	rQuery, err := qb.BuildQuery(ctx, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "error building report query")
 	}

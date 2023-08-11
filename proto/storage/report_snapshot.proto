@@ -18,19 +18,19 @@ message ReportSnapshot {
         VULNERABILITY = 0;
     }
 
-    string                    report_id                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    string                    report_configuration_id      = 2 [(gogoproto.moretags) = 'search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"'];
-    string                    name                         = 3 [(gogoproto.moretags) = 'search:"Report Name"'];
-    string                    description                  = 4;
-    ReportType                type                         = 5;
-    oneof                     filter {
-        VulnerabilityReportFilters  vuln_report_filters    = 6;
+    string                          report_id                = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string                          report_configuration_id  = 2 [(gogoproto.moretags) = 'search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"'];
+    string                          name                     = 3 [(gogoproto.moretags) = 'search:"Report Name"'];
+    string                          description              = 4;
+    ReportType                      type                     = 5;
+    oneof filter {
+        VulnerabilityReportFilters  vuln_report_filters      = 6;
     }
-    CollectionSnapshot        collection                   = 7;
-    storage.Schedule          schedule                     = 8;
-    ReportStatus              report_status                = 9;
-    repeated NotifierSnapshot notifiers                    = 10;
-    SlimUser                  requester                    = 11;
+    CollectionSnapshot              collection                = 7;
+    storage.Schedule                schedule                  = 8;
+    ReportStatus                    report_status             = 9;
+    repeated NotifierSnapshot       notifiers                 = 10;
+    SlimUser                        requester                 = 11;
 }
 
 message CollectionSnapshot {
