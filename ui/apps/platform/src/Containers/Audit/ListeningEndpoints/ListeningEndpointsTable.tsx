@@ -135,7 +135,8 @@ function ListeningEndpointsTable({
                                         />
                                     ) : (
                                         <Text className="pf-u-p-md">
-                                            No listening endpoints reported for this deployment
+                                            This deployment does not have any reported listening
+                                            endpoints
                                         </Text>
                                     )}
                                 </Card>
