@@ -1,25 +1,29 @@
 import { Alert, AlertVariant, Button, Modal } from '@patternfly/react-core';
 import React, { ReactElement } from 'react';
 
-export type DeleteReportModalProps = {
+export type DeleteModalProps = {
+    title: string;
     isOpen: boolean;
     onClose: () => void;
     isDeleting: boolean;
     onDelete: () => void;
     error: string | null;
+    children: string;
 };
 
-function DeleteReportModal({
+function DeleteModal({
+    title,
     isOpen,
     onClose,
     isDeleting,
     onDelete,
     error,
-}: DeleteReportModalProps): ReactElement {
+    children,
+}: DeleteModalProps): ReactElement {
     return (
         <Modal
             variant="small"
-            title="Permanently delete report?"
+            title={title}
             isOpen={isOpen}
             onClose={onClose}
             actions={[
@@ -45,12 +49,9 @@ function DeleteReportModal({
                     className="pf-u-mb-sm"
                 />
             )}
-            <p>
-                This report and any attached downloadable reports will be permanently deleted. The
-                action cannot be undone.
-            </p>
+            <p>{children}</p>
         </Modal>
     );
 }
 
-export default DeleteReportModal;
+export default DeleteModal;
