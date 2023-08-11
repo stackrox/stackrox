@@ -59,6 +59,6 @@ Finally, Index Reports generated in the secured cluster will not be stored in th
 3. The new Matcher API opens the door for Scanner in Matcher mode to provide vulnerability matching with multi-tenancy, where multiple Central instances could connect to a fleet of Matcher instances behind a load balancer backed by a DB to create vulnerability reports.
 4. The Node Scanning can be migrated to Scanner V4 using the new Matcher API and local scanning workflow, as long as it sends Index Reports to Central.
 5. In the event that the Central cluster is updated to a version with Scanner V4 enabled, but the secured cluster is still running Sensor based on Scanner V2, it's still feasible to detect vulnerabilities if there is at least one instance of Scanner V2 present in the Central cluster. This allows for a seamless transition to Scanner V4 while maintaining backward compatibility.
-7. The changes in the protos minimize the dependency on Scanner V2 protos, making it easy to remove them in the future.
+6. The changes in the protos minimize the dependency on Scanner V2 protos, making it easy to remove them in the future.
 
 [^1]: [In Sensor the [client interface](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/sensor/common/scannerclient/grpc_client.go#L24) is used by `LocalScan`, while in Central the Scanner V4 integration will support the [image vulnerability getter](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/pkg/scanners/types/types.go#L33).
