@@ -1,7 +1,6 @@
 package lifecycle
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -41,7 +40,7 @@ func initialize() {
 	log.Infof("Injecting %d policies into detectors.", len(policies))
 	for _, policy := range policies {
 		err = manager.UpsertPolicy(policy)
-		utils.Should(errors.Wrap(err, "could not inject policy"))
+		log.Errorf("Unable to inject policy: %v", err)
 	}
 	log.Info("Done injecting policies.")
 
