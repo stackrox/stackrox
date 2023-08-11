@@ -2,6 +2,7 @@ package v2
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 
@@ -12,10 +13,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	log = logging.LoggerForModule()
+
+	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 func parseJobID(r *http.Request) (id string, err error) {
@@ -121,6 +129,13 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="report-%s.zip"`, zip.GetSafeFilename(id)))
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Length", fmt.Sprint(buf.Len()))
-	_, _ = w.Write(buf.Bytes())
+	_, err = w.Write(buf.Bytes())
 
+	if err != nil && status.GetRunState() == storage.ReportStatus_GENERATED {
+		rep.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+		err = h.snapshotStore.UpdateReportSnapshot(allAccessCtx, rep)
+		if err != nil {
+			log.Error("Error setting report state to DELIVERED")
+		}
+	}
 }
