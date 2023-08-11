@@ -35,7 +35,7 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 
 // GetPipeline returns an instantiation of this particular pipeline.
 func GetPipeline() pipeline.Fragment {
-	return &pipelineImpl{metricsStore: &prometheusStore{}, telemetryMetrics: telemetry.Singleton(), usageStore: usageDS.Singleton()}
+	return NewPipeline(&prometheusStore{}, telemetry.Singleton(), usageDS.Singleton())
 }
 
 // NewPipeline returns a new instance of the pipeline.
