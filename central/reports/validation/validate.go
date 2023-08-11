@@ -175,8 +175,12 @@ func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) err
 }
 
 // ValidateAndGenerateReportRequest validates the report configuration for which report is requested and generates a report request
-func (v *Validator) ValidateAndGenerateReportRequest(configID string, notificationMethod storage.ReportStatus_NotificationMethod,
-	requestType storage.ReportStatus_RunMethod, requesterID authn.Identity) (*reportGen.ReportRequest, error) {
+func (v *Validator) ValidateAndGenerateReportRequest(
+	configID string,
+	notificationMethod storage.ReportStatus_NotificationMethod,
+	requestType storage.ReportStatus_RunMethod,
+	requesterID authn.Identity,
+) (*reportGen.ReportRequest, error) {
 	config, found, err := v.reportConfigDatastore.GetReportConfiguration(allAccessCtx, configID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
@@ -195,7 +199,7 @@ func (v *Validator) ValidateAndGenerateReportRequest(configID string, notificati
 
 	notifierIDs := make([]string, 0, len(config.GetNotifiers()))
 	for _, notifierConf := range config.GetNotifiers() {
-		notifierIDs = append(notifierIDs, notifierConf.GetEmailConfig().GetNotifierId())
+		notifierIDs = append(notifierIDs, notifierConf.GetId())
 	}
 	protoNotifiers, err := v.notifierDatastore.GetManyNotifiers(allAccessCtx, notifierIDs)
 	if err != nil {
@@ -234,9 +238,14 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	return nil
 }
 
-func generateReportSnapshot(config *storage.ReportConfiguration, collection *storage.ResourceCollection,
-	protoNotifiers []*storage.Notifier, notificationMethod storage.ReportStatus_NotificationMethod,
-	requestType storage.ReportStatus_RunMethod, requesterID authn.Identity) *storage.ReportSnapshot {
+func generateReportSnapshot(
+	config *storage.ReportConfiguration,
+	collection *storage.ResourceCollection,
+	protoNotifiers []*storage.Notifier,
+	notificationMethod storage.ReportStatus_NotificationMethod,
+	requestType storage.ReportStatus_RunMethod,
+	requesterID authn.Identity,
+) *storage.ReportSnapshot {
 	snapshot := &storage.ReportSnapshot{
 		ReportConfigurationId: config.GetId(),
 		Name:                  config.GetName(),
@@ -276,7 +285,11 @@ func generateReportSnapshot(config *storage.ReportConfiguration, collection *sto
 	for i, notifierConf := range config.GetNotifiers() {
 		notifierSnaps = append(notifierSnaps, &storage.NotifierSnapshot{
 			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-				EmailConfig: notifierConf.GetEmailConfig(),
+				EmailConfig: func() *storage.EmailNotifierConfiguration {
+					cfg := notifierConf.GetEmailConfig()
+					cfg.NotifierId = notifierConf.GetId()
+					return cfg
+				}(),
 			},
 			NotifierName: protoNotifiers[i].GetName(),
 		})
