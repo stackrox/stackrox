@@ -1871,8 +1871,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
 			assert.NoError(t, err)
 			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-			k8sRoleBindings, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
-			assert.NoError(t, err)
+			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
 
 			for _, sa := range c.serviceAccts {
 				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))

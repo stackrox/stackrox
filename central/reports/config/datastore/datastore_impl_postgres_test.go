@@ -31,12 +31,8 @@ type ReportConfigurationPostgresDatastoreTests struct {
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
-
-	var err error
 	s.testDB = pgtest.ForT(s.T())
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.NoError(err)
-
+	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),

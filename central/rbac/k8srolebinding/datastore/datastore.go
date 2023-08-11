@@ -29,16 +29,15 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(k8sRoleBindingStore store.Store, searcher search.Searcher) (DataStore, error) {
-	d := &datastoreImpl{
+func New(k8sRoleBindingStore store.Store, searcher search.Searcher) DataStore {
+	return &datastoreImpl{
 		storage:  k8sRoleBindingStore,
 		searcher: searcher,
 	}
-	return d, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
