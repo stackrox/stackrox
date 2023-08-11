@@ -468,6 +468,8 @@ jobs:
       run: |
         git submodule update --init
 
+    - uses: ./.github/actions/handle-tagged-build
+
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
       run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
@@ -475,8 +477,6 @@ jobs:
     - name: Set build tag for race condition images
       if: matrix.name == 'race-condition-debug'
       run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
-
-    - uses: ./.github/actions/handle-tagged-build
 
     - name: Build and push manifest lists
       # Skip for external contributions.
