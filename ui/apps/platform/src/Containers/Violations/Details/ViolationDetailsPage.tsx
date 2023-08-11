@@ -31,7 +31,7 @@ function ViolationDetailsPage(): ReactElement {
 
     const hasReadAccessForDeployment = hasReadAccess('Deployment');
 
-    const hasReadAccessForPolicyManagement = isRouteEnabled(
+    const hasReadAccessForPolicy = isRouteEnabled(
         { isFeatureFlagEnabled, hasReadAccess },
         policyManagementBasePath
     );
@@ -114,7 +114,7 @@ function ViolationDetailsPage(): ReactElement {
                             </PageSection>
                         </Tab>
                     )}
-                    {hasReadAccessForPolicyManagement && (
+                    {hasReadAccessForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
                                 <>
