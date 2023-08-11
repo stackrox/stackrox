@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -26,10 +27,11 @@ func TestReportConfigurationDatastoreV2(t *testing.T) {
 type ReportConfigurationDatastoreV2Tests struct {
 	suite.Suite
 
-	testDB              *pgtest.TestPostgres
-	datastore           DataStore
-	reportSnapshotStore reportSnapshotDS.DataStore
-	ctx                 context.Context
+	testDB                  *pgtest.TestPostgres
+	datastore               DataStore
+	reportSnapshotDataStore reportSnapshotDS.DataStore
+	notifierDataStore       notifierDS.DataStore
+	ctx                     context.Context
 }
 
 func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
@@ -41,7 +43,8 @@ func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.reportSnapshotStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.reportSnapshotDataStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -54,33 +57,47 @@ func (s *ReportConfigurationDatastoreV2Tests) TearDownSuite() {
 }
 
 func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTime() {
-	reportConfig1 := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig1 := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig1.Id = ""
 	reportConfig1.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{
 			CollectionId: "collection-1",
 		},
 	}
+
+	// Add all required notifiers to the database.
+	for i, n := range reportConfig1.GetNotifiers() {
+		reportConfig1.Notifiers[i].Ref = s.storeNotifier(n.GetId())
+	}
+
 	configID1, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig1)
 	s.NoError(err)
 
-	reportConfig2 := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig2 := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig2.Id = ""
 	reportConfig2.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{
 			CollectionId: "collection-2",
 		},
 	}
+	for i := range reportConfig2.GetNotifiers() {
+		reportConfig2.Notifiers[i] = reportConfig1.Notifiers[i]
+	}
+
 	configID2, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig2)
 	s.NoError(err)
 
-	reportConfig3 := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig3 := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig3.Id = ""
 	reportConfig3.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{
 			CollectionId: "collection-2",
 		},
 	}
+	for i := range reportConfig2.GetNotifiers() {
+		reportConfig3.Notifiers[i] = reportConfig1.Notifiers[i]
+	}
+
 	configID3, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig3)
 	s.NoError(err)
 
@@ -108,7 +125,7 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	}
 
 	for _, snap := range reportSnapshots {
-		_, err = s.reportSnapshotStore.AddReportSnapshot(s.ctx, snap)
+		_, err = s.reportSnapshotDataStore.AddReportSnapshot(s.ctx, snap)
 		s.NoError(err)
 	}
 
@@ -146,6 +163,14 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 		configIDs = append(configIDs, conf.Id)
 	}
 	s.Equal(expectedSortedConfigIDs, configIDs)
+}
+
+func (s *ReportConfigurationDatastoreV2Tests) storeNotifier(name string) *storage.NotifierConfiguration_Id {
+	allCtx := sac.WithAllAccess(context.Background())
+
+	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
+	s.Require().NoError(err)
+	return &storage.NotifierConfiguration_Id{Id: id}
 }
 
 func generateReportSnapshot(configID string, completionTime *types.Timestamp) *storage.ReportSnapshot {

@@ -37,7 +37,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Creator = creator
 				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				return ret
@@ -51,7 +51,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Notifiers = nil
 				ret.Creator = creator
 				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
@@ -66,7 +66,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Schedule = nil
 				ret.Creator = creator
 				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
@@ -81,7 +81,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Filter = nil
 				ret.Creator = creator
 				return ret
@@ -95,7 +95,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.ResourceScope = nil
 				ret.Creator = creator
 				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
@@ -110,7 +110,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.GetVulnReportFilters().CvesSince = nil
 				ret.Creator = creator
 				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
@@ -125,7 +125,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.ResourceScope.ScopeReference = nil
 				ret.Creator = creator
 				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
@@ -171,7 +171,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config with notifiers",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				return fixtures.GetValidReportConfigWithMultipleNotifiers()
+				return fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
@@ -183,7 +183,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config without notifiers",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Notifiers = nil
 				return ret
 			},
@@ -197,7 +197,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config without schedule",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Schedule = nil
 				return ret
 			},
@@ -212,7 +212,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config without filter",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Filter = nil
 				return ret
 			},
@@ -227,7 +227,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config without resource scope",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.ResourceScope = nil
 				return ret
 			},
@@ -241,7 +241,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config without CvesSince in filter",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.GetVulnReportFilters().CvesSince = nil
 				return ret
 			},
@@ -256,7 +256,7 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 		{
 			testname: "Report config without scope reference in ResourceScope",
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.ResourceScope.ScopeReference = nil
 				return ret
 			},
@@ -274,9 +274,9 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 			reportConfig := c.reportConfigGen()
 
 			for _, notifierConfig := range reportConfig.GetNotifiers() {
-				notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetEmailConfig().GetNotifierId()).
+				notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetId()).
 					Return(&storage.Notifier{
-						Id:   notifierConfig.GetEmailConfig().GetNotifierId(),
+						Id:   notifierConfig.GetId(),
 						Name: mockNotifierName,
 					}, true, nil).Times(1)
 			}

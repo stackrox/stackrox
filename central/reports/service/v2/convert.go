@@ -119,15 +119,16 @@ func convertV2NotifierConfigToProto(notifier *apiV2.NotifierConfiguration) *stor
 		return nil
 	}
 
-	ret := &storage.NotifierConfiguration{}
+	ret := &storage.NotifierConfiguration{
+		Ref: &storage.NotifierConfiguration_Id{
+			Id: notifier.GetEmailConfig().GetNotifierId(),
+		},
+	}
 	if notifier.GetEmailConfig() != nil {
-		emailConfig := &storage.EmailNotifierConfiguration{
-			NotifierId: notifier.GetEmailConfig().GetNotifierId(),
-		}
-		emailConfig.MailingLists = append(emailConfig.MailingLists, notifier.GetEmailConfig().GetMailingLists()...)
-
 		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
-			EmailConfig: emailConfig,
+			EmailConfig: &storage.EmailNotifierConfiguration{
+				MailingLists: notifier.GetEmailConfig().GetMailingLists(),
+			},
 		}
 	}
 	return ret
@@ -277,29 +278,26 @@ func ConvertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 		return nil, nil
 	}
 
-	ret := &apiV2.NotifierConfiguration{}
-	if notifierConfig.GetEmailConfig() != nil {
-		emailConfig := &apiV2.EmailNotifierConfiguration{
-			NotifierId: notifierConfig.GetEmailConfig().GetNotifierId(),
-		}
-		emailConfig.MailingLists = append(emailConfig.MailingLists, notifierConfig.GetEmailConfig().GetMailingLists()...)
-
-		ret.NotifierConfig = &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: emailConfig,
-		}
-
-		var notifierName string
-		notifier, found, err := notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetEmailConfig().GetNotifierId())
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetEmailConfig().GetNotifierId())
-		}
-		notifierName = notifier.GetName()
-		ret.NotifierName = notifierName
+	if notifierConfig.GetEmailConfig() == nil {
+		return nil, nil
 	}
-	return ret, nil
+
+	notifier, found, err := notifierDatastore.GetNotifier(allAccessCtx, notifierConfig.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
+	}
+	return &apiV2.NotifierConfiguration{
+		NotifierName: notifier.GetName(),
+		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
+			EmailConfig: &apiV2.EmailNotifierConfiguration{
+				NotifierId:   notifierConfig.GetId(),
+				MailingLists: notifierConfig.GetEmailConfig().GetMailingLists(),
+			},
+		},
+	}, nil
 }
 
 // ConvertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule

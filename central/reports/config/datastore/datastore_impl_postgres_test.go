@@ -103,7 +103,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 		s.T().SkipNow()
 	}
 
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
@@ -124,7 +124,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 		s.T().SkipNow()
 	}
 
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 	reportConfig.Notifiers = nil
 
 	// Test add

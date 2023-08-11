@@ -203,7 +203,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			}
 
 			s.reportConfigDataStore.EXPECT().GetReportConfigurations(allAccessContext, tc.expectedQ).
-				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiers()}, nil).Times(1)
+				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiersV2()}, nil).Times(1)
 
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[0])
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[1])
@@ -250,7 +250,7 @@ func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 			if !tc.isValidationError {
 				if !tc.isDataNotFoundError {
 					s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, tc.id).
-						Return(fixtures.GetValidReportConfigWithMultipleNotifiers(), true, nil).Times(1)
+						Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
 
 					expectedResp = fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 					s.mockGetNotifierCall(expectedResp.GetNotifiers()[0])
@@ -349,7 +349,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
-				return fixtures.GetValidReportConfigWithMultipleNotifiers()
+				return fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 			},
 			isValidationError: false,
 		},
@@ -363,7 +363,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Notifiers = nil
 				return ret
 			},
@@ -737,11 +737,11 @@ func (s *ReportServiceTestSuite) TestAuthz() {
 }
 
 func (s *ReportServiceTestSuite) TestRunReport() {
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	notifierIDs := make([]string, 0, len(reportConfig.GetNotifiers()))
 	notifiers := make([]*storage.Notifier, 0, len(reportConfig.GetNotifiers()))
 	for _, nc := range reportConfig.GetNotifiers() {
-		notifierIDs = append(notifierIDs, nc.GetEmailConfig().GetNotifierId())
+		notifierIDs = append(notifierIDs, nc.GetId())
 		notifiers = append(notifiers, &storage.Notifier{
 			Id:   nc.GetEmailConfig().GetNotifierId(),
 			Name: nc.GetEmailConfig().GetNotifierId(),
