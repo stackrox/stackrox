@@ -598,7 +598,7 @@ func (c *TestContext) LastViolationState(t *testing.T, name string, assertion Al
 func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
-	var lastErr error
+	lastErr := errors.Errorf("no alerts found for deployment %s", name)
 	for {
 		select {
 		case <-timer.C:
@@ -607,6 +607,9 @@ func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, a
 			messages := c.GetFakeCentral().GetAllMessages()
 			alerts := GetAllAlertsForDeploymentName(messages, name)
 			var lastViolationState *central.AlertResults
+			if len(alerts) == 0 {
+				continue
+			}
 			if len(alerts) > 0 {
 				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
 			}
