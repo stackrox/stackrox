@@ -13,6 +13,19 @@ import (
 )
 
 func TestConvertV2ReportConfigurationToProto(t *testing.T) {
+	creator := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+	accessScopeRules := []*storage.SimpleAccessScope_Rules{
+		{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
+
 	var cases = []struct {
 		testname        string
 		reportConfigGen func() *apiV2.ReportConfiguration
@@ -24,7 +37,10 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 				return fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 			},
 			resultGen: func() *storage.ReportConfiguration {
-				return fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				return ret
 			},
 		},
 		{
@@ -37,6 +53,8 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
 				ret.Notifiers = nil
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				return ret
 			},
 		},
@@ -50,6 +68,8 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
 				ret.Schedule = nil
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				return ret
 			},
 		},
@@ -63,6 +83,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
 				ret.Filter = nil
+				ret.Creator = creator
 				return ret
 			},
 		},
@@ -76,6 +97,8 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
 				ret.ResourceScope = nil
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				return ret
 			},
 		},
@@ -89,6 +112,8 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
 				ret.GetVulnReportFilters().CvesSince = nil
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				return ret
 			},
 		},
@@ -102,6 +127,8 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
 				ret.ResourceScope.ScopeReference = nil
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				return ret
 			},
 		},
@@ -111,7 +138,7 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 		t.Run(c.testname, func(t *testing.T) {
 			reportConfig := c.reportConfigGen()
 			expected := c.resultGen()
-			converted := convertV2ReportConfigurationToProto(reportConfig)
+			converted := convertV2ReportConfigurationToProto(reportConfig, creator, accessScopeRules)
 			assert.Equal(t, expected, converted)
 		})
 	}

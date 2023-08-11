@@ -320,6 +320,10 @@ func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effec
 }
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
+	// Note: Below special handling for system scopes AccessScopeExcludeAll and AccessScopeIncludeAll scopes
+	//   is replicated in central/reports/common/utils.go for access scoping vulnerability reports for reporting 2.0 feature.
+	//   Vulnerability report config stores the access scope rules of the user that creates the config and uses those
+	//   rules for scoping future scheduled reports. If the below behavior changes, central/reports/common/utils.go should be updated as well.
 	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}

@@ -351,6 +351,48 @@
         }
       }
     },
+    "SimpleAccessScopeRules": {
+      "type": "object",
+      "properties": {
+        "includedClusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "includedNamespaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SimpleAccessScopeRulesNamespace"
+          }
+        },
+        "clusterLabelSelectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSetBasedLabelSelector"
+          }
+        },
+        "namespaceLabelSelectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSetBasedLabelSelector"
+          }
+        }
+      },
+      "description": "Each element of any repeated field is an individual rule. Rules are\njoined by logical OR: if there exists a rule allowing resource `x`,\n`x` is in the access scope."
+    },
+    "SimpleAccessScopeRulesNamespace": {
+      "type": "object",
+      "properties": {
+        "clusterName": {
+          "type": "string",
+          "description": "Both fields must be set."
+        },
+        "namespaceName": {
+          "type": "string"
+        }
+      }
+    },
     "VulnerabilityReportFiltersFixability": {
       "type": "string",
       "enum": [
@@ -522,6 +564,47 @@
         }
       }
     },
+    "storageSetBasedLabelSelector": {
+      "type": "object",
+      "properties": {
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSetBasedLabelSelectorRequirement"
+          }
+        }
+      },
+      "description": "SetBasedLabelSelector only allows set-based label requirements.\n\nNext available tag: 3"
+    },
+    "storageSetBasedLabelSelectorOperator": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IN",
+        "NOT_IN",
+        "EXISTS",
+        "NOT_EXISTS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageSetBasedLabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageSetBasedLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
+    },
     "storageSlimUser": {
       "type": "object",
       "properties": {
@@ -563,6 +646,12 @@
         "sinceStartDate": {
           "type": "string",
           "format": "date-time"
+        },
+        "accessScopeRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SimpleAccessScopeRules"
+          }
         }
       }
     },
