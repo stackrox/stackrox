@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/central/reports/config/index"
 	"github.com/stackrox/rox/central/reports/config/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -43,7 +44,7 @@ func (s *searcherImpl) Count(ctx context.Context, query *v1.Query) (int, error) 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	defaultSortedSearcher := paginated.WithDefaultSortOption(searcher, defaultSortOption)
-	return defaultSortedSearcher
+	return common.TransformReportStateSearchValues(defaultSortedSearcher)
 }
 
 func (s *searcherImpl) searchReportConfigurations(ctx context.Context, q *v1.Query) ([]*storage.ReportConfiguration, error) {

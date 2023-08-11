@@ -349,7 +349,6 @@ func convertPrototoV2Reportstatus(status *storage.ReportStatus) *apiV2.ReportSta
 		ReportNotificationMethod: apiV2.NotificationMethod(status.GetReportNotificationMethod()),
 		ErrorMsg:                 status.GetErrorMsg(),
 	}
-
 }
 
 func convertProtoReportCollectiontoV2(collection *storage.CollectionSnapshot) *apiV2.CollectionSnapshot {
@@ -417,5 +416,4 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 	}
 
 	return res
-
 }

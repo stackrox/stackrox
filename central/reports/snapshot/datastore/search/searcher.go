@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/central/reports/snapshot/datastore/index"
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -43,5 +44,6 @@ func New(storage pgStore.Store, indexer index.Indexer) Searcher {
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
-	return paginated.WithDefaultSortOption(scopedSafeSearcher, defaultSortOption)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(scopedSafeSearcher, defaultSortOption)
+	return common.TransformReportStateSearchValues(defaultSortedSearcher)
 }

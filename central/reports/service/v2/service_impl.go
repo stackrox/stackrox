@@ -169,11 +169,6 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	err = replaceSearchBySuccess(parsedQuery)
-	if err != nil {
-		return nil, err
-	}
-
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
@@ -216,11 +211,6 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-
-	err = replaceSearchBySuccess(parsedQuery)
-	if err != nil {
-		return nil, err
 	}
 
 	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
@@ -266,11 +256,6 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	err = replaceSearchBySuccess(parsedQuery)
-	if err != nil {
-		return nil, err
-	}
-
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
 		parsedQuery,
@@ -306,11 +291,6 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 	err = verifyNoUserSearchLabels(parsedQuery)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-
-	err = replaceSearchBySuccess(parsedQuery)
-	if err != nil {
-		return nil, err
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(
@@ -456,22 +436,5 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 			return
 		}
 	})
-	return err
-}
-
-func replaceSearchBySuccess(q *v1.Query) error {
-	replaceQ := search.NewQueryBuilder().
-		AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
-		ProtoQuery()
-
-	_, err := search.ReplaceMatchingBaseQueries(q, func(bq *v1.BaseQuery) bool {
-		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if !ok {
-			return false
-		}
-		return mfQ.MatchFieldQuery.GetField() == search.ReportState.String() &&
-			mfQ.MatchFieldQuery.GetValue() == apiV2.ReportStatus_SUCCESS.String()
-	}, replaceQ)
-
 	return err
 }
