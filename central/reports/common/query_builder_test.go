@@ -11,17 +11,18 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 var clusters = []*storage.Cluster{
 	{
-		Id:   "cluster1",
+		Id:   uuid.NewV4().String(),
 		Name: "remote",
 	},
 	{
-		Id:   "cluster2",
+		Id:   uuid.NewV4().String(),
 		Name: "secured",
 	},
 }
@@ -34,14 +35,14 @@ var namespaces = []*storage.NamespaceMetadata{
 var remoteNS = &storage.NamespaceMetadata{
 	Id:          "namespace1",
 	Name:        "ns1",
-	ClusterId:   "cluster1",
+	ClusterId:   clusters[0].Id,
 	ClusterName: "remote",
 }
 
 var securedNS = &storage.NamespaceMetadata{
 	Id:          "namespace2",
 	Name:        "ns2",
-	ClusterId:   "cluster2",
+	ClusterId:   clusters[1].Id,
 	ClusterName: "secured",
 }
 
@@ -61,9 +62,10 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockID := mockIdentity.NewMockIdentity(mockCtrl)
 	testCases := []struct {
-		name        string
-		identityGen func() authn.Identity
-		expectedQ   *v1.Query
+		name          string
+		identityGen   func() authn.Identity
+		expectedQ     *v1.Query
+		assertQueries func(t testing.TB, expected *v1.Query, actual *v1.Query)
 	}{
 		{
 			name: "Identity has no roles",
@@ -71,7 +73,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				mockID.EXPECT().Roles().Return(nil).Times(1)
 				return mockID
 			},
-			expectedQ: getMatchNoneQuery(),
+			expectedQ:     getMatchNoneQuery(),
+			assertQueries: assertByDirectComparison,
 		},
 		{
 			name: "Identity has nil access scope",
@@ -81,7 +84,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 				return mockID
 			},
-			expectedQ: getMatchNoneQuery(),
+			expectedQ:     getMatchNoneQuery(),
+			assertQueries: assertByDirectComparison,
 		},
 		{
 			name: "Identity has exclude all access scope",
@@ -91,7 +95,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 				return mockID
 			},
-			expectedQ: getMatchNoneQuery(),
+			expectedQ:     getMatchNoneQuery(),
+			assertQueries: assertByDirectComparison,
 		},
 		{
 			name: "Identity has include all access scope",
@@ -101,7 +106,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 				return mockID
 			},
-			expectedQ: search.EmptyQuery(),
+			expectedQ:     search.EmptyQuery(),
+			assertQueries: assertByDirectComparison,
 		},
 		{
 			name: "Identity has include all access scope among multiple access scopes",
@@ -118,7 +124,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole1, mockRole2}).Times(1)
 				return mockID
 			},
-			expectedQ: search.EmptyQuery(),
+			expectedQ:     search.EmptyQuery(),
+			assertQueries: assertByDirectComparison,
 		},
 		{
 			name: "Identity has access scope with nil rules; access scope is not equal to AccessScopeIncludeAll system scope",
@@ -129,7 +136,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 				return mockID
 			},
-			expectedQ: getMatchNoneQuery(),
+			expectedQ:     getMatchNoneQuery(),
+			assertQueries: assertByDirectComparison,
 		},
 		{
 			name: "Identity has access scope with rules",
@@ -154,6 +162,16 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 					search.NewQueryBuilder().AddExactMatches(search.Namespace, securedNS.Name).ProtoQuery(),
 				),
 			),
+			assertQueries: func(t testing.TB, expected *v1.Query, actual *v1.Query) {
+				switch typedQ := actual.GetQuery().(type) {
+				case *v1.Query_Disjunction:
+					assert.ElementsMatch(t,
+						expected.GetQuery().(*v1.Query_Disjunction).Disjunction.GetQueries(),
+						typedQ.Disjunction.GetQueries())
+				default:
+					assert.Fail(t, "queries mismatch")
+				}
+			},
 		},
 	}
 
@@ -167,7 +185,11 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 			qBuilder := queryBuilder{vulnFilters: vulnReportFilters}
 			scopeQuery, err := qBuilder.buildAccessScopeQuery(clusters, namespaces)
 			assert.NoError(t, err)
-			assert.EqualValues(t, tc.expectedQ, scopeQuery)
+			tc.assertQueries(t, tc.expectedQ, scopeQuery)
 		})
 	}
+}
+
+func assertByDirectComparison(t testing.TB, expected *v1.Query, actual *v1.Query) {
+	assert.Equal(t, expected, actual)
 }
