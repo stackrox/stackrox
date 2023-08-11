@@ -122,4 +122,5 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Length", fmt.Sprint(buf.Len()))
 	_, _ = w.Write(buf.Bytes())
+
 }

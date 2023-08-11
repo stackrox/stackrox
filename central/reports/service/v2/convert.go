@@ -404,6 +404,7 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
 				VulnReportFilters: ConvertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
 			},
+			IsDownloadAvailable: snapshot.GetReportStatus().GetRunState() == storage.ReportStatus_GENERATED,
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := ConvertProtoNotifierSnapshotToV2(notifier)
@@ -412,7 +413,6 @@ func convertProtoReportSnapshotstoV2(snapshots []*storage.ReportSnapshot) []*api
 			}
 		}
 		res = append(res, snapshotv2)
-
 	}
 
 	return res

@@ -90,12 +90,11 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	// Change report status to SUCCESS
-	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_DELIVERED)
-	if err != nil {
-		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to SUCCESS"), req)
-		return
+	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_EMAIL {
+		err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_DELIVERED)
+		if err != nil {
+			rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to DELIVERED"), req)
+		}
 	}
 }
 
@@ -111,6 +110,12 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData)
 	if err != nil {
 		return err
+	}
+
+	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
+	if err != nil {
+		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
 
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
