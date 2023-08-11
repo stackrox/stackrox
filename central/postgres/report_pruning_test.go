@@ -56,8 +56,7 @@ func (s *ReportHistoryPruningSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 
-	configDS, err := configDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
-	s.Require().NoError(err)
+	configDS := configDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.configDS = configDS
 	s.historyDS = historyDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.blobDS = blobDatastore.NewTestDatastore(s.T(), s.testDB)

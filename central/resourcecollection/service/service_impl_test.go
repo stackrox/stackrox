@@ -44,10 +44,8 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
 	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
 
-	var err error
 	suite.testDB = pgtest.ForT(suite.T())
-	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
-	suite.NoError(err)
+	suite.resourceConfigDS = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
 
 	testutils.SetExampleVersion(suite.T())
