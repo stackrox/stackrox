@@ -59,6 +59,9 @@ var migrationToolFile string
 //go:embed migration_tool_test.go.tpl
 var migrationToolTestFile string
 
+//go:embed migration_store.go.tpl
+var migrationStoreFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
@@ -70,6 +73,7 @@ var (
 	migrationTestTemplate     = newTemplate(migrationTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
 	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
+	migrationStoreTemplate    = newTemplate(migrationStoreFile)
 )
 
 type properties struct {
@@ -133,6 +137,9 @@ type properties struct {
 
 	// The feature flag that specifies if the schema should be registered
 	FeatureFlag string
+
+	// Indicates a migration store is to be generated
+	MigrationFlag bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -204,6 +211,8 @@ func main() {
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
+	c.Flags().BoolVar(&props.MigrationFlag, "migration", false, "if true, generates a migration store")
+
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	/**
@@ -318,63 +327,70 @@ func main() {
 			"SearchScope":    searchScope,
 			"RegisterSchema": !props.ConversionFuncs,
 			"FeatureFlag":    props.FeatureFlag,
+			"Migration":      props.MigrationFlag,
 		}
 
-		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
-			return err
-		}
-
-		if props.ConversionFuncs {
-			if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
+		if !props.MigrationFlag {
+			if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 				return err
 			}
-		}
-		if !props.SchemaOnly {
-			if props.SingletonStore {
-				if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
-					return err
-				}
-				if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
-					return err
-				}
-			} else {
-				if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
-					return err
-				}
-				if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-					return err
-				}
 
-				if props.SearchCategory != "" {
-					if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+			if props.ConversionFuncs {
+				if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
+					return err
+				}
+			}
+			if !props.SchemaOnly {
+				if props.SingletonStore {
+					if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
 						return err
+					}
+					if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
+						return err
+					}
+				} else {
+					if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
+						return err
+					}
+					if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+						return err
+					}
+
+					if props.SearchCategory != "" {
+						if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+							return err
+						}
 					}
 				}
 			}
-		}
 
-		if props.MigrateSeq != 0 {
-			postgresPluginTemplate := storeTemplate
-			if props.SingletonStore {
-				postgresPluginTemplate = singletonTemplate
-			}
-			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
-			root := filepath.Join(props.MigrateRoot, migrationDir)
-			templateMap["Migration"] = MigrationOptions{
-				MigrateFromDB:   props.MigrateFrom,
-				MigrateSequence: props.MigrateSeq,
-				Dir:             migrationDir,
-				SingletonStore:  props.SingletonStore,
-				BatchSize:       props.MigrationBatchSize,
-			}
+			if props.MigrateSeq != 0 {
+				postgresPluginTemplate := storeTemplate
+				if props.SingletonStore {
+					postgresPluginTemplate = singletonTemplate
+				}
+				migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
+				root := filepath.Join(props.MigrateRoot, migrationDir)
+				templateMap["Migration"] = MigrationOptions{
+					MigrateFromDB:   props.MigrateFrom,
+					MigrateSequence: props.MigrateSeq,
+					Dir:             migrationDir,
+					SingletonStore:  props.SingletonStore,
+					BatchSize:       props.MigrationBatchSize,
+				}
 
-			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
-				return err
+				if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
+					return err
+				}
+				if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
+					return err
+				}
+				if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres/postgres_plugin.go")); err != nil {
+					return err
+				}
 			}
-			if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
-				return err
-			}
-			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres/postgres_plugin.go")); err != nil {
+		} else {
+			if err := renderFile(templateMap, migrationStoreTemplate, "migration_store.go"); err != nil {
 				return err
 			}
 		}

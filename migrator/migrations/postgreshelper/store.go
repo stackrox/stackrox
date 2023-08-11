@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -39,13 +38,12 @@ type copier[T any, PT searcher.Unmarshaler[T]] func(ctx context.Context, s Delet
 
 // GenericStore implements subset of Store interface for resources with single ID.
 type GenericStore[T any, PT searcher.Unmarshaler[T]] struct {
-	mutex          sync.RWMutex
-	db             postgres.DB
-	schema         *walker.Schema
-	pkGetter       primaryKeyGetter[T, PT]
-	insertInto     inserter[T, PT]
-	copyFromObj    copier[T, PT]
-	targetResource permissions.ResourceMetadata
+	mutex       sync.RWMutex
+	db          postgres.DB
+	schema      *walker.Schema
+	pkGetter    primaryKeyGetter[T, PT]
+	insertInto  inserter[T, PT]
+	copyFromObj copier[T, PT]
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
@@ -56,33 +54,13 @@ func NewGenericStore[T any, PT searcher.Unmarshaler[T]](
 	pkGetter primaryKeyGetter[T, PT],
 	insertInto inserter[T, PT],
 	copyFromObj copier[T, PT],
-	targetResource permissions.ResourceMetadata,
-) *GenericStore[T, PT] {
-	return &GenericStore[T, PT]{
-		db:             db,
-		schema:         schema,
-		pkGetter:       pkGetter,
-		insertInto:     insertInto,
-		copyFromObj:    copyFromObj,
-		targetResource: targetResource,
-	}
-}
-
-// NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT searcher.Unmarshaler[T]](
-	db postgres.DB,
-	schema *walker.Schema,
-	pkGetter primaryKeyGetter[T, PT],
-	insertInto inserter[T, PT],
-	copyFromObj copier[T, PT],
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:          db,
 		schema:      schema,
 		pkGetter:    pkGetter,
-		copyFromObj: copyFromObj,
 		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
 	}
 }
 
@@ -99,7 +77,7 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 }
 
 // Count returns the number of objects in the store.
-func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {\
+func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	var query *v1.Query
 
 	return searcher.RunCountRequestForSchema(ctx, s.schema, query, s.db)
