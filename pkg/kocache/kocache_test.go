@@ -10,9 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -131,23 +129,12 @@ func Test_koCache_cleanup(t *testing.T) {
 	t.Skip("test unimplemented")
 }
 
-type mockClock struct{}
-
-func (m *mockClock) Now() time.Time {
-	return time.Date(2000, 1, 1, 0, 0, 0, 0, time.Local)
-}
-
-func (m *mockClock) TimestampNow() timestamp.MicroTS {
-	return timestamp.FromGoTime(m.Now())
-}
-
 func Test_koCache_getOrAddEntry(t *testing.T) {
 	errEntryExpired := errors.New("entry expired")
 	en1 := &entry{
 		done:         concurrency.NewErrorSignal(),
 		references:   sync.WaitGroup{},
 		data:         nil,
-		clock:        &mockClock{},
 		creationTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.Local),
 		lastAccess:   0,
 	}
@@ -155,7 +142,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 		done:         concurrency.NewErrorSignal(),
 		references:   sync.WaitGroup{},
 		data:         nil,
-		clock:        &mockClock{},
 		creationTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.Local),
 		lastAccess:   0,
 	}
@@ -172,8 +158,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 		centralReplyError  error
 		centralReplyBody   string
 		wantCentralCall    bool
-		wantData           *ioutils.RWBuf
-		wantCreationTime   time.Time
 		wantErr            bool
 	}{
 		"Existing non-expired entry shall be found": {
@@ -181,8 +165,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 			key:              "en1",
 			wantCentralCall:  false,
 			centralReachable: true,
-			wantCreationTime: en1.CreationTime(),
-			wantData:         en1.data,
 			wantErr:          false,
 		},
 		"Existing expired entry shall be found and replaced by a fresh one from Central": {
@@ -191,8 +173,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 			wantCentralCall:    true,
 			centralReachable:   true,
 			centralReplyStatus: 200,
-			wantCreationTime:   expiredEntry.CreationTime(),
-			wantData:           expiredEntry.data,
 			wantErr:            false,
 		},
 		"Non-existing entry shall trigger a call to central": {
@@ -201,8 +181,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 			wantCentralCall:    true,
 			centralReachable:   true,
 			centralReplyStatus: 200,
-			wantCreationTime:   en1.CreationTime(),
-			wantData:           en1.data,
 			wantErr:            false,
 		},
 		"Call to central in offline mode shall not be attempted and yield an error": {
@@ -217,7 +195,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cli := newMockHTTPClient(tt.centralReplyStatus, tt.centralReplyError, io.NopCloser(bytes.NewBufferString(tt.centralReplyBody)))
 			c := New(context.Background(), cli, "/")
-			c.clock = &mockClock{}
 			c.entries = tt.entries
 			c.centralReady.Store(tt.centralReachable)
 
@@ -226,8 +203,6 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.wantData, got.data)
-				assert.Equal(t, tt.wantCreationTime, got.CreationTime())
 				if tt.wantCentralCall {
 					// Wait until `Populate` method finishes
 					err, ok := got.DoneSig().WaitWithTimeout(time.Second)

@@ -77,8 +77,7 @@ func applyDefaults(o *options) *options {
 }
 
 type koCache struct {
-	opts  *options
-	clock clock
+	opts *options
 
 	parentCtx    context.Context
 	entries      map[string]*entry
@@ -91,6 +90,7 @@ type koCache struct {
 	// onlineCtx will be canceled when connectivity to central is lost
 	onlineCtx       context.Context
 	onlineCtxCancel context.CancelCauseFunc
+	ctxMutex        *sync.Mutex
 }
 
 type httpClient interface {
@@ -107,7 +107,6 @@ func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL s
 	onlineCtx, onlineCtxCancel := context.WithCancelCause(parentCtx)
 	cache := &koCache{
 		opts:            opt,
-		clock:           &systemClock{},
 		parentCtx:       parentCtx,
 		entries:         make(map[string]*entry),
 		entriesMutex:    &sync.Mutex{},
@@ -116,6 +115,7 @@ func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL s
 		centralReady:    &atomic.Bool{},
 		onlineCtx:       onlineCtx,
 		onlineCtxCancel: onlineCtxCancel,
+		ctxMutex:        &sync.Mutex{},
 	}
 	cache.centralReady.Store(opt.StartOnline)
 
@@ -124,6 +124,8 @@ func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL s
 }
 
 func (c *koCache) GoOnline() {
+	c.ctxMutex.Lock()
+	defer c.ctxMutex.Unlock()
 	c.centralReady.Store(true)
 	c.onlineCtx, c.onlineCtxCancel = context.WithCancelCause(c.parentCtx)
 }
@@ -154,7 +156,7 @@ func (c *koCache) getOrAddEntry(path string) (*entry, error) {
 		} else if c.entries == nil {
 			return nil, errKoCacheShuttingDown
 		} else {
-			e = newEntryWithClock(c.clock)
+			e = newEntry()
 			c.entries[path] = e
 			go e.Populate(c.onlineCtx, c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 		}

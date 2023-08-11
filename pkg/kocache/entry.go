@@ -14,43 +14,21 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-type clock interface {
-	Now() time.Time
-	TimestampNow() timestamp.MicroTS
-}
-
-type systemClock struct {
-}
-
-func (d *systemClock) Now() time.Time {
-	return time.Now()
-}
-
-func (d *systemClock) TimestampNow() timestamp.MicroTS {
-	return timestamp.Now()
-}
-
 type entry struct {
 	done concurrency.ErrorSignal
 
 	references sync.WaitGroup
 	data       *ioutils.RWBuf
 
-	clock        clock
 	creationTime time.Time
 	lastAccess   timestamp.MicroTS // atomically set
 }
 
 func newEntry() *entry {
-	return newEntryWithClock(&systemClock{})
-}
-
-func newEntryWithClock(clock clock) *entry {
 	return &entry{
-		clock:        clock,
 		done:         concurrency.NewErrorSignal(),
-		creationTime: clock.Now(),
-		lastAccess:   clock.TimestampNow(),
+		creationTime: time.Now(),
+		lastAccess:   timestamp.Now(),
 	}
 }
 
@@ -69,11 +47,11 @@ func (e *entry) Contents() (io.ReaderAt, int64, error) {
 
 func (e *entry) AcquireRef() {
 	e.references.Add(1)
-	e.lastAccess.StoreAtomic(e.clock.TimestampNow())
+	e.lastAccess.StoreAtomic(timestamp.Now())
 }
 
 func (e *entry) ReleaseRef() {
-	e.lastAccess.StoreAtomic(e.clock.TimestampNow())
+	e.lastAccess.StoreAtomic(timestamp.Now())
 	e.references.Done()
 }
 
@@ -99,7 +77,7 @@ func (e *entry) IsError() bool {
 func (e *entry) Populate(ctx context.Context, client httpClient, upstreamURL string, opts *options) {
 	err := e.doPopulate(ctx, client, upstreamURL, opts)
 	defer e.done.SignalWithError(err)
-	e.lastAccess.StoreAtomic(e.clock.TimestampNow())
+	e.lastAccess.StoreAtomic(timestamp.Now())
 }
 
 func (e *entry) doPopulate(ctx context.Context, client httpClient, upstreamURL string, opts *options) error {
