@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -285,7 +284,7 @@ func (s *GenericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 // region Helper functions
 
-func (s *GenericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
+func (s *GenericStore[T, PT]) acquireConn(ctx context.Context) (*postgres.Conn, error) {
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not acquire connection")
@@ -297,7 +296,7 @@ func (s *GenericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	if s.insertInto == nil {
 		return utils.ShouldErr(errInvalidOperation)
 	}
-	conn, err := s.acquireConn(ctx, ops.Upsert)
+	conn, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -329,7 +328,7 @@ func (s *GenericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 		return utils.ShouldErr(errInvalidOperation)
 	}
 
-	conn, err := s.acquireConn(ctx, ops.UpsertAll)
+	conn, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
