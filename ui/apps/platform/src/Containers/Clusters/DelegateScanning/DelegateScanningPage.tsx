@@ -187,6 +187,14 @@ function DelegateScanningPage() {
         setDedicatedRegistryConfig(newState);
     }
 
+    function updateRegistriesOrder(newRegistries) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        newState.registries = newRegistries;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
     function onSave() {
         setAlertObj(null);
         updateDelegatedRegistryConfig(delegatedRegistryConfig)
@@ -274,6 +282,10 @@ function DelegateScanningPage() {
                                 handleClusterChange={handleClusterChange}
                                 addRegistryRow={addRegistryRow}
                                 deleteRow={deleteRow}
+                                // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                updateRegistriesOrder={updateRegistriesOrder}
                                 key="delegated-registries-list"
                             />
                         </>

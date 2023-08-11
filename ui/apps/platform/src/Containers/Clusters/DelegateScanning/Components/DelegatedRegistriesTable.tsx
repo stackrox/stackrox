@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable no-param-reassign */
 /* eslint-disable react/no-array-index-key */
-import React, { useState } from 'react';
+// TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+/* eslint-disable react/prop-types */
+import React, { useState, useEffect } from 'react';
 import { Button, Select, SelectOption, TextInput } from '@patternfly/react-core';
 import {
     TableComposable,
@@ -28,6 +30,8 @@ type DelegatedRegistriesTableProps = {
     handlePathChange: (number, string) => void;
     handleClusterChange: (number, string) => void;
     deleteRow: (number) => void;
+    // TODO: re-enable next type after @typescript-eslint deps can be resolved to ^5.2.x
+    // updateRegistriesOrder: (DelegatedRegistry[]) => void;
 };
 
 function DelegatedRegistriesTable({
@@ -37,11 +41,17 @@ function DelegatedRegistriesTable({
     handlePathChange,
     handleClusterChange,
     deleteRow,
+    // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    updateRegistriesOrder,
 }: DelegatedRegistriesTableProps) {
     const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
     const [draggingToItemIndex, setDraggingToItemIndex] = React.useState<number | null>(null);
     const [isDragging, setIsDragging] = React.useState(false);
-    const [itemOrder, setItemOrder] = React.useState(['row1', 'row2', 'row3']);
+
+    const initialOrderIds = registries.map((_, rowIndex) => `row-${rowIndex}`);
+    const [itemOrder, setItemOrder] = React.useState(initialOrderIds);
     const [tempItemOrder, setTempItemOrder] = React.useState<string[]>([]);
 
     const [openRow, setRowOpen] = useState<number>(-1);
@@ -52,6 +62,11 @@ function DelegatedRegistriesTable({
         handleClusterChange(rowIndex, value);
         setRowOpen(-1);
     }
+
+    useEffect(() => {
+        const orderIds = registries.map((_, rowIndex) => `row-${rowIndex}`);
+        setItemOrder(orderIds);
+    }, [registries]);
 
     const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => {
         const optionLabel =
@@ -146,6 +161,15 @@ function DelegatedRegistriesTable({
     const onDrop: TrProps['onDrop'] = (evt) => {
         if (isValidDrop(evt)) {
             setItemOrder(tempItemOrder);
+
+            // the rest of this block was added to the PF drag and drop paradigm,
+            // in order to keep the form data in sync with PF's visual drop order
+            const newRegistries: DelegatedRegistry[] = tempItemOrder.map((tempItem) => {
+                const newIndex = Number(tempItem.split('row-').pop());
+                return registries[newIndex];
+            });
+
+            updateRegistriesOrder(newRegistries);
         } else {
             onDragCancel();
         }
@@ -216,6 +240,7 @@ function DelegatedRegistriesTable({
                         // note: in spite of best practice, we have to use the array index as key here,
                         //       because the value of path changes as the user types, and the input would lose focus
                         key={rowIndex}
+                        id={itemOrder[rowIndex]}
                         draggable
                         onDrop={onDrop}
                         onDragEnd={onDragEnd}

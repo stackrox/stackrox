@@ -1,3 +1,5 @@
+// TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+/* eslint-disable react/prop-types */
 import React from 'react';
 import {
     Bullseye,
@@ -24,6 +26,8 @@ type DelegatedRegistriesListProps = {
     deleteRow: (number) => void;
     handlePathChange: (number, string) => void;
     handleClusterChange: (number, string) => void;
+    // TODO: re-enable next type after @typescript-eslint deps can be resolved to ^5.2.x
+    // updateRegistriesOrder: (DelegatedRegistry[]) => void;
 };
 
 function DelegatedRegistriesList({
@@ -34,6 +38,10 @@ function DelegatedRegistriesList({
     handleClusterChange,
     addRegistryRow,
     deleteRow,
+    // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    updateRegistriesOrder,
 }: DelegatedRegistriesListProps) {
     return (
         <Card className="pf-u-mb-lg">
@@ -46,6 +54,10 @@ function DelegatedRegistriesList({
                         handlePathChange={handlePathChange}
                         handleClusterChange={handleClusterChange}
                         deleteRow={deleteRow}
+                        // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        updateRegistriesOrder={updateRegistriesOrder}
                         key="delegated-registries-table"
                     />
                     <CardFooter>
