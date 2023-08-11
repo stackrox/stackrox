@@ -52,8 +52,7 @@ export const selectors = {
         searchModifier: '.react-select__multi-value__label:first',
         searchWord: '.react-select__multi-value__label:eq(1)',
     },
-    createPolicyButton:
-        '[data-testid="panel-button-create-policy-from-search"]:contains("Create Policy")',
+    createPolicyButton: 'button:contains("Create policy")',
     imageLink: 'div:contains("Image Name") + a',
     table: scopeSelectors('[data-testid="panel"]:first', tableSelectors),
     eventTimeline: eventTimelineSelectors,
