@@ -326,9 +326,7 @@ type ProductUsageServiceClient interface {
 	//
 	// The usage metrics are continously collected from all the connected
 	// clusters. The maximum values are kept for some period of time in memory,
-	// and then, periodically, are averaged with the previously collected
-	// maximum values and stored to the database. Storing average with the
-	// previous record allows for smoothing short peaks and drops.
+	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
 	GetMaxSecuredUnitsUsage(ctx context.Context, in *TimeRange, opts ...grpc.CallOption) (*MaxSecuredUnitsUsageResponse, error)
 }
@@ -375,9 +373,7 @@ type ProductUsageServiceServer interface {
 	//
 	// The usage metrics are continously collected from all the connected
 	// clusters. The maximum values are kept for some period of time in memory,
-	// and then, periodically, are averaged with the previously collected
-	// maximum values and stored to the database. Storing average with the
-	// previous record allows for smoothing short peaks and drops.
+	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
 	GetMaxSecuredUnitsUsage(context.Context, *TimeRange) (*MaxSecuredUnitsUsageResponse, error)
 }
