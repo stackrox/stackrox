@@ -2,6 +2,7 @@ import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 import selectSelectors from '../../selectors/select';
+import { networkGraphSelectors } from './networkGraph.selectors';
 
 const networkGraphClusterAlias = 'networkgraph/cluster/id';
 
@@ -59,6 +60,16 @@ export function selectDeployment(deployment) {
     }, routeMatcherMapForClusterInNetworkGraph);
 }
 
+export function selectFilter(filterKey, filterValue) {
+    cy.get('.react-select__value-container').click();
+    cy.get(`.react-select__menu-list .react-select__option:contains("${filterKey}")`).click();
+    cy.focused().type(filterValue);
+    cy.get(`.react-select__menu-list .react-select__option:contains("${filterValue}")`)
+        .first()
+        .click();
+    cy.get('.react-select__value-container').click();
+}
+
 // visit helpers
 
 export const notifiersAlias = 'notifiers';
@@ -90,4 +101,19 @@ export function checkNetworkGraphEmptyState() {
     cy.get(
         '.pf-c-empty-state__content:contains("Select a cluster and at least one namespace to render active deployment traffic on the graph")'
     );
+}
+
+export function updateAndCloseCidrModal() {
+    cy.clock();
+    cy.get(networkGraphSelectors.updateCidrBlocksButton).click();
+    cy.get(
+        networkGraphSelectors.cidrModalAlertWithMessage(
+            'CIDR blocks have been successfully configured'
+        )
+    );
+    // Once the above alert is shown, the modal automatically closes after 2000 ms. This
+    // advances the clock to save time during test runs. (Otherwise every save would add 2 seconds
+    // to our test job.)
+    cy.tick(2000);
+    cy.get(networkGraphSelectors.manageCidrBlocksModal).should('not.exist');
 }
