@@ -20,7 +20,7 @@ jobs:
         run: |
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "matrix<<$EOF" >> $GITHUB_OUTPUT
-          sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: split("\n") }' | tee -a "$GITHUB_OUTPUT"
+          sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
           echo $EOF >> $GITHUB_OUTPUT
 
   upload-vulnerabilities:
@@ -68,4 +68,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Failure in Scanner Updater Workflow: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in job ${{ github.job }} of workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
