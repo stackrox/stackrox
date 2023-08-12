@@ -4,7 +4,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/branding"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
@@ -151,7 +150,7 @@ var (
 
 	telemetryLabels = prometheus.Labels{
 		"branding":       branding.GetProductNameShort(),
-		"build":          buildinfo.BuildFlavor,
+		"build":          metrics.GetBuildType(),
 		"hosting":        getHosting(),
 		"install_method": env.InstallMethod.Setting(),
 		"sensor_version": version.GetMainVersion(),

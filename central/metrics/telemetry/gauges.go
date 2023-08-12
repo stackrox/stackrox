@@ -8,7 +8,6 @@ import (
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
@@ -55,7 +54,7 @@ func newGaugeMap(installation installationStore.Store) map[string]prometheus.Gau
 	utils.Should(err)
 	labels := prometheus.Labels{
 		"branding":        branding.GetProductNameShort(),
-		"build":           buildinfo.BuildFlavor,
+		"build":           metrics.GetBuildType(),
 		"central_id":      installInfo.GetId(),
 		"central_version": version.GetMainVersion(),
 		"hosting":         getHosting(),
