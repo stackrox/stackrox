@@ -12,7 +12,7 @@ import (
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
-	"github.com/stackrox/stackrox/scanner/v4/updater/manual"
+	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
 
 	_ "github.com/quay/claircore/updater/defaults"
@@ -23,27 +23,23 @@ import (
 func Export(ctx context.Context, outputDir string) error {
 	var outOfTree []driver.Updater
 
-	// Append updater sets directly to the outOfTree
-	appendUpdaterSet := func(updaterSet driver.UpdaterSet, err error) {
-		if err != nil {
-			zlog.Error(ctx).Err(err).Send()
-			return
-		}
+	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
+	} else {
 		outOfTree = append(outOfTree, updaterSet.Updaters()...)
 	}
 
-	appendUpdaterSet(manual.UpdaterSet(ctx, nil))
-	err := os.MkdirAll(outputDir, 0700)
+	err = os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
 	}
 
-	// create temp file
+	// create output json file
 	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.ztd"))
 	if err != nil {
 		return err
 	}
-	defer outputFile.Close()
 
 	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
 	httpClient := &http.Client{
@@ -86,6 +82,12 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 	err = jsonStore2.Store(zstdWriter)
+	if err != nil {
+		return err
+	}
+
+	// After done with the file, remove the directory
+	err = os.RemoveAll(outputDir)
 	if err != nil {
 		return err
 	}

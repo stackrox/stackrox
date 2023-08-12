@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/quay/zlog"
-	"github.com/stackrox/stackrox/scanner/v4/updater"
+	"github.com/stackrox/rox/scanner/updater"
 )
 
 func main() {
