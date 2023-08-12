@@ -23,22 +23,19 @@ import (
 func Export(ctx context.Context, outputDir string) error {
 	var outOfTree []driver.Updater
 
-	// Append updater sets directly to the outOfTree
-	appendUpdaterSet := func(updaterSet driver.UpdaterSet, err error) {
-		if err != nil {
-			zlog.Error(ctx).Err(err).Send()
-			return
-		}
+	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
+	} else {
 		outOfTree = append(outOfTree, updaterSet.Updaters()...)
 	}
 
-	appendUpdaterSet(manual.UpdaterSet(ctx, nil))
-	err := os.MkdirAll(outputDir, 0700)
+	err = os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
 	}
 
-	// create temp file
+	// create output json file
 	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.ztd"))
 	if err != nil {
 		return err
