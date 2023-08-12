@@ -273,8 +273,8 @@ func DecOutputChannelSize() {
 	outputChannelSize.Dec()
 }
 
-// SetInfoMetric sets the cluster metrics for the telemetry metrics.
-func SetInfoMetric(cm *central.ClusterMetrics) {
+// SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
+func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 	telemetrySecuredNodes.Reset()
 	telemetrySecuredNodes.WithLabelValues(
 		centralid.Get(),
