@@ -28,19 +28,16 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
 
-      - objectTemplate: STACKROX_DIR/.github/workflows/kube-burner-configs/templates/deployment.yml
+      - objectTemplate: deployment.yml
         replicas: 5
         inputVars:
           podReplicas: 2
 
-      - objectTemplate: STACKROX_DIR/.github/workflows/kube-burner-configs/templates/service.yml
+      - objectTemplate: service.yml
         replicas: 5
 
-      - objectTemplate: STACKROX_DIR/.github/workflows/kube-burner-configs/templates/route.yml
-        replicas: 1
-
-      - objectTemplate: STACKROX_DIR/.github/workflows/kube-burner-configs/templates/secret.yml
+      - objectTemplate: secret.yml
         replicas: 10
 
-      - objectTemplate: STACKROX_DIR/.github/workflows/kube-burner-configs/templates/configmap.yml
+      - objectTemplate: configmap.yml
         replicas: 10
