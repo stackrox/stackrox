@@ -172,11 +172,10 @@ diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-diff/testda
   assert_file_exist "$ofile"
     # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload payments/visa-processor-v2[Deployment] added)
-source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload frontend/blog[Deployment] added)
-source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload zeroday/zeroday[Deployment] added)'
+diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
 }
-
 
 @test "roxctl-release connectivity-diff generates conns diff report between resources from two directories txt output" {
   dir1="${diff_tests_dir}/acs-security-demos/"
@@ -236,11 +235,10 @@ source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  N
   assert_file_exist "$ofile"
     # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload payments/visa-processor-v2[Deployment] added)
-source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload frontend/blog[Deployment] added)
-source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload zeroday/zeroday[Deployment] added)'
+diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
 }
-
 
 @test "roxctl-release connectivity-diff generates conns diff report between resources from two directories md output" {
   dir1="${diff_tests_dir}/acs-security-demos/"
@@ -299,11 +297,11 @@ source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  N
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # partial is used to filter WARN and INFO messages
-  assert_output --partial '| source | destination | dir1 | dir2 | diff-type |
-|--------|-------------|------|------|-----------|
-| payments/gateway[Deployment] | payments/visa-processor-v2[Deployment] | No Connections | TCP 8080 | added (workload payments/visa-processor-v2[Deployment] added) |
-| {ingress-controller} | frontend/blog[Deployment] | No Connections | TCP 8080 | added (workload frontend/blog[Deployment] added) |
-| {ingress-controller} | zeroday/zeroday[Deployment] | No Connections | TCP 8080 | added (workload zeroday/zeroday[Deployment] added) |'
+  assert_output --partial '| diff-type | source | destination | dir1 | dir2 | workloads-diff-info |
+|-----------|--------|-------------|------|------|---------------------|
+| added | payments/gateway[Deployment] | payments/visa-processor-v2[Deployment] | No Connections | TCP 8080 | workload payments/visa-processor-v2[Deployment] added |
+| added | {ingress-controller} | frontend/blog[Deployment] | No Connections | TCP 8080 | workload frontend/blog[Deployment] added |
+| added | {ingress-controller} | zeroday/zeroday[Deployment] | No Connections | TCP 8080 | workload zeroday/zeroday[Deployment] added |'
 }
 
 @test "roxctl-release connectivity-diff generates conns diff report between resources from two directories csv output" {
@@ -363,10 +361,10 @@ source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  N
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
     # partial is used to filter WARN and INFO messages
-  assert_output --partial 'source,destination,dir1,dir2,diff-type
-payments/gateway[Deployment],payments/visa-processor-v2[Deployment],No Connections,TCP 8080,added (workload payments/visa-processor-v2[Deployment] added)
-{ingress-controller},frontend/blog[Deployment],No Connections,TCP 8080,added (workload frontend/blog[Deployment] added)
-{ingress-controller},zeroday/zeroday[Deployment],No Connections,TCP 8080,added (workload zeroday/zeroday[Deployment] added)'
+  assert_output --partial 'diff-type,source,destination,dir1,dir2,workloads-diff-info
+added,payments/gateway[Deployment],payments/visa-processor-v2[Deployment],No Connections,TCP 8080,workload payments/visa-processor-v2[Deployment] added
+added,{ingress-controller},frontend/blog[Deployment],No Connections,TCP 8080,workload frontend/blog[Deployment] added
+added,{ingress-controller},zeroday/zeroday[Deployment],No Connections,TCP 8080,workload zeroday/zeroday[Deployment] added'
 }
 
 @test "roxctl-release connectivity-diff hould return error on not supported output format" {
@@ -484,9 +482,9 @@ payments/gateway[Deployment],payments/visa-processor-v2[Deployment],No Connectio
   assert_file_exist "$out_dir/out.txt"
   # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload payments/visa-processor-v2[Deployment] added)
-source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload frontend/blog[Deployment] added)
-source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, diff-type: added (workload zeroday/zeroday[Deployment] added)'
+diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
 }
 
 @test "roxctl-release connectivity-diff generates conns diff report between resources from another two directories txt output" {
@@ -508,8 +506,8 @@ source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  N
   assert_file_exist "$ofile"
   # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-source: default/frontend[Deployment], destination: default/backend[Deployment], dir1:  TCP 9090, dir2: TCP 9090,UDP 53, diff-type: changed
-source: 0.0.0.0-255.255.255.255, destination: default/backend[Deployment], dir1:  No Connections, dir2: TCP 9090, diff-type: added'
+diff-type: changed, source: default/frontend[Deployment], destination: default/backend[Deployment], dir1:  TCP 9090, dir2: TCP 9090,UDP 53
+diff-type: added, source: 0.0.0.0-255.255.255.255, destination: default/backend[Deployment], dir1:  No Connections, dir2: TCP 9090'
 }
 
 @test "roxctl-release connectivity-diff generates conns diff report between resources from another two directories md output" {
@@ -530,10 +528,10 @@ source: 0.0.0.0-255.255.255.255, destination: default/backend[Deployment], dir1:
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # partial is used to filter WARN and INFO messages
-  assert_output --partial '| source | destination | dir1 | dir2 | diff-type |
-|--------|-------------|------|------|-----------|
-| default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 | TCP 9090,UDP 53 | changed |
-| 0.0.0.0-255.255.255.255 | default/backend[Deployment] | No Connections | TCP 9090 | added |'
+  assert_output --partial '| diff-type | source | destination | dir1 | dir2 | workloads-diff-info |
+|-----------|--------|-------------|------|------|---------------------|
+| changed | default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 | TCP 9090,UDP 53 |  |
+| added | 0.0.0.0-255.255.255.255 | default/backend[Deployment] | No Connections | TCP 9090 |  |'
 }
 
 @test "roxctl-release connectivity-diff generates conns diff report between resources from another two directories csv output" {
@@ -554,9 +552,9 @@ source: 0.0.0.0-255.255.255.255, destination: default/backend[Deployment], dir1:
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
     # partial is used to filter WARN and INFO messages
-  assert_output --partial 'source,destination,dir1,dir2,diff-type
-default/frontend[Deployment],default/backend[Deployment],TCP 9090,"TCP 9090,UDP 53",changed
-0.0.0.0-255.255.255.255,default/backend[Deployment],No Connections,TCP 9090,added'
+  assert_output --partial 'diff-type,source,destination,dir1,dir2,workloads-diff-info
+changed,default/frontend[Deployment],default/backend[Deployment],TCP 9090,"TCP 9090,UDP 53",
+added,0.0.0.0-255.255.255.255,default/backend[Deployment],No Connections,TCP 9090,'
 }
 
 @test "roxctl-release connectivity-diff empty diff report for two paths with same directory " {
