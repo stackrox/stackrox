@@ -52,8 +52,8 @@ teardown() {
   run roxctl-release connectivity-map "$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
   assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error 
-  assert_line --index 2 --partial 'there were errors during execution'  # last line 
+  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error
+  assert_line --index 2 --partial 'there were errors during execution'  # last line
 }
 
 @test "roxctl-release connectivity-map produces no output when all yamls are templated" {
