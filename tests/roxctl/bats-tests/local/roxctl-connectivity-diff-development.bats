@@ -19,20 +19,28 @@ teardown() {
   rm -f "$ofile"
 }
 
-@test "roxctl-development connectivity-diff no args" {
-  run roxctl-development connectivity-diff
+@test "roxctl-development connectivity-diff illegal args" {
+  run roxctl-development connectivity-diff "dir1" "dir2"
   assert_failure
-  assert_line --partial "accepts 2 arg(s), received 0"
+  assert_line --partial "accepts 0 arg(s), received 2"
 }
 
-@test "roxctl-development connectivity-diff only one arg" {
-  run roxctl-development connectivity-diff "dir1"
+@test "roxctl-development connectivity-diff no input directories" {
+  run roxctl-development connectivity-diff
   assert_failure
-  assert_line --partial "accepts 2 arg(s), received 1"
+  assert_line --partial "ERROR:"
+  assert_line --partial "both directory paths dir1 and dir2 are require"
+}
+
+@test "roxctl-development connectivity-diff only one input directory" {
+  run roxctl-development connectivity-diff --dir1="dir1"
+  assert_failure
+  assert_line --partial "ERROR:"
+  assert_line --partial "both directory paths dir1 and dir2 are require"
 }
 
 @test "roxctl-development connectivity-diff non existing dirs" {
-  run roxctl-development connectivity-diff "$out_dir" "$out_dir"
+  run roxctl-development connectivity-diff --dir1="$out_dir" --dir2="$out_dir"
   assert_failure
   assert_line --partial "error in connectivity diff analysis"
   assert_line --partial "no such file or directory"
@@ -43,7 +51,7 @@ teardown() {
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/a_templated-010-XXXXXX-file1.yaml")"
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/b_templated-020-XXXXXX-file2.yaml")"
 
-  run roxctl-development connectivity-diff "$out_dir/" "$out_dir/" --remove --output-file=/dev/null --fail
+  run roxctl-development connectivity-diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
   assert_output --partial 'YAML document is malformed'
   assert_output --partial 'file1.yaml'
@@ -55,7 +63,7 @@ teardown() {
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
 
   echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
-  run roxctl-development connectivity-diff "$out_dir/" "$out_dir/"
+  run roxctl-development connectivity-diff --dir1="$out_dir/" --dir2="$out_dir/"
   assert_failure
   assert_output --partial 'YAML document is malformed'
   assert_output --partial 'no relevant Kubernetes resources found'
@@ -71,7 +79,7 @@ teardown() {
   cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
 
   echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
-  run roxctl-development connectivity-diff "$out_dir/" "$out_dir/" --remove --output-file=/dev/null
+  run roxctl-development connectivity-diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null
   assert_failure
   assert_output --partial 'YAML document is malformed'
   refute_output --partial 'no relevant Kubernetes resources found'
@@ -84,7 +92,7 @@ teardown() {
   cp "${test_data}/np-guard/empty-yamls/empty.yaml" "$out_dir/empty.yaml"
   cp "${test_data}/np-guard/empty-yamls/empty2.yaml" "$out_dir/empty2.yaml"
 
-  run roxctl-development connectivity-diff "$out_dir/" "$out_dir/" --remove --output-file=/dev/null
+  run roxctl-development connectivity-diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null
   assert_failure
   assert_output --partial 'Yaml document is not a K8s resource'
   assert_output --partial 'no relevant Kubernetes resources found'
@@ -100,13 +108,13 @@ diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-diff/testda
   assert_file_exist "${dir1}/namespace.yaml"
   assert_file_exist "${dir1}/route.yaml"
   # without strict it ignores the invalid yaml and continue
-  run roxctl-development connectivity-diff "${dir1}" "${dir1}" --remove --output-file=/dev/null
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir1}" --remove --output-file=/dev/null
   assert_success
   assert_output --partial 'WARN:'
   assert_output --partial 'Yaml document is not a K8s resource'
 
   # running with strict , a warning on invalid yaml doc is treated as error
-  run roxctl-development connectivity-diff "${dir1}" "${dir1}" --remove --output-file=/dev/null --strict
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir1}" --remove --output-file=/dev/null --strict
   assert_failure
   assert_output --partial 'WARN:'
   assert_output --partial 'Yaml document is not a K8s resource'
@@ -165,7 +173,7 @@ diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-diff/testda
   assert_file_exist "${dir2}/zeroday/route.yaml"
   assert_file_exist "${dir2}/acs_netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}"
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}"
   assert_success
 
   echo "$output" > "$ofile"
@@ -228,7 +236,7 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
   assert_file_exist "${dir2}/zeroday/route.yaml"
   assert_file_exist "${dir2}/acs_netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=txt
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=txt
   assert_success
 
   echo "$output" > "$ofile"
@@ -291,7 +299,7 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
   assert_file_exist "${dir2}/zeroday/route.yaml"
   assert_file_exist "${dir2}/acs_netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=md
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=md
   assert_success
 
   echo "$output" > "$ofile"
@@ -355,7 +363,7 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
   assert_file_exist "${dir2}/zeroday/route.yaml"
   assert_file_exist "${dir2}/acs_netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=csv
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=csv
   assert_success
 
   echo "$output" > "$ofile"
@@ -418,7 +426,7 @@ added,{ingress-controller},zeroday/zeroday[Deployment],No Connections,TCP 8080,w
   assert_file_exist "${dir2}/zeroday/route.yaml"
   assert_file_exist "${dir2}/acs_netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=png
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=png
   assert_failure
 
   assert_line --partial "error in formatting connectivity diff"
@@ -476,7 +484,7 @@ added,{ingress-controller},zeroday/zeroday[Deployment],No Connections,TCP 8080,w
   assert_file_exist "${dir2}/zeroday/route.yaml"
   assert_file_exist "${dir2}/acs_netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-file="$out_dir/out.txt"
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-file="$out_dir/out.txt"
   assert_success
 
   assert_file_exist "$out_dir/out.txt"
@@ -499,7 +507,7 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
   assert_file_exist "${dir2}/frontend.yaml"
   assert_file_exist "${dir2}/netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=txt
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=txt
   assert_success
 
   echo "$output" > "$ofile"
@@ -523,7 +531,7 @@ diff-type: added, source: 0.0.0.0-255.255.255.255, destination: default/backend[
   assert_file_exist "${dir2}/frontend.yaml"
   assert_file_exist "${dir2}/netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=md
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=md
   assert_success
 
   echo "$output" > "$ofile"
@@ -547,7 +555,7 @@ diff-type: added, source: 0.0.0.0-255.255.255.255, destination: default/backend[
   assert_file_exist "${dir2}/frontend.yaml"
   assert_file_exist "${dir2}/netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir2}" --output-format=csv
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir2}" --output-format=csv
   assert_success
 
   echo "$output" > "$ofile"
@@ -565,7 +573,7 @@ added,0.0.0.0-255.255.255.255,default/backend[Deployment],No Connections,TCP 909
   assert_file_exist "${dir1}/frontend.yaml"
   assert_file_exist "${dir1}/netpols.yaml"
   echo "Writing diff report to ${ofile}" >&3
-  run roxctl-development connectivity-diff "${dir1}" "${dir1}" 
+  run roxctl-development connectivity-diff --dir1="${dir1}" --dir2="${dir1}" 
   assert_success
 
   echo "$output" > "$ofile"

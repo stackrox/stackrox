@@ -174,8 +174,8 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzeNetpol() {
 			diffNetpolCmd := diffNetpolCommand{
 				stopOnFirstError:      tt.stopOnFirstErr,
 				treatWarningsAsErrors: tt.strict,
-				inputFolderPath1:      "", // set through construct
-				inputFolderPath2:      "", // set through construct
+				inputFolderPath1:      tt.inputFolderPath1,
+				inputFolderPath2:      tt.inputFolderPath2,
 				outputFilePath:        tt.outFile,
 				removeOutputPath:      tt.removeOutputPath,
 				outputToFile:          tt.outputToFile,
@@ -183,7 +183,7 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzeNetpol() {
 				env:                   env,
 			}
 
-			analyzer, err := diffNetpolCmd.construct([]string{tt.inputFolderPath1, tt.inputFolderPath2})
+			analyzer, err := diffNetpolCmd.construct([]string{})
 			d.Assert().NoError(err)
 
 			err = diffNetpolCmd.validate()

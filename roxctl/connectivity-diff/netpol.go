@@ -41,7 +41,7 @@ Red Hat does not recommend using them in production.
 These features provide early access to upcoming product features, enabling customers to test functionality and provide feedback during the development process.
 For more information about the support scope of Red Hat Technology Preview features, see https://access.redhat.com/support/offerings/techpreview/`,
 
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(0),
 		RunE: func(c *cobra.Command, args []string) error {
 			diffNetpolCmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
 			analyzer, err := diffNetpolCmd.construct(args)
@@ -55,6 +55,8 @@ For more information about the support scope of Red Hat Technology Preview featu
 		},
 	}
 
+	c.Flags().StringVarP(&diffNetpolCmd.inputFolderPath1, "dir1", "", "", "first resources dir path")
+	c.Flags().StringVarP(&diffNetpolCmd.inputFolderPath2, "dir2", "", "", "second resources dir path to be compared with the first dir path")
 	c.Flags().BoolVar(&diffNetpolCmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
 	c.Flags().BoolVar(&diffNetpolCmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
 	c.Flags().BoolVar(&diffNetpolCmd.removeOutputPath, "remove", false, "remove the output path if it already exists")
@@ -65,8 +67,6 @@ For more information about the support scope of Red Hat Technology Preview featu
 }
 
 func (cmd *diffNetpolCommand) construct(args []string) (diffAnalyzer, error) {
-	cmd.inputFolderPath1 = args[0]
-	cmd.inputFolderPath2 = args[1]
 	var opts []npguard.DiffAnalyzerOption
 	if cmd.env != nil && cmd.env.Logger() != nil {
 		opts = append(opts, npguard.WithLogger(npg.NewLogger(cmd.env.Logger())))
@@ -84,6 +84,9 @@ func (cmd *diffNetpolCommand) construct(args []string) (diffAnalyzer, error) {
 }
 
 func (cmd *diffNetpolCommand) validate() error {
+	if cmd.inputFolderPath1 == "" || cmd.inputFolderPath2 == "" {
+		return errors.New("both directory paths dir1 and dir2 are required")
+	}
 	if err := cmd.setupPath(cmd.outputFilePath); err != nil {
 		return errors.Wrap(err, "failed to set up file path")
 	}
