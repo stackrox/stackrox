@@ -40,8 +40,8 @@ teardown() {
 
 @test "roxctl-release connectivity-diff stops on first error when run with --fail" {
   mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-011-XXXXXX-file1.yaml")"
+  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-021-XXXXXX-file2.yaml")"
 
   run roxctl-release connectivity-diff "$out_dir/" "$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure

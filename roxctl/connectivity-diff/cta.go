@@ -23,29 +23,41 @@ type diffAnalyzer interface {
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
 	connsDiff, err := analyzer.ConnDiffFromDirPaths(cmd.inputFolderPath1, cmd.inputFolderPath2)
-	if err != nil {
+	if err != nil { // returned with fatal error
 		return errors.Wrap(err, "error in connectivity diff analysis")
 	}
+	severeErr, warnErr := cmd.checkAnalyzerErrors(analyzer)
+	if cmd.stopOnFirstError && severeErr != nil {
+		return severeErr
+	}
+
 	connsDiffStr, err := analyzer.ConnectivityDiffToString(connsDiff)
 	if err != nil {
 		return errors.Wrap(err, "error in formatting connectivity diff")
 	}
+
 	if err := cmd.ouputConnsDiff(connsDiffStr); err != nil {
 		return err
 	}
-	var roxerr error
+
+	if cmd.treatWarningsAsErrors && severeErr == nil {
+		return warnErr
+	}
+	return severeErr
+}
+
+func (cmd *diffNetpolCommand) checkAnalyzerErrors(analyzer diffAnalyzer) (severeErr, warnErr error) {
+	var severe, warning error
 	for _, e := range analyzer.Errors() {
 		if e.IsSevere() {
 			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
-			roxerr = npg.ErrErrors
+			severe = npg.ErrErrors
 		} else {
 			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
-			if cmd.treatWarningsAsErrors && roxerr == nil {
-				roxerr = npg.ErrWarnings
-			}
+			warning = npg.ErrWarnings
 		}
 	}
-	return roxerr
+	return severe, warning
 }
 
 func (cmd *diffNetpolCommand) ouputConnsDiff(connsDiffStr string) error {
