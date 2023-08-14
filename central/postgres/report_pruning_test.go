@@ -14,13 +14,10 @@ import (
 	configDatastore "github.com/stackrox/rox/central/reports/config/datastore"
 	historyDatastore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -65,14 +62,22 @@ func (s *ReportHistoryPruningSuite) SetupSuite() {
 	s.configDS = configDS
 	s.historyDS = historyDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.blobDS = blobDatastore.NewTestDatastore(s.T(), s.testDB)
-	storageCollection := collectionPgStore.New(s.testDB.DB)
-	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
-	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
-
+	var err error
+	s.collectionDS, _, err = collectionDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
+	s.NoError(err)
 	for _, id := range []string{config1, config2, config3, config4} {
 		reportConfig := newConfig(id)
-		s.addCollectiontoReportConfiguration(reportConfig)
-		_, err := s.configDS.AddReportConfiguration(s.ctx, reportConfig)
+		collection := storage.ResourceCollection{
+			Name: " Test Collection" + uuid.NewV4().String(),
+		}
+		collectionID, err := s.collectionDS.AddCollection(s.ctx, &collection)
+		s.Require().NoError(err)
+		reportConfig.ResourceScope = &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{
+				CollectionId: collectionID,
+			},
+		}
+		_, err = s.configDS.AddReportConfiguration(s.ctx, reportConfig)
 		s.Require().NoError(err)
 	}
 }
@@ -89,24 +94,6 @@ func (s *ReportHistoryPruningSuite) TearDownTest() {
 
 func (s *ReportHistoryPruningSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
-}
-
-func (s *ReportHistoryPruningSuite) addCollectiontoReportConfiguration(reportConfig *storage.ReportConfiguration) {
-
-	collection := storage.ResourceCollection{
-		Name: " Test Collection" + uuid.NewV4().String(),
-	}
-	err := s.collectionDS.AddCollection(s.ctx, &collection)
-	s.Require().NoError(err)
-	query := search.NewQueryBuilder().AddExactMatches(search.CollectionName, collection.GetName()).ProtoQuery()
-	collections, err := s.collectionDS.SearchCollections(s.ctx, query)
-	s.Require().NoError(err)
-	collectionID := collections[0].GetId()
-	reportConfig.ResourceScope = &storage.ResourceScope{
-		ScopeReference: &storage.ResourceScope_CollectionId{
-			CollectionId: collectionID,
-		},
-	}
 }
 
 func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobOneDownload() {

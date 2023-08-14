@@ -9,8 +9,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -18,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,14 +46,14 @@ func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportConfigStore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	var err error
+	s.collectionDS, _, err = collectionDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.NoError(err)
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
-	storageCollection := collectionPgStore.New(s.testDB.DB)
-	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
-	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
@@ -64,11 +63,15 @@ func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
 func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig.Id = ""
-
 	// Add all required notifiers to the database.
 	for i, n := range reportConfig.GetNotifiers() {
 		reportConfig.Notifiers[i].Ref = s.storeNotifier(n.GetId())
-	collectionID, err := s.collectionDS.AddTestCollection(s.ctx)
+	}
+
+	collection := storage.ResourceCollection{
+		Name: " Test Collection" + uuid.NewV4().String(),
+	}
+	collectionID, err := s.collectionDS.AddCollection(s.ctx, &collection)
 	s.NoError(err)
 	reportConfig.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{

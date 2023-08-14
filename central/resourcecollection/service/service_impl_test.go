@@ -11,8 +11,6 @@ import (
 	reportConfigurationDS "github.com/stackrox/rox/central/reports/config/datastore"
 	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -20,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -51,10 +50,9 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.testDB = pgtest.ForT(suite.T())
 	suite.resourceConfigDS = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
-	storageCollection := collectionPgStore.New(suite.testDB.DB)
-	indexer := collectionPgStore.NewIndexer(suite.testDB.DB)
-	suite.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
-
+	var err error
+	suite.collectionDS, _, err = collectionDatastore.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
+	suite.NoError(err)
 	testutils.SetExampleVersion(suite.T())
 }
 
@@ -331,8 +329,10 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 		Name:    "config0",
 		ScopeId: "col0",
 	}
-
-	collectionID, err := suite.collectionDS.AddTestCollection(allAccessCtx)
+	collection := storage.ResourceCollection{
+		Name: " Test Collection" + uuid.NewV4().String(),
+	}
+	collectionID, err := suite.collectionDS.AddCollection(allAccessCtx, &collection)
 	suite.NoError(err)
 	reportConfig.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{

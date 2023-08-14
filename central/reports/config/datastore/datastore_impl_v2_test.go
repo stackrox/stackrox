@@ -11,8 +11,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -50,13 +48,10 @@ func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportSnapshotDataStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.reportSnapshotDataStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	var err error
+	s.collectionDS, _, err = collectionDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.NoError(err)
-	s.reportSnapshotStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	storageCollection := collectionPgStore.New(s.testDB.DB)
-	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
-	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
-
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -199,18 +194,15 @@ func (s *ReportConfigurationDatastoreV2Tests) addCollectionToReportConfiguration
 	collection := storage.ResourceCollection{
 		Name: " Test Collection" + uuid.NewV4().String(),
 	}
-	err := s.collectionDS.AddCollection(s.ctx, &collection)
+	collectionID, err := s.collectionDS.AddCollection(s.ctx, &collection)
 	s.Require().NoError(err)
-	query := search.NewQueryBuilder().AddExactMatches(search.CollectionName, collection.GetName()).ProtoQuery()
-	collections, err := s.collectionDS.SearchCollections(s.ctx, query)
-	s.Require().NoError(err)
-	newCollectionID := collections[0].GetId()
+
 	reportConfig.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{
-			CollectionId: newCollectionID,
+			CollectionId: collectionID,
 		},
 	}
-	return newCollectionID
+	return collectionID
 }
 
 func generateReportSnapshot(configID string, completionTime *types.Timestamp) *storage.ReportSnapshot {

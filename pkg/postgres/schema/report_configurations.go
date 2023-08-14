@@ -34,11 +34,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		referencedSchemas := map[string]*walker.Schema{
-<<<<<<< HEAD
-			"storage.Notifier": NotifiersSchema,
-=======
+			"storage.Notifier":           NotifiersSchema,
 			"storage.ResourceCollection": CollectionsSchema,
->>>>>>> 0d91c4c388 (Added foreign key constraint to report config table)
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {

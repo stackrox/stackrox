@@ -52,21 +52,6 @@ func (mr *MockDataStoreMockRecorder) AddCollection(ctx, collection interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCollection", reflect.TypeOf((*MockDataStore)(nil).AddCollection), ctx, collection)
 }
 
-// AddTestCollection mocks base method.
-func (m *MockDataStore) AddTestCollection(ctx context.Context) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddTestCollection", ctx)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddTestCollection indicates an expected call of AddTestCollection.
-func (mr *MockDataStoreMockRecorder) AddTestCollection(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTestCollection", reflect.TypeOf((*MockDataStore)(nil).AddTestCollection), ctx)
-}
-
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()

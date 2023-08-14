@@ -7,9 +7,8 @@ import (
 	"fmt"
 	"testing"
 
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	collectionDatastore "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	collectionPgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -29,10 +28,11 @@ func TestReportConfigurationPostgresDatastore(t *testing.T) {
 type ReportConfigurationPostgresDatastoreTests struct {
 	suite.Suite
 
-	testDB       *pgtest.TestPostgres
-	datastore    DataStore
-	ctx          context.Context
-	collectionDS collectionDatastore.DataStore
+	testDB            *pgtest.TestPostgres
+	datastore         DataStore
+	ctx               context.Context
+	collectionDS      collectionDatastore.DataStore
+	notifierDataStore notifierDS.DataStore
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
@@ -43,9 +43,10 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
-	storageCollection := collectionPgStore.New(s.testDB.DB)
-	indexer := collectionPgStore.NewIndexer(s.testDB.DB)
-	s.collectionDS, _, _ = collectionDatastore.New(storageCollection, collectionSearch.New(storageCollection, indexer))
+	var err error
+	s.collectionDS, _, err = collectionDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.NoError(err)
+	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TearDownSuite() {
@@ -134,31 +135,37 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestDeleteCollectionWithRepo
 	s.addCollectiontoReportConfiguration(reportConfig)
 
 	// Add report config
+	for i, n := range reportConfig.GetNotifiers() {
+		reportConfig.Notifiers[i].Ref = s.storeNotifier(n.GetId())
+	}
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
 	s.Require().NoError(err)
 
 	// Test get
 	err = s.collectionDS.DeleteCollection(s.ctx, reportConfig.ResourceScope.GetCollectionId())
 	s.Require().Error(err)
+
+	reportConfig = &storage.ReportConfiguration{}
+	collectionID := s.addCollectiontoReportConfiguration(reportConfig)
+	// Test get
+	err = s.collectionDS.DeleteCollection(s.ctx, collectionID)
+	s.NoError(err)
 }
 
-func (s *ReportConfigurationPostgresDatastoreTests) addCollectiontoReportConfiguration(reportConfig *storage.ReportConfiguration) {
-
+func (s *ReportConfigurationPostgresDatastoreTests) addCollectiontoReportConfiguration(reportConfig *storage.ReportConfiguration) string {
 	collection := storage.ResourceCollection{
 		Name: " Test Collection" + uuid.NewV4().String(),
 	}
-	err := s.collectionDS.AddCollection(s.ctx, &collection)
+	collectionID, err := s.collectionDS.AddCollection(s.ctx, &collection)
 	s.Require().NoError(err)
-	query := search.NewQueryBuilder().AddExactMatches(search.CollectionName, collection.GetName()).ProtoQuery()
-	collections, err := s.collectionDS.SearchCollections(s.ctx, query)
-	s.Require().NoError(err)
-	collectionID := collections[0].GetId()
 	reportConfig.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{
 			CollectionId: collectionID,
 		},
 	}
+	return collectionID
 }
+
 func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
 
@@ -186,4 +193,12 @@ func (s *ReportConfigurationPostgresDatastoreTests) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)
 	s.NoError(err)
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) storeNotifier(name string) *storage.NotifierConfiguration_Id {
+	allCtx := sac.WithAllAccess(context.Background())
+
+	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
+	s.Require().NoError(err)
+	return &storage.NotifierConfiguration_Id{Id: id}
 }
