@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: stackrox-central-diagnostics
-  namespace: {{.Release.Namespace}}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "stackrox-central-diagnostics") | nindent 4 }}
   annotations:
@@ -30,7 +30,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: stackrox-central-diagnostics
-  namespace: {{.Release.Namespace}}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "stackrox-central-diagnostics") | nindent 4 }}
   annotations:
@@ -42,4 +42,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: central
-    namespace: {{.Release.Namespace}}
+    namespace: {{ .Release.Namespace }}
