@@ -32,6 +32,8 @@ import { ReportConfiguration } from 'types/report.proto';
 import { SearchFilter } from 'types/search';
 import { TableColumn, SortDirection } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import { getWriteAccessForReport } from './VulnMgmtReport.utils';
 import ReportsSearchFilter from './Components/ReportsSearchFilter';
 
 export type ActionItem = {
@@ -60,7 +62,7 @@ type ReportingTablePanelProps = {
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
-    onRunReports: (reportIds: string[]) => Promise<any>; // return value not used
+    onRunReports: (reportIds: string[]) => Promise<void[]>; // return value not used
     onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
@@ -84,14 +86,8 @@ function ReportingTablePanel({
     const [alerts, setAlerts] = useState<AlertInfo[]>([]);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('Access');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Integration');
-    const canWriteReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasAccessScopeWriteAccess &&
-        hasNotifierIntegrationWriteAccess;
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const {
         selected,
@@ -296,7 +292,7 @@ function ReportingTablePanel({
                             const { id } = report;
 
                             const actionItems: ActionItem[] = [];
-                            if (canWriteReports) {
+                            if (hasWriteAccessForReport) {
                                 actionItems.push({
                                     title: (
                                         <Button
