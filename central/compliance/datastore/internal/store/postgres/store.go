@@ -140,7 +140,12 @@ func (s *storeImpl) getResultsFromMetadata(
 	metadata *storage.ComplianceRunMetadata,
 	flags types.GetFlags,
 ) (*storage.ComplianceRunResults, error) {
-	cacheKey := fmt.Sprintf("%s|%d", metadata.GetRunId(), flags.Hash())
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(resources.Compliance))
+	if err != nil {
+		return nil, errors.Wrap(err, "getting effective access scope to compute ComplianceRunResults cache key")
+	}
+	cacheKey := fmt.Sprintf("%s|%d|%s", metadata.GetRunId(), flags.Hash(), scopeTree.Compactify().String())
 	cachedResults, found := getRunResultsCache().Get(cacheKey)
 	if found && cachedResults != nil {
 		return cachedResults, nil
