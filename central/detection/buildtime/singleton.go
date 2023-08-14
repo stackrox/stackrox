@@ -42,7 +42,7 @@ func initialize() {
 
 	for _, policy := range policies {
 		if policyUtils.AppliesAtBuildTime(policy) {
-			utils.Must(policySet.UpsertPolicy(policy))
+			utils.Should(policySet.UpsertPolicy(policy))
 		}
 	}
 

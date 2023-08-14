@@ -171,7 +171,7 @@ func (s *Sensor) Start() {
 	if err != nil {
 		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
 	} else {
-		probeDownloadHandler := probeupload.NewProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
+		probeDownloadHandler := probeupload.NewConnectionAwareProbeHandler(probeupload.LogCallback(log), koCacheSource)
 		koCacheRoute := routes.CustomRoute{
 			Route:         "/kernel-objects/",
 			Authorizer:    idcheck.CollectorOnly(),
@@ -179,6 +179,7 @@ func (s *Sensor) Start() {
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)
+		s.AddNotifiable(WrapNotifiable(probeDownloadHandler, "Kernel probe server handler"))
 	}
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.

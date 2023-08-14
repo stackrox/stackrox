@@ -64,9 +64,6 @@ spec:
           privileged: true
           readOnlyRootFilesystem: true
         volumeMounts:
-        - mountPath: /host/var/run/docker.sock
-          name: var-run-docker-sock
-          readOnly: true
         - mountPath: /host/proc
           name: proc-ro
           readOnly: true
@@ -172,9 +169,6 @@ spec:
            name: cache-volume
       {{- end }}
       volumes:
-      - hostPath:
-          path: /var/run/docker.sock
-        name: var-run-docker-sock
       - hostPath:
           path: /proc
         name: proc-ro

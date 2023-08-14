@@ -86,7 +86,7 @@ test_upgrade_paths() {
     # To test we remain backwards compatible rollback to 4.1.x
     # TODO(ROX-18861): Replace the rollback version to next 4.1 release
     # We use an engineering build for now until it is available
-    FORCE_ROLLBACK_VERSION="4.1.2-2-g8489ac9584"
+    FORCE_ROLLBACK_VERSION="4.1.2-5-gaf845e72a2"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"

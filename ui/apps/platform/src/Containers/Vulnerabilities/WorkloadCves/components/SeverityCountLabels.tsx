@@ -3,18 +3,9 @@ import { Flex, Label, Tooltip, pluralize, capitalize } from '@patternfly/react-c
 import { EllipsisHIcon } from '@patternfly/react-icons';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
-import { noViolationsColor } from 'constants/severityColors';
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import { noViolationsClassName, noViolationsColor } from 'constants/severityColors';
 
 import { VulnerabilitySeverityLabel } from '../types';
-
-const vulnSeverityTextColors: Record<VulnerabilitySeverity, string> = {
-    LOW_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--blue-500)',
-    MODERATE_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--gold-600)',
-    IMPORTANT_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--orange-500)',
-    CRITICAL_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--red-200)',
-    UNKNOWN_VULNERABILITY_SEVERITY: 'var(--pf-global--palette--black-400)',
-};
 
 type SeverityCountLabelsProps = {
     criticalCount: number;
@@ -33,6 +24,11 @@ function getTooltipContent(severity: string, severityCount?: number, entity?: st
         return `${pluralize(severityCount, `${severity} severity CVE`)} across this ${entity}`;
     }
     return `${pluralize(severityCount, 'image')} with ${severity} severity`;
+}
+
+function getClassNameForCount(count?: number) {
+    // Render non-zero count in normal black versus zero (or undefined) count in gray.
+    return count ? '' : noViolationsClassName;
 }
 
 function SeverityCountLabels({
@@ -64,16 +60,9 @@ function SeverityCountLabels({
                 <Label
                     aria-label={getTooltipContent('critical', critical, entity)}
                     variant="outline"
-                    className="pf-u-font-weight-bold"
                     icon={<CriticalIcon color={critical ? undefined : noViolationsColor} />}
                 >
-                    <span
-                        style={{
-                            color: critical
-                                ? vulnSeverityTextColors.CRITICAL_VULNERABILITY_SEVERITY
-                                : noViolationsColor,
-                        }}
-                    >
+                    <span className={getClassNameForCount(critical)}>
                         {!critical && critical !== 0 ? (
                             <EllipsisHIcon className="pf-u-my-xs" />
                         ) : (
@@ -86,16 +75,9 @@ function SeverityCountLabels({
                 <Label
                     aria-label={getTooltipContent('important', important, entity)}
                     variant="outline"
-                    className="pf-u-font-weight-bold"
                     icon={<ImportantIcon color={important ? undefined : noViolationsColor} />}
                 >
-                    <span
-                        style={{
-                            color: important
-                                ? vulnSeverityTextColors.IMPORTANT_VULNERABILITY_SEVERITY
-                                : noViolationsColor,
-                        }}
-                    >
+                    <span className={getClassNameForCount(important)}>
                         {!important && important !== 0 ? (
                             <EllipsisHIcon className="pf-u-my-xs" />
                         ) : (
@@ -108,16 +90,9 @@ function SeverityCountLabels({
                 <Label
                     aria-label={getTooltipContent('moderate', moderate, entity)}
                     variant="outline"
-                    className="pf-u-font-weight-bold"
                     icon={<ModerateIcon color={moderate ? undefined : noViolationsColor} />}
                 >
-                    <span
-                        style={{
-                            color: moderate
-                                ? vulnSeverityTextColors.MODERATE_VULNERABILITY_SEVERITY
-                                : noViolationsColor,
-                        }}
-                    >
+                    <span className={getClassNameForCount(moderate)}>
                         {!moderate && moderate !== 0 ? (
                             <EllipsisHIcon className="pf-u-my-xs" />
                         ) : (
@@ -130,16 +105,9 @@ function SeverityCountLabels({
                 <Label
                     aria-label={getTooltipContent('low', low, entity)}
                     variant="outline"
-                    className="pf-u-font-weight-bold"
                     icon={<LowIcon color={low ? undefined : noViolationsColor} />}
                 >
-                    <span
-                        style={{
-                            color: low
-                                ? vulnSeverityTextColors.LOW_VULNERABILITY_SEVERITY
-                                : noViolationsColor,
-                        }}
-                    >
+                    <span className={getClassNameForCount(low)}>
                         {!low && low !== 0 ? <EllipsisHIcon className="pf-u-my-xs" /> : low}
                     </span>
                 </Label>

@@ -2,7 +2,6 @@ package v2
 
 import (
 	"context"
-	"io"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -12,10 +11,13 @@ import (
 	reportConfigDSMocks "github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -69,26 +71,45 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 	s.notifierDataStore = notifierDSMocks.NewMockDataStore(s.mockCtrl)
 	s.blobStore = blobDSMocks.NewMockDatastore(s.mockCtrl)
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore)
+	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
 }
 
 func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
+	creator := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
 	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
-
-			creator := &storage.SlimUser{
-				Id:   "uid",
-				Name: "name",
-			}
-			ctx := s.getContextForUser(creator)
+			mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+			ctx := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
 			if !tc.isValidationError {
+				mockID.EXPECT().UID().Return(creator.Id).AnyTimes()
+				mockID.EXPECT().FullName().Return(creator.Name).AnyTimes()
+				mockID.EXPECT().FriendlyName().Return(creator.Name).AnyTimes()
+
+				mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+				mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
+				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
+
 				protoReportConfig := tc.reportConfigGen()
 				protoReportConfig.Creator = creator
+				protoReportConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{accessScope.Rules}
 				s.reportConfigDataStore.EXPECT().AddReportConfiguration(ctx, protoReportConfig).Return(protoReportConfig.GetId(), nil).Times(1)
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(ctx, protoReportConfig.GetId()).Return(protoReportConfig, true, nil).Times(1)
 			}
@@ -112,11 +133,28 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
+	creator := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+
+	accessScopeRules := []*storage.SimpleAccessScope_Rules{
+		{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
 	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
+				protoReportConfig.Creator = creator
+				protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
+					Return(protoReportConfig, true, nil).Times(1)
 				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(allAccessContext, protoReportConfig).Return(nil).Times(1)
 			}
 			result, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
@@ -165,7 +203,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			}
 
 			s.reportConfigDataStore.EXPECT().GetReportConfigurations(allAccessContext, tc.expectedQ).
-				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiers()}, nil).Times(1)
+				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiersV2()}, nil).Times(1)
 
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[0])
 			s.mockGetNotifierCall(expectedResp.ReportConfigs[0].GetNotifiers()[1])
@@ -212,7 +250,7 @@ func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 			if !tc.isValidationError {
 				if !tc.isDataNotFoundError {
 					s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, tc.id).
-						Return(fixtures.GetValidReportConfigWithMultipleNotifiers(), true, nil).Times(1)
+						Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
 
 					expectedResp = fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 					s.mockGetNotifierCall(expectedResp.GetNotifiers()[0])
@@ -311,7 +349,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
-				return fixtures.GetValidReportConfigWithMultipleNotifiers()
+				return fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 			},
 			isValidationError: false,
 		},
@@ -325,7 +363,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
-				ret := fixtures.GetValidReportConfigWithMultipleNotifiers()
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Notifiers = nil
 				return ret
 			},
@@ -699,11 +737,11 @@ func (s *ReportServiceTestSuite) TestAuthz() {
 }
 
 func (s *ReportServiceTestSuite) TestRunReport() {
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	notifierIDs := make([]string, 0, len(reportConfig.GetNotifiers()))
 	notifiers := make([]*storage.Notifier, 0, len(reportConfig.GetNotifiers()))
 	for _, nc := range reportConfig.GetNotifiers() {
-		notifierIDs = append(notifierIDs, nc.GetEmailConfig().GetNotifierId())
+		notifierIDs = append(notifierIDs, nc.GetId())
 		notifiers = append(notifiers, &storage.Notifier{
 			Id:   nc.GetEmailConfig().GetNotifierId(),
 			Name: nc.GetEmailConfig().GetNotifierId(),
@@ -717,7 +755,24 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		Id:   "uid",
 		Name: "name",
 	}
-	userContext := s.getContextForUser(user)
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
+
+	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+
+	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
+	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
+	userContext := authn.ContextWithIdentity(s.ctx, mockID, s.T())
 
 	testCases := []struct {
 		desc    string
@@ -999,161 +1054,6 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			}
 		})
 	}
-}
-
-func (s *ReportServiceTestSuite) TestDownloadReport() {
-	reportSnapshot := fixtures.GetReportSnapshot()
-	reportSnapshot.ReportId = uuid.NewV4().String()
-	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
-	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
-	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-	user := reportSnapshot.GetRequester()
-	userContext := s.getContextForUser(user)
-	blob, blobData := fixtures.GetBlobWithData()
-	blobName := common.GetReportBlobPath(reportSnapshot.GetReportConfigurationId(), reportSnapshot.GetReportId())
-
-	testCases := []struct {
-		desc    string
-		req     *apiV2.DownloadReportRequest
-		ctx     context.Context
-		mockGen func()
-		isError bool
-	}{
-		{
-			desc: "Empty Report ID",
-			req: &apiV2.DownloadReportRequest{
-				Id: "",
-			},
-			ctx:     userContext,
-			isError: true,
-		},
-		{
-			desc: "User info not present in context",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx:     s.ctx,
-			mockGen: func() {},
-			isError: true,
-		},
-		{
-			desc: "Report ID not found",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(nil, false, nil).Times(1)
-			},
-			isError: true,
-		},
-		{
-			desc: "Download requester id and report requester user id mismatch",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				snap := reportSnapshot.Clone()
-				snap.Requester = &storage.SlimUser{
-					Id:   reportSnapshot.Requester.Id + "-1",
-					Name: reportSnapshot.Requester.Name + "-1",
-				}
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(snap, true, nil).Times(1)
-			},
-			isError: true,
-		},
-		{
-			desc: "Report was not generated",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				snap := reportSnapshot.Clone()
-				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(snap, true, nil).Times(1)
-			},
-			isError: true,
-		},
-		{
-			desc: "Report is not ready yet",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				snap := reportSnapshot.Clone()
-				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(snap, true, nil).Times(1)
-			},
-			isError: true,
-		},
-		{
-			desc: "Blob get error",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(reportSnapshot, true, nil).Times(1)
-				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, errors.New(""))
-			},
-			isError: true,
-		},
-		{
-			desc: "Blob does not exist",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(reportSnapshot, true, nil).Times(1)
-				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).Return(nil, false, nil)
-			},
-			isError: true,
-		},
-		{
-			desc: "Report downloaded",
-			req: &apiV2.DownloadReportRequest{
-				Id: reportSnapshot.GetReportId(),
-			},
-			ctx: userContext,
-			mockGen: func() {
-				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
-					Return(reportSnapshot, true, nil).Times(1)
-				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
-					func(_ context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
-						c, err := writer.Write(blobData.Bytes())
-						s.NoError(err)
-						s.Equal(c, blobData.Len())
-						return blob, true, nil
-					})
-			},
-			isError: false,
-		},
-	}
-	for _, tc := range testCases {
-		s.T().Run(tc.desc, func(t *testing.T) {
-			if tc.mockGen != nil {
-				tc.mockGen()
-			}
-			response, err := s.service.DownloadReport(tc.ctx, tc.req)
-			if tc.isError {
-				s.Error(err)
-			} else {
-				s.NoError(err)
-				s.Equal(&apiV2.DownloadReportResponse{Data: blobData.Bytes()}, response)
-			}
-		})
-	}
-
 }
 
 func (s *ReportServiceTestSuite) TestDeleteReport() {

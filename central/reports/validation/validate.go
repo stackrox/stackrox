@@ -2,26 +2,186 @@ package validation
 
 import (
 	"context"
+	"net/mail"
 
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
-	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+// Use this context only to
+// 1) check if notifiers and collection attached to report config exist
+// 2) Populating notifiers and collection in report snapshot
 var allAccessCtx = sac.WithAllAccess(context.Background())
 
+// Validator validates the requests to report service and generates job request for RunReport service
+type Validator struct {
+	reportConfigDatastore reportConfigDS.DataStore
+	snapshotDatastore     snapshotDS.DataStore
+	collectionDatastore   collectionDS.DataStore
+	notifierDatastore     notifierDS.DataStore
+}
+
+// New Validator instance
+func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotDatastore snapshotDS.DataStore,
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore) *Validator {
+	return &Validator{
+		reportConfigDatastore: reportConfigDatastore,
+		snapshotDatastore:     reportSnapshotDatastore,
+		collectionDatastore:   collectionDatastore,
+		notifierDatastore:     notifierDatastore,
+	}
+}
+
+// ValidateReportConfiguration validates the given report configuration object
+func (v *Validator) ValidateReportConfiguration(config *apiV2.ReportConfiguration) error {
+	if config.GetName() == "" {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration name is empty")
+	}
+
+	if err := v.validateSchedule(config); err != nil {
+		return err
+	}
+	if err := v.validateNotifiers(config); err != nil {
+		return err
+	}
+	if err := v.validateResourceScope(config); err != nil {
+		return err
+	}
+	if err := v.validateReportFilters(config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
+	schedule := config.GetSchedule()
+	if schedule == nil {
+		return nil
+	}
+	switch schedule.GetIntervalType() {
+	case apiV2.ReportSchedule_UNSET:
+		return errors.Wrap(errox.InvalidArgs, "Report configuration schedule must be one of WEEKLY or MONTHLY")
+	case apiV2.ReportSchedule_WEEKLY:
+		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for weekly schedule")
+		}
+		for _, day := range schedule.GetDaysOfWeek().GetDays() {
+			if day < 1 || day > 7 {
+				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (1) - Saturday(7)")
+			}
+		}
+	case apiV2.ReportSchedule_MONTHLY:
+		if schedule.GetDaysOfMonth() == nil || len(schedule.GetDaysOfMonth().GetDays()) == 0 {
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for monthly schedule")
+		}
+		for _, day := range schedule.GetDaysOfMonth().GetDays() {
+			if day != 1 && day != 15 {
+				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th day of the month")
+			}
+		}
+	}
+	return nil
+}
+
+func (v *Validator) validateNotifiers(config *apiV2.ReportConfiguration) error {
+	notifiers := config.GetNotifiers()
+	if len(notifiers) == 0 {
+		return nil
+	}
+	for _, notifier := range notifiers {
+		if notifier.GetEmailConfig() == nil {
+			return errors.Wrap(errox.InvalidArgs, "Notifier must specify an email notifier configuration")
+		}
+		if err := v.validateEmailConfig(notifier.GetEmailConfig()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfiguration) error {
+	if emailConfig.GetNotifierId() == "" {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
+	}
+	if len(emailConfig.GetMailingLists()) == 0 {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
+	}
+
+	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
+	for _, addr := range emailConfig.GetMailingLists() {
+		if _, err := mail.ParseAddress(addr); err != nil {
+			errorList.AddError(errors.Wrapf(errox.InvalidArgs, "Invalid email recipient address: %s", addr))
+		}
+	}
+	if !errorList.Empty() {
+		return errorList.ToError()
+	}
+
+	// Use allAccessCtx since report creator/updater might not have permissions for integrationSAC
+	exists, err := v.notifierDatastore.Exists(allAccessCtx, emailConfig.GetNotifierId())
+	if err != nil {
+		return errors.Errorf("Error looking up attached notifier, Notifier ID: %s, Error: %s", emailConfig.GetNotifierId(), err)
+	}
+	if !exists {
+		return errors.Wrapf(errox.NotFound, "Notifier with ID %s not found.", emailConfig.GetNotifierId())
+	}
+	return nil
+}
+
+func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) error {
+	if config.GetResourceScope() == nil || config.GetResourceScope().GetCollectionScope() == nil {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+	}
+	collectionID := config.GetResourceScope().GetCollectionScope().GetCollectionId()
+
+	if collectionID == "" {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID")
+	}
+
+	// Use allAccessCtx since report creator/updater might not have permissions for workflowAdministrationSAC
+	exists, err := v.collectionDatastore.Exists(allAccessCtx, collectionID)
+	if err != nil {
+		return errors.Errorf("Error trying to lookup attached collection, Collection: %s, Error: %s", collectionID, err)
+	}
+	if !exists {
+		return errors.Wrapf(errox.NotFound, "Collection %s not found.", collectionID)
+	}
+
+	return nil
+}
+
+func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) error {
+	if config.GetVulnReportFilters() == nil {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must include Vulnerability report filters")
+	}
+	if config.GetVulnReportFilters().GetCvesSince() == nil {
+		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
+			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
+	}
+	return nil
+}
+
 // ValidateAndGenerateReportRequest validates the report configuration for which report is requested and generates a report request
-func ValidateAndGenerateReportRequest(reportConfigStore reportConfigDS.DataStore, collectionStore collectionDS.DataStore,
-	notifierStore notifierDS.DataStore, configID string, requester *storage.SlimUser,
+func (v *Validator) ValidateAndGenerateReportRequest(
+	configID string,
 	notificationMethod storage.ReportStatus_NotificationMethod,
-	requestType storage.ReportStatus_RunMethod) (*reportGen.ReportRequest, error) {
-	config, found, err := reportConfigStore.GetReportConfiguration(allAccessCtx, configID)
+	requestType storage.ReportStatus_RunMethod,
+	requesterID authn.Identity,
+) (*reportGen.ReportRequest, error) {
+	config, found, err := v.reportConfigDatastore.GetReportConfiguration(allAccessCtx, configID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding report configuration %s", configID)
 	}
@@ -29,7 +189,7 @@ func ValidateAndGenerateReportRequest(reportConfigStore reportConfigDS.DataStore
 		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
 	}
 
-	collection, found, err := collectionStore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
+	collection, found, err := v.collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error finding collection ID '%s'", config.GetResourceScope().GetCollectionId())
 	}
@@ -39,9 +199,9 @@ func ValidateAndGenerateReportRequest(reportConfigStore reportConfigDS.DataStore
 
 	notifierIDs := make([]string, 0, len(config.GetNotifiers()))
 	for _, notifierConf := range config.GetNotifiers() {
-		notifierIDs = append(notifierIDs, notifierConf.GetEmailConfig().GetNotifierId())
+		notifierIDs = append(notifierIDs, notifierConf.GetId())
 	}
-	protoNotifiers, err := notifierStore.GetManyNotifiers(allAccessCtx, notifierIDs)
+	protoNotifiers, err := v.notifierDatastore.GetManyNotifiers(allAccessCtx, notifierIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding attached notifiers")
 	}
@@ -50,15 +210,14 @@ func ValidateAndGenerateReportRequest(reportConfigStore reportConfigDS.DataStore
 	}
 
 	return &reportGen.ReportRequest{
-		ReportConfig:   config,
 		Collection:     collection,
-		ReportSnapshot: generateReportSnapshot(config, requester, collection, protoNotifiers, notificationMethod, requestType),
+		ReportSnapshot: generateReportSnapshot(config, collection, protoNotifiers, notificationMethod, requestType, requesterID),
 	}, nil
 }
 
 // ValidateCancelReportRequest validates if the given requester can cancel the report job with job ID = reportID.
-func ValidateCancelReportRequest(reportSnapshotStore reportSnapshotDS.DataStore, reportID string, requester *storage.SlimUser) error {
-	snapshot, found, err := reportSnapshotStore.Get(allAccessCtx, reportID)
+func (v *Validator) ValidateCancelReportRequest(reportID string, requester *storage.SlimUser) error {
+	snapshot, found, err := v.snapshotDatastore.Get(allAccessCtx, reportID)
 	if err != nil {
 		return errors.Wrapf(err, "Error finding report snapshot with job ID '%s'.", reportID)
 	}
@@ -79,18 +238,19 @@ func ValidateCancelReportRequest(reportSnapshotStore reportSnapshotDS.DataStore,
 	return nil
 }
 
-func generateReportSnapshot(config *storage.ReportConfiguration, requester *storage.SlimUser,
-	collection *storage.ResourceCollection, protoNotifiers []*storage.Notifier,
+func generateReportSnapshot(
+	config *storage.ReportConfiguration,
+	collection *storage.ResourceCollection,
+	protoNotifiers []*storage.Notifier,
 	notificationMethod storage.ReportStatus_NotificationMethod,
-	requestType storage.ReportStatus_RunMethod) *storage.ReportSnapshot {
+	requestType storage.ReportStatus_RunMethod,
+	requesterID authn.Identity,
+) *storage.ReportSnapshot {
 	snapshot := &storage.ReportSnapshot{
 		ReportConfigurationId: config.GetId(),
 		Name:                  config.GetName(),
 		Description:           config.GetDescription(),
 		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Filter: &storage.ReportSnapshot_VulnReportFilters{
-			VulnReportFilters: config.GetVulnReportFilters(),
-		},
 		Collection: &storage.CollectionSnapshot{
 			Id:   config.GetResourceScope().GetCollectionId(),
 			Name: collection.GetName(),
@@ -101,7 +261,23 @@ func generateReportSnapshot(config *storage.ReportConfiguration, requester *stor
 			ReportRequestType:        requestType,
 			ReportNotificationMethod: notificationMethod,
 		},
-		Requester: requester,
+	}
+
+	reportFilters := config.GetVulnReportFilters().Clone()
+	var requester *storage.SlimUser
+	switch requestType {
+	case storage.ReportStatus_ON_DEMAND:
+		reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
+		requester = &storage.SlimUser{
+			Id:   requesterID.UID(),
+			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
+		}
+	case storage.ReportStatus_SCHEDULED:
+		requester = config.GetCreator()
+	}
+	snapshot.Requester = requester
+	snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
+		VulnReportFilters: reportFilters,
 	}
 
 	notifierSnaps := make([]*storage.NotifierSnapshot, 0, len(config.GetNotifiers()))
@@ -109,7 +285,11 @@ func generateReportSnapshot(config *storage.ReportConfiguration, requester *stor
 	for i, notifierConf := range config.GetNotifiers() {
 		notifierSnaps = append(notifierSnaps, &storage.NotifierSnapshot{
 			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-				EmailConfig: notifierConf.GetEmailConfig(),
+				EmailConfig: func() *storage.EmailNotifierConfiguration {
+					cfg := notifierConf.GetEmailConfig()
+					cfg.NotifierId = notifierConf.GetId()
+					return cfg
+				}(),
 			},
 			NotifierName: protoNotifiers[i].GetName(),
 		})

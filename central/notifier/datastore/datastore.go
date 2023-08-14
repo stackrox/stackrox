@@ -2,9 +2,12 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/notifier/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore provides storage functionality for notifiers.
@@ -29,4 +32,9 @@ func New(storage store.Store) DataStore {
 	return &datastoreImpl{
 		storage: storage,
 	}
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
+	return New(pgStore.New(pool))
 }

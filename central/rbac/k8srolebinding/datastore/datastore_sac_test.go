@@ -35,11 +35,8 @@ type k8sRoleBindingSACSuite struct {
 }
 
 func (s *k8sRoleBindingSACSuite) SetupSuite() {
-	var err error
-
 	s.testPostgres = pgtest.ForT(s.T())
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testPostgres.DB)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.testPostgres.DB)
 	s.optionsMap = schema.RoleBindingsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),

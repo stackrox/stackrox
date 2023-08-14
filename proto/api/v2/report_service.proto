@@ -185,14 +185,6 @@ message RunReportResponse {
     string report_id        = 2;
 }
 
-message DownloadReportRequest {
-    string id = 1;
-}
-
-message DownloadReportResponse {
-    bytes data = 1;
-}
-
 message DeleteReportRequest {
     string id = 1;
 }
@@ -248,12 +240,6 @@ service ReportService {
             get: "/v2/reports/jobs/{id}/status"
         };
     }
-    // GetReportStatusConfigID returns report status for a report config id
-    rpc GetLastReportStatusConfigID (ResourceByID) returns (ReportStatusResponse) {
-        option (google.api.http) = {
-            get: "/v2/reports/last-status/{id}"
-        };
-    }
 
     // GetReportHistory returns the full report job history for a report configuration with the specified ID.
     rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
@@ -286,13 +272,7 @@ service ReportService {
         };
     }
 
-    // Downloads a generated report for the given report id
-    rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse) {
-        option (google.api.http) = {
-            get: "/v2/reports/jobs/{id}/download"
-        };
-    }
-
+    // Deletes a generated report for the given report id
     rpc DeleteReport(DeleteReportRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v2/reports/jobs/{id}/delete"

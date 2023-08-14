@@ -16,7 +16,7 @@
   padding-bottom: var(--pf-global--spacer--xs);
 }
 
-.network-policies-generation-scope > *:not(:first-child):before, 
+.network-policies-generation-scope > *:not(:first-child):before,
 .network-policies-generation-scope > *:not(:first-child):after  {
   position: absolute;
   content: "";

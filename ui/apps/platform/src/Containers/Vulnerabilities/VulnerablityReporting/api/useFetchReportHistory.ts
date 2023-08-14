@@ -7,6 +7,10 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseFetchReportHistory = {
     id: string;
+    query: string;
+    page: number;
+    perPage: number;
+    showMyHistory: boolean;
 };
 
 type Result = {
@@ -25,7 +29,13 @@ const defaultResult = {
     error: null,
 };
 
-function useFetchReportHistory({ id }: UseFetchReportHistory): FetchReportsResult {
+function useFetchReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    showMyHistory,
+}: UseFetchReportHistory): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
     const fetchReportSnapshots = useCallback(() => {
@@ -34,7 +44,7 @@ function useFetchReportHistory({ id }: UseFetchReportHistory): FetchReportsResul
             isLoading: true,
             error: null,
         });
-        fetchReportHistory(id)
+        fetchReportHistory(id, query, page, perPage, showMyHistory)
             .then((reportSnapshots) => {
                 setResult({
                     reportSnapshots,
@@ -49,7 +59,7 @@ function useFetchReportHistory({ id }: UseFetchReportHistory): FetchReportsResul
                     error: getAxiosErrorMessage(error),
                 });
             });
-    }, [id]);
+    }, [id, query, page, perPage, showMyHistory]);
 
     useEffect(() => {
         void fetchReportSnapshots();

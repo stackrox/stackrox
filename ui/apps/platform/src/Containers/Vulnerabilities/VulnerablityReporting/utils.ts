@@ -2,6 +2,7 @@ import {
     Fixability,
     ImageType,
     ReportConfiguration,
+    ReportStatus,
     Schedule,
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
@@ -202,4 +203,40 @@ export function getReportFormValuesFromConfiguration(
     };
 
     return reportFormValues;
+}
+
+export function getReportStatusText(reportStatus: ReportStatus | null): string {
+    let statusText = '-';
+
+    if (
+        reportStatus?.runState === 'SUCCESS' &&
+        reportStatus?.reportNotificationMethod === 'EMAIL'
+    ) {
+        statusText = 'Emailed';
+    } else if (
+        reportStatus?.runState === 'SUCCESS' &&
+        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
+    ) {
+        statusText = 'Download prepared';
+    } else if (
+        reportStatus?.runState === 'FAILURE' &&
+        reportStatus?.reportNotificationMethod === 'EMAIL'
+    ) {
+        statusText = 'Email attempted';
+    } else if (
+        reportStatus?.runState === 'FAILURE' &&
+        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
+    ) {
+        statusText = 'Failed to generate download';
+    } else if (reportStatus?.runState === 'SUCCESS') {
+        statusText = 'Success';
+    } else if (reportStatus?.runState === 'FAILURE') {
+        statusText = 'Error';
+    } else if (reportStatus?.runState === 'PREPARING') {
+        statusText = 'Preparing';
+    } else if (reportStatus?.runState === 'WAITING') {
+        statusText = 'Waiting';
+    }
+
+    return statusText;
 }

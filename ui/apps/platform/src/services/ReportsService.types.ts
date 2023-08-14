@@ -90,7 +90,14 @@ export type ReportStatus = {
     reportNotificationMethod: ReportNotificationMethod;
 };
 
-export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
+export const runStates = {
+    WAITING: 'WAITING',
+    PREPARING: 'PREPARING',
+    SUCCESS: 'SUCCESS',
+    FAILURE: 'FAILURE',
+} as const;
+
+export type RunState = (typeof runStates)[keyof typeof runStates];
 
 export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
 
@@ -103,7 +110,8 @@ export type ReportHistoryResponse = {
 };
 
 export type ReportSnapshot = {
-    id: string;
+    reportConfigId: string;
+    reportJobId: string;
     name: string;
     description: string;
     vulnReportFilters: VulnerabilityReportFilters;
@@ -112,6 +120,7 @@ export type ReportSnapshot = {
     reportStatus: ReportStatus;
     notifiers: NotifierConfiguration[];
     user: SlimUser;
+    isDownloadAvailable: boolean;
 };
 
 export type CollectionSnapshot = {

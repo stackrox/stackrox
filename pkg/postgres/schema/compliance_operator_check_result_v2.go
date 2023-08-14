@@ -54,7 +54,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	ID         string                                              `gorm:"column:id;type:varchar;primaryKey"`
 	ClusterID  string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:btree"`
 	Status     storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
-	Severity   string                                              `gorm:"column:severity;type:varchar"`
+	Severity   storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	Standard   string                                              `gorm:"column:standard;type:varchar"`
 	ScanID     string                                              `gorm:"column:scanid;type:varchar"`
 	Serialized []byte                                              `gorm:"column:serialized;type:bytea"`

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,10 +17,6 @@ var (
 )
 
 func Test_SensorHello(t *testing.T) {
-	// TODO(ROX-18747): Remove this when the feature flag is enabled
-	if buildinfo.ReleaseBuild {
-		t.Skipf("Don't run test in release mode: feature flag cannot be enabled")
-	}
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
@@ -48,11 +43,6 @@ func Test_SensorHello(t *testing.T) {
 func Test_SensorReconnects(t *testing.T) {
 	// TODO(ROX-18197) Address flakiness
 	t.Skipf("This test is too flaky. Has to be fixed before re-enabled")
-
-	// TODO(ROX-18747): Remove this when the feature flag is enabled
-	if buildinfo.ReleaseBuild {
-		t.Skipf("Don't run test in release mode: feature flag cannot be enabled")
-	}
 
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
 	t.Setenv("ROX_RESYNC_DISABLED", "true")

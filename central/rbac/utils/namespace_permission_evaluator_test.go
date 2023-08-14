@@ -170,8 +170,7 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 
 	pool := pgtest.ForT(t)
 	roleStore := roleDS.GetTestPostgresDataStore(t, pool)
-	bindingStore, err := roleBindingDS.GetTestPostgresDataStore(t, pool)
-	require.NoError(t, err)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(t, pool)
 	for _, role := range testRoles {
 		require.NoError(t, roleStore.UpsertRole(ctx, role))
 	}
@@ -200,8 +199,7 @@ func BenchmarkGetBindingsAndRoles(b *testing.B) {
 	pool := pgtest.ForT(b)
 
 	roleStore := roleDS.GetTestPostgresDataStore(b, pool)
-	bindingStore, err := roleBindingDS.GetTestPostgresDataStore(b, pool)
-	require.NoError(b, err)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(b, pool)
 
 	roles := fixtures.GetMultipleK8SRoles(10000)
 	bindings := fixtures.GetMultipleK8sRoleBindingsWithRole(10000, 10, roles)

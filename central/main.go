@@ -107,6 +107,7 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
+	reportHandler "github.com/stackrox/rox/central/reports/handler"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
@@ -774,6 +775,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			EnableAudit:   true,
 		},
 	)
+
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		// Report custom routes
+		customRoutes = append(customRoutes, reportHandler.CustomRoutes()...)
+	}
 
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)

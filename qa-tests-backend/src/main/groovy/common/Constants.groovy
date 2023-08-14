@@ -46,16 +46,6 @@ class Constants {
     // tests fail.
     static final TEST_FEATURE_TIMEOUT_PAD = 360
 
-    // Used for @Tag("Parallel") tests to gate their requirements for scanner
-    // configuration.
-    // A ResourceAccessMode.READ_WRITE @ResourceLock means the test will modify
-    // scanner integrations and other tests that require a READ or READ_WRITE
-    // lock are blocked.
-    // A ResourceAccessMode.READ @ResourceLock means the test relies on the
-    // default scanner configuration (currently Stackrox Scanner). Other READ
-    // tests will run. READ_WRITE tests are blocked.
-    static final String RESOURCE_SCANNER_INTEGRATION = "RESOURCE_SCANNER_INTEGRATION"
-
     /*
         StackRox Product Feature Flags
 

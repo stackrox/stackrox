@@ -117,8 +117,7 @@ func TestIsClusterAdmin(t *testing.T) {
 
 	pool := pgtest.ForT(t)
 	roleStore := roleDS.GetTestPostgresDataStore(t, pool)
-	bindingStore, err := roleBindingDS.GetTestPostgresDataStore(t, pool)
-	require.NoError(t, err)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(t, pool)
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -208,8 +207,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 
 	pool := pgtest.ForT(t)
 	roleStore := roleDS.GetTestPostgresDataStore(t, pool)
-	bindingStore, err := roleBindingDS.GetTestPostgresDataStore(t, pool)
-	require.NoError(t, err)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(t, pool)
 
 	ctx := sac.WithAllAccess(context.Background())
 

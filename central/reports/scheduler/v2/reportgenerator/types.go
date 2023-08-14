@@ -7,7 +7,6 @@ import (
 
 // ReportRequest contains information needed to generate and notify a report
 type ReportRequest struct {
-	ReportConfig   *storage.ReportConfiguration
 	ReportSnapshot *storage.ReportSnapshot
 	Collection     *storage.ResourceCollection
 	DataStartTime  *types.Timestamp
