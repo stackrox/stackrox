@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 // TestClusterScope contains cluster-level scope information (cluster included or list of included namespaces
@@ -66,6 +67,9 @@ func (c *testScopeCheckerCore) EffectiveAccessScope(resource permissions.Resourc
 	if resourceCore == nil {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
+	if resources.GetScopeForResource(resource.Resource.GetResource()) == permissions.GlobalScope {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
 	if !resourceCore.Included && len(resourceCore.Clusters) == 0 {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
@@ -122,9 +126,13 @@ func (c *testScopeCheckerCore) Allowed() bool {
 	if !resourceOK {
 		return false
 	}
-	resourceScope := c.scope[accessMode][permissions.Resource(resourceKey.String())]
+	targetResource := permissions.Resource(resourceKey.String())
+	resourceScope := c.scope[accessMode][targetResource]
 	if resourceScope == nil {
 		return false
+	}
+	if resources.GetScopeForResource(targetResource) == permissions.GlobalScope {
+		return true
 	}
 	if resourceScope.Included {
 		return true
@@ -139,6 +147,11 @@ func (c *testScopeCheckerCore) Allowed() bool {
 		return false
 	}
 	if clusterScope.Included {
+		return true
+	}
+	// For cluster-scoped resources, allow access if partial cluster access is allowed.
+	targetResourceScope := resources.GetScopeForResource(targetResource)
+	if targetResourceScope == permissions.ClusterScope && len(clusterScope.Namespaces) > 0 {
 		return true
 	}
 	if len(c.path) == 3 {

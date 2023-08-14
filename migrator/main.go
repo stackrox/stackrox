@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -105,6 +108,24 @@ func run() error {
 	return nil
 }
 
+func dbCheck(source map[string]string, adminConfig *postgres.Config) error {
+	// Create the central database if necessary
+	log.WriteToStderrf("checking if the database %q exists", pgconfig.GetActiveDB())
+	exists, err := pgadmin.CheckIfDBExists(adminConfig, pgconfig.GetActiveDB())
+	if err != nil {
+		log.WriteToStderrf("Could not check for central database: %v", err)
+		return err
+	}
+	if !exists {
+		err = pgadmin.CreateDB(source, adminConfig, pgadmin.EmptyDB, pgconfig.GetActiveDB())
+		if err != nil {
+			log.WriteToStderrf("Could not create central database: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
 func ensureDatabaseExists() error {
 	sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
 	if err != nil {
@@ -112,20 +133,11 @@ func ensureDatabaseExists() error {
 	}
 
 	if !pgconfig.IsExternalDatabase() {
-		// Create the central database if necessary
-		exists, err := pgadmin.CheckIfDBExists(adminConfig, pgconfig.GetActiveDB())
-		if err != nil {
-			log.WriteToStderrf("Could not check for central database: %v", err)
-			return err
-		}
-		if !exists {
-			err = pgadmin.CreateDB(sourceMap, adminConfig, pgadmin.EmptyDB, pgconfig.GetActiveDB())
-			if err != nil {
-				log.WriteToStderrf("Could not create central database: %v", err)
-				return err
-			}
-		}
+		return retry.WithRetry(func() error {
+			return dbCheck(sourceMap, adminConfig)
+		}, retry.Tries(10), retry.BetweenAttempts(func(_ int) {
+			time.Sleep(5 * time.Second)
+		}))
 	}
-
 	return nil
 }

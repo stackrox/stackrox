@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/set"
@@ -25,35 +24,6 @@ var (
 
 	log = logging.LoggerForModule()
 )
-
-// PolicyStoreErrorList is used to encapsulate multiple errors returned from policy store methods
-type PolicyStoreErrorList struct {
-	Errors []error
-}
-
-func (p *PolicyStoreErrorList) Error() string {
-	return errorhelpers.NewErrorListWithErrors("policy store encountered errors", p.Errors).String()
-}
-
-// IDConflictError can be returned by AddPolicies when a policy exists with the same ID as a new policy
-type IDConflictError struct {
-	ErrString          string
-	ExistingPolicyName string
-}
-
-func (i *IDConflictError) Error() string {
-	return i.ErrString
-}
-
-// NameConflictError can be returned by AddPolicies when a policy exists with the same name as a new policy
-type NameConflictError struct {
-	ErrString          string
-	ExistingPolicyName string
-}
-
-func (i *NameConflictError) Error() string {
-	return i.ErrString
-}
 
 // Store provides storage functionality for policies.
 //

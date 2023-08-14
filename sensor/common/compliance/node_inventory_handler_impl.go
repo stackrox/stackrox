@@ -36,7 +36,7 @@ func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 func (c *nodeInventoryHandlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.NodeScanningCap}
+	return nil
 }
 
 // ResponsesC returns a channel with messages to Central. It must be called after Start() for the channel to be not nil
@@ -93,6 +93,8 @@ func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) erro
 		return nil
 	}
 	log.Debugf("Received node-scanning-ACK message: %v", ackMsg)
+	metrics.ObserveNodeInventoryAck(ackMsg.GetNodeName(), ackMsg.GetAction().String(),
+		metrics.AckReasonUnknown, metrics.AckOriginCentral)
 	switch ackMsg.GetAction() {
 	case central.NodeInventoryACK_ACK:
 		c.sendAckToCompliance(c.acksFromCentral, ackMsg.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_ACK)
@@ -135,6 +137,9 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 			if !c.centralReady.IsDone() {
 				log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
 				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
+				metrics.ObserveNodeInventoryAck(inventory.GetNodeName(),
+					sensor.MsgToCompliance_NodeInventoryACK_NACK.String(),
+					metrics.AckReasonCentralUnreachable, metrics.AckOriginSensor)
 				continue
 			}
 			if inventory == nil {
@@ -144,6 +149,8 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
 				log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
 				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
+				metrics.ObserveNodeInventoryAck(inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK.String(),
+					metrics.AckReasonNodeUnknown, metrics.AckOriginSensor)
 
 			} else {
 				inventory.NodeId = nodeID

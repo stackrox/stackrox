@@ -4,8 +4,9 @@ import { DescriptionList } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
-import ObjectDescriptionList from 'Components/ObjectDescriptionList';
 import { Deployment } from 'types/deployment.proto';
+
+import FlatObjectDescriptionList from './FlatObjectDescriptionList';
 
 export type DeploymentOverviewProps = {
     deployment: Deployment;
@@ -14,7 +15,7 @@ export type DeploymentOverviewProps = {
 function DeploymentOverview({ deployment }: DeploymentOverviewProps): ReactElement {
     const imagePullSecrets = deployment?.imagePullSecrets || [];
     return (
-        <DescriptionList isHorizontal>
+        <DescriptionList isCompact isHorizontal>
             <DescriptionListItem term="Deployment ID" desc={deployment.id} />
             <DescriptionListItem term="Deployment name" desc={deployment.name} />
             <DescriptionListItem term="Deployment type" desc={deployment.type} />
@@ -31,11 +32,11 @@ function DeploymentOverview({ deployment }: DeploymentOverviewProps): ReactEleme
             />
             <DescriptionListItem
                 term="Labels"
-                desc={<ObjectDescriptionList data={deployment.labels} />}
+                desc={<FlatObjectDescriptionList data={deployment.labels} />}
             />
             <DescriptionListItem
                 term="Annotations"
-                desc={<ObjectDescriptionList data={deployment.annotations} />}
+                desc={<FlatObjectDescriptionList data={deployment.annotations} />}
             />
             <DescriptionListItem term="Service account" desc={deployment.serviceAccount} />
             {imagePullSecrets.length > 0 && (

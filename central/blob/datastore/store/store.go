@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -20,10 +21,13 @@ var (
 )
 
 // Store is the interface to interact with the storage for storage.Blob
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.Blob, reader io.Reader) error
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
+	GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
 }
@@ -215,6 +219,11 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 // GetIDs all blob names
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return s.store.GetIDs(ctx)
+}
+
+// GetMetadataByQuery get a list of Blobs by query.
+func (s *storeImpl) GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error) {
+	return s.store.GetByQuery(ctx, query)
 }
 
 // GetMetadata all blob names

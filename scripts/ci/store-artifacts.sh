@@ -147,7 +147,7 @@ make_artifacts_help() {
     cat > "$help_file" <<- EOH
         <html>
         <head>
-        <title><h4>Additional StackRox e2e artifacts</h4></title>
+        <title>Additional StackRox e2e artifacts</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }

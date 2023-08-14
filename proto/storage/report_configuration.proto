@@ -32,7 +32,7 @@ message ReportConfiguration {
     google.protobuf.Timestamp       last_successful_run_time    = 10;
     ResourceScope                   resource_scope              = 11;
     repeated NotifierConfiguration  notifiers                   = 12;
-    SlimUser                        creator                     = 13;
+    SlimUser                        creator                     = 13 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
 message ReportLastRunStatus {

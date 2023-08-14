@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+import "google/protobuf/timestamp.proto";
+import weak "google/api/annotations.proto";
+import "api/v2/common.proto";
+import "api/v2/search_query.proto";
+import "api/v2/user.proto";
+
+package v2;
+
+// ClusterScanStatus holds status based on cluster in the event that a scan configuration
+// was successfully applied to some clusters but not others.
+// Next available tag: 3
+message ClusterScanStatus {
+    string                    cluster_id = 1;
+    repeated string           errors     = 2;
+}
+
+// Next available tag: 4
+message BaseComplianceScanConfigurationSettings {
+    bool                  one_time_scan            = 1;
+    repeated string       profiles                 = 2;
+    Schedule              scan_schedule            = 3;
+}
+
+// Next available tag: 4
+message ComplianceScanConfiguration {
+    string                                     scan_name   = 1;
+    BaseComplianceScanConfigurationSettings    scan_config = 2;
+    repeated string                            clusters    = 3;
+}
+
+// Next available tag: 7
+message ComplianceScanConfigurationStatus {
+    string                                     scan_name            = 1;
+    BaseComplianceScanConfigurationSettings    scan_config          = 2;
+    repeated ClusterScanStatus                 cluster_status       = 3;
+    google.protobuf.Timestamp                  created_time         = 4;
+    google.protobuf.Timestamp                  last_updated_time    = 5;
+    // Most recent user to update the scan settings
+    SlimUser                                   created_by           = 6;
+}
+
+// Next available tag: 2
+message ComplianceScanConfigurationRequest {
+    string scan_name = 1;
+}
+
+// Next available tag: 2
+message ListComplianceScanConfigurationResponse {
+    repeated ComplianceScanConfigurationStatus configuration = 1;
+}
+
+service ComplianceScanConfigurationService {
+    // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+    rpc ListComplianceScanConfigurations (RawQuery) returns (ListComplianceScanConfigurationResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/configurations"
+        };
+    }
+
+    // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+    rpc GetComplianceScanConfiguration (ComplianceScanConfigurationRequest) returns (ComplianceScanConfigurationStatus) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/configurations/{scan_name}"
+        };
+    }
+
+    // PostComplianceScanConfiguration creates a compliance scan configuration
+    rpc PostComplianceScanConfiguration (ComplianceScanConfiguration) returns (ComplianceScanConfiguration) {
+        option (google.api.http) = {
+            post: "/v2/compliance/scan/configurations"
+            body: "*"
+        };
+    }
+
+    // UpdateComplianceScanConfiguration updates a compliance scan configuration
+    rpc UpdateComplianceScanConfiguration (ComplianceScanConfiguration) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v2/compliance/scan/configurations/{scan_name}"
+            body: "*"
+        };
+    }
+
+    // DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name
+    rpc DeleteComplianceScanConfiguration (ComplianceScanConfigurationRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/compliance/scan/configurations/{scan_name}"
+        };
+    }
+
+    // RunComplianceScanConfiguration launches scan for the specified scan configuration
+    rpc RunComplianceScanConfiguration (ComplianceScanConfigurationRequest) returns (Empty) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/configurations/execute/{scan_name}"
+        };
+    }
+}

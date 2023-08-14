@@ -9,7 +9,7 @@ import (
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -41,6 +41,7 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
 func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
+	// TODO ROX-18773 : Add SAC query filter on deploymentsQuery to scope the results by report requester.
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
 	if err != nil {
 		return nil, err
@@ -86,7 +87,7 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 }
 
 func filterVulnsByFirstOccurrenceTime(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return vulnReportFilters.SinceLastReport
 	}
 	return vulnReportFilters.GetSinceLastSentScheduledReport() || vulnReportFilters.GetSinceStartDate() != nil

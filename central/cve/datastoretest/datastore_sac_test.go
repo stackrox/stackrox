@@ -339,13 +339,12 @@ var (
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespacesABReadWriteCtx,
-			// Partial cluster scope is too narrow for allowfixedscope at cluster level.
 			expectedCVEFound: map[string]bool{
-				"CVE-1234-0001": false,
-				"CVE-4567-0002": false,
-				"CVE-1234-0003": false,
-				"CVE-3456-0004": false,
-				"CVE-3456-0005": false,
+				"CVE-1234-0001": true,
+				"CVE-4567-0002": true,
+				"CVE-1234-0003": true,
+				"CVE-3456-0004": true,
+				"CVE-3456-0005": true,
 				"CVE-2345-0006": false,
 				"CVE-2345-0007": false,
 			},
@@ -364,15 +363,14 @@ var (
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespaceBReadWriteCtx,
-			// Partial cluster scope is too narrow for allowfixedscope at cluster level.
 			expectedCVEFound: map[string]bool{
 				"CVE-1234-0001": false,
-				"CVE-4567-0002": false,
+				"CVE-4567-0002": true,
 				"CVE-1234-0003": false,
-				"CVE-3456-0004": false,
-				"CVE-3456-0005": false,
-				"CVE-2345-0006": false,
-				"CVE-2345-0007": false,
+				"CVE-3456-0004": true,
+				"CVE-3456-0005": true,
+				"CVE-2345-0006": true,
+				"CVE-2345-0007": true,
 			},
 		},
 		{
@@ -392,9 +390,9 @@ var (
 			// The mixed scope context can see cluster1 and namespaceA as well as all cluster2.
 			// Therefore it should see only cluster2 vulnerabilities (and shared ones).
 			expectedCVEFound: map[string]bool{
-				"CVE-1234-0001": false,
+				"CVE-1234-0001": true,
 				"CVE-4567-0002": true,
-				"CVE-1234-0003": false,
+				"CVE-1234-0003": true,
 				"CVE-3456-0004": true,
 				"CVE-3456-0005": true,
 				"CVE-2345-0006": true,

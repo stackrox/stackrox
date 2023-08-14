@@ -43,9 +43,9 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
-	reportConfig "github.com/stackrox/rox/central/reportconfigurations/datastore"
-	reportConfigSearch "github.com/stackrox/rox/central/reportconfigurations/search"
-	reportConfigPgStore "github.com/stackrox/rox/central/reportconfigurations/store/postgres"
+	reportConfig "github.com/stackrox/rox/central/reports/config/datastore"
+	reportConfigSearch "github.com/stackrox/rox/central/reports/config/search"
+	reportConfigPgStore "github.com/stackrox/rox/central/reports/config/store/postgres"
 	reportDatastore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	reportSearch "github.com/stackrox/rox/central/reports/snapshot/datastore/search"
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
@@ -60,7 +60,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -105,6 +105,7 @@ var (
 				},
 			},
 			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
+			ReportRetentionConfig:      &storage.ReportRetentionConfig{},
 		},
 	}
 )
@@ -558,7 +559,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			alerts, config, images, deployments, pods := s.generateImageDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
@@ -605,8 +606,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 }
 
 func (s *PruningTestSuite) TestReportHistoryPruning() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}
@@ -882,7 +883,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1005,7 +1006,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1178,7 +1179,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			alerts, config, images, deployments := s.generateAlertDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {

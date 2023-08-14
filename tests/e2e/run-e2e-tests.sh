@@ -127,7 +127,6 @@ get_initial_options() {
 if [[ ! -f "/i-am-rox-ci-image" ]]; then
     handle_tag_requirements "$@"
     kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-    mkdir -p "${HOME}/.gradle/caches"
     mkdir -p "$QA_TEST_DEBUG_LOGS"
     info "Running in a container..."
     docker run \

@@ -187,10 +187,10 @@ func TestSACQueryEnricherForClusterResource(t *testing.T) {
 				)),
 		},
 		{
-			description:           "Namespace-only-access scope tree and nil query result in MatchNone query enrichment",
+			description:           "Namespace-only-access scope tree and nil query result in cluster match query enrichment",
 			scope:                 effectiveaccessscope.TestTreeOneClusterNamespacePairOnlyIncluded(t),
 			query:                 nil,
-			expectedEnrichedQuery: search.ConjunctionQuery(nil, getMatchNoneQuery()),
+			expectedEnrichedQuery: search.ConjunctionQuery(nil, clusterNonVerboseMatch(t, clusterIDArrakis)),
 		},
 		// Empty query test pagination data propagation with unrestricted access
 		{

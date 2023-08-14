@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	reportConfigurationDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigurationDS "github.com/stackrox/rox/central/reports/config/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

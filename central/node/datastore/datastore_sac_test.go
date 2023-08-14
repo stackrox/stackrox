@@ -158,7 +158,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 			ValidClusterScope:  true,
 			ExpectedClusterIds: validClusterIDs,
 		},
-		"read-write on the right cluster and partial namespace access cannot get": {
+		"read-write on the right cluster and partial namespace access can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
 				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -166,7 +166,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 					sac.ClusterScopeKeys(validClusterIDs...),
 					sac.NamespaceScopeKeys("someNamespace"))),
 			ValidClusterScope:  true,
-			ExpectedClusterIds: []string{},
+			ExpectedClusterIds: validClusterIDs,
 		},
 	}
 }
@@ -198,7 +198,7 @@ func (s *nodeDatastoreSACSuite) TestGetNode() {
 			s.NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.NotNil(fetchedNode)
+				s.Require().NotNil(fetchedNode)
 
 				// Priority can have updated value, and we want to ignore it.
 				fetchedNode.Priority = s.testNodes[nodeID].Priority

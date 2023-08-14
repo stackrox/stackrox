@@ -44,6 +44,7 @@ env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
+  TIMEOUT_WAIT_FOR_IMAGES_SECONDS: 3600
 
 run-name: >-
   ${{
@@ -198,7 +199,7 @@ jobs:
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -276,7 +277,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -319,6 +320,7 @@ jobs:
           image: "rhacs-eng/${{ matrix.image }}:${{ needs.variables.outputs.milestone }}"
           # Do not wait if running dry
           interval: ${{ fromJSON('["30", "0"]')[env.DRY_RUN == 'true'] }}
+          limit: ${{ fromJSON(format('["{0}","{1}"]', env.TIMEOUT_WAIT_FOR_IMAGES_SECONDS, 0))[env.DRY_RUN == 'true'] }}
 
   create-k8s-cluster:
     name: Create k8s cluster
@@ -350,7 +352,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -407,7 +409,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -528,7 +530,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -589,7 +591,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-

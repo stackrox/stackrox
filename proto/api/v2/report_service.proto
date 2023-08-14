@@ -7,13 +7,117 @@ import "google/protobuf/timestamp.proto";
 import "api/v2/common.proto";
 import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
-import "api/v2/report_configuration_service.proto";
 import "api/v2/user.proto";
 
 package v2;
 
+
+message ReportConfiguration {
+    enum ReportType {
+        VULNERABILITY = 0;
+    }
+    string                          id                    = 1;
+    string                          name                  = 2;
+    string                          description           = 3;
+    ReportType                      type                  = 4;
+    oneof                          filter {
+        VulnerabilityReportFilters  vuln_report_filters   = 5;
+    }
+
+    ReportSchedule                  schedule              = 6;
+    ResourceScope                   resource_scope        = 7;
+    repeated NotifierConfiguration  notifiers             = 8;
+}
+
+message VulnerabilityReportFilters {
+    enum Fixability {
+        BOTH        = 0;
+        FIXABLE     = 1;
+        NOT_FIXABLE = 2;
+    }
+
+    enum VulnerabilitySeverity {
+        UNKNOWN_VULNERABILITY_SEVERITY   = 0;
+        LOW_VULNERABILITY_SEVERITY       = 1;
+        MODERATE_VULNERABILITY_SEVERITY  = 2;
+        IMPORTANT_VULNERABILITY_SEVERITY = 3;
+        CRITICAL_VULNERABILITY_SEVERITY  = 4;
+    }
+
+    enum ImageType {
+        DEPLOYED = 0;
+        WATCHED  = 1;
+    }
+
+    Fixability                        fixability                        = 1;
+    repeated VulnerabilitySeverity    severities                        = 2;
+    repeated ImageType                image_types                       = 3;
+    oneof cves_since {
+        bool                          all_vuln                          = 4;
+        bool                          since_last_sent_scheduled_report  = 5;
+        google.protobuf.Timestamp     since_start_date                  = 6;
+    }
+}
+
+message ReportSchedule {
+    enum IntervalType {
+        UNSET           = 0;
+        WEEKLY          = 1;
+        MONTHLY         = 2;
+    }
+
+    // Sunday = 1, Monday = 2, .... Saturday =  7
+    message DaysOfWeek {
+        repeated int32 days = 1;
+    }
+    // 1 for 1st, 2 for 2nd .... 31 for 31st
+    message DaysOfMonth {
+        repeated int32 days = 1;
+    }
+
+    IntervalType interval_type      = 1;
+    int32        hour               = 2;
+    int32        minute             = 3;
+
+    oneof Interval {
+        DaysOfWeek days_of_week     = 4;
+        DaysOfMonth days_of_month   = 5;
+    }
+}
+
+message ResourceScope {
+    oneof scope_reference {
+        CollectionReference collection_scope = 1;
+    }
+}
+
+message CollectionReference {
+    string collection_id =   1;
+    string collection_name = 2;
+}
+
+message NotifierConfiguration {
+    oneof notifier_config {
+        EmailNotifierConfiguration email_config = 1;
+    }
+    string notifier_name = 2;
+}
+
+message EmailNotifierConfiguration  {
+    string                 notifier_id    = 1;
+    repeated string        mailing_lists  = 2;
+}
+
+message ListReportConfigurationsResponse {
+    repeated ReportConfiguration report_configs = 1;
+}
+
+message CountReportConfigurationsResponse {
+    int32 count = 1;
+}
+
 message GetReportHistoryRequest {
-    string   report_config_id  = 1;
+    string   id                 = 1;
     RawQuery report_param_query = 2;
 }
 
@@ -81,11 +185,67 @@ message RunReportResponse {
     string report_id        = 2;
 }
 
+message DownloadReportRequest {
+    string id = 1;
+}
+
+message DownloadReportResponse {
+    bytes data = 1;
+}
+
+message DeleteReportRequest {
+    string id = 1;
+}
+
 service ReportService {
+    // PostReportConfiguration creates a report configuration
+    rpc PostReportConfiguration (ReportConfiguration) returns (ReportConfiguration) {
+        option (google.api.http) = {
+            post: "/v2/reports/configurations"
+            body: "*"
+        };
+    }
+
+    // UpdateReportConfiguration updates a report configuration
+    rpc UpdateReportConfiguration (ReportConfiguration) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v2/reports/configurations/{id}"
+            body: "*"
+        };
+    }
+
+    // ListReportConfigurations returns report configurations matching given query
+    rpc ListReportConfigurations (RawQuery) returns (ListReportConfigurationsResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/configurations"
+        };
+    }
+
+    // CountReportConfigurations returns the number of report configurations.
+    rpc CountReportConfigurations (RawQuery) returns (CountReportConfigurationsResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/configuration-count"
+        };
+    }
+
+    // GetReportConfiguration returns the report configuration with given ID
+    rpc GetReportConfiguration(ResourceByID) returns (ReportConfiguration) {
+        option (google.api.http) = {
+            get: "/v2/reports/configurations/{id}"
+        };
+    }
+
+    // DeleteReportConfiguration removes the report configuration with given ID
+    rpc DeleteReportConfiguration (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/reports/configurations/{id}"
+        };
+    }
+
     // GetReportStatus returns report status for the given report id
     rpc GetReportStatus (ResourceByID) returns (ReportStatusResponse) {
         option (google.api.http) = {
-            get: "/v2/reports/status/{id}"
+            get: "/v2/reports/jobs/{id}/status"
         };
     }
     // GetReportStatusConfigID returns report status for a report config id
@@ -95,10 +255,17 @@ service ReportService {
         };
     }
 
-    // GetReportHistory returns the full history for a report configuration with the specified ID.
+    // GetReportHistory returns the full report job history for a report configuration with the specified ID.
     rpc GetReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
         option (google.api.http) = {
-            get: "/v2/reports/history/{report_config_id}"
+            get: "/v2/reports/configurations/{id}/history"
+        };
+    }
+
+    // GetMyReportHistory returns the requester's report job history for a report configuration with the specified ID.
+    rpc GetMyReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/configurations/{id}/my-history"
         };
     }
 
@@ -115,7 +282,20 @@ service ReportService {
     // If a report is already being prepared, it won't be cancelled.
     rpc CancelReport(ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            delete: "/v2/reports/cancel/{id}"
+            delete: "/v2/reports/jobs/{id}/cancel"
+        };
+    }
+
+    // Downloads a generated report for the given report id
+    rpc DownloadReport(DownloadReportRequest) returns (DownloadReportResponse) {
+        option (google.api.http) = {
+            get: "/v2/reports/jobs/{id}/download"
+        };
+    }
+
+    rpc DeleteReport(DeleteReportRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/reports/jobs/{id}/delete"
         };
     }
 }
