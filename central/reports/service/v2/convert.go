@@ -422,8 +422,12 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) (set.StringSet, error) {
 	blobNames := make([]string, 0)
 	for _, snap := range snapshots {
-		if snap.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
-			blobNames = append(blobNames, common.GetReportBlobPath(snap.GetReportConfigurationId(), snap.GetReportId()))
+		status := snap.GetReportStatus()
+		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
+			if status.GetRunState() == storage.ReportStatus_GENERATED ||
+				status.GetRunState() == storage.ReportStatus_DELIVERED {
+				blobNames = append(blobNames, common.GetReportBlobPath(snap.GetReportConfigurationId(), snap.GetReportId()))
+			}
 		}
 	}
 	blobs, err := s.blobStore.GetManyMetadata(allAccessCtx, blobNames)
