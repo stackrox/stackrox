@@ -53,8 +53,8 @@ and OPTIONALLY with the objects being migrated to create `gen.go` files for each
     `gogen -run pg-table-bindings`
 
 3. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` to
-   the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. 
-   For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2
+   the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. For
+   example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2
    onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported
    and we want to remove `column_v1`.  To do so, we will upgrade the schema to remove the column
    and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2
