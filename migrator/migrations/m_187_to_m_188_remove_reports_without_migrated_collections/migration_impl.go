@@ -26,7 +26,6 @@ func migrate(db *gorm.DB) error {
 
 	collectionsTable := db.WithContext(ctx).Table(schema.CollectionsTableName).Session(&gorm.Session{})
 
-	//var count int
 	var toDelete []schema.ReportConfigurations
 	for rows.Next() {
 		var config schema.ReportConfigurations
@@ -38,12 +37,12 @@ func migrate(db *gorm.DB) error {
 			return errors.Wrapf(err, "failed to convert %+v to proto", config)
 		}
 
-		//scope_id is not null then it is a V1 reportconfig
+		// scope_id is not null then it is a V1 reportconfig
 		reportID := configProto.GetId()
 		scopeID := configProto.GetScopeId()
 		collectionID := configProto.GetResourceScope().GetCollectionId()
 
-		//scope_id is null/empty and collection_id is null/empty -> undefined, so delete
+		// scope_id is null/empty and collection_id is null/empty -> undefined, so delete
 		// NOTE: At the point this migration runs, collection_id should never be set, but the check is here just in case
 		if strings.TrimSpace(scopeID) == "" && strings.TrimSpace(collectionID) == "" {
 			toDelete = append(toDelete, schema.ReportConfigurations{ID: reportID})
@@ -76,7 +75,7 @@ func migrate(db *gorm.DB) error {
 			result := tx.Delete(&toDelete)
 			if result.Error != nil || result.RowsAffected != int64(len(toDelete)) {
 				log.Errorf("failed to delete %d reports configurations with invalid collections", len(toDelete))
-				return errors.Wrapf(result.Error, "failed to delete report configurations in batch")
+				return errors.Wrap(result.Error, "failed to delete report configurations in batch")
 			}
 			return nil
 		})
