@@ -1,35 +1,31 @@
-apiVersion: v1
-kind: ServiceAccount
-automountServiceAccountToken: false
-metadata:
-  name: asset-cache
-  namespace: frontend
-  labels:
-    app: asset-cache
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: asset-cache
-  namespace: frontend
+  name: zeroday
+  namespace: zeroday
   labels:
-    app: asset-cache
+    app: zeroday
     exposed: "true"
-    app.kubernetes.io/part-of: frontend
+    app.kubernetes.io/part-of: zeroday
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: asset-cache
+      app: zeroday
   template:
     metadata:
       labels:
-        app: asset-cache
+        app: zeroday
     spec:
-      serviceAccountName: asset-cache
       automountServiceAccountToken: false
       containers:
-        - image: quay.io/vuln/asset-cache:latest
+        - image: quay.io/vuln/rce-webapp:alpine
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+            ]
           resources:
             requests:
               memory: "64Mi"
@@ -43,18 +39,21 @@ spec:
               drop:
                 - all
           imagePullPolicy: Always
-          name: asset-cache
+          name: zeroday
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            - name: exploit
+              value: "true"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: asset-cache
-  name: asset-cache-service
-  namespace: frontend
+    app: zeroday
+  name: zeroday-service
+  namespace: zeroday
 spec:
   ports:
     - port: 8080
@@ -62,5 +61,5 @@ spec:
       targetPort: 8080
       name: http
   selector:
-    app: asset-cache
+    app: zeroday
   type: ClusterIP

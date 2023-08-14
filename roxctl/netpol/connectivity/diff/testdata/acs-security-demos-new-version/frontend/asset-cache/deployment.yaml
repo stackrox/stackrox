@@ -29,7 +29,7 @@ spec:
       serviceAccountName: asset-cache
       automountServiceAccountToken: false
       containers:
-        - image: quay.io/vuln/asset-cache:latest
+        - image: quay.io/vuln/asset-cache:v1
           resources:
             requests:
               memory: "64Mi"
@@ -53,6 +53,7 @@ kind: Service
 metadata:
   labels:
     app: asset-cache
+    exposed: "true"
   name: asset-cache-service
   namespace: frontend
 spec:

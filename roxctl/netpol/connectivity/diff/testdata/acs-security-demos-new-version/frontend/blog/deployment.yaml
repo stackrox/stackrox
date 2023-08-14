@@ -1,35 +1,30 @@
-apiVersion: v1
-kind: ServiceAccount
-automountServiceAccountToken: false
-metadata:
-  name: asset-cache
-  namespace: frontend
-  labels:
-    app: asset-cache
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: asset-cache
+  name: blog
   namespace: frontend
   labels:
-    app: asset-cache
-    exposed: "true"
-    app.kubernetes.io/part-of: frontend
+    app: blog
+    app.kubernetes.io/part-of: blog
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: asset-cache
+      app: blog
   template:
     metadata:
       labels:
-        app: asset-cache
+        app: blog
     spec:
-      serviceAccountName: asset-cache
       automountServiceAccountToken: false
       containers:
-        - image: quay.io/vuln/asset-cache:latest
+        - image: quay.io/vuln/blog:v1
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+            ]
           resources:
             requests:
               memory: "64Mi"
@@ -43,17 +38,20 @@ spec:
               drop:
                 - all
           imagePullPolicy: Always
-          name: asset-cache
+          name: blog
           ports:
             - containerPort: 8080
               protocol: TCP
+          env:
+            - name: exploit
+              value: "true"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: asset-cache
-  name: asset-cache-service
+    app: blog
+  name: blog-service
   namespace: frontend
 spec:
   ports:
@@ -62,5 +60,5 @@ spec:
       targetPort: 8080
       name: http
   selector:
-    app: asset-cache
+    app: blog
   type: ClusterIP

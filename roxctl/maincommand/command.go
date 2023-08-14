@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
+	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
@@ -80,6 +81,7 @@ func Command() *cobra.Command {
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 		connectivitymap.Command(cliEnvironment),
+		netpol.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
