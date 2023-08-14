@@ -242,9 +242,9 @@ teardown() {
 acs_security_demos_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/acs-security-demos"
 @test "roxctl-release connectivity-map generates connlist for acs-security-demo" {
   check_acs_security_demos_files
-  run roxctl-release connectivity-map "${acs_security_demos_dir}" 
+  run roxctl-release connectivity-map "${acs_security_demos_dir}"
   assert_success
-  
+
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # partial is used to filter WARN and INFO messages
@@ -261,14 +261,14 @@ frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080
 payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
 payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
 {ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
-{ingress-controller} => frontend/webapp[Deployment] : TCP 8080' 
+{ingress-controller} => frontend/webapp[Deployment] : TCP 8080'
 }
 
 @test "roxctl-release connectivity-map generates connlist for acs-security-demo md format" {
   check_acs_security_demos_files
   run roxctl-release connectivity-map "${acs_security_demos_dir}" --output-format=md
   assert_success
-  
+
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # output lines , skipping WARN and INFO messages

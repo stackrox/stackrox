@@ -46,7 +46,7 @@ spec:
           name: asset-cache
           ports:
             - containerPort: 8080
-              protocol: TCP       
+              protocol: TCP
 ---
 apiVersion: v1
 kind: Service

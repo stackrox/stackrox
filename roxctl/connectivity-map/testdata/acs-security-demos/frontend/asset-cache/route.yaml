@@ -1,8 +1,8 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: asset-cache 
-  namespace: frontend 
+  name: asset-cache
+  namespace: frontend
   labels:
     app: asset-cache
 spec:
