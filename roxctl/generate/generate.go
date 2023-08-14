@@ -9,8 +9,9 @@ import (
 // Command defines the generate command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "(Technology Preview) Commands related to generating different resources.",
+		Use:        "generate",
+		Deprecated: "for 'roxctl generate netpol' use 'roxctl netpol generate' instead",
+		Short:      "(Technology Preview) Commands related to generating different resources.",
 		Long: `Commands related to generating different resources.
 
 ** This is a Technology Preview feature **

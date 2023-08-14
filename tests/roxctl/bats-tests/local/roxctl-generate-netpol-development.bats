@@ -23,6 +23,12 @@ teardown() {
   rm -f "$ofile"
 }
 
+@test "roxctl-development generate netpol should show deprecation info" {
+  run roxctl-development generate netpol
+  assert_failure
+  assert_line --partial "is deprecated"
+}
+
 @test "roxctl-development generate netpol should return error on empty or non-existing directory" {
   run roxctl-development generate netpol "$out_dir"
   assert_failure

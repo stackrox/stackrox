@@ -24,13 +24,18 @@ teardown() {
   rm -f "$ofile"
 }
 
+@test "roxctl-release netpol generate should not show deprecation info" {
+  run roxctl-release netpol generate
+  refute_line --partial "is deprecated"
+}
+
 @test "roxctl-release netpol generate should return error on empty or non-existing directory" {
   run roxctl-release netpol generate "$out_dir"
   assert_failure
   assert_line --partial "error generating network policies"
   assert_line --partial "no such file or directory"
 
-  run roxctl-release generate netpol
+  run roxctl-release netpol generate
   assert_failure
   assert_line --partial "accepts 1 arg(s), received 0"
 }
