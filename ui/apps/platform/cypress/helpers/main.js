@@ -82,16 +82,27 @@ export function visitMainDashboard(staticResponseMap) {
 }
 
 /**
- * @param {{data: Record<string, number>}} staticResponseForSummaryCounts
+ * @param {{data: Record<string, number>}} staticResponseForClustersForPermissions
  */
-export function visitMainDashboardWithStaticResponseForSummaryCounts(
-    staticResponseForSummaryCounts
+export function visitMainDashboardWithStaticResponseForClustersForPermission(
+    staticResponseForClustersForPermissions
 ) {
     // Omit requests for widgets because Dashboard redirects to Clusters page.
-    const staticResponseMapForSummaryCounts = {
-        [summaryCountsOpname]: staticResponseForSummaryCounts,
+    const clustersForPermissionsAlias = 'sac/clusters';
+    const routeMatcherMapForClustersForPermissions = {
+        [clustersForPermissionsAlias]: {
+            method: 'GET',
+            url: '/v1/sac/clusters?',
+        },
     };
-    visit(basePath, routeMatcherMapForSummaryCounts, staticResponseMapForSummaryCounts);
+    const staticResponseMapForClustersForPermissions = {
+        [clustersForPermissionsAlias]: staticResponseForClustersForPermissions,
+    };
+    visit(
+        basePath,
+        routeMatcherMapForClustersForPermissions,
+        staticResponseMapForClustersForPermissions
+    );
 
     // Omit assertion for Dashboard heading.
 }
