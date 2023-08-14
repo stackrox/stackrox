@@ -65,10 +65,15 @@ func main() {
 	c.Flags().StringVar(&rootDirectory, "root", "", "the root directory of the source tree")
 	utils.Must(c.MarkFlagRequired("root"))
 	var storeObject string
-	c.Flags().StringVar(&storeObject, "storeObject", "", "the object to migrate")
-	utils.Must(c.MarkFlagRequired("storeObject"))
+	c.Flags().StringVar(&storeObject, "storeObject", "", "the objects to migrate (comma separated)")
 
 	c.RunE = func(*cobra.Command, []string) error {
+		// check to see if we should build the stores
+		var buildStores bool
+		if storeObject != "" {
+			buildStores = true
+		}
+
 		startVersion := migrations.CurrentDBVersionSeqNum()
 		migrationDirName := getMigrationDirName(startVersion, migrationName)
 		_ = migrationDirName
@@ -84,12 +89,6 @@ func main() {
 		// Create migration directory
 		fullMigrationDirPath := path.Join(rootDirectory, "migrator", "migrations", migrationDirName)
 		err = os.MkdirAll(fullMigrationDirPath, 0755)
-		if err != nil {
-			return err
-		}
-		// Create store directory
-		storeMigrationDirPath := path.Join(fullMigrationDirPath, "store")
-		err = os.MkdirAll(storeMigrationDirPath, 0755)
 		if err != nil {
 			return err
 		}
@@ -111,12 +110,34 @@ func main() {
 		if err != nil {
 			return err
 		}
-		// Write migration postgres gen file
-		migrationGenFilePath := path.Join(storeMigrationDirPath, "gen.go")
-		err = renderFile(templateMap, postgresGenTemplate, migrationGenFilePath)
-		if err != nil {
-			return err
+
+		if buildStores {
+			// Parse the store objects and create the necessary paths
+			stores := strings.Split(storeObject, ",")
+			for _, store := range stores {
+				templateMap["storeObject"] = store
+
+				// Strip off the storage part of the object for the directories
+				rawObjects := strings.Split(store, ".")
+				if len(rawObjects) != 2 {
+					return errors.New("Store objects improperly formatted.")
+				}
+				// Create store directory
+				storeMigrationDirPath := path.Join(fullMigrationDirPath, strings.ToLower(rawObjects[1]), "store")
+				err = os.MkdirAll(storeMigrationDirPath, 0755)
+				if err != nil {
+					return err
+				}
+
+				// Write migration postgres gen file
+				migrationGenFilePath := path.Join(storeMigrationDirPath, "gen.go")
+				err = renderFile(templateMap, postgresGenTemplate, migrationGenFilePath)
+				if err != nil {
+					return err
+				}
+			}
 		}
+
 		// Overwrite seqence number file
 		seqNumFilePath := path.Join(rootDirectory, "pkg", "migrations", "internal", "seq_num.go")
 		err = renderFile(templateMap, seqNumTemplate, seqNumFilePath)

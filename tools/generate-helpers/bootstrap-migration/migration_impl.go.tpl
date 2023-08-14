@@ -13,15 +13,11 @@ import (
 //  - create a stores/previous subdirectory
 //  - create a stores/updated subdirectory
 //  - copy the old schemas from pkg/postgres/schema to schema/old
-//  - copy the old stores from their location in central to appropriate subdirectories in stores/previous
 //  - generate the new schemas in pkg/postgres/schema and the new stores where they belong
 //  - copy the newly generated schemas from pkg/postgres/schema to schema/new
 //  - remove the calls to GetSchemaForTable and to RegisterTable from the copied schema files
 //  - remove the xxxTableName constant from the copied schema files
-//  - copy the newly generated stores from their location in central to appropriate subdirectories in stores/updated
-//  - remove any unused function from the copied store files (the minimum for the public API should contain Walk, UpsertMany, DeleteMany)
-//  - remove the scoped access control code from the copied store files
-//  - remove the metrics collection code from the copied store files
+//  - remove the gen.go file generated in ../{OBJECT}/store
 
 // {{template "TODO"}}: Determine if this change breaks a previous releases database.
 // If so increment the `MinimumSupportedDBVersionSeqNum` to the `CurrentDBVersionSeqNum` of the release immediately
