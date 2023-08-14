@@ -75,6 +75,10 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
 }
 
+func (s *ReportServiceTestSuite) TearDownSuite() {
+	s.mockCtrl.Finish()
+}
+
 func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
@@ -637,6 +641,7 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 	}
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
+	s.blobStore.EXPECT().GetManyMetadata(gomock.Any(), gomock.Any()).Return([]*storage.Blob{}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		Id:               "test_report_config",
@@ -689,6 +694,7 @@ func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
+	s.blobStore.EXPECT().GetManyMetadata(gomock.Any(), gomock.Any()).Return([]*storage.Blob{}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		Id:               "test_report_config",

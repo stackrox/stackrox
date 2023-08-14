@@ -31,6 +31,7 @@ type Datastore interface {
 	Get(ctx context.Context, name string, writer io.Writer) (*storage.Blob, bool, error)
 	Delete(ctx context.Context, name string) error
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
+	GetManyMetadata(ctx context.Context, names []string) ([]*storage.Blob, error)
 	GetBlobWithDataInBuffer(ctx context.Context, name string) (*bytes.Buffer, *storage.Blob, bool, error)
 
 	Search(ctx context.Context, query *v1.Query) ([]pkgSearch.Result, error)
@@ -74,6 +75,15 @@ func (d *datastoreImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMetadata returns blob metadata only
 func (d *datastoreImpl) GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error) {
 	return d.store.GetMetadata(ctx, name)
+}
+
+// GetManyMetadata returns metadata of blobs with specified names
+func (d *datastoreImpl) GetManyMetadata(ctx context.Context, names []string) ([]*storage.Blob, error) {
+	blobs, _, err := d.store.GetManyMetadata(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	return blobs, nil
 }
 
 // GetBlobWithDataInBuffer returns the blob with data in a buffer with a size limit

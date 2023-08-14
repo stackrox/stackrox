@@ -101,6 +101,21 @@ func (mr *MockDatastoreMockRecorder) GetIDs(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockDatastore)(nil).GetIDs), ctx)
 }
 
+// GetManyMetadata mocks base method.
+func (m *MockDatastore) GetManyMetadata(ctx context.Context, names []string) ([]*storage.Blob, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyMetadata", ctx, names)
+	ret0, _ := ret[0].([]*storage.Blob)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManyMetadata indicates an expected call of GetManyMetadata.
+func (mr *MockDatastoreMockRecorder) GetManyMetadata(ctx, names interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyMetadata", reflect.TypeOf((*MockDatastore)(nil).GetManyMetadata), ctx, names)
+}
+
 // GetMetadata mocks base method.
 func (m *MockDatastore) GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error) {
 	m.ctrl.T.Helper()
