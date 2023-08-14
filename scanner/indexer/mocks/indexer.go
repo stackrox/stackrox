@@ -50,6 +50,22 @@ func (mr *MockIndexerMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIndexer)(nil).Close), arg0)
 }
 
+// GetIndexReport mocks base method.
+func (m *MockIndexer) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIndexReport", ctx, manifestDigest)
+	ret0, _ := ret[0].(*claircore.IndexReport)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetIndexReport indicates an expected call of GetIndexReport.
+func (mr *MockIndexerMockRecorder) GetIndexReport(ctx, manifestDigest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndexReport", reflect.TypeOf((*MockIndexer)(nil).GetIndexReport), ctx, manifestDigest)
+}
+
 // IndexContainerImage mocks base method.
 func (m *MockIndexer) IndexContainerImage(arg0 context.Context, arg1 claircore.Digest, arg2 string, arg3 ...indexer.Option) (*claircore.IndexReport, error) {
 	m.ctrl.T.Helper()
