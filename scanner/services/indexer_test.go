@@ -205,6 +205,7 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 		Return(nil, false, errors.New("ouch"))
 	r, err := s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
+	s.Nil(r)
 
 	// When get index report returns not found.
 	s.indexerMock.
@@ -213,6 +214,7 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 		Return(nil, false, nil)
 	r, err = s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "not found")
+	s.Nil(r)
 
 	// When get index report returns an index report.
 	s.indexerMock.
