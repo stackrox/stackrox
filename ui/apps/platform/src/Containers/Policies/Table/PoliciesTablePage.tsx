@@ -215,14 +215,18 @@ function PoliciesTablePage({
             <PolicyManagementSubHeader
                 description="Configure security policies for your resources."
                 actions={
-                    <>
-                        <Button variant="primary" onClick={onClickCreatePolicy}>
-                            Create policy
-                        </Button>
-                        <Button variant="secondary" onClick={onClickImportPolicy}>
-                            Import policy
-                        </Button>
-                    </>
+                    hasWriteAccessForPolicy ? (
+                        <>
+                            <Button variant="primary" onClick={onClickCreatePolicy}>
+                                Create policy
+                            </Button>
+                            <Button variant="secondary" onClick={onClickImportPolicy}>
+                                Import policy
+                            </Button>
+                        </>
+                    ) : (
+                        <></>
+                    )
                 }
             />
             <Divider component="div" />

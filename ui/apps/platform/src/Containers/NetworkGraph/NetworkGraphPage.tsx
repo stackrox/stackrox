@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import {
-    PageSection,
-    Title,
     Bullseye,
-    Spinner,
     Button,
     Divider,
+    Drawer,
+    DrawerContent,
+    DrawerContentBody,
+    DrawerPanelContent,
+    PageSection,
+    Spinner,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
+import { useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
+import { networkBasePath } from 'routePaths';
 import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
@@ -35,6 +42,7 @@ import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
 import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
 import TimeWindowSelector from './components/TimeWindowSelector';
 import { useScopeHierarchy } from './hooks/useScopeHierarchy';
+import useNetworkPolicySimulator from './hooks/useNetworkPolicySimulator';
 import {
     transformPolicyData,
     transformActiveData,
@@ -42,9 +50,12 @@ import {
     graphModel,
 } from './utils/modelUtils';
 import getSimulation from './utils/getSimulation';
+import CIDRFormModal from './components/CIDRFormModal';
+import NetworkPolicySimulatorSidePanel, {
+    clearSimulationQuery,
+} from './simulation/NetworkPolicySimulatorSidePanel';
 
 import './NetworkGraphPage.css';
-import CIDRFormModal from './components/CIDRFormModal';
 
 const emptyModel = {
     graph: graphModel,
@@ -64,6 +75,7 @@ const INCLUDE_POLICIES = true;
 const clusterPermissions = ['NetworkGraph', 'Deployment'];
 
 function NetworkGraphPage() {
+    const history = useHistory();
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
         'policyStatusBadge',
@@ -239,8 +251,19 @@ function NetworkGraphPage() {
         timeWindow,
         deploymentCount,
     ]);
+
+    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
+        simulation,
+        scopeHierarchy,
+    });
+
     function toggleCIDRBlockForm() {
         setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
+    }
+
+    function closeSimulatorSidebar() {
+        const queryString = clearSimulationQuery(history.location.search);
+        history.push(`${networkBasePath}${queryString}`);
     }
 
     return (
@@ -276,7 +299,7 @@ function NetworkGraphPage() {
                             <ToolbarItem spacer={{ default: 'spacerNone' }}>
                                 <SimulateNetworkPolicyButton
                                     simulation={simulation}
-                                    isDisabled={!hasClusterNamespaceSelected}
+                                    isDisabled={scopeHierarchy.cluster.id === ''}
                                 />
                             </ToolbarItem>
                         </ToolbarGroup>
@@ -348,10 +371,47 @@ function NetworkGraphPage() {
                 variant={hasClusterNamespaceSelected ? 'default' : 'light'}
                 padding={{ default: 'noPadding' }}
             >
-                {!hasClusterNamespaceSelected && <EmptyUnscopedState />}
+                {!hasClusterNamespaceSelected && (
+                    <Drawer isExpanded={simulation.isOn} isInline>
+                        <DrawerContent
+                            panelContent={
+                                <DrawerPanelContent
+                                    className="cluster-simulation-drawer-panel"
+                                    isResizable
+                                    defaultSize="500px"
+                                >
+                                    <Button
+                                        className="pf-topology-side-bar__dismiss"
+                                        variant="plain"
+                                        onClick={closeSimulatorSidebar}
+                                        aria-label="Close sidebar"
+                                    >
+                                        <TimesIcon />
+                                    </Button>
+                                    <NetworkPolicySimulatorSidePanel
+                                        simulator={simulator}
+                                        setNetworkPolicyModification={setNetworkPolicyModification}
+                                        scopeHierarchy={scopeHierarchy}
+                                        networkPolicyGenerationScope={{
+                                            granularity: 'CLUSTER',
+                                            cluster: scopeHierarchy.cluster.name,
+                                            namespaces: [],
+                                            deployments: [],
+                                        }}
+                                    />
+                                </DrawerPanelContent>
+                            }
+                        >
+                            <DrawerContentBody>
+                                <EmptyUnscopedState />
+                            </DrawerContentBody>
+                        </DrawerContent>
+                    </Drawer>
+                )}
                 {models.activeModel.nodes.length > 0 &&
                     models.extraneousModel.nodes.length > 0 &&
-                    !isLoading && (
+                    !isLoading &&
+                    hasClusterNamespaceSelected && (
                         <NetworkGraphContainer
                             models={models}
                             edgeState={edgeState}

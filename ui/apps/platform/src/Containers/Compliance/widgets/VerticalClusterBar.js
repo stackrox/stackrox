@@ -14,14 +14,14 @@ import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
 
 import { standardBaseTypes } from 'constants/entityTypes';
-import colors from 'constants/visuals/colors';
+
+import { verticalBarColors } from './colorsForCompliance';
 
 class VerticalClusterBar extends Component {
     static propTypes = {
         id: PropTypes.string,
         history: ReactRouterPropTypes.history.isRequired,
         data: PropTypes.shape({}).isRequired,
-        colors: PropTypes.arrayOf(PropTypes.string),
         containerProps: PropTypes.shape({}),
         plotProps: PropTypes.shape({}),
         seriesProps: PropTypes.shape({}),
@@ -32,7 +32,6 @@ class VerticalClusterBar extends Component {
 
     static defaultProps = {
         id: '',
-        colors,
         containerProps: {},
         plotProps: {},
         seriesProps: {},
@@ -42,17 +41,17 @@ class VerticalClusterBar extends Component {
     };
 
     getLegendData = () => {
-        const { data, colors: colorRange } = this.props;
+        const { data } = this.props;
         return Object.keys(data)
             .sort()
             .map((key, i) => ({
                 title: standardBaseTypes[key] || key,
-                color: colorRange[i % colorRange.length],
+                color: verticalBarColors[i % verticalBarColors.length],
             }));
     };
 
     render() {
-        const { id, data, colors: colorRange, tickValues, tickFormat, labelLinks } = this.props;
+        const { id, data, tickValues, tickFormat, labelLinks } = this.props;
 
         // Default props
         const defaultPlotProps = {
@@ -121,7 +120,7 @@ class VerticalClusterBar extends Component {
                 series.push(
                     <VerticalBarSeries
                         data={data[key]}
-                        color={colorRange[i % colorRange.length]}
+                        color={verticalBarColors[i % verticalBarColors.length]}
                         className={`vertical-cluster-bar-${standardBaseTypes[key]}`}
                         {...seriesProps}
                         key={key}
@@ -147,7 +146,7 @@ class VerticalClusterBar extends Component {
                         <DiscreteColorLegend
                             orientation="horizontal"
                             items={this.getLegendData()}
-                            colors={colors}
+                            colors={verticalBarColors}
                             className="horizontal-bar-legend"
                         />
                     </div>

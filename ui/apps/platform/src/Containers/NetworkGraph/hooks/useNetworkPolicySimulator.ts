@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import * as networkService from 'services/NetworkService';
 import { ensureExhaustive } from 'utils/type.utils';
-import { NetworkPolicy, NetworkPolicyModification } from 'types/networkPolicy.proto';
+import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Simulation } from '../utils/getSimulation';
@@ -12,7 +12,6 @@ import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 export type NetworkPolicySimulator =
     | {
           state: 'ACTIVE';
-          networkPolicies: NetworkPolicy[];
           isLoading: boolean;
           error: string;
       }
@@ -87,7 +86,6 @@ function useNetworkPolicySimulator({
         if (state === 'ACTIVE') {
             setSimulator({
                 state: 'ACTIVE',
-                networkPolicies: [],
                 error: '',
                 isLoading: true,
             });
@@ -101,36 +99,11 @@ function useNetworkPolicySimulator({
         }
         switch (state) {
             case 'ACTIVE':
-                networkService
-                    .fetchNetworkPoliciesByClusterId(
-                        options.scopeHierarchy.cluster.id,
-                        getRequestQueryStringForSearchFilter({
-                            Namespace: options.scopeHierarchy.namespaces,
-                            Deployment: options.scopeHierarchy.deployments,
-                            ...options.scopeHierarchy.remainingQuery,
-                        })
-                    )
-                    .then((data) => {
-                        setSimulator({
-                            state,
-                            networkPolicies: data,
-                            error: '',
-                            isLoading: false,
-                        });
-                    })
-                    .catch((error) => {
-                        const message = getAxiosErrorMessage(error);
-                        const errorMessage =
-                            message ||
-                            'An unknown error occurred while getting the list of clusters';
-
-                        setSimulator({
-                            state,
-                            networkPolicies: [],
-                            error: errorMessage,
-                            isLoading: false,
-                        });
-                    });
+                setSimulator({
+                    state,
+                    error: '',
+                    isLoading: false,
+                });
                 break;
             case 'GENERATED':
                 networkService

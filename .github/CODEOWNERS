@@ -22,6 +22,7 @@ roxctl/**/*     @stackrox/merlin
 pkg/auth/**/*   @stackrox/merlin
 pkg/sac/**/*    @stackrox/merlin
 */declarativeconfig/**/* @stackrox/merlin
+tests/performance @stackrox/merlin
 
 pkg/images/defaults/**/* @stackrox/maple
 

@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
@@ -52,7 +52,7 @@ func createRequest(id, url, username string) *v4.CreateIndexReportRequest {
 	}
 }
 
-func (s *indexerServiceTestSuite) setupIndexContainerImageMock(optCount int, report *claircore.IndexReport, err error) {
+func (s *indexerServiceTestSuite) setupMock(optCount int, report *claircore.IndexReport, err error) {
 	s.indexerMock.
 		EXPECT().
 		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(imageURL), gomock.Len(optCount)).
@@ -60,7 +60,7 @@ func (s *indexerServiceTestSuite) setupIndexContainerImageMock(optCount int, rep
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {
-	s.setupIndexContainerImageMock(1, &claircore.IndexReport{}, nil)
+	s.setupMock(1, &claircore.IndexReport{}, nil)
 	req := createRequest(hashID, imageURL, "sample username")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
@@ -68,7 +68,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
-	s.setupIndexContainerImageMock(0, &claircore.IndexReport{}, nil)
+	s.setupMock(0, &claircore.IndexReport{}, nil)
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
@@ -76,11 +76,23 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupIndexContainerImageMock(0, nil, errors.New(`indexer said "ouch"`))
+	s.setupMock(0, nil, fmt.Errorf(`indexer said "ouch"`))
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
 	s.Nil(r)
+}
+
+func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError() {
+	iURL := "https://foobar:443/image:sha256@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106"
+	s.indexerMock.
+		EXPECT().
+		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(iURL), gomock.Len(0)).
+		Return(&claircore.IndexReport{}, nil)
+	req := createRequest(hashID, iURL, "")
+	r, err := s.service.CreateIndexReport(s.ctx, req)
+	s.NoError(err)
+	s.Equal(&v4.IndexReport{HashId: hashID}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
@@ -140,7 +152,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			wantErr: "missing image URL",
 		},
 		{
-			name: "when empty container image URL",
+			name: "when invalid container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
 					HashId: "/v4/containerimage/foobar",
@@ -154,7 +166,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 			wantErr: "image URL does not start with",
 		},
 		{
-			name: "when empty container image URL",
+			name: "when invalid image reference in container image URL",
 			args: args{
 				req: &v4.CreateIndexReportRequest{
 					HashId: "/v4/containerimage/foobar",
@@ -190,7 +202,7 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	s.indexerMock.
 		EXPECT().
 		GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
-		Return(nil, false, errors.New("ouch"))
+		Return(nil, false, fmt.Errorf("ouch"))
 	r, err := s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
 

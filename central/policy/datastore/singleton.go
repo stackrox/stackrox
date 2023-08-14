@@ -76,10 +76,10 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		policyCategories := p.GetCategories()
 		p.Categories = []string{}
 		if err := s.Upsert(workflowAdministrationCtx, p); err != nil {
-			utils.CrashOnError(err)
+			utils.Must(err)
 		}
 		if err := categoriesDS.SetPolicyCategoriesForPolicy(sac.WithAllAccess(context.Background()), p.GetId(), policyCategories); err != nil {
-			utils.CrashOnError(err)
+			utils.Should(err)
 		}
 
 	}

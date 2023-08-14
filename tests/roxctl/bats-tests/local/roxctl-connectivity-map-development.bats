@@ -51,9 +51,9 @@ teardown() {
 
   run roxctl-development connectivity-map "$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
-  assert_output --partial 'YAML document is malformed'
-  assert_output --partial 'file1.yaml'
-  refute_output --partial 'file2.yaml'
+  assert_line --index 0 --partial 'This is a Technology Preview feature'
+  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error
+  assert_line --index 2 --partial 'there were errors during execution'  # last line
 }
 
 @test "roxctl-development connectivity-map produces no output when all yamls are templated" {
@@ -186,18 +186,14 @@ teardown() {
 }
 
 @test "roxctl-development connectivity-map skips unsupported openshift resources" {
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/asset-cache-route.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/frontend-netpols.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-deployment.yaml"
-  assert_file_exist "${test_data}/np-guard/security-frontend-demo/webapp-route.yaml"
+  assert_file_exist "${test_data}/np-guard/irrelevant-oc-resource-example/irrelevant_oc_resource.yaml"
   echo "Writing connlist to ${ofile}" >&3
-  run roxctl-development connectivity-map "${test_data}/np-guard/security-frontend-demo"
-  assert_success
+  run roxctl-development connectivity-map "${test_data}/np-guard/irrelevant-oc-resource-example"
+  assert_failure # no workload nor network-policy resources
 
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
-  assert_output --partial 'skipping object with type: Route'
+  assert_output --partial 'skipping object with type: SecurityContextConstraints'
 }
 
 @test "roxctl-development connectivity-map generates focused to workload connlist output" {
@@ -211,8 +207,7 @@ teardown() {
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # partial here is used to filter the WARN and INFO messages
-  assert_output --partial 'default/backend[Deployment] => default/backend[Deployment] : All Connections
-default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+  assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
   refute_output --partial 'default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53'
 }
 
@@ -225,6 +220,141 @@ default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
 
   assert_file_exist "$out_dir/out.txt"
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
+}
+
+@test "roxctl-development connectivity-map generates empty connlist netpols blocks ingress connections from Routes" {
+  frontend_sec_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/frontend-security"
+  assert_file_exist "${frontend_sec_dir}/asset-cache-deployment.yaml"
+  assert_file_exist "${frontend_sec_dir}/asset-cache-route.yaml"
+  assert_file_exist "${frontend_sec_dir}/frontend-netpols.yaml"
+  assert_file_exist "${frontend_sec_dir}/webapp-deployment.yaml"
+  assert_file_exist "${frontend_sec_dir}/webapp-route.yaml"
+  run roxctl-development connectivity-map "${frontend_sec_dir}"
+  assert_success
+  # netpols deny connections between the existing deployments; and blocks ingress from external ips or ingress-controller
+  # the output contains only WARN and INFO messages
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'Route resource frontend/asset-cache specified workload frontend/asset-cache[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload.'
+}
+
+# following const is used as the directory path of the next tests
+acs_security_demos_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/acs-security-demos"
+@test "roxctl-development connectivity-map generates connlist for acs-security-demo" {
+  check_acs_security_demos_files
+  run roxctl-development connectivity-map "${acs_security_demos_dir}"
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter WARN and INFO messages
+  assert_output --partial 'backend/checkout[Deployment] => backend/notification[Deployment] : TCP 8080
+backend/checkout[Deployment] => backend/recommendation[Deployment] : TCP 8080
+backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+backend/recommendation[Deployment] => backend/catalog[Deployment] : TCP 8080
+backend/reports[Deployment] => backend/catalog[Deployment] : TCP 8080
+backend/reports[Deployment] => backend/recommendation[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/checkout[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/recommendation[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/reports[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
+{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
+{ingress-controller} => frontend/webapp[Deployment] : TCP 8080'
+}
+
+@test "roxctl-development connectivity-map generates connlist for acs-security-demo md format" {
+  check_acs_security_demos_files
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" --output-format=md
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # output lines , skipping WARN and INFO messages
+  assert_output --partial '| src | dst | conn |
+|-----|-----|------|
+| backend/checkout[Deployment] | backend/notification[Deployment] | TCP 8080 |
+| backend/checkout[Deployment] | backend/recommendation[Deployment] | TCP 8080 |
+| backend/checkout[Deployment] | payments/gateway[Deployment] | TCP 8080 |
+| backend/recommendation[Deployment] | backend/catalog[Deployment] | TCP 8080 |
+| backend/reports[Deployment] | backend/catalog[Deployment] | TCP 8080 |
+| backend/reports[Deployment] | backend/recommendation[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/checkout[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/recommendation[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/reports[Deployment] | TCP 8080 |
+| frontend/webapp[Deployment] | backend/shipping[Deployment] | TCP 8080 |
+| payments/gateway[Deployment] | payments/mastercard-processor[Deployment] | TCP 8080 |
+| payments/gateway[Deployment] | payments/visa-processor[Deployment] | TCP 8080 |
+| {ingress-controller} | frontend/asset-cache[Deployment] | TCP 8080 |
+| {ingress-controller} | frontend/webapp[Deployment] | TCP 8080 |'
+}
+
+@test "roxctl-development connectivity-map generates connlist for acs-security-demo with focus-workload=gateway" {
+  check_acs_security_demos_files
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" --focus-workload=gateway
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
+  refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+  refute_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080'
+}
+
+@test "roxctl-development connectivity-map generates connlist for acs-security-demo with focus-workload=payments/gateway" {
+  check_acs_security_demos_files
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" --focus-workload=payments/gateway
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
+  refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+  refute_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080'
+}
+
+@test "roxctl-development connectivity-map generates connlist for acs-security-demo with focus-workload that does not exist" {
+  check_acs_security_demos_files
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" --focus-workload=abc
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'Workload abc does not exist in the input resources. Connectivity map report will be empty.'
+}
+
+@test "roxctl-development connectivity-map generates connlist for acs-security-demo with focus-workload=ingress-controller" {
+  check_acs_security_demos_files
+  run roxctl-development connectivity-map "${acs_security_demos_dir}" --focus-workload=ingress-controller
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
+{ingress-controller} => frontend/webapp[Deployment] : TCP 8080'
+  refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+}
+
+check_acs_security_demos_files() {
+  assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/notification/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/shipping/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/gateway/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/mastercard-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/visa-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/acs_netpols.yaml"
 }
 
 write_yaml_to_file() {

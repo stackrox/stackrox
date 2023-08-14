@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
     Alert,
     Bullseye,
@@ -18,10 +18,17 @@ import {
     Text,
     TextContent,
     TextVariants,
+    Title,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
+import sortBy from 'lodash/sortBy';
 
+import useRestQuery from 'hooks/useRestQuery';
 import useTabs from 'hooks/patternfly/useTabs';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { fetchNetworkPoliciesByClusterId } from 'services/NetworkService';
+
 import ViewActiveYAMLs from './ViewActiveYAMLs';
 import {
     NetworkPolicySimulator,
@@ -33,11 +40,28 @@ import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import CompareYAMLModal from './CompareYAMLModal';
+import CodeCompareIcon from './CodeCompareIcon';
+import NetworkPoliciesGenerationScope, { EntityScope } from './NetworkPoliciesGenerationScope';
 
-type NetworkPolicySimulatorSidePanelProps = {
+// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
+export function clearSimulationQuery(search: string): string {
+    const modifiedSearchFilter = getQueryObject(search);
+    delete modifiedSearchFilter.simulation;
+    const queryString = getQueryString(modifiedSearchFilter);
+    return queryString;
+}
+
+export type NetworkPolicySimulatorSidePanelProps = {
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
+    /** scopeHierarchy is the user's selected scope for the network graph */
     scopeHierarchy: NetworkScopeHierarchy;
+    /**
+     *  `networkPolicyGenerationScope` is the set of entities selected by the `scopeHierarchy`
+     *  that can have network policies generated for them
+     */
+    networkPolicyGenerationScope: EntityScope;
 };
 
 const tabs = {
@@ -49,6 +73,7 @@ function NetworkPolicySimulatorSidePanel({
     simulator,
     setNetworkPolicyModification,
     scopeHierarchy,
+    networkPolicyGenerationScope,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
@@ -56,6 +81,26 @@ function NetworkPolicySimulatorSidePanel({
     const [isExcludingPortsAndProtocols, setIsExcludingPortsAndProtocols] =
         React.useState<boolean>(false);
     const [isNotifyModalOpen, setIsNotifyModalOpen] = React.useState(false);
+    const [compareModalYAMLs, setCompareModalYAMLs] = React.useState<{
+        generated: string;
+        current: string;
+    } | null>(null);
+
+    const clusterId = scopeHierarchy.cluster.id;
+    const deploymentQuery = getRequestQueryStringForSearchFilter({
+        Namespace: scopeHierarchy.namespaces,
+        Deployment: scopeHierarchy.deployments,
+        ...scopeHierarchy.remainingQuery,
+    });
+
+    const fetchNetworkPolicies = useCallback(
+        () =>
+            fetchNetworkPoliciesByClusterId(clusterId, deploymentQuery).then((policies) =>
+                sortBy(policies, 'name')
+            ),
+        [clusterId, deploymentQuery]
+    );
+    const { data: currentNetworkPolicies } = useRestQuery(fetchNetworkPolicies);
 
     function handleFileInputChange(
         _event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>,
@@ -130,59 +175,105 @@ function NetworkPolicySimulatorSidePanel({
     }
 
     if (simulator.state === 'GENERATED') {
-        const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
+        const currentPolicies = currentNetworkPolicies ?? [];
+        const currentYaml =
+            currentPolicies.length === 0
+                ? 'No network policies exist in the current scope'
+                : currentPolicies.map((policy) => policy.yaml).join('\n---\n');
+        const generatedYaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
         return (
             <div>
                 <Flex
-                    direction={{ default: 'row' }}
-                    alignItems={{ default: 'alignItemsFlexEnd' }}
-                    className="pf-u-p-lg pf-u-mb-0"
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                    className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
                 >
                     <FlexItem>
                         <TextContent>
-                            <Text component={TextVariants.h2} className="pf-u-font-size-xl">
-                                Network Policy Simulator
+                            <Text component={TextVariants.h2}>Generated network policies</Text>
+                            <Text component={TextVariants.h3} className="pf-u-m-0">
+                                Scope of baseline:
                             </Text>
                         </TextContent>
                     </FlexItem>
+                    <NetworkPoliciesGenerationScope
+                        networkPolicyGenerationScope={networkPolicyGenerationScope}
+                    />
                 </Flex>
-                <Divider component="div" />
-                <Stack hasGutter>
-                    <StackItem className="pf-u-p-md">
-                        <Alert
-                            variant={simulator.error ? 'danger' : 'success'}
-                            isInline
-                            isPlain
-                            title={
-                                simulator.error
-                                    ? simulator.error
-                                    : `Policies generated from the baseline for cluster “${scopeHierarchy.cluster.name}”`
-                            }
+                <Flex direction={{ default: 'column' }}>
+                    <FlexItem style={{ overflow: 'auto' }}>
+                        <NetworkPoliciesYAML
+                            yaml={generatedYaml}
+                            additionalControls={[
+                                <Flex
+                                    justifyContent={{ default: 'justifyContentFlexEnd' }}
+                                    alignItems={{ default: 'alignItemsCenter' }}
+                                    spaceItems={{ default: 'spaceItemsNone' }}
+                                    className="pf-u-flex-1"
+                                >
+                                    <Button
+                                        variant="link"
+                                        onClick={() =>
+                                            setCompareModalYAMLs({
+                                                generated: generatedYaml,
+                                                current: currentYaml,
+                                            })
+                                        }
+                                        icon={<CodeCompareIcon />}
+                                    >
+                                        Compare
+                                    </Button>
+                                    <Popover
+                                        bodyContent={
+                                            <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                                                <Title headingLevel="h3">Compare</Title>
+                                                <Text>
+                                                    Compare the generated network policies to the
+                                                    existing network policies.
+                                                </Text>
+                                            </Flex>
+                                        }
+                                    >
+                                        <button
+                                            className="pf-u-color-200"
+                                            type="button"
+                                            aria-label="More info on comparing changes"
+                                        >
+                                            <HelpIcon />
+                                        </button>
+                                    </Popover>
+                                </Flex>,
+                            ]}
                         />
-                    </StackItem>
-                    <StackItem isFilled style={{ overflow: 'auto' }}>
-                        <NetworkPoliciesYAML yaml={yaml} />
-                    </StackItem>
-                    <StackItem>
+                    </FlexItem>
+                    <FlexItem>
                         <NetworkSimulatorActions
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
                             openNotifyYAMLModal={openNotifyYAMLModal}
                         />
-                    </StackItem>
-                </Stack>
+                    </FlexItem>
+                </Flex>
                 <NotifyYAMLModal
                     isModalOpen={isNotifyModalOpen}
                     setIsModalOpen={setIsNotifyModalOpen}
                     clusterId={scopeHierarchy.cluster.id}
                     modification={simulator.modification}
                 />
+                {compareModalYAMLs && (
+                    <CompareYAMLModal
+                        generated={compareModalYAMLs.generated}
+                        current={compareModalYAMLs.current}
+                        isOpen={!!compareModalYAMLs}
+                        onClose={() => setCompareModalYAMLs(null)}
+                    />
+                )}
             </div>
         );
     }
 
-    // @TODO: Consider how to reuse parts of this that are similiar between states
+    // @TODO: Consider how to reuse parts of this that are similar between states
     if (simulator.state === 'UNDO') {
         const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
         return (
@@ -290,17 +381,20 @@ function NetworkPolicySimulatorSidePanel({
     return (
         <Stack>
             <StackItem>
-                <Flex direction={{ default: 'row' }} className="pf-u-p-lg pf-u-mb-0">
-                    <FlexItem>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-u-font-size-xl pf-u-mr-xl"
-                            >
-                                Simulate network policy for cluster “{scopeHierarchy.cluster.name}”
-                            </Text>
-                        </TextContent>
-                    </FlexItem>
+                <Flex
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                    className="pf-u-p-md pf-u-pb-sm pf-u-mb-0"
+                >
+                    <TextContent>
+                        <Text component={TextVariants.h2}>Generate network policies</Text>
+                        <Text component={TextVariants.h3} className="pf-u-m-0">
+                            Scope of baseline:
+                        </Text>
+                    </TextContent>
+                    <NetworkPoliciesGenerationScope
+                        networkPolicyGenerationScope={networkPolicyGenerationScope}
+                    />
                 </Flex>
             </StackItem>
             <StackItem>
@@ -333,7 +427,7 @@ function NetworkPolicySimulatorSidePanel({
                                                 component={TextVariants.h2}
                                                 className="pf-u-font-size-lg"
                                             >
-                                                Generate network policies based on the baseline
+                                                Generate network policies from the baseline
                                                 <Popover
                                                     showClose={false}
                                                     bodyContent={
@@ -376,8 +470,10 @@ function NetworkPolicySimulatorSidePanel({
                                             <Text component={TextVariants.p}>
                                                 Generate a set of recommended network policies based
                                                 on your cluster baseline. Cluster baseline is the
-                                                aggregatation of the baselines of the deployments
-                                                that belong to the cluster.
+                                                aggregation of the baselines of the deployments that
+                                                belong to the cluster. Only deployments that are
+                                                part of the current scope will be included in
+                                                generated policies.
                                             </Text>
                                         </TextContent>
                                     </StackItem>
@@ -441,9 +537,7 @@ function NetworkPolicySimulatorSidePanel({
                     hidden={activeKeyTab !== tabs.VIEW_ACTIVE_YAMLS}
                 >
                     <ViewActiveYAMLs
-                        networkPolicies={
-                            simulator.state === 'ACTIVE' ? simulator.networkPolicies : []
-                        }
+                        networkPolicies={currentNetworkPolicies ?? []}
                         generateNetworkPolicies={generateNetworkPolicies}
                         undoNetworkPolicies={undoNetworkPolicies}
                         onFileInputChange={handleFileInputChange}

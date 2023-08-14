@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	reportConfigurationDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	reportConfigurationDS "github.com/stackrox/rox/central/reports/config/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,10 +44,8 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 	suite.queryResolver = datastoreMocks.NewMockQueryResolver(suite.mockCtrl)
 	suite.deploymentDS = deploymentDSMocks.NewMockDataStore(suite.mockCtrl)
 
-	var err error
 	suite.testDB = pgtest.ForT(suite.T())
-	suite.resourceConfigDS, err = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
-	suite.NoError(err)
+	suite.resourceConfigDS = reportConfigurationDS.GetTestPostgresDataStore(suite.T(), suite.testDB.DB)
 	suite.collectionService = New(suite.dataStore, suite.queryResolver, suite.deploymentDS, suite.resourceConfigDS)
 
 	testutils.SetExampleVersion(suite.T())
@@ -195,7 +193,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 
-	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return("fake-id", nil)
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NoError(err)
 	suite.NotNil(resp.GetCollection())
@@ -214,7 +212,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	mockID.EXPECT().FullName().Return("name").Times(1)
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
-	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(errors.New("test error"))
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return("", errors.New("test error"))
 	_, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.Error(err)
 }

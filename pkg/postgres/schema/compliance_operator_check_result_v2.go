@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -37,7 +38,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, "complianceoperatorcheckresultv2", (*storage.ComplianceOperatorCheckResultV2)(nil)))
-		RegisterTable(schema, CreateTableComplianceOperatorCheckResultV2Stmt)
+		RegisterTable(schema, CreateTableComplianceOperatorCheckResultV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, schema)
 		return schema
 	}()
@@ -53,7 +54,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	ID         string                                              `gorm:"column:id;type:varchar;primaryKey"`
 	ClusterID  string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:btree"`
 	Status     storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
-	Severity   string                                              `gorm:"column:severity;type:varchar"`
+	Severity   storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	Standard   string                                              `gorm:"column:standard;type:varchar"`
 	ScanID     string                                              `gorm:"column:scanid;type:varchar"`
 	Serialized []byte                                              `gorm:"column:serialized;type:bytea"`

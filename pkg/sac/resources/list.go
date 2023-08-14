@@ -3,6 +3,7 @@ package resources
 
 import (
 	"sort"
+	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -153,6 +154,23 @@ func newInternalResourceMetadata(name permissions.Resource, scope permissions.Re
 	return md
 }
 
+// GetScopeForResource gives the scope associated with the target resource.
+func GetScopeForResource(resource permissions.Resource) permissions.ResourceScope {
+	md, found := resourceToMetadata[resource]
+	if found {
+		return md.GetScope()
+	}
+	md, found = disabledResourceToMetadata[resource]
+	if found {
+		return md.GetScope()
+	}
+	md, found = internalResourceToMetadata[resource]
+	if found {
+		return md.GetScope()
+	}
+	return permissions.GlobalScope
+}
+
 // ListAll returns a list of all resources.
 func ListAll() []permissions.Resource {
 	resources := make([]permissions.Resource, 0, len(resourceToMetadata))
@@ -248,4 +266,34 @@ func MetadataForInternalResource(res permissions.Resource) (permissions.Resource
 		md.Scope = permissions.GlobalScope
 	}
 	return md, found
+}
+
+// RegisterResourceMetadataForTest allows to register resourceMetadata for test resources.
+func RegisterResourceMetadataForTest(
+	_ *testing.T,
+	name permissions.Resource,
+	scope permissions.ResourceScope,
+) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource: name,
+		Scope:    scope,
+	}
+	resourceToMetadata[name] = md
+	return md
+}
+
+// RegisterDeprecatedResourceMetadataForTest allows to register resourceMetadata for test resources.
+func RegisterDeprecatedResourceMetadataForTest(
+	_ *testing.T,
+	name permissions.Resource,
+	scope permissions.ResourceScope,
+	replacingResourceMD permissions.ResourceMetadata,
+) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource:          name,
+		Scope:             scope,
+		ReplacingResource: &replacingResourceMD,
+	}
+	resourceToMetadata[name] = md
+	return md
 }

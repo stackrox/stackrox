@@ -123,19 +123,19 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 		},
 		{
 			contextKey:        sacTestUtils.Cluster1NamespaceAReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster1AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster1NamespaceBReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster1AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster1NamespacesABReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster1AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster1NamespacesBCReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster1AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2ReadWriteCtx,
@@ -143,19 +143,19 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespaceAReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespaceBReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespacesABReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster2NamespacesACReadWriteCtx,
-			expectedEdgeFound: noAccessMap,
+			expectedEdgeFound: cluster2AccessMap,
 		},
 		{
 			contextKey:        sacTestUtils.Cluster3ReadWriteCtx,
@@ -164,7 +164,7 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 		{
 			contextKey: sacTestUtils.MixedClusterAndNamespaceReadCtx,
 			// Has access to Cluster1 + NamespaceA as well as full access to Cluster2 (including NamespaceB).
-			expectedEdgeFound: cluster2AccessMap,
+			expectedEdgeFound: fullAccessMap,
 		},
 	}
 	return testCases

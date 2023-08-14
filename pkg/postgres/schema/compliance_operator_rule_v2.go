@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
@@ -24,7 +25,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorRuleV2)(nil)), "compliance_operator_rule_v2")
-		RegisterTable(schema, CreateTableComplianceOperatorRuleV2Stmt)
+		RegisterTable(schema, CreateTableComplianceOperatorRuleV2Stmt, features.ComplianceEnhancements.Enabled)
 		return schema
 	}()
 )
@@ -36,10 +37,10 @@ const (
 
 // ComplianceOperatorRuleV2 holds the Gorm model for Postgres table `compliance_operator_rule_v2`.
 type ComplianceOperatorRuleV2 struct {
-	Name        string `gorm:"column:name;type:varchar;primaryKey"`
-	Version     string `gorm:"column:version;type:varchar"`
-	RuleVersion string `gorm:"column:ruleversion;type:varchar"`
-	RuleType    string `gorm:"column:ruletype;type:varchar"`
-	Severity    string `gorm:"column:severity;type:varchar"`
-	Serialized  []byte `gorm:"column:serialized;type:bytea"`
+	Name        string               `gorm:"column:name;type:varchar;primaryKey"`
+	Version     string               `gorm:"column:version;type:varchar"`
+	RuleVersion string               `gorm:"column:ruleversion;type:varchar"`
+	RuleType    string               `gorm:"column:ruletype;type:varchar"`
+	Severity    storage.RuleSeverity `gorm:"column:severity;type:integer"`
+	Serialized  []byte               `gorm:"column:serialized;type:bytea"`
 }

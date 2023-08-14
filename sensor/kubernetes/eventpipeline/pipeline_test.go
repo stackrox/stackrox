@@ -205,7 +205,7 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 			},
 		},
 	}
-	s.detector.EXPECT().ProcessPolicySync(gomock.Any()).Times(1).Do(func(_ interface{}) {
+	s.detector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).Times(1).Do(func(_, _ interface{}) {
 		defer messageReceived.Done()
 	})
 

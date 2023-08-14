@@ -18,8 +18,8 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -277,7 +277,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVData, err := common.Format(reportData, nil)
+	zippedCSVData, empty, err := common.Format(reportData, nil)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
@@ -285,8 +285,9 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	// will indicate that no vulns were found
 
 	templateStr := vulnReportEmailTemplate
-	if zippedCSVData == nil {
+	if empty {
 		// If it is an empty report, the email body will indicate that no vulns were found
+		zippedCSVData = nil
 		templateStr = noVulnsFoundEmailTemplate
 	}
 
@@ -357,7 +358,7 @@ func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConf
 	collection *storage.ResourceCollection) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
 		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
-	rQuery, err := qb.BuildQuery(ctx)
+	rQuery, err := qb.BuildQuery(ctx, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "error building report query")
 	}

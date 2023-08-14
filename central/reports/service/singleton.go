@@ -4,7 +4,7 @@ import (
 	"context"
 
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -32,10 +32,12 @@ func initializeManager() manager.Manager {
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
 	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, query)
-	if err != nil {
-		panic(err)
-	}
 	mgr := manager.Singleton()
+	if err != nil {
+		log.Errorf("Error finding scheduled reports: %s", err)
+		return mgr
+	}
+
 	for _, rc := range reportConfigs {
 		if err := mgr.Upsert(ctx, rc); err != nil {
 			log.Errorf("error upserting report config: %v", err)

@@ -17,4 +17,6 @@ DEST="$2"
 
 docker pull "${SRC}" | cat
 docker tag "${SRC}" "${DEST}"
-"${ROOT}/scripts/ci/push-as-manifest-list.sh" "${DEST}" | cat
+docker push "${DEST}" | cat
+# No need to keep the old images
+docker rmi "${SRC}" "${DEST}"

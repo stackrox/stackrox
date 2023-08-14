@@ -116,6 +116,19 @@ const PrivateConfigDataRetentionDetails = ({
                     </CardBody>
                 </Card>
             </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Vulnerability report run history retention</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={
+                                privateConfig?.reportRetentionConfig?.historyRetentionDurationDays
+                            }
+                            suffix="day"
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
             <GridItem sm={12}>
                 <Title headingLevel="h3" id="cluster-deletion">
                     Cluster deletion

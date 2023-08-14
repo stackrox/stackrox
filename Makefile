@@ -16,7 +16,8 @@ SILENT ?= @
 # UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests"
+# TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -46,6 +47,7 @@ ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 endif
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
+DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
 GOCACHE_VOLUME_NAME := stackrox-rox-gocache
@@ -64,17 +66,8 @@ UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-ifeq ($(UNAME_S),Darwin)
-ifeq ($(UNAME_M),arm64)
-	# TODO(ROX-12064) build these images in the CI pipeline
-	# Currently built on a GCP ARM instance off the rox-ci-image branch "cgorman-custom-arm"
-	BUILD_IMAGE = quay.io/rhacs-eng/sandbox:apollo-ci-stackrox-build-0.3.59-arm64
-endif
-endif
-
-TARGET_ARCH := "amd64"
-ifeq ($(UNAME_M),arm64)
-TARGET_ARCH = "arm64"
+ifneq ($(UNAME_M),x86_64)
+	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
 endif
 
 ifeq ($(UNAME_S),Darwin)
@@ -429,7 +422,7 @@ main-build-dockerized: main-builder-image
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
-	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -560,16 +553,14 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
 main-image: all-builds
 	make docker-build-main-image
 
-$(CURDIR)/image/rhel/bundle.tar.gz:
-	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image $(CURDIR)/image/rhel
-
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir central-db-image $(CURDIR)/image/rhel/bundle.tar.gz
-	docker build \
+docker-build-main-image: copy-binaries-to-image-dir central-db-image
+	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
+		--build-arg DEBUG_BUILD="$(DEBUG_BUILD)" \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
-		--build-arg TARGET_ARCH=$(TARGET_ARCH) \
+		--build-arg TARGET_ARCH=$(GOARCH) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--build-arg LABEL_VERSION=$(TAG) \
 		--build-arg LABEL_RELEASE=$(TAG) \
@@ -582,7 +573,7 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image $(CURDIR)/i
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
 	cp -f bin/linux_$(GOARCH)/roxctl image/roxctl/roxctl-linux
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl/Dockerfile \
@@ -591,43 +582,44 @@ docker-build-roxctl-image:
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
-	cp bin/linux_$(GOARCH)/central image/bin/central
+	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 ifdef CI
-	cp bin/linux_amd64/roxctl image/bin/roxctl-linux-amd64
-	cp bin/linux_ppc64le/roxctl image/bin/roxctl-linux-ppc64le
-	cp bin/linux_s390x/roxctl image/bin/roxctl-linux-s390x
-	cp bin/darwin_amd64/roxctl image/bin/roxctl-darwin-amd64
-	cp bin/windows_amd64/roxctl.exe image/bin/roxctl-windows-amd64.exe
+	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
+	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
+	cp bin/linux_ppc64le/roxctl image/rhel/bin/roxctl-linux-ppc64le
+	cp bin/linux_s390x/roxctl image/rhel/bin/roxctl-linux-s390x
+	cp bin/darwin_amd64/roxctl image/rhel/bin/roxctl-darwin-amd64
+	cp bin/windows_amd64/roxctl.exe image/rhel/bin/roxctl-windows-amd64.exe
 else
 ifneq ($(HOST_OS),linux)
-	cp bin/linux_$(GOARCH)/roxctl image/bin/roxctl-linux-$(GOARCH)
+	cp bin/linux_$(GOARCH)/roxctl image/rhel/bin/roxctl-linux-$(GOARCH)
 endif
-	cp bin/$(HOST_OS)_amd64/roxctl image/bin/roxctl-$(HOST_OS)-amd64
+	cp bin/$(HOST_OS)_amd64/roxctl image/rhel/bin/roxctl-$(HOST_OS)-amd64
 endif
-	cp bin/linux_$(GOARCH)/migrator image/bin/migrator
-	cp bin/linux_$(GOARCH)/kubernetes        image/bin/kubernetes-sensor
-	cp bin/linux_$(GOARCH)/upgrader          image/bin/sensor-upgrader
-	cp bin/linux_$(GOARCH)/admission-control image/bin/admission-control
-	cp bin/linux_$(GOARCH)/collection        image/bin/compliance
+	cp bin/linux_$(GOARCH)/migrator image/rhel/bin/migrator
+	cp bin/linux_$(GOARCH)/kubernetes        image/rhel/bin/kubernetes-sensor
+	cp bin/linux_$(GOARCH)/upgrader          image/rhel/bin/sensor-upgrader
+	cp bin/linux_$(GOARCH)/admission-control image/rhel/bin/admission-control
+	cp bin/linux_$(GOARCH)/collection        image/rhel/bin/compliance
 	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
-	find image/bin -not -path "*/.*" -type f -exec chmod +x {} \;
+	find image/rhel/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
-	cp -r ui/build image/ui/
+	cp -r ui/build image/rhel/ui/
 ifdef CI
-	$(SILENT)[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
+	$(SILENT)[ -d image/rhel/THIRD_PARTY_NOTICES ] || { echo "image/rhel/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
 else
-	$(SILENT)[ -f image/THIRD_PARTY_NOTICES ] || mkdir -p image/THIRD_PARTY_NOTICES
+	$(SILENT)[ -f image/rhel/THIRD_PARTY_NOTICES ] || mkdir -p image/rhel/THIRD_PARTY_NOTICES
 endif
 	$(SILENT)[ -d image/rhel/docs ] || { echo "Generated docs not found in image/rhel/docs. They are required for build."; exit 1; }
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bin/linux_$(GOARCH)/profiler scale/image/bin/profiler
-	cp bin/linux_$(GOARCH)/chaos scale/image/bin/chaos
-	chmod +w scale/image/bin/*
+	cp bin/linux_$(GOARCH)/profiler scale/image/rhel/bin/profiler
+	cp bin/linux_$(GOARCH)/chaos scale/image/rhel/bin/chaos
+	chmod +w scale/image/rhel/bin/*
 	docker build \
 		-t stackrox/scale:$(TAG) \
 		-t quay.io/rhacs-eng/scale:$(TAG) \
@@ -661,7 +653,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 
 .PHONY: central-db-image
 central-db-image:
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		--file image/postgres/Dockerfile \
@@ -678,8 +670,8 @@ clean: clean-image
 .PHONY: clean-image
 clean-image:
 	@echo "+ $@"
-	git clean -xf image/bin
-	git clean -xdf image/ui image/rhel/docs
+	git clean -xf image/bin image/rhel/bin
+	git clean -xdf image/ui image/rhel/ui image/rhel/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
@@ -716,7 +708,7 @@ ossls-audit: deps
 .PHONY: ossls-notice
 ossls-notice: deps
 	ossls version
-	ossls audit --export image/THIRD_PARTY_NOTICES
+	ossls audit --export image/rhel/THIRD_PARTY_NOTICES
 
 .PHONY: collector-tag
 collector-tag:

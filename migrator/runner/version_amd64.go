@@ -21,7 +21,6 @@ import (
 var (
 	versionBucketName = []byte("version")
 	versionKey        = []byte("\x00")
-	ctx               = sac.WithAllAccess(context.Background())
 )
 
 // getCurrentSeqNumBolt returns the current seq-num found in the bolt DB.
@@ -69,7 +68,7 @@ func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 }
 
 func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
-	ver, err := version.ReadVersionGormDB(ctx, databases.GormDB)
+	ver, err := version.ReadVersionGormDB(sac.WithAllAccess(context.Background()), databases.GormDB)
 	if err != nil {
 		return 0, errors.Wrap(err, "getting current postgres sequence number")
 	}
@@ -79,15 +78,16 @@ func getCurrentSeqNumPostgres(databases *types.Databases) (int, error) {
 
 func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
-	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks
-	// sequence number will take precedence and drive the migrations
-	if databases.RocksDB == nil && databases.BoltDB == nil {
-		return getCurrentSeqNumPostgres(databases)
+	// we are in a state where we need to migrate Rocks to Postgres.  We use the Postgres sequence
+	// number to determine where we pick up the migration from.
+	postgresSeqNum, err := getCurrentSeqNumPostgres(databases)
+	if err != nil {
+		return 0, err
 	}
 
-	// Legacy databases should be present at this point.
+	// Legacy databases will be present if migrating from legacy.  If not present use Postgres
 	if databases.RocksDB == nil || databases.BoltDB == nil {
-		return 0, errors.New("legacy databases do not not exist")
+		return postgresSeqNum, nil
 	}
 
 	boltSeqNum, err := getCurrentSeqNumBolt(databases.BoltDB)
@@ -103,6 +103,10 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 		return 0, fmt.Errorf("bolt and rocksdb numbers mismatch: %d vs %d", boltSeqNum, writeHeavySeqNum)
 	}
 
+	if postgresSeqNum > boltSeqNum {
+		return postgresSeqNum, nil
+	}
+
 	return boltSeqNum, nil
 }
 
@@ -115,11 +119,11 @@ func updateRocksDB(db *gorocksdb.DB, versionBytes []byte) error {
 	return nil
 }
 
-func updateVersion(databases *types.Databases, newVersion *storage.Version) error {
+func updateVersion(ctx context.Context, databases *types.Databases, newVersion *storage.Version) error {
 	// If the sequence number is higher than the sequence number without postgres then
 	// we are migrating postgres and as such need to update the Postgres version.
 	if int(newVersion.GetSeqNum()) > migrations.LastRocksDBVersionSeqNum() {
-		version.SetVersionGormDB(ctx, databases.GormDB, newVersion, false)
+		version.UpdateVersionPostgres(ctx, databases.PostgresDB, newVersion)
 		return nil
 	}
 

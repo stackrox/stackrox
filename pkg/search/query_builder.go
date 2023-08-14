@@ -5,6 +5,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,6 +33,9 @@ const (
 
 	// EqualityPrefixSuffix is the prefix for an exact match
 	EqualityPrefixSuffix = `"`
+
+	// TimeRangePrefix is the prefix for a time range query
+	TimeRangePrefix = "tr/"
 
 	// MaxQueryParameters is the maximum number of query parameters for a single statement
 	MaxQueryParameters = math.MaxUint16
@@ -408,6 +412,13 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	bools := conv.FormatBool(v...)
 
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], bools...)
+	return qb
+}
+
+// AddTimeRangeField adds a range query between two times for the specific field.
+func (qb *QueryBuilder) AddTimeRangeField(field FieldLabel, from, to time.Time) *QueryBuilder {
+	value := fmt.Sprintf("%s%d-%d", TimeRangePrefix, from.UnixMilli(), to.UnixMilli())
+	qb.fieldsToValues[field] = append(qb.fieldsToValues[field], value)
 	return qb
 }
 

@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { assertCannotFindThePage } from '../../helpers/visit';
 
 import {
     assertAccessControlEntityDoesNotExist,
@@ -16,7 +17,7 @@ const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sen
 describe('Access Control Roles', () => {
     withAuth();
 
-    it('displays alert if no permission', () => {
+    it('cannot find the page if no permission', () => {
         const staticResponseForPermissions = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
         };
@@ -25,10 +26,7 @@ describe('Access Control Roles', () => {
             staticResponseForPermissions
         );
 
-        cy.get(selectors.alertTitle).should(
-            'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view roles.'
-        );
+        assertCannotFindThePage();
     });
 
     it('list has heading, button, and table head cells', () => {

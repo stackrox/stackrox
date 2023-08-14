@@ -3,6 +3,8 @@
 package types
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
@@ -21,4 +23,7 @@ type Databases struct {
 	PkgRocksDB *rocksdb.RocksDB
 	GormDB     *gorm.DB
 	PostgresDB postgres.DB
+
+	// Adding a context, so we can wrap migrations in a transaction if desired
+	DBCtx context.Context
 }

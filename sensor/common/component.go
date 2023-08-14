@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -20,12 +22,37 @@ const (
 	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
 )
 
+// LogSensorComponentEvent returns a unified string for logging the transition between component states/
+// For OfflineAware components, the optional parameter with component name should be provided.
+// Variadic `optComponentName` is used for backwards compatibility;
+// only first element of `optComponentName` will be printed if more elements are provided.
+func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string) string {
+	name := "Component"
+	if len(optComponentName) > 0 {
+		name += fmt.Sprintf(" '%s'", optComponentName[0])
+	}
+	mode := fmt.Sprintf("unknown (%s)", e)
+	switch e {
+	case SensorComponentEventCentralReachable:
+		mode = "Online"
+	case SensorComponentEventOfflineMode:
+		mode = "Offline"
+	}
+	return fmt.Sprintf("%s runs now in %s mode", name, mode)
+
+}
+
+// Notifiable is the interface used by Sensor to notify components of state changes in Central<->Sensor connectivity.
+type Notifiable interface {
+	Notify(e SensorComponentEvent)
+}
+
 // SensorComponent is one of the components that constitute sensor. It supports for receiving messages from central,
 // as well as sending messages back to central.
 type SensorComponent interface {
+	Notifiable
 	Start() error
 	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
-	Notify(e SensorComponentEvent)
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error

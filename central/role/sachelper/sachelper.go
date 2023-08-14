@@ -75,6 +75,9 @@ func (h *clusterSACHelperImpl) GetClustersForPermissions(
 	if err != nil {
 		return nil, err
 	}
+	if len(clusterIDsInScope) == 0 && !hasFullAccess {
+		return nil, nil
+	}
 
 	// Use an elevated context to fetch cluster names associated with the listed IDs.
 	// This context must not be propagated.
@@ -157,6 +160,9 @@ func (h *clusterNamespaceSACHelperImpl) GetNamespacesForClusterAndPermissions(
 	namespacesInScope, hasFullAccess, err := listNamespaceNamesInScope(ctx, clusterID, resourcesWithAccess)
 	if err != nil {
 		return nil, err
+	}
+	if len(namespacesInScope) == 0 && !hasFullAccess {
+		return nil, nil
 	}
 
 	// Use an elevated context to fetch namespace IDs and names associated with the listed namespace names.

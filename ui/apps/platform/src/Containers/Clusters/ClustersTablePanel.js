@@ -37,7 +37,8 @@ import AddClusterPrompt from './AddClusterPrompt';
 
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
     const { hasReadWriteAccess } = usePermissions();
-    const hasReadWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
+    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
 
     function onToggleInstallMenu(newIsInstallMenuOpen) {
@@ -218,39 +219,47 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     const headerActions = (
         <>
-            <AutoUpgradeToggle />
-            <Button
-                variant="secondary"
-                className="pf-u-ml-sm"
-                onClick={upgradeSelectedClusters}
-                isDisabled={upgradableClusters.length === 0 || !!selectedClusterId}
-            >
-                {`Upgrade (${upgradableClusters.length})`}
-            </Button>
-            <Button
-                variant="danger"
-                className="pf-u-ml-sm pf-u-mr-sm"
-                onClick={deleteSelectedClusters}
-                isDisabled={checkedClusterIds.length === 0 || !!selectedClusterId}
-            >
-                {`Delete (${checkedClusterIds.length})`}
-            </Button>
-            <Dropdown
-                className="mr-4"
-                onSelect={onSelectInstallMenuItem}
-                toggle={
-                    <DropdownToggle
-                        id="install-toggle"
-                        toggleVariant="secondary"
-                        onToggle={onToggleInstallMenu}
+            {hasWriteAccessForAdministration && (
+                <>
+                    <AutoUpgradeToggle />
+                    <Button
+                        variant="secondary"
+                        className="pf-u-ml-sm"
+                        onClick={upgradeSelectedClusters}
+                        isDisabled={upgradableClusters.length === 0 || !!selectedClusterId}
                     >
-                        Install cluster
-                    </DropdownToggle>
-                }
-                position={DropdownPosition.right}
-                isOpen={isInstallMenuOpen}
-                dropdownItems={installMenuOptions}
-            />
+                        {`Upgrade (${upgradableClusters.length})`}
+                    </Button>
+                </>
+            )}
+            {hasWriteAccessForCluster && (
+                <>
+                    <Button
+                        variant="danger"
+                        className="pf-u-ml-sm pf-u-mr-sm"
+                        onClick={deleteSelectedClusters}
+                        isDisabled={checkedClusterIds.length === 0 || !!selectedClusterId}
+                    >
+                        {`Delete (${checkedClusterIds.length})`}
+                    </Button>
+                    <Dropdown
+                        className="mr-4"
+                        onSelect={onSelectInstallMenuItem}
+                        toggle={
+                            <DropdownToggle
+                                id="install-toggle"
+                                toggleVariant="secondary"
+                                onToggle={onToggleInstallMenu}
+                            >
+                                Install cluster
+                            </DropdownToggle>
+                        }
+                        position={DropdownPosition.right}
+                        isOpen={isInstallMenuOpen}
+                        dropdownItems={installMenuOptions}
+                    />
+                </>
+            )}
         </>
     );
 
@@ -288,7 +297,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     const columnOptions = {
         clusterIdToRetentionInfo,
-        hasReadWriteAccessForCluster,
+        hasWriteAccessForCluster,
         metadata,
         rowActions: {
             onDeleteHandler,

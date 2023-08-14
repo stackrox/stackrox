@@ -14,20 +14,30 @@ export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 export const authorizeRoxctlPath = '/authorize-roxctl';
 
-export const dashboardPath = `${mainPath}/dashboard`;
-export const networkBasePath = `${mainPath}/network-graph`;
-export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
-export const violationsBasePath = `${mainPath}/violations`;
-export const violationsPath = `${violationsBasePath}/:alertId?`;
+// Add (related) path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
+export const accessControlBasePath = `${mainPath}/access-control`;
+export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
+export const apidocsPath = `${mainPath}/apidocs`;
 export const clustersBasePath = `${mainPath}/clusters`;
-export const clustersDelegateScanningPath = `${clustersBasePath}/delegate-scanning`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
+export const clustersDelegateScanningPath = `${clustersBasePath}/delegate-scanning`;
+export const collectionsBasePath = `${mainPath}/collections`;
+export const collectionsPath = `${mainPath}/collections/:collectionId?`;
+export const complianceBasePath = `${mainPath}/compliance`;
+export const compliancePath = `${mainPath}/:context(compliance)`;
+export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
+export const configManagementPath = `${mainPath}/configmanagement`;
+export const dashboardPath = `${mainPath}/dashboard`;
+export const dataRetentionPath = `${mainPath}/retention`;
 export const integrationsPath = `${mainPath}/integrations`;
-export const integrationsListPath = `${integrationsPath}/:source/:type`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
 export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
+export const integrationsListPath = `${integrationsPath}/:source/:type`;
+export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
+export const networkBasePath = `${mainPath}/network-graph`;
+export const networkPath = `${networkBasePath}/:detailType?/:detailId?`;
 export const policyManagementBasePath = `${mainPath}/policy-management`;
 export const policiesBasePath = `${policyManagementBasePath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
@@ -36,158 +46,190 @@ export const deprecatedPoliciesBasePath = `${mainPath}/policies`;
 export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
-export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const searchPath = `${mainPath}/search`;
-export const apidocsPath = `${mainPath}/apidocs`;
-export const accessControlBasePath = `${mainPath}/access-control`;
-export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
+export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
+export const systemConfigPath = `${mainPath}/systemconfig`;
+export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
-export const systemConfigPath = `${mainPath}/systemconfig`;
-export const complianceBasePath = `${mainPath}/compliance`;
-export const compliancePath = `${mainPath}/:context(compliance)`;
-export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
-export const dataRetentionPath = `${mainPath}/retention`;
-export const systemHealthPath = `${mainPath}/system-health`;
-export const collectionsBasePath = `${mainPath}/collections`;
-export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const listeningEndpointsBasePath = `${mainPath}/listening-endpoints`;
+export const violationsBasePath = `${mainPath}/violations`;
+export const violationsPath = `${violationsBasePath}/:alertId?`;
+export const vulnManagementPath = `${mainPath}/vulnerability-management`;
+export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
+export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
+export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
+export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
-// Configuration Management
+// Configuration Management paths for links from Search:
 
-export const configManagementPath = `${mainPath}/configmanagement`;
-export const configManagementClustersPath = `${configManagementPath}/clusters`;
-export const configManagementControlsPath = `${configManagementPath}/controls`;
-export const configManagementDeploymentsPath = `${configManagementPath}/deployments`;
-export const configManagementImagesPath = `${configManagementPath}/images`;
-export const configManagementNamespacesPath = `${configManagementPath}/namespaces`;
-export const configManagementNodesPath = `${configManagementPath}/nodes`;
-export const configManagementPoliciesPath = `${configManagementPath}/policies`;
 export const configManagementRolesPath = `${configManagementPath}/roles`;
 export const configManagementSecretsPath = `${configManagementPath}/secrets`;
 export const configManagementServiceAccountsPath = `${configManagementPath}/serviceaccounts`;
-export const configManagementSubjectsPath = `${configManagementPath}/subjects`;
 
-// Vuln Management Paths
+// Vulnerability Management 1.0 paths for links from Dashboard or Search:
 
-export const vulnManagementPath = `${mainPath}/vulnerability-management`;
-export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
-export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
-export const vulnManagementImageCVEsPath = `${vulnManagementPath}/image-cves`;
-export const vulnManagementNodeCVEsPath = `${vulnManagementPath}/node-cves`;
-export const vulnManagementPlatformCVEsPath = `${vulnManagementPath}/cluster-cves`;
-export const vulnManagementClustersPath = `${vulnManagementPath}/clusters`;
-export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
-export const vulnManagementDeploymentsPath = `${vulnManagementPath}/deployments`;
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
-// TODO: Remove the /components path once we completely split the components into node and image components
-export const vulnManagementComponentsPath = `${vulnManagementPath}/components`;
-export const vulnManagementNodeComponentsPath = `${vulnManagementPath}/node-components`;
-export const vulnManagementImageComponentsPath = `${vulnManagementPath}/image-components`;
+export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
-// The following paths are not part of the infinite nesting Workflow in Vuln Management
-export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
-export const vulnManagementReportsPathWithParam = `${vulnManagementPath}/reports/:reportId`;
+// Compose resourceAccessRequirements from resource names and predicates.
 
-export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
-export const vulnManagementPendingApprovalsPath = `${vulnManagementRiskAcceptancePath}/pending-approvals`;
-export const vulnManagementApprovedDeferralsPath = `${vulnManagementRiskAcceptancePath}/approved-deferrals`;
-export const vulnManagementApprovedFalsePositivesPath = `${vulnManagementRiskAcceptancePath}/approved-false-positives`;
+type ResourcePredicate = (hasReadAccess: HasReadAccess) => boolean;
 
-// VM 2.0 "Vulnerabilities" paths
-export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
+type ResourceItem = ResourceName | ResourcePredicate;
 
-export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
-export const vulnerabilitiesWorkloadCveSinglePath = `${vulnerabilitiesBasePath}/workload-cves/cves/:cveId`;
-export const vulnerabilitiesWorkloadCveImageSinglePath = `${vulnerabilitiesBasePath}/workload-cves/images/:imageId`;
-export const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesBasePath}/workload-cves/deployments/:deploymentId`;
+function evaluateItem(resourceItem: ResourceItem, hasReadAccess: HasReadAccess) {
+    if (typeof resourceItem === 'function') {
+        return resourceItem(hasReadAccess);
+    }
 
-export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
-export const vulnerabilityReportPath = `${vulnerabilitiesBasePath}/reports/:reportId`;
+    return hasReadAccess(resourceItem);
+}
+
+// Given array or resource names, higher-order functions return predicate function.
+// You can also compose every with some, if requirements ever become so complicated.
+
+export function everyResource(resourceItems: ResourceItem[]): ResourcePredicate {
+    return (hasReadAccess: HasReadAccess) =>
+        resourceItems.every((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
+}
+
+export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
+    return (hasReadAccess: HasReadAccess) =>
+        resourceItems.some((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
+}
 
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
 
 type RouteDescription = {
-    featureFlagDependency?: FeatureFlagEnvVar; // can add array as alternative if needed in the future
-    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS
+    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
+    resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
 };
 
 // Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 const routeDescriptionMap: Record<string, RouteDescription> = {
     [accessControlPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Access']),
     },
     [apidocsPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [clustersDelegateScanningPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     [clustersPathWithParam]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Cluster']),
     },
     [collectionsPath]: {
-        resourceAccessRequirements: ['WorkflowAdministration'],
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     [compliancePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Alert', // for Deployment
+            'Cluster',
+            'Compliance',
+            'Deployment',
+            'Image', // for Deployment and Namespace
+            'K8sRole', // for Cluster
+            'K8sRoleBinding', // for Cluster
+            'K8sSubject', // for Cluster
+            'Namespace',
+            'NetworkPolicy', // for Namespace
+            'Node',
+            'Secret', // for Deployment and Namespace
+            'ServiceAccount', // for Cluster and Deployment
+        ]),
     },
     [complianceEnhancedBasePath]: {
-        resourceAccessRequirements: [],
+        featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
+        resourceAccessRequirements: everyResource(['Compliance']),
     },
     [configManagementPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Alert',
+            'Cluster',
+            'Compliance',
+            'Deployment',
+            'Image',
+            'K8sRole',
+            'K8sRoleBinding',
+            'K8sSubject',
+            'Namespace',
+            'Node',
+            'Secret',
+            'ServiceAccount',
+            'WorkflowAdministration',
+        ]),
     },
     [dashboardPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [integrationsPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     [listeningEndpointsBasePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [networkPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['NetworkGraph', 'NetworkPolicy']),
     },
     [policyManagementBasePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Cluster',
+            'Deployment',
+            'Image',
+            'Integration',
+            'WorkflowAdministration',
+        ]),
     },
     [riskPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [searchPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [systemConfigPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     [systemHealthPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
     },
     [userBasePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [violationsPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Alert']),
     },
-    [vulnManagementPath]: {
-        resourceAccessRequirements: [],
-    },
+    // Reporting and Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     [vulnManagementReportsPath]: {
-        resourceAccessRequirements: ['WorkflowAdministration'],
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     [vulnManagementRiskAcceptancePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'VulnerabilityManagementApprovals',
+            'VulnerabilityManagementRequests',
+        ]),
+    },
+    [vulnManagementPath]: {
+        resourceAccessRequirements: everyResource([
+            'Alert', // for Cluster and Deployment and Namespace
+            'Cluster',
+            'Deployment',
+            'Image',
+            'Namespace',
+            'Node',
+            'WatchedImage', // for Image
+            'WorkflowAdministration', // TODO obsolete because of policies for Cluster and Namespace?
+        ]),
     },
     [vulnerabilitiesWorkloadCvesPath]: {
-        featureFlagDependency: 'ROX_VULN_MGMT_WORKLOAD_CVES',
-        resourceAccessRequirements: [],
+        featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
+        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
     },
     [vulnerabilityReportsPath]: {
-        featureFlagDependency: 'ROX_VULN_MGMT_REPORTING_ENHANCEMENTS',
-        resourceAccessRequirements: ['WorkflowAdministration'],
+        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
 };
 
@@ -205,18 +247,22 @@ export function isRouteEnabled(
     if (!routeDescription) {
         // eslint-disable-next-line no-console
         console.warn(`isRouteEnabled for unknown path ${path}`);
-        return true;
+        return false; // better to find mistakes than allow loopholes
     }
 
     const { featureFlagDependency, resourceAccessRequirements } = routeDescription;
 
-    if (typeof featureFlagDependency === 'string') {
-        if (!isFeatureFlagEnabled(featureFlagDependency)) {
+    if (Array.isArray(featureFlagDependency)) {
+        if (
+            !featureFlagDependency.every((featureFlagEnvVar) =>
+                isFeatureFlagEnabled(featureFlagEnvVar)
+            )
+        ) {
             return false;
         }
     }
 
-    return resourceAccessRequirements.every((resourceName) => hasReadAccess(resourceName));
+    return resourceAccessRequirements(hasReadAccess);
 }
 
 /**
@@ -230,12 +276,12 @@ export const urlEntityListTypes = {
     [resourceTypes.DEPLOYMENT]: 'deployments',
     [resourceTypes.IMAGE]: 'images',
     [resourceTypes.SECRET]: 'secrets',
-    [resourceTypes.POLICY]: 'policies',
-    [resourceTypes.CVE]: 'cves',
+    [resourceTypes.POLICY]: 'policies', // TODO verify if used for Configuration Management
+    [resourceTypes.CVE]: 'cves', // TODO verify obsolete because non-postgres
     [resourceTypes.IMAGE_CVE]: 'image-cves',
     [resourceTypes.NODE_CVE]: 'node-cves',
     [resourceTypes.CLUSTER_CVE]: 'cluster-cves',
-    [resourceTypes.COMPONENT]: 'components',
+    [resourceTypes.COMPONENT]: 'components', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-components',
     [resourceTypes.IMAGE_COMPONENT]: 'image-components',
     [standardEntityTypes.CONTROL]: 'controls',
@@ -251,12 +297,12 @@ export const urlEntityTypes = {
     [resourceTypes.DEPLOYMENT]: 'deployment',
     [resourceTypes.IMAGE]: 'image',
     [resourceTypes.SECRET]: 'secret',
-    [resourceTypes.POLICY]: 'policy',
-    [resourceTypes.CVE]: 'cve',
+    [resourceTypes.POLICY]: 'policy', // TODO verify if used for Configuration Management
+    [resourceTypes.CVE]: 'cve', // TODO verify obsolete because non-postgres
     [resourceTypes.IMAGE_CVE]: 'image-cve',
     [resourceTypes.NODE_CVE]: 'node-cve',
     [resourceTypes.CLUSTER_CVE]: 'cluster-cve',
-    [resourceTypes.COMPONENT]: 'component',
+    [resourceTypes.COMPONENT]: 'component', // TODO verify obsolete because non-postgres
     [resourceTypes.NODE_COMPONENT]: 'node-component',
     [resourceTypes.IMAGE_COMPONENT]: 'image-component',
     [standardEntityTypes.CONTROL]: 'control',

@@ -8,7 +8,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -26,7 +26,9 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ReportSnapshot, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ReportSnapshot, error)
 
-	AddReportSnapshot(ctx context.Context, report *storage.ReportSnapshot) error
+	// AddReportSnapshot adds the given snapshot to database. The implementation should generate and return the ReportId
+	AddReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) (string, error)
+	UpdateReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) error
 	DeleteReportSnapshot(ctx context.Context, id string) error
 
 	Walk(ctx context.Context, fn func(report *storage.ReportSnapshot) error) error
@@ -34,7 +36,7 @@ type DataStore interface {
 
 // New returns a new instance of a DataStore
 func New(storage pgStore.Store, searcher search.Searcher) DataStore {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
 	ds := &datastoreImpl{

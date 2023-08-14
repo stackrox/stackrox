@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -36,10 +35,6 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
 		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
 	} else if env.RHCOSNodeScanning.BooleanSetting() {
-		// Start the prometheus metrics server
-		metrics.NewServer(metrics.ComplianceSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
-		metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
-
 		// Set up Compliance <-> NodeInventory connection
 		niConn, err := clientconn.AuthenticatedGRPCConnection(address, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))
 		if err != nil {

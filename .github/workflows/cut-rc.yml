@@ -44,6 +44,7 @@ env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
+  TIMEOUT_WAIT_FOR_IMAGES_SECONDS: 3600
 
 run-name: >-
   ${{
@@ -198,7 +199,7 @@ jobs:
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -276,7 +277,7 @@ jobs:
       - name: Post to Slack
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           channel-id: ${{ needs.properties.outputs.slack-channel }}
           payload: >-
@@ -299,317 +300,20 @@ jobs:
             milestone to avoid confusion." }}
             ]}
 
-  wait-for-images:
-    name: Wait for images on Quay.io
+  clusters:
+    name: Setup demo clusters
+    secrets: inherit
     needs: [variables, cut-rc]
-    runs-on: ubuntu-latest
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     if: >- # Skip if no clusters are going to be created.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||
       needs.variables.outputs.rc == '1' &&
       github.event.inputs.create-long-cluster != 'false'
-    strategy:
-      matrix:
-        image: [main, scanner, scanner-db, collector]
-    steps:
-      - name: Wait for the ${{matrix.image}} image
-        uses: stackrox/actions/release/wait-for-image@v1
-        with:
-          token: "${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}"
-          image: "rhacs-eng/${{ matrix.image }}:${{ needs.variables.outputs.milestone }}"
-          # Do not wait if running dry
-          interval: ${{ fromJSON('["30", "0"]')[env.DRY_RUN == 'true'] }}
-
-  create-k8s-cluster:
-    name: Create k8s cluster
-    needs: [variables, wait-for-images]
-    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
-    if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-k8s-cluster != 'false'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: stackrox/actions/infra/create-cluster@v1
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: qa-demo
-          name: qa-k8s-${{ needs.variables.outputs.milestone }}
-          args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }},central-db-image=quay.io/rhacs-eng/central-db:${{ needs.variables.outputs.milestone }}
-          lifespan: 48h
-
-  notify-k8s-cluster:
-    name: Notify about K8s cluster creation
-    needs: [variables, properties, create-k8s-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: qa-k8s-${{ needs.variables.outputs.milestone }}
-    steps:
-      - name: Determine demo url and cluster name
-        id: get_demo_artifacts
-        run: |
-          echo "cluster-name=${NAME//./-}" >> "$GITHUB_OUTPUT"
-          echo "url=https://${NAME//[.-]/}.demo.stackrox.com/login" >> "$GITHUB_OUTPUT"
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "QA Demo cluster is being created. Check #acs-infra-notifications for cluster access.",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|QA demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` is being created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: When it is ready in ca. 20 minutes, a notification will be posted in #acs-infra-notifications channel, and the cluster will be accessible at ${{ steps.get_demo_artifacts.outputs.url }} with your @stackrox.com Google account."
-                  }
-                }
-              ]
-            }
-
-  create-os4-cluster:
-    name: Create OS4 cluster
-    needs: [variables, wait-for-images]
-    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
-    if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-os4-cluster != 'false'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: stackrox/actions/infra/create-cluster@v1
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: openshift-4-demo
-          name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-          args: central-services-helm-chart-version=${{ needs.variables.outputs.milestone }},secured-cluster-services-helm-chart-version=${{ needs.variables.outputs.milestone }}
-          lifespan: 48h
-
-  notify-os4-cluster:
-    name: Notify about Openshift cluster creation
-    needs: [variables, properties, create-os4-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-    steps:
-      - name: Determine demo url and cluster name
-        id: get_demo_artifacts
-        run: |
-          echo "cluster-name=${NAME//./-}" >> "$GITHUB_OUTPUT"
-          echo "url=https://central-stackrox.apps.${NAME//./-}.openshift.infra.rox.systems/login" >> "$GITHUB_OUTPUT"
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Openshift 4 Demo cluster is being created. Check #acs-infra-notifications for cluster access.",
-
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|Openshift 4 Demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` is being created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: The cluster will be accessible at ${{ steps.get_demo_artifacts.outputs.url }} in ~40 minutes. You can find the admin password and kubeconfig with `infractl artifacts ${{ steps.get_demo_artifacts.outputs.cluster-name }}`."
-                  }
-                }
-              ]
-            }
-
-  create-long-running-cluster:
-    name: Create GKE long-running cluster
-    needs: [variables, wait-for-images]
-    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
-    if: >-
-      github.event.inputs.dry-run != 'true' &&
-      needs.variables.outputs.rc == '1' &&
-      github.event.inputs.create-long-cluster != 'false'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: stackrox/actions/infra/create-cluster@v1
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: gke-default
-          name: gke-long-running-${{ needs.variables.outputs.milestone }}
-          lifespan: 168h
-          args: nodes=5,machine-type=e2-standard-8
-          wait: true
-
-  patch-long-running-cluster:
-    name: Patch long-running cluster
-    needs: [variables, properties, create-long-running-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: gke-long-running-${{ needs.variables.outputs.milestone }}
-      TAG: ${{needs.variables.outputs.milestone}}
-      KUBECONFIG: artifacts/kubeconfig
-      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
-    steps:
-      - uses: stackrox/actions/infra/install-infractl@v1
-      - name: Test readiness
-        run: |
-          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
-          if [ "$STATUS" != "READY" ]; then
-            exit 1
-          fi
-      - name: Check out code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{needs.variables.outputs.milestone}}
-          repository: stackrox/stackrox
-      - uses: "google-github-actions/auth@v1"
-        with:
-          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v1"
-        with:
-          install_components: "gke-gcloud-auth-plugin"
-      - name: Download artifacts
-        id: artifacts
-        run: |
-          infractl artifacts "${NAME//./-}" -d artifacts >> "$GITHUB_STEP_SUMMARY"
-      - name: Launch central
-        id: launch_central
-        env:
-          MAIN_IMAGE_TAG: ${{needs.variables.outputs.milestone}} # Release version, e.g. 3.63.0-rc.2.
-          API_ENDPOINT: localhost:8000
-          STORAGE: pvc # Backing storage
-          STORAGE_CLASS: faster # Runs on an SSD type
-          STORAGE_SIZE: 100 # 100G
-          MONITORING_SUPPORT: true # Runs monitoring
-          LOAD_BALANCER: lb
-          ROX_ADMIN_USERNAME: admin
-          PAGERDUTY_INTEGRATION_KEY: ${{ secrets.RELEASE_MANAGEMENT_PAGERDUTY_INTEGRATION_KEY }}
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          set -uo pipefail
-          ./deploy/k8s/central.sh
-          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
-          sleep 20
-
-          ./deploy/k8s/sensor.sh
-
-          kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0 ROX_FAKE_KUBERNETES_WORKLOAD=long-running ROX_FAKE_WORKLOAD_STORAGE=/var/cache/stackrox/pebble.db
-          kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-
-          kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
-          kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-
-          ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)
-          echo "::add-mask::$ROX_ADMIN_PASSWORD"
-          CENTRAL_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
-          kubectl -n stackrox create secret generic access-rhacs --from-literal="username=${ROX_ADMIN_USERNAME}" --from-literal="password=${ROX_ADMIN_PASSWORD}" --from-literal="central_url=https://${CENTRAL_IP}"
-          echo "rox_password=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
-          echo "cluster_name=${NAME//./-}" >> "$GITHUB_OUTPUT"
-
-          printf "Long-running GKE cluster %s has been patched.\nAccess it by running \`./scripts/release-tools/setup-central-access.sh %s\` from your local machine." "${NAME//./-}" "${NAME//./-}" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Long-running cluster created. Setup your local access with `scripts/release-tools/setup-central-access.sh | bash -s -- ${{ steps.launch_central.outputs.cluster_name }}`",
-
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *Long-running cluster `${{ steps.launch_central.outputs.cluster_name }}` created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: Setup your local access to Central by running:\n```curl -L https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/release-tools/setup-central-access.sh | bash -s -- ${{ steps.launch_central.outputs.cluster_name }}```"
-                  }
-                }
-              ]
-            }
-
-      - name: Start fake workload
-        env:
-          API_ENDPOINT: localhost:8000
-          ROX_PASSWORD: ${{ steps.launch_central.outputs.rox_password }}
-        run: |
-          echo "::add-mask::$ROX_PASSWORD"
-          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
-          sleep 20
-          ./scale/launch_workload.sh np-load
-          echo "Fake workload has been deployed to the long-running cluster" >> "$GITHUB_STEP_SUMMARY"
-
-  notify-failed-clusters:
-    name: Notify about failed cluster creation
-    needs:
-      [
-        variables,
-        properties,
-        create-k8s-cluster,
-        create-os4-cluster,
-        create-long-running-cluster,
-      ]
-    if:
-      >- # Required as create-*-cluster jobs could be skipped while other jobs could fail.
-      always() && (
-        needs.create-k8s-cluster.result == 'failure' ||
-        needs.create-os4-cluster.result == 'failure' ||
-        needs.create-long-running-cluster.result == 'failure'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "Couldn't create test cluster. Check <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" for details",
-
-              "blocks": [
-              { "type": "section", "text": { "type": "mrkdwn", "text":
-              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: *Please investigate the output of the
-            <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>
-            workflow run and then restart the workflow.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ">
-            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Milestone: ${{needs.variables.outputs.milestone}}\n>
-            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
-            ]}
+    with:
+      version: ${{needs.variables.outputs.milestone}}
+      create-k8s-cluster: ${{github.event.inputs.create-k8s-cluster == 'true'}}
+      create-os4-cluster: ${{github.event.inputs.create-os4-cluster == 'true'}}
+      create-long-cluster: ${{needs.variables.outputs.rc == '1' && github.event.inputs.create-long-cluster == 'true'}}
+      dry-run: ${{github.event.inputs.dry-run == 'true'}}
+      workflow-ref: v1

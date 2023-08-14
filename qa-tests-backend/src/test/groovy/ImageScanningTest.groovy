@@ -7,9 +7,10 @@ import orchestratormanager.OrchestratorTypes
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import io.stackrox.proto.storage.Vulnerability
 
-import common.Constants
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.ClairV4ScannerIntegration
@@ -23,6 +24,7 @@ import objects.StackroxScannerIntegration
 import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
+import services.PolicyService
 import util.Env
 import util.Timer
 
@@ -33,6 +35,8 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 class ImageScanningTest extends BaseSpecification {
+    static final private String TEST_NAMESPACE = "qa-image-scanning-test"
+    private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
 
     static final private String UBI8_0_IMAGE = "registry.access.redhat.com/ubi8:8.0-208"
     static final private String RHEL7_IMAGE =
@@ -55,11 +59,15 @@ class ImageScanningTest extends BaseSpecification {
             "Secure Shell (ssh) Port Exposed in Image",
     ]
 
+    @Shared
+    private List<Policy> policiesScopedForTest
+
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 30
 
     static final private Map<String, Deployment> DEPLOYMENTS = [
             "quay": new Deployment()
                     .setName("quay-image-scanning-test")
+                    .setNamespace(TEST_NAMESPACE)
                     // same image as us.gcr.io/stackrox-ci/qa/registry-image:0.3 but just retagged
                     // Alternatively can use quay.io/rhacs-eng/qa:struts-app but that doesn't have as many
                     // dockerfile violations
@@ -68,17 +76,20 @@ class ImageScanningTest extends BaseSpecification {
                     .addImagePullSecret("quay-image-scanning-test"),
             "gcr": new Deployment()
                     .setName("gcr-image-scanning-test")
+                    .setNamespace(TEST_NAMESPACE)
                     .setImage("us.gcr.io/stackrox-ci/qa/registry-image:0.3")
                     .addLabel("app", "gcr-image-scanning-test")
                     .addImagePullSecret("gcr-image-scanning-test"),
             "ecr": new Deployment()
                     .setName("ecr-image-registry-test")
+                    .setNamespace(TEST_NAMESPACE)
                     .setImage("${Env.mustGetAWSECRRegistryID()}.dkr.ecr.${Env.mustGetAWSECRRegistryRegion()}." +
                             "amazonaws.com/stackrox-qa-ecr-test:registry-image-no-secrets")
                     .addLabel("app", "ecr-image-registry-test")
                     .addImagePullSecret("ecr-image-registry-test"),
             "acr": new Deployment()
                     .setName("acr-image-registry-test")
+                    .setNamespace(TEST_NAMESPACE)
                     .setImage("stackroxci.azurecr.io/stackroxci/registry-image:0.3")
                     .addLabel("app", "acr-image-registry-test")
                     .addImagePullSecret("acr-image-registry-test"),
@@ -87,53 +98,63 @@ class ImageScanningTest extends BaseSpecification {
     static final private Map<String, Secret> IMAGE_PULL_SECRETS = [
             "quay": new Secret(
                     name: "quay-image-scanning-test",
-                    namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                    namespace: TEST_NAMESPACE,
                     username: Env.mustGet("QUAY_RHACS_ENG_RO_USERNAME"),
                     password: Env.mustGet("QUAY_RHACS_ENG_RO_PASSWORD"),
                     server: "https://quay.io"),
             "gcr": new Secret(
                     name: "gcr-image-scanning-test",
-                    namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                    namespace: TEST_NAMESPACE,
                     username: "_json_key",
                     password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
                     server: "https://us.gcr.io"),
             "ecr": new Secret(
                     name: "ecr-image-registry-test",
-                    namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                    namespace: TEST_NAMESPACE,
                     username: "AWS",
                     password: Env.mustGetAWSECRDockerPullPassword(),
                     server: "https://${Env.mustGetAWSECRRegistryID()}.dkr.ecr."+
                             "${Env.mustGetAWSECRRegistryRegion()}.amazonaws.com"),
             "acr": new Secret(
                     name: "acr-image-registry-test",
-                    namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                    namespace: TEST_NAMESPACE,
                     username: "stackroxci",
                     password: Env.mustGet("AZURE_REGISTRY_PASSWORD"),
                     server: "https://stackroxci.azurecr.io"),
     ]
-
-    @Shared
-    static final private List<String> UPDATED_POLICIES = []
 
     def setupSpec() {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         removeGCRImagePullSecret()
         ImageIntegrationService.deleteAutoRegisteredGCRIntegrationIfExists()
 
-        // Enable specific policies to test image integrations
-        for (String policy : POLICIES) {
-            if (Services.setPolicyDisabled(policy, false)) {
-                UPDATED_POLICIES.add(policy)
-            }
+        // Create namespace scoped policies for test.
+        policiesScopedForTest = []
+        for (String policyName : POLICIES) {
+            Policy policy = Services.getPolicyByName(policyName)
+            Policy scopedPolicyForTest = policy.toBuilder()
+                .clearId()
+                .setName(policy.getName() + " ${CLONED_POLICY_SUFFIX}")
+                .setDisabled(false)
+                .clearScope()
+                .addScope(Scope.newBuilder().setNamespace(TEST_NAMESPACE))
+                .build()
+            Policy created = PolicyService.createAndFetchPolicy(scopedPolicyForTest)
+            assert created
+            policiesScopedForTest.add(created)
         }
+
+        orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
     }
 
     def cleanupSpec() {
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
+
         ImageIntegrationService.addStackroxScannerIntegration()
         addGCRImagePullSecret()
 
-        for (String policy : UPDATED_POLICIES) {
-            Services.setPolicyDisabled(policy, true)
+        for (Policy policy : policiesScopedForTest) {
+            PolicyService.deletePolicy(policy.getId())
         }
     }
 
@@ -226,8 +247,8 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "validate expected violations based on dockerfile"
-        for (String policy : POLICIES) {
-            assert Services.waitForViolation(deployment.name, policy, WAIT_FOR_VIOLATION_TIMEOUT)
+        for (Policy policy : policiesScopedForTest) {
+            assert Services.waitForViolation(deployment.name, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         }
 
         when:
@@ -577,8 +598,8 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "validate expected violations based on dockerfile"
-        for (String policy : POLICIES) {
-            assert Services.waitForViolation(deployment.name, policy, WAIT_FOR_VIOLATION_TIMEOUT)
+        for (Policy policy : policiesScopedForTest) {
+            assert Services.waitForViolation(deployment.name, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         }
 
         cleanup:

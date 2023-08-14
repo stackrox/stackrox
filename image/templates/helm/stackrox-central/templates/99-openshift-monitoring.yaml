@@ -48,12 +48,12 @@ subjects:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: "central-monitor-{{ .Release.Name }}-{{ .Release.Namespace }}"
+  name: "central-monitor-{{ .Release.Namespace }}"
   namespace: openshift-monitoring
   labels:
-    {{- include "srox.labels" (list . "servicemonitor" (print "central-monitor-" .Release.Name "-" .Release.Namespace )) | nindent 4 }}
+    {{- include "srox.labels" (list . "servicemonitor" (print "central-monitor-" .Release.Namespace)) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "servicemonitor" (print "central-monitor-" .Release.Name "-" .Release.Namespace )) | nindent 4 }}
+    {{- include "srox.annotations" (list . "servicemonitor" (print "central-monitor-" .Release.Namespace)) | nindent 4 }}
 spec:
   endpoints:
   - interval: 30s
@@ -77,12 +77,12 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: rhacs-central-auth-reader
+  name: "rhacs-central-auth-reader-{{ .Release.Namespace }}"
   namespace: kube-system
   labels:
-    {{- include "srox.labels" (list . "rolebinding" "rhacs-central-auth-reader") | nindent 4 }}
+    {{- include "srox.labels" (list . "rolebinding" (print "rhacs-central-auth-reader-" .Release.Namespace)) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "rhacs-central-auth-reader") | nindent 4 }}
+    {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-central-auth-reader-" .Release.Namespace)) | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -91,5 +91,38 @@ subjects:
   - kind: ServiceAccount
     name: central
     namespace: "{{ .Release.Namespace }}"
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "central-telemeter-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "prometheusrule" (print "central-telemeter-" .Release.Namespace )) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "prometheusrule" (print "central-telemeter-" .Release.Namespace )) | nindent 4 }}
+spec:
+  groups:
+    - name: rhacs.telemeter
+      rules:
+        - expr: |
+            max by (branding, build, central_id, central_version, hosting, install_method) (
+              rox_central_secured_clusters
+            )
+          record: rhacs:telemetry:rox_central_secured_clusters
+
+        - expr: |
+            max by (branding, build, central_id, central_version, hosting, install_method) (
+              rox_central_secured_nodes
+            )
+          record: rhacs:telemetry:rox_central_secured_nodes
+
+        - expr: |
+            max by (branding, build, central_id, central_version, hosting, install_method) (
+              rox_central_secured_vcpu
+            )
+          record: rhacs:telemetry:rox_central_secured_vcpu
 
 {{- end -}}

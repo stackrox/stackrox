@@ -135,7 +135,7 @@ store_as_spyglass_artifact() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Scale test comparison with baseline: ${metrics_name}</h4></title>
+        <title>Scale test comparison with baseline: ${metrics_name}</title>
     </head>
     <body>
     <pre style="background: #fff;">

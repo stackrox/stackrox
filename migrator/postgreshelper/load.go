@@ -30,10 +30,13 @@ func GetConnections() (postgres.DB, *gorm.DB, error) {
 		return nil, nil, err
 	}
 
-	// For migrations we may have long running jobs.  Here we explicitly turn
-	// off the statement timeout for the connection and will rely on the context
-	// timeouts to control this.
-	dbConfig.ConnConfig.RuntimeParams["statement_timeout"] = "0"
+	if !pgconfig.IsExternalDatabase() {
+		// For migrations we may have long running jobs.  Here we explicitly turn
+		// off the statement timeout for the connection and will rely on the context
+		// timeouts to control this.
+		dbConfig.ConnConfig.RuntimeParams["statement_timeout"] = "0"
+	}
+
 	postgresDB, err = pgadmin.GetPool(dbConfig)
 	if err != nil {
 		log.WriteToStderrf("timed out connecting to database: %v", err)
@@ -75,12 +78,13 @@ func Load(databaseName string) (postgres.DB, *gorm.DB, error) {
 				return nil, nil, err
 			}
 		}
+
+		// For migrations we may have long running jobs.  Here we explicitly turn
+		// off the statement timeout for the connection and will rely on the context
+		// timeouts to control this.
+		adminConfig.ConnConfig.RuntimeParams["statement_timeout"] = "0"
 	}
 
-	// For migrations we may have long running jobs.  Here we explicitly turn
-	// off the statement timeout for the connection and will rely on the context
-	// timeouts to control this.
-	adminConfig.ConnConfig.RuntimeParams["statement_timeout"] = "0"
 	postgresDB, err = pgadmin.GetClonePool(adminConfig, databaseName)
 	if err != nil {
 		log.WriteToStderrf("timed out connecting to database: %v", err)

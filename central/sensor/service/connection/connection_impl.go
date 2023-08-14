@@ -105,7 +105,7 @@ func newConnection(ctx context.Context,
 	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
 	deduper.StartSync()
 
-	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig, deduper)
+	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
@@ -591,11 +591,13 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)
 		}
 
-		// Send the audit log state to sensor even if the the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
+		// Send the audit log state to sensor even if the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
 		}
 	}
+
+	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()

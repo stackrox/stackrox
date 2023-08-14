@@ -32,6 +32,7 @@ var (
 )
 
 type scanResult struct {
+	context                context.Context
 	action                 central.ResourceAction
 	deployment             *storage.Deployment
 	images                 []*storage.Image
@@ -289,11 +290,12 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	return images
 }
 
-func (e *enricher) blockingScan(deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
+func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
 	select {
 	case <-e.stopSig.Done():
 		return
 	case e.scanResultChan <- scanResult{
+		context:                ctx,
 		action:                 action,
 		deployment:             deployment,
 		images:                 e.getImages(deployment),

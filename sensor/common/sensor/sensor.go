@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -69,6 +70,9 @@ type Sensor struct {
 	centralConnectionFactory centralclient.CentralConnectionFactory
 
 	stoppedSig concurrency.ErrorSignal
+
+	notifyList []common.Notifiable
+	reconnect  atomic.Bool
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -89,12 +93,20 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		currentStateMtx: &sync.Mutex{},
 
 		stoppedSig: concurrency.NewErrorSignal(),
+
+		reconnect: atomic.Bool{},
 	}
 }
 
 // AddAPIServices adds the api services to the sensor. It should be called PRIOR to Start()
 func (s *Sensor) AddAPIServices(services ...pkgGRPC.APIService) {
 	s.apiServices = append(s.apiServices, services...)
+}
+
+// AddNotifiable adds a common.Notifiable component to the list of components that will be notified of any connectivity
+// state changes. All components passed to NewSensor are added by default.
+func (s *Sensor) AddNotifiable(notifiable common.Notifiable) {
+	s.notifyList = append(s.notifyList, notifiable)
 }
 
 func (s *Sensor) startProfilingServer() *http.Server {
@@ -129,6 +141,7 @@ func (s *Sensor) Start() {
 	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 
 	for _, c := range s.components {
+		s.AddNotifiable(c)
 		switch v := c.(type) {
 		case common.CentralGRPCConnAware:
 			v.SetCentralGRPCClient(s.centralConnection)
@@ -158,7 +171,7 @@ func (s *Sensor) Start() {
 	if err != nil {
 		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
 	} else {
-		probeDownloadHandler := probeupload.NewProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
+		probeDownloadHandler := probeupload.NewConnectionAwareProbeHandler(probeupload.LogCallback(log), koCacheSource)
 		koCacheRoute := routes.CustomRoute{
 			Route:         "/kernel-objects/",
 			Authorizer:    idcheck.CollectorOnly(),
@@ -166,11 +179,12 @@ func (s *Sensor) Start() {
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)
+		s.AddNotifiable(WrapNotifiable(probeDownloadHandler, "Kernel probe server handler"))
 	}
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
 	if env.LocalImageScanningEnabled.BooleanSetting() {
-		route, err := newScannerDefinitionsRoute(s.centralEndpoint)
+		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
@@ -249,11 +263,12 @@ func (s *Sensor) Start() {
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
 // definitions retrieved from Central.
-func newScannerDefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, error) {
+func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, error) {
 	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint)
 	if err != nil {
 		return nil, err
 	}
+	s.AddNotifiable(handler)
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
@@ -287,7 +302,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.components...)
+	s.centralCommunication = NewCentralCommunication(false, s.components...)
 
 	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 
@@ -311,7 +326,7 @@ func (s *Sensor) changeState(state common.SensorComponentEvent) {
 }
 
 func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
-	for _, component := range s.components {
+	for _, component := range s.notifyList {
 		component.Notify(notification)
 	}
 }
@@ -348,8 +363,10 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection if up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.components...)
+		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+		// Reset the exponential back-off if the connection successes
+		exponential.Reset()
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
@@ -361,6 +378,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.centralConnectionFactory.Reset()
+			s.reconnect.Store(true)
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)

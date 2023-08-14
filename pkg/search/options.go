@@ -293,6 +293,7 @@ var (
 	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
+	UserID                      = newFieldLabel("User ID")
 	UserName                    = newFieldLabel("User Name")
 
 	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
@@ -318,6 +319,11 @@ var (
 	MinSequenceNumber     = newFieldLabel("Minimum Sequence Number")
 	CurrentSequenceNumber = newFieldLabel("Current Sequence Number")
 	LastPersistedTime     = newFieldLabel("Last Persisted")
+
+	// Blob store fields
+	BlobName             = newFieldLabel("Blob Name")
+	BlobLength           = newFieldLabel("Blob Length")
+	BlobModificationTime = newFieldLabel("Blob Modified On")
 
 	// Report Metadata fields
 	ReportState              = newFieldLabel("Report State")

@@ -38,17 +38,18 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddReportSnapshot mocks base method.
-func (m *MockDataStore) AddReportSnapshot(ctx context.Context, report *storage.ReportSnapshot) error {
+func (m *MockDataStore) AddReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddReportSnapshot", ctx, report)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "AddReportSnapshot", ctx, snapshot)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AddReportSnapshot indicates an expected call of AddReportSnapshot.
-func (mr *MockDataStoreMockRecorder) AddReportSnapshot(ctx, report interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) AddReportSnapshot(ctx, snapshot interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReportSnapshot", reflect.TypeOf((*MockDataStore)(nil).AddReportSnapshot), ctx, report)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddReportSnapshot", reflect.TypeOf((*MockDataStore)(nil).AddReportSnapshot), ctx, snapshot)
 }
 
 // Count mocks base method.
@@ -169,6 +170,20 @@ func (m *MockDataStore) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 func (mr *MockDataStoreMockRecorder) SearchResults(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), ctx, q)
+}
+
+// UpdateReportSnapshot mocks base method.
+func (m *MockDataStore) UpdateReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateReportSnapshot", ctx, snapshot)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateReportSnapshot indicates an expected call of UpdateReportSnapshot.
+func (mr *MockDataStoreMockRecorder) UpdateReportSnapshot(ctx, snapshot interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateReportSnapshot", reflect.TypeOf((*MockDataStore)(nil).UpdateReportSnapshot), ctx, snapshot)
 }
 
 // Walk mocks base method.

@@ -19,7 +19,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 chart_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services")
 
-gkecluster = GKECluster("compat-test")
+gkecluster = GKECluster("compat-test", machine_type="e2-standard-8", num_nodes=2)
 
 failing_sensor_versions = []
 for version in chart_versions:

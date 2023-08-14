@@ -2,11 +2,11 @@ import React from 'react';
 import { Flex, FlexItem, Title, Button } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import { riskBasePath } from 'routePaths';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentsAtMostRiskTable from './DeploymentsAtMostRiskTable';
-import WidgetCard from './WidgetCard';
 import useDeploymentsAtRisk from '../hooks/useDeploymentsAtRisk';
 import NoDataEmptyState from './NoDataEmptyState';
 

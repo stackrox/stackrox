@@ -75,7 +75,7 @@ func (s *postgresMigrationSuite) TestGroupMigration() {
 	s.NoError(legacyStore.UpsertOldFormat(s.ctx, initializedGroupOldFormat))
 
 	// Move
-	s.NoError(move(s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
+	s.NoError(move(s.ctx, s.postgresDB.GetGormDB(), s.postgresDB.DB, legacyStore))
 
 	// Verify
 	count, err := newStore.Count(s.ctx)

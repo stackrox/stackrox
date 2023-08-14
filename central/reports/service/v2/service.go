@@ -3,11 +3,15 @@ package v2
 import (
 	"context"
 
-	metadataDS "github.com/stackrox/rox/central/reports/metadata/datastore"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
+	"github.com/stackrox/rox/central/reports/validation"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -20,13 +24,19 @@ type Service interface {
 }
 
 // New returns a new instance of the service.
-func New(metadataDatastore metadataDS.DataStore, snapshotDatastore snapshotDS.DataStore, scheduler schedulerV2.Scheduler) Service {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotDS.DataStore,
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
+	scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore, validator *validation.Validator) Service {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return nil
 	}
 	return &serviceImpl{
-		metadataDatastore: metadataDatastore,
-		snapshotDatastore: snapshotDatastore,
-		scheduler:         scheduler,
+		reportConfigStore:   reportConfigStore,
+		snapshotDatastore:   snapshotDatastore,
+		collectionDatastore: collectionDatastore,
+		notifierDatastore:   notifierDatastore,
+		scheduler:           scheduler,
+		blobStore:           blobStore,
+		validator:           validator,
 	}
 }

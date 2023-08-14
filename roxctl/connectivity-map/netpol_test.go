@@ -3,6 +3,7 @@ package connectivitymap
 import (
 	"errors"
 	"os"
+	"path"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
@@ -103,6 +104,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			expectedValidateError: nil,
 			expectedAnalysisError: nil,
 			outputToFile:          true,
+			outputFormat:          defaultOutputFormat,
 		},
 		{
 			name:                  "output should be focused to a workload",
@@ -164,6 +166,13 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			outputToFile:          true,
 			outputFormat:          "json",
 		},
+		{
+			name:                  "generate connections list with ingress controller",
+			inputFolderPath:       "testdata/acs-security-demos",
+			expectedValidateError: nil,
+			expectedAnalysisError: nil,
+			outputToFile:          true,
+		},
 	}
 
 	for _, tt := range cases {
@@ -212,11 +221,20 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 
 			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
 				defaultFile := analyzeNetpolCmd.getDefaultFileName()
+				formatSuffix := ""
 				if tt.outputFormat != "" {
 					d.Assert().Contains(defaultFile, tt.outputFormat)
+					formatSuffix = tt.outputFormat
+				} else {
+					formatSuffix = defaultOutputFormat
 				}
-				_, err := os.Stat(defaultFile)
-				d.Assert().NoError(err) // default output file should exist
+				output, err := os.ReadFile(defaultFile)
+				d.Assert().NoError(err)
+
+				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath, "output."+formatSuffix))
+				d.Assert().NoError(err)
+				d.Equal(string(expectedOutput), string(output))
+
 				d.Assert().NoError(os.Remove(defaultFile))
 			}
 		})

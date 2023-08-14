@@ -28,7 +28,7 @@ func initializeIntegrations(storage store.Store) {
 	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
 		// Add default integrations
 		for _, ii := range store.DefaultImageIntegrations {
-			utils.Must(storage.Upsert(ctx, ii))
+			utils.Should(storage.Upsert(ctx, ii))
 		}
 	}
 

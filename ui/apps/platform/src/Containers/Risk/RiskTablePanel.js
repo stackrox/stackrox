@@ -15,7 +15,7 @@ import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import {
     fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
-    fetchDeploymentsCount,
+    fetchDeploymentsCountLegacy,
 } from 'services/DeploymentsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
@@ -78,7 +78,7 @@ function RiskTablePanel({
          * Although count does not depend on change to sort option or page offset,
          * request in case of change to count of deployments in Kubernetes environment.
          */
-        fetchDeploymentsCount(restSearch)
+        fetchDeploymentsCountLegacy(restSearch)
             .then(setDeploymentsCount)
             .catch(() => {
                 setDeploymentsCount(0);

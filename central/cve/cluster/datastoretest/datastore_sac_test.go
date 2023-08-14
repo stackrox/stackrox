@@ -116,7 +116,7 @@ func getClusterCVETestCases(_ *testing.T, validCluster1 string, validCluster2 st
 			},
 		},
 		{
-			name: "Partial cluster access has access to no data",
+			name: "Partial cluster access has access to all data for the cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(
@@ -127,8 +127,8 @@ func getClusterCVETestCases(_ *testing.T, validCluster1 string, validCluster2 st
 				),
 			),
 			visibleCVE: map[string]bool{
-				fixtures.GetEmbeddedClusterCVE1234x0001().GetCve(): false,
-				fixtures.GetEmbeddedClusterCVE4567x0002().GetCve(): false,
+				fixtures.GetEmbeddedClusterCVE1234x0001().GetCve(): true,
+				fixtures.GetEmbeddedClusterCVE4567x0002().GetCve(): true,
 				fixtures.GetEmbeddedClusterCVE2345x0003().GetCve(): false,
 			},
 		},
@@ -149,7 +149,7 @@ func getClusterCVETestCases(_ *testing.T, validCluster1 string, validCluster2 st
 			},
 		},
 		{
-			name: "Partial access to other cluster has access to no data",
+			name: "Partial access to other cluster has access to all data for that cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(
@@ -161,8 +161,8 @@ func getClusterCVETestCases(_ *testing.T, validCluster1 string, validCluster2 st
 			),
 			visibleCVE: map[string]bool{
 				fixtures.GetEmbeddedClusterCVE1234x0001().GetCve(): false,
-				fixtures.GetEmbeddedClusterCVE4567x0002().GetCve(): false,
-				fixtures.GetEmbeddedClusterCVE2345x0003().GetCve(): false,
+				fixtures.GetEmbeddedClusterCVE4567x0002().GetCve(): true,
+				fixtures.GetEmbeddedClusterCVE2345x0003().GetCve(): true,
 			},
 		},
 		{

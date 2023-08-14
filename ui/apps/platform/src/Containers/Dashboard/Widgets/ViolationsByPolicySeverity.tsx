@@ -3,6 +3,7 @@ import { gql, useQuery } from '@apollo/client';
 import { Flex, FlexItem, Title, Button, Divider, Stack, StackItem } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import { violationsBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
@@ -13,7 +14,6 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severities } from 'constants/severities';
 import pluralize from 'pluralize';
 import { ValueOf } from 'utils/type.utils';
-import WidgetCard from './WidgetCard';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
 

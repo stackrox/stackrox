@@ -3,7 +3,6 @@ package gorm
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
@@ -54,8 +53,11 @@ func getConfig() (*gormConfig, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "pgsql: could not load password file %q", pgconfig.DBPasswordFile)
 	}
+
+	log.WriteToStderrf("connect to gorm: %q", centralConfig.CentralDB.Source)
+
 	// Add the password to the source to pass to get the pool config
-	source := fmt.Sprintf("%s password=%s client_encoding=UTF8", centralConfig.CentralDB.Source, password)
+	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
 	source = pgutils.PgxpoolDsnToPgxDsn(source)
 	gConfig = &gormConfig{source: source, password: string(password)}
 	return gConfig, nil
@@ -68,7 +70,6 @@ func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 	if !pgconfig.IsExternalDatabase() && dbName != "" {
 		source = fmt.Sprintf("%s database=%s", gc.source, dbName)
 	}
-	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, gc.password, "<REDACTED>", -1))
 
 	db, err := gorm.Open(postgres.Open(source), &gorm.Config{
 		NamingStrategy:    pgutils.NamingStrategy,
@@ -105,7 +106,6 @@ func (gc *gormConfig) ConnectWithRetries(dbName string) (db *gorm.DB, err error)
 // ConnectDatabase connects to the configured database within the Postgres instance and returns a Gorm DB instance with error if applicable.
 func (gc *gormConfig) ConnectDatabase() (*gorm.DB, error) {
 	source := gc.source
-	log.WriteToStderrf("connect to gorm: %v", strings.Replace(source, gc.password, "<REDACTED>", -1))
 
 	db, err := gorm.Open(postgres.Open(source), &gorm.Config{
 		NamingStrategy:    pgutils.NamingStrategy,

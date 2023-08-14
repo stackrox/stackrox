@@ -107,11 +107,6 @@ function launch_central {
       use_docker=0
     fi
 
-    local DOCKER_PLATFORM_ARGS=()
-    if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
-      DOCKER_PLATFORM_ARGS=("--platform linux/x86_64")
-    fi
-
     add_args() {
     	EXTRA_ARGS+=("$@")
     }
@@ -227,7 +222,7 @@ function launch_central {
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
-        docker run --rm ${DOCKER_PLATFORM_ARGS[@]} "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
+        docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
           central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
@@ -334,7 +329,7 @@ function launch_central {
 
       if [[ -n "$ROX_OPENSHIFT_VERSION" ]]; then
         helm_args+=(
-          --set-string env.openshift="${ROX_OPENSHIFT_VERSION}"
+          --set env.openshift="${ROX_OPENSHIFT_VERSION}"
         )
       fi
 
@@ -406,7 +401,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    rollout_wait_timeout="3m"
+    rollout_wait_timeout="4m"
     if [[ "${IS_RACE_BUILD:-}" == "true" ]]; then
       rollout_wait_timeout="9m"
     fi
@@ -546,8 +541,17 @@ function launch_sensor {
         --set "image.main.repository=${MAIN_IMAGE_REPO}"
         --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
-        --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
       )
+      if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
+        helm_args+=(
+          --set env.openshift="${ROX_OPENSHIFT_VERSION}"
+        )
+      else
+        helm_args+=(
+          --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
+        )
+      fi
+
       if [[ -f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml" ]]; then
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi

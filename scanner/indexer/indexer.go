@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -101,19 +102,18 @@ func (i *indexerImpl) IndexContainerImage(
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
-		return nil, fmt.Errorf("parsing image URL: %w", err)
+		return nil, fmt.Errorf("parsing image URL %q: %w", imageURL, err)
 	}
-	imgLayers, err := getContainerImageLayers(ctx, o, imgRef)
+	imgLayers, err := getContainerImageLayers(ctx, imgRef, o)
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
-	httpClient := http.Client{Timeout: time.Duration(1) * time.Minute}
+	httpClient := http.Client{Timeout: time.Minute}
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
 	zlog.Info(ctx).
 		Str("image_reference", imgRef.String()).
-		Str("registry", imgRef.Context().RegistryStr()).
 		Int("layers_count", len(imgLayers)).
 		Msg("retrieving layers to populate container image manifest")
 	for _, layer := range imgLayers {
@@ -145,9 +145,6 @@ func getLayerDigests(layer v1.Layer) (ccd claircore.Digest, ld v1.Hash, err erro
 		return ccd, ld, err
 	}
 	ccd, err = claircore.ParseDigest(ld.String())
-	if err != nil {
-		return ccd, ld, err
-	}
 	return ccd, ld, err
 }
 
@@ -186,7 +183,7 @@ func (i *indexerImpl) GetIndexReport(ctx context.Context, manifestDigest clairco
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
 // a list of layers.
-func getContainerImageLayers(ctx context.Context, o options, ref name.Reference) ([]v1.Layer, error) {
+func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
 	// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
 	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform))
 	if err != nil {
@@ -205,16 +202,25 @@ func getContainerImageLayers(ctx context.Context, o options, ref name.Reference)
 
 // parseContainerImageURL returns a image reference from an image URL.
 func parseContainerImageURL(imageURL string) (name.Reference, error) {
-	// Parse image reference to ensure we have a valid reference.
+	// We expect input was sanitized, so all errors here are considered internal errors.
+	if imageURL == "" {
+		return nil, errors.New("invalid URL")
+	}
+	// Parse image reference to ensure it is valid.
 	parsedURL, err := url.Parse(imageURL)
 	if err != nil {
-		// We expect input was sanitized, so this is an internal error.
 		return nil, err
 	}
+	// Check URL scheme and update ref parsing options.
 	parseOpts := []name.Option{name.StrictValidation}
-	if parsedURL.Scheme == "http" {
+	switch parsedURL.Scheme {
+	case "http":
 		parseOpts = append(parseOpts, name.Insecure)
+	case "https":
+	default:
+		return nil, errors.New("invalid URL")
 	}
+	// Strip the URL scheme:// and parse host/path as an image reference.
 	imageRef := strings.TrimPrefix(imageURL, parsedURL.Scheme+"://")
 	ref, err := name.ParseReference(imageRef, parseOpts...)
 	if err != nil {

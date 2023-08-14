@@ -87,6 +87,10 @@ type SecuredClusterSpec struct {
 	// Overlays
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
+
+	// Monitoring configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
@@ -272,7 +276,7 @@ type CollectorContainerSpec struct {
 	// and process executions. The remaining settings in these section will not have any effect.
 	// Note that CORE_BPF is on Tech Preview stage.
 	//+kubebuilder:default=EBPF
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
 	// The image flavor to use for collector. "Regular" images are bigger in size, but contain probes

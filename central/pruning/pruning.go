@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -23,12 +24,15 @@ import (
 	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/reports/common"
+	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -85,7 +89,9 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	serviceAccts serviceAccountDataStore.DataStore,
 	k8sRoles k8sRoleDataStore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
-	logimbueStore logimbueDataStore.Store) GarbageCollector {
+	logimbueStore logimbueDataStore.Store,
+	reportSnapshotDS snapshotDS.DataStore,
+	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -107,6 +113,8 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		logimbueStore:   logimbueStore,
 		stopper:         concurrency.NewStopper(),
 		postgres:        globaldb.GetPostgres(),
+		reportSnapshot:  reportSnapshotDS,
+		blobStore:       blobStore,
 	}
 }
 
@@ -132,6 +140,8 @@ type garbageCollectorImpl struct {
 	k8sRoleBindings roleBindingDataStore.DataStore
 	logimbueStore   logimbueDataStore.Store
 	stopper         concurrency.Stopper
+	reportSnapshot  snapshotDS.DataStore
+	blobStore       blobDatastore.Datastore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -156,6 +166,10 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		g.removeOldReportHistory(pvtConfig)
+		g.removeOldReportBlobs(pvtConfig)
+	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -545,6 +559,51 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			log.Error(err)
 		}
 	}
+}
+
+func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {
+	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
+	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
+	postgres.PruneReportHistory(pruningCtx, g.postgres, dur)
+}
+
+func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
+	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
+	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
+	if err != nil {
+		log.Errorf("Failed to determine downloadable report retention %v", err)
+		return
+	}
+
+	// Sort reversely by modification time
+	query := search.NewQueryBuilder().AddRegexes(search.BlobName, common.ReportBlobRegex).WithPagination(
+		search.NewPagination().AddSortOption(search.NewSortOption(search.BlobModificationTime).Reversed(true)))
+	blobs, err := g.blobStore.SearchMetadata(pruningCtx, query.ProtoQuery())
+	if err != nil {
+		log.Errorf("Failed to fetch downloadable report metadata: %v", err)
+		return
+	}
+
+	remainingQuota := int64(config.GetReportRetentionConfig().GetDownloadableReportGlobalRetentionBytes())
+	var bytesFreed int64
+	var blobsRemoved int
+	var toFree bool
+	for _, blob := range blobs {
+		if !toFree {
+			if remainingQuota > blob.GetLength() && blob.GetModifiedTime().Compare(cutOffTime) > 0 {
+				remainingQuota = remainingQuota - blob.GetLength()
+				continue
+			}
+			toFree = true
+		}
+		if err = g.blobStore.Delete(pruningCtx, blob.GetName()); err != nil {
+			log.Errorf("Failed to delete blob %+v, will try next time", blob)
+			continue
+		}
+		bytesFreed += blob.GetLength()
+		blobsRemoved++
+	}
+	log.Infof("[Downloadable Report Pruning] Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
 }
 
 func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {

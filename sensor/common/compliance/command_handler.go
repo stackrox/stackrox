@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"sync/atomic"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
@@ -25,6 +27,7 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 
 		scrapeIDToState: make(map[string]*scrapeState),
 
-		stopper: concurrency.NewStopper(),
+		stopper:          concurrency.NewStopper(),
+		centralReachable: atomic.Bool{},
 	}
 }
