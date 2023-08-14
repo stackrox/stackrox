@@ -44,11 +44,11 @@ var (
 	policyDiffs = []policymigrationhelper.PolicyDiff{
 		{
 			FieldsToCompare: fieldsToCompareForExclusions,
-			PolicyFileName:  "exec-iptables.json",
+			PolicyFileName:  "exec-iptables-root.json",
 		},
 		{
 			FieldsToCompare: fieldsToCompareForExclusions,
-			PolicyFileName:  "exec-iptables-root.json",
+			PolicyFileName:  "exec-iptables.json",
 		},
 	}
 )
