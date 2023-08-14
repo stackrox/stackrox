@@ -641,7 +641,7 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 	}
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
-	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]*search.Result{}, nil).AnyTimes()
+	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		Id:               "test_report_config",
@@ -694,7 +694,7 @@ func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
-	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]*search.Result{}, nil).AnyTimes()
+	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		Id:               "test_report_config",
