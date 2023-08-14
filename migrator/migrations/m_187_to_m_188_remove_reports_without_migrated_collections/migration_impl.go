@@ -44,30 +44,28 @@ func migrate(db *gorm.DB) error {
 		collectionID := configProto.GetResourceScope().GetCollectionId()
 
 		//scope_id is null/empty and collection_id is null/empty -> undefined, so delete
+		// NOTE: At the point this migration runs, collection_id should never be set, but the check is here just in case
 		if strings.TrimSpace(scopeID) == "" && strings.TrimSpace(collectionID) == "" {
 			toDelete = append(toDelete, schema.ReportConfigurations{ID: reportID})
 			continue
 		}
 
-		// If scope_id is empty but collection_id is not, then it's a V2, so skip
-		// NOTE: This will skip even if the config has a scope_id (valid or invalid)
-		if strings.TrimSpace(collectionID) != "" {
-			continue
-		}
+		// If scope_id is not empty, check that it's valid
+		if strings.TrimSpace(scopeID) != "" {
+			// Otherwise it's a V1 config, and scope_id is not empty, so check if it's pointing to a valid collection
+			var count int64
+			result := collectionsTable.Where(schema.Collections{ID: scopeID}).Count(&count)
+			if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				// This looks like a valid error, but I don't think it should fail the entire migration, so log and move on
+				log.Errorf("error while trying to fetch collection with id %s", scopeID)
+				continue
+			}
 
-		// Otherwise it's a V1 config, and scope_id is not empty, so check if it's pointing to a valid collection
-		var count int64
-		result := collectionsTable.Where(schema.Collections{ID: scopeID}).Count(&count)
-		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// This looks like a valid error, but I don't think it should fail the entire migration, so log and move on
-			log.Errorf("error while trying to fetch collection with id %s", scopeID)
-			continue
-		}
-
-		// If no collection with that id could be found, it's an invalid config, so delete
-		if count == 0 || errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			toDelete = append(toDelete, schema.ReportConfigurations{ID: reportID})
-			continue
+			// If no collection with that id could be found, it's an invalid config, so delete
+			if count == 0 || errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				toDelete = append(toDelete, schema.ReportConfigurations{ID: reportID})
+				continue
+			}
 		}
 	}
 
