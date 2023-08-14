@@ -8,6 +8,7 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -430,14 +431,12 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 			}
 		}
 	}
-	blobs, err := s.blobStore.GetManyMetadata(allAccessCtx, blobNames)
+
+	query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobNames...).ProtoQuery()
+	results, err := s.blobStore.Search(allAccessCtx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	existingBlobNames := set.NewStringSet()
-	for _, b := range blobs {
-		existingBlobNames.Add(b.GetName())
-	}
-	return existingBlobNames, nil
+	return search.ResultsToIDSet(results), nil
 }

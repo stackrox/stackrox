@@ -30,7 +30,6 @@ type Store interface {
 	GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]*storage.Blob, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error)
-	GetManyMetadata(ctx context.Context, names []string) ([]*storage.Blob, []int, error)
 }
 
 type storeImpl struct {
@@ -230,10 +229,4 @@ func (s *storeImpl) GetMetadataByQuery(ctx context.Context, query *v1.Query) ([]
 // GetMetadata all blob names
 func (s *storeImpl) GetMetadata(ctx context.Context, name string) (*storage.Blob, bool, error) {
 	return s.store.Get(ctx, name)
-}
-
-// GetManyMetadata returns metadata of blobs with given names. For the blobs that are not found, it returns their indices in
-// a missing indices slice
-func (s *storeImpl) GetManyMetadata(ctx context.Context, names []string) ([]*storage.Blob, []int, error) {
-	return s.store.GetMany(ctx, names)
 }
