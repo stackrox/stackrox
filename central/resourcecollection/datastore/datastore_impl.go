@@ -274,19 +274,19 @@ func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.
 	return collections, nil
 }
 
-func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) error {
+func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) (string, error) {
 
 	// sanity checks
 	if err := verifyCollectionConstraints(collection); err != nil {
-		return err
+		return "", err
 	}
 	if collection.GetId() != "" {
-		return errors.New("new collections must not have a preset `id`")
+		return "", errors.New("new collections must not have a preset `id`")
 	}
 
 	// check for access so we can fast fail before locking
 	if ok, err := workflowSAC.WriteAllowed(ctx); err != nil || !ok {
-		return err
+		return "", err
 	}
 
 	ds.lock.Lock()
@@ -294,41 +294,42 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 
 	// verify that the name is not already in use
 	if collection.GetName() == "" || ds.names.Contains(collection.GetName()) {
-		return errors.Errorf("collections must have non-empty, unique `name` values (%s)", collection.GetName())
+		return "", errors.Errorf("collections must have non-empty, unique `name` values (%s)", collection.GetName())
 	}
 
 	// add to graph to detect any cycles, this also sets the `id` field
 	graph, err := ds.addCollectionToGraphNoLock(collection)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// if this is a dryrun, we don't want to add to storage or make changes to objects
 	if dryrun {
 		collection.Id = ""
-		return nil
+		return "", nil
 	}
 
 	// add to storage
 	err = ds.storage.Upsert(ctx, collection)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// we've succeeded, now set all the values
 	ds.names.Add(collection.GetName())
 	ds.graph = graph
-	return nil
+	return collection.GetId(), nil
 }
 
-func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
+func (ds *datastoreImpl) AddCollection(ctx context.Context, collection *storage.ResourceCollection) (string, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "AddCollection")
 	return ds.addCollectionWorkflow(ctx, collection, false)
 }
 
 func (ds *datastoreImpl) DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "DryRunAddCollection")
-	return ds.addCollectionWorkflow(ctx, collection, true)
+	_, err := ds.addCollectionWorkflow(ctx, collection, true)
+	return err
 }
 
 func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collection *storage.ResourceCollection, dryrun bool) error {

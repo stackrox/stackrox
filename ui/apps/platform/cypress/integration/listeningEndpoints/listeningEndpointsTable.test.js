@@ -29,8 +29,8 @@ describe('Listening endpoints page table', () => {
         // assert that the row contains a process name of 'postgres' and a port of '5432'
         cy.get(
             `${centralDbProcessTableSelector} ${selectors.tableRowWithValueForColumn(
-                'Process name',
-                'postgres'
+                'Exec file path',
+                '/usr/pgsql-13/bin/postgres'
             )}`
         );
         cy.get(

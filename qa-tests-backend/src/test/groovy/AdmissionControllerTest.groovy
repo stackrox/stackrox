@@ -8,7 +8,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 
-import common.Constants
 import objects.Deployment
 import services.CVEService
 import services.ClusterService
@@ -19,16 +18,11 @@ import util.ApplicationHealth
 import util.ChaosMonkey
 import util.Timer
 
-import org.spockframework.runtime.model.parallel.ResourceAccessMode
-import spock.lang.ResourceLock
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Timeout
 import spock.lang.Unroll
 
-// @ResourceLock() - Ensures that no tests that modify scanner integrations run
-// in parallel with this test.
-@ResourceLock(value = Constants.RESOURCE_SCANNER_INTEGRATION, mode = ResourceAccessMode.READ)
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private String clusterId

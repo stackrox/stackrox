@@ -23,6 +23,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
@@ -260,8 +261,8 @@ func TestCreateCentralTLS(t *testing.T) {
 	}
 }
 
-func gettingSecretFails(secretName string) testutils.InterceptorFns {
-	return testutils.InterceptorFns{
+func gettingSecretFails(secretName string) interceptor.Funcs {
+	return interceptor.Funcs{
 		Get: func(ctx context.Context, client ctrlClient.WithWatch, key ctrlClient.ObjectKey, obj ctrlClient.Object, opts ...ctrlClient.GetOption) error {
 			if _, ok := obj.(*v1.Secret); ok && key.Name == secretName {
 				return k8sErrors.NewServiceUnavailable("failure")
@@ -271,8 +272,8 @@ func gettingSecretFails(secretName string) testutils.InterceptorFns {
 	}
 }
 
-func creatingSecretFails(secretName string) testutils.InterceptorFns {
-	return testutils.InterceptorFns{
+func creatingSecretFails(secretName string) interceptor.Funcs {
+	return interceptor.Funcs{
 		Create: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.CreateOption) error {
 			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
 				return k8sErrors.NewServiceUnavailable("failure")
@@ -282,8 +283,8 @@ func creatingSecretFails(secretName string) testutils.InterceptorFns {
 	}
 }
 
-func deletingSecretFails(secretName string) testutils.InterceptorFns {
-	return testutils.InterceptorFns{
+func deletingSecretFails(secretName string) interceptor.Funcs {
+	return interceptor.Funcs{
 		Delete: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.DeleteOption) error {
 			if secret, ok := obj.(*v1.Secret); ok && secret.Name == secretName {
 				return k8sErrors.NewServiceUnavailable("failure")
@@ -292,8 +293,8 @@ func deletingSecretFails(secretName string) testutils.InterceptorFns {
 		},
 	}
 }
-func secretIsAlreadyDeleted(secretName string) testutils.InterceptorFns {
-	return testutils.InterceptorFns{
+func secretIsAlreadyDeleted(secretName string) interceptor.Funcs {
+	return interceptor.Funcs{
 		Delete: func(ctx context.Context, client ctrlClient.WithWatch, obj ctrlClient.Object, opts ...ctrlClient.DeleteOption) error {
 			// To simulate that the secret was already deleted, this intercepted
 			// call will actually delete the secret by calling the underlying client,

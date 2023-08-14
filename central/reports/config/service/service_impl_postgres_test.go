@@ -100,7 +100,7 @@ func (s *ReportConfigurationServicePostgresTestSuite) TestAddInvalidValidReportC
 	})
 	s.Error(err)
 
-	incorrectEmailReportConfig := fixtures.GetInvalidReportConfigurationIncorrectEmail()
+	incorrectEmailReportConfig := fixtures.GetInvalidReportConfigurationIncorrectEmailV1()
 	_, err = s.service.PostReportConfiguration(ctx, &v1.PostReportConfigurationRequest{
 		ReportConfig: incorrectEmailReportConfig,
 	})
@@ -131,7 +131,7 @@ func (s *ReportConfigurationServicePostgresTestSuite) TestUpdateInvalidValidRepo
 	})
 	s.Error(err)
 
-	incorrectEmailReportConfig := fixtures.GetInvalidReportConfigurationIncorrectEmail()
+	incorrectEmailReportConfig := fixtures.GetInvalidReportConfigurationIncorrectEmailV1()
 	_, err = s.service.UpdateReportConfiguration(ctx, &v1.UpdateReportConfigurationRequest{
 		ReportConfig: incorrectEmailReportConfig,
 	})

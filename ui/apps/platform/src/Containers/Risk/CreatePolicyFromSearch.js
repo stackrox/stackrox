@@ -2,10 +2,9 @@ import React, { useContext, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Plus } from 'react-feather';
+import { Button } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import PanelButton from 'Components/PanelButton';
 import { actions as formMessageActions } from 'reducers/formMessages';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/policies/wizard';
@@ -77,16 +76,14 @@ function CreatePolicyFromSearch({
     const isPolicyBtnDisabled = !policySearchOptions?.length;
 
     return (
-        <PanelButton
-            icon={<Plus className="h-4 w-4" />}
-            className="btn-icon btn-tertiary whitespace-nowrap h-10 ml-4"
+        <Button
+            variant="secondary"
+            className="ml-4"
             onClick={createPolicyFromSearch}
-            disabled={isPolicyBtnDisabled}
-            tooltip="Create Policy from Current Search"
-            dataTestId="panel-button-create-policy-from-search"
+            isDisabled={isPolicyBtnDisabled}
         >
-            Create Policy
-        </PanelButton>
+            Create policy
+        </Button>
     );
 }
 

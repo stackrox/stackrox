@@ -39,6 +39,8 @@ import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ReportScope } from 'hooks/useFetchReport';
 
+import { getWriteAccessForReport } from '../VulnMgmtReport.utils';
+
 type VulnMgmtReportDetailProps = {
     report: ReportConfiguration;
     reportScope: ReportScope | null;
@@ -51,17 +53,11 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [isActionsOpen, setIsActionsOpen] = useState(false);
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('Access');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Integration');
-    const canWriteReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasAccessScopeWriteAccess &&
-        hasNotifierIntegrationWriteAccess;
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const dropdownItems: ReactElement[] = [];
-    if (canWriteReports) {
+    if (hasWriteAccessForReport) {
         dropdownItems.push(
             <DropdownItem key="Edit report" component="button" onClick={onEditReport}>
                 Edit report
@@ -242,10 +238,7 @@ function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Report scope</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <ScopeName
-                                        reportScope={reportScope}
-                                        canWriteReports={canWriteReports}
-                                    />
+                                    <ScopeName reportScope={reportScope} />
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>

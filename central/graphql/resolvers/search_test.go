@@ -357,14 +357,12 @@ func TestSubjectAutocompleteSearch(t *testing.T) {
 	defer pgtest.CloseGormDB(t, testGormDB)
 	defer testDB.Teardown(t)
 
-	roleBindingDatastore, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, testDB.DB)
-	require.NoError(t, err)
+	roleBindingDatastore := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, testDB.DB)
 
 	ctx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	roleBindings := fixtures.GetMultipleK8sRoleBindings(2, 3)
 	for _, roleBinding := range roleBindings {
-		err = roleBindingDatastore.UpsertRoleBinding(ctx, roleBinding)
-		require.NoError(t, err)
+		require.NoError(t, roleBindingDatastore.UpsertRoleBinding(ctx, roleBinding))
 	}
 
 	resolver, _ := SetupTestResolver(t, roleBindingDatastore)

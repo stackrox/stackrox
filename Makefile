@@ -16,7 +16,8 @@ SILENT ?= @
 # UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests"
+# TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -420,8 +421,8 @@ main-build-dockerized: main-builder-image
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
-	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
-	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
+	$(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
 endif

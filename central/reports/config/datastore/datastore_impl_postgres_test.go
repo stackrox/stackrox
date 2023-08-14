@@ -31,12 +31,8 @@ type ReportConfigurationPostgresDatastoreTests struct {
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
-
-	var err error
 	s.testDB = pgtest.ForT(s.T())
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.NoError(err)
-
+	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -107,7 +103,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 		s.T().SkipNow()
 	}
 
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
@@ -128,7 +124,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 		s.T().SkipNow()
 	}
 
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 	reportConfig.Notifiers = nil
 
 	// Test add

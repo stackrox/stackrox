@@ -36,11 +36,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -565,12 +563,8 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 
 func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {
 	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
-	query := search.NewQueryBuilder().AddDays(search.ReportCompletionTime, int64(reportHistoryRetentionConfig)).ProtoQuery()
-	err := pgSearch.RunDeleteRequestForSchema(pruningCtx, pkgSchema.ReportSnapshotsSchema, query, g.postgres)
-
-	if err != nil {
-		log.Errorf("Delete query for report snapshot history unsuccessful: %s", err)
-	}
+	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
+	postgres.PruneReportHistory(pruningCtx, g.postgres, dur)
 }
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {

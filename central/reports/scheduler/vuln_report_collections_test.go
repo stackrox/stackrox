@@ -170,7 +170,7 @@ func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {
 	}
 
 	for _, c := range testCases {
-		err := s.collectionDatastore.AddCollection(s.ctx, c.collection)
+		_, err := s.collectionDatastore.AddCollection(s.ctx, c.collection)
 		s.NoError(err)
 
 		reportConfig := testReportConfig(c.collection.GetId(), c.fixability, c.severities)

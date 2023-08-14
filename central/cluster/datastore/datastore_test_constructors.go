@@ -68,10 +68,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		return nil, err
 	}
 	k8sRoleStore := roleDataStore.GetTestPostgresDataStore(t, pool)
-	k8sRoleBindingStore, err := roleBindingDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	k8sRoleBindingStore := roleBindingDataStore.GetTestPostgresDataStore(t, pool)
 	networkBaselineManager, err := networkBaselineManager.GetTestPostgresManager(t, pool)
 	if err != nil {
 		return nil, err

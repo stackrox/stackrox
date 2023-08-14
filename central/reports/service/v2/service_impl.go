@@ -1,7 +1,6 @@
 package v2
 
 import (
-	"bytes"
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 )
 
@@ -55,14 +55,12 @@ var (
 		},
 		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v2.ReportService/GetReportStatus",
-			"/v2.ReportService/GetLastReportStatusConfigID",
 			"/v2.ReportService/GetReportHistory",
 			"/v2.ReportService/GetMyReportHistory",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v2.ReportService/RunReport",
 			"/v2.ReportService/CancelReport",
-			"/v2.ReportService/DownloadReport",
 			"/v2.ReportService/DeleteReport",
 		},
 	})
@@ -76,6 +74,7 @@ type serviceImpl struct {
 	notifierDatastore   notifierDS.DataStore
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
+	validator           *validation.Validator
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -94,17 +93,22 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV2.ReportConfiguration) (*apiV2.ReportConfiguration, error) {
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
+	creatorID := authn.IdentityFromContextOrNil(ctx)
+	if creatorID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	if err := s.ValidateReportConfiguration(request); err != nil {
+	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request)
-	protoReportConfig.Creator = slimUser
+	creator := &storage.SlimUser{
+		Id:   creatorID.UID(),
+		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
+	}
+
+	protoReportConfig := convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
 		return nil, err
@@ -131,18 +135,27 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
-	if err := s.ValidateReportConfiguration(request); err != nil {
+	if err := s.validator.ValidateReportConfiguration(request); err != nil {
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request)
+	currentConfig, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
+	}
 
-	err := s.reportConfigStore.UpdateReportConfiguration(ctx, protoReportConfig)
+	updatedConfig := convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
+		currentConfig.GetVulnReportFilters().GetAccessScopeRules())
+
+	err = s.reportConfigStore.UpdateReportConfiguration(ctx, updatedConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(protoReportConfig)
+	err = s.scheduler.UpsertReportSchedule(updatedConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -175,16 +188,16 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	return &apiV2.ListReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
 }
 
-func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
-	if id.GetId() == "" {
+func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
+	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required")
 	}
-	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	config, exists, err := s.reportConfigStore.GetReportConfiguration(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
 
 	converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
@@ -231,29 +244,6 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
 	}
 	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
-	return &apiV2.ReportStatusResponse{Status: status}, err
-}
-
-func (s *serviceImpl) GetLastReportStatusConfigID(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportStatusResponse, error) {
-	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report config id")
-	}
-	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String(), storage.ReportStatus_FAILURE.String()).
-		WithPagination(search.NewPagination().
-			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
-			Limit(1)).ProtoQuery()
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	if len(results) > 1 {
-		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
-	}
-	if len(results) == 0 {
-		return &apiV2.ReportStatusResponse{}, nil
-	}
-	status := convertPrototoV2Reportstatus(results[0].GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
 }
 
@@ -330,8 +320,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if req.GetReportConfigId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration ID is empty")
 	}
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
@@ -342,8 +332,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		notificationMethod = storage.ReportStatus_DOWNLOAD
 	}
 
-	reportReq, err := validation.ValidateAndGenerateReportRequest(s.reportConfigStore, s.collectionDatastore, s.notifierDatastore,
-		req.GetReportConfigId(), slimUser, notificationMethod, storage.ReportStatus_ON_DEMAND)
+	reportReq, err := s.validator.ValidateAndGenerateReportRequest(req.GetReportConfigId(), notificationMethod,
+		storage.ReportStatus_ON_DEMAND, requesterID)
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +361,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, errors.New("Could not determine user identity from provided context")
 	}
 
-	err := validation.ValidateCancelReportRequest(s.snapshotDatastore, req.GetId(), slimUser)
+	err := s.validator.ValidateCancelReportRequest(req.GetId(), slimUser)
 	if err != nil {
 		return nil, err
 	}
@@ -386,63 +376,6 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 	}
 
 	return &apiV2.Empty{}, nil
-}
-
-func (s *serviceImpl) DownloadReport(ctx context.Context, req *apiV2.DownloadReportRequest) (*apiV2.DownloadReportResponse, error) {
-	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or report job id")
-	}
-
-	slimUser := authn.UserFromContext(ctx)
-	if slimUser == nil {
-		return nil, errors.New("Could not determine user identity from provided context")
-	}
-
-	rep, found, err := s.snapshotDatastore.Get(ctx, req.GetId())
-	if err != nil {
-		return nil, errors.Wrapf(err, "Error finding report snapshot with job ID %q.", req.GetId())
-	}
-
-	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "Error finding report snapshot with job ID '%q'.", req.GetId())
-	}
-
-	if slimUser.GetId() != rep.GetRequester().GetId() {
-		return nil, errors.Wrap(errox.NotAuthorized, "Report cannot be downloaded by a user who did not request the report.")
-	}
-
-	status := rep.GetReportStatus()
-	if status.GetReportNotificationMethod() != storage.ReportStatus_DOWNLOAD {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Report job id %q did not generate a downloadable report and hence report cannot be downloaded.", req.GetId())
-	}
-
-	if status.GetRunState() == storage.ReportStatus_FAILURE {
-		return nil, errors.Errorf("Report job %q has failed and hence no report to download", req.GetId())
-	}
-	if status.GetRunState() != storage.ReportStatus_SUCCESS {
-		return nil, errors.Errorf("Report job %q is not ready for download", req.GetId())
-	}
-
-	// Fetch data
-	buf := bytes.NewBuffer(nil)
-
-	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)),
-	)
-
-	_, exists, err := s.blobStore.Get(ctx, common.GetReportBlobPath(rep.GetReportConfigurationId(), req.GetId()), buf)
-	if err != nil {
-		return nil, errors.Wrap(errox.InvariantViolation, "Failed to fetch report data")
-	}
-
-	if !exists {
-		// If the blob does not exist, report error.
-		return nil, errors.Errorf("Report is not available to download for job %q", req.GetId())
-	}
-
-	return &apiV2.DownloadReportResponse{Data: buf.Bytes()}, nil
 }
 
 func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportRequest) (*apiV2.Empty, error) {

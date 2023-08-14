@@ -10,6 +10,7 @@ import {
 import { SearchFilter } from 'types/search';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
+import { getRequestQueryString } from './apiUtils';
 
 export type UseFetchReportsProps = {
     searchFilter: SearchFilter;
@@ -34,12 +35,6 @@ const defaultResult = {
     isLoading: false,
     error: null,
 };
-
-export function getRequestQueryString(searchFilter: SearchFilter): string {
-    return Object.entries(searchFilter)
-        .map(([key, val]) => `${key}:${Array.isArray(val) ? val.join(',') : val ?? ''}`)
-        .join('+');
-}
 
 function useFetchReports({
     searchFilter,

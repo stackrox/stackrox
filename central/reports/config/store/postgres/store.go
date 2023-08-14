@@ -106,6 +106,31 @@ func insertIntoReportConfigurations(batch *pgx.Batch, obj *storage.ReportConfigu
 	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, ResourceScope_CollectionId, Creator_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, ResourceScope_CollectionId = EXCLUDED.ResourceScope_CollectionId, Creator_Name = EXCLUDED.Creator_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
+	var query string
+
+	for childIndex, child := range obj.GetNotifiers() {
+		if err := insertIntoReportConfigurationsNotifiers(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from report_configurations_notifiers where report_configurations_Id = $1 AND idx >= $2"
+	batch.Queue(query, obj.GetId(), len(obj.GetNotifiers()))
+	return nil
+}
+
+func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, reportConfigurationID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		reportConfigurationID,
+		idx,
+		obj.GetId(),
+	}
+
+	finalStr := "INSERT INTO report_configurations_notifiers (report_configurations_Id, idx, Id) VALUES($1, $2, $3) ON CONFLICT(report_configurations_Id, idx) DO UPDATE SET report_configurations_Id = EXCLUDED.report_configurations_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id"
+	batch.Queue(finalStr, values...)
+
 	return nil
 }
 
@@ -169,6 +194,51 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 		}
 	}
 
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err := copyFromReportConfigurationsNotifiers(ctx, s, tx, obj.GetId(), obj.GetNotifiers()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, reportConfigurationID string, objs ...*storage.NotifierConfiguration) error {
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	copyCols := []string{
+		"report_configurations_id",
+		"idx",
+		"id",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+			reportConfigurationID,
+			idx,
+			obj.GetId(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations_notifiers"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
 	return nil
 }
 
@@ -189,6 +259,12 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableReportConfigurations(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations CASCADE")
+	dropTableReportConfigurationsNotifiers(ctx, db)
+
+}
+
+func dropTableReportConfigurationsNotifiers(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations_notifiers CASCADE")
 
 }
 

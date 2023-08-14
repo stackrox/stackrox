@@ -58,9 +58,10 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList
+                    isFillColumns
                     columnModifier={{
-                        default: '2Col',
-                        md: '2Col',
+                        default: '3Col',
+                        md: '3Col',
                         sm: '1Col',
                     }}
                 >

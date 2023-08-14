@@ -81,7 +81,7 @@ import (
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
-	"github.com/stackrox/rox/central/metrics/info"
+	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -111,6 +111,7 @@ import (
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
+	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -278,8 +279,8 @@ func main() {
 		log.Fatalf("Failed to remove backup DB: %v", err)
 	}
 
-	// Register cluster info metric.
-	info.Singleton().Start()
+	// Register telemetry prometheus metrics.
+	telemetry.Singleton().Start()
 	// Start the prometheus metrics server
 	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
@@ -774,6 +775,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			EnableAudit:   true,
 		},
 	)
+
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		// Append report custom routes
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/jobs/download",
+			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+			ServerHandler: v2Service.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
 
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)

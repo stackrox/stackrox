@@ -4,7 +4,6 @@ package pruning
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -43,12 +42,6 @@ import (
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	k8sRoleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
-	reportConfig "github.com/stackrox/rox/central/reports/config/datastore"
-	reportConfigSearch "github.com/stackrox/rox/central/reports/config/search"
-	reportConfigPgStore "github.com/stackrox/rox/central/reports/config/store/postgres"
-	reportDatastore "github.com/stackrox/rox/central/reports/snapshot/datastore"
-	reportSearch "github.com/stackrox/rox/central/reports/snapshot/datastore/search"
-	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
@@ -60,7 +53,6 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -401,17 +393,6 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	return mockConfigDatastore, deployments, clusterDataStore
 }
 
-func generateReportDataStructure(db postgres.DB) (reportDatastore.DataStore, reportConfig.DataStore) {
-
-	storage := pgStore.New(db)
-	indexer := pgStore.NewIndexer(db)
-	reportSnapshotDS := reportDatastore.New(storage, reportSearch.New(storage, indexer))
-	reportConfigStorage := reportConfigPgStore.New(db)
-	reportConfig, _ := reportConfig.New(reportConfigStorage, reportConfigSearch.New(reportConfigStorage, indexer))
-
-	return reportSnapshotDS, reportConfig
-}
-
 func (s *PruningTestSuite) TestImagePruning() {
 	var cases = []struct {
 		name        string
@@ -602,72 +583,6 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, pods.RemovePod(ctx, c.pod.Id))
 			}
 		})
-	}
-}
-
-func (s *PruningTestSuite) TestReportHistoryPruning() {
-	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
-	if !env.VulnReportingEnhancements.BooleanSetting() {
-		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		s.T().SkipNow()
-	}
-	historyRetentionDays := 7
-	config := &storage.PrivateConfig{
-		ReportRetentionConfig: &storage.ReportRetentionConfig{
-			HistoryRetentionDurationDays: int32(historyRetentionDays),
-		},
-	}
-	gci := &garbageCollectorImpl{
-		postgres: s.pool,
-	}
-	reportds, configDS := generateReportDataStructure(s.pool)
-	type testCase struct {
-		day            int
-		repExpected    bool
-		reportSnapshot *storage.ReportSnapshot
-	}
-	cases := []testCase{}
-	numDays := []int{1, 8}
-	for _, day := range numDays {
-		test := testCase{
-			day: day,
-			reportSnapshot: &storage.ReportSnapshot{
-				Name: fmt.Sprintf("test_report_%d_days", day),
-				ReportStatus: &storage.ReportStatus{
-					CompletedAt: timeBeforeDays(day),
-				},
-			},
-		}
-		if day > historyRetentionDays {
-			test.repExpected = false
-		} else {
-			test.repExpected = true
-		}
-		cases = append(cases, test)
-	}
-
-	for _, test := range cases {
-		reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
-		reportConfigID := uuid.NewV4().String()
-		reportConfig.Id = reportConfigID
-		test.reportSnapshot.ReportConfigurationId = reportConfigID
-		_, err := configDS.AddReportConfiguration(s.ctx, reportConfig)
-		if err != nil {
-			assert.Errorf(s.T(), err, "Adding report config failed")
-		}
-		test.reportSnapshot.ReportId, err = reportds.AddReportSnapshot(s.ctx, test.reportSnapshot)
-		if err != nil {
-			assert.Errorf(s.T(), err, "Adding report snapshot failed")
-		}
-		repBeforePruning, _, _ := reportds.Get(s.ctx, test.reportSnapshot.ReportId)
-		assert.NotEmpty(s.T(), repBeforePruning)
-		gci.removeOldReportHistory(config)
-		repsPruning, _, _ := reportds.Get(s.ctx, test.reportSnapshot.ReportId)
-		if test.repExpected {
-			assert.NotEmpty(s.T(), repsPruning)
-		} else {
-			assert.Empty(s.T(), repsPruning)
-		}
 	}
 }
 
@@ -1956,8 +1871,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
 			assert.NoError(t, err)
 			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-			k8sRoleBindings, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
-			assert.NoError(t, err)
+			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
 
 			for _, sa := range c.serviceAccts {
 				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))
