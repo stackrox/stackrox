@@ -44,10 +44,15 @@ A migration can read from any of the databases, make changes to the data or to t
 Script should correspond to single change. Script should be part of the same release as this change.
 Here are the steps to write migration script:
 
-1. Run `DESCRIPTION="xxx" make bootstrap_migration` with a proper description of what the migration will do
+1. Run `DESCRIPTION="xxx" STORE_OBJECT="storage.Object0,storage.Object1" make bootstrap_migration` with a proper description of what the migration will do
    in the `DESCRIPTION` environment variable.
+and OPTIONALLY with the objects being migrated to create `gen.go` files for each object being migrated
+    in the optional `STORE_OBJECT` environment variable.
 
-2. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` 
+2. If using the optional `STORE_OBJECT` parameter, generate the migration stores with the following command:
+    `gogen -run pg-table-bindings`
+
+3. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` 
    to the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. 
    For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2
    onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported
@@ -56,10 +61,10 @@ Here are the steps to write migration script:
    as 4.1 will no longer be supported.  The migration process will inform the user of an error when trying to migrate
    to a software version that can no longer be supported by the database.
 
-3. Write the migration code and associated tests in the generated `migration_impl.go` and `migration_test.go` files.
+4. Write the migration code and associated tests in the generated `migration_impl.go` and `migration_test.go` files.
    The files contain a number of TODOs to help with the tasks to complete when writing the migration code itself.
 
-4. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
+5. To better understand how to write the `migration.go` and `migration_test.go` files, look at existing examples
 in `migrations` directory, or at the examples listed below.
 
     - [#1](https://github.com/stackrox/rox/pull/8609)
@@ -194,11 +199,13 @@ In migrator, there are a multiple ways to access data.
    }
    ```
 
-3. Duplicate the Postgres Store
-   This method is used in version 73 and 74 to migrate all tables from RocksDB to Postgres. In addition to frozen schema,
-   the store to access the data are also frozen for migration. The migrations with this method are closely associated
-   with current release eg. search/delete with schema and the prototypes of the objects. This method is NOT recommended for
-   4.0 and beyond.
+3. Stores
+
+    Generate a version of the Postgres Store based off the migrator's Generic Store via the bootstrap process.
+    The migrations with this method are closely associated with current release eg. search/delete 
+    with schema and the prototypes of the objects. The search schema and the prototypes of the objects
+    must be backwards compatible.  The advantage of this approach is it would be more familiar
+    for the engineers.
 
 #### Conversion tool
 
