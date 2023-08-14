@@ -18,6 +18,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - The `--offline-mode` flag for the `roxctl scanner generate` command was removed, as Scanner's default behavior is
   to fetch vulnerability updates from Central.
+- In version 4.0, RHACS released the collections feature that replaced access scopes used in report configurations.
+  RHACS automatically created equivalent collections for access scopes used in existing report configurations and migrated report configurations to use newly-created collections.
+  If the migration failed, the report configurations became non-functional, and RHACS logged the error messages in Central logs. In this release, any report configurations that could not be migrated will be deleted.
 
 ### Deprecated Features
 
