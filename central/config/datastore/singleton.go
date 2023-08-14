@@ -34,7 +34,7 @@ const (
 	// DefaultDownloadableReportRetentionDays number of days to retain downloadable reports
 	DefaultDownloadableReportRetentionDays = 7
 	// DefaultDownloadableReportGlobalRetentionBytes is the maximum total upper limit in bytes for all downloadable reports
-	DefaultDownloadableReportGlobalRetentionBytes = 5 * 1024 * 1024
+	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 )
 
 var (
