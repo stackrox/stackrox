@@ -4,4 +4,4 @@ kind: ConfigMap
 metadata:
   name: {{.JobName}}-{{.Replica}}
 data:
-  key1: 2048
+  key1: "2048"
