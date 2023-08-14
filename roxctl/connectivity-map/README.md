@@ -100,6 +100,8 @@ Supported output formats: `txt, md, csv, json, dot`. The `dot` output format is 
 The [`Graphviz` tool](https://graphviz.org/) (locally installed or online viewer) can be used to convert the `dot` output to a graph in a format such as `svg/jpeg/png`.
 
 The `--focus-workload` parameter allows specifying a workload name, such that the output only contains allowed connections of this workload, whereas the other workloads are omitted.
+The supported formats for the input workload name are: `name` or `namespace/name`. For example, if the workload of interest from the report is `default/backend[Deployment]`, the input workload specified can be `--focus-workload=default/backend` or `--focus-workload=backend`. In addition, to focus connections inferred from Route/Ingress resources, the specified workload can be `--focus-workload=ingress-controller`.
+If the input `focus-workload` value speifies a workload name that does not exist in the input resources YAML manifests, the connectivity-map output will be empty.
 
 When running in a CI pipeline, `roxctl connectivity-map` may benefit from the `--fail` option that stops the processing on the first encountered error.
 

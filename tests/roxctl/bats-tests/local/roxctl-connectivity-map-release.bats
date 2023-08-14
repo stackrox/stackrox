@@ -241,24 +241,7 @@ teardown() {
 # following const is used as the directory path of the next tests
 acs_security_demos_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/acs-security-demos"
 @test "roxctl-release connectivity-map generates connlist for acs-security-demo" {
-  assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/checkout/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/checkout/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/notification/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/reports/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/reports/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/shipping/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/route.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/route.yaml"
-  assert_file_exist "${acs_security_demos_dir}/payments/gateway/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/payments/mastercard-processor/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/payments/visa-processor/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/acs_netpols.yaml"
+  check_acs_security_demos_files
   run roxctl-release connectivity-map "${acs_security_demos_dir}" 
   assert_success
   
@@ -282,24 +265,7 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
 }
 
 @test "roxctl-release connectivity-map generates connlist for acs-security-demo md format" {
-  assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/checkout/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/checkout/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/notification/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/reports/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/reports/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/backend/shipping/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/route.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/configmap.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/route.yaml"
-  assert_file_exist "${acs_security_demos_dir}/payments/gateway/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/payments/mastercard-processor/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/payments/visa-processor/deployment.yaml"
-  assert_file_exist "${acs_security_demos_dir}/acs_netpols.yaml"
+  check_acs_security_demos_files
   run roxctl-release connectivity-map "${acs_security_demos_dir}" --output-format=md
   assert_success
   
@@ -322,6 +288,73 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
 | payments/gateway[Deployment] | payments/visa-processor[Deployment] | TCP 8080 |
 | {ingress-controller} | frontend/asset-cache[Deployment] | TCP 8080 |
 | {ingress-controller} | frontend/webapp[Deployment] | TCP 8080 |'
+}
+
+@test "roxctl-release connectivity-map generates connlist for acs-security-demo with focus-workload=gateway" {
+  check_acs_security_demos_files
+  run roxctl-release connectivity-map "${acs_security_demos_dir}" --focus-workload=gateway
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
+  refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+  refute_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080'
+}
+
+@test "roxctl-release connectivity-map generates connlist for acs-security-demo with focus-workload=payments/gateway" {
+  check_acs_security_demos_files
+  run roxctl-release connectivity-map "${acs_security_demos_dir}" --focus-workload=payments/gateway
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
+  refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+  refute_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080'
+}
+
+@test "roxctl-release connectivity-map generates connlist for acs-security-demo with focus-workload that does not exist" {
+  check_acs_security_demos_files
+  run roxctl-release connectivity-map "${acs_security_demos_dir}" --focus-workload=abc
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'Workload abc does not exist in the input resources. Connectivity map report will be empty.'
+}
+
+@test "roxctl-release connectivity-map generates connlist for acs-security-demo with focus-workload=ingress-controller" {
+  check_acs_security_demos_files
+  run roxctl-release connectivity-map "${acs_security_demos_dir}" --focus-workload=ingress-controller
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
+{ingress-controller} => frontend/webapp[Deployment] : TCP 8080'
+  refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+}
+
+check_acs_security_demos_files() {
+  assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/checkout/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/notification/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/recommendation/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/reports/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/backend/shipping/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/asset-cache/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/configmap.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/frontend/webapp/route.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/gateway/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/mastercard-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/payments/visa-processor/deployment.yaml"
+  assert_file_exist "${acs_security_demos_dir}/acs_netpols.yaml"
 }
 
 write_yaml_to_file() {
