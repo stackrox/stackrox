@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
-	policypostgresstore "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_add_nftables_to_policy/policypostgresstore"
+	policypostgresstore "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_add_nftables_to_policy/policy/store"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
