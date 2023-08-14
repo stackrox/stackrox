@@ -99,7 +99,11 @@ func (s *NetworkPolicySuite) Test_Deployment_NetpolViolations() {
 			s.testContext.RunTest(t,
 				helper.WithResources(resourcesToApply),
 				helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, objects map[string]k8s.Object) {
-					tc.LastViolationState(t, "nginx-deployment", checkViolations(testCase.violationsExpected), name)
+					if len(testCase.violationsExpected) == 0 {
+						tc.NoViolationForDeployment(t, "nginx-deployment", "no violations for deployment")
+					} else {
+						tc.LastViolationState(t, "nginx-deployment", checkViolations(testCase.violationsExpected), name)
+					}
 				}))
 		})
 
