@@ -11,7 +11,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
 	installationStore "github.com/stackrox/rox/central/installation/store"
-	"github.com/stackrox/rox/central/metrics/info"
+	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -93,7 +93,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if sensorSupportsHello {
-		installInfo, err := info.FetchInstallInfo(context.Background(), s.installation)
+		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
 		utils.Should(err)
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
