@@ -22,6 +22,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 
 - RBAC risk was deprecated in release 4.0 due to poor performance.
+- The CIS Docker v1.2.0 standard will be removed from RHACS Compliance checks starting in RHACS version 4.4.
 
 ### Technical Changes
 
