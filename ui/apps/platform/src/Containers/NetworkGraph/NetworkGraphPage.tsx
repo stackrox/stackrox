@@ -23,6 +23,7 @@ import { networkBasePath } from 'routePaths';
 import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
+import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
 import queryService from 'utils/queryService';
@@ -75,6 +76,11 @@ const INCLUDE_POLICIES = true;
 const clusterPermissions = ['NetworkGraph', 'Deployment'];
 
 function NetworkGraphPage() {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForBlocks =
+        hasReadAccess('Administration') && hasReadWriteAccess('NetworkGraph');
+    const hasReadAccessForGenerator = hasReadAccess('Integration');
+
     const history = useHistory();
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
@@ -286,23 +292,32 @@ function NetworkGraphPage() {
                                 selectedDeployments={deploymentsFromUrl}
                             />
                         </ToolbarGroup>
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
-                            <ToolbarItem spacer={{ default: 'spacerMd' }}>
-                                <Button
-                                    variant="secondary"
-                                    onClick={toggleCIDRBlockForm}
-                                    isDisabled={!selectedClusterId}
-                                >
-                                    Manage CIDR blocks
-                                </Button>
-                            </ToolbarItem>
-                            <ToolbarItem spacer={{ default: 'spacerNone' }}>
-                                <SimulateNetworkPolicyButton
-                                    simulation={simulation}
-                                    isDisabled={scopeHierarchy.cluster.id === ''}
-                                />
-                            </ToolbarItem>
-                        </ToolbarGroup>
+                        {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
+                            <ToolbarGroup
+                                variant="button-group"
+                                alignment={{ default: 'alignRight' }}
+                            >
+                                {hasWriteAccessForBlocks && (
+                                    <ToolbarItem spacer={{ default: 'spacerMd' }}>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={toggleCIDRBlockForm}
+                                            isDisabled={!selectedClusterId}
+                                        >
+                                            Manage CIDR blocks
+                                        </Button>
+                                    </ToolbarItem>
+                                )}
+                                {hasReadAccessForGenerator && (
+                                    <ToolbarItem spacer={{ default: 'spacerNone' }}>
+                                        <SimulateNetworkPolicyButton
+                                            simulation={simulation}
+                                            isDisabled={scopeHierarchy.cluster.id === ''}
+                                        />
+                                    </ToolbarItem>
+                                )}
+                            </ToolbarGroup>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>

@@ -172,7 +172,12 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [networkPath]: {
-        resourceAccessRequirements: everyResource(['NetworkGraph', 'NetworkPolicy']),
+        resourceAccessRequirements: everyResource([
+            'Deployment',
+            'DeploymentExtension',
+            'NetworkGraph',
+            'NetworkPolicy',
+        ]),
     },
     [policyManagementBasePath]: {
         resourceAccessRequirements: everyResource([
