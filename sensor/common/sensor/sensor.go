@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/chaos"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -143,6 +144,9 @@ func createKOCacheSource(centralEndpoint string) (offlineAwareProbeSource, error
 func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
+	if chaos.HasChaosProxy() {
+		chaos.InitializeChaosConfiguration(context.Background())
+	}
 
 	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 

@@ -148,6 +148,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+require github.com/Shopify/toxiproxy/v2 v2.5.0
+
 require (
 	cloud.google.com/go v0.110.6 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect
