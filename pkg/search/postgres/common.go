@@ -742,6 +742,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 	})
 }
 
+// Unmarshaler used to unmarshal protos
 type Unmarshaler[T any] interface {
 	proto.Unmarshaler
 	*T

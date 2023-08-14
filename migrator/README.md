@@ -52,8 +52,8 @@ and OPTIONALLY with the objects being migrated to create `gen.go` files for each
 2. If using the optional `STORE_OBJECT` parameter, generate the migration stores with the following command:
     `gogen -run pg-table-bindings`
 
-3. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` 
-   to the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. 
+3. Determine if this change breaks a previous releases database.  If so increment the `MinimumSupportedDBVersionSeqNum` to
+   the `CurrentDBVersionSeqNum` of the release immediately following the release that cannot tolerate the change. 
    For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.  All the code from 4.2
    onward will not reference `column_v1`.  At some point in the future a rollback to 4.1 will not longer be supported
    and we want to remove `column_v1`.  To do so, we will upgrade the schema to remove the column
@@ -202,10 +202,9 @@ In migrator, there are a multiple ways to access data.
 3. Stores
 
     Generate a version of the Postgres Store based off the migrator's Generic Store via the bootstrap process.
-    The migrations with this method are closely associated with current release eg. search/delete 
-    with schema and the prototypes of the objects. The search schema and the prototypes of the objects
-    must be backwards compatible.  The advantage of this approach is it would be more familiar
-    for the engineers.
+    The migrations with this method are closely associated with current release eg. search/delete with schema
+    and the prototypes of the objects. The search schema and the prototypes of the objects must be backwards
+    compatible.  The advantage of this approach is it would be more familiar for the engineers.
 
 #### Conversion tool
 
