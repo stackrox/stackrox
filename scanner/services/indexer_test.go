@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/quay/claircore"
@@ -76,7 +76,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupMock(0, nil, fmt.Errorf(`indexer said "ouch"`))
+	s.setupMock(0, nil, errors.New(`indexer said "ouch"`))
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
@@ -202,7 +202,7 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	s.indexerMock.
 		EXPECT().
 		GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
-		Return(nil, false, fmt.Errorf("ouch"))
+		Return(nil, false, errors.New("ouch"))
 	r, err := s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
 
