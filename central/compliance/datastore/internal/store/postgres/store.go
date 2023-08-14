@@ -34,12 +34,15 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+const aggregatedResultsCacheSize = 100
+
 var (
 	log = logging.LoggerForModule()
 
 	domainCacheExpiry = 30 * time.Second
 	cacheLock         = concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
 	domainCache       = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets)
+	targetResource    = resources.Compliance
 )
 
 type metadataIndex interface {
@@ -49,8 +52,7 @@ type metadataIndex interface {
 
 // NewStore returns a compliance store based on Postgres
 func NewStore(db postgres.DB) store.Store {
-	const cacheSize = 100
-	aggregatedDataCache, err := lru.New[aggCacheKey, aggCacheEntry](cacheSize)
+	aggregatedDataCache, err := lru.New[aggCacheKey, aggCacheEntry](aggregatedResultsCacheSize)
 	utils.Must(err)
 	return &storeImpl{
 		domain:        domainStore.New(db),
@@ -304,7 +306,6 @@ func (s *storeImpl) ClearAggregationResults(_ context.Context) error {
 }
 
 func effectiveAccessScopeTree(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	targetResource := resources.Compliance
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
@@ -319,8 +320,13 @@ func aggKey(groupBy []storage.ComplianceAggregation_Scope, unit storage.Complian
 	})
 	key := fnv.New64a()
 	addKey(key, unit.String())
+	addKey(key, ":")
 	addKey(key, query)
-	addKey(key, scopeTree.Compactify().String())
+	addKey(key, ":")
+	if scopeTree != nil {
+		addKey(key, scopeTree.Compactify().String())
+	}
+	addKey(key, ":")
 	for _, scope := range groupBy {
 		addKey(key, scope.String())
 	}
