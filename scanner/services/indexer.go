@@ -18,8 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type indexerService struct {
@@ -42,11 +40,9 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	if err := validateContainerImageRequest(req); err != nil {
 		return nil, err
 	}
-	// Create a claircore.Digest using the full Hash ID, including resource type.
-	hashIDSum := sha512.Sum512([]byte(req.GetHashId()))
-	manifestDigest, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
+	manifestDigest, err := createManifestDigest(req.GetHashId())
 	if err != nil {
-		return nil, fmt.Errorf("internal error: creating container image manifest digest: %w", err)
+		return nil, err
 	}
 
 	ctx = zlog.ContextWithValues(ctx,
@@ -84,6 +80,24 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	return indexReport, nil
 }
 
+func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
+	clairReport, err := s.getClairIndexReport(ctx, req.GetHashId())
+	if err != nil {
+		return nil, err
+	}
+	indexReport := convertToIndexReport(clairReport)
+	indexReport.HashId = req.GetHashId()
+	return indexReport, nil
+}
+
+func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
+	_, err := s.getClairIndexReport(ctx, req.GetHashId())
+	if err != nil {
+		return nil, err
+	}
+	return &types.Empty{}, nil
+}
+
 // validateContainerImageRequest validates a container image request.
 func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	if req == nil {
@@ -117,12 +131,31 @@ func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	return nil
 }
 
-func (s *indexerService) GetIndexReport(_ context.Context, _ *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetIndexReport not implemented")
+// createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
+func createManifestDigest(hashID string) (claircore.Digest, error) {
+	hashIDSum := sha512.Sum512([]byte(hashID))
+	d, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
+	if err != nil {
+		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
+	}
+	return d, nil
 }
 
-func (s *indexerService) HasIndexReport(_ context.Context, _ *v4.HasIndexReportRequest) (*types.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method HasIndexReport not implemented")
+// getClairIndexReport query and return a claircore index report, return a "not
+// found" error when the report does not exist.
+func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
+	manifestDigest, err := createManifestDigest(hashID)
+	if err != nil {
+		return nil, err
+	}
+	clairReport, ok, err := s.indexer.GetIndexReport(ctx, manifestDigest)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, errox.NotFound.Newf("index report not found: %s", hashID)
+	}
+	return clairReport, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
