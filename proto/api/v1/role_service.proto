@@ -145,8 +145,6 @@ service RoleService {
     // Permission sets                                                        //
     //                                                                        //
 
-    // BEGIN EXPERIMENTAL/UNSTABLE API
-
     rpc GetPermissionSet (ResourceByID) returns (storage.PermissionSet) {
         option (google.api.http) = {
             get: "/v1/permissionsets/{id}"
@@ -182,13 +180,9 @@ service RoleService {
         };
     }
 
-    // END EXPERIMENTAL/UNSTABLE API
-
     ////////////////////////////////////////////////////////////////////////////
     // Access scopes                                                          //
     //                                                                        //
-
-    // BEGIN EXPERIMENTAL/UNSTABLE API
 
     rpc GetSimpleAccessScope (ResourceByID) returns (storage.SimpleAccessScope) {
         option (google.api.http) = {
@@ -296,6 +290,4 @@ service RoleService {
             get: "/v1/sac/clusters/{cluster_id}/namespaces"
         };
     }
-
-    // END EXPERIMENTAL/UNSTABLE API
 }
