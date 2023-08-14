@@ -580,6 +580,12 @@ func (s *IndexSuite) TestTime() {
 			q:               search.NewQueryBuilder().AddStrings(search.TestTimestamp, "-3000d-1d").ProtoQuery(),
 			expectedResults: []*storage.TestStruct{testStruct2029Mar09Noon},
 		},
+		{
+			desc: "range time query",
+			q: search.NewQueryBuilder().AddTimeRangeField(search.TestTimestamp,
+				protoconv.ConvertTimestampToTimeOrNow(testStruct2020Mar09Noon.Timestamp), protoconv.ConvertTimestampToTimeOrNow(testStruct2022Feb09Noon.Timestamp)).ProtoQuery(),
+			expectedResults: []*storage.TestStruct{testStruct2020Mar09Noon, testStruct2021Mar09Noon},
+		},
 	})
 }
 

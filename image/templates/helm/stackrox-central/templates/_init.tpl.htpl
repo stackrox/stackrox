@@ -64,6 +64,15 @@
 {{ end }}
 [< end >]
 
+{{ if $._rox.central.db.external }}
+  {{ if not $._rox.central.db.source.connectionString }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its connection string. We are using the default source string. To ensure the connection to your Central DB, you may override it with `--set central.db.source.connectionString=<ConnectionString>`.") }}
+  {{ end }}
+  {{ if not $._rox.central.db.password.value }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its password. We are using a generated password for now. To ensure the connection to your Central DB, you may provide your DB password by `--set central.db.password.value=<DBPassword>`.") }}
+  {{ end }}
+{{ end }}
+
 {{/* Initialize global prefix */}}
 {{- include "srox.initGlobalPrefix" (list $) -}}
 

@@ -22,16 +22,24 @@ const (
 	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
 )
 
-// LogSensorComponentEvent returns an unified string for logging the transition between component states
-func LogSensorComponentEvent(e SensorComponentEvent) string {
+// LogSensorComponentEvent returns a unified string for logging the transition between component states/
+// For OfflineAware components, the optional parameter with component name should be provided.
+// Variadic `optComponentName` is used for backwards compatibility;
+// only first element of `optComponentName` will be printed if more elements are provided.
+func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string) string {
+	name := "Component"
+	if len(optComponentName) > 0 {
+		name += fmt.Sprintf(" '%s'", optComponentName[0])
+	}
+	mode := fmt.Sprintf("unknown (%s)", e)
 	switch e {
 	case SensorComponentEventCentralReachable:
-		return "Component runs now in Online mode"
+		mode = "Online"
 	case SensorComponentEventOfflineMode:
-		return "Component runs now in Offline mode"
-	default:
-		return fmt.Sprintf("Unsupported component mode: %s", e)
+		mode = "Offline"
 	}
+	return fmt.Sprintf("%s runs now in %s mode", name, mode)
+
 }
 
 // Notifiable is the interface used by Sensor to notify components of state changes in Central<->Sensor connectivity.

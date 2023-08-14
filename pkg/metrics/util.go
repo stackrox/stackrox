@@ -4,6 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 // EmplaceCollector registers, or re-registers, the given metrics collector.
@@ -32,4 +33,12 @@ func CollectToSlice(vec *prometheus.GaugeVec) ([]*dto.Metric, error) {
 		metricSlice = append(metricSlice, dtoMetric)
 	}
 	return metricSlice, errList.ToError()
+}
+
+// GetBuildType returns the build type of the binary for telemetry purposes.
+func GetBuildType() string {
+	if version.IsReleaseVersion() {
+		return "release"
+	}
+	return "internal"
 }

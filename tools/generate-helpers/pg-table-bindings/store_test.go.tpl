@@ -267,11 +267,19 @@ func (s *{{$namePrefix}}StoreSuite) getTestData(access storage.Access) (*{{.Type
 					sac.ClusterScopeKeys({{ "objA" | .Obj.GetClusterID }}),
 					sac.NamespaceScopeKeys("unknown ns"),
 			)),
+			{{- if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
+			expectedObjIDs:         []string{ {{ "objA" | .Obj.GetID }} },
+			expectedIdentifiers:    []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*{{.Type}}{objA},
+			expectedWriteError:     nil,
+			{{- else }}
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
 			expectedObjects:        []*{{.Type}}{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
+			{{- end }}
 		},
 	}
 

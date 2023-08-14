@@ -3,15 +3,14 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
     fetchReportConfigurations,
-    fetchReportStatus,
-    fetchReportLastRunStatus,
     fetchReportConfigurationsCount,
+    fetchReportHistory,
 } from 'services/ReportsService';
 
-import { ReportStatus } from 'services/ReportsService.types';
 import { SearchFilter } from 'types/search';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
+import { getRequestQueryString } from './apiUtils';
 
 export type UseFetchReportsProps = {
     searchFilter: SearchFilter;
@@ -36,12 +35,6 @@ const defaultResult = {
     isLoading: false,
     error: null,
 };
-
-export function getRequestQueryString(searchFilter: SearchFilter): string {
-    return Object.entries(searchFilter)
-        .map(([key, val]) => `${key}:${Array.isArray(val) ? val.join(',') : val ?? ''}`)
-        .join('+');
-}
 
 function useFetchReports({
     searchFilter,
@@ -71,21 +64,23 @@ function useFetchReports({
             });
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
-                    // @TODO: The API returns a 500 when there's no report status. For now we'll do a try/catch, but
-                    // we should wait for backend to change this to a 404 or a 200 with a proper message
-                    let reportStatus: ReportStatus | null = null;
-                    try {
-                        reportStatus = await fetchReportStatus(reportConfiguration.id);
-                    } catch (error) {
-                        reportStatus = null;
-                    }
-                    const reportLastRunStatus = await fetchReportLastRunStatus(
-                        reportConfiguration.id
+                    const PAGE = 1;
+                    const PER_PAGE = 1;
+                    const SHOW_MY_HISTORY = true;
+                    // Query for the current user's last report job
+                    const query = getRequestQueryString({
+                        'Report state': ['PREPARING', 'WAITING'],
+                    });
+                    const reportSnapshot = await fetchReportHistory(
+                        reportConfiguration.id,
+                        query,
+                        PAGE,
+                        PER_PAGE,
+                        SHOW_MY_HISTORY
                     );
                     return {
                         ...reportConfiguration,
-                        reportStatus,
-                        reportLastRunStatus,
+                        reportSnapshot: reportSnapshot?.[0] || null,
                     };
                 })
             );

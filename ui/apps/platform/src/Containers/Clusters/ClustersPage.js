@@ -7,6 +7,7 @@ import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
+import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
 
@@ -21,6 +22,9 @@ const ClustersPage = ({
         params: { clusterId: selectedClusterId },
     },
 }) => {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const workflowState = parseURL({ pathname, search });
 
@@ -61,9 +65,11 @@ const ClustersPage = ({
                     placeholder="Filter clusters"
                     handleChangeSearchFilter={setSearchFilter}
                 />
-                <div className="flex items-center ml-4 mr-3">
-                    <ManageTokensButton />
-                </div>
+                {hasWriteAccessForIntegration && (
+                    <div className="flex items-center ml-4 mr-3">
+                        <ManageTokensButton />
+                    </div>
+                )}
             </div>
         </PageHeader>
     );

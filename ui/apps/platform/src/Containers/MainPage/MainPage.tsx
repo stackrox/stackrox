@@ -1,15 +1,15 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { Page, Button } from '@patternfly/react-core';
 import { OutlinedCommentsIcon } from '@patternfly/react-icons';
-import { gql, useQuery } from '@apollo/client';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/feedback';
+import { getClustersForPermissions } from 'services/RolesService';
 import { clustersBasePath } from 'routePaths';
 
 import AnnouncementBanner from './Banners/AnnouncementBanner';
@@ -29,16 +29,6 @@ import Body from './Body';
 import Notifications from './Notifications';
 import AcsFeedbackModal from './AcsFeedbackModal';
 
-type ClusterCountResponse = {
-    clusterCount: number;
-};
-
-const CLUSTER_COUNT = gql`
-    query summary_counts {
-        clusterCount
-    }
-`;
-
 function MainPage(): ReactElement {
     const history = useHistory();
     const dispatch = useDispatch();
@@ -47,29 +37,40 @@ function MainPage(): ReactElement {
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
     const isLoadingPublicConfig = useSelector(selectors.isLoadingPublicConfigSelector);
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
+    const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
 
-    // Check for clusters under management
-    // if none, and user can admin Clusters, redirect to clusters section
-    // (only applicable in Cloud Services version)
-    const hasClusterWritePermission = hasReadWriteAccess('Cluster');
-
-    useQuery<ClusterCountResponse>(CLUSTER_COUNT, {
-        onCompleted: (data) => {
-            if (hasClusterWritePermission && data?.clusterCount < 1) {
-                history.push(clustersBasePath);
-            }
-        },
-    });
+    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    useEffect(() => {
+        if (hasWriteAccessForCluster) {
+            setIsLoadingClustersCount(true);
+            getClustersForPermissions([])
+                .then(({ clusters }) => {
+                    // Essential that service function DOES NOT provide a default empty array!
+                    if (clusters?.length === 0) {
+                        // If no clusters, and user can admin Clusters, redirect to clusters section.
+                        // Only applicable in Cloud Services.
+                        history.push(clustersBasePath);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => {
+                    setIsLoadingClustersCount(false);
+                });
+        }
+    }, [hasWriteAccessForCluster, history]);
 
     // Prerequisites from initial requests for conditional rendering that affects all authenticated routes:
     // feature flags: for NavigationSidebar and Body
     // permissions: for NavigationSidebar and Body
     // public config: for PublicConfigHeader and PublicConfigFooter and analytics
+    // central capabilities: for System Health and some integrations
+    // clusters: for redirect to clusters
     if (
         isLoadingFeatureFlags ||
         isLoadingPermissions ||
         isLoadingPublicConfig ||
-        isLoadingCentralCapabilities
+        isLoadingCentralCapabilities ||
+        isLoadingClustersCount
     ) {
         return <LoadingSection message="Loading..." />;
     }

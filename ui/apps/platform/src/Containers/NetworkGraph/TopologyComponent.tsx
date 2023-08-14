@@ -15,13 +15,14 @@ import {
 } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
-import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
 import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
-import NetworkPolicySimulatorSidePanel from './simulation/NetworkPolicySimulatorSidePanel';
+import NetworkPolicySimulatorSidePanel, {
+    clearSimulationQuery,
+} from './simulation/NetworkPolicySimulatorSidePanel';
 import { getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { Simulation } from './utils/getSimulation';
@@ -33,6 +34,7 @@ import {
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
 import { deploymentTabs } from './utils/deploymentUtils';
+import { getInScopeEntities } from './utils/simulatorUtils';
 import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 // TODO: move these type defs to a central location
@@ -60,14 +62,6 @@ export type TopologyComponentProps = {
     edgeState: EdgeState;
     scopeHierarchy: NetworkScopeHierarchy;
 };
-
-// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
-function clearSimulationQuery(search: string): string {
-    const modifiedSearchFilter = getQueryObject(search);
-    delete modifiedSearchFilter.simulation;
-    const queryString = getQueryString(modifiedSearchFilter);
-    return queryString;
-}
 
 const TopologyComponent = ({
     model,
@@ -176,6 +170,10 @@ const TopologyComponent = ({
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {simulation.isOn && simulation.type === 'networkPolicy' && (
                         <NetworkPolicySimulatorSidePanel
+                            networkPolicyGenerationScope={getInScopeEntities(
+                                model.nodes,
+                                scopeHierarchy
+                            )}
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
                             scopeHierarchy={scopeHierarchy}

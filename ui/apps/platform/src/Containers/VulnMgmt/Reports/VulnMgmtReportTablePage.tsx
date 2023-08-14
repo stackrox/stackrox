@@ -33,7 +33,7 @@ import { filterAllowedSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getQueryString } from 'utils/queryStringUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
-import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
+import { VulnMgmtReportQueryObject, getWriteAccessForReport } from './VulnMgmtReport.utils';
 
 type ReportTablePageProps = {
     query: VulnMgmtReportQueryObject;
@@ -43,15 +43,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const history = useHistory();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasImageReadAccess = hasReadAccess('Image');
-    const hasAccessScopeReadAccess = hasReadAccess('Access');
-    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
-    const canWriteReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasImageReadAccess &&
-        hasAccessScopeReadAccess &&
-        hasNotifierIntegrationReadAccess;
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
 
@@ -129,7 +121,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                                 </Text>
                             </TextContent>
                         </ToolbarItem>
-                        {canWriteReports && (
+                        {hasWriteAccessForReport && (
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <Button
                                     variant={ButtonVariant.primary}

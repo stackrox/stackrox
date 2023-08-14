@@ -15,6 +15,7 @@ import {
     AlertActionCloseButton,
 } from '@patternfly/react-core';
 
+import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { PolicyCategory } from 'types/policy.proto';
@@ -24,6 +25,9 @@ import PolicyCategoriesListSection from './PolicyCategoriesListSection';
 import CreatePolicyCategoryModal from './CreatePolicyCategoryModal';
 
 function PolicyCategoriesPage(): React.ReactElement {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPolicy = hasReadWriteAccess('WorkflowAdministration');
+
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
@@ -43,7 +47,7 @@ function PolicyCategoriesPage(): React.ReactElement {
         listContent = (
             <PageSection variant="light" isFilled id="policies-table-error">
                 <Bullseye>
-                    <Alert variant="danger" title={errorMessage} />
+                    <Alert variant="danger" title={errorMessage} component="div" />
                 </Bullseye>
             </PageSection>
         );
@@ -91,17 +95,19 @@ function PolicyCategoriesPage(): React.ReactElement {
                                 Manage categories for your policies.
                             </div>
                         </ToolbarItem>
-                        <ToolbarItem alignment={{ default: 'alignRight' }}>
-                            <Flex>
-                                <Button
-                                    variant="primary"
-                                    onClick={() => setIsCreateModalOpen(true)}
-                                    isDisabled={isCreateModalOpen || !!selectedCategory}
-                                >
-                                    Create category
-                                </Button>
-                            </Flex>
-                        </ToolbarItem>
+                        {hasWriteAccessForPolicy && (
+                            <ToolbarItem alignment={{ default: 'alignRight' }}>
+                                <Flex>
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => setIsCreateModalOpen(true)}
+                                        isDisabled={isCreateModalOpen || !!selectedCategory}
+                                    >
+                                        Create category
+                                    </Button>
+                                </Flex>
+                            </ToolbarItem>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
@@ -112,6 +118,7 @@ function PolicyCategoriesPage(): React.ReactElement {
                     <Alert
                         variant={AlertVariant[variant]}
                         title={title}
+                        component="div"
                         timeout={4000}
                         onTimeout={() => removeToast(key)}
                         actionClose={

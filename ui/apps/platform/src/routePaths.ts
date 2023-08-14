@@ -73,89 +73,163 @@ export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
 export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
 export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
+// Compose resourceAccessRequirements from resource names and predicates.
+
+type ResourcePredicate = (hasReadAccess: HasReadAccess) => boolean;
+
+type ResourceItem = ResourceName | ResourcePredicate;
+
+function evaluateItem(resourceItem: ResourceItem, hasReadAccess: HasReadAccess) {
+    if (typeof resourceItem === 'function') {
+        return resourceItem(hasReadAccess);
+    }
+
+    return hasReadAccess(resourceItem);
+}
+
+// Given array or resource names, higher-order functions return predicate function.
+// You can also compose every with some, if requirements ever become so complicated.
+
+export function everyResource(resourceItems: ResourceItem[]): ResourcePredicate {
+    return (hasReadAccess: HasReadAccess) =>
+        resourceItems.every((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
+}
+
+export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
+    return (hasReadAccess: HasReadAccess) =>
+        resourceItems.some((resourceItem) => evaluateItem(resourceItem, hasReadAccess));
+}
+
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
 
 type RouteDescription = {
     featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
-    resourceAccessRequirements: ResourceName[]; // assume READ_ACCESS and multiple resource names imply must have access to all
+    resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
 };
 
 // Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 const routeDescriptionMap: Record<string, RouteDescription> = {
     [accessControlPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Access']),
     },
     [apidocsPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [clustersDelegateScanningPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     [clustersPathWithParam]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Cluster']),
     },
     [collectionsPath]: {
-        resourceAccessRequirements: ['WorkflowAdministration'],
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     [compliancePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Alert', // for Deployment
+            'Cluster',
+            'Compliance',
+            'Deployment',
+            'Image', // for Deployment and Namespace
+            'K8sRole', // for Cluster
+            'K8sRoleBinding', // for Cluster
+            'K8sSubject', // for Cluster
+            'Namespace',
+            'NetworkPolicy', // for Namespace
+            'Node',
+            'Secret', // for Deployment and Namespace
+            'ServiceAccount', // for Cluster and Deployment
+        ]),
     },
     [complianceEnhancedBasePath]: {
-        resourceAccessRequirements: [],
+        featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
+        resourceAccessRequirements: everyResource(['Compliance']),
     },
     [configManagementPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Alert',
+            'Cluster',
+            'Compliance',
+            'Deployment',
+            'Image',
+            'K8sRole',
+            'K8sRoleBinding',
+            'K8sSubject',
+            'Namespace',
+            'Node',
+            'Secret',
+            'ServiceAccount',
+            'WorkflowAdministration',
+        ]),
     },
     [dashboardPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [integrationsPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     [listeningEndpointsBasePath]: {
-        resourceAccessRequirements: ['Deployment', 'DeploymentExtension'],
+        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [networkPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['NetworkGraph', 'NetworkPolicy']),
     },
     [policyManagementBasePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Cluster',
+            'Deployment',
+            'Image',
+            'Integration',
+            'WorkflowAdministration',
+        ]),
     },
     [riskPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [searchPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [systemConfigPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     [systemHealthPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
     },
     [userBasePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([]),
     },
     [violationsPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Alert']),
     },
     // Reporting and Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     [vulnManagementReportsPath]: {
-        resourceAccessRequirements: ['WorkflowAdministration'],
+        resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
     [vulnManagementRiskAcceptancePath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'VulnerabilityManagementApprovals',
+            'VulnerabilityManagementRequests',
+        ]),
     },
     [vulnManagementPath]: {
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource([
+            'Alert', // for Cluster and Deployment and Namespace
+            'Cluster',
+            'Deployment',
+            'Image',
+            'Namespace',
+            'Node',
+            'WatchedImage', // for Image
+            'WorkflowAdministration', // TODO obsolete because of policies for Cluster and Namespace?
+        ]),
     },
     [vulnerabilitiesWorkloadCvesPath]: {
         featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
-        resourceAccessRequirements: [],
+        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
     },
     [vulnerabilityReportsPath]: {
         featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
-        resourceAccessRequirements: ['WorkflowAdministration'],
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
 };
 
@@ -188,7 +262,7 @@ export function isRouteEnabled(
         }
     }
 
-    return resourceAccessRequirements.every((resourceName) => hasReadAccess(resourceName));
+    return resourceAccessRequirements(hasReadAccess);
 }
 
 /**

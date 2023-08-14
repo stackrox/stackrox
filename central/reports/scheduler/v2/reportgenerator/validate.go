@@ -13,24 +13,14 @@ func ValidateReportRequest(request *ReportRequest) error {
 		return errors.New("Report request is nil.")
 	}
 	errorList := errorhelpers.NewErrorList("validating report request")
-	if request.ReportConfig == nil {
-		errorList.AddError(errors.New("Report request does not have a valid non-nil report configuration"))
-	} else if request.ReportConfig.GetId() == "" {
-		errorList.AddError(errors.New("Report configuration ID is empty"))
-	}
 	if request.Collection == nil {
 		errorList.AddError(errors.New("Report request does not have a valid non-nil collection."))
 	}
 
 	if request.ReportSnapshot == nil {
 		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
-	} else {
-		if request.ReportSnapshot.ReportStatus == nil {
-			errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
-		}
-		if request.ReportConfig.GetId() != request.ReportSnapshot.GetReportConfigurationId() {
-			errorList.AddError(errors.New("Mismatch between report config ids in ReportConfig and ReportSnapshot"))
-		}
+	} else if request.ReportSnapshot.ReportStatus == nil {
+		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
 	}
 	return errorList.ToError()
 }

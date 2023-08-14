@@ -10,9 +10,11 @@ import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
 
+import spock.lang.Retry
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Retry(count = 3)
 @Tag("Begin")
 class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"

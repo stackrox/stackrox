@@ -167,7 +167,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.8
+        uses: joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go build environment for release
         if: |
@@ -468,6 +468,8 @@ jobs:
       run: |
         git submodule update --init
 
+    - uses: ./.github/actions/handle-tagged-build
+
     - name: Set build tag for prerelease images
       if: matrix.name == 'prerelease'
       run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
@@ -475,8 +477,6 @@ jobs:
     - name: Set build tag for race condition images
       if: matrix.name == 'race-condition-debug'
       run: echo "BUILD_TAG=$(make --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
-
-    - uses: ./.github/actions/handle-tagged-build
 
     - name: Build and push manifest lists
       # Skip for external contributions.
@@ -538,7 +538,7 @@ jobs:
         run: go mod tidy
 
       - name: PR labels
-        uses: joerick/pr-labels-action@v1.0.8
+        uses: joerick/pr-labels-action@v1.0.9
 
       - name: Setup Go build environment
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')

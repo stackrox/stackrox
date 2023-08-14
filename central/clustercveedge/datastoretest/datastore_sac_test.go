@@ -136,7 +136,7 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			},
 		},
 		{
-			name: "Partial cluster access has access to no data",
+			name: "Partial cluster access has access to all data for the cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(
@@ -147,8 +147,8 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 				),
 			),
 			visibleEdges: map[string]bool{
-				cluster1ToCVE1EdgeID: false,
-				cluster1ToCVE2EdgeID: false,
+				cluster1ToCVE1EdgeID: true,
+				cluster1ToCVE2EdgeID: true,
 				cluster2ToCVE2EdgeID: false,
 				cluster2ToCVE3EdgeID: false,
 			},
@@ -171,7 +171,7 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			},
 		},
 		{
-			name: "Partial access to other cluster has access to no data",
+			name: "Partial access to other cluster has access to all data for that cluster",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(
@@ -184,8 +184,8 @@ func getClusterCVEEdgeReadTestCases(_ *testing.T, validCluster1 string, validClu
 			visibleEdges: map[string]bool{
 				cluster1ToCVE1EdgeID: false,
 				cluster1ToCVE2EdgeID: false,
-				cluster2ToCVE2EdgeID: false,
-				cluster2ToCVE3EdgeID: false,
+				cluster2ToCVE2EdgeID: true,
+				cluster2ToCVE3EdgeID: true,
 			},
 		},
 		{
@@ -227,7 +227,7 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			},
 		},
 		{
-			name: "Full read-only access has read access to all data",
+			name: "Full read-only access has write access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(
@@ -243,7 +243,7 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			},
 		},
 		{
-			name: "Full cluster access has access to all data for the cluster",
+			name: "Full cluster access has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(
@@ -278,7 +278,7 @@ func getClusterCVEEdgeWriteTestCases(_ *testing.T, validCluster1 string, validCl
 			},
 		},
 		{
-			name: "Full access to other cluster has access to all data for that cluster",
+			name: "Full access to other cluster has access to no data",
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
 				sac.AllowFixedScopes(

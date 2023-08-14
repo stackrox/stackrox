@@ -92,4 +92,37 @@ subjects:
     name: central
     namespace: "{{ .Release.Namespace }}"
 
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "central-telemeter-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "prometheusrule" (print "central-telemeter-" .Release.Namespace )) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "prometheusrule" (print "central-telemeter-" .Release.Namespace )) | nindent 4 }}
+spec:
+  groups:
+    - name: rhacs.telemeter
+      rules:
+        - expr: |
+            max by (branding, build, central_id, central_version, hosting, install_method) (
+              rox_central_secured_clusters
+            )
+          record: rhacs:telemetry:rox_central_secured_clusters
+
+        - expr: |
+            max by (branding, build, central_id, central_version, hosting, install_method) (
+              rox_central_secured_nodes
+            )
+          record: rhacs:telemetry:rox_central_secured_nodes
+
+        - expr: |
+            max by (branding, build, central_id, central_version, hosting, install_method) (
+              rox_central_secured_vcpu
+            )
+          record: rhacs:telemetry:rox_central_secured_vcpu
+
 {{- end -}}

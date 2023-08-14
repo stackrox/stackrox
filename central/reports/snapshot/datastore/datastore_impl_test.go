@@ -6,9 +6,10 @@ import (
 	"context"
 	"testing"
 
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -17,31 +18,31 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestReportMetadataDatastore(t *testing.T) {
-	suite.Run(t, new(ReportMetadataDatastoreTestSuite))
+func TestReportSnapshotDatastore(t *testing.T) {
+	suite.Run(t, new(ReportSnapshotDatastoreTestSuite))
 }
 
-type ReportMetadataDatastoreTestSuite struct {
+type ReportSnapshotDatastoreTestSuite struct {
 	suite.Suite
 
 	testDB            *pgtest.TestPostgres
 	datastore         DataStore
 	reportConfigStore reportConfigDS.DataStore
+	notifierDataStore notifierDS.DataStore
 	ctx               context.Context
 }
 
-func (s *ReportMetadataDatastoreTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtReportingEnhancements.EnvVar(), "true")
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}
 
-	var err error
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.reportConfigStore, err = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.NoError(err)
+	s.reportConfigStore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -49,13 +50,18 @@ func (s *ReportMetadataDatastoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 }
 
-func (s *ReportMetadataDatastoreTestSuite) TearDownSuite() {
+func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiers()
+func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig.Id = ""
+	// Add all required notifiers to the database.
+	for i, n := range reportConfig.GetNotifiers() {
+		reportConfig.Notifiers[i].Ref = s.storeNotifier(n.GetId())
+	}
+
 	configID, err := s.reportConfigStore.AddReportConfiguration(s.ctx, reportConfig)
 	s.NoError(err)
 
@@ -153,4 +159,12 @@ func (s *ReportMetadataDatastoreTestSuite) TestReportMetadataWorkflows() {
 	s.NoError(err)
 	s.False(found)
 	s.Nil(resultSnap)
+}
+
+func (s *ReportSnapshotDatastoreTestSuite) storeNotifier(name string) *storage.NotifierConfiguration_Id {
+	allCtx := sac.WithAllAccess(context.Background())
+
+	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
+	s.Require().NoError(err)
+	return &storage.NotifierConfiguration_Id{Id: id}
 }

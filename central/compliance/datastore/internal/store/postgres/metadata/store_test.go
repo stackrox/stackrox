@@ -220,11 +220,11 @@ func (s *ComplianceRunMetadataStoreSuite) getTestData(access storage.Access) (*s
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
 				)),
-			expectedObjIDs:         []string{},
-			expectedIdentifiers:    []string{},
-			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.ComplianceRunMetadata{},
-			expectedWriteError:     sac.ErrResourceAccessDenied,
+			expectedObjIDs:         []string{objA.GetRunId()},
+			expectedIdentifiers:    []string{objA.GetRunId()},
+			expectedMissingIndices: []int{1},
+			expectedObjects:        []*storage.ComplianceRunMetadata{objA},
+			expectedWriteError:     nil,
 		},
 	}
 

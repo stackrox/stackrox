@@ -161,7 +161,7 @@ export function fetchReportConfiguration(reportId: string): Promise<ReportConfig
 
 export function fetchReportStatus(id: string): Promise<ReportStatus | null> {
     return axios
-        .get<{ status: ReportStatus | null }>(`/v2/reports/status/${id}`)
+        .get<{ status: ReportStatus | null }>(`/v2/reports/jobs/${id}/status`)
         .then((response) => {
             return response.data?.status;
         });
@@ -175,10 +175,32 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export function fetchReportHistory(id: string): Promise<ReportSnapshot[]> {
-    return axios.get<ReportHistoryResponse>(`/v2/reports/history/${id}`).then((response) => {
-        return response.data?.reportSnapshots ?? [];
-    });
+export function fetchReportHistory(
+    id: string,
+    query: string,
+    page: number,
+    perPage: number,
+    showMyHistory: boolean
+): Promise<ReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: {
+                    limit: perPage,
+                    offset: page - 1,
+                },
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<ReportHistoryResponse>(
+            `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
+        )
+        .then((response) => {
+            return response.data?.reportSnapshots ?? [];
+        });
 }
 
 export function createReportConfiguration(
@@ -221,4 +243,16 @@ export function runReportRequest(
         .then((response) => {
             return response.data;
         });
+}
+
+export function downloadReport(reportId: string) {
+    return axios.get<string>(`/v2/reports/jobs/${reportId}/download`).then((response) => {
+        return response.data;
+    });
+}
+
+export function deleteDownloadableReport(reportId: string) {
+    return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
+        return response.data;
+    });
 }

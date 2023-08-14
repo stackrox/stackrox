@@ -81,7 +81,7 @@ import (
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
-	"github.com/stackrox/rox/central/metrics/info"
+	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -106,12 +106,12 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
-	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
-	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
+	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
+	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -161,7 +161,6 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -280,8 +279,8 @@ func main() {
 		log.Fatalf("Failed to remove backup DB: %v", err)
 	}
 
-	// Register cluster info metric.
-	info.Singleton().Start()
+	// Register telemetry prometheus metrics.
+	telemetry.Singleton().Start()
 	// Start the prometheus metrics server
 	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
@@ -407,9 +406,9 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 	}
 
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
-		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportServiceV2.Singleton())
+		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -777,6 +776,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		// Append report custom routes
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/jobs/download",
+			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+			ServerHandler: v2Service.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
+
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
@@ -838,7 +847,7 @@ func waitForTerminationSignal() {
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 	}
 
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 	} else {
 		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
