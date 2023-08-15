@@ -1,6 +1,10 @@
 package chaos
 
-import "github.com/stackrox/rox/pkg/env"
+import (
+	"strings"
+
+	"github.com/stackrox/rox/pkg/env"
+)
 
 var (
 	centralEndpointNoProxyEnv = env.RegisterSetting("ROX_CENTRAL_ENDPOINT_NO_PROXY")
@@ -13,7 +17,8 @@ func chaosProfile() string {
 }
 
 func originalCentralEndpoint() string {
-	return centralEndpointNoProxyEnv.Setting()
+	value := centralEndpointNoProxyEnv.Setting()
+	return strings.TrimRight(value, "\t\n\r")
 }
 
 // HasChaosProxy returns true if running with a chaos proxy between sensor and central.
