@@ -31,6 +31,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+var (
+	withoutV1ConfigsQuery = search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, "").ProtoQuery()
+)
+
 type upsertTestCase struct {
 	desc                       string
 	setMocksAndGenReportConfig func() *apiV2.ReportConfiguration
@@ -180,15 +184,26 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 		expectedQ *v1.Query
 	}{
 		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			desc:  "Empty query",
+			query: &apiV2.RawQuery{Query: ""},
+			expectedQ: func() *v1.Query {
+				query := search.ConjunctionQuery(
+					search.EmptyQuery(),
+					withoutV1ConfigsQuery)
+				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+				return query
+			}(),
 		},
 		{
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").
-				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedQ: func() *v1.Query {
+				query := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+					withoutV1ConfigsQuery)
+				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+				return query
+			}(),
 		},
 		{
 			desc: "Query with custom pagination",
@@ -196,7 +211,13 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 				Query:      "",
 				Pagination: &apiV2.Pagination{Limit: 25},
 			},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(25)).ProtoQuery(),
+			expectedQ: func() *v1.Query {
+				query := search.ConjunctionQuery(
+					search.EmptyQuery(),
+					withoutV1ConfigsQuery)
+				query.Pagination = &v1.QueryPagination{Limit: 25}
+				return query
+			}(),
 		},
 	}
 
@@ -285,14 +306,18 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 		expectedQ *v1.Query
 	}{
 		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+			desc:  "Empty query",
+			query: &apiV2.RawQuery{Query: ""},
+			expectedQ: search.ConjunctionQuery(
+				search.NewQueryBuilder().ProtoQuery(),
+				withoutV1ConfigsQuery),
 		},
 		{
-			desc:      "Query with search field",
-			query:     &apiV2.RawQuery{Query: "Report Name:name"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+			desc:  "Query with search field",
+			query: &apiV2.RawQuery{Query: "Report Name:name"},
+			expectedQ: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
+				withoutV1ConfigsQuery),
 		},
 	}
 
@@ -327,6 +352,8 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 
 	for _, tc := range testCases {
 		if !tc.isError {
+			s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
+				Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
 			s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
 		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})

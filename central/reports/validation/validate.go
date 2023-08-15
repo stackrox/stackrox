@@ -188,6 +188,9 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
 	}
+	if !common.IsV2ReportConfig(config) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
 
 	collection, found, err := v.collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
 	if err != nil {

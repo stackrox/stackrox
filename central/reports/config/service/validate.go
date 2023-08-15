@@ -5,6 +5,7 @@ import (
 	"net/mail"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -96,6 +97,10 @@ func (s *serviceImpl) validateEmailConfig(ctx context.Context, emailConfig *stor
 }
 
 func (s *serviceImpl) validateResourceScope(ctx context.Context, config *storage.ReportConfiguration) error {
+	if !common.IsV1ReportConfig(config) {
+		return errors.Wrap(errox.InvalidArgs, "Report configuration belonging to reporting version 1.0 should not set the 'resourceScope' field."+
+			"Instead, set the 'scopeID' field to the desired collection ID.")
+	}
 	if config.GetScopeId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID in the 'scopeId' field")
 	}

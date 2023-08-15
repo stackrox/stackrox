@@ -168,11 +168,12 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
 
 	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(filteredQ, query.GetPagination(), maxPaginationLimit)
 
-	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, parsedQuery)
+	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, filteredQ)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve report configurations")
 	}
@@ -199,6 +200,9 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
+	if !common.IsV2ReportConfig(config) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
 
 	converted, err := s.convertProtoReportConfigurationToV2(config)
 	if err != nil {
@@ -212,8 +216,9 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
 
-	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
+	numReportConfigs, err := s.reportConfigStore.Count(ctx, filteredQ)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +229,17 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
+	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	if err != nil {
+		return nil, errors.Wrap(err, "Error finding report config")
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' not found", id.GetId())
+	}
+	if !common.IsV2ReportConfig(config) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
+
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
 		return nil, err
 	}
