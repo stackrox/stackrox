@@ -23,4 +23,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_185_to_m_186_more_policy_migrations"
 	_ "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search"
 	_ "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_add_nftables_to_policy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_188_to_m_189_test_generic_example"
 )

@@ -1,0 +1,47 @@
+{
+  "id": "6abcaa13-9ed6-4109-a1a7-be2e8280e49e",
+  "name": "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
+  "description": "The TCP/IP port numbers below 1024 are considered privileged ports. Normal users and processes are not allowed to use them for various security reasons. Containers are, however, allowed to map their ports to privileged ports.",
+  "rationale": "By default, if the user does not specifically declare a container port to host port mapping, the containers ports will be mapped to available non-privileged host ports. Containers are, however, allow to map their ports to a privileged ports on the host if the user explicitly declares it. In Docker this is because containers are executed with NET_BIND_SERVICE Linux kernel capability which does not restrict privileged port mapping. The privileged ports receive and transmit various pieces of data which are security sensitive and allowing containers to use them is not in line with good security practice.",
+  "remediation": "You should not map container ports to privileged host ports when starting a container. You should also, ensure that there is no such container to host privileged port mapping declarations in the Dockerfile.",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on the router-default deployment in namespace openshift-ingress",
+      "deployment": {
+        "name": "router-default",
+        "scope": {
+          "namespace": "openshift-ingress"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Exposed Node Port",
+          "booleanOperator": "AND",
+          "values": [
+            {
+              "value": "<= 1024"
+            },
+            {
+              "value": "> 0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

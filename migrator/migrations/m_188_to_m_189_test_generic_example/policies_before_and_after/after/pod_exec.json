@@ -1,0 +1,85 @@
+{
+  "id": "8ab0f199-4904-4808-9461-3501da1d1b77",
+  "name": "Kubernetes Actions: Exec into Pod",
+  "description": "Alerts when Kubernetes API receives request to execute command in container",
+  "rationale": "'pods/exec' is non-standard approach for interacting with containers. Attackers with permissions could execute malicious code and compromise resources within a cluster",
+  "remediation": "Restrict RBAC access to the 'pods/exec' resource according to the Principle of Least Privilege. Limit such usage only to development, testing or debugging (non-production) activities",
+  "categories": [
+    "Kubernetes Events"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment thanos-querier in namespace openshift-monitoring",
+      "deployment": {
+        "name": "thanos-querier",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment prometheus-k8s in namespace openshift-monitoring",
+      "deployment": {
+        "name": "prometheus-k8s",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in namespace openshift-ovn-kubernetes",
+      "deployment": {
+        "name": "ovnkube-node",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment etcd-ci-ln-*-master-\\d+ in namespace openshift-etcd",
+      "deployment": {
+        "name": "etcd-ci-ln-.*-master-\\d+",
+        "scope": {
+          "namespace": "openshift-etcd"
+        }
+      }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Kubernetes Resource",
+          "values": [
+            {
+              "value": "PODS_EXEC"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1609"
+      ]
+    },
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1059.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
