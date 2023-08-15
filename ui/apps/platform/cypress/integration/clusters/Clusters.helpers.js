@@ -43,7 +43,7 @@ const routeMatcherMapForDelegateScanning = {
 };
 
 const basePath = '/main/clusters';
-const delegateScanningPath = `${basePath}/delegate-scanning`;
+export const delegatedScanningPath = `${basePath}/delegated-image-scanning`;
 
 const title = 'Clusters';
 
@@ -172,7 +172,7 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitDelegateScanning(staticResponseMap) {
-    visit(delegateScanningPath, routeMatcherMapForDelegateScanning, staticResponseMap);
+    visit(delegatedScanningPath, routeMatcherMapForDelegateScanning, staticResponseMap);
 }
 
 /**
