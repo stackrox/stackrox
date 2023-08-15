@@ -2,7 +2,6 @@ package v2
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 
@@ -22,8 +21,6 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-
-	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 func parseJobID(r *http.Request) (id string, err error) {
@@ -96,11 +93,11 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	switch status.GetRunState() {
 	case storage.ReportStatus_FAILURE:
 		httputil.WriteGRPCStyleError(w, codes.FailedPrecondition,
-			errors.Errorf("Report job %q has failed and hence no report to downloadAndVerify", id))
+			errors.Errorf("Report job %q has failed and hence no report to download", id))
 		return
 	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
 		httputil.WriteGRPCStyleError(w, codes.Unavailable,
-			errors.Errorf("Report job %q is not ready for downloadAndVerify", id))
+			errors.Errorf("Report job %q is not ready for download", id))
 		return
 	}
 
@@ -121,19 +118,24 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	if !exists {
 		// If the blob does not exist, report error.
 		httputil.WriteGRPCStyleError(w, codes.NotFound,
-			errors.Errorf("Report is not available to downloadAndVerify for job %q", id))
+			errors.Errorf("Report is not available to download for job %q", id))
 		return
 	}
 
-	// Tell the browser this is a downloadAndVerify.
+	// Tell the browser this is a download.
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="report-%s.zip"`, zip.GetSafeFilename(id)))
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Length", fmt.Sprint(buf.Len()))
 	_, err = w.Write(buf.Bytes())
 
+	writeSnapshotCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)),
+	)
 	if err != nil && status.GetRunState() == storage.ReportStatus_GENERATED {
 		rep.ReportStatus.RunState = storage.ReportStatus_DELIVERED
-		err = h.snapshotStore.UpdateReportSnapshot(allAccessCtx, rep)
+		err = h.snapshotStore.UpdateReportSnapshot(writeSnapshotCtx, rep)
 		if err != nil {
 			log.Error("Error setting report state to DELIVERED")
 		}
