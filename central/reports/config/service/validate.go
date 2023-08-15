@@ -99,7 +99,7 @@ func (s *serviceImpl) validateEmailConfig(ctx context.Context, emailConfig *stor
 func (s *serviceImpl) validateResourceScope(ctx context.Context, config *storage.ReportConfiguration) error {
 	if !common.IsV1ReportConfig(config) {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration belonging to reporting version 1.0 should not set the 'resourceScope' field."+
-			"Instead, set the 'scopeID' field to the desired collection ID.")
+			"Instead, set the 'scopeId' field to the desired collection ID.")
 	}
 	if config.GetScopeId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID in the 'scopeId' field")

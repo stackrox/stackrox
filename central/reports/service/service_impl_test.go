@@ -14,6 +14,7 @@ import (
 
 func TestConfigSeparation(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 	reportConfigStore := reportConfigDSMocks.NewMockDataStore(mockCtrl)
 	manager := managerMocks.NewMockManager(mockCtrl)
 	service := New(reportConfigStore, nil, manager)
