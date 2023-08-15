@@ -633,7 +633,7 @@ func (c *TestContext) NoViolationForDeployment(t *testing.T, name string, messag
 			messages := c.GetFakeCentral().GetAllMessages()
 			alerts := GetAllAlertsForDeploymentName(messages, name)
 			if len(alerts) > 0 {
-				t.Fatalf("alerts found for deployment %s: %s", name, message)
+				t.Fatalf("alerts found for deployment %s (%+v): %s", name, alerts, message)
 			}
 		}
 	}
