@@ -203,7 +203,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
     },
     // Reporting and Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     [vulnManagementReportsPath]: {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
     [vulnManagementRiskAcceptancePath]: {
         resourceAccessRequirements: everyResource([

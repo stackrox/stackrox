@@ -2,11 +2,14 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
+	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -24,7 +27,7 @@ type DataStore interface {
 	GetMany(ctx context.Context, id []string) ([]*storage.ResourceCollection, error)
 
 	// AddCollection adds the given collection object and populates the `Id` field on the object
-	AddCollection(ctx context.Context, collection *storage.ResourceCollection) error
+	AddCollection(ctx context.Context, collection *storage.ResourceCollection) (string, error)
 	DeleteCollection(ctx context.Context, id string) error
 	DryRunAddCollection(ctx context.Context, collection *storage.ResourceCollection) error
 	// UpdateCollection updates the given collection object, and preserves createdAt and createdBy fields from stored collection
@@ -76,4 +79,13 @@ func New(storage store.Store, searcher search.Searcher) (DataStore, QueryResolve
 		return nil, nil, err
 	}
 	return ds, ds, nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, QueryResolver, error) {
+	store := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
+	searcher := search.New(store, indexer)
+
+	return New(store, searcher)
 }

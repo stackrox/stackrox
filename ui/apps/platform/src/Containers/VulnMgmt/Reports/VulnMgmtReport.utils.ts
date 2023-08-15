@@ -1,4 +1,5 @@
 import { FixabilityLabelKey } from 'constants/reportConstants';
+import { HasReadAccess, HasReadWriteAccess } from 'hooks/usePermissions';
 import { ReportConfiguration, Fixability } from 'types/report.proto';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
@@ -62,4 +63,21 @@ export function getFixabilityConstantFromMap(fixabilityMap: FixabilityLabelKey[]
         return 'NOT_FIXABLE';
     }
     return 'UNSET';
+}
+
+// Single source of truth for conditional rendering in container.
+export function getWriteAccessForReport({
+    hasReadAccess,
+    hasReadWriteAccess,
+}: {
+    hasReadAccess: HasReadAccess;
+    hasReadWriteAccess: HasReadWriteAccess;
+}) {
+    // Run report now action requires Access and Image resources.
+    // Access seems like a leftover from access scope as report scope.
+    return (
+        hasReadWriteAccess('WorkflowAdministration') &&
+        hasReadAccess('Access') &&
+        hasReadAccess('Image')
+    );
 }
