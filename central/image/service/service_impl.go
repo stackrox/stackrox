@@ -489,7 +489,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	return internalScanRespFromImage(img), nil
 }
 
-// buildNames returns a slice of image names that contains the known image names from the various parameters.
+// buildNames returns a slice containing the known image names from the various parameters.
 func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
 	names := []*storage.ImageName{srcImage}
 
