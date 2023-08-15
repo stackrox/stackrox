@@ -79,8 +79,8 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for weekly schedule")
 		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
-			if day < 1 || day > 7 {
-				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (1) - Saturday(7)")
+			if day < 0 || day > 6 {
+				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
 			}
 		}
 	case apiV2.ReportSchedule_MONTHLY:
@@ -99,6 +99,9 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 func (v *Validator) validateNotifiers(config *apiV2.ReportConfiguration) error {
 	notifiers := config.GetNotifiers()
 	if len(notifiers) == 0 {
+		if config.GetSchedule() != nil {
+			return errors.Wrap(errox.InvalidArgs, "Report configurations with a schedule must specify a notifier.")
+		}
 		return nil
 	}
 	for _, notifier := range notifiers {
@@ -187,6 +190,11 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	}
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
+	}
+
+	if notificationMethod == storage.ReportStatus_EMAIL && len(config.GetNotifiers()) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs,
+			"Email request sent for a report configuration that does not have any email notifiers configured")
 	}
 
 	collection, found, err := v.collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())

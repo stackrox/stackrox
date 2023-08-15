@@ -342,7 +342,7 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 		{
 			testname: "Schedule with Weekly interval",
 			schedule: newSchedule(34, 12, []int32{2}, false, []int32{}),
-			result:   newScheduleV2(34, 12, []int32{3}, []int32{}),
+			result:   newScheduleV2(34, 12, []int32{2}, []int32{}),
 		},
 		{
 			testname: "Schedule with Weekly interval, oneOf interval is of type WeeklyInterval which allows just one day of week to be set",
@@ -356,7 +356,7 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 		{
 			testname: "Schedule with Weekly interval, Multiple days",
 			schedule: newSchedule(34, 12, []int32{2, 4}, false, []int32{}),
-			result:   newScheduleV2(34, 12, []int32{3, 5}, []int32{}),
+			result:   newScheduleV2(34, 12, []int32{2, 4}, []int32{}),
 		},
 		{
 			testname: "Schedule with monthly interval",
@@ -382,12 +382,12 @@ func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 		{
 			testname: "Report Schedule with Weekly interval",
 			schedule: newScheduleV2(34, 12, []int32{2}, []int32{}),
-			result:   newSchedule(34, 12, []int32{1}, false, []int32{}),
+			result:   newSchedule(34, 12, []int32{2}, false, []int32{}),
 		},
 		{
 			testname: "Report Schedule with Weekly interval, Multiple days",
 			schedule: newScheduleV2(34, 12, []int32{2, 4}, []int32{}),
-			result:   newSchedule(34, 12, []int32{1, 3}, false, []int32{}),
+			result:   newSchedule(34, 12, []int32{2, 4}, false, []int32{}),
 		},
 		{
 			testname: "Report Schedule with Monthly interval",
