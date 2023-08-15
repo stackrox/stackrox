@@ -128,30 +128,6 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 	s.Equal(reportConfig, foundReportConfig)
 }
 
-func (s *ReportConfigurationPostgresDatastoreTests) TestDeleteCollectionWithReportConfig() {
-
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-	// Test add collection
-	s.addCollectiontoReportConfiguration(reportConfig)
-
-	// Add report config
-	for i, n := range reportConfig.GetNotifiers() {
-		reportConfig.Notifiers[i].Ref = s.storeNotifier(n.GetId())
-	}
-	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
-	s.Require().NoError(err)
-
-	// Test get
-	err = s.collectionDS.DeleteCollection(s.ctx, reportConfig.ResourceScope.GetCollectionId())
-	s.Require().Error(err)
-
-	reportConfig = &storage.ReportConfiguration{}
-	collectionID := s.addCollectiontoReportConfiguration(reportConfig)
-	// Test get
-	err = s.collectionDS.DeleteCollection(s.ctx, collectionID)
-	s.NoError(err)
-}
-
 func (s *ReportConfigurationPostgresDatastoreTests) addCollectiontoReportConfiguration(reportConfig *storage.ReportConfiguration) string {
 	collection := storage.ResourceCollection{
 		Name: " Test Collection" + uuid.NewV4().String(),
@@ -193,12 +169,4 @@ func (s *ReportConfigurationPostgresDatastoreTests) truncateTable(name string) {
 	sql := fmt.Sprintf("TRUNCATE %s CASCADE", name)
 	_, err := s.testDB.Exec(s.ctx, sql)
 	s.NoError(err)
-}
-
-func (s *ReportConfigurationPostgresDatastoreTests) storeNotifier(name string) *storage.NotifierConfiguration_Id {
-	allCtx := sac.WithAllAccess(context.Background())
-
-	id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: name})
-	s.Require().NoError(err)
-	return &storage.NotifierConfiguration_Id{Id: id}
 }

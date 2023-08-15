@@ -62,6 +62,30 @@ func (s *ReportConfigurationDatastoreV2Tests) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
+func (s *ReportConfigurationDatastoreV2Tests) TestDeleteCollectionWithReportConfig() {
+
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	// Test add collection
+	s.addCollectionToReportConfiguration(reportConfig, "")
+
+	//Add report config
+	for i, n := range reportConfig.GetNotifiers() {
+		reportConfig.Notifiers[i].Ref = s.storeNotifier(n.GetId())
+	}
+	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
+	s.Require().NoError(err)
+
+	// Test get
+	err = s.collectionDS.DeleteCollection(s.ctx, reportConfig.ResourceScope.GetCollectionId())
+	s.Require().Error(err)
+
+	reportConfig = &storage.ReportConfiguration{}
+	collectionID := s.addCollectionToReportConfiguration(reportConfig, "")
+	// Test get
+	err = s.collectionDS.DeleteCollection(s.ctx, collectionID)
+	s.NoError(err)
+}
+
 func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTime() {
 	reportConfig1 := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig1.Id = ""
