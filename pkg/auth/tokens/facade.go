@@ -13,7 +13,8 @@ var (
 // issue token for token sources, as well as a corresponding validator that validates token issued by those issuers.
 func CreateIssuerFactoryAndValidator(issuerID string, privateKeyGetter jwt.PrivateKeyGetter, publicKeyGetter jwt.PublicKeyGetter, keyID string, options ...Option) (IssuerFactory, Validator) {
 	srcs := newSourceStore()
-	signerFactory, jwtValidator := jwt.CreateRS256SignerAndValidator(issuerID, nil, privateKeyGetter, publicKeyGetter, keyID)
+	signerFactory := jwt.CreateRS256SignerFactory(privateKeyGetter, keyID)
+	jwtValidator := jwt.CreateRS256Validator(issuerID, nil, publicKeyGetter)
 
 	factory := newIssuerFactory(issuerID, signerFactory, srcs, options...)
 	validator := newValidator(srcs, jwtValidator)

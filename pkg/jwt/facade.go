@@ -20,15 +20,19 @@ func (f *SignerFactory) CreateSigner() (jose.Signer, error) {
 	return jose.NewSigner(signingKey, new(jose.SignerOptions).WithType("JWT").WithHeader("kid", f.keyID))
 }
 
-// CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the
+// CreateRS256Validator creates a token validator with the given properties from the
+// specified RSA public key.
+func CreateRS256Validator(issuerID string, audience jwt.Audience, publicKeyStore PublicKeyGetter) Validator {
+	return NewRS256Validator(publicKeyStore, issuerID, audience)
+}
+
+// CreateRS256SignerFactory creates a token signer factory with the given properties from the
 // specified RSA private key.
-func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, privateKeyStore PrivateKeyGetter, publicKeyStore PublicKeyGetter, keyID string) (*SignerFactory, Validator) {
-	validator := NewRS256Validator(publicKeyStore, issuerID, audience)
-	signerFactory := &SignerFactory{
+func CreateRS256SignerFactory(privateKeyStore PrivateKeyGetter, keyID string) *SignerFactory {
+	return &SignerFactory{
 		keyStore: privateKeyStore,
 		keyID:    keyID,
 	}
-	return signerFactory, validator
 }
 
 // CreateES256Validator creates a token validator pair with the given properties and jwks public key url
