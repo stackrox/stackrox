@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportConfigurations, fetchReportConfigurationsCount } from 'services/ReportsService';
 
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
 import { fetchAndAppendLastReportJobForConfiguration, getRequestQueryString } from './apiUtils';
@@ -12,6 +12,7 @@ export type UseFetchReportsProps = {
     searchFilter: SearchFilter;
     page: number;
     perPage: number;
+    sortOption: ApiSortOption;
 };
 
 type Result = {
@@ -36,6 +37,7 @@ function useFetchReports({
     searchFilter,
     page,
     perPage,
+    sortOption,
 }: UseFetchReportsProps): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
@@ -52,11 +54,10 @@ function useFetchReports({
                 query: getRequestQueryString(searchFilter),
                 page,
                 perPage,
+                sortOption,
             });
             const { count: totalReports } = await fetchReportConfigurationsCount({
                 query: getRequestQueryString(searchFilter),
-                page,
-                perPage,
             });
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(fetchAndAppendLastReportJobForConfiguration)
@@ -75,7 +76,7 @@ function useFetchReports({
                 error: getErrorMessage(error),
             });
         }
-    }, [searchFilter, page, perPage]);
+    }, [searchFilter, page, perPage, sortOption]);
 
     useEffect(() => {
         void fetchReports();

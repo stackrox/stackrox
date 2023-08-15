@@ -13,19 +13,20 @@ export function getRequestQueryString(searchFilter: SearchFilter): string {
 export async function fetchAndAppendLastReportJobForConfiguration(
     reportConfiguration: ReportConfiguration
 ): Promise<Report> {
-    const PAGE = 1;
-    const PER_PAGE = 1;
-    const SHOW_MY_HISTORY = true;
     // Query for the current user's last report job
     const query = getRequestQueryString({ 'Report state': ['PREPARING', 'WAITING'] });
 
-    const reportSnapshot = await fetchReportHistory(
-        reportConfiguration.id,
+    const reportSnapshot = await fetchReportHistory({
+        id: reportConfiguration.id,
         query,
-        PAGE,
-        PER_PAGE,
-        SHOW_MY_HISTORY
-    );
+        page: 1,
+        perPage: 1,
+        showMyHistory: true,
+        sortOption: {
+            field: 'Report Completion Time',
+            reversed: true,
+        },
+    });
     return {
         ...reportConfiguration,
         reportSnapshot: reportSnapshot[0] ?? null,

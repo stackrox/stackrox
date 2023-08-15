@@ -101,20 +101,12 @@ export function runReport(reportId: string): Promise<Empty> {
 // @TODO: Same logic is used in fetchReportConfigurations. Maybe consider something more DRY
 export function fetchReportConfigurationsCount({
     query,
-    page,
-    perPage,
 }: {
     query: string;
-    page: number;
-    perPage: number;
 }): Promise<{ count: number }> {
     const params = queryString.stringify(
         {
             query,
-            pagination: {
-                limit: perPage,
-                offset: page - 1,
-            },
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
@@ -129,10 +121,12 @@ export function fetchReportConfigurations({
     query,
     page,
     perPage,
+    sortOption,
 }: {
     query: string;
     page: number;
     perPage: number;
+    sortOption: ApiSortOption;
 }): Promise<ReportConfiguration[]> {
     const params = queryString.stringify(
         {
@@ -140,6 +134,7 @@ export function fetchReportConfigurations({
             pagination: {
                 limit: perPage,
                 offset: page - 1,
+                sortOption,
             },
         },
         { arrayFormat: 'repeat', allowDots: true }
@@ -175,13 +170,23 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export function fetchReportHistory(
-    id: string,
-    query: string,
-    page: number,
-    perPage: number,
-    showMyHistory: boolean
-): Promise<ReportSnapshot[]> {
+export type FetchReportHistoryServiceProps = {
+    id: string;
+    query: string;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
+export function fetchReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: FetchReportHistoryServiceProps): Promise<ReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -189,6 +194,7 @@ export function fetchReportHistory(
                 pagination: {
                     limit: perPage,
                     offset: page - 1,
+                    sortOption,
                 },
             },
         },

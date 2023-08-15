@@ -86,6 +86,10 @@ function CloneVulnReportPage() {
         return false;
     }
 
+    function onClose() {
+        history.push(vulnerabilityReportsPath);
+    }
+
     const wizardSteps = [
         {
             name: wizardStepNames[0],
@@ -155,6 +159,7 @@ function CloneVulnReportPage() {
                     hasNoBodyPadding
                     steps={wizardSteps}
                     onSave={onCreate}
+                    onClose={onClose}
                     footer={
                         <ReportFormWizardFooter
                             wizardSteps={wizardSteps}
