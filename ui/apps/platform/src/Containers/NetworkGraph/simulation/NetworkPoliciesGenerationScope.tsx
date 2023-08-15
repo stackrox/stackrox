@@ -1,54 +1,42 @@
 import React from 'react';
-import { Button, Flex } from '@patternfly/react-core';
-import uniq from 'lodash/uniq';
+import { Button, Flex, pluralize } from '@patternfly/react-core';
 
+import useURLSearch from 'hooks/useURLSearch';
+
+import DeploymentScopeModal from './DeploymentScopeModal';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ClusterIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 import './NetworkPoliciesGenerationScope.css';
-import DeploymentScopeModal from './DeploymentScopeModal';
-
-export type EntityScope = {
-    // `granularity` refers to the most specific entity type that has been selected by the user.
-    granularity: 'CLUSTER' | 'NAMESPACE' | 'DEPLOYMENT';
-    cluster: string;
-    namespaces: string[];
-    deployments: {
-        namespace: string;
-        name: string;
-    }[];
-};
 
 export type NetworkPoliciesGenerationScopeProps = {
-    networkPolicyGenerationScope: EntityScope;
+    scopeHierarchy: NetworkScopeHierarchy;
+    scopeDeploymentCount: number;
 };
 
 function NetworkPoliciesGenerationScope({
-    networkPolicyGenerationScope,
+    scopeHierarchy,
+    scopeDeploymentCount,
 }: NetworkPoliciesGenerationScopeProps) {
-    const { granularity, cluster, deployments } = networkPolicyGenerationScope;
-    const [modalDeployments, setModalDeployments] = React.useState<
-        { namespace: string; name: string }[] | null
-    >(null);
+    const { searchFilter } = useURLSearch();
+    const isOnlyClusterScope =
+        scopeHierarchy.namespaces.length === 0 && scopeHierarchy.deployments.length === 0;
+    const [showDeploymentModal, setShowDeploymentModal] = React.useState(false);
 
     let deploymentElement = <span>All deployments</span>;
     let namespaceElement = <span>All namespaces</span>;
 
-    if (granularity !== 'CLUSTER') {
-        const namespaces = uniq(deployments.map((deployment) => deployment.namespace));
+    if (!isOnlyClusterScope) {
+        const { namespaces } = scopeHierarchy;
         const namespaceCount = namespaces.length;
         const namespaceText = namespaceCount === 1 ? namespaces[0] : `${namespaceCount} namespaces`;
         namespaceElement = <span>{namespaceText}</span>;
 
-        const deploymentCount = deployments.length;
-        const deploymentText =
-            deploymentCount === 1 ? deployments[0].name : `${deploymentCount} deployments`;
+        const deploymentCount = scopeDeploymentCount;
+        const deploymentText = pluralize(deploymentCount, 'deployment');
 
         deploymentElement = (
-            <Button
-                variant="link"
-                isInline
-                onClick={() => setModalDeployments(networkPolicyGenerationScope.deployments)}
-            >
+            <Button variant="link" isInline onClick={() => setShowDeploymentModal(true)}>
                 {deploymentText}
             </Button>
         );
@@ -56,13 +44,12 @@ function NetworkPoliciesGenerationScope({
 
     return (
         <>
-            {modalDeployments && (
-                <DeploymentScopeModal
-                    deployments={modalDeployments}
-                    isOpen={modalDeployments !== null}
-                    onClose={() => setModalDeployments(null)}
-                />
-            )}
+            <DeploymentScopeModal
+                searchFilter={searchFilter}
+                scopeDeploymentCount={scopeDeploymentCount}
+                isOpen={showDeploymentModal}
+                onClose={() => setShowDeploymentModal(false)}
+            />
             <div className="network-policies-generation-scope">
                 <Flex
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -85,7 +72,7 @@ function NetworkPoliciesGenerationScope({
                     spaceItems={{ default: 'spaceItemsSm' }}
                 >
                     <ClusterIcon aria-label="Cluster" />
-                    <span>{cluster}</span>
+                    <span>{scopeHierarchy.cluster.name}</span>
                 </Flex>
             </div>
         </>
