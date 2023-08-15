@@ -134,6 +134,9 @@ function CollectionSelection({
                 fieldId="scopeId"
                 touched={{}}
                 errors={{}}
+                // Workaround to ensure there is enough space for the select menu when opened
+                // at the bottom of a wizard step body (May no longer be needed after upgrade to PF5)
+                className={isOpen ? 'pf-u-mb-3xl' : ''}
             >
                 <Flex
                     direction={{ default: 'row' }}
