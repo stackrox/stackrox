@@ -56,13 +56,15 @@ func GetPrivateKeyBytes() ([]byte, error) {
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	// Load initial key so that we would immediately fail in case
 	// it's not present.
-	initialPrivateKey, err := loadPrivateKey(privateKeyDir)
+	initialPrivateKey, err := loadPrivateKey()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "loading initial value of JWT private key")
 	}
 	privateKeyStore := jwt.NewSinglePrivateKeyStore(initialPrivateKey, keyID)
 	publicKeyStore := jwt.NewDerivedPublicKeyStore(privateKeyStore, keyID)
-	jwt.WatchPrivateKeyDir(privateKeyDir, loadPrivateKey, func(key *rsa.PrivateKey) {
+	jwt.WatchPrivateKeyDir(privateKeyDir, func(_ string) (*rsa.PrivateKey, error) {
+		return loadPrivateKey()
+	}, func(key *rsa.PrivateKey) {
 		privateKeyStore.UpdateKey(keyID, key)
 	})
 
@@ -71,7 +73,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 }
 
 // We pass parameter here to satisfy WatchPrivateKeyDir interface.
-func loadPrivateKey(_ string) (*rsa.PrivateKey, error) {
+func loadPrivateKey() (*rsa.PrivateKey, error) {
 	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading private key")
