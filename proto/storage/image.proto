@@ -57,8 +57,10 @@ message Image {
 }
 
 message DataSource {
-    string id   = 1;
-    string name = 2;
+    string id                = 1;
+    string name              = 2;
+    string mirror            = 3;
+    string mirror_cluster_id = 4;
 }
 
 // Next tag: 7
