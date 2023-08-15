@@ -47,7 +47,12 @@ describe('Collection permission checks', () => {
     it('should not provide mutable UI controls to users with read-only access', () => {
         // Mock a 'READ_ACCESS' permission response
         visitWithStaticResponseForPermissions('/main', {
-            body: { resourceToAccess: { WorkflowAdministration: 'READ_ACCESS' } },
+            body: {
+                resourceToAccess: {
+                    Deployment: 'READ_ACCESS',
+                    WorkflowAdministration: 'READ_ACCESS',
+                },
+            },
         });
         // Ensure the collections link is visible and takes the user to the collections table
         cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`).click();
@@ -72,7 +77,12 @@ describe('Collection permission checks', () => {
     it('should provide the full UI to users with read-write access', () => {
         // Mock a 'READ_WRITE_ACCESS' permission response
         visitWithStaticResponseForPermissions('/main', {
-            body: { resourceToAccess: { WorkflowAdministration: 'READ_WRITE_ACCESS' } },
+            body: {
+                resourceToAccess: {
+                    Deployment: 'READ_ACCESS',
+                    WorkflowAdministration: 'READ_WRITE_ACCESS',
+                },
+            },
         });
         // Ensure the collections link is visible and takes the user to the collections table
         cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`).click();
