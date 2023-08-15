@@ -17,7 +17,6 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import { SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 const deploymentQuery = gql`
     query getDeploymentsForPolicyGeneration($query: String!, $pagination: Pagination!) {
@@ -112,7 +111,7 @@ function DeploymentScopeModal({
                         icon={ExclamationCircleIcon}
                         iconClassName="pf-u-danger-color-100"
                     >
-                        {getAxiosErrorMessage(error.message)}
+                        {error.message}
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
@@ -134,8 +133,8 @@ function DeploymentScopeModal({
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {deployments.map(({ name, namespace }) => (
-                            <Tr key={`${namespace}/${name}`}>
+                        {deployments.map(({ id, name, namespace }) => (
+                            <Tr key={id}>
                                 <Td dataLabel="Deployment">{name}</Td>
                                 <Td dataLabel="Namespace">{namespace}</Td>
                             </Tr>
