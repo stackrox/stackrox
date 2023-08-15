@@ -116,4 +116,31 @@ subjects:
     name: sensor
     namespace: "{{ .Release.Namespace }}"
 
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: "sensor-telemeter-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "prometheusrule" (print "sensor-telemeter-" .Release.Namespace )) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "prometheusrule" (print "sensor-telemeter-" .Release.Namespace )) | nindent 4 }}
+spec:
+  groups:
+    - name: rhacs.telemeter
+      rules:
+        - expr: |
+            max by (branding, build, central_id, hosting, install_method, sensor_id, sensor_version) (
+              rox_sensor_secured_nodes
+            )
+          record: rhacs:telemetry:rox_sensor_secured_nodes
+
+        - expr: |
+            max by (branding, build, central_id, hosting, install_method, sensor_id, sensor_version) (
+              rox_sensor_secured_vcpu
+            )
+          record: rhacs:telemetry:rox_sensor_secured_vcpu
+
 {{- end -}}
