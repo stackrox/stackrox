@@ -20,7 +20,9 @@ import ThemeToggleButton from './ThemeToggleButton';
 import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
-    const isSearchEnabled = useIsRouteEnabled(searchPath);
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForSearch = isRouteEnabled(searchPath);
+
     const location = useLocation();
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
@@ -36,7 +38,7 @@ function MastheadToolbar(): ReactElement {
                         <OrchestratorComponentsToggle />
                     </PageHeaderToolsItem>
                 )}
-                {isSearchEnabled && (
+                {isRouteEnabledForSearch && (
                     <PageHeaderToolsItem>
                         <GlobalSearchButton />
                     </PageHeaderToolsItem>
