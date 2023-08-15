@@ -29,11 +29,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// TODO
-// - Add to PR notes:
-//   - that optimized flow a bit by moving obtaining of registries after sempahore allows entry
-// TODO: mention https://issues.redhat.com/browse/ROX-17570 in PR after fixing scan_test.go
-
 const (
 	defaultMaxSemaphoreWaitTime = 5 * time.Second
 )
