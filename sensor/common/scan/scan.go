@@ -131,7 +131,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	}
 	defer s.scanSemaphore.Release(1)
 
-	log.Debugf("Enriching image %q from namespace %q locally", srcImage.GetName().GetFullName(), namespace)
+	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), namespace, requestID, force)
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
@@ -164,7 +164,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	}
 
 	if errorList.Empty() {
-		log.Debugf("Retrieved image enrichment results from Central for %q with id %q", srcImage.GetName().GetFullName(), srcImage.GetId())
+		log.Debugf("Retrieved image enrichment results from Central for %q with id %q (%v) components", srcImage.GetName().GetFullName(), srcImage.GetId(), centralResp.GetImage().GetComponents())
 	}
 
 	return centralResp.GetImage(), errorList.ToError()
@@ -347,12 +347,14 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 
 	// Fetch signatures from cluster-local registry.
 	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(), registry)
-	// The below logic was copied from Central's image enricher, errors are only logged not returned.
-	if !errors.Is(err, errox.NotAuthorized) {
-		log.Errorf("Fetching image signatures for image %q: %v", image.GetName().GetFullName(), err)
-	} else {
-		// Log not authorized errors in debug mode, since we expect them to occur.
-		log.Debugf("Unauthorized error fetching image signatures for image %q: %v", image.GetName().GetFullName(), err)
+	if err != nil {
+		// Like Central, only log errors related to fetching signatures.
+		if !errors.Is(err, errox.NotAuthorized) {
+			log.Errorf("Fetching image signatures for image %q: %v", image.GetName().GetFullName(), err)
+		} else {
+			// Log not authorized errors in debug mode, since we expect them to occur.
+			log.Debugf("Unauthorized error fetching image signatures for image %q: %v", image.GetName().GetFullName(), err)
+		}
 	}
 
 	if len(sigs) == 0 {

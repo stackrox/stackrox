@@ -399,12 +399,12 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	}
 
 	var imgExists bool
+	var existingImg *storage.Image
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
 	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
 	if imgID != "" && !request.GetForce() {
-		var existingImg *storage.Image
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -444,6 +444,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
 		Notes:          request.GetImageNotes(),
+		Scan:           existingImg.GetScan(),
 		IsClusterLocal: true,
 	}
 
@@ -455,6 +456,9 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				s.informScanWaiter(request.GetRequestId(), nil, err)
 				return nil, err
 			}
+		} else {
+			// If we didn't update the scan, fill in the stats from existing image (if there is one).
+			enricher.FillScanStats(img)
 		}
 
 		if forceSigVerificationUpdate {
