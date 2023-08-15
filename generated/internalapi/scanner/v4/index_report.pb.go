@@ -23,17 +23,14 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type IndexReport struct {
-	HashId               string                       `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
-	State                string                       `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
-	Success              bool                         `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
-	Err                  string                       `protobuf:"bytes,4,opt,name=err,proto3" json:"err,omitempty"`
-	Packages             []*Package                   `protobuf:"bytes,5,rep,name=packages,proto3" json:"packages,omitempty"`
-	Distributions        []*Distribution              `protobuf:"bytes,6,rep,name=distributions,proto3" json:"distributions,omitempty"`
-	Repositories         []*Repository                `protobuf:"bytes,7,rep,name=repositories,proto3" json:"repositories,omitempty"`
-	Environments         map[string]*Environment_List `protobuf:"bytes,8,rep,name=environments,proto3" json:"environments,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
-	XXX_unrecognized     []byte                       `json:"-"`
-	XXX_sizecache        int32                        `json:"-"`
+	HashId               string    `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
+	State                string    `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	Success              bool      `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
+	Err                  string    `protobuf:"bytes,4,opt,name=err,proto3" json:"err,omitempty"`
+	Contents             *Contents `protobuf:"bytes,5,opt,name=contents,proto3" json:"contents,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
 func (m *IndexReport) Reset()         { *m = IndexReport{} }
@@ -97,30 +94,9 @@ func (m *IndexReport) GetErr() string {
 	return ""
 }
 
-func (m *IndexReport) GetPackages() []*Package {
+func (m *IndexReport) GetContents() *Contents {
 	if m != nil {
-		return m.Packages
-	}
-	return nil
-}
-
-func (m *IndexReport) GetDistributions() []*Distribution {
-	if m != nil {
-		return m.Distributions
-	}
-	return nil
-}
-
-func (m *IndexReport) GetRepositories() []*Repository {
-	if m != nil {
-		return m.Repositories
-	}
-	return nil
-}
-
-func (m *IndexReport) GetEnvironments() map[string]*Environment_List {
-	if m != nil {
-		return m.Environments
+		return m.Contents
 	}
 	return nil
 }
@@ -135,36 +111,12 @@ func (m *IndexReport) Clone() *IndexReport {
 	cloned := new(IndexReport)
 	*cloned = *m
 
-	if m.Packages != nil {
-		cloned.Packages = make([]*Package, len(m.Packages))
-		for idx, v := range m.Packages {
-			cloned.Packages[idx] = v.Clone()
-		}
-	}
-	if m.Distributions != nil {
-		cloned.Distributions = make([]*Distribution, len(m.Distributions))
-		for idx, v := range m.Distributions {
-			cloned.Distributions[idx] = v.Clone()
-		}
-	}
-	if m.Repositories != nil {
-		cloned.Repositories = make([]*Repository, len(m.Repositories))
-		for idx, v := range m.Repositories {
-			cloned.Repositories[idx] = v.Clone()
-		}
-	}
-	if m.Environments != nil {
-		cloned.Environments = make(map[string]*Environment_List, len(m.Environments))
-		for k, v := range m.Environments {
-			cloned.Environments[k] = v.Clone()
-		}
-	}
+	cloned.Contents = m.Contents.Clone()
 	return cloned
 }
 
 func init() {
 	proto.RegisterType((*IndexReport)(nil), "scanner.v4.IndexReport")
-	proto.RegisterMapType((map[string]*Environment_List)(nil), "scanner.v4.IndexReport.EnvironmentsEntry")
 }
 
 func init() {
@@ -172,29 +124,22 @@ func init() {
 }
 
 var fileDescriptor_9a3455143a5a0b61 = []byte{
-	// 352 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xcf, 0x4a, 0x2b, 0x31,
-	0x14, 0x87, 0x6f, 0x3a, 0xb7, 0x7f, 0x4c, 0x2b, 0x68, 0x2c, 0x1a, 0x8a, 0x0c, 0x45, 0x37, 0xed,
-	0x66, 0x06, 0x6a, 0x17, 0xd2, 0x85, 0x0b, 0xb1, 0x8b, 0x82, 0x82, 0x64, 0x29, 0x48, 0x49, 0x67,
-	0x82, 0x0d, 0x6d, 0x93, 0x21, 0x49, 0x07, 0xfb, 0x26, 0xbe, 0x8f, 0x1b, 0x97, 0x3e, 0x82, 0xd4,
-	0x17, 0x91, 0x64, 0x5a, 0x4d, 0x11, 0x77, 0xe7, 0xe4, 0x7c, 0xdf, 0x49, 0xf8, 0x05, 0x76, 0xb9,
-	0x30, 0x4c, 0x09, 0x3a, 0xa7, 0x19, 0x8f, 0x75, 0x42, 0x85, 0x60, 0x2a, 0xce, 0xfb, 0x31, 0x17,
-	0x29, 0x7b, 0x1e, 0x2b, 0x96, 0x49, 0x65, 0xa2, 0x4c, 0x49, 0x23, 0x11, 0xdc, 0x8c, 0xa3, 0xbc,
-	0xdf, 0x3a, 0xff, 0x43, 0x4b, 0xe4, 0x62, 0x21, 0x45, 0x21, 0x9c, 0xbd, 0x06, 0xb0, 0x3e, 0xb2,
-	0x7b, 0x88, 0x5b, 0x83, 0x4e, 0x60, 0x75, 0x4a, 0xf5, 0x74, 0xcc, 0x53, 0x0c, 0xda, 0xa0, 0xb3,
-	0x47, 0x2a, 0xb6, 0x1d, 0xa5, 0xa8, 0x09, 0xcb, 0xda, 0x50, 0xc3, 0x70, 0xc9, 0x1d, 0x17, 0x0d,
-	0xc2, 0xb0, 0xaa, 0x97, 0x49, 0xc2, 0xb4, 0xc6, 0x41, 0x1b, 0x74, 0x6a, 0x64, 0xdb, 0xa2, 0x03,
-	0x18, 0x30, 0xa5, 0xf0, 0x7f, 0x47, 0xdb, 0x12, 0xc5, 0xb0, 0x96, 0xd1, 0x64, 0x46, 0x9f, 0x98,
-	0xc6, 0xe5, 0x76, 0xd0, 0xa9, 0xf7, 0x8e, 0xa2, 0x9f, 0xe7, 0x46, 0xf7, 0xc5, 0x8c, 0x7c, 0x43,
-	0xe8, 0x0a, 0xee, 0xa7, 0x5c, 0x1b, 0xc5, 0x27, 0x4b, 0xc3, 0xa5, 0xd0, 0xb8, 0xe2, 0x2c, 0xec,
-	0x5b, 0x37, 0x1e, 0x40, 0x76, 0x71, 0x34, 0x80, 0x0d, 0x1b, 0x8e, 0xe6, 0x46, 0x2a, 0xce, 0x34,
-	0xae, 0x3a, 0xfd, 0xd8, 0xd7, 0xc9, 0x76, 0xbe, 0x22, 0x3b, 0x2c, 0xba, 0x83, 0x0d, 0x26, 0x72,
-	0xae, 0xa4, 0x58, 0x30, 0x61, 0x34, 0xae, 0x39, 0xb7, 0xeb, 0xbb, 0x5e, 0x6c, 0xd1, 0xd0, 0x63,
-	0x87, 0xc2, 0xd8, 0x75, 0xbe, 0xde, 0x7a, 0x84, 0x87, 0xbf, 0x10, 0x1b, 0xd1, 0x8c, 0xad, 0x36,
-	0x39, 0xdb, 0x12, 0xf5, 0x60, 0x39, 0xa7, 0xf3, 0x65, 0x11, 0x72, 0xbd, 0x77, 0xea, 0x5f, 0xe7,
-	0xf9, 0xd1, 0x2d, 0xd7, 0x86, 0x14, 0xe8, 0xa0, 0x74, 0x09, 0xae, 0x9b, 0x6f, 0xeb, 0x10, 0xbc,
-	0xaf, 0x43, 0xf0, 0xb1, 0x0e, 0xc1, 0xcb, 0x67, 0xf8, 0xef, 0xa1, 0x94, 0xf7, 0x27, 0x15, 0xf7,
-	0xc5, 0x17, 0x5f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x17, 0xe9, 0x99, 0x98, 0x40, 0x02, 0x00, 0x00,
+	// 226 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0xcc, 0xcc, 0x2b, 0x49,
+	0x2d, 0xca, 0x4b, 0xcc, 0x49, 0x2c, 0xc8, 0xd4, 0x2f, 0x4e, 0x4e, 0xcc, 0xcb, 0x4b, 0x2d, 0xd2,
+	0x2f, 0x33, 0xd1, 0xcf, 0xcc, 0x4b, 0x49, 0xad, 0x88, 0x2f, 0x4a, 0x2d, 0xc8, 0x2f, 0x2a, 0xd1,
+	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x82, 0x4a, 0xeb, 0x95, 0x99, 0x48, 0x29, 0xe3, 0xd0,
+	0x96, 0x9c, 0x9f, 0x9b, 0x9b, 0x9f, 0x07, 0xd1, 0xa0, 0x34, 0x8b, 0x91, 0x8b, 0xdb, 0x13, 0x64,
+	0x4e, 0x10, 0xd8, 0x18, 0x21, 0x71, 0x2e, 0xf6, 0x8c, 0xc4, 0xe2, 0x8c, 0xf8, 0xcc, 0x14, 0x09,
+	0x46, 0x05, 0x46, 0x0d, 0xce, 0x20, 0x36, 0x10, 0xd7, 0x33, 0x45, 0x48, 0x84, 0x8b, 0xb5, 0xb8,
+	0x24, 0xb1, 0x24, 0x55, 0x82, 0x09, 0x2c, 0x0c, 0xe1, 0x08, 0x49, 0x70, 0xb1, 0x17, 0x97, 0x26,
+	0x27, 0xa7, 0x16, 0x17, 0x4b, 0x30, 0x2b, 0x30, 0x6a, 0x70, 0x04, 0xc1, 0xb8, 0x42, 0x02, 0x5c,
+	0xcc, 0xa9, 0x45, 0x45, 0x12, 0x2c, 0x60, 0xd5, 0x20, 0xa6, 0x90, 0x01, 0x17, 0x47, 0x72, 0x7e,
+	0x5e, 0x49, 0x6a, 0x5e, 0x49, 0xb1, 0x04, 0xab, 0x02, 0xa3, 0x06, 0xb7, 0x91, 0x88, 0x1e, 0xc2,
+	0xb9, 0x7a, 0xce, 0x50, 0xb9, 0x20, 0xb8, 0x2a, 0x27, 0x91, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c,
+	0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc6, 0x63, 0x39, 0x86, 0x28, 0xa6, 0x32, 0x93, 0x24,
+	0x36, 0xb0, 0xcb, 0x8d, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x4e, 0xa4, 0xfb, 0x0a, 0x17, 0x01,
+	0x00, 0x00,
 }
 
 func (m *IndexReport) Marshal() (dAtA []byte, err error) {
@@ -221,73 +166,17 @@ func (m *IndexReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Environments) > 0 {
-		for k := range m.Environments {
-			v := m.Environments[k]
-			baseI := i
-			if v != nil {
-				{
-					size, err := v.MarshalToSizedBuffer(dAtA[:i])
-					if err != nil {
-						return 0, err
-					}
-					i -= size
-					i = encodeVarintIndexReport(dAtA, i, uint64(size))
-				}
-				i--
-				dAtA[i] = 0x12
+	if m.Contents != nil {
+		{
+			size, err := m.Contents.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
 			}
-			i -= len(k)
-			copy(dAtA[i:], k)
-			i = encodeVarintIndexReport(dAtA, i, uint64(len(k)))
-			i--
-			dAtA[i] = 0xa
-			i = encodeVarintIndexReport(dAtA, i, uint64(baseI-i))
-			i--
-			dAtA[i] = 0x42
+			i -= size
+			i = encodeVarintIndexReport(dAtA, i, uint64(size))
 		}
-	}
-	if len(m.Repositories) > 0 {
-		for iNdEx := len(m.Repositories) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Repositories[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintIndexReport(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x3a
-		}
-	}
-	if len(m.Distributions) > 0 {
-		for iNdEx := len(m.Distributions) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Distributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintIndexReport(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x32
-		}
-	}
-	if len(m.Packages) > 0 {
-		for iNdEx := len(m.Packages) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Packages[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintIndexReport(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x2a
-		}
+		i--
+		dAtA[i] = 0x2a
 	}
 	if len(m.Err) > 0 {
 		i -= len(m.Err)
@@ -355,36 +244,9 @@ func (m *IndexReport) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovIndexReport(uint64(l))
 	}
-	if len(m.Packages) > 0 {
-		for _, e := range m.Packages {
-			l = e.Size()
-			n += 1 + l + sovIndexReport(uint64(l))
-		}
-	}
-	if len(m.Distributions) > 0 {
-		for _, e := range m.Distributions {
-			l = e.Size()
-			n += 1 + l + sovIndexReport(uint64(l))
-		}
-	}
-	if len(m.Repositories) > 0 {
-		for _, e := range m.Repositories {
-			l = e.Size()
-			n += 1 + l + sovIndexReport(uint64(l))
-		}
-	}
-	if len(m.Environments) > 0 {
-		for k, v := range m.Environments {
-			_ = k
-			_ = v
-			l = 0
-			if v != nil {
-				l = v.Size()
-				l += 1 + sovIndexReport(uint64(l))
-			}
-			mapEntrySize := 1 + len(k) + sovIndexReport(uint64(len(k))) + l
-			n += mapEntrySize + 1 + sovIndexReport(uint64(mapEntrySize))
-		}
+	if m.Contents != nil {
+		l = m.Contents.Size()
+		n += 1 + l + sovIndexReport(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -545,7 +407,7 @@ func (m *IndexReport) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Packages", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Contents", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -572,207 +434,12 @@ func (m *IndexReport) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Packages = append(m.Packages, &Package{})
-			if err := m.Packages[len(m.Packages)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if m.Contents == nil {
+				m.Contents = &Contents{}
+			}
+			if err := m.Contents.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Distributions", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowIndexReport
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthIndexReport
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthIndexReport
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Distributions = append(m.Distributions, &Distribution{})
-			if err := m.Distributions[len(m.Distributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Repositories", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowIndexReport
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthIndexReport
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthIndexReport
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Repositories = append(m.Repositories, &Repository{})
-			if err := m.Repositories[len(m.Repositories)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Environments", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowIndexReport
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthIndexReport
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthIndexReport
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Environments == nil {
-				m.Environments = make(map[string]*Environment_List)
-			}
-			var mapkey string
-			var mapvalue *Environment_List
-			for iNdEx < postIndex {
-				entryPreIndex := iNdEx
-				var wire uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowIndexReport
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					wire |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				fieldNum := int32(wire >> 3)
-				if fieldNum == 1 {
-					var stringLenmapkey uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowIndexReport
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						stringLenmapkey |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					intStringLenmapkey := int(stringLenmapkey)
-					if intStringLenmapkey < 0 {
-						return ErrInvalidLengthIndexReport
-					}
-					postStringIndexmapkey := iNdEx + intStringLenmapkey
-					if postStringIndexmapkey < 0 {
-						return ErrInvalidLengthIndexReport
-					}
-					if postStringIndexmapkey > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
-					iNdEx = postStringIndexmapkey
-				} else if fieldNum == 2 {
-					var mapmsglen int
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowIndexReport
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						mapmsglen |= int(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					if mapmsglen < 0 {
-						return ErrInvalidLengthIndexReport
-					}
-					postmsgIndex := iNdEx + mapmsglen
-					if postmsgIndex < 0 {
-						return ErrInvalidLengthIndexReport
-					}
-					if postmsgIndex > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapvalue = &Environment_List{}
-					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
-						return err
-					}
-					iNdEx = postmsgIndex
-				} else {
-					iNdEx = entryPreIndex
-					skippy, err := skipIndexReport(dAtA[iNdEx:])
-					if err != nil {
-						return err
-					}
-					if (skippy < 0) || (iNdEx+skippy) < 0 {
-						return ErrInvalidLengthIndexReport
-					}
-					if (iNdEx + skippy) > postIndex {
-						return io.ErrUnexpectedEOF
-					}
-					iNdEx += skippy
-				}
-			}
-			m.Environments[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

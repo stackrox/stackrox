@@ -22,26 +22,28 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-type NormalizedVersion struct {
-	Kind                 string   `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
-	V                    []int32  `protobuf:"varint,2,rep,packed,name=v,proto3" json:"v,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+type Contents struct {
+	Packages             []*Package                   `protobuf:"bytes,1,rep,name=packages,proto3" json:"packages,omitempty"`
+	Distributions        []*Distribution              `protobuf:"bytes,2,rep,name=distributions,proto3" json:"distributions,omitempty"`
+	Repositories         []*Repository                `protobuf:"bytes,3,rep,name=repositories,proto3" json:"repositories,omitempty"`
+	Environments         map[string]*Environment_List `protobuf:"bytes,4,rep,name=environments,proto3" json:"environments,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
 }
 
-func (m *NormalizedVersion) Reset()         { *m = NormalizedVersion{} }
-func (m *NormalizedVersion) String() string { return proto.CompactTextString(m) }
-func (*NormalizedVersion) ProtoMessage()    {}
-func (*NormalizedVersion) Descriptor() ([]byte, []int) {
+func (m *Contents) Reset()         { *m = Contents{} }
+func (m *Contents) String() string { return proto.CompactTextString(m) }
+func (*Contents) ProtoMessage()    {}
+func (*Contents) Descriptor() ([]byte, []int) {
 	return fileDescriptor_005c488b76892c40, []int{0}
 }
-func (m *NormalizedVersion) XXX_Unmarshal(b []byte) error {
+func (m *Contents) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *NormalizedVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Contents) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_NormalizedVersion.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Contents.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -51,45 +53,79 @@ func (m *NormalizedVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *NormalizedVersion) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NormalizedVersion.Merge(m, src)
+func (m *Contents) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Contents.Merge(m, src)
 }
-func (m *NormalizedVersion) XXX_Size() int {
+func (m *Contents) XXX_Size() int {
 	return m.Size()
 }
-func (m *NormalizedVersion) XXX_DiscardUnknown() {
-	xxx_messageInfo_NormalizedVersion.DiscardUnknown(m)
+func (m *Contents) XXX_DiscardUnknown() {
+	xxx_messageInfo_Contents.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_NormalizedVersion proto.InternalMessageInfo
+var xxx_messageInfo_Contents proto.InternalMessageInfo
 
-func (m *NormalizedVersion) GetKind() string {
+func (m *Contents) GetPackages() []*Package {
 	if m != nil {
-		return m.Kind
-	}
-	return ""
-}
-
-func (m *NormalizedVersion) GetV() []int32 {
-	if m != nil {
-		return m.V
+		return m.Packages
 	}
 	return nil
 }
 
-func (m *NormalizedVersion) MessageClone() proto.Message {
+func (m *Contents) GetDistributions() []*Distribution {
+	if m != nil {
+		return m.Distributions
+	}
+	return nil
+}
+
+func (m *Contents) GetRepositories() []*Repository {
+	if m != nil {
+		return m.Repositories
+	}
+	return nil
+}
+
+func (m *Contents) GetEnvironments() map[string]*Environment_List {
+	if m != nil {
+		return m.Environments
+	}
+	return nil
+}
+
+func (m *Contents) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *NormalizedVersion) Clone() *NormalizedVersion {
+func (m *Contents) Clone() *Contents {
 	if m == nil {
 		return nil
 	}
-	cloned := new(NormalizedVersion)
+	cloned := new(Contents)
 	*cloned = *m
 
-	if m.V != nil {
-		cloned.V = make([]int32, len(m.V))
-		copy(cloned.V, m.V)
+	if m.Packages != nil {
+		cloned.Packages = make([]*Package, len(m.Packages))
+		for idx, v := range m.Packages {
+			cloned.Packages[idx] = v.Clone()
+		}
+	}
+	if m.Distributions != nil {
+		cloned.Distributions = make([]*Distribution, len(m.Distributions))
+		for idx, v := range m.Distributions {
+			cloned.Distributions[idx] = v.Clone()
+		}
+	}
+	if m.Repositories != nil {
+		cloned.Repositories = make([]*Repository, len(m.Repositories))
+		for idx, v := range m.Repositories {
+			cloned.Repositories[idx] = v.Clone()
+		}
+	}
+	if m.Environments != nil {
+		cloned.Environments = make(map[string]*Environment_List, len(m.Environments))
+		for k, v := range m.Environments {
+			cloned.Environments[k] = v.Clone()
+		}
 	}
 	return cloned
 }
@@ -236,6 +272,78 @@ func (m *Package) Clone() *Package {
 	return cloned
 }
 
+type NormalizedVersion struct {
+	Kind                 string   `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	V                    []int32  `protobuf:"varint,2,rep,packed,name=v,proto3" json:"v,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NormalizedVersion) Reset()         { *m = NormalizedVersion{} }
+func (m *NormalizedVersion) String() string { return proto.CompactTextString(m) }
+func (*NormalizedVersion) ProtoMessage()    {}
+func (*NormalizedVersion) Descriptor() ([]byte, []int) {
+	return fileDescriptor_005c488b76892c40, []int{2}
+}
+func (m *NormalizedVersion) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NormalizedVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NormalizedVersion.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NormalizedVersion) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NormalizedVersion.Merge(m, src)
+}
+func (m *NormalizedVersion) XXX_Size() int {
+	return m.Size()
+}
+func (m *NormalizedVersion) XXX_DiscardUnknown() {
+	xxx_messageInfo_NormalizedVersion.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NormalizedVersion proto.InternalMessageInfo
+
+func (m *NormalizedVersion) GetKind() string {
+	if m != nil {
+		return m.Kind
+	}
+	return ""
+}
+
+func (m *NormalizedVersion) GetV() []int32 {
+	if m != nil {
+		return m.V
+	}
+	return nil
+}
+
+func (m *NormalizedVersion) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NormalizedVersion) Clone() *NormalizedVersion {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NormalizedVersion)
+	*cloned = *m
+
+	if m.V != nil {
+		cloned.V = make([]int32, len(m.V))
+		copy(cloned.V, m.V)
+	}
+	return cloned
+}
+
 type Distribution struct {
 	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Did                  string   `protobuf:"bytes,2,opt,name=did,proto3" json:"did,omitempty"`
@@ -255,7 +363,7 @@ func (m *Distribution) Reset()         { *m = Distribution{} }
 func (m *Distribution) String() string { return proto.CompactTextString(m) }
 func (*Distribution) ProtoMessage()    {}
 func (*Distribution) Descriptor() ([]byte, []int) {
-	return fileDescriptor_005c488b76892c40, []int{2}
+	return fileDescriptor_005c488b76892c40, []int{3}
 }
 func (m *Distribution) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -375,7 +483,7 @@ func (m *Repository) Reset()         { *m = Repository{} }
 func (m *Repository) String() string { return proto.CompactTextString(m) }
 func (*Repository) ProtoMessage()    {}
 func (*Repository) Descriptor() ([]byte, []int) {
-	return fileDescriptor_005c488b76892c40, []int{3}
+	return fileDescriptor_005c488b76892c40, []int{4}
 }
 func (m *Repository) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -468,7 +576,7 @@ func (m *Environment) Reset()         { *m = Environment{} }
 func (m *Environment) String() string { return proto.CompactTextString(m) }
 func (*Environment) ProtoMessage()    {}
 func (*Environment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_005c488b76892c40, []int{4}
+	return fileDescriptor_005c488b76892c40, []int{5}
 }
 func (m *Environment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -553,7 +661,7 @@ func (m *Environment_List) Reset()         { *m = Environment_List{} }
 func (m *Environment_List) String() string { return proto.CompactTextString(m) }
 func (*Environment_List) ProtoMessage()    {}
 func (*Environment_List) Descriptor() ([]byte, []int) {
-	return fileDescriptor_005c488b76892c40, []int{4, 0}
+	return fileDescriptor_005c488b76892c40, []int{5, 0}
 }
 func (m *Environment_List) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -609,8 +717,10 @@ func (m *Environment_List) Clone() *Environment_List {
 }
 
 func init() {
-	proto.RegisterType((*NormalizedVersion)(nil), "scanner.v4.NormalizedVersion")
+	proto.RegisterType((*Contents)(nil), "scanner.v4.Contents")
+	proto.RegisterMapType((map[string]*Environment_List)(nil), "scanner.v4.Contents.EnvironmentsEntry")
 	proto.RegisterType((*Package)(nil), "scanner.v4.Package")
+	proto.RegisterType((*NormalizedVersion)(nil), "scanner.v4.NormalizedVersion")
 	proto.RegisterType((*Distribution)(nil), "scanner.v4.Distribution")
 	proto.RegisterType((*Repository)(nil), "scanner.v4.Repository")
 	proto.RegisterType((*Environment)(nil), "scanner.v4.Environment")
@@ -622,45 +732,52 @@ func init() {
 }
 
 var fileDescriptor_005c488b76892c40 = []byte{
-	// 547 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x5d, 0x8b, 0xd3, 0x40,
-	0x14, 0x75, 0x92, 0x7e, 0x6c, 0x6e, 0xbb, 0xdd, 0x76, 0x14, 0x1d, 0x84, 0xd6, 0xd2, 0x45, 0x2c,
-	0x0a, 0x2d, 0xac, 0xf5, 0xc9, 0x37, 0x77, 0x05, 0x0b, 0xcb, 0x22, 0x79, 0xf0, 0xc1, 0x97, 0x90,
-	0x66, 0x46, 0x77, 0x68, 0x33, 0x13, 0x26, 0xd3, 0x40, 0xfd, 0x25, 0xfe, 0x24, 0x1f, 0xfd, 0x01,
-	0x3e, 0x48, 0x05, 0x9f, 0xfd, 0x09, 0x32, 0xc9, 0xb4, 0xc9, 0x76, 0x15, 0xf6, 0xed, 0xe4, 0xcc,
-	0x9d, 0x3b, 0xe7, 0x9c, 0x7b, 0x09, 0x9c, 0x72, 0xa1, 0x99, 0x12, 0xe1, 0x2a, 0x4c, 0xf8, 0x34,
-	0x8d, 0x42, 0x21, 0x98, 0x9a, 0x66, 0xb3, 0x69, 0x24, 0xe3, 0x58, 0x8a, 0x49, 0xa2, 0xa4, 0x96,
-	0x18, 0xec, 0xc1, 0x24, 0x9b, 0x8d, 0x5e, 0x41, 0xef, 0x4a, 0xaa, 0x38, 0x5c, 0xf1, 0x2f, 0x8c,
-	0x7e, 0x60, 0x2a, 0xe5, 0x52, 0x60, 0x0c, 0xb5, 0x25, 0x17, 0x94, 0xa0, 0x21, 0x1a, 0x7b, 0x7e,
-	0x8e, 0x71, 0x1b, 0x50, 0x46, 0x9c, 0xa1, 0x3b, 0xae, 0xfb, 0x28, 0x1b, 0xfd, 0x70, 0xa0, 0xf9,
-	0x3e, 0x8c, 0x96, 0xe1, 0x67, 0x86, 0x3b, 0xe0, 0xf0, 0x5d, 0xad, 0xc3, 0xa9, 0xb9, 0x2d, 0xc2,
-	0x98, 0x11, 0xa7, 0xb8, 0x6d, 0x30, 0x26, 0xd0, 0xcc, 0x8a, 0xe6, 0xc4, 0xcd, 0xe9, 0xdd, 0x27,
-	0xbe, 0x04, 0x2c, 0xf6, 0x02, 0x82, 0x5d, 0x51, 0x6d, 0x88, 0xc6, 0xad, 0xb3, 0xfe, 0xa4, 0x54,
-	0x3a, 0xb9, 0x25, 0xd3, 0xef, 0x89, 0xff, 0x2a, 0xaf, 0x57, 0x94, 0xbf, 0x80, 0x46, 0x2a, 0xd7,
-	0x2a, 0x62, 0xa4, 0x91, 0x77, 0xbd, 0x5f, 0xed, 0x6a, 0x4d, 0xf8, 0xb6, 0x04, 0xf7, 0x01, 0x92,
-	0x82, 0x0a, 0xe8, 0x82, 0x1c, 0xe5, 0x6d, 0x3c, 0xcb, 0x5c, 0x2c, 0xf0, 0x33, 0x38, 0x51, 0x2c,
-	0x91, 0x29, 0xd7, 0x52, 0x6d, 0x82, 0x6b, 0x2e, 0x34, 0xf1, 0xf2, 0x9a, 0x4e, 0x49, 0xbf, 0xe3,
-	0x42, 0xe3, 0x87, 0xd0, 0x88, 0x25, 0x5d, 0xaf, 0x18, 0x81, 0xfc, 0xdc, 0x7e, 0x19, 0x81, 0xa1,
-	0x8a, 0xae, 0x49, 0xab, 0x10, 0x68, 0x30, 0xee, 0x82, 0x1b, 0x25, 0x8c, 0xb4, 0x73, 0xca, 0xc0,
-	0xd1, 0x1f, 0x04, 0xed, 0x0b, 0x9e, 0x6a, 0xc5, 0x17, 0x6b, 0x6d, 0x7c, 0x1d, 0x66, 0xdc, 0x05,
-	0x97, 0x72, 0x6a, 0x23, 0x36, 0x70, 0x9f, 0xba, 0xfb, 0xef, 0xd4, 0x6b, 0x37, 0x53, 0x7f, 0x0e,
-	0x3d, 0x0b, 0x83, 0x48, 0x52, 0x16, 0xe4, 0x57, 0x8b, 0xd0, 0x4e, 0xec, 0xc1, 0xb9, 0xa4, 0xec,
-	0xca, 0x74, 0xe9, 0x03, 0xec, 0x6a, 0x39, 0xcd, 0x33, 0xf4, 0x7c, 0xcf, 0x32, 0x73, 0xba, 0x77,
-	0xd4, 0xbc, 0xed, 0xe8, 0x68, 0xef, 0x08, 0x3f, 0x81, 0x56, 0xa2, 0x98, 0xd6, 0x9b, 0xe2, 0xa9,
-	0x22, 0x34, 0x28, 0x28, 0xf3, 0xca, 0xe8, 0x13, 0x80, 0xbf, 0x8f, 0xf0, 0x4e, 0x3b, 0xd5, 0x05,
-	0x77, 0xc9, 0x36, 0xd6, 0xb0, 0x81, 0x86, 0x59, 0x2b, 0x6e, 0xbd, 0x1a, 0xb8, 0x13, 0x52, 0x2f,
-	0xa3, 0xfd, 0x8d, 0xa0, 0xf5, 0x56, 0x64, 0x5c, 0x49, 0x11, 0x33, 0xa1, 0x0f, 0x06, 0x8e, 0x0e,
-	0x07, 0x7e, 0x0a, 0xc7, 0x5c, 0x68, 0x25, 0xe9, 0x3a, 0x62, 0x34, 0xe0, 0xc2, 0x2a, 0x68, 0x97,
-	0xe4, 0x5c, 0x98, 0xad, 0xa0, 0x95, 0x69, 0x99, 0x98, 0x0a, 0x55, 0x9d, 0x2a, 0x3d, 0xa7, 0xf8,
-	0x29, 0x54, 0xf6, 0x24, 0xe0, 0x34, 0x25, 0xb5, 0xa1, 0x3b, 0xf6, 0xfc, 0xe3, 0x92, 0x9d, 0xd3,
-	0xf4, 0xf1, 0x39, 0xd4, 0x2e, 0x79, 0xaa, 0xf1, 0x6b, 0x68, 0xb3, 0x52, 0x6a, 0x4a, 0xd0, 0xd0,
-	0x1d, 0xb7, 0xce, 0x1e, 0x55, 0xf7, 0xb7, 0x62, 0xc5, 0xbf, 0x51, 0xfc, 0xe6, 0xc1, 0xb7, 0xed,
-	0x00, 0x7d, 0xdf, 0x0e, 0xd0, 0xcf, 0xed, 0x00, 0x7d, 0xfd, 0x35, 0xb8, 0xf7, 0xd1, 0xc9, 0x66,
-	0x8b, 0x46, 0xfe, 0x0b, 0x78, 0xf9, 0x37, 0x00, 0x00, 0xff, 0xff, 0x8f, 0x54, 0x4f, 0x42, 0x29,
-	0x04, 0x00, 0x00,
+	// 664 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0x5f, 0x6b, 0x13, 0x41,
+	0x10, 0xf7, 0xee, 0x92, 0x34, 0x99, 0xa4, 0x7f, 0xb2, 0x4a, 0x5d, 0x8a, 0x8d, 0x25, 0x45, 0x2d,
+	0x0a, 0x09, 0xd4, 0x0a, 0x52, 0xc1, 0x07, 0xdb, 0x82, 0x91, 0x52, 0xe4, 0x1e, 0x7c, 0x10, 0x24,
+	0x5c, 0x6e, 0x57, 0xbb, 0x34, 0xd9, 0x0d, 0x7b, 0x9b, 0x83, 0xf8, 0x49, 0xfc, 0x48, 0x3e, 0xfa,
+	0x01, 0x7c, 0x90, 0x08, 0x3e, 0xfb, 0x11, 0x64, 0xff, 0x24, 0xb7, 0x49, 0x5b, 0xf0, 0x6d, 0x76,
+	0xe6, 0x37, 0x7f, 0x76, 0xe6, 0x37, 0x03, 0xfb, 0x8c, 0x2b, 0x2a, 0x79, 0x32, 0x4c, 0xc6, 0xac,
+	0x9b, 0xa5, 0x09, 0xe7, 0x54, 0x76, 0xf3, 0xa3, 0x6e, 0x2a, 0x46, 0x23, 0xc1, 0x3b, 0x63, 0x29,
+	0x94, 0x40, 0xe0, 0x0c, 0x9d, 0xfc, 0xa8, 0x3d, 0x0b, 0xa1, 0x7a, 0x22, 0xb8, 0xa2, 0x5c, 0x65,
+	0xa8, 0x0b, 0xd5, 0x71, 0x92, 0x5e, 0x25, 0x5f, 0x68, 0x86, 0x83, 0xbd, 0xe8, 0xa0, 0x7e, 0x78,
+	0xb7, 0x53, 0x60, 0x3b, 0xef, 0xad, 0x2d, 0x5e, 0x80, 0xd0, 0x6b, 0x58, 0x27, 0x2c, 0x53, 0x92,
+	0x0d, 0x26, 0x8a, 0x09, 0x9e, 0xe1, 0xd0, 0x78, 0x61, 0xdf, 0xeb, 0xd4, 0x03, 0xc4, 0xcb, 0x70,
+	0x74, 0x0c, 0x0d, 0x49, 0xc7, 0x22, 0x63, 0x4a, 0x48, 0x46, 0x33, 0x1c, 0x19, 0xf7, 0x6d, 0xdf,
+	0x3d, 0x9e, 0xdb, 0xa7, 0xf1, 0x12, 0x16, 0xbd, 0x83, 0x06, 0xe5, 0x39, 0x93, 0x82, 0x8f, 0x74,
+	0xf1, 0xb8, 0x64, 0x7c, 0x1f, 0xfb, 0xbe, 0xf3, 0x8f, 0x75, 0xce, 0x3c, 0xe0, 0x19, 0x57, 0x3a,
+	0x96, 0xef, 0xbb, 0xf3, 0x09, 0x9a, 0xd7, 0x20, 0x68, 0x0b, 0xa2, 0x2b, 0x3a, 0xc5, 0xc1, 0x5e,
+	0x70, 0x50, 0x8b, 0xb5, 0x88, 0x0e, 0xa1, 0x9c, 0x27, 0xc3, 0x09, 0xc5, 0xe1, 0x5e, 0x70, 0x50,
+	0x3f, 0x7c, 0xe0, 0xe7, 0xf2, 0xfc, 0x3b, 0xe7, 0x2c, 0x53, 0xb1, 0x85, 0x1e, 0x87, 0x2f, 0x83,
+	0xf6, 0xcf, 0x10, 0xd6, 0x5c, 0xf3, 0xd0, 0x06, 0x84, 0x8c, 0xb8, 0xa0, 0x21, 0x23, 0x08, 0x41,
+	0x89, 0x27, 0x23, 0x1b, 0xb2, 0x16, 0x1b, 0x19, 0x61, 0x58, 0xcb, 0xa9, 0xcc, 0x98, 0xe0, 0x38,
+	0x32, 0xea, 0xf9, 0x13, 0x9d, 0x03, 0xe2, 0x42, 0x8e, 0x92, 0x21, 0xfb, 0x4a, 0x49, 0x7f, 0x0e,
+	0x2a, 0x99, 0x72, 0x76, 0xfd, 0x72, 0x2e, 0x16, 0xa8, 0x0f, 0x16, 0x14, 0x37, 0xf9, 0xaa, 0x4a,
+	0xe7, 0xbe, 0x62, 0x9c, 0xe0, 0xb2, 0xcd, 0xad, 0x65, 0xf4, 0x0c, 0x2a, 0x99, 0x98, 0xc8, 0x94,
+	0xe2, 0x8a, 0x89, 0x7a, 0x23, 0x03, 0x1c, 0x04, 0xed, 0x02, 0x38, 0x2e, 0xf4, 0xc9, 0x00, 0x57,
+	0x4d, 0x98, 0x9a, 0xd3, 0x9c, 0x0e, 0xd0, 0x13, 0xd8, 0x5c, 0x8c, 0x6c, 0xda, 0xbf, 0x64, 0x5c,
+	0xe1, 0x9a, 0xc1, 0x6c, 0x14, 0xea, 0xb7, 0x8c, 0x2b, 0xb4, 0x0d, 0x95, 0x91, 0x20, 0x93, 0x21,
+	0xc5, 0x60, 0xec, 0xee, 0xa5, 0x0b, 0x4c, 0x64, 0x7a, 0x89, 0xeb, 0xb6, 0x40, 0x2d, 0xeb, 0xb1,
+	0xa4, 0x63, 0x8a, 0x1b, 0x76, 0x2c, 0xe9, 0x98, 0xb6, 0x5f, 0x40, 0xf3, 0xe2, 0xd6, 0xbf, 0x05,
+	0xde, 0xdf, 0x1a, 0x10, 0xe4, 0x86, 0xa2, 0xe5, 0x38, 0xc8, 0xdb, 0x7f, 0x03, 0x68, 0xf8, 0xe4,
+	0xbc, 0x36, 0x9a, 0x2d, 0x88, 0x08, 0x23, 0x6e, 0x32, 0x5a, 0x5c, 0x0c, 0x2b, 0xba, 0x79, 0x58,
+	0xa5, 0xe5, 0x61, 0x3d, 0x85, 0xa6, 0x13, 0xfb, 0xa9, 0x20, 0xb4, 0x6f, 0x5c, 0x6d, 0xaf, 0x37,
+	0x9d, 0xe1, 0x44, 0x10, 0x7a, 0xa1, 0xa3, 0xec, 0x02, 0xcc, 0xb1, 0x8c, 0x98, 0xd6, 0xd7, 0xe2,
+	0x9a, 0xd3, 0xf4, 0xc8, 0xa2, 0x11, 0x6b, 0xd7, 0x1b, 0x51, 0x5d, 0x34, 0x02, 0x3d, 0x84, 0xfa,
+	0x58, 0x52, 0xa5, 0xa6, 0x36, 0x95, 0xed, 0x35, 0x58, 0x95, 0xce, 0xd2, 0xfe, 0x0c, 0x50, 0xec,
+	0xd3, 0x7f, 0x51, 0xd1, 0x2d, 0x41, 0x54, 0x2c, 0xc1, 0x16, 0x44, 0x13, 0xc9, 0xdc, 0x5f, 0xb5,
+	0x38, 0x2f, 0xa4, 0x5c, 0x4c, 0xe4, 0x4f, 0x00, 0x75, 0x6f, 0x21, 0x56, 0x78, 0x12, 0xac, 0xf2,
+	0x64, 0x1f, 0xd6, 0x19, 0x57, 0x52, 0x90, 0x49, 0x4a, 0x49, 0x9f, 0x71, 0x57, 0x41, 0xa3, 0x50,
+	0xf6, 0xb8, 0x26, 0x93, 0x7f, 0x3c, 0x74, 0x9b, 0x6c, 0x55, 0x1b, 0xbe, 0xba, 0x47, 0xd0, 0x23,
+	0xf0, 0xe8, 0xd5, 0x67, 0xc4, 0x9e, 0x86, 0x5a, 0xbc, 0x5e, 0x68, 0x7b, 0x24, 0xdb, 0x39, 0x81,
+	0x92, 0xde, 0x53, 0xf4, 0x6a, 0xe5, 0x8e, 0xd8, 0xc3, 0x77, 0xff, 0x96, 0xdd, 0x5e, 0x3e, 0x1c,
+	0x6f, 0xee, 0x7d, 0x9f, 0xb5, 0x82, 0x1f, 0xb3, 0x56, 0xf0, 0x6b, 0xd6, 0x0a, 0xbe, 0xfd, 0x6e,
+	0xdd, 0xf9, 0x18, 0xe6, 0x47, 0x83, 0x8a, 0xb9, 0xb3, 0xcf, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff,
+	0x5b, 0xec, 0xc3, 0xfb, 0x8e, 0x05, 0x00, 0x00,
 }
 
-func (m *NormalizedVersion) Marshal() (dAtA []byte, err error) {
+func (m *Contents) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -670,12 +787,12 @@ func (m *NormalizedVersion) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NormalizedVersion) MarshalTo(dAtA []byte) (int, error) {
+func (m *Contents) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *NormalizedVersion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Contents) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -684,31 +801,73 @@ func (m *NormalizedVersion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.V) > 0 {
-		dAtA2 := make([]byte, len(m.V)*10)
-		var j1 int
-		for _, num1 := range m.V {
-			num := uint64(num1)
-			for num >= 1<<7 {
-				dAtA2[j1] = uint8(uint64(num)&0x7f | 0x80)
-				num >>= 7
-				j1++
+	if len(m.Environments) > 0 {
+		for k := range m.Environments {
+			v := m.Environments[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintCommon(dAtA, i, uint64(size))
+				}
+				i--
+				dAtA[i] = 0x12
 			}
-			dAtA2[j1] = uint8(num)
-			j1++
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintCommon(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintCommon(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x22
 		}
-		i -= j1
-		copy(dAtA[i:], dAtA2[:j1])
-		i = encodeVarintCommon(dAtA, i, uint64(j1))
-		i--
-		dAtA[i] = 0x12
 	}
-	if len(m.Kind) > 0 {
-		i -= len(m.Kind)
-		copy(dAtA[i:], m.Kind)
-		i = encodeVarintCommon(dAtA, i, uint64(len(m.Kind)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.Repositories) > 0 {
+		for iNdEx := len(m.Repositories) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Repositories[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCommon(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Distributions) > 0 {
+		for iNdEx := len(m.Distributions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Distributions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCommon(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.Packages) > 0 {
+		for iNdEx := len(m.Packages) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Packages[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCommon(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -821,6 +980,59 @@ func (m *Package) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintCommon(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NormalizedVersion) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NormalizedVersion) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NormalizedVersion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.V) > 0 {
+		dAtA5 := make([]byte, len(m.V)*10)
+		var j4 int
+		for _, num1 := range m.V {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA5[j4] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j4++
+			}
+			dAtA5[j4] = uint8(num)
+			j4++
+		}
+		i -= j4
+		copy(dAtA[i:], dAtA5[:j4])
+		i = encodeVarintCommon(dAtA, i, uint64(j4))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Kind) > 0 {
+		i -= len(m.Kind)
+		copy(dAtA[i:], m.Kind)
+		i = encodeVarintCommon(dAtA, i, uint64(len(m.Kind)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1088,22 +1300,42 @@ func encodeVarintCommon(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *NormalizedVersion) Size() (n int) {
+func (m *Contents) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Kind)
-	if l > 0 {
-		n += 1 + l + sovCommon(uint64(l))
-	}
-	if len(m.V) > 0 {
-		l = 0
-		for _, e := range m.V {
-			l += sovCommon(uint64(e))
+	if len(m.Packages) > 0 {
+		for _, e := range m.Packages {
+			l = e.Size()
+			n += 1 + l + sovCommon(uint64(l))
 		}
-		n += 1 + sovCommon(uint64(l)) + l
+	}
+	if len(m.Distributions) > 0 {
+		for _, e := range m.Distributions {
+			l = e.Size()
+			n += 1 + l + sovCommon(uint64(l))
+		}
+	}
+	if len(m.Repositories) > 0 {
+		for _, e := range m.Repositories {
+			l = e.Size()
+			n += 1 + l + sovCommon(uint64(l))
+		}
+	}
+	if len(m.Environments) > 0 {
+		for k, v := range m.Environments {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovCommon(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovCommon(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovCommon(uint64(mapEntrySize))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1160,6 +1392,29 @@ func (m *Package) Size() (n int) {
 	l = len(m.Cpe)
 	if l > 0 {
 		n += 1 + l + sovCommon(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NormalizedVersion) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Kind)
+	if l > 0 {
+		n += 1 + l + sovCommon(uint64(l))
+	}
+	if len(m.V) > 0 {
+		l = 0
+		for _, e := range m.V {
+			l += sovCommon(uint64(e))
+		}
+		n += 1 + sovCommon(uint64(l)) + l
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1301,7 +1556,7 @@ func sovCommon(x uint64) (n int) {
 func sozCommon(x uint64) (n int) {
 	return sovCommon(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *NormalizedVersion) Unmarshal(dAtA []byte) error {
+func (m *Contents) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1324,17 +1579,17 @@ func (m *NormalizedVersion) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: NormalizedVersion: wiretype end group for non-group")
+			return fmt.Errorf("proto: Contents: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NormalizedVersion: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Contents: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Packages", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowCommon
@@ -1344,81 +1599,148 @@ func (m *NormalizedVersion) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthCommon
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthCommon
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Kind = string(dAtA[iNdEx:postIndex])
+			m.Packages = append(m.Packages, &Package{})
+			if err := m.Packages[len(m.Packages)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 2:
-			if wireType == 0 {
-				var v int32
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowCommon
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int32(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Distributions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommon
 				}
-				m.V = append(m.V, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowCommon
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return ErrInvalidLengthCommon
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return ErrInvalidLengthCommon
-				}
-				if postIndex > l {
+				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				var elementCount int
-				var count int
-				for _, integer := range dAtA[iNdEx:postIndex] {
-					if integer < 128 {
-						count++
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommon
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Distributions = append(m.Distributions, &Distribution{})
+			if err := m.Distributions[len(m.Distributions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Repositories", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommon
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommon
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Repositories = append(m.Repositories, &Repository{})
+			if err := m.Repositories[len(m.Repositories)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Environments", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommon
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCommon
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Environments == nil {
+				m.Environments = make(map[string]*Environment_List)
+			}
+			var mapkey string
+			var mapvalue *Environment_List
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowCommon
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
 					}
 				}
-				elementCount = count
-				if elementCount != 0 && len(m.V) == 0 {
-					m.V = make([]int32, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v int32
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return ErrIntOverflowCommon
@@ -1428,16 +1750,72 @@ func (m *NormalizedVersion) Unmarshal(dAtA []byte) error {
 						}
 						b := dAtA[iNdEx]
 						iNdEx++
-						v |= int32(b&0x7F) << shift
+						stringLenmapkey |= uint64(b&0x7F) << shift
 						if b < 0x80 {
 							break
 						}
 					}
-					m.V = append(m.V, v)
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthCommon
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthCommon
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowCommon
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthCommon
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthCommon
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &Environment_List{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipCommon(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthCommon
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
 				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field V", wireType)
 			}
+			m.Environments[mapkey] = mapvalue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCommon(dAtA[iNdEx:])
@@ -1849,6 +2227,165 @@ func (m *Package) Unmarshal(dAtA []byte) error {
 			}
 			m.Cpe = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCommon(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NormalizedVersion) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCommon
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NormalizedVersion: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NormalizedVersion: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Kind", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCommon
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCommon
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCommon
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Kind = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType == 0 {
+				var v int32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowCommon
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.V = append(m.V, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowCommon
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthCommon
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthCommon
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.V) == 0 {
+					m.V = make([]int32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v int32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowCommon
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= int32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.V = append(m.V, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field V", wireType)
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCommon(dAtA[iNdEx:])
