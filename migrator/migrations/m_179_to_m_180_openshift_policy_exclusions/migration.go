@@ -38,11 +38,11 @@ var (
 	policyDiffs = []postgresHelper.PolicyDiff{
 		{
 			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "exec-iptables.json",
+			PolicyFileName:  "exec-iptables-root.json",
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
-			PolicyFileName:  "exec-iptables-root.json",
+			PolicyFileName:  "exec-iptables.json",
 		},
 		{
 			FieldsToCompare: fieldsToCompare,
