@@ -1,4 +1,4 @@
-package info
+package telemetry
 
 import (
 	"testing"
