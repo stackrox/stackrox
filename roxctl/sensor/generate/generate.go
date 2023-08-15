@@ -213,7 +213,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "image repository sensor should be deployed with (if unset, a default will be used)")
 	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, ebpf, core_bpf). Note that core_bpf is on Tech Preview stage")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, ebpf, core_bpf).")
 
 	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 

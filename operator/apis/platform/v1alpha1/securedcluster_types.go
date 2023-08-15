@@ -204,14 +204,14 @@ type PerNodeSpec struct {
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that 'CORE_BPF' is on Tech Preview stage and that the collection method will be switched to EBPF if KernelModule is used.
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to EBPF if KernelModule is used.
 // +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection;KernelModule
 type CollectionMethod string
 
 const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
-	// CollectionCOREBPF means: use CORE_BPF collection [Tech Preview].
+	// CollectionCOREBPF means: use CORE_BPF collection.
 	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionNone means: NO_COLLECTION.
 	CollectionNone CollectionMethod = "NoCollection"
@@ -274,7 +274,6 @@ type CollectorContainerSpec struct {
 	// The method for system-level data collection. EBPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
-	// Note that CORE_BPF is on Tech Preview stage.
 	//+kubebuilder:default=EBPF
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`

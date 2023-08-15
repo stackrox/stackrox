@@ -249,7 +249,7 @@ chart and their default values:
 |`image.main.registry`| Address of the registry you are using for main image.|`[< required "" .MainRegistry >]` |
 |`image.collector.registry`| Address of the registry you are using for collector image.|`[< required "" .CollectorRegistry >]` |
 |`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
-|`collector.collectionMethod`|Either `EBPF`, `CORE_BPF [Tech Preview]`, or `NO_COLLECTION`. |`EBPF` |
+|`collector.collectionMethod`|Either `EBPF`, `CORE_BPF`, or `NO_COLLECTION`. |`EBPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
 |`collector.slimMode`| Specify `true` if you want to use a slim Collector image for deploying Collector. Using slim Collector images requires Central to provide the matching kernel module or eBPF probe. If you are running the StackRox Kubernetes Security Platform in offline mode, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html) and upload it to Central for slim Collectors to function. Otherwise, you must ensure that Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.|`false` |
 |`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
