@@ -3,16 +3,51 @@ package v2
 import (
 	"testing"
 
-	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
+	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
+	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestConvertV2ReportConfigurationToProto(t *testing.T) {
+func TestTypeConversions(t *testing.T) {
+	suite.Run(t, new(typeConversionTestSuite))
+}
+
+type typeConversionTestSuite struct {
+	suite.Suite
+	mockCtrl *gomock.Controller
+
+	collectionDatastore *collectionDSMocks.MockDataStore
+	notifierDatastore   *notifierDSMocks.MockDataStore
+	service             *serviceImpl
+}
+
+func (s *typeConversionTestSuite) SetupSuite() {
+	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
+	if !env.VulnReportingEnhancements.BooleanSetting() {
+		s.T().Skip("Skip test when reporting enhancements are disabled")
+		s.T().SkipNow()
+	}
+
+	s.mockCtrl = gomock.NewController(s.T())
+	s.collectionDatastore = collectionDSMocks.NewMockDataStore(s.mockCtrl)
+	s.notifierDatastore = notifierDSMocks.NewMockDataStore(s.mockCtrl)
+	s.service = &serviceImpl{
+		collectionDatastore: s.collectionDatastore,
+		notifierDatastore:   s.notifierDatastore,
+	}
+}
+
+func (s *typeConversionTestSuite) TearDownSuite() {
+	s.mockCtrl.Finish()
+}
+
+func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 	creator := &storage.SlimUser{
 		Id:   "uid",
 		Name: "name",
@@ -135,10 +170,10 @@ func TestConvertV2ReportConfigurationToProto(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.testname, func(t *testing.T) {
+		s.T().Run(c.testname, func(t *testing.T) {
 			reportConfig := c.reportConfigGen()
 			expected := c.resultGen()
-			converted := convertV2ReportConfigurationToProto(reportConfig, creator, accessScopeRules)
+			converted := s.service.convertV2ReportConfigurationToProto(reportConfig, creator, accessScopeRules)
 			assert.Equal(t, expected, converted)
 		})
 	}
@@ -156,10 +191,7 @@ func setCollectionName(reportConfig *apiV2.ReportConfiguration, name string) {
 	}
 }
 
-func TestConvertProtoReportConfigurationToV2(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	notifierDatastore := notifierMocks.NewMockDataStore(mockCtrl)
-	collectionDatastore := collectionMocks.NewMockDataStore(mockCtrl)
+func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 	mockNotifierName := "mock-notifier"
 	mockCollectionName := "mock-collection"
 
@@ -270,18 +302,18 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.testname, func(t *testing.T) {
+		s.T().Run(c.testname, func(t *testing.T) {
 			reportConfig := c.reportConfigGen()
 
 			for _, notifierConfig := range reportConfig.GetNotifiers() {
-				notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetId()).
+				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetId()).
 					Return(&storage.Notifier{
 						Id:   notifierConfig.GetId(),
 						Name: mockNotifierName,
 					}, true, nil).Times(1)
 			}
 			if reportConfig.GetResourceScope() != nil && reportConfig.GetResourceScope().GetScopeReference() != nil {
-				collectionDatastore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
+				s.collectionDatastore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
 					Return(&storage.ResourceCollection{
 						Id:   reportConfig.GetResourceScope().GetCollectionId(),
 						Name: mockCollectionName,
@@ -289,14 +321,14 @@ func TestConvertProtoReportConfigurationToV2(t *testing.T) {
 			}
 
 			expected := c.resultGen()
-			converted, err := convertProtoReportConfigurationToV2(reportConfig, collectionDatastore, notifierDatastore)
+			converted, err := s.service.convertProtoReportConfigurationToV2(reportConfig)
 			assert.NoError(t, err)
 			assert.Equal(t, expected, converted)
 		})
 	}
 }
 
-func TestConvertProtoScheduleToV2(t *testing.T) {
+func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 	var cases = []struct {
 		testname string
 		schedule *storage.Schedule
@@ -334,14 +366,14 @@ func TestConvertProtoScheduleToV2(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.testname, func(t *testing.T) {
-			converted := ConvertProtoScheduleToV2(c.schedule)
+		s.T().Run(c.testname, func(t *testing.T) {
+			converted := s.service.convertProtoScheduleToV2(c.schedule)
 			assert.Equal(t, c.result, converted)
 		})
 	}
 }
 
-func TestConvertV2ScheduleToProto(t *testing.T) {
+func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 	var cases = []struct {
 		testname string
 		schedule *apiV2.ReportSchedule
@@ -365,8 +397,8 @@ func TestConvertV2ScheduleToProto(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.testname, func(t *testing.T) {
-			converted := convertV2ScheduleToProto(c.schedule)
+		s.T().Run(c.testname, func(t *testing.T) {
+			converted := s.service.convertV2ScheduleToProto(c.schedule)
 			assert.Equal(t, c.result, converted)
 		})
 	}

@@ -75,6 +75,10 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
 }
 
+func (s *ReportServiceTestSuite) TearDownSuite() {
+	s.mockCtrl.Finish()
+}
+
 func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
@@ -637,6 +641,7 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 	}
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
+	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		Id:               "test_report_config",
@@ -689,6 +694,7 @@ func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
+	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
 	emptyQuery := &apiV2.RawQuery{Query: ""}
 	req := &apiV2.GetReportHistoryRequest{
 		Id:               "test_report_config",
@@ -971,6 +977,20 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			isError: true,
 		},
 		{
+			desc: "Report is already delivered",
+			req: &apiV2.ResourceByID{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+			},
+			isError: true,
+		},
+		{
 			desc: "Report is already generated",
 			req: &apiV2.ResourceByID{
 				Id: reportSnapshot.GetReportId(),
@@ -978,7 +998,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.Clone()
-				snap.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1060,7 +1080,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	reportSnapshot := fixtures.GetReportSnapshot()
 	reportSnapshot.ReportId = uuid.NewV4().String()
 	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
-	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_DELIVERED
 	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
@@ -1169,6 +1189,21 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
+				s.blobStore.EXPECT().Delete(gomock.Any(), blobName).Times(1).Return(nil)
+			},
+			isError: false,
+		},
+		{
+			desc: "Generated but not downloaded report deleted",
+			req: &apiV2.DeleteReportRequest{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.Clone()
+				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
+					Return(snap, true, nil).Times(1)
 				s.blobStore.EXPECT().Delete(gomock.Any(), blobName).Times(1).Return(nil)
 			},
 			isError: false,
