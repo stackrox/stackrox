@@ -118,7 +118,7 @@ deploy_stackrox_operator() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
         return
     fi
-    
+
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         info "Deploying ACS operator via midstream image"
         # hardcoding values for testing
@@ -203,7 +203,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
-    
+
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         env - \
         centralAdminPasswordBase64="$centralAdminPasswordBase64" \
