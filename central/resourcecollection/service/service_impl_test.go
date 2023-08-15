@@ -193,7 +193,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 
-	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return("fake-id", nil)
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NoError(err)
 	suite.NotNil(resp.GetCollection())
@@ -212,7 +212,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	mockID.EXPECT().FullName().Return("name").Times(1)
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
-	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(errors.New("test error"))
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return("", errors.New("test error"))
 	_, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.Error(err)
 }

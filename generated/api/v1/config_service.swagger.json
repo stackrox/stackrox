@@ -299,7 +299,7 @@
       "properties": {
         "historyRetentionDurationDays": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "downloadableReportRetentionDays": {
           "type": "integer",

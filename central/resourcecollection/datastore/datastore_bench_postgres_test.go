@@ -8,10 +8,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -19,25 +16,12 @@ import (
 )
 
 func BenchmarkCollections(b *testing.B) {
-
 	ctx := sac.WithAllAccess(context.Background())
 
-	source := pgtest.GetConnectionString(b)
-	config, err := postgres.ParseConfig(source)
-	require.NoError(b, err)
+	db := pgtest.ForT(b)
+	defer db.Teardown(b)
 
-	pool, err := postgres.New(ctx, config)
-	require.NoError(b, err)
-	gormDB := pgtest.OpenGormDB(b, source)
-	defer pgtest.CloseGormDB(b, gormDB)
-
-	db := pool
-	defer db.Close()
-
-	pgStore.Destroy(ctx, db)
-	store := pgStore.CreateTableAndNewStore(ctx, db, gormDB)
-	index := pgStore.NewIndexer(db)
-	datastore, _, err := New(store, search.New(store, index))
+	datastore, _, err := GetTestPostgresDataStore(b, db)
 	require.NoError(b, err)
 
 	numSeedObjects := 5000
@@ -47,8 +31,9 @@ func BenchmarkCollections(b *testing.B) {
 	for i := 0; i < numSeedObjects; i++ {
 		name := fmt.Sprintf("%d", i)
 		collections = append(collections, getTestCollection(name, nil))
-		require.NoError(b, datastore.AddCollection(ctx, collections[i]))
-		ids = append(ids, collections[i].GetId())
+		id, err := datastore.AddCollection(ctx, collections[i])
+		require.NoError(b, err)
+		ids = append(ids, id)
 	}
 
 	// DryRun Add
@@ -102,10 +87,7 @@ func BenchmarkCollections(b *testing.B) {
 	})
 
 	// graphInit
-	dsImpl := &datastoreImpl{
-		storage:  store,
-		searcher: search.New(store, index),
-	}
+	dsImpl := datastore.(*datastoreImpl)
 	b.Run("graphInit", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			require.NoError(b, resetLocalGraph(dsImpl))
@@ -123,7 +105,7 @@ func BenchmarkCollections(b *testing.B) {
 				end = numSeedObjects - 1
 			}
 			collection := getTestCollection(uuid.NewV4().String(), ids[start:end])
-			err = datastore.AddCollection(ctx, collection)
+			_, err = datastore.AddCollection(ctx, collection)
 			require.NoError(b, err)
 		}
 	})

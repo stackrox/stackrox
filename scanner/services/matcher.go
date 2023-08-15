@@ -1,4 +1,4 @@
-package matcher
+package services
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/scanner/matcher"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,14 +16,14 @@ import (
 // matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
 	v4.UnimplementedMatcherServer
-	matcher *Matcher
+	matcher matcher.Matcher
 }
 
 // NewMatcherService creates a new vulnerability matcher gRPC service.
-func NewMatcherService(matcher *Matcher) (*matcherService, error) {
+func NewMatcherService(matcher matcher.Matcher) *matcherService {
 	return &matcherService{
 		matcher: matcher,
-	}, nil
+	}
 }
 
 func (s *matcherService) GetVulnerabilities(_ context.Context, _ *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
