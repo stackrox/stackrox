@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -29,7 +28,6 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceIntegrationService/ListComplianceIntegrations",
-			"/v2.ComplianceIntegrationService/GetComplianceIntegration",
 		},
 	})
 	log = logging.LoggerForModule()
@@ -86,23 +84,4 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 	}
 
 	return &v2.ListComplianceIntegrationsResponse{Integrations: apiIntegrations}, nil
-}
-
-func (s *serviceImpl) GetComplianceIntegration(ctx context.Context, req *v2.ComplianceIntegrationStatusRequest) (*v2.ComplianceIntegration, error) {
-	integrations, err := s.complianceMetaDataStore.GetComplianceIntegrationByCluster(ctx, req.GetClusterId())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve compliance integrations.")
-	}
-
-	// Multiple versions of compliance operator for a cluster is an error
-	if len(integrations) > 1 {
-		return nil, errors.New("should only have one compliance operator per cluster.")
-	}
-
-	var integrationReturned *storage.ComplianceIntegration
-	if len(integrations) > 0 {
-		integrationReturned = integrations[0]
-	}
-
-	return convertStorageIntegrationToV2(ctx, integrationReturned, s.clusterDS)
 }

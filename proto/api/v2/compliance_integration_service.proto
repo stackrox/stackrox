@@ -35,11 +35,4 @@ service ComplianceIntegrationService {
             get: "/v2/compliance/integrations"
         };
     }
-
-    // GetComplianceIntegration retrieves the compliance operator metadata for the specified cluster
-    rpc GetComplianceIntegration (ComplianceIntegrationStatusRequest) returns (ComplianceIntegration) {
-        option (google.api.http) = {
-            get: "/v2/compliance/integration/{cluster_id}"
-        };
-    }
 }
