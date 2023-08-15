@@ -51,6 +51,7 @@ import {
     graphModel,
 } from './utils/modelUtils';
 import getSimulation from './utils/getSimulation';
+import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import CIDRFormModal from './components/CIDRFormModal';
 import NetworkPolicySimulatorSidePanel, {
     clearSimulationQuery,
@@ -136,7 +137,10 @@ function NetworkGraphPage() {
     }
 
     const selectedClusterId = clusterFromUrl.id;
-    const { deploymentCount } = useFetchDeploymentCount(selectedClusterId);
+
+    const { deploymentCount } = useFetchDeploymentCount(
+        getSearchFilterFromScopeHierarchy(scopeHierarchy)
+    );
 
     const [prevEpochCount, setPrevEpochCount] = useState(0);
     const [currentEpochCount, setCurrentEpochCount] = useState(0);
@@ -161,6 +165,7 @@ function NetworkGraphPage() {
         const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
 
         // only refresh the graph data from the API if both a cluster and at least one namespace are selected
+        // and the selected scope has at least one deployment
         const isClusterNamespaceSelected =
             clusterFromUrl.name && namespacesFromUrl.length > 0 && deploymentCount;
 
@@ -407,12 +412,7 @@ function NetworkGraphPage() {
                                         simulator={simulator}
                                         setNetworkPolicyModification={setNetworkPolicyModification}
                                         scopeHierarchy={scopeHierarchy}
-                                        networkPolicyGenerationScope={{
-                                            granularity: 'CLUSTER',
-                                            cluster: scopeHierarchy.cluster.name,
-                                            namespaces: [],
-                                            deployments: [],
-                                        }}
+                                        scopeDeploymentCount={deploymentCount ?? 0}
                                     />
                                 </DrawerPanelContent>
                             }

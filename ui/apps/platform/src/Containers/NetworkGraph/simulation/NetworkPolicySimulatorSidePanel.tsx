@@ -35,14 +35,17 @@ import {
     SetNetworkPolicyModification,
 } from '../hooks/useNetworkPolicySimulator';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
-import { getDisplayYAMLFromNetworkPolicyModification } from '../utils/simulatorUtils';
+import {
+    getDisplayYAMLFromNetworkPolicyModification,
+    getSearchFilterFromScopeHierarchy,
+} from '../utils/simulatorUtils';
 import UploadYAMLButton from './UploadYAMLButton';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 import NotifyYAMLModal from './NotifyYAMLModal';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import CompareYAMLModal from './CompareYAMLModal';
 import CodeCompareIcon from './CodeCompareIcon';
-import NetworkPoliciesGenerationScope, { EntityScope } from './NetworkPoliciesGenerationScope';
+import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';
 
 // @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
 export function clearSimulationQuery(search: string): string {
@@ -57,11 +60,7 @@ export type NetworkPolicySimulatorSidePanelProps = {
     setNetworkPolicyModification: SetNetworkPolicyModification;
     /** scopeHierarchy is the user's selected scope for the network graph */
     scopeHierarchy: NetworkScopeHierarchy;
-    /**
-     *  `networkPolicyGenerationScope` is the set of entities selected by the `scopeHierarchy`
-     *  that can have network policies generated for them
-     */
-    networkPolicyGenerationScope: EntityScope;
+    scopeDeploymentCount: number;
 };
 
 const tabs = {
@@ -73,7 +72,7 @@ function NetworkPolicySimulatorSidePanel({
     simulator,
     setNetworkPolicyModification,
     scopeHierarchy,
-    networkPolicyGenerationScope,
+    scopeDeploymentCount,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
@@ -87,11 +86,9 @@ function NetworkPolicySimulatorSidePanel({
     } | null>(null);
 
     const clusterId = scopeHierarchy.cluster.id;
-    const deploymentQuery = getRequestQueryStringForSearchFilter({
-        Namespace: scopeHierarchy.namespaces,
-        Deployment: scopeHierarchy.deployments,
-        ...scopeHierarchy.remainingQuery,
-    });
+    const deploymentQuery = getRequestQueryStringForSearchFilter(
+        getSearchFilterFromScopeHierarchy(scopeHierarchy)
+    );
 
     const fetchNetworkPolicies = useCallback(
         () =>
@@ -197,7 +194,8 @@ function NetworkPolicySimulatorSidePanel({
                         </TextContent>
                     </FlexItem>
                     <NetworkPoliciesGenerationScope
-                        networkPolicyGenerationScope={networkPolicyGenerationScope}
+                        scopeHierarchy={scopeHierarchy}
+                        scopeDeploymentCount={scopeDeploymentCount}
                     />
                 </Flex>
                 <Flex direction={{ default: 'column' }}>
@@ -393,7 +391,8 @@ function NetworkPolicySimulatorSidePanel({
                         </Text>
                     </TextContent>
                     <NetworkPoliciesGenerationScope
-                        networkPolicyGenerationScope={networkPolicyGenerationScope}
+                        scopeHierarchy={scopeHierarchy}
+                        scopeDeploymentCount={scopeDeploymentCount}
                     />
                 </Flex>
             </StackItem>
