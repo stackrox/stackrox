@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	_ k8scfgwatch.Handler = (*handler)(nil) // compile time check that the handler implements the interface
+	_ k8scfgwatch.Handler = (*handler)(nil) // compile time check that the handler implements the interface.
 )
 
 type loadKeyFunc func(dir string) (*rsa.PrivateKey, error)

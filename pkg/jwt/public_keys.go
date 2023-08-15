@@ -91,11 +91,12 @@ func NewDerivedPublicKeyStore(privateKeyStore PrivateKeyGetter, keyID string) Pu
 
 // Key returns public key with matching id.
 func (d *derivedPublicKeyStore) Key(id string) interface{} {
-	if id == d.keyID {
-		privateKey := d.privateKeyStore.Key(d.keyID)
-		if privateKey != nil {
-			return privateKey.Public()
-		}
-	}
-	return nil
+        if id != d.keyID {
+                return nil
+        }
+        privateKey := d.privateKeyStore.Key(d.keyID)
+        if privateKey != nil {
+                return privateKey.Public()
+        }
+        return nil
 }
