@@ -192,7 +192,21 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [searchPath]: {
-        resourceAccessRequirements: everyResource([]),
+        resourceAccessRequirements: everyResource([
+            'Alert', // ALERTS
+            'Cluster', // CLUSTERS
+            'Deployment', // DEPLOYMENTS
+            'Image', // IMAGES
+            'Integration', // IMAGE_INTEGRATIONS
+            'K8sRole', // ROLES
+            'K8sRoleBinding', // ROLEBINDINGS
+            'K8sSubject', // SUBJECTS
+            'Namespace', // NAMESPACES
+            'Node', // NODES
+            'Secret', // SECRETS
+            'ServiceAccount', // SERVICE_ACCOUNTS
+            'WorkflowAdministration', // POLICIES POLICY_CATEGORIES
+        ]),
     },
     [systemConfigPath]: {
         resourceAccessRequirements: everyResource(['Administration']),
