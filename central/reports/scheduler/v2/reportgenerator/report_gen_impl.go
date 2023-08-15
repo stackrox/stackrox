@@ -90,12 +90,11 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	// Change report status to SUCCESS
-	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_SUCCESS)
-	if err != nil {
-		rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to SUCCESS"), req)
-		return
+	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_EMAIL {
+		err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_DELIVERED)
+		if err != nil {
+			rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to DELIVERED"), req)
+		}
 	}
 }
 
@@ -111,6 +110,12 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData)
 	if err != nil {
 		return err
+	}
+
+	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
+	if err != nil {
+		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
 
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
@@ -334,7 +339,7 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.R
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, snap.GetReportConfigurationId()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
-		AddExactMatches(search.ReportState, storage.ReportStatus_SUCCESS.String()).
+		AddExactMatches(search.ReportState, storage.ReportStatus_DELIVERED.String()).
 		WithPagination(search.NewPagination().
 			AddSortOption(search.NewSortOption(search.ReportCompletionTime).Reversed(true)).
 			Limit(1)).

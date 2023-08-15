@@ -12,10 +12,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func parseJobID(r *http.Request) (id string, err error) {
@@ -85,14 +90,14 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if status.GetRunState() == storage.ReportStatus_FAILURE {
+	switch status.GetRunState() {
+	case storage.ReportStatus_FAILURE:
 		httputil.WriteGRPCStyleError(w, codes.FailedPrecondition,
-			errors.Errorf("Report job %q has failed and hence no report to downloadAndVerify", id))
+			errors.Errorf("Report job %q has failed and hence no report to download", id))
 		return
-	}
-	if status.GetRunState() != storage.ReportStatus_SUCCESS {
+	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
 		httputil.WriteGRPCStyleError(w, codes.Unavailable,
-			errors.Errorf("Report job %q is not ready for downloadAndVerify", id))
+			errors.Errorf("Report job %q is not ready for download", id))
 		return
 	}
 
@@ -113,13 +118,26 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	if !exists {
 		// If the blob does not exist, report error.
 		httputil.WriteGRPCStyleError(w, codes.NotFound,
-			errors.Errorf("Report is not available to downloadAndVerify for job %q", id))
+			errors.Errorf("Report is not available to download for job %q", id))
 		return
 	}
 
-	// Tell the browser this is a downloadAndVerify.
+	// Tell the browser this is a download.
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="report-%s.zip"`, zip.GetSafeFilename(id)))
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Length", fmt.Sprint(buf.Len()))
-	_, _ = w.Write(buf.Bytes())
+	_, err = w.Write(buf.Bytes())
+
+	writeSnapshotCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)),
+	)
+	if err != nil && status.GetRunState() == storage.ReportStatus_GENERATED {
+		rep.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+		err = h.snapshotStore.UpdateReportSnapshot(writeSnapshotCtx, rep)
+		if err != nil {
+			log.Error("Error setting report state to DELIVERED")
+		}
+	}
 }

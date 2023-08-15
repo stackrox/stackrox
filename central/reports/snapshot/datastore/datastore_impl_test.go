@@ -78,7 +78,7 @@ func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 	s.NoError(err)
 
 	// Test UpdateReportSnapshot: no error with write access
-	snap.ReportStatus.RunState = storage.ReportStatus_SUCCESS
+	snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
 	err = s.datastore.UpdateReportSnapshot(s.ctx, snap)
 	s.NoError(err)
 
