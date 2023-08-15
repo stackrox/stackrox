@@ -92,10 +92,7 @@ func Test_koCache_GoOffline(t *testing.T) {
 			defer cancel(errors.New("test ended"))
 			c := New(ctx, nil, "URL", fn)
 			c.GoOffline()
-			assert.False(t, c.centralReady.Load())
-			assert.Error(t, c.onlineCtx.Err())
-			assert.ErrorIs(t, c.onlineCtx.Err(), context.Canceled)
-			assert.ErrorIs(t, context.Cause(c.onlineCtx), errCentralUnreachable)
+			assert.False(t, c.IsOnline())
 		})
 	}
 }
@@ -119,8 +116,7 @@ func Test_koCache_GoOnline(t *testing.T) {
 			defer cancel(errors.New("test ended"))
 			c := New(ctx, nil, "URL", fn)
 			c.GoOnline()
-			assert.True(t, c.centralReady.Load())
-			assert.NoError(t, c.onlineCtx.Err())
+			assert.True(t, c.IsOnline())
 		})
 	}
 }
@@ -196,7 +192,12 @@ func Test_koCache_getOrAddEntry(t *testing.T) {
 			cli := newMockHTTPClient(tt.centralReplyStatus, tt.centralReplyError, io.NopCloser(bytes.NewBufferString(tt.centralReplyBody)))
 			c := New(context.Background(), cli, "/")
 			c.entries = tt.entries
-			c.centralReady.Store(tt.centralReachable)
+			switch tt.centralReachable {
+			case true:
+				c.GoOnline()
+			case false:
+				c.GoOffline()
+			}
 
 			got, err := c.getOrAddEntry(tt.key)
 			if tt.wantErr {

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
@@ -24,7 +23,6 @@ const (
 )
 
 var (
-	errCentralUnreachable  = errors.New("central is currently unreachable")
 	errKoCacheShuttingDown = errors.New("kernel object cache is shutting down")
 	errProbeNotFound       = errors.New("probe not found")
 )
@@ -77,6 +75,7 @@ func applyDefaults(o *options) *options {
 }
 
 type koCache struct {
+	*offlineCtrl
 	opts *options
 
 	parentCtx    context.Context
@@ -85,12 +84,6 @@ type koCache struct {
 
 	upstreamClient  httpClient
 	upstreamBaseURL string
-
-	centralReady *atomic.Bool
-	// onlineCtx will be canceled when connectivity to central is lost
-	onlineCtx       context.Context
-	onlineCtxCancel context.CancelCauseFunc
-	ctxMutex        *sync.Mutex
 }
 
 type httpClient interface {
@@ -104,7 +97,6 @@ func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL s
 	for _, option := range opts {
 		option(opt)
 	}
-	onlineCtx, onlineCtxCancel := context.WithCancelCause(parentCtx)
 	cache := &koCache{
 		opts:            opt,
 		parentCtx:       parentCtx,
@@ -112,27 +104,17 @@ func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL s
 		entriesMutex:    &sync.Mutex{},
 		upstreamClient:  upstreamClient,
 		upstreamBaseURL: strings.TrimSuffix(upstreamBaseURL, "/"),
-		centralReady:    &atomic.Bool{},
-		onlineCtx:       onlineCtx,
-		onlineCtxCancel: onlineCtxCancel,
-		ctxMutex:        &sync.Mutex{},
+		offlineCtrl:     newOfflineCtrl(parentCtx, opt.StartOnline),
 	}
-	cache.centralReady.Store(opt.StartOnline)
+	switch opt.StartOnline {
+	case true:
+		cache.GoOnline()
+	case false:
+		cache.GoOffline()
+	}
 
 	go cache.cleanupLoop(parentCtx)
 	return cache
-}
-
-func (c *koCache) GoOnline() {
-	c.ctxMutex.Lock()
-	defer c.ctxMutex.Unlock()
-	c.centralReady.Store(true)
-	c.onlineCtx, c.onlineCtxCancel = context.WithCancelCause(c.parentCtx)
-}
-
-func (c *koCache) GoOffline() {
-	c.centralReady.Store(false)
-	c.onlineCtxCancel(errCentralUnreachable)
 }
 
 func (c *koCache) getOrAddEntry(path string) (*entry, error) {
@@ -151,14 +133,14 @@ func (c *koCache) getOrAddEntry(path string) (*entry, error) {
 	}
 
 	if e == nil {
-		if !c.centralReady.Load() {
-			return nil, errCentralUnreachable
+		if !c.IsOnline() {
+			return nil, context.Cause(c.Context())
 		} else if c.entries == nil {
 			return nil, errKoCacheShuttingDown
 		} else {
 			e = newEntry()
 			c.entries[path] = e
-			go e.Populate(c.onlineCtx, c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
+			go e.Populate(c.Context(), c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 		}
 	}
 	e.AcquireRef()
