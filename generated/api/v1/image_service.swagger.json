@@ -933,6 +933,12 @@
         },
         "name": {
           "type": "string"
+        },
+        "mirror": {
+          "type": "string"
+        },
+        "mirrorClusterId": {
+          "type": "string"
         }
       }
     },

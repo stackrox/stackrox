@@ -440,7 +440,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		Id:   imgID,
 		Name: request.GetImageName(),
 		// 'Names' must be populated to enable cache hits in central AND sensor.
-		Names:          []*storage.ImageName{request.GetImageName()},
+		Names:          buildNames(request.GetImageName(), request.GetMetadata()),
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
 		Notes:          request.GetImageNotes(),
@@ -483,6 +483,23 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
+}
+
+// buildNames returns a slice of image names that contains the known image names from the various parameters.
+func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
+	names := []*storage.ImageName{srcImage}
+
+	// Add a mirror name if exists.
+	if mirror := metadata.GetDataSource().GetMirror(); mirror != "" {
+		mirrorImg, err := utils.GenerateImageFromString(mirror)
+		if err != nil {
+			log.Warnf("Failed generating image from string %q: %v", mirror, err)
+		} else {
+			names = append(names, mirrorImg.GetName())
+		}
+	}
+
+	return names
 }
 
 func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr error) {

@@ -9,7 +9,7 @@ import (
 const (
 	// metadataVersion needs to be incremented if there are changes to the enrichment code that requires that the metadata be re-pulled
 	// or if the metadataHash is modified and the metadata should be re-pulled to populate the new fields
-	metadataVersion = 0
+	metadataVersion = 1
 )
 
 var (
@@ -20,6 +20,9 @@ var (
 	metadataHashToVersion = map[uint64]int{
 		// initial hash of the metadata maps to 0
 		16385665611439321574: 0,
+
+		// hash changed when mirror* fields were added to storage.DataSource.
+		15313109102692888684: 1,
 	}
 
 	metadataHash uint64
