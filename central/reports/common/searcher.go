@@ -74,7 +74,7 @@ func replaceSearchBySuccess(q *v1.Query) {
 		if !ok {
 			return
 		}
-		if strings.ToLower(mfQ.MatchFieldQuery.GetField()) == strings.ToLower(search.ReportState.String()) &&
+		if strings.EqualFold(mfQ.MatchFieldQuery.GetField(), search.ReportState.String()) &&
 			doesValueMatchSuccess(mfQ.MatchFieldQuery.GetValue()) {
 			*q = *search.NewQueryBuilder().
 				AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
@@ -86,6 +86,6 @@ func replaceSearchBySuccess(q *v1.Query) {
 }
 
 func doesValueMatchSuccess(val string) bool {
-	return strings.ToLower(val) == strings.ToLower(apiV2.ReportStatus_SUCCESS.String()) ||
-		strings.ToLower(val) == strings.ToLower(search.ExactMatchString(apiV2.ReportStatus_SUCCESS.String()))
+	return strings.EqualFold(val, apiV2.ReportStatus_SUCCESS.String()) ||
+		strings.EqualFold(val, search.ExactMatchString(apiV2.ReportStatus_SUCCESS.String()))
 }
