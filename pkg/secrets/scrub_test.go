@@ -36,6 +36,183 @@ func TestScrubFromNestedStructPointer(t *testing.T) {
 	assert.Equal(t, "name", testStruct.Name)
 }
 
+func TestScrubMapFromStruct(t *testing.T) {
+	testStruct := &toplevel{
+		Map:      map[string]string{"client_secret": "scrub", "keep": "keep_top"},
+		ScrubMap: map[string]string{"client_secret": "scrub", "keep": "keep_top"},
+		ConfigPtr: &config{
+			Map:      map[string]string{"client_secret": "scrub", "keep": "keep_ptr"},
+			ScrubMap: map[string]string{"client_secret": "scrub", "keep": "keep_ptr"},
+		},
+		Config: config{
+			Map:      map[string]string{"client_secret": "scrub", "keep": "keep"},
+			ScrubMap: map[string]string{"client_secret": "scrub", "keep": "keep"},
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, "***")
+
+	assert.Equal(t, map[string]string{"client_secret": "scrub", "keep": "keep_top"}, testStruct.Map)
+	assert.Equal(t, map[string]string{"client_secret": "***", "keep": "keep_top"}, testStruct.ScrubMap)
+	assert.Equal(t, map[string]string{"client_secret": "scrub", "keep": "keep_ptr"}, testStruct.ConfigPtr.Map)
+	assert.Equal(t, map[string]string{"client_secret": "***", "keep": "keep_ptr"}, testStruct.ConfigPtr.ScrubMap)
+	assert.Equal(t, map[string]string{"client_secret": "scrub", "keep": "keep"}, testStruct.Config.Map)
+	assert.Equal(t, map[string]string{"client_secret": "***", "keep": "keep"}, testStruct.Config.ScrubMap)
+}
+
+func TestScrubMapFromStructWithoutChange(t *testing.T) {
+	testStruct := &toplevel{
+		Map:      map[string]string{"keep": "keep_top"},
+		ScrubMap: map[string]string{"keep": "keep_top"},
+		ConfigPtr: &config{
+			Map:      map[string]string{"keep": "keep_ptr"},
+			ScrubMap: map[string]string{"keep": "keep_ptr"},
+		},
+		Config: config{
+			Map:      map[string]string{"keep": "keep"},
+			ScrubMap: map[string]string{"keep": "keep"},
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, "***")
+
+	assert.Equal(t, map[string]string{"keep": "keep_top"}, testStruct.Map)
+	assert.Equal(t, map[string]string{"keep": "keep_top"}, testStruct.ScrubMap)
+	assert.Equal(t, map[string]string{"keep": "keep_ptr"}, testStruct.ConfigPtr.Map)
+	assert.Equal(t, map[string]string{"keep": "keep_ptr"}, testStruct.ConfigPtr.ScrubMap)
+	assert.Equal(t, map[string]string{"keep": "keep"}, testStruct.Config.Map)
+	assert.Equal(t, map[string]string{"keep": "keep"}, testStruct.Config.ScrubMap)
+}
+
+func TestScrubMapFromStructEmpty(t *testing.T) {
+	testStruct := &toplevel{
+		Map:      map[string]string{},
+		ScrubMap: map[string]string{},
+		ConfigPtr: &config{
+			Map:      map[string]string{},
+			ScrubMap: map[string]string{},
+		},
+		Config: config{
+			Map:      map[string]string{},
+			ScrubMap: map[string]string{},
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, "***")
+
+	assert.Empty(t, testStruct.Map)
+	assert.Empty(t, testStruct.ScrubMap)
+	assert.Empty(t, testStruct.ConfigPtr.Map)
+	assert.Empty(t, testStruct.ConfigPtr.ScrubMap)
+	assert.Empty(t, testStruct.Config.Map)
+	assert.Empty(t, testStruct.Config.ScrubMap)
+}
+
+func TestScrubNilMapFromStructWithoutChange(t *testing.T) {
+	testStruct := &toplevel{
+		Map:      nil,
+		ScrubMap: nil,
+		ConfigPtr: &config{
+			Map:      nil,
+			ScrubMap: nil,
+		},
+		Config: config{
+			Map:      nil,
+			ScrubMap: nil,
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, "***")
+
+	assert.Nil(t, testStruct.Map)
+	assert.Nil(t, testStruct.ScrubMap)
+	assert.Nil(t, testStruct.ConfigPtr.Map)
+	assert.Nil(t, testStruct.ConfigPtr.ScrubMap)
+	assert.Nil(t, testStruct.Config.Map)
+	assert.Nil(t, testStruct.Config.ScrubMap)
+}
+
+func TestScrubMapFromStructNotSupportedMap(t *testing.T) {
+	type notSupportedKeyType struct {
+		ScrubMap map[int]string `scrub:"map-values"`
+	}
+
+	assert.Panics(t, func() { ScrubSecretsFromStructWithReplacement(notSupportedKeyType{}, "") })
+	assert.Panics(t, func() {
+		ScrubSecretsFromStructWithReplacement(notSupportedKeyType{ScrubMap: map[int]string{1: "one"}}, "")
+	})
+
+	type nestedNotSupportedKeyType struct {
+		Nested    notSupportedKeyType
+		NestedPtr *notSupportedKeyType
+	}
+
+	assert.Panics(t, func() { ScrubSecretsFromStructWithReplacement(nestedNotSupportedKeyType{}, "") })
+	assert.Panics(t, func() {
+		ScrubSecretsFromStructWithReplacement(nestedNotSupportedKeyType{Nested: notSupportedKeyType{ScrubMap: map[int]string{1: "one"}}}, "")
+	})
+	assert.Panics(t, func() {
+		ScrubSecretsFromStructWithReplacement(nestedNotSupportedKeyType{NestedPtr: &notSupportedKeyType{ScrubMap: map[int]string{1: "one"}}}, "")
+	})
+
+	type notSupportedValueType struct {
+		ScrubMap map[string]int `scrub:"map-values"`
+	}
+
+	assert.Panics(t, func() { ScrubSecretsFromStructWithReplacement(notSupportedValueType{}, "") })
+	assert.Panics(t, func() {
+		ScrubSecretsFromStructWithReplacement(notSupportedValueType{ScrubMap: map[string]int{"one": 1}}, "")
+	})
+
+	type nestedNotSupportedValueType struct {
+		Nested    notSupportedValueType
+		NestedPtr *notSupportedValueType
+	}
+
+	assert.Panics(t, func() { ScrubSecretsFromStructWithReplacement(nestedNotSupportedValueType{}, "") })
+	assert.Panics(t, func() {
+		ScrubSecretsFromStructWithReplacement(nestedNotSupportedValueType{Nested: notSupportedValueType{ScrubMap: map[string]int{"one": 1}}}, "")
+	})
+	assert.Panics(t, func() {
+		ScrubSecretsFromStructWithReplacement(nestedNotSupportedValueType{NestedPtr: &notSupportedValueType{ScrubMap: map[string]int{"one": 1}}}, "")
+	})
+}
+
+func TestScrubMapFromStructNotSupportedMapWithoutTag(t *testing.T) {
+	type noTagUnsupportedType struct {
+		MapKey   map[int]string
+		MapValue map[string]int
+	}
+
+	testStruct := noTagUnsupportedType{
+		MapKey:   map[int]string{1: "one"},
+		MapValue: map[string]int{"two": 2},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, "")
+
+	assert.Equal(t, map[int]string{1: "one"}, testStruct.MapKey)
+	assert.Equal(t, map[string]int{"two": 2}, testStruct.MapValue)
+
+	type noTagUnsupportedTypeNested struct {
+		Nested    noTagUnsupportedType
+		NestedPtr *noTagUnsupportedType
+	}
+
+	testNestedStruct := &noTagUnsupportedTypeNested{
+		Nested: noTagUnsupportedType{
+			MapKey:   map[int]string{1: "one"},
+			MapValue: map[string]int{"two": 2},
+		},
+		NestedPtr: &noTagUnsupportedType{
+			MapKey:   map[int]string{1: "one"},
+			MapValue: map[string]int{"two": 2},
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testNestedStruct, "")
+
+	assert.Equal(t, map[int]string{1: "one"}, testNestedStruct.Nested.MapKey)
+	assert.Equal(t, map[string]int{"two": 2}, testNestedStruct.Nested.MapValue)
+
+	assert.Equal(t, map[int]string{1: "one"}, testNestedStruct.NestedPtr.MapKey)
+	assert.Equal(t, map[string]int{"two": 2}, testNestedStruct.NestedPtr.MapValue)
+}
+
 func TestScrubEmbeddedConfig(t *testing.T) {
 	// Test an embedded config
 	ecrIntegration := &storage.ImageIntegration{
