@@ -32,14 +32,7 @@ service ComplianceIntegrationService {
     // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
     rpc ListComplianceIntegrations (RawQuery) returns (ListComplianceIntegrationsResponse) {
         option (google.api.http) = {
-            get: "/v2/complianceintegrations"
-        };
-    }
-
-    // GetComplianceIntegration retrieves the compliance operator metadata for the specified cluster
-    rpc GetComplianceIntegration (ComplianceIntegrationStatusRequest) returns (ComplianceIntegration) {
-        option (google.api.http) = {
-            get: "/v2/complianceintegrations/{cluster_id}"
+            get: "/v2/compliance/integrations"
         };
     }
 }

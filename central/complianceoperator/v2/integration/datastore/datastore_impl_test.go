@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -112,17 +113,35 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegration()
 	s.Nil(retrievedIntegration)
 }
 
+func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationByCluster() {
+	testIntegrations := getDefaultTestIntegrations()
+	_ = s.addBaseIntegrations(testIntegrations)
+
+	// No integrations found for cluster
+	clusterIntegrations, err := s.dataStore.GetComplianceIntegrationByCluster(s.hasReadCtx, uuid.NewV4().String())
+	s.NoError(err)
+	s.Nil(clusterIntegrations)
+
+	// Use cluster 1
+	clusterIntegrations, err = s.dataStore.GetComplianceIntegrationByCluster(s.hasReadCtx, fixtureconsts.Cluster1)
+	s.NoError(err)
+	s.Equal(1, len(clusterIntegrations))
+	s.Contains(clusterIntegrations, testIntegrations[0])
+}
+
 func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrations() {
 	testIntegrations := getDefaultTestIntegrations()
 	_ = s.addBaseIntegrations(testIntegrations)
 
 	// No integrations found for cluster
-	clusterIntegrations, err := s.dataStore.GetComplianceIntegrations(s.hasReadCtx, uuid.NewV4().String())
+	clusterIntegrations, err := s.dataStore.GetComplianceIntegrations(s.hasReadCtx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, uuid.NewV4().String()).ProtoQuery())
 	s.NoError(err)
 	s.Nil(clusterIntegrations)
 
 	// Use cluster 1
-	clusterIntegrations, err = s.dataStore.GetComplianceIntegrations(s.hasReadCtx, fixtureconsts.Cluster1)
+	clusterIntegrations, err = s.dataStore.GetComplianceIntegrations(s.hasReadCtx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery())
 	s.NoError(err)
 	s.Equal(1, len(clusterIntegrations))
 	s.Contains(clusterIntegrations, testIntegrations[0])
