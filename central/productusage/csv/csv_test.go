@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,4 +34,22 @@ func TestGetTimeParam(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, now.Unix(), to.GetSeconds())
 	})
+}
+
+func TestSecuredUnitsConverter(t *testing.T) {
+	converter := getSecuredUnitsConverter()
+	first := converter(nil)
+	assert.Equal(t, csv.Row{"0001-01-01T00:00:00Z", "0", "0"}, first)
+
+	now := time.Now()
+	su := &storage.SecuredUnits{
+		Timestamp:   protoconv.ConvertTimeToTimestamp(now),
+		NumNodes:    10,
+		NumCpuUnits: 20,
+	}
+	second := converter(su)
+	assert.Equal(t, csv.Row{now.UTC().Format(time.RFC3339), "10", "20"}, second)
+	assert.Equal(t, 3, cap(second))
+
+	assert.Equal(t, &first, &second, "converter should reuse the same array")
 }

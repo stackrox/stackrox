@@ -17,12 +17,12 @@ import (
 
 var (
 	zeroTime  = time.Time{}
-	csvHeader = []string{"Timestamp", "Nodes", "CPU Units"}
+	csvHeader = csv.Row{"Timestamp", "Nodes", "CPU Units"}
 )
 
-func getRowConverter() func(*storage.SecuredUnits) []string {
-	record := make([]string, 3)
-	return func(m *storage.SecuredUnits) []string {
+func getSecuredUnitsConverter() csv.Converter[storage.SecuredUnits] {
+	record := make(csv.Row, 3)
+	return func(m *storage.SecuredUnits) csv.Row {
 		record[0] = protoconv.ConvertTimestampToTimeOrDefault(m.GetTimestamp(), zeroTime).UTC().Format(time.RFC3339)
 		record[1] = fmt.Sprint(m.GetNumNodes())
 		record[2] = fmt.Sprint(m.GetNumCpuUnits())
@@ -40,8 +40,8 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 			return
 		}
 
-		csvWriter := csv.NewHTTPCSVWriter(w,
-			"secured_units_usage.csv", getRowConverter(),
+		csvWriter := csv.NewHTTPWriter(w,
+			"secured_units_usage.csv", getSecuredUnitsConverter(),
 			csvHeader,
 		)
 
