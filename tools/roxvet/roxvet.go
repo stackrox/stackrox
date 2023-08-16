@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoptrs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/regexes"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
@@ -32,5 +33,6 @@ func main() {
 		filepathwalk.Analyzer,
 		validateimports.Analyzer,
 		importpackagenames.Analyzer,
+		structuredlogs.Analyzer,
 	)
 }
