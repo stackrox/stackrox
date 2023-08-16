@@ -169,7 +169,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestRunReport() {
 func (s *ServiceLevelConfigSeparationSuiteV2) convertConfigs(configs []*storage.ReportConfiguration) []*apiV2.ReportConfiguration {
 	apiV2Configs := make([]*apiV2.ReportConfiguration, 0, len(configs))
 	for _, conf := range configs {
-		c, err := convertProtoReportConfigurationToV2(conf, s.collectionDatastore, s.notifierDatastore)
+		c, err := s.service.convertProtoReportConfigurationToV2(conf)
 		s.Require().NoError(err)
 		apiV2Configs = append(apiV2Configs, c)
 	}
