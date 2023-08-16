@@ -157,6 +157,10 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
+				snap := reportSnapshot.Clone()
+				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+				s.reportSnapshotDataStore.EXPECT().UpdateReportSnapshot(gomock.Any(), snap).
+					Return(nil).Times(1)
 				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
 					func(_ context.Context, _ string, writer io.Writer) (*storage.Blob, bool, error) {
 						c, err := writer.Write(blobData.Bytes())

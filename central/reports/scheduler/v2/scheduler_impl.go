@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
@@ -359,7 +360,8 @@ func (s *scheduler) queueScheduledReports() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).
 		ProtoQuery()
-	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, query)
+	filteredQ := common.WithoutV1ReportConfigs(query)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, filteredQ)
 	if err != nil {
 		log.Errorf("Error finding scheduled reports: %s", err)
 		return
