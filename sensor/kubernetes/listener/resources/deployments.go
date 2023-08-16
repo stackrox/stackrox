@@ -268,7 +268,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 	}
 	expiresAt, err := types.TimestampProto(credentials.ExpirestAt)
 	if err != nil {
-		log.Errorf("ignoring invalid registry credentials: failed to parse timestamp")
+		log.Error("ignoring invalid registry credentials: failed to parse timestamp")
 		return nil
 	}
 	// Currently, all AWS registry credentials are handled as ECR image integrations, hence

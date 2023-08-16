@@ -32,7 +32,7 @@ func configureCA() error {
 	}
 
 	// Found fallback CA
-	log.Infof("Switching to fallback CA file location")
+	log.Info("Switching to fallback CA file location")
 	if err := utils.ShouldErr(os.Setenv(mtls.CAFileEnvName, alternativeCAPath)); err != nil {
 		return errors.Wrap(err, "failed to update environment for alternative CA location")
 	}

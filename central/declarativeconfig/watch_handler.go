@@ -82,11 +82,11 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 	// We have to ensure that no errors will be omitted from the time we changed the hashes for the files to passing
 	// the latest changes to the updater, otherwise we could potentially lose changes.
 	if !w.compareHashesForChanges(fileContents) && !w.checkForDeletedFiles(fileContents) {
-		log.Debugf("Found no changes from before in content, no reconciliation will be triggered")
+		log.Debug("Found no changes from before in content, no reconciliation will be triggered")
 		return
 	}
 
-	log.Debugf("Found changes in declarative configuration files, reconciliation will be triggered")
+	log.Debug("Found changes in declarative configuration files, reconciliation will be triggered")
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 	w.updater.UpdateDeclarativeConfigContents(w.id, maputil.Values(fileContents))
@@ -152,7 +152,7 @@ func (w *watchHandler) logFileContents(contents map[string][]byte) {
 	for fileName, fileContents := range contents {
 		logMessage += fmt.Sprintf("File %s: %s\n", fileName, fileContents)
 	}
-	log.Debugf(logMessage)
+	log.Debug(logMessage)
 }
 
 // readDeclarativeConfigFile will read the file and additionally verify that the contents are valid YAML.

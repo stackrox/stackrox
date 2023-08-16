@@ -159,7 +159,7 @@ func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage,
 
 func (d *delegatedRegistryImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
 	d.imageSvc = v1.NewImageServiceClient(cc)
-	log.Debugf("Received central GRPC client connection")
+	log.Debug("Received central GRPC client connection")
 }
 
 func (d *delegatedRegistryImpl) processImageIntegrations(iiReq *central.ImageIntegrations) error {
