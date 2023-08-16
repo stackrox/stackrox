@@ -122,8 +122,9 @@ deploy_stackrox_operator() {
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         info "Deploying ACS operator via midstream image"
         # hardcoding values for testing
-        export OPERATOR_VERSION="4.1.2"
-        export VERSION="545338"
+        ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
+        export OPERATOR_VERSION=$(cat operator/midstream/iib.json | jq '.version')
+        export VERSION=$(cat operator/midstream/iib.json | jq -r --arg version "$ocp_version" '.iibs[$version]')
         export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
 
         make -C operator kuttl deploy-via-olm-midstream
