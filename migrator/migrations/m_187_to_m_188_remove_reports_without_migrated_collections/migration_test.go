@@ -94,13 +94,6 @@ func (s *migrationTestSuite) TestMigration() {
 		s.createConfigInDB(id, scopeID, "")
 	}
 
-	// Valid V2 reports (collection_id is set but not scope_id)
-	for i := 0; i < len(collections); i++ {
-		id := fmt.Sprintf("v2-report-config-%d", i)
-		validV2Reports = append(validV2Reports, id)
-		s.createConfigInDB(id, "", collections[i])
-	}
-
 	// Valid V2 reports with both scope and collection_id pointing to valid collections
 	for i := 0; i < len(collections); i++ {
 		id := fmt.Sprintf("v2-report-config-%d", i+10)
@@ -108,15 +101,7 @@ func (s *migrationTestSuite) TestMigration() {
 		s.createConfigInDB(id, collections[i], collections[i])
 	}
 
-	// Invalid reports with scope and collection_id pointing to invalid collection
-	for i := 0; i < len(collections); i++ {
-		id := fmt.Sprintf("v2-report-config-%d", i+20)
-		scopeID := fmt.Sprintf("invalid-collection-%d", i)
-		invalidReports = append(invalidReports, id)
-		s.createConfigInDB(id, scopeID, collections[i])
-	}
-
-	// Invalid configs that have neither collections nor scope ids
+	// Invalid configs that don't have scopeid set
 	// Empty string
 	for i := 0; i < 3; i++ {
 		id := fmt.Sprintf("invalid-report-config-%d", i+10)

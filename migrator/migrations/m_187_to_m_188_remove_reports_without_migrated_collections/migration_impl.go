@@ -2,85 +2,39 @@ package m187tom188
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections/schema"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/utils"
-	"gorm.io/gorm"
+	"github.com/stackrox/rox/migrator/types"
 )
 
-func migrate(db *gorm.DB) error {
-	ctx := sac.WithAllAccess(context.Background())
+// The goal of this migration is to ensure that all reports have a non-empty scopeid that points to a valid collection
+// Note that `resourcescope_collectionid is a new field introduced in 4.2 and shouldn't be set at the beginning
+// of this migration, so it will not be considered here. In rare cases, where the user upgrades, creates a _new_ report
+// with resourcescope_collectionid and then rollsback, then this migration will delete that new data.
+// However, since there is no guarantee that this new data is persisted after a rollback, this is acceptable.
+func migrate(database *types.Databases) error {
+	ctx, cancel := context.WithTimeout(context.Background(), types.DefaultMigrationTimeout)
+	defer cancel()
 
-	rows, err := db.WithContext(ctx).Table(schema.ReportConfigurationsTableName).Rows()
+	// Delete all reports whose scopeid is not found in the collections table
+	sql := fmt.Sprintf(
+		"delete from %[1]s where not exists (select 1 from %[2]s where %[1]s.scopeid = %[2]s.id)",
+		schema.ReportConfigurationsTableName,
+		schema.CollectionsTableName,
+	)
+	r, err := database.PostgresDB.Exec(ctx, sql)
+
 	if err != nil {
-		return errors.Wrapf(err, "failed to iterate table %s", schema.ReportConfigurationsTableName)
-	}
-	if rows.Err() != nil {
-		utils.Should(rows.Err())
-		return errors.Wrapf(rows.Err(), "failed to get rows for %s", schema.ReportConfigurationsTableName)
-	}
-	defer func() { _ = rows.Close() }()
-
-	collectionsTable := db.WithContext(ctx).Table(schema.CollectionsTableName).Session(&gorm.Session{})
-
-	var toDelete []schema.ReportConfigurations
-	for rows.Next() {
-		var config schema.ReportConfigurations
-		if err = db.ScanRows(rows, &config); err != nil {
-			return errors.Wrap(err, "failed to scan rows")
-		}
-		configProto, err := schema.ConvertReportConfigurationToProto(&config)
-		if err != nil {
-			return errors.Wrapf(err, "failed to convert %+v to proto", config)
-		}
-
-		// scope_id is not null then it is a V1 reportconfig
-		reportID := configProto.GetId()
-		scopeID := configProto.GetScopeId()
-		collectionID := configProto.GetResourceScope().GetCollectionId()
-
-		// scope_id is null/empty and collection_id is null/empty -> undefined, so delete
-		// NOTE: At the point this migration runs, collection_id should never be set, but the check is here just in case
-		if strings.TrimSpace(scopeID) == "" && strings.TrimSpace(collectionID) == "" {
-			toDelete = append(toDelete, schema.ReportConfigurations{ID: reportID})
-			continue
-		}
-
-		// If scope_id is not empty, check that it's valid
-		if strings.TrimSpace(scopeID) != "" {
-			// Otherwise it's a V1 config, and scope_id is not empty, so check if it's pointing to a valid collection
-			var count int64
-			result := collectionsTable.Where(schema.Collections{ID: scopeID}).Count(&count)
-			if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				// This looks like a valid error, but I don't think it should fail the entire migration, so log and move on
-				log.Errorf("error while trying to fetch collection with id %s", scopeID)
-				continue
-			}
-
-			// If no collection with that id could be found, it's an invalid config, so delete
-			if count == 0 || errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				toDelete = append(toDelete, schema.ReportConfigurations{ID: reportID})
-				continue
-			}
-		}
+		return errors.Wrap(err, "failed to delete invalid report configurations")
 	}
 
-	if len(toDelete) != 0 {
-		log.Infof("Deleting %d report configurations because they have invalid collections", len(toDelete))
-		// Txn is probably overkill given that it's one where in delete query...
-		return db.WithContext(ctx).Table(schema.ReportConfigurationsTableName).Transaction(func(tx *gorm.DB) error {
-			result := tx.Delete(&toDelete)
-			if result.Error != nil || result.RowsAffected != int64(len(toDelete)) {
-				log.Errorf("failed to delete %d reports configurations with invalid collections", len(toDelete))
-				return errors.Wrap(result.Error, "failed to delete report configurations in batch")
-			}
-			return nil
-		})
+	if r.RowsAffected() != 0 {
+		log.Infof("Deleted %d report configurations because they have invalid collections", r.RowsAffected())
+	} else {
+		log.Debug("No invalid report configurations found")
 	}
 
-	log.Debug("No invalid report configurations found")
 	return nil
 }

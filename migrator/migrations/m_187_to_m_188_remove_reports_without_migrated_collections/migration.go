@@ -16,9 +16,7 @@ var (
 	migration = types.Migration{
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
-		Run: func(databases *types.Databases) error {
-			return migrate(databases.GormDB)
-		},
+		Run:            migrate,
 	}
 
 	log = logging.LoggerForModule()
