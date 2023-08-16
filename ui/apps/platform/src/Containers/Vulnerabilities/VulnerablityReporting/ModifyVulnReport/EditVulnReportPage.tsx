@@ -39,7 +39,7 @@ function EditVulnReportPage() {
     const history = useHistory();
     const { reportId } = useParams();
 
-    const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
+    const { report, isLoading, error } = useFetchReport(reportId);
     const formik = useReportFormValues();
     const { isSaving, saveError, saveReport } = useSaveReport({
         onCompleted: () => {
@@ -50,12 +50,12 @@ function EditVulnReportPage() {
 
     // We fetch the report configuration for the edittable report and then populate the form values
     useEffect(() => {
-        if (reportConfiguration) {
-            const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
+        if (report) {
+            const reportFormValues = getReportFormValuesFromConfiguration(report);
             formik.setValues(reportFormValues);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reportConfiguration, formik.setValues]);
+    }, [report, formik.setValues]);
 
     function onSave() {
         saveReport(reportId, formik.values);

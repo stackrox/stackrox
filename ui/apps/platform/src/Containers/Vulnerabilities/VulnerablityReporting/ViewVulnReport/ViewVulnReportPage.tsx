@@ -1,6 +1,10 @@
 import React, { ReactElement, useState } from 'react';
 import { Link, useHistory, useParams, generatePath } from 'react-router-dom';
 import {
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    AlertVariant,
     PageSection,
     Title,
     Divider,
@@ -32,11 +36,13 @@ import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hoo
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import DeleteModal from '../components/DeleteModal';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import ReportJobs from './ReportJobs';
+import useRunReport from '../api/useRunReport';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -63,7 +69,7 @@ function ViewVulnReportPage() {
     const { reportId } = useParams();
     const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
 
-    const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
+    const { report, isLoading, error } = useFetchReport(reportId);
 
     const {
         openDeleteModal,
@@ -75,6 +81,21 @@ function ViewVulnReportPage() {
     } = useDeleteModal({
         onCompleted: () => {
             history.push(vulnerabilityReportsPath);
+        },
+    });
+
+    const { toasts, addToast, removeToast } = useToasts();
+
+    const { isRunning, runError, runReport } = useRunReport({
+        onCompleted: ({ reportNotificationMethod }) => {
+            if (reportNotificationMethod === 'EMAIL') {
+                addToast('The report has been sent to the configured email notifier', 'success');
+            } else if (reportNotificationMethod === 'DOWNLOAD') {
+                addToast(
+                    'The report generation has started and will be available for download once complete',
+                    'success'
+                );
+            }
         },
     });
 
@@ -94,7 +115,7 @@ function ViewVulnReportPage() {
         );
     }
 
-    if (error || !reportConfiguration) {
+    if (error || !report) {
         return (
             <NotFoundMessage
                 title="Error fetching the report configuration"
@@ -106,27 +127,52 @@ function ViewVulnReportPage() {
     }
 
     const vulnReportPageURL = generatePath(vulnerabilityReportPath, {
-        reportId: reportConfiguration.id,
+        reportId: report.id,
     }) as string;
 
-    const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
+    const reportFormValues = getReportFormValuesFromConfiguration(report);
+
+    const isReportStatusPending =
+        report.reportSnapshot?.reportStatus.runState === 'PREPARING' ||
+        report.reportSnapshot?.reportStatus.runState === 'WAITING';
 
     return (
         <>
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        timeout
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
+            {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageTitle title="View vulnerability report" />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>
+                    <BreadcrumbItem isActive>{report.name}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'row' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h1">{reportConfiguration.name}</Title>
+                        <Title headingLevel="h1">{report.name}</Title>
                     </FlexItem>
                     <FlexItem>
                         <Dropdown
@@ -156,14 +202,25 @@ function ViewVulnReportPage() {
                                 <DropdownItem
                                     key="Send report now"
                                     component="button"
-                                    onClick={() => {}}
+                                    onClick={() => runReport(reportId, 'EMAIL')}
+                                    isDisabled={
+                                        isReportStatusPending ||
+                                        isRunning ||
+                                        report.notifiers.length === 0
+                                    }
+                                    description={
+                                        report.notifiers.length === 0
+                                            ? 'No delivery destinations set'
+                                            : ''
+                                    }
                                 >
                                     Send report now
                                 </DropdownItem>,
                                 <DropdownItem
                                     key="Generate download"
                                     component="button"
-                                    onClick={() => {}}
+                                    onClick={() => runReport(reportId, 'DOWNLOAD')}
+                                    isDisabled={isReportStatusPending || isRunning}
                                 >
                                     Generate download
                                 </DropdownItem>,
@@ -182,7 +239,7 @@ function ViewVulnReportPage() {
                                     className="pf-u-danger-color-100"
                                     component="button"
                                     onClick={() => {
-                                        openDeleteModal(reportConfiguration.id);
+                                        openDeleteModal(report.id);
                                     }}
                                 >
                                     Delete report
