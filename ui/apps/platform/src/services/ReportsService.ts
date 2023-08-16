@@ -98,26 +98,8 @@ export function runReport(reportId: string): Promise<Empty> {
 
 // The following functions are built around the new VM Reporting Enhancements
 
-// @TODO: Same logic is used in fetchReportConfigurations. Maybe consider something more DRY
-export function fetchReportConfigurationsCount({
-    query,
-    page,
-    perPage,
-}: {
-    query: string;
-    page: number;
-    perPage: number;
-}): Promise<{ count: number }> {
-    const params = queryString.stringify(
-        {
-            query,
-            pagination: {
-                limit: perPage,
-                offset: page - 1,
-            },
-        },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+export function fetchReportConfigurationsCount(query: string): Promise<{ count: number }> {
+    const params = queryString.stringify({ query }, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<{ count: number }>(`/v2/reports/configuration-count?${params}`)
         .then((response) => {
@@ -139,7 +121,7 @@ export function fetchReportConfigurations({
             query,
             pagination: {
                 limit: perPage,
-                offset: page - 1,
+                offset: (page - 1) * perPage,
             },
         },
         { arrayFormat: 'repeat', allowDots: true }

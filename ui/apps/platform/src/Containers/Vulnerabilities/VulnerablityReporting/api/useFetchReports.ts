@@ -57,11 +57,9 @@ function useFetchReports({
                 page,
                 perPage,
             });
-            const { count: totalReports } = await fetchReportConfigurationsCount({
-                query: getRequestQueryString(searchFilter),
-                page,
-                perPage,
-            });
+            const { count: totalReports } = await fetchReportConfigurationsCount(
+                getRequestQueryString(searchFilter)
+            );
             const reports: Report[] = await Promise.all(
                 reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
                     const PAGE = 1;
