@@ -40,6 +40,8 @@ func (o *offlineCtrl) IsOnline() bool {
 }
 
 func (o *offlineCtrl) Context() context.Context {
+	o.ctxMutex.Lock()
+	defer o.ctxMutex.Unlock()
 	return o.onlineCtx
 }
 

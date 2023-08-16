@@ -3,9 +3,40 @@ package kocache
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func Test_DataRace(t *testing.T) {
+	o := newOfflineCtrl(context.Background(), false)
+
+	// Go Online periodically
+	go func() {
+		tick := time.NewTicker(10 * time.Millisecond)
+		for {
+			select {
+			case <-time.After(time.Second):
+				return
+			case <-tick.C:
+				o.GoOnline()
+			}
+		}
+	}()
+
+	// Fetch context periodically
+	go func() {
+		tick := time.NewTicker(10 * time.Millisecond)
+		for {
+			select {
+			case <-time.After(time.Second):
+				return
+			case <-tick.C:
+				_ = o.Context()
+			}
+		}
+	}()
+}
 
 func Test_offlineCtrl(t *testing.T) {
 	tests := map[string]struct {
