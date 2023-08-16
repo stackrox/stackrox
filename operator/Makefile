@@ -340,6 +340,10 @@ deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
 
+.PHONY: deploy-via-olm-midstream
+deploy-via-olm: ## Deploy operator image to the cluster using OLM and midstream index images.
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $(OPERATOR_VERSION)
+
 .PHONY: deploy-dirty-tag-via-olm
 deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
 # This target ignores filter for dirty tagged images.
