@@ -21,3 +21,13 @@ export type GroupProperties = {
     key: string;
     value: string;
 };
+
+export type GetDefaultGroupRequest = {
+    authProviderId: string;
+    roleName: string;
+};
+
+export type GroupBatchUpdateRequest = {
+    previousGroups: Group[];
+    requiredGroups: Group[];
+};
