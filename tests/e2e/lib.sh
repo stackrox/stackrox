@@ -719,6 +719,15 @@ restore_56_1_backup() {
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
 
+update_public_config() {
+    info "Updating public config to ensure that it is overridden by restore"
+
+    config=$(roxcurl /v1/config)
+    new_config=$(echo "$config" | jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }')
+    roxcurl /v1/config -X PUT -d "{ \"config\": $new_config }" > /dev/null || touch DB_TEST_FAIL
+    echo "$config"
+}
+
 db_backup_and_restore_test() {
     info "Running a central database backup and restore test"
 
@@ -731,6 +740,9 @@ db_backup_and_restore_test() {
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api
+
+    info "Updating public config"
+    original_config=$(update_public_config)
 
     local output_dir="$1"
     info "Backing up to ${output_dir}"
@@ -745,6 +757,16 @@ db_backup_and_restore_test() {
             info "Restoring from ${output_dir}/stackrox_db_*"
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
         fi
+    fi
+
+    wait_for_api
+
+    info "Checking to see if restore overwrote previous config"
+
+    post_restore_config=$(roxcurl /v1/config)
+    if [[ "${original_config}" != "${post_restore_config}" ]]; then
+        info "config prior to backup is different from config after restore: ${original_config} vs. ${post_restore_config}"
+        touch DB_TEST_FAIL
     fi
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
