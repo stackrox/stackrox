@@ -7,7 +7,7 @@ export interface FormLabelGroupProps<T> extends FormGroupProps {
     fieldId: string;
     touched?: FormikTouched<T>;
     errors: FormikErrors<T>;
-    children: ReactElement | ReactElement[];
+    children: ReactElement;
 }
 
 function FormLabelGroup<T>({
@@ -19,13 +19,14 @@ function FormLabelGroup<T>({
 }: FormLabelGroupProps<T>): ReactElement {
     const error = get(errors, fieldId);
     const isTouched = touched && get(touched, fieldId);
+    const showError = touched === undefined ? error : isTouched && error;
 
     return (
         <FormGroup
             fieldId={fieldId}
-            {...rest}
             helperTextInvalid={error}
-            validated={isTouched && error ? ValidatedOptions.error : ValidatedOptions.default}
+            validated={showError ? ValidatedOptions.error : ValidatedOptions.default}
+            {...rest}
         >
             {children}
         </FormGroup>

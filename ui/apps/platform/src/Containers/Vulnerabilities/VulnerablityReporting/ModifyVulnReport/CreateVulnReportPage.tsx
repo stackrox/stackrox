@@ -9,7 +9,9 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Wizard,
+    WizardStep,
 } from '@patternfly/react-core';
+import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';
 import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
@@ -25,50 +27,58 @@ import ReportFormErrorAlert from './ReportFormErrorAlert';
 
 const wizardStepNames = [
     'Configure report parameters',
-    'Configure delivery destinations (Optional)',
+    'Configure delivery destinations',
     'Review and create',
 ];
 
 function CreateVulnReportPage() {
     const history = useHistory();
 
-    const { formValues, setFormFieldValue, clearFormValues } = useReportFormValues();
+    const formik = useReportFormValues();
     const { isLoading, error, createReport } = useCreateReport({
         onCompleted: () => {
-            clearFormValues();
+            formik.resetForm();
             history.push(vulnerabilityReportsPath);
         },
     });
 
     function onCreate() {
-        createReport(formValues);
+        createReport(formik.values);
     }
 
-    const wizardSteps = [
+    // @TODO: This is reused in the Edit and Clone components so we can try to refactor this soon
+    function isStepDisabled(stepName: string | undefined): boolean {
+        if (stepName === wizardStepNames[0]) {
+            return false;
+        }
+        if (stepName === wizardStepNames[1]) {
+            return !isEmpty(formik.errors.reportParameters);
+        }
+        if (stepName === wizardStepNames[2]) {
+            return (
+                !isEmpty(formik.errors.reportParameters) ||
+                !isEmpty(formik.errors.deliveryDestinations) ||
+                !isEmpty(formik.errors.schedule)
+            );
+        }
+        return false;
+    }
+
+    const wizardSteps: WizardStep[] = [
         {
             name: wizardStepNames[0],
-            component: (
-                <ReportParametersForm
-                    title={wizardStepNames[0]}
-                    formValues={formValues}
-                    setFormFieldValue={setFormFieldValue}
-                />
-            ),
+            component: <ReportParametersForm title={wizardStepNames[0]} formik={formik} />,
         },
         {
             name: wizardStepNames[1],
-            component: (
-                <DeliveryDestinationsForm
-                    title={wizardStepNames[1]}
-                    formValues={formValues}
-                    setFormFieldValue={setFormFieldValue}
-                />
-            ),
+            component: <DeliveryDestinationsForm title={wizardStepNames[1]} formik={formik} />,
+            isDisabled: isStepDisabled(wizardStepNames[1]),
         },
         {
             name: wizardStepNames[2],
-            component: <ReportReviewForm title={wizardStepNames[2]} formValues={formValues} />,
+            component: <ReportReviewForm title={wizardStepNames[2]} formValues={formik.values} />,
             nextButtonText: 'Create',
+            isDisabled: isStepDisabled(wizardStepNames[2]),
         },
     ];
 
@@ -110,6 +120,7 @@ function CreateVulnReportPage() {
                             saveText="Create"
                             onSave={onCreate}
                             isSaving={isLoading}
+                            isStepDisabled={isStepDisabled}
                         />
                     }
                 />
