@@ -56,21 +56,21 @@ func (s *ServiceLevelConfigSeparationSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 
 	// Add notifier
-	notifierId, err := s.notifierDatastore.AddNotifier(s.ctx, &storage.Notifier{Name: "notifier"})
+	notifierID, err := s.notifierDatastore.AddNotifier(s.ctx, &storage.Notifier{Name: "notifier"})
 	s.Require().NoError(err)
 
 	// Add collection
-	collectionId, err := s.collectionDatastore.AddCollection(s.ctx, &storage.ResourceCollection{Name: "collection"})
+	collectionID, err := s.collectionDatastore.AddCollection(s.ctx, &storage.ResourceCollection{Name: "collection"})
 	s.Require().NoError(err)
 
 	// Add report configs
-	s.v1Configs = common.GetTestReportConfigsV1(s.T(), notifierId, collectionId)
+	s.v1Configs = common.GetTestReportConfigsV1(s.T(), notifierID, collectionID)
 	for _, conf := range s.v1Configs {
 		conf.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, conf)
 		s.Require().NoError(err)
 	}
 
-	s.v2Configs = common.GetTestReportConfigsV2(s.T(), notifierId, collectionId)
+	s.v2Configs = common.GetTestReportConfigsV2(s.T(), notifierID, collectionID)
 	for _, conf := range s.v2Configs {
 		conf.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, conf)
 		s.Require().NoError(err)
