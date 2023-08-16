@@ -13,6 +13,7 @@ export type SelectSingleProps = {
     isCreatable?: boolean;
     variant?: 'typeahead' | null;
     placeholderText?: string;
+    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
 };
 
 function SelectSingle({
@@ -27,6 +28,7 @@ function SelectSingle({
     isCreatable = false,
     variant = null,
     placeholderText = '',
+    onBlur,
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -53,6 +55,7 @@ function SelectSingle({
             isCreatable={isCreatable}
             placeholderText={placeholderText}
             toggleId={id}
+            onBlur={onBlur}
         >
             {children}
         </Select>

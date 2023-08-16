@@ -10,7 +10,7 @@ export type ReportConfiguration = {
     type: ReportType;
     vulnReportFilters: VulnerabilityReportFilters;
     notifiers: NotifierConfiguration[];
-    schedule: Schedule;
+    schedule: Schedule | null;
     resourceScope: ResourceScope;
 };
 
@@ -27,15 +27,17 @@ export type VulnerabilityReportFilters =
           allVuln: boolean;
       })
     | (VulnerabilityReportFiltersBase & {
-          lastSuccessfulReport: boolean;
+          sinceLastSentScheduledReport: boolean;
       })
     | (VulnerabilityReportFiltersBase & {
-          startDate: string; // in the format of google.protobuf.Timestamp};
+          sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       });
 
 export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
 
-export type ImageType = 'DEPLOYED' | 'WATCHED';
+export const imageTypes = ['DEPLOYED', 'WATCHED'] as const;
+
+export type ImageType = (typeof imageTypes)[number];
 
 export type NotifierConfiguration = {
     emailConfig: {
@@ -59,7 +61,9 @@ export type Schedule =
           daysOfMonth: DaysOfMonth;
       };
 
-export type IntervalType = 'WEEKLY' | 'MONTHLY';
+export const intervalTypes = ['WEEKLY', 'MONTHLY'] as const;
+
+export type IntervalType = (typeof intervalTypes)[number];
 
 export type Interval = DaysOfWeek | DaysOfMonth;
 

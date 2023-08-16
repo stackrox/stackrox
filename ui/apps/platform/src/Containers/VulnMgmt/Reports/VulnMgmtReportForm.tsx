@@ -239,31 +239,45 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={3}>
-                                    <RepeatScheduleDropdown
-                                        label="Repeat report…"
+                                    <FormLabelGroup
                                         isRequired
+                                        label="Repeat report…"
                                         fieldId="schedule.intervalType"
-                                        value={values.schedule.intervalType}
-                                        handleSelect={onScheduledRepeatChange}
-                                    />
+                                        errors={{}}
+                                    >
+                                        <RepeatScheduleDropdown
+                                            fieldId="schedule.intervalType"
+                                            value={values.schedule.intervalType}
+                                            handleSelect={onScheduledRepeatChange}
+                                        />
+                                    </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={3}>
-                                    <DayPickerDropdown
-                                        label="On…"
+                                    <FormLabelGroup
                                         isRequired
+                                        label="On…"
                                         fieldId={
                                             values.schedule.intervalType === 'WEEKLY'
                                                 ? 'schedule.daysOfWeek.days'
                                                 : 'schedule.daysOfMonth.days'
                                         }
-                                        value={
-                                            values.schedule.intervalType === 'WEEKLY'
-                                                ? values?.schedule?.daysOfWeek?.days || []
-                                                : values?.schedule?.daysOfMonth?.days || []
-                                        }
-                                        handleSelect={onScheduledDaysChange}
-                                        intervalType={values.schedule.intervalType}
-                                    />
+                                        errors={{}}
+                                    >
+                                        <DayPickerDropdown
+                                            fieldId={
+                                                values.schedule.intervalType === 'WEEKLY'
+                                                    ? 'schedule.daysOfWeek.days'
+                                                    : 'schedule.daysOfMonth.days'
+                                            }
+                                            value={
+                                                values.schedule.intervalType === 'WEEKLY'
+                                                    ? values?.schedule?.daysOfWeek?.days || []
+                                                    : values?.schedule?.daysOfMonth?.days || []
+                                            }
+                                            handleSelect={onScheduledDaysChange}
+                                            intervalType={values.schedule.intervalType}
+                                        />
+                                    </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={12}>
                                     <FormLabelGroup

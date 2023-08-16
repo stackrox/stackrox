@@ -5,32 +5,34 @@ import {
     ButtonVariant,
     Flex,
     FlexItem,
-    FormGroup,
     SelectOption,
     TextInput,
 } from '@patternfly/react-core';
+import { FormikProps } from 'formik';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { fetchIntegration } from 'services/IntegrationsService';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { ReportNotifier } from './useReportFormValues';
+import { ReportFormValues, ReportNotifier } from './useReportFormValues';
 
 // eslint-disable-next-line import/no-named-as-default
 import EmailNotifierFormModal from './EmailNotifierFormModal';
 
 type NotifierSelectionProps = {
+    prefixId: string;
     selectedNotifier: ReportNotifier | null;
     mailingLists: string[];
-    setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
     allowCreate: boolean;
+    formik: FormikProps<ReportFormValues>;
 };
 
 function NotifierSelection({
+    prefixId,
     selectedNotifier,
     mailingLists,
-    setFieldValue,
     allowCreate,
+    formik,
 }: NotifierSelectionProps): ReactElement {
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
     const [lastAddedNotifier, setLastAddedNotifier] = useState<NotifierIntegration | null>(null);
@@ -61,36 +63,36 @@ function NotifierSelection({
     }
 
     function onMailingListsChange(value) {
-        const explodedEmails = value.split(',').map((email) => email.trim() as string);
-        setFieldValue('mailingLists', explodedEmails);
+        const explodedEmails: string = value.split(',').map((email) => email.trim() as string);
+        formik.setFieldValue(`${prefixId}.mailingLists`, explodedEmails);
     }
 
     function onNotifierChange(_id, selectionId) {
         const notifierObject = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierObject) {
             const notifierMailingLists = notifierObject.labelDefault.split(',');
-            setFieldValue('notifier', notifierObject);
-            setFieldValue('mailingLists', notifierMailingLists);
+            formik.setFieldValue(prefixId, {
+                notifier: notifierObject,
+                mailingLists: notifierMailingLists,
+            });
             setIsEmailNotifierModalOpen(false);
         }
     }
 
     const joinedMailingLists = mailingLists.join(', ');
-
     return (
         <>
-            <Flex alignItems={{ default: 'alignItemsFlexEnd' }}>
-                <FlexItem>
-                    <FormLabelGroup
-                        className="pf-u-mb-md"
-                        isRequired
-                        label="Email notifier"
-                        fieldId="notifierId"
-                        touched={{}}
-                        errors={{}}
-                    >
+            <FormLabelGroup
+                className="pf-u-mb-md"
+                isRequired
+                label="Email notifier"
+                fieldId={`${prefixId}.notifier`}
+                errors={formik.errors}
+            >
+                <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsFlexEnd' }}>
+                    <FlexItem>
                         <SelectSingle
-                            id="notifierId"
+                            id={`${prefixId}.notifier`}
                             toggleAriaLabel="Select a notifier"
                             value={selectedNotifier?.id || ''}
                             handleSelect={onNotifierChange}
@@ -103,35 +105,34 @@ function NotifierSelection({
                                 </SelectOption>
                             ))}
                         </SelectSingle>
-                    </FormLabelGroup>
-                </FlexItem>
-                {allowCreate && (
-                    <FlexItem>
-                        <Button
-                            className="pf-u-mb-md"
-                            variant={ButtonVariant.secondary}
-                            onClick={onToggleEmailNotifierModal}
-                        >
-                            Create email notifier
-                        </Button>
                     </FlexItem>
-                )}
-            </Flex>
-            <FormGroup
+                    {allowCreate && (
+                        <FlexItem>
+                            <Button
+                                variant={ButtonVariant.secondary}
+                                onClick={onToggleEmailNotifierModal}
+                            >
+                                Create email notifier
+                            </Button>
+                        </FlexItem>
+                    )}
+                </Flex>
+            </FormLabelGroup>
+            <FormLabelGroup
                 isRequired
                 label="Distribution list"
-                fieldId="mailingLists"
+                fieldId={`${prefixId}.mailingLists`}
                 helperText="Enter an audience, who will receive the scheduled report. Multiple email addresses can be entered with comma separators."
+                errors={formik.errors}
             >
                 <TextInput
                     isRequired
                     type="text"
-                    id="mailingLists"
                     value={joinedMailingLists}
                     onChange={onMailingListsChange}
                     placeholder="annie@example.com,jack@example.com"
                 />
-            </FormGroup>
+            </FormLabelGroup>
             <EmailNotifierFormModal
                 isOpen={isEmailNotifierModalOpen}
                 updateNotifierList={setLastAddedNotifier}
