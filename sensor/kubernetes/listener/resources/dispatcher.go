@@ -76,6 +76,7 @@ func NewDispatcherRegistry(
 	endpointManager := storeProvider.endpointManager
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
 	registryStore := storeProvider.registryStore
+	registryMirrorStore := storeProvider.registryMirrorStore
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
@@ -90,7 +91,7 @@ func NewDispatcherRegistry(
 		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),
 		clusterOperatorDispatcher:  newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
-		osRegistryMirrorDispatcher: newRegistryMirrorDispatcher(registryStore),
+		osRegistryMirrorDispatcher: newRegistryMirrorDispatcher(registryMirrorStore),
 
 		traceWriter: traceWriter,
 

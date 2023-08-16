@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -21,6 +22,7 @@ type InMemoryStoreProvider struct {
 	entityStore            *clusterentities.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
+	registryMirrorStore    registrymirror.Store
 
 	cleanableStores []CleanableStore
 }
@@ -50,6 +52,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		serviceAccountStore:    newServiceAccountStore(),
 		orchestratorNamespaces: orchestratornamespaces.NewOrchestratorNamespaces(),
 		registryStore:          registry.NewRegistryStore(nil),
+		registryMirrorStore:    registrymirror.NewFileStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
@@ -63,6 +66,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.serviceAccountStore,
 		p.orchestratorNamespaces,
 		p.registryStore,
+		p.registryMirrorStore,
 	}
 
 	return p
@@ -123,4 +127,9 @@ func (p *InMemoryStoreProvider) Entities() *clusterentities.Store {
 // Nodes returns the Nodes public interface
 func (p *InMemoryStoreProvider) Nodes() store.NodeStore {
 	return p.nodeStore
+}
+
+// RegistryMirrors returns the RegistryMirror store public interface.
+func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
+	return p.registryMirrorStore
 }

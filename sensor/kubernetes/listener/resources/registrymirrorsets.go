@@ -5,18 +5,18 @@ import (
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
 type registryMirrorDispatcher struct {
-	registryStore *registry.Store
+	mirrorStore registrymirror.Store
 }
 
-func newRegistryMirrorDispatcher(registryStore *registry.Store) *registryMirrorDispatcher {
+func newRegistryMirrorDispatcher(mirrorStore registrymirror.Store) *registryMirrorDispatcher {
 	return &registryMirrorDispatcher{
-		registryStore: registryStore,
+		mirrorStore: mirrorStore,
 	}
 }
 
@@ -38,36 +38,54 @@ func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action centr
 
 func (r *registryMirrorDispatcher) handleImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy, action central.ResourceAction) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		r.registryStore.DeleteImageContentSourcePolicy(icsp.GetUID())
-		log.Debugf("Deleted ImageContentSourcePolicy from registry store: %q (%v)", icsp.GetName(), icsp.GetUID())
+		if err := r.mirrorStore.DeleteImageContentSourcePolicy(icsp.GetUID()); err != nil {
+			log.Errorf("Deleting ImageContentSourcePolicy from mirror store %q (%v): %v", icsp.GetName(), icsp.GetUID(), err)
+		} else {
+			log.Debugf("Deleted ImageContentSourcePolicy from mirror store: %q (%v)", icsp.GetName(), icsp.GetUID())
+		}
 		return nil
 	}
 
-	r.registryStore.UpsertImageContentSourcePolicy(icsp)
-	log.Debugf("Upserted ImageContentSourcePolicy into registry store: %q (%v)", icsp.GetName(), icsp.GetUID())
+	if err := r.mirrorStore.UpsertImageContentSourcePolicy(icsp); err != nil {
+		log.Errorf("Upserting ImageContentSourcePolicy into mirror store %q (%v): %v", icsp.GetName(), icsp.GetUID(), err)
+	} else {
+		log.Debugf("Upserted ImageContentSourcePolicy into mirror store: %q (%v)", icsp.GetName(), icsp.GetUID())
+	}
 	return nil
 }
 
 func (r *registryMirrorDispatcher) handleImageDigestMirrorSet(idms *configV1.ImageDigestMirrorSet, action central.ResourceAction) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		r.registryStore.DeleteImageDigestMirrorSet(idms.GetUID())
-		log.Debugf("Deleted ImageDigestMirrorSet from registry store: %q (%v)", idms.GetName(), idms.GetUID())
+		if err := r.mirrorStore.DeleteImageDigestMirrorSet(idms.GetUID()); err != nil {
+			log.Errorf("Deleting ImageDigestMirrorSet from mirror store %q (%v): %v", idms.GetName(), idms.GetUID(), err)
+		} else {
+			log.Debugf("Deleted ImageDigestMirrorSet from mirror store: %q (%v)", idms.GetName(), idms.GetUID())
+		}
 		return nil
 	}
 
-	r.registryStore.UpsertImageDigestMirrorSet(idms)
-	log.Debugf("Upserted ImageDigestMirrorSet into registry store: %q (%v)", idms.GetName(), idms.GetUID())
+	if err := r.mirrorStore.UpsertImageDigestMirrorSet(idms); err != nil {
+		log.Errorf("Upserting ImageDigestMirrorSet into mirror store %q (%v): %v", idms.GetName(), idms.GetUID(), err)
+	} else {
+		log.Debugf("Upserted ImageDigestMirrorSet into mirror store: %q (%v)", idms.GetName(), idms.GetUID())
+	}
 	return nil
 }
 
 func (r *registryMirrorDispatcher) handleImageTagMirrorSet(itms *configV1.ImageTagMirrorSet, action central.ResourceAction) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		r.registryStore.DeleteImageTagMirrorSet(itms.GetUID())
-		log.Debugf("Deleted ImageTagMirrorSet from registry store: %q (%v)", itms.GetName(), itms.GetUID())
+		if err := r.mirrorStore.DeleteImageTagMirrorSet(itms.GetUID()); err != nil {
+			log.Errorf("Deleting ImageTagMirrorSet from mirror store %q (%v): %v", itms.GetName(), itms.GetUID(), err)
+		} else {
+			log.Debugf("Deleted ImageTagMirrorSet from mirror store: %q (%v)", itms.GetName(), itms.GetUID())
+		}
 		return nil
 	}
 
-	r.registryStore.UpsertImageTagMirrorSet(itms)
-	log.Debugf("Upserted ImageTagMirrorSet into registry store: %q (%v)", itms.GetName(), itms.GetUID())
+	if err := r.mirrorStore.UpsertImageTagMirrorSet(itms); err != nil {
+		log.Errorf("Upserting ImageTagMirrorSet into mirror store %q (%v): %v", itms.GetName(), itms.GetUID(), err)
+	} else {
+		log.Debugf("Upserted ImageTagMirrorSet into mirror store: %q (%v)", itms.GetName(), itms.GetUID())
+	}
 	return nil
 }
