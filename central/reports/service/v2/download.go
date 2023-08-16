@@ -133,7 +133,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)),
 	)
-	if err != nil && status.GetRunState() == storage.ReportStatus_GENERATED {
+	if err == nil && status.GetRunState() == storage.ReportStatus_GENERATED {
 		rep.ReportStatus.RunState = storage.ReportStatus_DELIVERED
 		err = h.snapshotStore.UpdateReportSnapshot(writeSnapshotCtx, rep)
 		if err != nil {
