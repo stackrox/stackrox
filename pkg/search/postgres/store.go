@@ -158,19 +158,7 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 
 // Walk iterates over all the objects in the store and applies the closure.
 func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, sacQueryFilter, s.db)
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return err
 	}
@@ -210,23 +198,7 @@ func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, false, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, false, err
-		}
-		sacQueryFilter = filter
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
 	data, err := RunGetQueryForSchema[T, PT](ctx, s.schema, q, s.db)
 	if err != nil {
@@ -240,27 +212,7 @@ func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, err
-		}
-		sacQueryFilter = filter
-	}
-
-	pagination := query.GetPagination()
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-	q.Pagination = pagination
-
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -306,22 +258,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 		return nil, nil, nil
 	}
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, nil, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, nil, err
-		}
-		sacQueryFilter = filter
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
 	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
 	if err != nil {
