@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchReportConfigurations, fetchReportConfigurationsCount } from 'services/ReportsService';
 
 import { ApiSortOption, SearchFilter } from 'types/search';
-import { Report } from '../types';
+import { ReportConfiguration } from 'services/ReportsService.types';
 import { getErrorMessage } from '../errorUtils';
-import { fetchAndAppendLastReportJobForConfiguration, getRequestQueryString } from './apiUtils';
+import { getRequestQueryString } from './apiUtils';
 
 export type UseFetchReportsProps = {
     searchFilter: SearchFilter;
@@ -16,7 +16,7 @@ export type UseFetchReportsProps = {
 };
 
 type Result = {
-    reports: Report[];
+    reportConfigurations: ReportConfiguration[] | null;
     totalReports: number;
     isLoading: boolean;
     error: string | null;
@@ -27,7 +27,7 @@ type FetchReportsResult = {
 } & Result;
 
 const defaultResult = {
-    reports: [],
+    reportConfigurations: null,
     totalReports: 0,
     isLoading: false,
     error: null,
@@ -42,12 +42,12 @@ function useFetchReports({
     const [result, setResult] = useState<Result>(defaultResult);
 
     const fetchReports = useCallback(async () => {
-        setResult({
-            reports: [],
-            totalReports: 0,
+        setResult((prevResult) => ({
+            reportConfigurations: prevResult.reportConfigurations,
+            totalReports: prevResult.totalReports,
             isLoading: true,
             error: null,
-        });
+        }));
 
         try {
             const reportConfigurations = await fetchReportConfigurations({
@@ -59,18 +59,15 @@ function useFetchReports({
             const { count: totalReports } = await fetchReportConfigurationsCount({
                 query: getRequestQueryString(searchFilter),
             });
-            const reports: Report[] = await Promise.all(
-                reportConfigurations.map(fetchAndAppendLastReportJobForConfiguration)
-            );
             setResult({
-                reports,
+                reportConfigurations,
                 totalReports,
                 isLoading: false,
                 error: null,
             });
         } catch (error) {
             setResult({
-                reports: [],
+                reportConfigurations: null,
                 totalReports: 0,
                 isLoading: false,
                 error: getErrorMessage(error),
