@@ -722,8 +722,10 @@ restore_56_1_backup() {
 update_public_config() {
     info "Updating public config to ensure that it is overridden by restore"
 
-    new_config=$(echo "$1" | jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }')
+    config=$(roxcurl /v1/config)
+    new_config=$(echo "$config" | jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }')
     roxcurl /v1/config -X PUT -d "{ \"config\": $new_config }" > /dev/null || touch DB_TEST_FAIL
+    echo "$config"
 }
 
 db_backup_and_restore_test() {
@@ -739,16 +741,13 @@ db_backup_and_restore_test() {
     # Ensure central is ready for requests after any previous tests
     wait_for_api
 
-    # Get original config
-    original_config=$(roxcurl /v1/config)
-
     local output_dir="$1"
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
-    info "Updating public config with new values that should be removed when restore occurs"
-    update_public_config "$original_config"
+    info "Updating public config"
+    original_config=$(update_public_config)
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
