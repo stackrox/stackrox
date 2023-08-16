@@ -1,10 +1,10 @@
-# This file lists the ACS versions supported by Scanner V4 and Scanner V4 Updater.
-# Since Scanner V4 shares the same version as ACS,
-# Scanner V4 Updater updates vulnerability data for all versions of Scanner V4 listed in this file
-# and uploads that data to Google Storage.
-# Various versions of Scanner V4 matchers will import vulnerability data based on their respective versions from Google Storage.
+# This file serves as a list of Stackrox versions.
+# As Scanner and Stackrox versions are aligned, the scanner updater is responsible for updating vulnerability data across all versions listed in this file.
+# Subsequently, this updated data is uploaded to Google Storage.
+# For each individual version of Scanner's vulnerability updater, corresponding vulnerability data is collected and then seamlessly uploaded to Google Storage.
+# This process ensures that each version's vulnerability data is accurately captured and maintained in accordance with its respective version.
 4.0.0
 3.74.4
 4.1.x-476-g1aa6557244
 4.1.x-786-g1a0528a30c
-4.1.x-787-g9025f208b7
+4.1.x-820-g3a14dfce97

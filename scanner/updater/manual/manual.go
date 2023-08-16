@@ -20,11 +20,11 @@ func UpdaterSet(_ context.Context, vulns []*claircore.Vulnerability) (driver.Upd
 	return res, nil
 }
 
+var _ driver.Updater = (*updater)(nil)
+
 type updater struct {
 	data []*claircore.Vulnerability
 }
-
-var _ driver.Updater = (*updater)(nil)
 
 func (u *updater) Name() string { return `manual updater` }
 

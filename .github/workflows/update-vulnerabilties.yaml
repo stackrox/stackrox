@@ -28,9 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false #if one of the versions fails to get updated vulns, we still want to update for the other versions
-      max-parallel: 2
+      max-parallel: 2 #limit the number of concurrent jobs to avoid job interruption by OOM as creating json blob has been memory-intensive
       matrix:
-        version: ${{fromJson(needs.read-versions.outputs.matrix).versions}}
+        version: ${{ fromJson(needs.read-versions.outputs.matrix).versions }}
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
@@ -48,8 +48,8 @@ jobs:
           DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
           FILE_NAME=$(basename "$DOWNLOAD_URL")
           wget "$DOWNLOAD_URL" -O "$FILE_NAME"
-          unzip "$FILE_NAME" -d unzipped-dir
-          cd unzipped-dir/stackrox-*
+          unzip "$FILE_NAME" -d "${FILE_NAME}-dir"
+          cd "${FILE_NAME}-dir/stackrox-"*
           if [ ! -d "scanner" ]; then
             echo "Scanner directory not found. Terminating current matrix step."
             exit 1
@@ -57,7 +57,7 @@ jobs:
           
           cd scanner
           go run cmd/updater/main.go -output-dir=${{ env.ROX_PRODUCT_VERSION }}
-          gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/"
+          gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
         
   send-notification:
     needs:
