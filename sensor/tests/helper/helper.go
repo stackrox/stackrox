@@ -621,22 +621,12 @@ func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, a
 	}
 }
 
-// NoViolationForDeployment checks that no alerts are raised for deployment name.
-func (c *TestContext) NoViolationForDeployment(t *testing.T, name string, message string) {
-	timer := time.NewTimer(defaultWaitTimeout)
-	ticker := time.NewTicker(defaultTicker)
-	for {
-		select {
-		case <-timer.C:
-			return
-		case <-ticker.C:
-			messages := c.GetFakeCentral().GetAllMessages()
-			alerts := GetAllAlertsForDeploymentName(messages, name)
-			if len(alerts) > 0 {
-				t.Fatalf("alerts found for deployment %s (%+v): %s", name, alerts, message)
-			}
-		}
-	}
+// NoViolations checks that no alerts are raised for deployment after timer.
+func (c *TestContext) NoViolations(t *testing.T, name string, message string) {
+	<-time.After(defaultWaitTimeout)
+	messages := c.GetFakeCentral().GetAllMessages()
+	alerts := GetAllAlertsForDeploymentName(messages, name)
+	assert.Len(t, alerts, 0, fmt.Sprintf("%s: violations found [%+v]", message, alerts))
 }
 
 // LastViolationStateByID checks the violation state by deployment ID
