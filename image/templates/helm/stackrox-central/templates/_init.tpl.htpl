@@ -140,11 +140,11 @@
 [<- end >]
 
 [< if .Operator >]
-{{ $_ := set $env "installMethod" "rhacs-operator" }}
-[< else if not .KubectlOutput >]
-{{ $_ := set $env "installMethod" "helm" }}
-[< else >]
+{{ $_ := set $env "installMethod" "operator" }}
+[< else if .KubectlOutput >]
 {{ $_ := set $env "installMethod" "manifest" }}
+[< else >]
+{{ $_ := set $env "installMethod" "helm" }}
 [< end >]
 
 {{/* Apply defaults */}}

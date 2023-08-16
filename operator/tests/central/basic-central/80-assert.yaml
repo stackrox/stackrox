@@ -39,7 +39,7 @@ spec:
             - name: ROX_OPENSHIFT
               value: "true"
             - name: ROX_INSTALL_METHOD
-              value: "rhacs-operator"
+              value: "operator"
             - name: NO_PROXY
               valueFrom:
                 secretKeyRef:

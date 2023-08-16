@@ -29,6 +29,6 @@ func Set(value storage.ManagerType) {
 	case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
 		installMethod = "helm"
 	case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
-		installMethod = "rhacs-operator"
+		installMethod = "operator"
 	}
 }
