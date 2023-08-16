@@ -127,7 +127,7 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {
-			log.Infof("Connection established: Starting Kubernetes listener")
+			log.Info("Connection established: Starting Kubernetes listener")
 			// TODO(ROX-18613): use contextProvider to provide context for listener
 			p.createNewContext()
 			if err := p.listener.StartWithContext(p.context); err != nil {

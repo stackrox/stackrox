@@ -67,7 +67,7 @@ func (m *orchestratorIstioCVEManagerImpl) reconcile() {
 }
 
 func (m *orchestratorIstioCVEManagerImpl) reconcileAllCVEs() {
-	log.Infof("Start orchestrator-level vulnerability reconciliation")
+	log.Info("Start orchestrator-level vulnerability reconciliation")
 	m.reconcile()
 }
 
