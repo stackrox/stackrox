@@ -2,13 +2,16 @@ package service
 
 import (
 	"context"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -65,18 +68,34 @@ func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Emp
 
 func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeRange) (*v1.MaxSecuredUnitsUsageResponse, error) {
 	max := &v1.MaxSecuredUnitsUsageResponse{}
-	err := s.datastore.Walk(ctx, req.GetFrom(), req.GetTo(), func(metrics *storage.SecuredUnits) error {
-		if nodes := metrics.GetNumNodes(); nodes >= max.MaxNodes {
-			max.MaxNodes = nodes
-			max.MaxNodesAt = metrics.GetTimestamp()
+	var from time.Time
+	to := time.Now()
+	var err error
+	if req.GetFrom() != nil {
+		if from, err = types.TimestampFromProto(req.GetFrom()); err != nil {
+			return nil, errox.InvalidArgs.New("invalid value in from parameter")
 		}
-		if cpus := metrics.GetNumCpuUnits(); cpus >= max.MaxCpuUnits {
-			max.MaxCpuUnits = cpus
-			max.MaxCpuUnitsAt = metrics.GetTimestamp()
+	}
+	if req.GetTo() != nil {
+		if to, err = types.TimestampFromProto(req.GetTo()); err != nil {
+			return nil, errox.InvalidArgs.New("invalid value in to parameter")
 		}
-		return nil
-	})
-	if err != nil {
+	}
+	if !from.Before(to) {
+		return nil, errox.InvalidArgs.New("bad combination of from and to parameters")
+	}
+	if err := s.datastore.Walk(ctx, from, to,
+		func(metrics *storage.SecuredUnits) error {
+			if nodes := metrics.GetNumNodes(); nodes >= max.MaxNodes {
+				max.MaxNodes = nodes
+				max.MaxNodesAt = metrics.GetTimestamp()
+			}
+			if cpus := metrics.GetNumCpuUnits(); cpus >= max.MaxCpuUnits {
+				max.MaxCpuUnits = cpus
+				max.MaxCpuUnitsAt = metrics.GetTimestamp()
+			}
+			return nil
+		}); err != nil {
 		return nil, errors.Wrap(err, "cannot get product usage")
 	}
 	return max, nil

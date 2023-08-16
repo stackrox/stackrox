@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/productusage/store"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,9 +17,9 @@ type DataStore interface {
 
 	// Walk calls fn on every record found in the storage. Stops iterating if
 	// fn returns an error, and returns this error.
-	Walk(ctx context.Context, from *types.Timestamp, to *types.Timestamp, fn func(*storage.SecuredUnits) error) error
-	// Upsert puts metrics to the persistent storage.
-	Upsert(ctx context.Context, metrics *storage.SecuredUnits) error
+	Walk(ctx context.Context, from time.Time, to time.Time, fn func(*storage.SecuredUnits) error) error
+	// Add appends metrics to the persistent storage.
+	Add(ctx context.Context, metrics *storage.SecuredUnits) error
 
 	//
 	// In-memory storage access:

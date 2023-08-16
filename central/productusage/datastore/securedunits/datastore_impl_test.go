@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	mockStore "github.com/stackrox/rox/central/productusage/store/mocks"
@@ -78,34 +79,57 @@ func makeSource(n int64, c int64) *storage.SecuredUnits {
 }
 
 func (suite *UsageDataStoreTestSuite) TestWalk() {
-	err := suite.datastore.Walk(suite.hasNoneCtx, nil, nil, nil)
+	var zeroTime time.Time
+	err := suite.datastore.Walk(suite.hasNoneCtx, zeroTime, zeroTime, nil)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.Walk(suite.hasBadCtx, nil, nil, nil)
+	err = suite.datastore.Walk(suite.hasBadCtx, zeroTime, zeroTime, nil)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 
-	suite.store.EXPECT().Walk(gomock.Any(), gomock.Any()).Times(4).Return(nil)
+	const page = 10
+	const N = page + 2
+	data := make([]*storage.SecuredUnits, 0, N)
+	now := time.Now()
+	from := now
+	for i := 0; i < N; i++ {
+		ts, _ := types.TimestampProto(from)
+		data = append(data, &storage.SecuredUnits{
+			Timestamp:   ts,
+			NumNodes:    int64(i),
+			NumCpuUnits: int64(i * 2),
+		})
+		from = from.Add(5 * time.Minute)
+	}
 
-	fn := func(su *storage.SecuredUnits) error { return nil }
-	err = suite.datastore.Walk(suite.hasReadCtx, nil, nil, fn)
+	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
+		Return(data[0:page], nil)
+	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
+		Return(data[page:N], nil)
+	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
+		Return(nil, nil)
+
+	var totalNodes, totalCPUUnits int64
+	fn := func(su *storage.SecuredUnits) error {
+		totalNodes += su.NumNodes
+		totalCPUUnits += su.NumCpuUnits
+		return nil
+	}
+
+	err = suite.datastore.Walk(suite.hasReadCtx, now, from, fn)
 	suite.NoError(err)
-	err = suite.datastore.Walk(suite.hasReadCtx, &types.Timestamp{}, nil, fn)
-	suite.NoError(err)
-	err = suite.datastore.Walk(suite.hasReadCtx, nil, &types.Timestamp{}, fn)
-	suite.NoError(err)
-	err = suite.datastore.Walk(suite.hasWriteCtx, &types.Timestamp{}, &types.Timestamp{}, fn)
-	suite.NoError(err)
+	suite.Equal(int64((N-1)*N/2), totalNodes)
+	suite.Equal(int64((N-1)*N), totalCPUUnits)
 }
 
-func (suite *UsageDataStoreTestSuite) TestUpsert() {
-	err := suite.datastore.Upsert(suite.hasNoneCtx, &storage.SecuredUnits{})
+func (suite *UsageDataStoreTestSuite) TestAdd() {
+	err := suite.datastore.Add(suite.hasNoneCtx, &storage.SecuredUnits{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.Upsert(suite.hasBadCtx, &storage.SecuredUnits{})
+	err = suite.datastore.Add(suite.hasBadCtx, &storage.SecuredUnits{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
-	err = suite.datastore.Upsert(suite.hasReadCtx, &storage.SecuredUnits{})
+	err = suite.datastore.Add(suite.hasReadCtx, &storage.SecuredUnits{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	suite.store.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Times(1).Return(nil)
-	err = suite.datastore.Upsert(suite.hasWriteCtx, &storage.SecuredUnits{})
+	err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{})
 	suite.NoError(err)
 }
 

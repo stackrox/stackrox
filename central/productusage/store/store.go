@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -11,5 +12,5 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Upsert(ctx context.Context, obj *storage.SecuredUnits) error
-	Walk(ctx context.Context, fn func(obj *storage.SecuredUnits) error) error
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.SecuredUnits, error)
 }

@@ -8,6 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -35,6 +36,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// GetByQuery mocks base method.
+func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.SecuredUnits, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
+	ret0, _ := ret[0].([]*storage.SecuredUnits)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByQuery indicates an expected call of GetByQuery.
+func (mr *MockStoreMockRecorder) GetByQuery(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
+}
+
 // Upsert mocks base method.
 func (m *MockStore) Upsert(ctx context.Context, obj *storage.SecuredUnits) error {
 	m.ctrl.T.Helper()
@@ -47,18 +63,4 @@ func (m *MockStore) Upsert(ctx context.Context, obj *storage.SecuredUnits) error
 func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
-}
-
-// Walk mocks base method.
-func (m *MockStore) Walk(ctx context.Context, fn func(*storage.SecuredUnits) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", ctx, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Walk indicates an expected call of Walk.
-func (mr *MockStoreMockRecorder) Walk(ctx, fn interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), ctx, fn)
 }
