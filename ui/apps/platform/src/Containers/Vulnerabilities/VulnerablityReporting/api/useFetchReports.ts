@@ -1,16 +1,12 @@
 /* eslint-disable no-void */
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-    fetchReportConfigurations,
-    fetchReportConfigurationsCount,
-    fetchReportHistory,
-} from 'services/ReportsService';
+import { fetchReportConfigurations, fetchReportConfigurationsCount } from 'services/ReportsService';
 
 import { SearchFilter } from 'types/search';
 import { Report } from '../types';
 import { getErrorMessage } from '../errorUtils';
-import { getRequestQueryString } from './apiUtils';
+import { fetchAndAppendLastReportJobForConfiguration, getRequestQueryString } from './apiUtils';
 
 export type UseFetchReportsProps = {
     searchFilter: SearchFilter;
@@ -63,26 +59,7 @@ function useFetchReports({
                 perPage,
             });
             const reports: Report[] = await Promise.all(
-                reportConfigurations.map(async (reportConfiguration): Promise<Report> => {
-                    const PAGE = 1;
-                    const PER_PAGE = 1;
-                    const SHOW_MY_HISTORY = true;
-                    // Query for the current user's last report job
-                    const query = getRequestQueryString({
-                        'Report state': ['PREPARING', 'WAITING'],
-                    });
-                    const reportSnapshot = await fetchReportHistory(
-                        reportConfiguration.id,
-                        query,
-                        PAGE,
-                        PER_PAGE,
-                        SHOW_MY_HISTORY
-                    );
-                    return {
-                        ...reportConfiguration,
-                        reportSnapshot: reportSnapshot?.[0] || null,
-                    };
-                })
+                reportConfigurations.map(fetchAndAppendLastReportJobForConfiguration)
             );
             setResult({
                 reports,

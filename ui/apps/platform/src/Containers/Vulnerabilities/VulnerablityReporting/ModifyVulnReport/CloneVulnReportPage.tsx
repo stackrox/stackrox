@@ -39,7 +39,7 @@ function CloneVulnReportPage() {
     const history = useHistory();
     const { reportId } = useParams();
 
-    const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
+    const { report, isLoading, error } = useFetchReport(reportId);
     const formik = useReportFormValues();
     const {
         isLoading: isCreating,
@@ -54,15 +54,15 @@ function CloneVulnReportPage() {
 
     // We fetch the report configuration for the edittable report and then populate the form values
     useEffect(() => {
-        if (reportConfiguration) {
-            const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
+        if (report) {
+            const reportFormValues = getReportFormValuesFromConfiguration(report);
             // We need to clear the reportId and modify the name
             reportFormValues.reportId = '';
             reportFormValues.reportParameters.reportName = `${reportFormValues.reportParameters.reportName} (copy)`;
             formik.setValues(reportFormValues);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reportConfiguration, formik.setValues]);
+    }, [report, formik.setValues]);
 
     function onCreate() {
         createReport(formik.values);
