@@ -8,7 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_DataRace(t *testing.T) {
+// Test_DataRace is intended for the race tests
+func Test_DataRace(_ *testing.T) {
 	o := newOfflineCtrl(context.Background(), false)
 
 	// Go Online periodically
