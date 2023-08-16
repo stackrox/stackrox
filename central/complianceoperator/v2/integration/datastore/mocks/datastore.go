@@ -8,6 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -66,19 +67,34 @@ func (mr *MockDataStoreMockRecorder) GetComplianceIntegration(ctx, id interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceIntegration", reflect.TypeOf((*MockDataStore)(nil).GetComplianceIntegration), ctx, id)
 }
 
-// GetComplianceIntegrations mocks base method.
-func (m *MockDataStore) GetComplianceIntegrations(ctx context.Context, clusterID string) ([]*storage.ComplianceIntegration, error) {
+// GetComplianceIntegrationByCluster mocks base method.
+func (m *MockDataStore) GetComplianceIntegrationByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceIntegration, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetComplianceIntegrations", ctx, clusterID)
+	ret := m.ctrl.Call(m, "GetComplianceIntegrationByCluster", ctx, clusterID)
+	ret0, _ := ret[0].([]*storage.ComplianceIntegration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetComplianceIntegrationByCluster indicates an expected call of GetComplianceIntegrationByCluster.
+func (mr *MockDataStoreMockRecorder) GetComplianceIntegrationByCluster(ctx, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceIntegrationByCluster", reflect.TypeOf((*MockDataStore)(nil).GetComplianceIntegrationByCluster), ctx, clusterID)
+}
+
+// GetComplianceIntegrations mocks base method.
+func (m *MockDataStore) GetComplianceIntegrations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceIntegration, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComplianceIntegrations", ctx, query)
 	ret0, _ := ret[0].([]*storage.ComplianceIntegration)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetComplianceIntegrations indicates an expected call of GetComplianceIntegrations.
-func (mr *MockDataStoreMockRecorder) GetComplianceIntegrations(ctx, clusterID interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetComplianceIntegrations(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceIntegrations", reflect.TypeOf((*MockDataStore)(nil).GetComplianceIntegrations), ctx, clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComplianceIntegrations", reflect.TypeOf((*MockDataStore)(nil).GetComplianceIntegrations), ctx, query)
 }
 
 // RemoveComplianceIntegration mocks base method.

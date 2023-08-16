@@ -33,6 +33,7 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
@@ -161,6 +162,7 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -409,6 +411,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting 2.0 is GA.
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+	}
+
+	if features.ComplianceEnhancements.Enabled() {
+		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
