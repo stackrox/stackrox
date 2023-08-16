@@ -88,6 +88,7 @@ func init() {
 		&storage.SignatureIntegration{}:                         resources.Integration,
 		&storage.SimpleAccessScope{}:                            resources.Access,
 		&storage.StoredLicenseKey{}:                             resources.Access,
+		&storage.SystemInfo{}:                                   resources.Administration,
 		&storage.TelemetryConfiguration{}:                       resources.Administration,
 		&storage.TokenMetadata{}:                                resources.Integration,
 		&storage.User{}:                                         resources.Access,

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Hash)(nil)), "hashes")
+		schema.ScopingResource = resources.Hash
 		RegisterTable(schema, CreateTableHashesStmt, features.StoreEventHashes.Enabled)
 		return schema
 	}()
