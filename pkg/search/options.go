@@ -333,7 +333,9 @@ var (
 	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
 	// Notification fields.
-	NotificationArea = newFieldLabel("Notification Area")
+	NotificationArea  = newFieldLabel("Notification Area")
+	NotificationType  = newFieldLabel("Notification Type")
+	NotificationLevel = newFieldLabel("Notification Level")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

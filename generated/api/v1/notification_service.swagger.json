@@ -59,6 +59,33 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "notificationType",
+            "description": "For filtering notifications based on their type.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_TYPE_GENERIC",
+              "NOTIFICATION_TYPE_LOG_MESSAGE"
+            ],
+            "default": "NOTIFICATION_TYPE_GENERIC"
+          },
+          {
+            "name": "level",
+            "description": "For filtering notifications based on their level.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_LEVEL_UNKNOWN",
+              "NOTIFICATION_LEVEL_INFO",
+              "NOTIFICATION_LEVEL_SUCCESS",
+              "NOTIFICATION_LEVEL_WARN",
+              "NOTIFICATION_LEVEL_DANGER"
+            ],
+            "default": "NOTIFICATION_LEVEL_UNKNOWN"
           }
         ],
         "tags": [
@@ -163,13 +190,21 @@
           "type": "string",
           "description": "UUID of the notification."
         },
+        "type": {
+          "$ref": "#/definitions/v1NotificationType",
+          "description": "Type of the notification."
+        },
+        "level": {
+          "$ref": "#/definitions/v1NotificationLevel",
+          "description": "Level associated with the notification. The level is categorized into danger, warn, info,\nsuccess."
+        },
         "message": {
           "type": "string",
           "description": "Message associated with the notification. The message may include detailed information\nfor this particular notification."
         },
-        "remediation": {
+        "hint": {
           "type": "string",
-          "description": "Remediation associated with the notification. The remediation may include detailed actions\nto take for this particular notification."
+          "description": "Hint associated with the notification. The hint may include different information based\non the type of notification. It can include instructions to resolve a notification, or\ninformational hints."
         },
         "area": {
           "type": "string",
@@ -188,13 +223,39 @@
           "format": "int64",
           "description": "Occurrences associated with the notification. Notifications may occur multiple times, the occurrences\nwill track the amount."
         },
+        "lastOccurred": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Specifies the time the notification has last occurred."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Specifies the time the event has been created."
+          "description": "Specifies the time the notification has been created."
         }
       },
       "description": "Notifications are emitted by Central. They are used to create transparency for users\nfor asynchronous, background tasks.\nCurrently, notifications only cover logs emitted by Central."
+    },
+    "v1NotificationLevel": {
+      "type": "string",
+      "enum": [
+        "NOTIFICATION_LEVEL_UNKNOWN",
+        "NOTIFICATION_LEVEL_INFO",
+        "NOTIFICATION_LEVEL_SUCCESS",
+        "NOTIFICATION_LEVEL_WARN",
+        "NOTIFICATION_LEVEL_DANGER"
+      ],
+      "default": "NOTIFICATION_LEVEL_UNKNOWN",
+      "description": "Notification level exposes the different levels which a notification can have."
+    },
+    "v1NotificationType": {
+      "type": "string",
+      "enum": [
+        "NOTIFICATION_TYPE_GENERIC",
+        "NOTIFICATION_TYPE_LOG_MESSAGE"
+      ],
+      "default": "NOTIFICATION_TYPE_GENERIC",
+      "description": "Notification type exposes the different types of notifications.\nCurrently, the notification type is either generic or contains a log message."
     },
     "v1NotificationsResponse": {
       "type": "object",

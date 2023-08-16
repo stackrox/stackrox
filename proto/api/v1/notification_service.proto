@@ -28,6 +28,12 @@ message GetNotificationsRequest {
 
     // For filtering notifications associated with a specific resource type.
     string resource_type                = 4;
+
+    // For filtering notifications based on their type.
+    NotificationType notification_type  = 5;
+
+    // For filtering notifications based on their level.
+    NotificationLevel level             = 6;
 }
 
 // Notifications are emitted by Central. They are used to create transparency for users
@@ -35,35 +41,62 @@ message GetNotificationsRequest {
 // Currently, notifications only cover logs emitted by Central.
 message Notification {
     // UUID of the notification.
-    string id                            = 1;
+    string id                               = 1;
+
+    // Type of the notification.
+    NotificationType type                   = 2;
+
+    // Level associated with the notification. The level is categorized into danger, warn, info,
+    // success.
+    NotificationLevel level                 = 3;
 
     // Message associated with the notification. The message may include detailed information
     // for this particular notification.
-    string message                       = 2;
+    string message                          = 4;
 
-    // Remediation associated with the notification. The remediation may include detailed actions
-    // to take for this particular notification.
-    string remediation                   = 3;
+    // Hint associated with the notification. The hint may include different information based
+    // on the type of notification. It can include instructions to resolve a notification, or
+    // informational hints.
+    string hint                             = 5;
 
     // Area associated with the notification. A notification's area outlines the feature area where
     // the notification was created from. As an example, this might be "Image Scanning".
     // In case of notifications that cannot be tied to a specific area, this will be "General".
-    string area                          = 4;
+    string area                             = 6;
 
     // Resource type associated with the notification. A notification may refer to an underlying resource
     // such as a particular image. In that case, the resource type will be filled here.
-    string resource_type                 = 5;
+    string resource_type                    = 7;
 
     // Resource ID associated with the notification. If a notification refers to an underlying resource,
     // the resource ID identifies the underlying resource.
-    string resource_id                   = 6;
+    string resource_id                      = 8;
 
     // Occurrences associated with the notification. Notifications may occur multiple times, the occurrences
     // will track the amount.
-    int64 occurrences                    = 7;
+    int64 occurrences                       = 9;
 
-    // Specifies the time the event has been created.
-    google.protobuf.Timestamp created_at = 8;
+    // Specifies the time the notification has last occurred.
+    google.protobuf.Timestamp last_occurred = 10;
+
+    // Specifies the time the notification has been created.
+    google.protobuf.Timestamp created_at    = 11;
+}
+
+// Notification type exposes the different types of notifications.
+// Currently, the notification type is either generic or contains a log message.
+enum NotificationType {
+    NOTIFICATION_TYPE_GENERIC     = 0;
+    NOTIFICATION_TYPE_LOG_MESSAGE = 1;
+}
+
+// Notification level exposes the different levels which a notification can have.
+enum NotificationLevel {
+    NOTIFICATION_LEVEL_UNKNOWN = 0;
+    NOTIFICATION_LEVEL_INFO    = 1;
+    NOTIFICATION_LEVEL_SUCCESS = 2;
+    NOTIFICATION_LEVEL_WARN    = 3;
+    NOTIFICATION_LEVEL_DANGER  = 4;
 }
 
 service NotificationService {

@@ -12,12 +12,34 @@ package storage;
 //
 // Refer to v1.Notification for a more detailed doc.
 message Notification {
-    string id                            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    string message                       = 2;
-    string remediation                   = 3;
-    string area                          = 4 [(gogoproto.moretags) = 'search:"Notification Area,hidden"'];
-    string resource_type                 = 5 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
-    string resource_id                   = 6;
-    int64 occurrences                    = 7;
-    google.protobuf.Timestamp created_at = 8 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+    string id                               = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    NotificationType type                   = 2 [(gogoproto.moretags) = 'search:"Notification Type,hidden"'];
+    NotificationLevel level                 = 3 [(gogoproto.moretags) = 'search:"Notification Level,hidden"'];
+    string message                          = 4;
+    string hint                             = 5;
+    string area                             = 6 [(gogoproto.moretags) = 'search:"Notification Area,hidden"'];
+    string resource_type                    = 7 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
+    string resource_id                      = 8;
+    int64 occurrences                       = 9;
+    google.protobuf.Timestamp last_occurred = 10;
+    google.protobuf.Timestamp created_at    = 11 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+}
+
+// Notification type is the storage representation of the Notification type.
+//
+// Refer to v1.NotificationType for a more detailed doc.
+enum NotificationType {
+    NOTIFICATION_TYPE_GENERIC     = 0;
+    NOTIFICATION_TYPE_LOG_MESSAGE = 1;
+}
+
+// Notification level is the storage representation of the Notification level.
+//
+// Refer to v1.NotificationLevel for a more detailed doc.
+enum NotificationLevel {
+    NOTIFICATION_LEVEL_UNKNOWN = 0;
+    NOTIFICATION_LEVEL_INFO    = 1;
+    NOTIFICATION_LEVEL_SUCCESS = 2;
+    NOTIFICATION_LEVEL_WARN    = 3;
+    NOTIFICATION_LEVEL_DANGER  = 4;
 }

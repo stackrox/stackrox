@@ -27,6 +27,68 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// Notification type exposes the different types of notifications.
+// Currently, the notification type is either generic or contains a log message.
+type NotificationType int32
+
+const (
+	NotificationType_NOTIFICATION_TYPE_GENERIC     NotificationType = 0
+	NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE NotificationType = 1
+)
+
+var NotificationType_name = map[int32]string{
+	0: "NOTIFICATION_TYPE_GENERIC",
+	1: "NOTIFICATION_TYPE_LOG_MESSAGE",
+}
+
+var NotificationType_value = map[string]int32{
+	"NOTIFICATION_TYPE_GENERIC":     0,
+	"NOTIFICATION_TYPE_LOG_MESSAGE": 1,
+}
+
+func (x NotificationType) String() string {
+	return proto.EnumName(NotificationType_name, int32(x))
+}
+
+func (NotificationType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{0}
+}
+
+// Notification level exposes the different levels which a notification can have.
+type NotificationLevel int32
+
+const (
+	NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN NotificationLevel = 0
+	NotificationLevel_NOTIFICATION_LEVEL_INFO    NotificationLevel = 1
+	NotificationLevel_NOTIFICATION_LEVEL_SUCCESS NotificationLevel = 2
+	NotificationLevel_NOTIFICATION_LEVEL_WARN    NotificationLevel = 3
+	NotificationLevel_NOTIFICATION_LEVEL_DANGER  NotificationLevel = 4
+)
+
+var NotificationLevel_name = map[int32]string{
+	0: "NOTIFICATION_LEVEL_UNKNOWN",
+	1: "NOTIFICATION_LEVEL_INFO",
+	2: "NOTIFICATION_LEVEL_SUCCESS",
+	3: "NOTIFICATION_LEVEL_WARN",
+	4: "NOTIFICATION_LEVEL_DANGER",
+}
+
+var NotificationLevel_value = map[string]int32{
+	"NOTIFICATION_LEVEL_UNKNOWN": 0,
+	"NOTIFICATION_LEVEL_INFO":    1,
+	"NOTIFICATION_LEVEL_SUCCESS": 2,
+	"NOTIFICATION_LEVEL_WARN":    3,
+	"NOTIFICATION_LEVEL_DANGER":  4,
+}
+
+func (x NotificationLevel) String() string {
+	return proto.EnumName(NotificationLevel_name, int32(x))
+}
+
+func (NotificationLevel) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{1}
+}
+
 type NotificationsResponse struct {
 	Notifications        []*Notification `protobuf:"bytes,1,rep,name=notifications,proto3" json:"notifications,omitempty"`
 	Pagination           *Pagination     `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -110,10 +172,14 @@ type GetNotificationsRequest struct {
 	// For filtering notifications from a specific area.
 	Area string `protobuf:"bytes,3,opt,name=area,proto3" json:"area,omitempty"`
 	// For filtering notifications associated with a specific resource type.
-	ResourceType         string   `protobuf:"bytes,4,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	ResourceType string `protobuf:"bytes,4,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
+	// For filtering notifications based on their type.
+	NotificationType NotificationType `protobuf:"varint,5,opt,name=notification_type,json=notificationType,proto3,enum=v1.NotificationType" json:"notification_type,omitempty"`
+	// For filtering notifications based on their level.
+	Level                NotificationLevel `protobuf:"varint,6,opt,name=level,proto3,enum=v1.NotificationLevel" json:"level,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *GetNotificationsRequest) Reset()         { *m = GetNotificationsRequest{} }
@@ -177,6 +243,20 @@ func (m *GetNotificationsRequest) GetResourceType() string {
 	return ""
 }
 
+func (m *GetNotificationsRequest) GetNotificationType() NotificationType {
+	if m != nil {
+		return m.NotificationType
+	}
+	return NotificationType_NOTIFICATION_TYPE_GENERIC
+}
+
+func (m *GetNotificationsRequest) GetLevel() NotificationLevel {
+	if m != nil {
+		return m.Level
+	}
+	return NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN
+}
+
 func (m *GetNotificationsRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -198,27 +278,35 @@ func (m *GetNotificationsRequest) Clone() *GetNotificationsRequest {
 type Notification struct {
 	// UUID of the notification.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Type of the notification.
+	Type NotificationType `protobuf:"varint,2,opt,name=type,proto3,enum=v1.NotificationType" json:"type,omitempty"`
+	// Level associated with the notification. The level is categorized into danger, warn, info,
+	// success.
+	Level NotificationLevel `protobuf:"varint,3,opt,name=level,proto3,enum=v1.NotificationLevel" json:"level,omitempty"`
 	// Message associated with the notification. The message may include detailed information
 	// for this particular notification.
-	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	// Remediation associated with the notification. The remediation may include detailed actions
-	// to take for this particular notification.
-	Remediation string `protobuf:"bytes,3,opt,name=remediation,proto3" json:"remediation,omitempty"`
+	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	// Hint associated with the notification. The hint may include different information based
+	// on the type of notification. It can include instructions to resolve a notification, or
+	// informational hints.
+	Hint string `protobuf:"bytes,5,opt,name=hint,proto3" json:"hint,omitempty"`
 	// Area associated with the notification. A notification's area outlines the feature area where
 	// the notification was created from. As an example, this might be "Image Scanning".
 	// In case of notifications that cannot be tied to a specific area, this will be "General".
-	Area string `protobuf:"bytes,4,opt,name=area,proto3" json:"area,omitempty"`
+	Area string `protobuf:"bytes,6,opt,name=area,proto3" json:"area,omitempty"`
 	// Resource type associated with the notification. A notification may refer to an underlying resource
 	// such as a particular image. In that case, the resource type will be filled here.
-	ResourceType string `protobuf:"bytes,5,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
+	ResourceType string `protobuf:"bytes,7,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
 	// Resource ID associated with the notification. If a notification refers to an underlying resource,
 	// the resource ID identifies the underlying resource.
-	ResourceId string `protobuf:"bytes,6,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	ResourceId string `protobuf:"bytes,8,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
 	// Occurrences associated with the notification. Notifications may occur multiple times, the occurrences
 	// will track the amount.
-	Occurrences int64 `protobuf:"varint,7,opt,name=occurrences,proto3" json:"occurrences,omitempty"`
-	// Specifies the time the event has been created.
-	CreatedAt            *types.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Occurrences int64 `protobuf:"varint,9,opt,name=occurrences,proto3" json:"occurrences,omitempty"`
+	// Specifies the time the notification has last occurred.
+	LastOccurred *types.Timestamp `protobuf:"bytes,10,opt,name=last_occurred,json=lastOccurred,proto3" json:"last_occurred,omitempty"`
+	// Specifies the time the notification has been created.
+	CreatedAt            *types.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -264,6 +352,20 @@ func (m *Notification) GetId() string {
 	return ""
 }
 
+func (m *Notification) GetType() NotificationType {
+	if m != nil {
+		return m.Type
+	}
+	return NotificationType_NOTIFICATION_TYPE_GENERIC
+}
+
+func (m *Notification) GetLevel() NotificationLevel {
+	if m != nil {
+		return m.Level
+	}
+	return NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN
+}
+
 func (m *Notification) GetMessage() string {
 	if m != nil {
 		return m.Message
@@ -271,9 +373,9 @@ func (m *Notification) GetMessage() string {
 	return ""
 }
 
-func (m *Notification) GetRemediation() string {
+func (m *Notification) GetHint() string {
 	if m != nil {
-		return m.Remediation
+		return m.Hint
 	}
 	return ""
 }
@@ -306,6 +408,13 @@ func (m *Notification) GetOccurrences() int64 {
 	return 0
 }
 
+func (m *Notification) GetLastOccurred() *types.Timestamp {
+	if m != nil {
+		return m.LastOccurred
+	}
+	return nil
+}
+
 func (m *Notification) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
@@ -323,11 +432,14 @@ func (m *Notification) Clone() *Notification {
 	cloned := new(Notification)
 	*cloned = *m
 
+	cloned.LastOccurred = m.LastOccurred.Clone()
 	cloned.CreatedAt = m.CreatedAt.Clone()
 	return cloned
 }
 
 func init() {
+	proto.RegisterEnum("v1.NotificationType", NotificationType_name, NotificationType_value)
+	proto.RegisterEnum("v1.NotificationLevel", NotificationLevel_name, NotificationLevel_value)
 	proto.RegisterType((*NotificationsResponse)(nil), "v1.NotificationsResponse")
 	proto.RegisterType((*GetNotificationsRequest)(nil), "v1.GetNotificationsRequest")
 	proto.RegisterType((*Notification)(nil), "v1.Notification")
@@ -336,40 +448,53 @@ func init() {
 func init() { proto.RegisterFile("api/v1/notification_service.proto", fileDescriptor_4a870580de356350) }
 
 var fileDescriptor_4a870580de356350 = []byte{
-	// 522 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x52, 0xdd, 0x6a, 0x13, 0x41,
-	0x14, 0xee, 0x6e, 0xd2, 0xd6, 0x9c, 0xa4, 0x3f, 0x9e, 0x22, 0x59, 0xa3, 0xa4, 0x31, 0xde, 0xe4,
-	0x6a, 0x62, 0x22, 0x08, 0x5e, 0x5a, 0x04, 0xe9, 0x4d, 0x91, 0xb5, 0x17, 0xe2, 0x85, 0x61, 0xba,
-	0x7b, 0x12, 0x06, 0xbb, 0x3b, 0xeb, 0xcc, 0x64, 0x31, 0x88, 0x08, 0xbe, 0x81, 0x78, 0xe3, 0x83,
-	0xf8, 0x0a, 0x82, 0x97, 0x82, 0x2f, 0x20, 0xd1, 0x07, 0x91, 0x9d, 0xdd, 0x4d, 0xd7, 0x14, 0xeb,
-	0xdd, 0xcc, 0x37, 0xdf, 0xf9, 0xce, 0x77, 0xce, 0x7c, 0x70, 0x87, 0x27, 0x62, 0x98, 0x8e, 0x86,
-	0xb1, 0x34, 0x62, 0x2a, 0x02, 0x6e, 0x84, 0x8c, 0x27, 0x9a, 0x54, 0x2a, 0x02, 0x62, 0x89, 0x92,
-	0x46, 0xa2, 0x9b, 0x8e, 0x3a, 0xb7, 0x67, 0x52, 0xce, 0xce, 0x69, 0x98, 0xb1, 0x79, 0x1c, 0x4b,
-	0x63, 0x89, 0x3a, 0x67, 0x74, 0x0e, 0x0a, 0x91, 0x40, 0x46, 0x91, 0x8c, 0x0b, 0xb0, 0x5d, 0x80,
-	0x09, 0x9f, 0x89, 0xd8, 0xd2, 0x8b, 0x87, 0xc3, 0x42, 0xcb, 0xde, 0xce, 0xe6, 0xd3, 0xa1, 0x11,
-	0x11, 0x69, 0xc3, 0xa3, 0x24, 0x27, 0xf4, 0xdf, 0xc3, 0x8d, 0x93, 0x8a, 0x1d, 0xed, 0x93, 0x4e,
-	0x64, 0xac, 0x09, 0x1f, 0xc0, 0x4e, 0xd5, 0xa7, 0xf6, 0x9c, 0x5e, 0x6d, 0xd0, 0x1c, 0xef, 0xb3,
-	0x74, 0xc4, 0xaa, 0x15, 0xfe, 0xdf, 0x34, 0x64, 0x00, 0x17, 0x2e, 0x3c, 0xb7, 0xe7, 0x0c, 0x9a,
-	0xe3, 0xdd, 0xac, 0xe8, 0xe9, 0x0a, 0xf5, 0x2b, 0x8c, 0xfe, 0x17, 0x07, 0xda, 0x4f, 0xc8, 0xac,
-	0x99, 0x78, 0x3d, 0x27, 0x6d, 0x90, 0x41, 0x7d, 0xaa, 0x64, 0xe4, 0x39, 0x56, 0xa5, 0xc3, 0xf2,
-	0x61, 0x58, 0x39, 0x0c, 0x3b, 0x2d, 0x87, 0xf1, 0x2d, 0x0f, 0xef, 0xc1, 0xe6, 0x3c, 0x36, 0xe2,
-	0xbc, 0x68, 0x7b, 0x55, 0x41, 0x4e, 0x44, 0x84, 0x3a, 0x57, 0xc4, 0xbd, 0x5a, 0xcf, 0x19, 0x34,
-	0x7c, 0x7b, 0xc6, 0xbb, 0xb0, 0xa3, 0x48, 0xcb, 0xb9, 0x0a, 0x68, 0x62, 0x16, 0x09, 0x79, 0x75,
-	0xfb, 0xd8, 0x2a, 0xc1, 0xd3, 0x45, 0x42, 0xfd, 0x8f, 0x2e, 0xb4, 0xaa, 0x9e, 0x71, 0x17, 0x5c,
-	0x11, 0x5a, 0xa7, 0x0d, 0xdf, 0x15, 0x21, 0x7a, 0xb0, 0x1d, 0x91, 0xd6, 0x7c, 0x46, 0xd6, 0x4d,
-	0xc3, 0x2f, 0xaf, 0xd8, 0x83, 0xa6, 0xa2, 0x88, 0x42, 0x91, 0xaf, 0x28, 0x6f, 0x5d, 0x85, 0x56,
-	0xae, 0xea, 0x57, 0xb9, 0xda, 0xbc, 0xec, 0x0a, 0x0f, 0x33, 0xe9, 0x82, 0x24, 0x42, 0x6f, 0xcb,
-	0x52, 0xa0, 0x84, 0x8e, 0xc3, 0xac, 0xb7, 0x0c, 0x82, 0xb9, 0x52, 0x14, 0x07, 0xa4, 0xbd, 0xed,
-	0x9e, 0x33, 0xa8, 0xf9, 0x55, 0x08, 0x1f, 0x02, 0x04, 0x8a, 0xb8, 0xa1, 0x70, 0xc2, 0x8d, 0x77,
-	0xed, 0xbf, 0x8b, 0x6c, 0x14, 0xec, 0x47, 0x66, 0xfc, 0xd5, 0x81, 0x83, 0xea, 0x4e, 0x9e, 0xe5,
-	0xd1, 0xc6, 0x97, 0xb0, 0xbf, 0xfe, 0xc3, 0x78, 0x2b, 0x8b, 0xc4, 0x3f, 0xfe, 0xbd, 0x73, 0x73,
-	0x3d, 0x64, 0xab, 0x58, 0xf6, 0xf1, 0xc3, 0x8f, 0xdf, 0x9f, 0xdc, 0x16, 0x42, 0x16, 0x77, 0x4a,
-	0x29, 0x36, 0x1a, 0x4f, 0x60, 0x6f, 0x4d, 0x09, 0x6d, 0x4c, 0xfd, 0x62, 0xee, 0xa3, 0xc5, 0xf1,
-	0xe3, 0xce, 0xa5, 0xe0, 0xf6, 0xdb, 0x56, 0xea, 0x3a, 0xee, 0x5d, 0x48, 0x0d, 0xdf, 0x8a, 0xf0,
-	0xdd, 0x11, 0xfb, 0xb6, 0xec, 0x3a, 0xdf, 0x97, 0x5d, 0xe7, 0xe7, 0xb2, 0xeb, 0x7c, 0xfe, 0xd5,
-	0xdd, 0x00, 0x4f, 0x48, 0xa6, 0x0d, 0x0f, 0x5e, 0x29, 0xf9, 0x26, 0x5f, 0x02, 0xe3, 0x89, 0x60,
-	0xe9, 0xe8, 0x85, 0x9b, 0x8e, 0x9e, 0x6f, 0x9c, 0x6d, 0x59, 0xec, 0xfe, 0x9f, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0x1d, 0x34, 0xf5, 0x09, 0xe2, 0x03, 0x00, 0x00,
+	// 722 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0xcd, 0x6e, 0xda, 0x4a,
+	0x14, 0xc6, 0x86, 0x24, 0x97, 0x03, 0x49, 0x9c, 0xc9, 0x8d, 0x70, 0xc8, 0x0d, 0x21, 0xdc, 0x0d,
+	0xca, 0x95, 0xcc, 0x85, 0x2b, 0x5d, 0xa9, 0xab, 0x8a, 0x10, 0x07, 0xa1, 0x52, 0x13, 0x19, 0xd2,
+	0xb4, 0x5d, 0xd4, 0x72, 0xcc, 0x84, 0x5a, 0x05, 0x8f, 0xeb, 0x19, 0xac, 0x46, 0x55, 0x55, 0xa9,
+	0xaf, 0xd0, 0x4d, 0xa5, 0x6e, 0xbb, 0xec, 0x6b, 0x54, 0xea, 0xb2, 0x52, 0x5f, 0xa0, 0x4a, 0xfb,
+	0x20, 0x95, 0xc7, 0x86, 0x10, 0x93, 0x9f, 0x9d, 0xfd, 0x9d, 0xef, 0x3b, 0x73, 0xce, 0x37, 0x67,
+	0x0e, 0xec, 0x9a, 0xae, 0x5d, 0xf1, 0xab, 0x15, 0x87, 0x30, 0xfb, 0xcc, 0xb6, 0x4c, 0x66, 0x13,
+	0xc7, 0xa0, 0xd8, 0xf3, 0x6d, 0x0b, 0x2b, 0xae, 0x47, 0x18, 0x41, 0xa2, 0x5f, 0xcd, 0xff, 0x35,
+	0x20, 0x64, 0x30, 0xc4, 0x95, 0x80, 0x6d, 0x3a, 0x0e, 0x61, 0x9c, 0x48, 0x43, 0x46, 0x7e, 0x3d,
+	0x4a, 0x62, 0x91, 0xd1, 0x88, 0x38, 0x11, 0x98, 0x8b, 0x40, 0xd7, 0x1c, 0xd8, 0x0e, 0xa7, 0x47,
+	0x81, 0x9d, 0x28, 0x17, 0xff, 0x3b, 0x1d, 0x9f, 0x55, 0x98, 0x3d, 0xc2, 0x94, 0x99, 0x23, 0x37,
+	0x24, 0x94, 0xde, 0xc2, 0x86, 0x36, 0x53, 0x0e, 0xd5, 0x31, 0x75, 0x89, 0x43, 0x31, 0xfa, 0x1f,
+	0x96, 0x67, 0xeb, 0xa4, 0xb2, 0x50, 0x4c, 0x96, 0x33, 0x35, 0x49, 0xf1, 0xab, 0xca, 0xac, 0x42,
+	0xbf, 0x4a, 0x43, 0x0a, 0xc0, 0x65, 0x15, 0xb2, 0x58, 0x14, 0xca, 0x99, 0xda, 0x4a, 0x20, 0x3a,
+	0x9a, 0xa2, 0xfa, 0x0c, 0xa3, 0xf4, 0x49, 0x84, 0x5c, 0x13, 0xb3, 0x58, 0x11, 0x2f, 0xc7, 0x98,
+	0x32, 0xa4, 0x40, 0xea, 0xcc, 0x23, 0x23, 0x59, 0xe0, 0x59, 0xf2, 0x4a, 0xd8, 0x8c, 0x32, 0x69,
+	0x46, 0xe9, 0x4d, 0x9a, 0xd1, 0x39, 0x0f, 0xfd, 0x0b, 0x0b, 0x63, 0x87, 0xd9, 0xc3, 0xe8, 0xd8,
+	0xdb, 0x04, 0x21, 0x11, 0x21, 0x48, 0x99, 0x1e, 0x36, 0xe5, 0x64, 0x51, 0x28, 0xa7, 0x75, 0xfe,
+	0x8d, 0xfe, 0x86, 0x65, 0x0f, 0x53, 0x32, 0xf6, 0x2c, 0x6c, 0xb0, 0x73, 0x17, 0xcb, 0x29, 0x1e,
+	0xcc, 0x4e, 0xc0, 0xde, 0xb9, 0x8b, 0x51, 0x1d, 0xd6, 0xae, 0x5c, 0x23, 0x27, 0x2e, 0x14, 0x85,
+	0xf2, 0x4a, 0xed, 0xcf, 0xb8, 0x45, 0x81, 0x40, 0x97, 0x9c, 0x18, 0x82, 0xfe, 0x81, 0x85, 0x21,
+	0xf6, 0xf1, 0x50, 0x5e, 0xe4, 0xb2, 0x8d, 0xb8, 0xac, 0x1d, 0x04, 0xf5, 0x90, 0x53, 0xfa, 0x98,
+	0x84, 0xec, 0x6c, 0x10, 0xad, 0x80, 0x68, 0xf7, 0xb9, 0x33, 0x69, 0x5d, 0xb4, 0xfb, 0xa8, 0x0c,
+	0x29, 0x5e, 0x83, 0x78, 0x4b, 0x0d, 0x9c, 0x71, 0x79, 0x6e, 0xf2, 0xee, 0x73, 0x91, 0x0c, 0x4b,
+	0x23, 0x4c, 0xa9, 0x39, 0x98, 0xd8, 0x30, 0xf9, 0x0d, 0xac, 0x7b, 0x6e, 0x3b, 0x8c, 0x37, 0x9d,
+	0xd6, 0xf9, 0xf7, 0xd4, 0xce, 0xc5, 0xdb, 0xec, 0x5c, 0xba, 0xc6, 0xce, 0x1d, 0xc8, 0x4c, 0x49,
+	0x76, 0x5f, 0xfe, 0x83, 0x53, 0x60, 0x02, 0xb5, 0xfa, 0xa8, 0x08, 0x19, 0x62, 0x59, 0x63, 0xcf,
+	0xc3, 0x8e, 0x85, 0xa9, 0x9c, 0x2e, 0x0a, 0xe5, 0xa4, 0x3e, 0x0b, 0xa1, 0xfb, 0xb0, 0x3c, 0x34,
+	0x29, 0x33, 0x22, 0xac, 0x2f, 0xc3, 0x9d, 0x43, 0x90, 0x0d, 0x04, 0x9d, 0x88, 0x8f, 0xee, 0x01,
+	0x58, 0x1e, 0x36, 0x19, 0xee, 0x1b, 0x26, 0x93, 0x33, 0x77, 0xaa, 0xd3, 0x11, 0xbb, 0xce, 0xf6,
+	0x7a, 0x20, 0xc5, 0xcd, 0x46, 0xdb, 0xb0, 0xa9, 0x75, 0x7a, 0xad, 0xc3, 0x56, 0xa3, 0xde, 0x6b,
+	0x75, 0x34, 0xa3, 0xf7, 0xe4, 0x48, 0x35, 0x9a, 0xaa, 0xa6, 0xea, 0xad, 0x86, 0x94, 0x40, 0xbb,
+	0xb0, 0x3d, 0x1f, 0x6e, 0x77, 0x9a, 0xc6, 0x43, 0xb5, 0xdb, 0xad, 0x37, 0x55, 0x49, 0xd8, 0xfb,
+	0x2c, 0xc0, 0xda, 0xdc, 0xc5, 0xa0, 0x02, 0xe4, 0xaf, 0x08, 0xdb, 0xea, 0x23, 0xb5, 0x6d, 0x1c,
+	0x6b, 0x0f, 0xb4, 0xce, 0x89, 0x26, 0x25, 0xd0, 0x16, 0xe4, 0xae, 0x89, 0xb7, 0xb4, 0xc3, 0x8e,
+	0x24, 0xdc, 0x20, 0xee, 0x1e, 0x37, 0x1a, 0x6a, 0xb7, 0x2b, 0x89, 0x37, 0x88, 0x4f, 0xea, 0xba,
+	0x26, 0x25, 0xe7, 0x3a, 0x0a, 0x83, 0x07, 0x75, 0xad, 0xa9, 0xea, 0x52, 0xaa, 0xf6, 0x45, 0x80,
+	0xf5, 0xd9, 0x72, 0xbb, 0xe1, 0x66, 0x43, 0xcf, 0x40, 0x8a, 0x3f, 0x70, 0xb4, 0x15, 0x0c, 0xdd,
+	0x0d, 0xcf, 0x3e, 0xbf, 0x19, 0x9f, 0xc8, 0xe9, 0x56, 0x2a, 0xa1, 0x77, 0xdf, 0x7f, 0xbd, 0x17,
+	0xb3, 0x08, 0x82, 0x6d, 0x87, 0x7d, 0xec, 0x30, 0x8a, 0x34, 0x58, 0x8d, 0x65, 0x42, 0x7c, 0x4b,
+	0xe9, 0xd1, 0xf4, 0xec, 0x9f, 0xb7, 0x0e, 0xf2, 0x73, 0x7b, 0xab, 0x94, 0xe3, 0xa9, 0xd6, 0xd0,
+	0xea, 0x65, 0xaa, 0xca, 0x6b, 0xbb, 0xff, 0x66, 0x5f, 0xf9, 0x7a, 0x51, 0x10, 0xbe, 0x5d, 0x14,
+	0x84, 0x1f, 0x17, 0x05, 0xe1, 0xc3, 0xcf, 0x42, 0x02, 0x64, 0x9b, 0x28, 0x94, 0x99, 0xd6, 0x0b,
+	0x8f, 0xbc, 0x0a, 0x27, 0x41, 0x31, 0x5d, 0x5b, 0xf1, 0xab, 0x4f, 0x45, 0xbf, 0xfa, 0x38, 0x71,
+	0xba, 0xc8, 0xb1, 0xff, 0x7e, 0x07, 0x00, 0x00, 0xff, 0xff, 0x31, 0x6d, 0x53, 0xef, 0xe1, 0x05,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -571,6 +696,16 @@ func (m *GetNotificationsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.Level != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.Level))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.NotificationType != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.NotificationType))
+		i--
+		dAtA[i] = 0x28
+	}
 	if len(m.ResourceType) > 0 {
 		i -= len(m.ResourceType)
 		copy(dAtA[i:], m.ResourceType)
@@ -646,47 +781,69 @@ func (m *Notification) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintNotificationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x5a
+	}
+	if m.LastOccurred != nil {
+		{
+			size, err := m.LastOccurred.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x52
 	}
 	if m.Occurrences != 0 {
 		i = encodeVarintNotificationService(dAtA, i, uint64(m.Occurrences))
 		i--
-		dAtA[i] = 0x38
+		dAtA[i] = 0x48
 	}
 	if len(m.ResourceId) > 0 {
 		i -= len(m.ResourceId)
 		copy(dAtA[i:], m.ResourceId)
 		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.ResourceId)))
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x42
 	}
 	if len(m.ResourceType) > 0 {
 		i -= len(m.ResourceType)
 		copy(dAtA[i:], m.ResourceType)
 		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.ResourceType)))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x3a
 	}
 	if len(m.Area) > 0 {
 		i -= len(m.Area)
 		copy(dAtA[i:], m.Area)
 		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.Area)))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x32
 	}
-	if len(m.Remediation) > 0 {
-		i -= len(m.Remediation)
-		copy(dAtA[i:], m.Remediation)
-		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.Remediation)))
+	if len(m.Hint) > 0 {
+		i -= len(m.Hint)
+		copy(dAtA[i:], m.Hint)
+		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.Hint)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x2a
 	}
 	if len(m.Message) > 0 {
 		i -= len(m.Message)
 		copy(dAtA[i:], m.Message)
 		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.Message)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x22
+	}
+	if m.Level != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.Level))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Type != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x10
 	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
@@ -753,6 +910,12 @@ func (m *GetNotificationsRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovNotificationService(uint64(l))
 	}
+	if m.NotificationType != 0 {
+		n += 1 + sovNotificationService(uint64(m.NotificationType))
+	}
+	if m.Level != 0 {
+		n += 1 + sovNotificationService(uint64(m.Level))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -769,11 +932,17 @@ func (m *Notification) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovNotificationService(uint64(l))
 	}
+	if m.Type != 0 {
+		n += 1 + sovNotificationService(uint64(m.Type))
+	}
+	if m.Level != 0 {
+		n += 1 + sovNotificationService(uint64(m.Level))
+	}
 	l = len(m.Message)
 	if l > 0 {
 		n += 1 + l + sovNotificationService(uint64(l))
 	}
-	l = len(m.Remediation)
+	l = len(m.Hint)
 	if l > 0 {
 		n += 1 + l + sovNotificationService(uint64(l))
 	}
@@ -791,6 +960,10 @@ func (m *Notification) Size() (n int) {
 	}
 	if m.Occurrences != 0 {
 		n += 1 + sovNotificationService(uint64(m.Occurrences))
+	}
+	if m.LastOccurred != nil {
+		l = m.LastOccurred.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
 	}
 	if m.CreatedAt != nil {
 		l = m.CreatedAt.Size()
@@ -1094,6 +1267,44 @@ func (m *GetNotificationsRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.ResourceType = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NotificationType", wireType)
+			}
+			m.NotificationType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NotificationType |= NotificationType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
+			}
+			m.Level = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Level |= NotificationLevel(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipNotificationService(dAtA[iNdEx:])
@@ -1178,6 +1389,44 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 			m.Id = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= NotificationType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
+			}
+			m.Level = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Level |= NotificationLevel(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
 			}
@@ -1209,9 +1458,9 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 			}
 			m.Message = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Remediation", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Hint", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1239,9 +1488,9 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Remediation = string(dAtA[iNdEx:postIndex])
+			m.Hint = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Area", wireType)
 			}
@@ -1273,7 +1522,7 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 			}
 			m.Area = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResourceType", wireType)
 			}
@@ -1305,7 +1554,7 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 			}
 			m.ResourceType = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ResourceId", wireType)
 			}
@@ -1337,7 +1586,7 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 			}
 			m.ResourceId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 7:
+		case 9:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Occurrences", wireType)
 			}
@@ -1356,7 +1605,43 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 8:
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastOccurred", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastOccurred == nil {
+				m.LastOccurred = &types.Timestamp{}
+			}
+			if err := m.LastOccurred.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
 			}
