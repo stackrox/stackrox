@@ -2,6 +2,7 @@
 
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
 declare -r pull_secret="operator-pull-secret"
+declare -r USE_MIDSTREAM_IMAGES=${USE_MIDSTREAM_IMAGES:-false}
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
 readonly ROOT_DIR
