@@ -21,16 +21,8 @@ import (
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context, outputDir string) error {
-	var outOfTree []driver.Updater
 
-	updaterSet, err := manual.UpdaterSet(ctx, nil)
-	if err != nil {
-		zlog.Error(ctx).Err(err).Send()
-	} else {
-		outOfTree = append(outOfTree, updaterSet.Updaters()...)
-	}
-
-	err = os.MkdirAll(outputDir, 0700)
+	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
 	}
@@ -55,41 +47,42 @@ func Export(ctx context.Context, outputDir string) error {
 	}
 	defer zstdWriter.Close()
 
-	jsonStore1, err := jsonblob.New()
-	updateMgr1, err := updates.NewManager(ctx, jsonStore1, updates.NewLocalLockSource(), httpClient,
-		updates.WithEnabled([]string{"oracle", "photon", "suse", "aws", "rhcc"}),
-		updates.WithOutOfTree(outOfTree),
-	)
-	if err != nil {
-		return err
+	//add out of tree updater
+	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	outOfTree := [][]driver.Updater{
+		make([]driver.Updater, 0),
 	}
-	if err := updateMgr1.Run(ctx); err != nil {
-		return err
-	}
-	err = jsonStore1.Store(zstdWriter)
 	if err != nil {
-		return err
+		zlog.Error(ctx).Err(err).Send()
+	} else {
+		outOfTree = append(outOfTree, updaterSet.Updaters())
 	}
 
-	jsonStore2, err := jsonblob.New()
-	updateMgr2, err := updates.NewManager(ctx, jsonStore2, updates.NewLocalLockSource(), httpClient,
-		updates.WithEnabled([]string{"alpine", "rhel", "ubuntu", "osv", "debian"}),
-	)
-	if err != nil {
-		return err
-	}
-	if err := updateMgr2.Run(ctx); err != nil {
-		return err
-	}
-	err = jsonStore2.Store(zstdWriter)
-	if err != nil {
-		return err
-	}
+	for i, uSet := range [][]string{
+		{"oracle", "photon", "suse", "aws", "rhcc"},
+		{"alpine", "rhel", "ubuntu", "osv", "debian"},
+	} {
+		jsonStore, err := jsonblob.New()
+		if err != nil {
+			return err
+		}
 
-	// After done with the file, remove the directory
-	err = os.RemoveAll(outputDir)
-	if err != nil {
-		return err
+		updateMgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
+			updates.WithEnabled(uSet),
+			updates.WithOutOfTree(outOfTree[i]),
+		)
+		if err != nil {
+			return err
+		}
+
+		if err := updateMgr.Run(ctx); err != nil {
+			return err
+		}
+
+		err = jsonStore.Store(zstdWriter)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
