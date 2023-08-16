@@ -14,6 +14,8 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
 )
@@ -64,7 +66,7 @@ func New(db postgres.DB) Store {
 		copyFromNetworkEntities,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		permissionCheckerSingleton(),
+		sac.NewNotGloballyDeniedPermissionChecker(resources.NetworkGraph),
 	)
 }
 
