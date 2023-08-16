@@ -15,6 +15,7 @@ import {
 } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
+import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
@@ -34,7 +35,7 @@ import {
 } from './hooks/useNetworkPolicySimulator';
 import { EdgeState } from './components/EdgeStateSelect';
 import { deploymentTabs } from './utils/deploymentUtils';
-import { getInScopeEntities } from './utils/simulatorUtils';
+import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 // TODO: move these type defs to a central location
@@ -107,6 +108,10 @@ const TopologyComponent = ({
         }
     }
 
+    const { deploymentCount } = useFetchDeploymentCount(
+        getSearchFilterFromScopeHierarchy(scopeHierarchy)
+    );
+
     function onNodeSelect(id: string) {
         onNodeClick([id]);
     }
@@ -170,13 +175,10 @@ const TopologyComponent = ({
                 <TopologySideBar resizable onClose={closeSidebar}>
                     {simulation.isOn && simulation.type === 'networkPolicy' && (
                         <NetworkPolicySimulatorSidePanel
-                            networkPolicyGenerationScope={getInScopeEntities(
-                                model.nodes,
-                                scopeHierarchy
-                            )}
                             simulator={simulator}
                             setNetworkPolicyModification={setNetworkPolicyModification}
                             scopeHierarchy={scopeHierarchy}
+                            scopeDeploymentCount={deploymentCount ?? 0}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (

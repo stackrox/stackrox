@@ -64,7 +64,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 	req := createRequest(hashID, imageURL, "sample username")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
@@ -72,7 +72,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
@@ -92,7 +92,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	req := createRequest(hashID, iURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
@@ -223,5 +223,5 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 		Return(&claircore.IndexReport{State: "sample state"}, true, nil)
 	r, err = s.service.GetIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state"}, r)
+	s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state", Contents: &v4.Contents{}}, r)
 }

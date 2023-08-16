@@ -164,9 +164,9 @@ func (a *apiImpl) Stop() bool {
 		return false
 	}
 
-	log.Infof("Starting stop procedure")
+	log.Info("Starting stop procedure")
 	a.grpcServer.GracefulStop()
-	log.Infof("gRPC server fully stopped")
+	log.Info("gRPC server fully stopped")
 	for _, listener := range a.listeners {
 		if listener.stopper != nil {
 			listener.stopper()

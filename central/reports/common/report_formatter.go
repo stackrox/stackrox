@@ -103,9 +103,9 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							strconv.FormatBool(v.IsFixable),
 							v.FixedByVersion,
 							strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 							discoveredTs,
 							v.Link,
-							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 						})
 					}
 				}
@@ -131,9 +131,9 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						strconv.FormatBool(v.IsFixable),
 						v.FixedByVersion,
 						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 						discoveredTs,
 						v.Link,
-						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 					})
 				}
 			}

@@ -144,7 +144,7 @@ func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQu
 
 	res := csvHandler.GetResolver()
 	if res == nil {
-		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		log.Error("Unexpected value (nil) for resolver in Handler")
 		return nil, errors.New("Resolver not initialized in handler")
 	}
 	vulnResolvers, err := res.NodeVulnerabilities(ctx, paginatedQuery)

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,7 +32,9 @@ func initializeManager() manager.Manager {
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).ProtoQuery()
-	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, query)
+	filteredQ := common.WithoutV2ReportConfigs(query)
+
+	reportConfigs, err := datastore.Singleton().GetReportConfigurations(ctx, filteredQ)
 	mgr := manager.Singleton()
 	if err != nil {
 		log.Errorf("Error finding scheduled reports: %s", err)

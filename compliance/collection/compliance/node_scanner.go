@@ -33,7 +33,7 @@ func (n *NodeInventoryComponentScanner) IsActive() bool {
 // Connect connects to node-inventory and stores an active client
 func (n *NodeInventoryComponentScanner) Connect(address string) {
 	if !env.NodeInventoryContainerEnabled.BooleanSetting() {
-		log.Infof("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
+		log.Info("Compliance will not call the node-inventory container, because this is not Openshift 4 cluster")
 	} else if env.RHCOSNodeScanning.BooleanSetting() {
 		// Set up Compliance <-> NodeInventory connection
 		niConn, err := clientconn.AuthenticatedGRPCConnection(address, mtls.Subject{}, clientconn.UseInsecureNoTLS(true))

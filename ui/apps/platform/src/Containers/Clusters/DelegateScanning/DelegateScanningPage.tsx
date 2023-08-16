@@ -39,7 +39,7 @@ const initialDelegatedState: DelegatedRegistryConfig = {
 };
 
 function DelegateScanningPage() {
-    const displayedPageTitle = 'Delegate Image Scanning';
+    const displayedPageTitle = 'Delegated Image Scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
     const [delegatedRegistryClusters, setDelegatedRegistryClusters] = useState<

@@ -25,24 +25,31 @@ import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
+import useURLSort from 'hooks/useURLSort';
+import { saveFile } from 'services/DownloadService';
+import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import { saveFile } from 'services/DownloadService';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import ReportJobStatus from './ReportJobStatus';
 import JobDetails from './JobDetails';
-import useDeleteDownloadModal from '../hooks/useDeleteDownloadModal';
 import DeleteModal from '../components/DeleteModal';
 
 export type RunHistoryProps = {
     reportId: string;
 };
 
+const sortOptions = {
+    sortFields: ['Report Completion Time'],
+    defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
+};
+
 function ReportJobs({ reportId }: RunHistoryProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
     const [showOnlyMyJobs, setShowOnlyMyJobs] = React.useState<boolean>(false);
     const expandedRowSet = useSet<string>();
@@ -56,6 +63,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
         query,
         page,
         perPage,
+        sortOption,
         showMyHistory: showOnlyMyJobs,
     });
 
@@ -149,7 +157,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     <Thead>
                         <Tr>
                             <Td>{/* Header for expanded column */}</Td>
-                            <Th>Completed</Th>
+                            <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
                             <Th>Status</Th>
                             <Th>Requestor</Th>
                             <Td>{/* Header for table actions column */}</Td>

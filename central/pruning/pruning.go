@@ -365,7 +365,7 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 	postgres.PruneOrphanedProcessIndicators(pruningCtx, g.postgres, orphanWindow)
-	log.Infof("[Process pruning] Pruning of orphaned processes complete")
+	log.Info("[Process pruning] Pruning of orphaned processes complete")
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {

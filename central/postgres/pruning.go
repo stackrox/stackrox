@@ -49,13 +49,13 @@ const (
 		delete FROM process_indicators pi USING orphan_proc op WHERE pi.id = op.id AND 	
 		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
 
-	// (snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 5)
+	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
 	// ...gives us the report jobs that are in final state.
 	//
 	// (SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
 	// WHERE latest.reportstatus_completedat IS NOT NULL
 	// AND snapshots.reportconfigurationid = latest.reportconfigurationid
-	// AND latest.reportstatus_runstate = 5
+	// AND latest.reportstatus_runstate = 3
 	// GROUP BY latest.reportstatus_reportnotificationmethod, latest.reportstatus_reportrequesttype)
 	//	...gives us the last successful report job for each config, for each notificated method, and each request type.
 	//
@@ -68,13 +68,13 @@ const (
 	pruneOldReportHistory = `DELETE FROM ` + schema.ReportSnapshotsTableName + ` WHERE reportid IN
 		(
 			SELECT snapshots.reportid FROM ` + schema.ReportSnapshotsTableName + ` snapshots
-			WHERE (snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4 OR snapshots.reportstatus_runstate = 5)
+			WHERE (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
 			AND snapshots.reportstatus_completedat NOT IN
 			(
 				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
 				WHERE latest.reportstatus_completedat IS NOT NULL
 				AND snapshots.reportconfigurationid = latest.reportconfigurationid
-				AND latest.reportstatus_runstate = 5
+				AND latest.reportstatus_runstate = 3
 				GROUP BY latest.reportstatus_reportnotificationmethod, latest.reportstatus_reportrequesttype
 			)
 			AND NOT EXISTS
