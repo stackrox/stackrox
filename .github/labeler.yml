@@ -1,7 +1,7 @@
 # This file provides the list of labels to apply on PRs based on files changed
 # More information on the supported syntax can be found here: https://github.com/actions/labeler
 
-area/ci:
+area/ci:            
 - .github/**/*
 - .openshift-ci/**/*
 - scripts/ci/**/
