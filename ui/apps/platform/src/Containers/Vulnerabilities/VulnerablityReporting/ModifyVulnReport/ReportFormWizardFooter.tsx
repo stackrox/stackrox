@@ -1,5 +1,12 @@
 import React from 'react';
-import { Button, WizardContextConsumer, WizardFooter, WizardStep } from '@patternfly/react-core';
+import {
+    Button,
+    Modal,
+    WizardContextConsumer,
+    WizardFooter,
+    WizardStep,
+} from '@patternfly/react-core';
+import useModal from 'hooks/useModal';
 
 export type ReportFormWizardStepsProps = {
     wizardSteps: WizardStep[];
@@ -16,6 +23,7 @@ function ReportFormWizardFooter({
     isSaving,
     isStepDisabled,
 }: ReportFormWizardStepsProps) {
+    const { isModalOpen, openModal, closeModal } = useModal();
     return (
         <WizardFooter>
             <WizardContextConsumer>
@@ -59,9 +67,28 @@ function ReportFormWizardFooter({
                             >
                                 Back
                             </Button>
-                            <Button variant="link" onClick={onClose}>
+                            <Button variant="link" onClick={openModal}>
                                 Cancel
                             </Button>
+                            <Modal
+                                variant="small"
+                                title="Confirm cancel"
+                                isOpen={isModalOpen}
+                                onClose={closeModal}
+                                actions={[
+                                    <Button key="confirm" variant="primary" onClick={onClose}>
+                                        Confirm
+                                    </Button>,
+                                    <Button key="cancel" variant="secondary" onClick={closeModal}>
+                                        Cancel
+                                    </Button>,
+                                ]}
+                            >
+                                <p>
+                                    Are you sure you want to cancel? Any unsaved changes will be
+                                    lost. You&apos;ll be taken back to the list of reports.
+                                </p>
+                            </Modal>
                         </>
                     );
                 }}
