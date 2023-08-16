@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
 import { ReportSnapshot } from 'services/ReportsService.types';
+import { ApiSortOption } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseFetchReportHistory = {
@@ -10,6 +11,7 @@ export type UseFetchReportHistory = {
     query: string;
     page: number;
     perPage: number;
+    sortOption: ApiSortOption;
     showMyHistory: boolean;
 };
 
@@ -34,6 +36,7 @@ function useFetchReportHistory({
     query,
     page,
     perPage,
+    sortOption,
     showMyHistory,
 }: UseFetchReportHistory): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
@@ -44,7 +47,7 @@ function useFetchReportHistory({
             isLoading: true,
             error: null,
         });
-        fetchReportHistory(id, query, page, perPage, showMyHistory)
+        fetchReportHistory({ id, query, page, perPage, sortOption, showMyHistory })
             .then((reportSnapshots) => {
                 setResult({
                     reportSnapshots,
@@ -59,7 +62,7 @@ function useFetchReportHistory({
                     error: getAxiosErrorMessage(error),
                 });
             });
-    }, [id, query, page, perPage, showMyHistory]);
+    }, [id, query, page, perPage, sortOption, showMyHistory]);
 
     useEffect(() => {
         void fetchReportSnapshots();

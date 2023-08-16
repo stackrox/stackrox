@@ -35,6 +35,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
 import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
@@ -52,6 +53,11 @@ const CreateReportsButton = () => {
 
 const reportNameSearchKey = 'Report Name';
 
+const sortOptions = {
+    sortFields: [reportNameSearchKey],
+    defaultSortOption: { field: reportNameSearchKey, direction: 'asc' } as const,
+};
+
 function VulnReportsPage() {
     const history = useHistory();
 
@@ -67,6 +73,7 @@ function VulnReportsPage() {
         hasNotifierIntegrationReadAccess;
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [searchValue, setSearchValue] = useState(() => {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
@@ -82,6 +89,7 @@ function VulnReportsPage() {
         searchFilter,
         page,
         perPage,
+        sortOption,
     });
     const { isRunning, runError, runReport } = useRunReport({
         onCompleted: fetchReports,
@@ -192,7 +200,9 @@ function VulnReportsPage() {
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
-                                            <Th>Report</Th>
+                                            <Th sort={getSortParams(reportNameSearchKey)}>
+                                                Report
+                                            </Th>
                                             <HelpIconTh
                                                 popoverContent={
                                                     <div>

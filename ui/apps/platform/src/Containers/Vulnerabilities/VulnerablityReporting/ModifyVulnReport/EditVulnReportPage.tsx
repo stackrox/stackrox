@@ -79,6 +79,10 @@ function EditVulnReportPage() {
         return false;
     }
 
+    function onClose() {
+        history.push(vulnerabilityReportsPath);
+    }
+
     const wizardSteps = [
         {
             name: wizardStepNames[0],
@@ -148,6 +152,7 @@ function EditVulnReportPage() {
                     hasNoBodyPadding
                     steps={wizardSteps}
                     onSave={onSave}
+                    onClose={onClose}
                     footer={
                         <ReportFormWizardFooter
                             wizardSteps={wizardSteps}

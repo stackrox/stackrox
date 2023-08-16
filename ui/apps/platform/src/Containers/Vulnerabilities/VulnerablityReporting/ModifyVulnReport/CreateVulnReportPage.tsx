@@ -46,6 +46,10 @@ function CreateVulnReportPage() {
         createReport(formik.values);
     }
 
+    function onClose() {
+        history.push(vulnerabilityReportsPath);
+    }
+
     // @TODO: This is reused in the Edit and Clone components so we can try to refactor this soon
     function isStepDisabled(stepName: string | undefined): boolean {
         if (stepName === wizardStepNames[0]) {
@@ -114,6 +118,7 @@ function CreateVulnReportPage() {
                     hasNoBodyPadding
                     steps={wizardSteps}
                     onSave={onCreate}
+                    onClose={onClose}
                     footer={
                         <ReportFormWizardFooter
                             wizardSteps={wizardSteps}
