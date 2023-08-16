@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging/structured"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -86,7 +86,7 @@ func (p *notifierSetImpl) UpsertNotifier(ctx context.Context, notifier notifiers
 	}
 	if knownNotifier := p.notifiers[notifierID]; knownNotifier != nil && knownNotifier != notifier {
 		if err := knownNotifier.Close(ctx); err != nil {
-			log.Error("failed to close notifier instance", logging.Err(err))
+			log.Error("failed to close notifier instance", structured.Err(err))
 		}
 	}
 	p.notifiers[notifierID] = notifier
@@ -99,7 +99,7 @@ func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 
 	if notifier := p.notifiers[id]; notifier != nil {
 		if err := notifier.Close(ctx); err != nil {
-			log.Error("failed to close notifier instance", logging.Err(err))
+			log.Error("failed to close notifier instance", structured.Err(err))
 		}
 	}
 

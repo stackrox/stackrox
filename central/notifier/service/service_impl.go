@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging/structured"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/notifiers/splunk"
@@ -192,7 +192,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	}
 	defer func() {
 		if err := notifier.Close(ctx); err != nil {
-			log.Warn("failed to close temporary notifier instance", logging.Err(err))
+			log.Warn("failed to close temporary notifier instance", structured.Err(err))
 		}
 	}()
 

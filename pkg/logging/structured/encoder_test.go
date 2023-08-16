@@ -1,4 +1,4 @@
-package events
+package structured
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestConverter(t *testing.T) {
+func TestEncoder(t *testing.T) {
 	date := time.Date(1994, time.January, 1, 2, 3, 4, 5, time.UTC)
 	d := 5 * time.Minute
 	expectedValues := map[string]string{
@@ -22,9 +22,11 @@ func TestConverter(t *testing.T) {
 		"count":    "20",
 	}
 
-	z := &zapConverter{}
+	enc := &stringObjectEncoder{
+		m: make(map[string]string, len(expectedValues)),
+	}
 
-	event := z.Convert("test message",
+	context := []zap.Field{
 		zap.Bool("true", true),
 		zap.Bool("false", false),
 		zap.Duration("duration", d),
@@ -33,10 +35,11 @@ func TestConverter(t *testing.T) {
 		zap.Time("now", date),
 		zap.Uint("uint", 50000),
 		zap.Float64("float", 2.5),
-	)
+	}
 
-	assert.Equal(t, "test message", event.GetMessage())
-	assert.NotEmpty(t, event.GetId())
-	assert.NotEmpty(t, event.GetCreatedAt())
-	assert.Equal(t, expectedValues, event.GetLabels())
+	for _, c := range context {
+		c.AddTo(enc)
+	}
+
+	assert.Equal(t, expectedValues, enc.m)
 }

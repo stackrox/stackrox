@@ -21,6 +21,7 @@ import (
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/logging/structured"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -213,7 +214,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 
 	results, err := l.deployments.SearchDeployments(allAccessCtx, query.ProtoQuery())
 	if err != nil {
-		log.Errorw("Error getting results for deployment reprocessing", logging.Err(err))
+		log.Errorw("Error getting results for deployment reprocessing", structured.Err(err))
 		return
 	}
 
@@ -261,7 +262,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	ids, err := getIDsFunc()
 	if err != nil {
 		log.Errorw("Failed to retrieve active IDs for entity", zap.String("entity", entityType),
-			logging.Err(err))
+			structured.Err(err))
 		return
 	}
 	log.Infof("Found %d %ss to scan", len(ids), entityType)
@@ -272,7 +273,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	for _, id := range ids {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
-			log.Errorw("Reprocessing stopped", logging.Err(err))
+			log.Errorw("Reprocessing stopped", structured.Err(err))
 			return
 		}
 		go func(id string) {
@@ -297,7 +298,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
-		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
+		log.Errorw("Error fetching image from database", structured.ImageID(id), structured.Err(err))
 		return nil, false
 	}
 	if !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
@@ -309,13 +310,13 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	}, image)
 
 	if err != nil {
-		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+		log.Errorw("Error enriching image", structured.ImageName(image.GetName().GetFullName()), structured.Err(err))
 		return nil, false
 	}
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorw("Error upserting image into datastore",
-				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
+				structured.ImageName(image.GetName().GetFullName()), structured.Err(err))
 			return nil, false
 		}
 	}
@@ -339,7 +340,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 	results, err := l.images.Search(allAccessCtx, imageQuery)
 	if err != nil {
-		log.Errorw("Error searching for active image IDs", logging.Err(err))
+		log.Errorw("Error searching for active image IDs", structured.Err(err))
 		return
 	}
 
@@ -354,7 +355,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	for _, result := range results {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
-			log.Errorw("Reprocessing stopped", logging.Err(err))
+			log.Errorw("Reprocessing stopped", structured.Err(err))
 			return
 		}
 		// Duplicates can exist if the image is within multiple deployments
@@ -384,8 +385,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 				})
 				if err != nil {
 					log.Errorw("Error sending updated image to sensor",
-						logging.ImageName(image.GetName().GetFullName()),
-						logging.ClusterID(clusterID), logging.Err(err))
+						structured.ImageName(image.GetName().GetFullName()),
+						structured.ClusterID(clusterID), structured.Err(err))
 				}
 			}
 		}(result.ID, clusterIDSet)
@@ -412,11 +413,11 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 func (l *loopImpl) reprocessNode(id string) bool {
 	node, exists, err := l.nodes.GetNode(allAccessCtx, id)
 	if err != nil {
-		log.Errorw("Error fetching node from the database", logging.NodeID(id), logging.Err(err))
+		log.Errorw("Error fetching node from the database", structured.NodeID(id), structured.Err(err))
 		return false
 	}
 	if !exists {
-		log.Warnw("Error fetching non-existing node from the database", logging.NodeID(id))
+		log.Warnw("Error fetching non-existing node from the database", structured.NodeID(id))
 		return false
 	}
 
@@ -428,7 +429,7 @@ func (l *loopImpl) reprocessNode(id string) bool {
 
 	err = l.nodeEnricher.EnrichNode(node)
 	if err != nil {
-		log.Errorw("Error enriching node", zap.String("node", nodeDatastore.NodeString(node)), logging.Err(err))
+		log.Errorw("Error enriching node", zap.String("node", nodeDatastore.NodeString(node)), structured.Err(err))
 		return false
 	}
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
@@ -454,7 +455,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		FetchOpt: imageEnricher.IgnoreExistingImages,
 	}, name)
 	if err != nil {
-		log.Errorw("Error enriching watched image", logging.ImageName(name), logging.Err(err))
+		log.Errorw("Error enriching watched image", structured.ImageName(name), structured.Err(err))
 		return false
 	}
 	// Save the image
@@ -463,7 +464,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		return false
 	}
 	if err := l.risk.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorw("Error upserting watched image after enriching", logging.ImageName(name), logging.Err(err))
+		log.Errorw("Error upserting watched image after enriching", structured.ImageName(name), structured.Err(err))
 		return false
 	}
 	return true

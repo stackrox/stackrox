@@ -209,7 +209,7 @@ func (l *LoggerImpl) createNotificationFromLog(msg string, keysAndValues ...inte
 	}
 
 	// We will use the log converter to convert logs to a storage.Notification.
-	notification := l.opts.notificationConverter.Convert(msg, keysAndValues...)
+	notification := l.opts.notificationConverter.Convert(msg, l.Module().Name(), keysAndValues...)
 	err := retry.WithRetry(func() error {
 		return l.opts.notificationStream.Produce(notification)
 	}, retry.Tries(3))
