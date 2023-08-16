@@ -181,7 +181,6 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
     },
     [policyManagementBasePath]: {
         resourceAccessRequirements: everyResource([
-            'Cluster',
             'Deployment',
             'Image',
             'Integration',
