@@ -122,7 +122,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     [collectionsPath]: {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
     },
     [compliancePath]: {
         resourceAccessRequirements: everyResource([
