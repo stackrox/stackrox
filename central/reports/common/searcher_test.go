@@ -93,6 +93,19 @@ func TestReplaceSearchBySuccess(t *testing.T) {
 			),
 		},
 		{
+			name: "Simple query with Report state = sUCCEsS (case insensitive replacement)",
+			query: search.NewQueryBuilder().
+				AddStrings(search.ReportState, storage.ReportStatus_PREPARING.String(), "sUCCEsS").ProtoQuery(),
+			expectedQ: search.DisjunctionQuery(
+				search.NewQueryBuilder().
+					AddStrings(search.ReportState, storage.ReportStatus_PREPARING.String()).
+					ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
+					ProtoQuery(),
+			),
+		},
+		{
 			name: "Complex query with Report state = SUCCESS",
 			query: search.ConjunctionQuery(
 				search.NewQueryBuilder().
@@ -101,6 +114,32 @@ func TestReplaceSearchBySuccess(t *testing.T) {
 					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
 				search.NewQueryBuilder().
 					AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String(), "SUCCESS").
+					ProtoQuery(),
+			),
+			expectedQ: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.DisjunctionQuery(
+					search.NewQueryBuilder().
+						AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String()).
+						ProtoQuery(),
+					search.NewQueryBuilder().
+						AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
+						ProtoQuery(),
+				),
+			),
+		},
+		{
+			name: "Complex query with Report state = sUCCEsS (case insensitive replacement)",
+			query: search.ConjunctionQuery(
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportNotificationMethod, storage.ReportStatus_DOWNLOAD.String()).ProtoQuery(),
+				search.NewQueryBuilder().
+					AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String(), "sUCCEsS").
 					ProtoQuery(),
 			),
 			expectedQ: search.ConjunctionQuery(

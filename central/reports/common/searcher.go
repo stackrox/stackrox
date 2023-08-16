@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -73,7 +74,7 @@ func replaceSearchBySuccess(q *v1.Query) {
 		if !ok {
 			return
 		}
-		if mfQ.MatchFieldQuery.GetField() == search.ReportState.String() &&
+		if strings.ToLower(mfQ.MatchFieldQuery.GetField()) == strings.ToLower(search.ReportState.String()) &&
 			doesValueMatchSuccess(mfQ.MatchFieldQuery.GetValue()) {
 			*q = *search.NewQueryBuilder().
 				AddExactMatches(search.ReportState, storage.ReportStatus_GENERATED.String(), storage.ReportStatus_DELIVERED.String()).
@@ -85,6 +86,6 @@ func replaceSearchBySuccess(q *v1.Query) {
 }
 
 func doesValueMatchSuccess(val string) bool {
-	return val == apiV2.ReportStatus_SUCCESS.String() ||
-		val == search.ExactMatchString(apiV2.ReportStatus_SUCCESS.String())
+	return strings.ToLower(val) == strings.ToLower(apiV2.ReportStatus_SUCCESS.String()) ||
+		strings.ToLower(val) == strings.ToLower(search.ExactMatchString(apiV2.ReportStatus_SUCCESS.String()))
 }
