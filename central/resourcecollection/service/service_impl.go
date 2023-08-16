@@ -146,7 +146,10 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 	}
 
 	// error out if collection is in use by a report config
-	query := search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery()
+	query := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery(),
+	)
 	reportConfigCount, err := s.reportConfigDatastore.Count(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
