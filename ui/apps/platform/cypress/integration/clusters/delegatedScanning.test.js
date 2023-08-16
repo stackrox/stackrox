@@ -1,18 +1,23 @@
 import withAuth from '../../helpers/basicAuth';
 
 import { getInputByLabel } from '../../helpers/formHelpers';
+import { visitWithStaticResponseForPermissions } from '../../helpers/visit';
 
-import { visitDelegateScanning, saveDelegatedRegistryConfig } from './Clusters.helpers';
+import {
+    visitDelegateScanning,
+    saveDelegatedRegistryConfig,
+    delegatedScanningPath,
+} from './Clusters.helpers';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
-describe('Delegate Image Scanning', () => {
+describe('Delegated Image Scanning', () => {
     withAuth();
 
     it(`should load the page in the cluster hierarchy`, () => {
         visitDelegateScanning();
 
         // make sure the static page loads
-        cy.get('h1:contains("Delegate Image Scanning")');
+        cy.get('h1:contains("Delegated Image Scanning")');
 
         cy.get('.pf-c-breadcrumb__item a:contains("Clusters")').should(
             'have.attr',
@@ -20,7 +25,7 @@ describe('Delegate Image Scanning', () => {
             '/main/clusters'
         );
 
-        cy.get('.pf-c-breadcrumb__item:contains("Delegate Image Scanning")');
+        cy.get('.pf-c-breadcrumb__item:contains("Delegated Image Scanning")');
 
         // check the initial state of the delegate config
         getInputByLabel('Enable delegated image scanning').should('not.be.checked');
@@ -62,5 +67,25 @@ describe('Delegate Image Scanning', () => {
         cy.get(
             '.pf-c-alert.pf-m-success .pf-c-alert__title:contains("Delegated scanning configuration saved successfully")'
         );
+    });
+
+    describe('when user does not have permission to see page', () => {
+        it(`should not show the page`, () => {
+            cy.fixture('auth/mypermissionsNoAdminAccess.json').then(({ resourceToAccess }) => {
+                const staticResponseForPermissions = {
+                    body: {
+                        resourceToAccess: { ...resourceToAccess },
+                    },
+                };
+
+                visitWithStaticResponseForPermissions(
+                    delegatedScanningPath,
+                    staticResponseForPermissions
+                );
+
+                // make sure page does not load
+                cy.get('h1:contains("Delegated Image Scanning")').should('not.exist');
+            });
+        });
     });
 });
