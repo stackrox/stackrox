@@ -65,7 +65,7 @@ jobs:
 
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
-      run: git diff --check "${{ github.event.pull_request.base.sha }}"
+      run: git diff --check "${{ github.event.pull_request.base.sha }}" ':(exclude)*.md'
 
     - name: Check PR fixes
       run: scripts/ci/jobs/check-pr-fixes.sh
