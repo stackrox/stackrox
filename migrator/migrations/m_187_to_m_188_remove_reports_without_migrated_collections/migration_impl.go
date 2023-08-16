@@ -20,7 +20,7 @@ func migrate(database *types.Databases) error {
 
 	// Delete all reports whose scopeid is not found in the collections table
 	sql := fmt.Sprintf(
-		"delete from %[1]s where not exists (select 1 from %[2]s where %[1]s.scopeid = %[2]s.id)",
+		"DELETE FROM %[1]s WHERE NOT EXISTS (SELECT 1 FROM %[2]s WHERE %[1]s.scopeid = %[2]s.id)",
 		schema.ReportConfigurationsTableName,
 		schema.CollectionsTableName,
 	)
