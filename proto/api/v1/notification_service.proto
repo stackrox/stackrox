@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message NotificationsResponse {
+    repeated Notification notifications = 1;
+    Pagination              pagination  = 2;
+}
+
+message GetNotificationsRequest {
+    // For filtering notifications starting from a specific timestamp, i.e. the lower boundary.
+    google.protobuf.Timestamp from      = 1;
+
+    // For filtering notifications up until a specific timestamp, i.e. the upper boundary.
+    google.protobuf.Timestamp until     = 2;
+
+    // For filtering notifications from a specific area.
+    string area                         = 3;
+
+    // For filtering notifications associated with a specific resource type.
+    string resource_type                = 4;
+}
+
+// Notifications are emitted by Central. They are used to create transparency for users
+// for asynchronous, background tasks.
+// Currently, notifications only cover logs emitted by Central.
+message Notification {
+    // UUID of the notification.
+    string id                            = 1;
+
+    // Message associated with the notification. The message may include detailed information
+    // for this particular notification.
+    string message                       = 2;
+
+    // Remediation associated with the notification. The remediation may include detailed actions
+    // to take for this particular notification.
+    string remediation                   = 3;
+
+    // Area associated with the notification. A notification's area outlines the feature area where
+    // the notification was created from. As an example, this might be "Image Scanning".
+    // In case of notifications that cannot be tied to a specific area, this will be "General".
+    string area                          = 4;
+
+    // Resource type associated with the notification. A notification may refer to an underlying resource
+    // such as a particular image. In that case, the resource type will be filled here.
+    string resource_type                 = 5;
+
+    // Resource ID associated with the notification. If a notification refers to an underlying resource,
+    // the resource ID identifies the underlying resource.
+    string resource_id                   = 6;
+
+    // Occurrences associated with the notification. Notifications may occur multiple times, the occurrences
+    // will track the amount.
+    int64 occurrences                    = 7;
+
+    // Specifies the time the event has been created.
+    google.protobuf.Timestamp created_at = 8;
+}
+
+service NotificationService {
+    // GetNotifications returns the list of notifications. The events may be filtered by
+    // dedicated fields.
+    rpc GetNotifications(GetNotificationsRequest) returns (NotificationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/events"
+        };
+    }
+
+    // GetNotification retrieves a notification by ID.
+    rpc GetNotification(ResourceByID) returns (Notification) {
+        option(google.api.http) = {
+            get: "/v1/events/{id}"
+        };
+    }
+}

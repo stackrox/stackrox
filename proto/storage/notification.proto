@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+// Notification is the storage representation of the Notification.
+//
+// Refer to v1.Notification for a more detailed doc.
+message Notification {
+    string id                            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string message                       = 2;
+    string remediation                   = 3;
+    string area                          = 4 [(gogoproto.moretags) = 'search:"Notification Area,hidden"'];
+    string resource_type                 = 5 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
+    string resource_id                   = 6;
+    int64 occurrences                    = 7;
+    google.protobuf.Timestamp created_at = 8 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+}

@@ -332,8 +332,8 @@ var (
 	ReportRequestType        = newFieldLabel("Report Request Type")
 	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
-	// Event fields.
-	EventLabel = newFieldLabel("Event Label")
+	// Notification fields.
+	NotificationArea = newFieldLabel("Notification Area")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
