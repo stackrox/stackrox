@@ -203,11 +203,11 @@ func (l *LoggerImpl) Debugw(msg string, keysAndValues ...interface{}) {
 
 func (l *LoggerImpl) processStructuredLog(msg string, keysAndValues ...interface{}) {
 	// Short-circuit if no event writer or converter is found.
-	if l.opts.eventWriter == nil || l.opts.eventConverter == nil {
+	if l.opts.notificationWriter == nil || l.opts.notificationConverter == nil {
 		return
 	}
 
 	// We will use the log converter to convert logs to a storage.Event.
-	event := l.opts.eventConverter.Convert(msg, keysAndValues...)
-	l.opts.eventWriter.Write(event)
+	event := l.opts.notificationConverter.Convert(msg, keysAndValues...)
+	l.opts.notificationWriter.Write(event)
 }
