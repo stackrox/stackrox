@@ -133,7 +133,7 @@ export function fetchReportConfigurations({
             query,
             pagination: {
                 limit: perPage,
-                offset: page - 1,
+                offset: (page - 1) * perPage,
                 sortOption,
             },
         },
@@ -193,7 +193,7 @@ export function fetchReportHistory({
                 query,
                 pagination: {
                     limit: perPage,
-                    offset: page - 1,
+                    offset: (page - 1) * perPage,
                     sortOption,
                 },
             },
