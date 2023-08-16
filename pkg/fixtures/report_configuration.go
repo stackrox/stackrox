@@ -101,7 +101,7 @@ func GetValidReportConfigWithMultipleNotifiersV2() *storage.ReportConfiguration 
 			IntervalType: storage.Schedule_WEEKLY,
 			Interval: &storage.Schedule_DaysOfWeek_{
 				DaysOfWeek: &storage.Schedule_DaysOfWeek{
-					Days: []int32{1},
+					Days: []int32{2},
 				},
 			},
 		},

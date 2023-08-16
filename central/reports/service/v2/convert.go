@@ -155,13 +155,8 @@ func (s *serviceImpl) convertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *
 	}
 	switch schedule.Interval.(type) {
 	case *apiV2.ReportSchedule_DaysOfWeek_:
-		var days []int32
-		// Convert to numbering starting from 0
-		for _, d := range schedule.GetDaysOfWeek().GetDays() {
-			days = append(days, d-1)
-		}
 		ret.Interval = &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: days},
+			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
 		}
 	case *apiV2.ReportSchedule_DaysOfMonth_:
 		ret.Interval = &storage.Schedule_DaysOfMonth_{
@@ -319,13 +314,8 @@ func (s *serviceImpl) convertProtoScheduleToV2(schedule *storage.Schedule) *apiV
 
 	switch schedule.Interval.(type) {
 	case *storage.Schedule_DaysOfWeek_:
-		var days []int32
-		// Convert to numbering starting from 1
-		for _, d := range schedule.GetDaysOfWeek().GetDays() {
-			days = append(days, d+1)
-		}
 		ret.Interval = &apiV2.ReportSchedule_DaysOfWeek_{
-			DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: days},
+			DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
 		}
 	case *storage.Schedule_DaysOfMonth_:
 		ret.Interval = &apiV2.ReportSchedule_DaysOfMonth_{
