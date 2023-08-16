@@ -162,7 +162,7 @@ func (s *PodsStoreSuite) getTestData(access storage.Access) (*storage.Pod, *stor
 		},
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
@@ -175,7 +175,7 @@ func (s *PodsStoreSuite) getTestData(access storage.Access) (*storage.Pod, *stor
 		},
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
@@ -189,7 +189,7 @@ func (s *PodsStoreSuite) getTestData(access storage.Access) (*storage.Pod, *stor
 		},
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
@@ -202,7 +202,7 @@ func (s *PodsStoreSuite) getTestData(access storage.Access) (*storage.Pod, *stor
 		},
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
@@ -215,7 +215,7 @@ func (s *PodsStoreSuite) getTestData(access storage.Access) (*storage.Pod, *stor
 		},
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(access),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),

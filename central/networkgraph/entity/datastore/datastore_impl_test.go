@@ -62,16 +62,16 @@ type NetworkEntityDataStoreTestSuite struct {
 
 func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.elevatedCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.noAccessCtx = sac.WithNoAccess(context.Background())
 	suite.globalReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 	suite.globalWriteAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
@@ -309,17 +309,17 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	defaultEntity := testutils.GetExtSrcNetworkEntity(defaultEntityID.String(), "default", "192.0.2.0/30", true, "")
 
 	cluster1ReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedClusterLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster1)))
 	cluster1WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedClusterLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster1)))
 	cluster2WriteCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedClusterLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(cluster2)))

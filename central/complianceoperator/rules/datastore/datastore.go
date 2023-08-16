@@ -31,7 +31,7 @@ func NewDatastore(store store.Store) (DataStore, error) {
 		rulesByName: make(map[string]map[string]*storage.ComplianceOperatorRule),
 	}
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.ComplianceOperator),
 		))

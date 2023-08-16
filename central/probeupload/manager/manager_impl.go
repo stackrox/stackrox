@@ -39,7 +39,7 @@ var (
 	administrationSAC = sac.ForResource(resources.Administration)
 
 	blobReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 )

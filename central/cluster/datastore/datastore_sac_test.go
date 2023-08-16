@@ -89,7 +89,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster full read-only",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster))),
 			ExpectedClusterIDs:   []string{clusterID1, clusterID2},
@@ -98,7 +98,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster full read-write",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster))),
 			ExpectedClusterIDs:   []string{clusterID1, clusterID2},
@@ -107,7 +107,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster read Cluster1",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1))),
@@ -117,7 +117,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster partial read Cluster1",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1),
@@ -128,7 +128,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster read Cluster2",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID2))),
@@ -138,7 +138,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster partial read Cluster2",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID2),
@@ -149,7 +149,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster read other cluster",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(otherClusterID))),
@@ -159,7 +159,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster partial read other cluster",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(otherClusterID),
@@ -170,7 +170,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster read Cluster1 and Cluster2",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, clusterID2))),
@@ -180,7 +180,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster partial read Cluster1 and Cluster2",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, clusterID2),
@@ -191,7 +191,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster read Cluster1 and some other cluster",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, otherClusterID))),
@@ -201,7 +201,7 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 		{
 			Name: "Cluster partial read Cluster1 and some other cluster",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, otherClusterID),
@@ -349,7 +349,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedResourceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster)))
 		removeErr := s.datastore.RemoveCluster(ctx, clusterID, &doneSignal)
@@ -371,7 +371,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedResourceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster)))
 		removeErr := s.datastore.RemoveCluster(ctx, clusterID, &doneSignal)
@@ -393,7 +393,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedClusterLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys("not"+clusterID)))
@@ -416,7 +416,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedNamespaceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys("not"+clusterID),
@@ -440,7 +440,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedClusterLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys(clusterID)))
@@ -463,7 +463,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedNamespaceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys(clusterID),
@@ -487,7 +487,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedClusterLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys(clusterID, testconsts.Cluster3)))
@@ -510,7 +510,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 		defer s.deleteCluster(clusterID)
 		s.Require().NoError(err)
 		ctx := sac.WithGlobalAccessScopeChecker(baseContext,
-			sac.AllowFixedNamespaceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys(clusterID, "otherthan"+clusterID),

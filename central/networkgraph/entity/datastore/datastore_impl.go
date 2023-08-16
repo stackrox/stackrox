@@ -36,8 +36,7 @@ var (
 	// clusters, we allow them to be accessed if users have network graph permissions to any cluster.
 	networkGraphSAC       = sac.ForResource(resources.NetworkGraph)
 	administrationReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 )
 
@@ -464,8 +463,7 @@ func (ds *dataStoreImpl) getNetworkTree(ctx context.Context, clusterID string, c
 func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...string) {
 	// If push request if for a global network entity, push to all known clusters once and return.
 	elevateCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
 	if set.NewStringSet(clusters...).Contains("") {

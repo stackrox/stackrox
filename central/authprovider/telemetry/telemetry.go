@@ -19,7 +19,7 @@ import (
 // Gather auth provider names and number of groups per auth provider.
 var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, error) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 	props := make(map[string]any)

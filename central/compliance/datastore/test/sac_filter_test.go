@@ -31,7 +31,7 @@ func (s *sacFilterTestSuite) SetupTest() {
 func (s *sacFilterTestSuite) TestRunNotFiltered() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment, resources.Node)))
 
@@ -86,7 +86,7 @@ func (s *sacFilterTestSuite) TestRunNotFiltered() {
 func (s *sacFilterTestSuite) TestFilterCluster() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment, resources.Node)))
 
@@ -177,7 +177,7 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Node)))
 
@@ -375,7 +375,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 func (s *sacFilterTestSuite) TestFilterNodes() {
 	clusterID := "c1"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment)))
 
@@ -457,7 +457,7 @@ func (s *sacFilterTestSuite) TestFiltersClustersBatch() {
 	cluster1 := "c1"
 	cluster2 := "c2"
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedClusterLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Compliance, resources.Deployment, resources.Node),
 			sac.ClusterScopeKeys(cluster2)))

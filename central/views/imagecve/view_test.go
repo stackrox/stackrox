@@ -213,7 +213,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 	tc := s.testCases()[0]
 	s.T().Run(fmt.Sprintf("Deployment read access %s", tc.desc), func(t *testing.T) {
 		ctx := sac.WithGlobalAccessScopeChecker(tc.ctx,
-			sac.AllowFixedResourceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Deployment)))
 

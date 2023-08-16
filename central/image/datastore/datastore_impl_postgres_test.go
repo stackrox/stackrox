@@ -91,11 +91,10 @@ func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
 func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	image := getTestImage("id1")
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Image),
-		))
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.Image),
+	))
 
 	// Upsert image.
 	s.NoError(s.datastore.UpsertImage(ctx, image))

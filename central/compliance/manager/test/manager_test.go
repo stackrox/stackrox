@@ -124,11 +124,11 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 
 func (s *managerTestSuite) SetupTest() {
 	s.testCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Compliance)))
 	s.readOnlyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Compliance)))
 	s.mockCtrl = gomock.NewController(s.T())

@@ -27,7 +27,7 @@ func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *stor
 
 func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
 	elevatedPreSACReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
@@ -45,7 +45,7 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 
 func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
 	elevatedPreSACCheckCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))

@@ -27,11 +27,10 @@ func TestAllowFixedScopes(t *testing.T) {
 		Resource: permissions.Resource("resC"),
 	}
 
-	sc := NewScopeChecker(
-		AllowFixedResourceLevelScopes(
-			AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			ResourceScopeKeys(resA, resB),
-		))
+	sc := NewScopeChecker(AllowFixedScopes(
+		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		ResourceScopeKeys(resA, resB),
+	))
 
 	cases := []struct {
 		scope    []ScopeKey
@@ -200,47 +199,47 @@ func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 	namespaceA := "namespaceA"
 	namespaceB := "namespaceB"
 
-	emptyAllowedScope := AllowFixedGlobalLevelScopes()
+	emptyAllowedScope := AllowFixedScopes()
 
-	readAllAllowedScope := AllowFixedAccessLevelScopes(
+	readAllAllowedScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS))
 
-	readWriteAllAllowedScope := AllowFixedAccessLevelScopes(
+	readWriteAllAllowedScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS))
 
-	readResourceAScope := AllowFixedResourceLevelScopes(
+	readResourceAScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA))
 
-	readWriteResourceAScope := AllowFixedResourceLevelScopes(
+	readWriteResourceAScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		ResourceScopeKeys(resA))
 
-	readResourceACluster1Scope := AllowFixedClusterLevelScopes(
+	readResourceACluster1Scope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA),
 		ClusterScopeKeys(cluster1))
 
-	readResourceACluster1NamespacesABScope := AllowFixedNamespaceLevelScopes(
+	readResourceACluster1NamespacesABScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resA),
 		ClusterScopeKeys(cluster1),
 		NamespaceScopeKeys(namespaceA, namespaceB))
 
-	readResourceDScope := AllowFixedResourceLevelScopes(
+	readResourceDScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resD))
 
-	readWriteResourceDScope := AllowFixedResourceLevelScopes(
+	readWriteResourceDScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		ResourceScopeKeys(resD))
 
-	readResourceDCluster1Scope := AllowFixedClusterLevelScopes(
+	readResourceDCluster1Scope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resD),
 		ClusterScopeKeys(cluster1))
 
-	readResourceDCluster1NamespacesABScope := AllowFixedNamespaceLevelScopes(
+	readResourceDCluster1NamespacesABScope := AllowFixedScopes(
 		AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		ResourceScopeKeys(resD),
 		ClusterScopeKeys(cluster1),

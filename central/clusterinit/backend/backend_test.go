@@ -395,60 +395,53 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 		expectedErr error
 	}{
 		"read access to both Administration and Integration should allow read access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
 			access: storage.Access_READ_ACCESS,
 		},
 		"read access to both Administration and Integration should not allow write access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
 			access:      storage.Access_READ_WRITE_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
 		"read access to only Administration should not allow read access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Administration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration))),
 			access:      storage.Access_READ_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
 		"read access to only Integration should not allow read access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Integration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Integration))),
 			access:      storage.Access_READ_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
 		"write access to both should allow write access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
 			access: storage.Access_READ_WRITE_ACCESS,
 		},
 		"write access to only Administration should not allow write access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Administration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration))),
 			access:      storage.Access_READ_WRITE_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,
 		},
 		"write access to only Integration should not allow write access": {
-			ctx: sac.WithGlobalAccessScopeChecker(context.Background(),
-				sac.AllowFixedResourceLevelScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-					sac.ResourceScopeKeys(resources.Integration))),
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Integration))),
 			access:      storage.Access_READ_WRITE_ACCESS,
 			shouldFail:  true,
 			expectedErr: errox.NotAuthorized,

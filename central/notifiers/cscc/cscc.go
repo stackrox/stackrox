@@ -24,7 +24,7 @@ var (
 	log = logging.LoggerForModule()
 
 	clusterForAlertContext = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster),
 		))

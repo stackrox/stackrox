@@ -52,11 +52,11 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	suite.optionsMap = schema.RisksSchema.OptionsMap
 
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 }
@@ -103,14 +103,14 @@ func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 	}
 
 	scopedAccess := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedNamespaceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 			sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 			sac.NamespaceScopeKeys(fixtureconsts.Namespace1)))
 
 	scopedAccessForDifferentNamespace := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedNamespaceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 			sac.ClusterScopeKeys(fixtureconsts.Cluster1),

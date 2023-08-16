@@ -107,7 +107,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 	return map[string]sacMultiNodeTest{
 		"(full) read-only can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...))),
 			ValidClusterScope:  false,
@@ -115,7 +115,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		},
 		"full read-write can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedResourceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...))),
 			ValidClusterScope:  false,
@@ -123,7 +123,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		},
 		"full read-write on wrong cluster cannot get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(wrongClusterID))),
@@ -132,7 +132,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		},
 		"read-write on wrong cluster and partial namespace access cannot get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(wrongClusterID),
@@ -142,7 +142,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		},
 		"read-only on right cluster can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterIDs...))),
@@ -151,7 +151,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		},
 		"full read-write on right cluster can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterIDs...))),
@@ -160,7 +160,7 @@ func getSACMultiNodeTestCases(baseContext context.Context, _ *testing.T, validCl
 		},
 		"read-write on the right cluster and partial namespace access can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterIDs...),

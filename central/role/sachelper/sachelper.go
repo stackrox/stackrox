@@ -86,14 +86,14 @@ func (h *clusterSACHelperImpl) GetClustersForPermissions(
 	var clusterLookupCtx context.Context
 	if hasFullAccess {
 		clusterLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedResourceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 			),
 		)
 	} else {
 		clusterLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedClusterLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 				sac.ClusterScopeKeys(clusterIDsInScope.AsSlice()...),
@@ -131,7 +131,7 @@ func (h *clusterSACHelperImpl) IsClusterVisibleForPermissions(
 		// This context must not be propagated.
 		elevatedCtx := sac.WithGlobalAccessScopeChecker(
 			ctx,
-			sac.AllowFixedResourceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
 			),
@@ -172,7 +172,7 @@ func (h *clusterNamespaceSACHelperImpl) GetNamespacesForClusterAndPermissions(
 	var namespaceLookupCtx context.Context
 	if hasFullAccess {
 		namespaceLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedClusterLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Namespace),
 				sac.ClusterScopeKeys(clusterID),
@@ -180,7 +180,7 @@ func (h *clusterNamespaceSACHelperImpl) GetNamespacesForClusterAndPermissions(
 		)
 	} else {
 		namespaceLookupCtx = sac.WithGlobalAccessScopeChecker(ctx,
-			sac.AllowFixedNamespaceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 				sac.ResourceScopeKeys(resources.Namespace),
 				sac.ClusterScopeKeys(clusterID),

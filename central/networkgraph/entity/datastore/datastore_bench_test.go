@@ -20,7 +20,7 @@ import (
 
 func BenchmarkNetEntityCreates(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 		))
@@ -51,7 +51,7 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 
 func BenchmarkNetEntityCreateBatch(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 		))
@@ -78,7 +78,7 @@ func BenchmarkNetEntityCreateBatch(b *testing.B) {
 
 func BenchmarkNetEntityUpdates(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 		))

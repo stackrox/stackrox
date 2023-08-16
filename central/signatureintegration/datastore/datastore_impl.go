@@ -180,7 +180,7 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 
 func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id string) error {
 	workflowAdministrationCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	policies, err := d.policyStore.GetAllPolicies(workflowAdministrationCtx)

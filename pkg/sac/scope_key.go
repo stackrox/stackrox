@@ -61,8 +61,8 @@ func (k AccessModeScopeKey) Verb() string {
 }
 
 // AccessModeScopeKeys wraps the given access modes in a scope key slice.
-func AccessModeScopeKeys(ams ...storage.Access) []AccessModeScopeKey {
-	keys := make([]AccessModeScopeKey, len(ams))
+func AccessModeScopeKeys(ams ...storage.Access) []ScopeKey {
+	keys := make([]ScopeKey, len(ams))
 	for i, am := range ams {
 		keys[i] = AccessModeScopeKey(am)
 	}
@@ -90,8 +90,8 @@ func (k ResourceScopeKey) String() string {
 // to the returned scope keys.
 // This should be fine, as the ResourceScopeKeys is used in contexts which do not
 // specifically require a fixed length based on the number of permissions.ResourceHandle.
-func ResourceScopeKeys(resources ...permissions.ResourceHandle) []ResourceScopeKey {
-	keys := make([]ResourceScopeKey, 0, len(resources))
+func ResourceScopeKeys(resources ...permissions.ResourceHandle) []ScopeKey {
+	keys := make([]ScopeKey, 0, len(resources))
 	for _, resource := range resources {
 		keys = append(keys, ResourceScopeKey(resource.GetResource()))
 		if resource.GetReplacingResource() != nil {
@@ -117,8 +117,8 @@ func (k ClusterScopeKey) String() string {
 }
 
 // ClusterScopeKeys wraps the given cluster IDs in a scope key slice.
-func ClusterScopeKeys(clusterIDs ...string) []ClusterScopeKey {
-	keys := make([]ClusterScopeKey, len(clusterIDs))
+func ClusterScopeKeys(clusterIDs ...string) []ScopeKey {
+	keys := make([]ScopeKey, len(clusterIDs))
 	for i, clusterID := range clusterIDs {
 		keys[i] = ClusterScopeKey(clusterID)
 	}
@@ -141,8 +141,8 @@ func (k NamespaceScopeKey) String() string {
 }
 
 // NamespaceScopeKeys wraps the given namespaces in a scope key slice.
-func NamespaceScopeKeys(namespaces ...string) []NamespaceScopeKey {
-	keys := make([]NamespaceScopeKey, len(namespaces))
+func NamespaceScopeKeys(namespaces ...string) []ScopeKey {
+	keys := make([]ScopeKey, len(namespaces))
 	for i, namespace := range namespaces {
 		keys[i] = NamespaceScopeKey(namespace)
 	}

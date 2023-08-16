@@ -899,14 +899,14 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 			expectAllowed: true,
 		},
 		"access to clusterA": {
-			checker: sac.AllowFixedClusterLevelScopes(
+			checker: sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA")),
 			expectAllowed: true,
 		},
 		"exactly matching namespaces": {
-			checker: sac.AllowFixedNamespaceLevelScopes(
+			checker: sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
@@ -914,7 +914,7 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 			expectAllowed: true,
 		},
 		"more namespaces": {
-			checker: sac.AllowFixedNamespaceLevelScopes(
+			checker: sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),
@@ -926,14 +926,14 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 			expectAllowed: false,
 		},
 		"access to clusterB": {
-			checker: sac.AllowFixedClusterLevelScopes(
+			checker: sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterB")),
 			expectAllowed: false,
 		},
 		"correct namespaces in wrong cluster": {
-			checker: sac.AllowFixedNamespaceLevelScopes(
+			checker: sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterB"),
@@ -941,7 +941,7 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 			expectAllowed: false,
 		},
 		"one namespace missing": {
-			checker: sac.AllowFixedNamespaceLevelScopes(
+			checker: sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.NetworkPolicy),
 				sac.ClusterScopeKeys("clusterA"),

@@ -79,9 +79,8 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 
 func (ds *datastoreImpl) initializeRankers() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Image, resources.Node)))
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image, resources.Node)))
 
 	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
 	if err != nil {

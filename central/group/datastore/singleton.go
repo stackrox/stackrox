@@ -24,7 +24,7 @@ func initialize() {
 
 	// Give datastore access to groups so that it can delete any groups with empty props on startup
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 

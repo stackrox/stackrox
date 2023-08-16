@@ -203,7 +203,7 @@ var (
 	}
 
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration),
 		))
@@ -448,7 +448,7 @@ func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 func startGRPCServer() {
 	// Temporarily elevate permissions to modify auth providers.
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Access)))
 
@@ -540,7 +540,7 @@ func startGRPCServer() {
 	)
 
 	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 

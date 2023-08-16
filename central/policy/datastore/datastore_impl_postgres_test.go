@@ -92,11 +92,10 @@ func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {
 func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
 	policy := fixtures.GetPolicy()
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
-		))
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
 
 	// Add policy.
 	_, err := s.datastore.AddPolicy(ctx, policy)
@@ -144,11 +143,10 @@ func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
 
 func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
-		))
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
 	s.mockClusterDS.EXPECT().GetClusters(ctx).Return([]*storage.Cluster{fixtures.GetCluster("cluster-1")}, nil)
 
 	policy := fixtures.GetPolicy()
@@ -183,11 +181,10 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabl
 	// no edges, no separate category objects)
 	policy := fixtures.GetPolicy()
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
-		))
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
 
 	// Add policy.
 	_, err := s.datastore.AddPolicy(ctx, policy)
@@ -208,11 +205,10 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchPolicyCategoryFeatureDisabl
 func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 	policy := fixtures.GetPolicy()
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
-		))
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
 
 	// Add policy.
 	_, err := s.datastore.AddPolicy(ctx, policy)

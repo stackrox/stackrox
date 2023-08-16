@@ -258,9 +258,8 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 
 func (ds *datastoreImpl) initializeRankers() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Node)))
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Node)))
 
 	results, err := ds.searcher.Search(readCtx, pkgSearch.EmptyQuery())
 	if err != nil {

@@ -24,7 +24,7 @@ func CreateIdentity(clusterID string, serviceType storage.ServiceType, identityS
 	}
 	if identityStore != nil {
 		administrationAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedResourceLevelScopes(
+			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Administration)))
 		if err := identityStore.AddServiceIdentity(administrationAllAccessCtx, issuedCert.ID); err != nil {

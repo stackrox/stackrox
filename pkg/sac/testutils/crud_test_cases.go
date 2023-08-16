@@ -253,7 +253,7 @@ func GenericClusterSACGetTestCases(baseContext context.Context, _ *testing.T, va
 		},
 		"read-write on the right cluster and partial namespace access can get": {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID),
@@ -319,7 +319,7 @@ func GenericClusterSACWriteTestCases(baseContext context.Context, _ *testing.T, 
 		},
 		"read-write on the right cluster and partial namespace access can " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID),
@@ -540,7 +540,7 @@ func GenericGlobalClusterSACWriteTestCases(baseContext context.Context, _ *testi
 		},
 		"full read-write on right cluster cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedClusterLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID))),
@@ -549,7 +549,7 @@ func GenericGlobalClusterSACWriteTestCases(baseContext context.Context, _ *testi
 		},
 		"read-write on the right cluster and partial namespace access cannot " + verb: {
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
-				sac.AllowFixedNamespaceLevelScopes(
+				sac.AllowFixedScopes(
 					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 					sac.ResourceScopeKeys(resourceHandles...),
 					sac.ClusterScopeKeys(validClusterID),

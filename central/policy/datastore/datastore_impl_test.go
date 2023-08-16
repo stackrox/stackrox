@@ -54,12 +54,12 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 	s.datastore = newWithoutDefaults(s.store, nil, s.clusterDatastore, s.notifierDatastore, s.categoriesDatastore)
 
 	s.hasReadWriteWorkflowAdministrationAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration),
 		))
 	s.hasReadWorkflowAdministrationAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration),
 		))

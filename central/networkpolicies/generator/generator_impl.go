@@ -109,7 +109,7 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *types.Timestamp, includePorts bool) (map[networkgraph.Entity]*node, error) {
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedClusterLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(clusterID)))

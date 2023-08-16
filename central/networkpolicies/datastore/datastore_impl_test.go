@@ -48,19 +48,19 @@ type netPolDataStoreTestSuite struct {
 func (s *netPolDataStoreTestSuite) SetupTest() {
 	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	s.hasNS1ReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedNamespaceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkPolicy),
 			sac.ClusterScopeKeys(FakeClusterID),
 			sac.NamespaceScopeKeys(FakeNamespace1)))
 	s.hasNS2ReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedNamespaceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkPolicy),
 			sac.ClusterScopeKeys(FakeClusterID),
 			sac.NamespaceScopeKeys(FakeNamespace2)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedResourceLevelScopes(
+		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkPolicy)))
 
