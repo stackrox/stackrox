@@ -241,10 +241,10 @@ func (s *Sensor) Start() {
 	errSig := s.centralConnectionFactory.StopSignal()
 
 	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		log.Infof("Running Sensor with connection retry: preventing sensor restart on disconnect")
+		log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
 		go s.communicationWithCentralWithRetries(&centralReachable)
 	} else {
-		log.Infof("Running Sensor without connection retries: sensor will restart on disconnect")
+		log.Info("Running Sensor without connection retries: sensor will restart on disconnect")
 		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
 		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
 		// crash if it fails.
@@ -392,7 +392,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
 	})
 
-	log.Infof("Stopping gRPC connection retry loop.")
+	log.Info("Stopping gRPC connection retry loop.")
 
 	if err != nil {
 		log.Warnf("Backoff returned error: %s", err)

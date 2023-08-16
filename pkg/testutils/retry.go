@@ -61,6 +61,6 @@ func Retry(t T, times int, sleepInterval time.Duration, testFn func(t T)) {
 		}
 		time.Sleep(sleepInterval)
 	}
-	log.Infof("Final test attempt")
+	log.Info("Final test attempt")
 	testFn(t)
 }

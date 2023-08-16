@@ -63,11 +63,11 @@ func (s *pipelineImpl) Run(
 		}
 	} else {
 		if s.dataStore == nil {
-			log.Warnf("Cannot process PLOP event: data store is nil")
+			log.Warn("Cannot process PLOP event: data store is nil")
 		}
 
 		if update == nil {
-			log.Warnf("Cannot process PLOP event: update message is nil")
+			log.Warn("Cannot process PLOP event: update message is nil")
 		}
 	}
 

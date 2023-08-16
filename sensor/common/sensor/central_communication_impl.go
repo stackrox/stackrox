@@ -207,7 +207,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		}
 	} else {
 		// No sensor hello :(
-		log.Warnf("Central is running a legacy version that might not support all current features")
+		log.Warn("Central is running a legacy version that might not support all current features")
 	}
 
 	clusterID := centralHello.GetClusterId()

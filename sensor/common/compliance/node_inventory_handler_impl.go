@@ -135,7 +135,7 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 				return
 			}
 			if !c.centralReady.IsDone() {
-				log.Warnf("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
+				log.Warn("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
 				c.sendAckToCompliance(toCompliance, inventory.GetNodeName(), sensor.MsgToCompliance_NodeInventoryACK_NACK)
 				metrics.ObserveNodeInventoryAck(inventory.GetNodeName(),
 					sensor.MsgToCompliance_NodeInventoryACK_NACK.String(),
@@ -143,7 +143,7 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 				continue
 			}
 			if inventory == nil {
-				log.Warnf("Received nil node inventory: not sending to Central")
+				log.Warn("Received nil node inventory: not sending to Central")
 				break
 			}
 			if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {

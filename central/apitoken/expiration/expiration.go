@@ -191,7 +191,7 @@ func (n *logExpirationNotifier) Notify(items []*storage.TokenMetadata) error {
 	expirationSliceDuration := env.APITokenExpirationExpirationSlice.DurationSetting()
 	expirationSliceName := env.APITokenExpirationExpirationSliceName.Setting()
 	for _, token := range items {
-		log.Warnf(generateExpiringTokenLog(token, now, expirationSliceDuration, expirationSliceName))
+		log.Warn(generateExpiringTokenLog(token, now, expirationSliceDuration, expirationSliceName))
 	}
 	return nil
 }

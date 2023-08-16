@@ -125,7 +125,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 		}
 		opts = append(opts, clientconn.AddRootCAs(certs...))
 	} else {
-		log.Infof("Did not add central CA cert to gRPC connection")
+		log.Info("Did not add central CA cert to gRPC connection")
 	}
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)

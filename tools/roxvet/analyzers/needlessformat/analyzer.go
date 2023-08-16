@@ -13,12 +13,10 @@ import (
 	"golang.org/x/tools/go/types/typeutil"
 )
 
-const doc = `check for use of format methodsToReplacementByPackage without format arguments`
-
 // Analyzer is the analyzer.
 var Analyzer = &analysis.Analyzer{
 	Name:     "needlessformat",
-	Doc:      doc,
+	Doc:      "check for use of format methodsToReplacementByPackage without format arguments",
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
 }
@@ -36,12 +34,12 @@ var (
 			"(*ErrorList).AddStringf": "AddString",
 		},
 		"github.com/stackrox/rox/pkg/logging": {
-			"(*Logger).Infof":  "Info",
-			"(*Logger).Warnf":  "Warn",
-			"(*Logger).Debugf": "Debug",
-			"(*Logger).Errorf": "Error",
-			"(*Logger).Panicf": "Panic",
-			"(*Logger).Fatalf": "Fatal",
+			"Logger.Infof":  "Info",
+			"Logger.Warnf":  "Warn",
+			"Logger.Debugf": "Debug",
+			"Logger.Errorf": "Error",
+			"Logger.Panicf": "Panic",
+			"Logger.Fatalf": "Fatal",
 		},
 		"github.com/pkg/errors": {
 			"Errorf": "New",
