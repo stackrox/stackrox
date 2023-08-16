@@ -44,7 +44,7 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) 
 				utils.CrashOnError(errors.Errorf("expected map kind, got %s", field.Kind()))
 			}
 			if field.Type() != reflect.TypeOf(map[string]string{}) {
-				utils.CrashOnError(errors.Errorf("expected map[string]string, got %s", field.Type()))
+				utils.CrashOnError(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(map[string]string{})))
 			}
 
 			if field.IsNil() {

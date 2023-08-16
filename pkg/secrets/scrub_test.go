@@ -68,8 +68,8 @@ func TestScrubMapFromStructWithoutChange(t *testing.T) {
 			ScrubMap: map[string]string{"keep": "keep_ptr"},
 		},
 		Config: config{
-			Map:      map[string]string{},
-			ScrubMap: map[string]string{},
+			Map:      map[string]string{"keep": "keep"},
+			ScrubMap: map[string]string{"keep": "keep"},
 		},
 	}
 	ScrubSecretsFromStructWithReplacement(testStruct, "***")
@@ -78,6 +78,29 @@ func TestScrubMapFromStructWithoutChange(t *testing.T) {
 	assert.Equal(t, map[string]string{"keep": "keep_top"}, testStruct.ScrubMap)
 	assert.Equal(t, map[string]string{"keep": "keep_ptr"}, testStruct.ConfigPtr.Map)
 	assert.Equal(t, map[string]string{"keep": "keep_ptr"}, testStruct.ConfigPtr.ScrubMap)
+	assert.Equal(t, map[string]string{"keep": "keep"}, testStruct.Config.Map)
+	assert.Equal(t, map[string]string{"keep": "keep"}, testStruct.Config.ScrubMap)
+}
+
+func TestScrubMapFromStructEmpty(t *testing.T) {
+	testStruct := &toplevel{
+		Map:      map[string]string{},
+		ScrubMap: map[string]string{},
+		ConfigPtr: &config{
+			Map:      map[string]string{},
+			ScrubMap: map[string]string{},
+		},
+		Config: config{
+			Map:      map[string]string{},
+			ScrubMap: map[string]string{},
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, "***")
+
+	assert.Empty(t, testStruct.Map)
+	assert.Empty(t, testStruct.ScrubMap)
+	assert.Empty(t, testStruct.ConfigPtr.Map)
+	assert.Empty(t, testStruct.ConfigPtr.ScrubMap)
 	assert.Empty(t, testStruct.Config.Map)
 	assert.Empty(t, testStruct.Config.ScrubMap)
 }
