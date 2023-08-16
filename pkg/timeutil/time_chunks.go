@@ -9,12 +9,13 @@ type TimeRange struct {
 }
 
 //
-// Next and Done methods allow for iterating over the time range by chunks.
+// Next and Done methods allow for iterating over a time range by given chunks.
 //
 // Example:
-//	tr = TimeRange{from, to}
+//	tr := TimeRange{From: from, To: to}
 //	for !tr.Done() {
-//		current := tr.Next(time.Hour)
+//		chunk := tr.Next(time.Hour)
+//		// QueryByTime(chunk.From, chunk.To)
 //	}
 //
 
@@ -31,7 +32,7 @@ func (tr *TimeRange) Next(chunk time.Duration) *TimeRange {
 	return &result
 }
 
-// Done tells whether the range start is reached the end.
+// Done tells whether the range start has reached the end.
 func (tr *TimeRange) Done() bool {
 	return !tr.From.Before(tr.To)
 }
