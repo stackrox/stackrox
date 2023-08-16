@@ -122,7 +122,7 @@ deploy_stackrox_operator() {
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         info "Deploying ACS operator via midstream image"
         # hardcoding values for testing
-        export VERSION="545338"
+        export VERSION="541232"
         export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
 
         make -C operator kuttl deploy-via-olm
