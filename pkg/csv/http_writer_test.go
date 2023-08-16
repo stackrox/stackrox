@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type httpWriter struct {
+type httpWriterMock struct {
 	header http.Header
 	buf    *bytes.Buffer
 	err    error
@@ -17,9 +17,9 @@ type httpWriter struct {
 	status int
 }
 
-func (w *httpWriter) Header() http.Header    { return w.header }
-func (w *httpWriter) WriteHeader(status int) { w.status = status }
-func (w *httpWriter) Write(data []byte) (int, error) {
+func (w *httpWriterMock) Header() http.Header    { return w.header }
+func (w *httpWriterMock) WriteHeader(status int) { w.status = status }
+func (w *httpWriterMock) Write(data []byte) (int, error) {
 	if w.err != nil {
 		return 0, w.err
 	}
@@ -35,14 +35,14 @@ var metrics = []*data{{a: "a1", b: "b1"}, {a: "a2", b: "b2"}}
 
 func TestHTTPCSVWriter(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	httpWriterMock := &httpWriter{
+	httpWriterMock := &httpWriterMock{
 		header: http.Header{},
 		buf:    buf,
 	}
 
-	rowConverter := func(r *data) []string { return []string{r.a, r.b} }
-	header := []string{"a", "b"}
-	w := NewHTTPCSVWriter(httpWriterMock, "filename", rowConverter, header)
+	converter := func(r *data) Row { return Row{r.a, r.b} }
+	header := Row{"a", "b"}
+	w := NewHTTPWriter(httpWriterMock, "filename", converter, header)
 
 	var err error
 	assert.Empty(t, httpWriterMock.header)
@@ -51,7 +51,7 @@ func TestHTTPCSVWriter(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, CSVContentType, httpWriterMock.header["Content-Type"][0])
+	assert.Equal(t, ContentType, httpWriterMock.header["Content-Type"][0])
 	assert.NoError(t, err)
 	w.Flush()
 	assert.Equal(t, "\uFEFFa,b\r\na1,b1\r\na2,b2\r\n", buf.String())
@@ -60,15 +60,15 @@ func TestHTTPCSVWriter(t *testing.T) {
 
 func TestHTTPCSVWriterError(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	httpWriterMock := &httpWriter{
+	httpWriterMock := &httpWriterMock{
 		header: http.Header{},
 		buf:    buf,
 		err:    errors.New("early error"),
 	}
 
-	rowConverter := func(r *data) []string { return []string{r.a, r.b} }
-	header := []string{"a", "b"}
-	w := NewHTTPCSVWriter(httpWriterMock, "filename", rowConverter, header)
+	converter := func(r *data) Row { return Row{r.a, r.b} }
+	header := Row{"a", "b"}
+	w := NewHTTPWriter(httpWriterMock, "filename", converter, header)
 
 	var err error
 	assert.Empty(t, httpWriterMock.header)
@@ -78,7 +78,7 @@ func TestHTTPCSVWriterError(t *testing.T) {
 		}
 	}
 	assert.Equal(t, "text/plain; charset=utf-8", httpWriterMock.header["Content-Type"][0])
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, errSendHeaders)
 	w.Flush()
 	assert.Equal(t, "", buf.String())
 	assert.Equal(t, http.StatusInternalServerError, httpWriterMock.status)
@@ -86,14 +86,14 @@ func TestHTTPCSVWriterError(t *testing.T) {
 
 func TestHTTPCSVWriterLateError(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
-	httpWriterMock := &httpWriter{
+	httpWriterMock := &httpWriterMock{
 		header: http.Header{},
 		buf:    buf,
 	}
 
-	rowConverter := func(r *data) []string { return []string{r.a, r.b} }
-	header := []string{"a", "b"}
-	w := NewHTTPCSVWriter(httpWriterMock, "filename", rowConverter, header)
+	converter := func(r *data) Row { return Row{r.a, r.b} }
+	header := Row{"a", "b"}
+	w := NewHTTPWriter(httpWriterMock, "filename", converter, header)
 
 	var err error
 	assert.Empty(t, httpWriterMock.header)
@@ -106,7 +106,7 @@ func TestHTTPCSVWriterLateError(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, CSVContentType, httpWriterMock.header["Content-Type"][0])
+	assert.Equal(t, ContentType, httpWriterMock.header["Content-Type"][0])
 	assert.NoError(t, err)
 	w.Flush()
 	assert.Equal(t, UTF8BOM, buf.String())
