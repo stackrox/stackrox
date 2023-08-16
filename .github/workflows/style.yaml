@@ -65,6 +65,7 @@ jobs:
 
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
+      # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
       run: git diff --check "${{ github.event.pull_request.base.sha }}" ':(exclude)*.md'
 
     - name: Check PR fixes
