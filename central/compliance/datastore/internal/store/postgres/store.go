@@ -141,7 +141,7 @@ func getRunResultCacheKey(ctx context.Context, runID string, flags types.GetFlag
 	if err != nil {
 		return "", errors.Wrap(err, "getting effective access scope to compute ComplianceRunResults cache key")
 	}
-	return fmt.Sprintf("%s|%d|%s", runID, flags.Hash(), scopeTree.Compactify().String())
+	return fmt.Sprintf("%s|%d|%s", runID, flags.Hash(), scopeTree.Compactify().String()), nil
 }
 
 func (s *storeImpl) getResultsFromMetadata(
@@ -149,11 +149,8 @@ func (s *storeImpl) getResultsFromMetadata(
 	metadata *storage.ComplianceRunMetadata,
 	flags types.GetFlags,
 ) (*storage.ComplianceRunResults, error) {
-	useCache := true
 	cacheKey, keyGenErr := getRunResultCacheKey(ctx, metadata.GetRunId(), flags)
-	if keyGenErr != nil {
-		useCache = false
-	}
+	useCache := keyGenErr == nil
 	if useCache {
 		cachedResults, found := getRunResultsCache().Get(cacheKey)
 		if found && cachedResults != nil {
