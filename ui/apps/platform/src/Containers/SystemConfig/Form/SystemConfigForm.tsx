@@ -17,12 +17,16 @@ import {
     Grid,
     GridItem,
     SelectOption,
+    Split,
+    SplitItem,
     Switch,
+    Text,
     TextArea,
     TextInput,
     Title,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
+import * as yup from 'yup';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
@@ -34,6 +38,7 @@ import { selectors } from 'reducers';
 import { initializeAnalytics } from 'global/initializeAnalytics';
 
 import FormSelect from './FormSelect';
+import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     return {
@@ -72,6 +77,17 @@ export type SystemConfigFormProps = {
     setIsNotEditing: () => void;
 };
 
+const validationSchema = yup.object().shape({
+    privateConfig: yup.object().shape({
+        reportRetentionConfig: yup.object().shape({
+            downloadableReportGlobalRetentionBytes: yup
+                .number()
+                .min(convertBetweenBytesAndMB(50, 'MB'), 'The number must be at least 50 MB')
+                .required(),
+        }),
+    }),
+});
+
 const SystemConfigForm = ({
     systemConfig,
     setSystemConfig,
@@ -84,55 +100,66 @@ const SystemConfigForm = ({
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
-    const { submitForm, setFieldValue, values, dirty, isValid, isSubmitting, setSubmitting } =
-        useFormik<Values>({
-            initialValues: { privateConfig, publicConfig },
-            onSubmit: () => {
-                // Payload for privateConfig allows strings as number values.
-                saveSystemConfig({
-                    privateConfig: values.privateConfig,
-                    publicConfig: values.publicConfig,
+    const {
+        dirty,
+        errors,
+        isSubmitting,
+        isValid,
+        setFieldValue,
+        setSubmitting,
+        submitForm,
+        values,
+    } = useFormik<Values>({
+        initialValues: { privateConfig, publicConfig },
+        validationSchema,
+        onSubmit: () => {
+            // Payload for privateConfig allows strings as number values.
+            saveSystemConfig({
+                privateConfig: values.privateConfig,
+                publicConfig: values.publicConfig,
+            })
+                .then((data) => {
+                    // Simulate fetchPublicConfig response to update Redux state.
+                    const action: PublicConfigAction = {
+                        type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
+                        response: data.publicConfig || {
+                            footer: null,
+                            header: null,
+                            loginNotice: null,
+                            telemetry: null,
+                        },
+                    };
+
+                    const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
+                    const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
+                    if (isTelemetryEnabledCurr && isTelemetryConfigured) {
+                        initializeAnalytics(telemetryConfig.storageKeyV1, telemetryConfig.userId);
+                    }
+
+                    dispatch(action);
+                    setSystemConfig(data);
+                    setErrorMessage(null);
+                    setSubmitting(false);
+                    setIsNotEditing();
+
+                    if (isTelemetryEnabledPrev && !isTelemetryEnabledCurr) {
+                        window.location.reload();
+                    }
                 })
-                    .then((data) => {
-                        // Simulate fetchPublicConfig response to update Redux state.
-                        const action: PublicConfigAction = {
-                            type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
-                            response: data.publicConfig || {
-                                footer: null,
-                                header: null,
-                                loginNotice: null,
-                                telemetry: null,
-                            },
-                        };
-
-                        const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
-                        const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
-                        if (isTelemetryEnabledCurr && isTelemetryConfigured) {
-                            initializeAnalytics(
-                                telemetryConfig.storageKeyV1,
-                                telemetryConfig.userId
-                            );
-                        }
-
-                        dispatch(action);
-                        setSystemConfig(data);
-                        setErrorMessage(null);
-                        setSubmitting(false);
-                        setIsNotEditing();
-
-                        if (isTelemetryEnabledPrev && !isTelemetryEnabledCurr) {
-                            window.location.reload();
-                        }
-                    })
-                    .catch((error) => {
-                        setSubmitting(false);
-                        setErrorMessage(getAxiosErrorMessage(error));
-                    });
-            },
-        });
+                .catch((error) => {
+                    setSubmitting(false);
+                    setErrorMessage(getAxiosErrorMessage(error));
+                });
+        },
+    });
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
+    }
+
+    function onDownloadableReportChange(value, event) {
+        const valueInBytes = convertBetweenBytesAndMB(value, 'MB');
+        return setFieldValue(event.target.id, valueInBytes);
     }
 
     function onCustomChange(value, id) {
@@ -145,6 +172,9 @@ const SystemConfigForm = ({
             'privateConfig.decommissionedClusterRetention.ignoreClusterLabels'
         );
     }
+
+    const downloadableReportRetentionError =
+        errors.privateConfig?.reportRetentionConfig?.downloadableReportGlobalRetentionBytes;
 
     return (
         <Form>
@@ -301,6 +331,39 @@ const SystemConfigForm = ({
                             onChange={onChange}
                             min={0}
                         />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
+                        label="Prepared downloadable vulnerability reports limit"
+                        isRequired
+                        fieldId="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
+                        helperTextInvalid={downloadableReportRetentionError}
+                        validated={downloadableReportRetentionError ? 'error' : 'default'}
+                    >
+                        <Split hasGutter className="pf-u-align-items-center">
+                            <SplitItem isFilled>
+                                <TextInput
+                                    isRequired
+                                    type="number"
+                                    id="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
+                                    name="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"
+                                    value={convertBetweenBytesAndMB(
+                                        values?.privateConfig?.reportRetentionConfig
+                                            ?.downloadableReportGlobalRetentionBytes,
+                                        'B'
+                                    )}
+                                    onChange={onDownloadableReportChange}
+                                    min={50}
+                                    validated={
+                                        downloadableReportRetentionError ? 'error' : 'default'
+                                    }
+                                />
+                            </SplitItem>
+                            <SplitItem>
+                                <Text>MB</Text>
+                            </SplitItem>
+                        </Split>
                     </FormGroup>
                 </GridItem>
             </Grid>
