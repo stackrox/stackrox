@@ -356,27 +356,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
+	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
 }
 
 // Delete removes the object associated to the specified ID from the store.
@@ -388,21 +368,6 @@ func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
-
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
@@ -417,10 +382,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		}
 
 		identifierBatch := identifiers[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-		)
+		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
 			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
