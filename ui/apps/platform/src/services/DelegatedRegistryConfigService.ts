@@ -6,6 +6,7 @@ export type DelegatedRegistryConfigEnabledFor = 'NONE' | 'ALL' | 'SPECIFIC';
 export type EnabledSelections = Exclude<DelegatedRegistryConfigEnabledFor, 'NONE'>;
 
 export type DelegatedRegistry = {
+    uuid?: string;
     path: string;
     clusterId: string;
 };

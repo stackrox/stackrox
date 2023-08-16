@@ -38,6 +38,26 @@ const initialDelegatedState: DelegatedRegistryConfig = {
     registries: [],
 };
 
+function addUuidstoRegistries(config: DelegatedRegistryConfig) {
+    const newRegistries = config.registries.map((registry) => {
+        // eslint-disable-next-line no-restricted-globals
+        const uuid = self.crypto.randomUUID();
+
+        return {
+            path: registry.path,
+            clusterId: registry.clusterId,
+            uuid,
+        };
+    });
+
+    const newState: DelegatedRegistryConfig = {
+        ...config,
+        registries: newRegistries,
+    };
+
+    return newState;
+}
+
 function DelegateScanningPage() {
     const displayedPageTitle = 'Delegate Image Scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
@@ -56,7 +76,8 @@ function DelegateScanningPage() {
         setAlertObj(null);
         fetchDelegatedRegistryConfig()
             .then((configFetched) => {
-                setDedicatedRegistryConfig(configFetched);
+                const configWithUuids = addUuidstoRegistries(configFetched);
+                setDedicatedRegistryConfig(configWithUuids);
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
@@ -134,7 +155,14 @@ function DelegateScanningPage() {
     function addRegistryRow() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
-        newState.registries.push({ path: '', clusterId: delegatedRegistryConfig.defaultClusterId });
+        // eslint-disable-next-line no-restricted-globals
+        const uuid = self.crypto.randomUUID();
+
+        newState.registries.push({
+            path: '',
+            clusterId: delegatedRegistryConfig.defaultClusterId,
+            uuid,
+        });
 
         setDedicatedRegistryConfig(newState);
     }

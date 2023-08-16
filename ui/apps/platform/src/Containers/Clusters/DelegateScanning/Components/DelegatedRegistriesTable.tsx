@@ -50,7 +50,7 @@ function DelegatedRegistriesTable({
     const [draggingToItemIndex, setDraggingToItemIndex] = React.useState<number | null>(null);
     const [isDragging, setIsDragging] = React.useState(false);
 
-    const initialOrderIds = registries.map((_, rowIndex) => `row-${rowIndex}`);
+    const initialOrderIds = registries.map((reg) => reg.uuid as string);
     const [itemOrder, setItemOrder] = React.useState(initialOrderIds);
     const [tempItemOrder, setTempItemOrder] = React.useState<string[]>([]);
 
@@ -64,7 +64,7 @@ function DelegatedRegistriesTable({
     }
 
     useEffect(() => {
-        const orderIds = registries.map((_, rowIndex) => `row-${rowIndex}`);
+        const orderIds = registries.map((reg) => reg.uuid as string);
         setItemOrder(orderIds);
     }, [registries]);
 
@@ -165,7 +165,7 @@ function DelegatedRegistriesTable({
             // the rest of this block was added to the PF drag and drop paradigm,
             // in order to keep the form data in sync with PF's visual drop order
             const newRegistries: DelegatedRegistry[] = tempItemOrder.map((tempItem) => {
-                const newIndex = Number(tempItem.split('row-').pop());
+                const newIndex = registries.findIndex((reg) => reg.uuid === tempItem) || 0;
                 return registries[newIndex];
             });
 
@@ -239,8 +239,9 @@ function DelegatedRegistriesTable({
                     <Tr
                         // note: in spite of best practice, we have to use the array index as key here,
                         //       because the value of path changes as the user types, and the input would lose focus
-                        key={rowIndex}
-                        id={itemOrder[rowIndex]}
+                        key={registry.uuid}
+                        // id={itemOrder[rowIndex]}
+                        id={registry.uuid}
                         draggable
                         onDrop={onDrop}
                         onDragEnd={onDragEnd}
