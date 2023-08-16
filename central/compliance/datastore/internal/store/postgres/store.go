@@ -135,20 +135,30 @@ func getRunResultsCache() lru.Cache[string, *storage.ComplianceRunResults] {
 	return runResultsCache
 }
 
+func getRunResultCacheKey(ctx context.Context, runID string, flags types.GetFlags) (string, error) {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(resources.Compliance))
+	if err != nil {
+		return "", errors.Wrap(err, "getting effective access scope to compute ComplianceRunResults cache key")
+	}
+	return fmt.Sprintf("%s|%d|%s", runID, flags.Hash(), scopeTree.Compactify().String())
+}
+
 func (s *storeImpl) getResultsFromMetadata(
 	ctx context.Context,
 	metadata *storage.ComplianceRunMetadata,
 	flags types.GetFlags,
 ) (*storage.ComplianceRunResults, error) {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(resources.Compliance))
-	if err != nil {
-		return nil, errors.Wrap(err, "getting effective access scope to compute ComplianceRunResults cache key")
+	useCache := true
+	cacheKey, keyGenErr := getRunResultCacheKey(ctx, metadata.GetRunId(), flags)
+	if keyGenErr != nil {
+		useCache = false
 	}
-	cacheKey := fmt.Sprintf("%s|%d|%s", metadata.GetRunId(), flags.Hash(), scopeTree.Compactify().String())
-	cachedResults, found := getRunResultsCache().Get(cacheKey)
-	if found && cachedResults != nil {
-		return cachedResults, nil
+	if useCache {
+		cachedResults, found := getRunResultsCache().Get(cacheKey)
+		if found && cachedResults != nil {
+			return cachedResults, nil
+		}
 	}
 
 	result, err := s.getResultsFromMetadataFromStore(ctx, metadata, flags)
@@ -156,7 +166,9 @@ func (s *storeImpl) getResultsFromMetadata(
 		return nil, err
 	}
 
-	getRunResultsCache().Add(cacheKey, result)
+	if useCache {
+		getRunResultsCache().Add(cacheKey, result)
+	}
 
 	return result, nil
 }
