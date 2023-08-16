@@ -362,6 +362,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers = nil
+				ret.Schedule = nil
 
 				s.mockCollectionStoreCalls(ret, true, false, isUpdate)
 				return ret
@@ -369,6 +370,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 				ret.Notifiers = nil
+				ret.Schedule = nil
 				return ret
 			},
 			isValidationError: false,
