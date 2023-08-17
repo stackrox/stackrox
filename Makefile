@@ -647,19 +647,17 @@ syslog-image: syslog-build
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
-	find bin -type f -name mock-grpc-server -exec install -D  "{}" "integration-tests/mock-grpc-server/image/{}" \;
+	cp -R bin integration-tests/mock-grpc-server/image
 	docker buildx build --platform $(PLATFORM) --load \
 		-t stackrox/grpc-server:$(TAG) \
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		-f integration-tests/mock-grpc-server/image/Dockerfile \
 		integration-tests/mock-grpc-server/image
 
 .PHONY: mock-grpc-server-image-push
 mock-grpc-server-image-push:
-	find bin -type f -name mock-grpc-server -exec install -D  "{}" "integration-tests/mock-grpc-server/image/{}" \;
+	cp -R bin integration-tests/mock-grpc-server/image
 	docker buildx build --platform $(PLATFORM) --push \
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		-f integration-tests/mock-grpc-server/image/Dockerfile \
 		integration-tests/mock-grpc-server/image
 
 .PHONY: central-db-image
