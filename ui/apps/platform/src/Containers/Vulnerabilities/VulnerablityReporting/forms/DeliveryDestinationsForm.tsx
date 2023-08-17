@@ -106,7 +106,10 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                 {formik.values.deliveryDestinations.map(
                                     (deliveryDestination, index) => {
                                         return (
-                                            <li className="pf-u-mb-md">
+                                            <li
+                                                key={deliveryDestination.notifier?.id}
+                                                className="pf-u-mb-md"
+                                            >
                                                 <Card>
                                                     <CardTitle>
                                                         <Flex
