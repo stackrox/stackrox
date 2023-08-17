@@ -17,7 +17,7 @@ kind: Subscription
 metadata:
   name: stackrox-operator-test-subscription
 spec:
-  channel: stable
+  channel: rhacs-1.0
   name: rhacs-operator
   source: stackrox-operator-test-index
   sourceNamespace: ${NAMESPACE}
