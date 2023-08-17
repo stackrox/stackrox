@@ -35,7 +35,7 @@ spec:
           args:
             [
               "-jar",
-	            "-Dlisten=8080",
+              "-Dlisten=8080",
               "/deployments/webapp-1.0-jar-with-dependencies.jar",
             ]
           resources:

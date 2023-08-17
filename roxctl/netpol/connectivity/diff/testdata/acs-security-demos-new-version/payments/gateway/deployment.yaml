@@ -27,7 +27,7 @@ spec:
           args:
             [
               "-jar",
-	            "-Dlisten=8080",
+              "-Dlisten=8080",
               "-Dconnect=$(VISA_SERVICE_ADDR):$(VISA_SERVICE_PORT),$(MASTER_SERVICE_ADDR):$(MASTER_SERVICE_PORT)",
               "/deployments/gateway-1.0-jar-with-dependencies.jar",
             ]

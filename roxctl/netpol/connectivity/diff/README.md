@@ -100,6 +100,7 @@ default/frontend[Deployment] => default/backend[Deployment] : TCP 9090,UDP 53
 The semantic-diff report provides a summary of changed/added/removed connections from `dir2` with respect to allowed connections from `dir1`.
 
 ### Understanding the output
+
 Each line in the output represents an allowed connection that has been added/removed/changed on `dir2` with respect to `dir1`.
 The `workloads-diff-info` adds information about added/removed workload related to the added/removed connection, if relevant.
 
