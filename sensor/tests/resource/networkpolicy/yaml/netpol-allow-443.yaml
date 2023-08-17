@@ -11,4 +11,3 @@ spec:
     - port: 443
   policyTypes:
   - Ingress
-
