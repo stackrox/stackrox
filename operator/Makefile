@@ -341,7 +341,7 @@ deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
 
 .PHONY: deploy-via-olm-midstream
-deploy-via-olm: ## Deploy operator image to the cluster using OLM and midstream index images.
+deploy-via-olm-midstream: ## Deploy operator image to the cluster using OLM and midstream index images.
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $(OPERATOR_VERSION)
 
 .PHONY: deploy-dirty-tag-via-olm
