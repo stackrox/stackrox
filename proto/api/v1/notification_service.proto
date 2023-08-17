@@ -13,7 +13,7 @@ package v1;
 
 message NotificationsResponse {
     repeated Notification notifications = 1;
-    Pagination              pagination  = 2;
+    Pagination pagination               = 2;
 }
 
 message GetNotificationsRequest {
