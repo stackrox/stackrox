@@ -27,7 +27,7 @@ import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilityReportsPath } from 'routePaths';
+import { collectionsPath, isRouteEnabled, vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
@@ -39,6 +39,7 @@ import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
@@ -61,6 +62,7 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
@@ -71,6 +73,11 @@ function VulnReportsPage() {
         hasImageReadAccess &&
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
+
+    const isCollectionsRouteEnabled = isRouteEnabled(
+        { hasReadAccess, isFeatureFlagEnabled },
+        collectionsPath
+    );
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
@@ -404,6 +411,8 @@ function VulnReportsPage() {
                                                 isDisabled: isReportStatusPending,
                                             },
                                         ];
+                                        const { collectionName, collectionId } =
+                                            report.resourceScope.collectionScope;
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -419,10 +428,17 @@ function VulnReportsPage() {
                                                         </Link>
                                                     </Td>
                                                     <Td>
-                                                        {
-                                                            report.resourceScope.collectionScope
-                                                                .collectionName
-                                                        }
+                                                        {isCollectionsRouteEnabled ? (
+                                                            <Link
+                                                                to={generatePath(collectionsPath, {
+                                                                    collectionId,
+                                                                })}
+                                                            >
+                                                                {collectionName}
+                                                            </Link>
+                                                        ) : (
+                                                            collectionName
+                                                        )}
                                                     </Td>
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
