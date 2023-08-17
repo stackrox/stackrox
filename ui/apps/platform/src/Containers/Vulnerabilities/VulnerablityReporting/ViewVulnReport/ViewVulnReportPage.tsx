@@ -43,6 +43,7 @@ import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetai
 import ScheduleDetails from '../components/ScheduleDetails';
 import ReportJobs from './ReportJobs';
 import useRunReport from '../api/useRunReport';
+import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 
 export type TabTitleProps = {
     icon?: ReactElement;
@@ -69,7 +70,9 @@ function ViewVulnReportPage() {
     const { reportId } = useParams();
     const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
 
-    const { report, isLoading, error } = useFetchReport(reportId);
+    const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
+    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfiguration);
+    const reportSnapshot = reportSnapshots[reportId];
 
     const {
         openDeleteModal,
@@ -115,7 +118,7 @@ function ViewVulnReportPage() {
         );
     }
 
-    if (error || !report) {
+    if (error || !reportConfiguration) {
         return (
             <NotFoundMessage
                 title="Error fetching the report configuration"
@@ -127,14 +130,14 @@ function ViewVulnReportPage() {
     }
 
     const vulnReportPageURL = generatePath(vulnerabilityReportPath, {
-        reportId: report.id,
+        reportId: reportConfiguration.id,
     }) as string;
 
-    const reportFormValues = getReportFormValuesFromConfiguration(report);
+    const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
 
     const isReportStatusPending =
-        report.reportSnapshot?.reportStatus.runState === 'PREPARING' ||
-        report.reportSnapshot?.reportStatus.runState === 'WAITING';
+        reportSnapshot?.reportStatus.runState === 'PREPARING' ||
+        reportSnapshot?.reportStatus.runState === 'WAITING';
 
     return (
         <>
@@ -165,14 +168,14 @@ function ViewVulnReportPage() {
                     <BreadcrumbItemLink to={vulnerabilityReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>{report.name}</BreadcrumbItem>
+                    <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'row' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h1">{report.name}</Title>
+                        <Title headingLevel="h1">{reportConfiguration.name}</Title>
                     </FlexItem>
                     <FlexItem>
                         <Dropdown
@@ -206,10 +209,10 @@ function ViewVulnReportPage() {
                                     isDisabled={
                                         isReportStatusPending ||
                                         isRunning ||
-                                        report.notifiers.length === 0
+                                        reportConfiguration.notifiers.length === 0
                                     }
                                     description={
-                                        report.notifiers.length === 0
+                                        reportConfiguration.notifiers.length === 0
                                             ? 'No delivery destinations set'
                                             : ''
                                     }
@@ -239,7 +242,7 @@ function ViewVulnReportPage() {
                                     className="pf-u-danger-color-100"
                                     component="button"
                                     onClick={() => {
-                                        openDeleteModal(report.id);
+                                        openDeleteModal(reportConfiguration.id);
                                     }}
                                 >
                                     Delete report

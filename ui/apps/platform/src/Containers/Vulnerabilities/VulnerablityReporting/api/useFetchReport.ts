@@ -2,17 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportConfiguration } from 'services/ReportsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { fetchAndAppendLastReportJobForConfiguration } from './apiUtils';
-import { Report } from '../types';
+import { ReportConfiguration } from 'services/ReportsService.types';
 
 type FetchReportResult = {
-    report: Report | null;
+    reportConfiguration: ReportConfiguration | null;
     isLoading: boolean;
     error: string | null;
 };
 
 const defaultResult = {
-    report: null,
+    reportConfiguration: null,
     isLoading: true,
     error: null,
 };
@@ -25,15 +24,14 @@ function useFetchReport(reportId: string): FetchReportResult {
 
         try {
             const reportConfiguration = await fetchReportConfiguration(reportId);
-            const report = await fetchAndAppendLastReportJobForConfiguration(reportConfiguration);
             setResult({
-                report,
+                reportConfiguration,
                 isLoading: false,
                 error: null,
             });
         } catch (error) {
             setResult({
-                report: null,
+                reportConfiguration: null,
                 isLoading: false,
                 error: getAxiosErrorMessage(error),
             });

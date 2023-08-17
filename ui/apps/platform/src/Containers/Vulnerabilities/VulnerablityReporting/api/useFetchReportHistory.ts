@@ -16,7 +16,7 @@ export type UseFetchReportHistory = {
 };
 
 type Result = {
-    reportSnapshots: ReportSnapshot[];
+    reportSnapshots: ReportSnapshot[] | null;
     isLoading: boolean;
     error: string | null;
 };
@@ -26,7 +26,7 @@ export type FetchReportsResult = {
 } & Result;
 
 const defaultResult = {
-    reportSnapshots: [],
+    reportSnapshots: null,
     isLoading: false,
     error: null,
 };
@@ -42,11 +42,11 @@ function useFetchReportHistory({
     const [result, setResult] = useState<Result>(defaultResult);
 
     const fetchReportSnapshots = useCallback(() => {
-        setResult({
-            reportSnapshots: [],
+        setResult((prevResult) => ({
+            reportSnapshots: prevResult.reportSnapshots,
             isLoading: true,
             error: null,
-        });
+        }));
         fetchReportHistory({ id, query, page, perPage, sortOption, showMyHistory })
             .then((reportSnapshots) => {
                 setResult({
@@ -57,7 +57,7 @@ function useFetchReportHistory({
             })
             .catch((error) => {
                 setResult({
-                    reportSnapshots: [],
+                    reportSnapshots: null,
                     isLoading: false,
                     error: getAxiosErrorMessage(error),
                 });
