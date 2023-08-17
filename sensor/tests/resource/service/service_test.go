@@ -51,15 +51,6 @@ func assertAlertTriggered(alert *storage.Alert) helper.AlertAssertFunc {
 	}
 }
 
-func assertAlertNotTriggered(alert *storage.Alert) helper.AlertAssertFunc {
-	return func(results *central.AlertResults) error {
-		if err := checkAlert(alert, results); err != nil {
-			return nil
-		}
-		return errors.Errorf("alert '%s' should not be triggered", alert.GetPolicy().GetName())
-	}
-}
-
 func checkPortConfig(deployment *storage.Deployment, ports []*storage.PortConfig) error {
 	for _, expectedPort := range ports {
 		foundPortConfig := false
@@ -171,16 +162,7 @@ func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 			),
 			"'PortConfig' for Cluster IP service test not found",
 		)
-		testC.LastViolationState(t, nginxDeploymentName,
-			assertAlertNotTriggered(
-				&storage.Alert{
-					Policy: &storage.Policy{
-						Name: servicePolicyName,
-					},
-					State: storage.ViolationState_ACTIVE,
-				},
-			),
-			fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+		testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }
@@ -341,16 +323,7 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 				),
 				"PortConfig",
 			)
-			testC.LastViolationState(t, nginxDeploymentName,
-				assertAlertNotTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
-				fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+			testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}),
 	)
@@ -443,16 +416,7 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 			),
 			"'PortConfig' for Multiple Deployment Updates test found",
 		)
-		testC.LastViolationState(t, nginxDeploymentName,
-			assertAlertNotTriggered(
-				&storage.Alert{
-					Policy: &storage.Policy{
-						Name: servicePolicyName,
-					},
-					State: storage.ViolationState_RESOLVED,
-				},
-			),
-			fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+		testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }
