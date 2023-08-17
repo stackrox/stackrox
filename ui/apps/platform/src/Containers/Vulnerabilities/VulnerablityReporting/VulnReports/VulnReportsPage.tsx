@@ -40,6 +40,7 @@ import useURLSort from 'hooks/useURLSort';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
@@ -85,6 +86,7 @@ function VulnReportsPage() {
     const [searchValue, setSearchValue] = useState(() => {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
     });
+    const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
 
     const {
         reports,
@@ -431,13 +433,16 @@ function VulnReportsPage() {
                                                     </Td>
                                                     <Td>
                                                         {isCollectionsRouteEnabled ? (
-                                                            <Link
-                                                                to={generatePath(collectionsPath, {
-                                                                    collectionId,
-                                                                })}
+                                                            <Button
+                                                                variant="link"
+                                                                onClick={() =>
+                                                                    setCollectionModalId(
+                                                                        collectionId
+                                                                    )
+                                                                }
                                                             >
                                                                 {collectionName}
-                                                            </Link>
+                                                            </Button>
                                                         ) : (
                                                             collectionName
                                                         )}
@@ -477,6 +482,13 @@ function VulnReportsPage() {
                 This report and any attached downloadable reports will be permanently deleted. The
                 action cannot be undone.
             </DeleteModal>
+            {collectionModalId && (
+                <CollectionsFormModal
+                    hasWriteAccessForCollections={false}
+                    modalAction={{ type: 'view', collectionId: collectionModalId }}
+                    onClose={() => setCollectionModalId(null)}
+                />
+            )}
         </>
     );
 }
