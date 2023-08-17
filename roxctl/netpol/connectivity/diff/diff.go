@@ -84,7 +84,7 @@ func (cmd *diffNetpolCommand) construct() (diffAnalyzer, error) {
 
 func (cmd *diffNetpolCommand) validate() error {
 	if cmd.inputFolderPath1 == "" {
-		return errors.New("flag dir1 is required")
+		return errors.New("dir1 is required")
 	}
 	if cmd.inputFolderPath2 == "" {
 		return errors.New("flag dir2 is required")
