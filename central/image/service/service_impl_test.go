@@ -27,7 +27,7 @@ func TestBuildNames(t *testing.T) {
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
 	})
 
-	t.Run("metadata with data source", func(t *testing.T) {
+	t.Run("metadata with empty data source", func(t *testing.T) {
 		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{}}
 		names := buildNames(srcImage, metadata)
 		assert.Len(t, names, 1)

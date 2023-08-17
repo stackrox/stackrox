@@ -297,7 +297,6 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 }
 
 // enrichImageWithMetadata will loop through registries returning the first that succeeds in enriching image with metadata.
-// If none succeed adds a note to the image and errors to errorList.
 func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, registries []registryTypes.ImageRegistry, image *storage.Image) registryTypes.ImageRegistry {
 	var errs []error
 	for _, reg := range registries {

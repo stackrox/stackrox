@@ -42,7 +42,7 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(_ context.Context,
 type echoImageServiceClient struct {
 }
 
-// EnrichLocalImageInternal returns an image with values taken from the request (echo's them back).
+// EnrichLocalImageInternal returns an image with values taken from the request (echoes them back).
 func (i *echoImageServiceClient) EnrichLocalImageInternal(_ context.Context, req *v1.EnrichLocalImageInternalRequest, _ ...grpc.CallOption) (*v1.ScanImageInternalResponse, error) {
 	img := &storage.Image{
 		Id:        req.GetImageId(),
