@@ -3,12 +3,13 @@ import React, { ReactElement } from 'react';
 import { useHistory, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { useFormik, FormikProvider } from 'formik';
+import { useFormik, FormikProvider, FieldArray } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
     Button,
     Flex,
+    FlexItem,
     Form,
     FormGroup,
     FormSection,
@@ -21,6 +22,7 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
 
@@ -29,6 +31,7 @@ import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 
 import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
+import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -41,6 +44,7 @@ import {
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
 import { TraitsOriginLabel } from '../TraitsOriginLabel';
+import { isUserResource } from '../traits';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -258,6 +262,10 @@ function AuthProviderForm({
 
     const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
+    function isDisabled() {
+        return isViewing || values.active || getIsAuthProviderImmutable(values);
+    }
+
     return (
         <Form>
             <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
@@ -401,11 +409,7 @@ function AuthProviderForm({
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={
-                                        isViewing ||
-                                        values.active ||
-                                        getIsAuthProviderImmutable(values)
-                                    }
+                                    isDisabled={isDisabled()}
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={
@@ -483,53 +487,119 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
-                    {selectedAuthProvider.requiredAttributes &&
-                        selectedAuthProvider.requiredAttributes.length > 0 && (
-                            <FormSection
-                                title="Required attributes for the authentication provider"
-                                titleElement="h3"
-                            >
-                                {selectedAuthProvider.requiredAttributes.map(
-                                    (attribute, index: number) => (
-                                        <Flex
-                                            key={`${attribute.attributeKey}_required_attribute_${index}`}
-                                        >
-                                            <FormGroup label="Key" fieldId={attribute.attributeKey}>
-                                                <TextInput
-                                                    type="text"
-                                                    id={attribute.attributeKey}
-                                                    value={attribute.attributeKey}
-                                                    isDisabled
-                                                />
-                                            </FormGroup>
-                                            <FormGroup
-                                                label="Value"
-                                                fieldId={attribute.attributeValue}
-                                            >
-                                                <TextInput
-                                                    type="text"
-                                                    id={attribute.attributeValue}
-                                                    value={attribute.attributeValue}
-                                                    isDisabled
-                                                />
-                                            </FormGroup>
-                                        </Flex>
-                                    )
+                    {selectedAuthProvider.type === 'oidc' && (
+                        <FormSection
+                            title="Required attributes for the authentication provider"
+                            titleElement="h3"
+                        >
+                            <div id="required-attributes-description">
+                                <Alert isInline variant="info" title="">
+                                    <p>
+                                        The required attributes are used to require attributes being
+                                        returned from the authentication provider.
+                                    </p>
+                                    <p>
+                                        In case a required attribute is not set, the login will fail
+                                        and no role will be set to the user.
+                                    </p>
+                                </Alert>
+                            </div>
+                            <FieldArray
+                                name="requiredAttributes"
+                                render={(arrayHelpers) => (
+                                    <>
+                                        {values.requiredAttributes &&
+                                            values.requiredAttributes.map(
+                                                (attribute, index: number) => (
+                                                    <Flex key={`required_attribute_${index}`}>
+                                                        <FormGroup
+                                                            label="Key"
+                                                            fieldId={`requiredAttributes[${index}].attributeKey`}
+                                                        >
+                                                            <TextInput
+                                                                type="text"
+                                                                id={`requiredAttributes[${index}].attributeKey`}
+                                                                value={attribute.attributeKey}
+                                                                onChange={onChange}
+                                                                isDisabled={isDisabled()}
+                                                            />
+                                                        </FormGroup>
+                                                        <FormGroup
+                                                            label="Value"
+                                                            fieldId={`requiredAttributes[${index}].attributeValue`}
+                                                        >
+                                                            <TextInput
+                                                                type="text"
+                                                                id={`requiredAttributes[${index}].attributeValue`}
+                                                                value={attribute.attributeValue}
+                                                                onChange={onChange}
+                                                                isDisabled={isDisabled()}
+                                                            />
+                                                        </FormGroup>
+                                                        {!isDisabled() && (
+                                                            <FlexItem>
+                                                                <Button
+                                                                    variant="plain"
+                                                                    aria-label="Delete required attribute"
+                                                                    style={{
+                                                                        transform:
+                                                                            'translate(0, 42px)',
+                                                                    }}
+                                                                    onClick={() =>
+                                                                        arrayHelpers.remove(index)
+                                                                    }
+                                                                >
+                                                                    <TrashIcon />
+                                                                </Button>
+                                                            </FlexItem>
+                                                        )}
+                                                        {!isUserResource(
+                                                            selectedAuthProvider.traits
+                                                        ) && (
+                                                            <FlexItem>
+                                                                <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
+                                                                    <Button
+                                                                        variant="plain"
+                                                                        aria-label="Information button"
+                                                                        style={{
+                                                                            transform:
+                                                                                'translate(0, 42px)',
+                                                                        }}
+                                                                    >
+                                                                        <InfoCircleIcon />
+                                                                    </Button>
+                                                                </Tooltip>
+                                                            </FlexItem>
+                                                        )}
+                                                    </Flex>
+                                                )
+                                            )}
+                                        {!isDisabled() && (
+                                            <Flex>
+                                                <FlexItem>
+                                                    <Button
+                                                        variant="link"
+                                                        isInline
+                                                        icon={
+                                                            <PlusCircleIcon className="pf-u-mr-sm" />
+                                                        }
+                                                        onClick={() =>
+                                                            arrayHelpers.push({
+                                                                attributeKey: '',
+                                                                attributeValue: '',
+                                                            })
+                                                        }
+                                                    >
+                                                        Add required attribute
+                                                    </Button>
+                                                </FlexItem>
+                                            </Flex>
+                                        )}
+                                    </>
                                 )}
-                                <div id="required-attributes-description">
-                                    <Alert isInline variant="info" title="">
-                                        <p>
-                                            The required attributes are used to require attributes
-                                            being returned from the authentication provider.
-                                        </p>
-                                        <p>
-                                            In case a required attribute is not set, the login will
-                                            fail and no role will be set to the user.
-                                        </p>
-                                    </Alert>
-                                </div>
-                            </FormSection>
-                        )}
+                            />
+                        </FormSection>
+                    )}
                     <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
