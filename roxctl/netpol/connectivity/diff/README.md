@@ -1,6 +1,7 @@
 # Static Network Policy Connectivity Diff
 
-## Developer Preview Notice
+## Technology Preview Notice
+
 The static network policy connectivity diff feature is offered as a developer preview feature.
 While we are open to receiving feedback about this feature, our technical support will not be able to assist and answer questions about it.
 
@@ -10,7 +11,6 @@ The static network policy connectivity diff is a tool that analyzes two sets of 
 Based on two given folders containing deployment and network policy YAMLs, it analyzes the permitted cluster connectivity for each input folder.
 It produces a list of a **differences in terms of allowed connections**, based on the workloads and network policies defined.
 It is based on [NP-Guard's Network Policy Analyzer component](https://github.com/np-guard/netpol-analyzer). For more details, refer to the [NP-Guard webpage](https://np-guard.github.io/).
-
 
 ## Command Objective
 
@@ -22,9 +22,6 @@ Generate a file that allows users to visualize the **connectivity diff** between
 
 To produce a connectivity-diff report, the command `roxctl netpol connectivity diff --dir1=<folder1> --dir2=<folder2>` requires two folders, `dir1` and `dir2`, each containing Kubernetes manifests, including network policies.
 The manifests must not be templated (e.g., Helm charts) to be considered. All YAML files that could be accepted by `kubectl apply -f` will be accepted as a valid input and searched by `roxctl netpol connectivity diff`.
-
-
-
 
 #### Syntactic vs semantic diff:
 
@@ -83,7 +80,6 @@ Semantic diff output in `md` format:
 | changed | default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 | TCP 9090,UDP 53 |  |
 | added | 0.0.0.0-255.255.255.255 | default/backend[Deployment] | No Connections | TCP 9090 |  |
 
-
 Connectivity report from `dir1`:
 ```
 $ roxctl connectivity-map netpols-analysis-example-minimal/
@@ -102,7 +98,6 @@ default/frontend[Deployment] => default/backend[Deployment] : TCP 9090,UDP 53
 ```
 
 The semantic-diff report provides a summary of changed/added/removed connections from `dir2` with respect to allowed connections from `dir1`.
-
 
 ### Understanding the output
 Each line in the output represents an allowed connection that has been added/removed/changed on `dir2` with respect to `dir1`.
