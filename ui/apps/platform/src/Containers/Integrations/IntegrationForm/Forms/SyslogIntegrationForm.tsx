@@ -170,7 +170,7 @@ function SyslogIntegrationForm({
                                 type="text"
                                 id="syslog.tcpConfig.hostname"
                                 value={values.syslog.tcpConfig.hostname}
-                                placeholder="example, host.example.com)"
+                                placeholder="(example, host.example.com)"
                                 onChange={onChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
