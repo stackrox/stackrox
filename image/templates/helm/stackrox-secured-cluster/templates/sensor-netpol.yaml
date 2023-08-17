@@ -72,6 +72,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "sensor-monitoring-tls") | nindent 4 }}
 spec:
