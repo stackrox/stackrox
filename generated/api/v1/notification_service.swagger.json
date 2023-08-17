@@ -47,8 +47,8 @@
             "format": "date-time"
           },
           {
-            "name": "area",
-            "description": "For filtering notifications from a specific area.",
+            "name": "domain",
+            "description": "For filtering notifications from a specific domain.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -206,9 +206,9 @@
           "type": "string",
           "description": "Hint associated with the notification. The hint may include different information based\non the type of notification. It can include instructions to resolve a notification, or\ninformational hints."
         },
-        "area": {
+        "domain": {
           "type": "string",
-          "description": "Area associated with the notification. A notification's area outlines the feature area where\nthe notification was created from. As an example, this might be \"Image Scanning\".\nIn case of notifications that cannot be tied to a specific area, this will be \"General\"."
+          "description": "Domain associated with the notification. A notification's domain outlines the feature domain where\nthe notification was created from. As an example, this might be \"Image Scanning\".\nIn case of notifications that cannot be tied to a specific domain, this will be \"General\"."
         },
         "resourceType": {
           "type": "string",

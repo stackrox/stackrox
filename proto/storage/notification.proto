@@ -12,12 +12,14 @@ package storage;
 //
 // Refer to v1.Notification for a more detailed doc.
 message Notification {
+    // This is a UUIDv5 where the tuple of domain, resource_type, resource_id, message is used to generate it
+    // deterministically. This can be then used for deduping purposes.
     string id                               = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     NotificationType type                   = 2 [(gogoproto.moretags) = 'search:"Notification Type,hidden"'];
     NotificationLevel level                 = 3 [(gogoproto.moretags) = 'search:"Notification Level,hidden"'];
     string message                          = 4;
     string hint                             = 5;
-    string area                             = 6 [(gogoproto.moretags) = 'search:"Notification Area,hidden"'];
+    string domain                           = 6 [(gogoproto.moretags) = 'search:"Notification Domain,hidden"'];
     string resource_type                    = 7 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
     string resource_id                      = 8;
     int64 occurrences                       = 9;
