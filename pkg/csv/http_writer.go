@@ -55,13 +55,15 @@ func NewHTTPWriter[Record any](w http.ResponseWriter, filename string,
 }
 
 func (w *httpWriterImpl[Record]) sendHeaders() error {
+	h := w.writer.Header()
+	h.Set("Content-Type", ContentType)
+	h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, w.filename))
+
 	// Set UTF-8 BOM to please Windows CSV editors.
 	if _, err := w.writer.Write(([]byte)(UTF8BOM)); err != nil {
 		return errSendHeaders.CausedBy(err)
 	}
-	h := w.writer.Header()
-	h.Set("Content-Type", ContentType)
-	h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, w.filename))
+	// Headers are sent automatically only after first Write.
 	w.headersSent = true
 	if err := w.csv.Write(w.csvHeader); err != nil {
 		return errSendHeaders.CausedBy(err)
