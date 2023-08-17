@@ -119,7 +119,7 @@ class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
-    def "Verify CI/CD Integration Endpoint excluded scopes - #policy - #excludedscopes"() {
+    def "Verify CI/CD Integration Endpoint excluded scopes - #policyName - #excludedscopes"() {
         when:
         "Clone and scope the policy for test"
         Policy clone = PolicyService.clonePolicyAndScopeByNamespace(policyName, TEST_NAMESPACE)
