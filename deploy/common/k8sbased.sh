@@ -376,6 +376,8 @@ function launch_central {
       fi
 
       set -x
+      echo "About to install central, running ls -la"
+      ls -la "${helm_chart}"
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
       set +x
@@ -639,6 +641,8 @@ function launch_sensor {
       fi
 
       set -x
+      echo "About to install sensor, running ls -la"
+      ls -la "${helm_chart}"
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
       set +x

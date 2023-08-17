@@ -69,8 +69,12 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         ci_export CENTRAL_CHART_DIR_OVERRIDE "./central-chart-dir-compatibility-tests"
         central_chart="${helm_repo_name}/stackrox-central-services"
         helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${CENTRAL_CHART_DIR_OVERRIDE}"
+        echo >&2 "Pulled helm chart for central-services to ${CENTRAL_CHART_DIR_OVERRIDE}, running ls -a"
+        set -x
+        ls -la "${CENTRAL_CHART_DIR_OVERRIDE}"
+        set +x
     elif [[ "$latest_tag" != "$CENTRAL_CHART_VERSION_OVERRIDE" ]]; then
-        echo >&2 "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
+        echo "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
     fi
 
@@ -81,6 +85,10 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         sensor_chart="${helm_repo_name}/stackrox-secured-cluster-services"
         ci_export SENSOR_CHART_DIR_OVERRIDE "./sensor-chart-dir-compatibility-tests"
         helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${SENSOR_CHART_DIR_OVERRIDE}"
+        echo "Pulled helm chart for central-services to ${SENSOR_CHART_DIR_OVERRIDE}, running ls -a"
+        set -x
+        ls -la "${SENSOR_CHART_DIR_OVERRIDE}"
+        set +x
     elif [[ "$latest_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
         if [[ $(roxctl version) != "$latest_tag" ]]; then
             echo >&2 "Roxctl version $(roxctl version) is not equal to latest tag ${latest_tag}"
@@ -89,7 +97,6 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         ci_export SENSOR_CHART_DIR_OVERRIDE "./sensor-chart-dir-compatibility-tests"
         roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
         echo "Downloaded stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} to ${SENSOR_CHART_DIR_OVERRIDE}"
-        unset SENSOR_CHART_VERSION_OVERRIDE
     else
         echo >&2 "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
