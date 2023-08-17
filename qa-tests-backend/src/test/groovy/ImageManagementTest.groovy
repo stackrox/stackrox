@@ -4,6 +4,8 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.ScopeOuterClass
 
 import objects.Deployment
 import objects.GenericNotifier
@@ -18,19 +20,29 @@ import util.Env
 
 class ImageManagementTest extends BaseSpecification {
 
+    private static final String TEST_NAMESPACE = "qa-image-management"
+
     private static final String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
+
+    def cleanupSpec() {
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
+    }
 
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
-    def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
+    def "Verify CI/CD Integration Endpoint - #policyName - #imageRegistry #note"() {
         when:
+        "Clone and scope the policy for test"
+        Policy clone = PolicyService.clonePolicyAndScopeByNamespace(policyName, TEST_NAMESPACE)
+
+        and:
         "Update Policy to build time"
-        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
+        Services.updatePolicyLifecycleStage(clone.name, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
 
         and:
         "Update Policy to be enabled"
-        def policyEnabled = Services.setPolicyDisabled(policy, false)
+        Services.setPolicyDisabled(clone.name, false)
 
         and:
         "Request Image Scan"
@@ -38,19 +50,18 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "verify policy exists in response"
-        assert scanResults.getAlertsList().findAll { it.getPolicy().name == policy }.size() == 1
+        assert scanResults.getAlertsList().findAll { it.getPolicy().name == clone.name }.size() == 1
 
         cleanup:
-        "Revert Policy"
-        Services.updatePolicyLifecycleStage(policy, startStages)
-        if (policyEnabled) {
-            Services.setPolicyDisabled(policy, true)
+        "Delete policy clone"
+        if (clone) {
+            PolicyService.deletePolicy(clone.id)
         }
 
         where:
         "Data inputs are: "
 
-        policy                            | imageRegistry | imageRemote                      | imageTag     | note
+        policyName                        | imageRegistry | imageRemote                      | imageTag     | note
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
@@ -110,9 +121,13 @@ class ImageManagementTest extends BaseSpecification {
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint excluded scopes - #policy - #excludedscopes"() {
         when:
+        "Clone and scope the policy for test"
+        Policy clone = PolicyService.clonePolicyAndScopeByNamespace(policyName, TEST_NAMESPACE)
+
+        and:
         "Update Policy to build time and mark policy excluded scope"
-        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
-        Services.updatePolicyImageExclusion(policy, excludedscopes)
+        Services.updatePolicyLifecycleStage(clone.name, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
+        Services.updatePolicyImageExclusion(clone.name, excludedscopes)
 
         and:
         "Request Image Scan"
@@ -120,17 +135,20 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "verify violation matches expected violation status"
-        assert expectedViolation == (scanResults.getAlertsList().findAll { it.getPolicy().name == policy }.size() == 1)
+        assert expectedViolation == (
+            scanResults.getAlertsList().findAll { it.getPolicy().name == clone.name }.size() == 1
+        )
 
         cleanup:
-        "Revert Policy"
-        Services.updatePolicyLifecycleStage(policy, startStages)
-        Services.updatePolicyImageExclusion(policy, [])
+        "Delete policy clone"
+        if (clone) {
+            PolicyService.deletePolicy(clone.id)
+        }
 
         where:
         "Data inputs are: "
 
-        policy       | imageRegistry | imageRemote            | imageTag | excludedscopes | expectedViolation
+        policyName   | imageRegistry | imageRemote                       | imageTag | excludedscopes | expectedViolation
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["quay.io"]           | false
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" | ["quay.io/rhacs-eng"] | false
         "Latest tag" | "quay.io"     | "rhacs-eng/qa-multi-arch-busybox" | "latest" |
@@ -175,12 +193,11 @@ class ImageManagementTest extends BaseSpecification {
                                         .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("CVE-2019-14697")
                                                 .build()).build()
                         ).build()
-                ).build()
-        policy = PolicyService.policyClient.postPolicy(
-                PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
-                    .setPolicy(policy)
-                    .build()
-        )
+                )
+                .clearScope()
+                .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
+                .build()
+        policy = PolicyService.createAndFetchPolicy(policy)
         def scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
         assert scanResults.alertsList.find { x -> x.policy.id == policy.id } != null
 
@@ -202,7 +219,7 @@ class ImageManagementTest extends BaseSpecification {
 
         cleanup:
         "Delete policy"
-        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policy.id).build())
+        PolicyService.deletePolicy(policy.id)
     }
 
     @Unroll
@@ -229,6 +246,7 @@ class ImageManagementTest extends BaseSpecification {
         "Create deployment that runs an image and verify that image has a non-zero riskScore"
         def deployment = new Deployment()
                 .setName("risk-image")
+                .setNamespace(TEST_NAMESPACE)
                 .setReplicas(1)
                 .setImage("quay.io/rhacs-eng/qa:mysql-from-docker-io")
                 .setCommand(["sleep", "60000"])
@@ -301,21 +319,24 @@ class ImageManagementTest extends BaseSpecification {
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
-        "Update policy to build time, create notifier and add it to policy"
-        def notifier = new GenericNotifier()
+        "Clone and scope the policy for test"
+        Policy clone = PolicyService.clonePolicyAndScopeByNamespace("Latest tag", TEST_NAMESPACE)
+
+        and:
+        "Create a notifier"
+        def notifier = new GenericNotifier("Generic Notifier - ${TEST_NAMESPACE}")
         notifier.createNotifier()
         assert notifier.id
 
-        def policyName = "Latest tag"
-        def startPolicy = Services.getPolicyByName(policyName)
-        assert startPolicy
-
-        def newPolicy = PolicyOuterClass.Policy.newBuilder(startPolicy)
+        and:
+        "Update policy to build time and add the notifier"
+        def update = clone.toBuilder()
             .clearLifecycleStages()
             .addLifecycleStages(LifecycleStage.BUILD)
             .addNotifiers(notifier.id)
+            .addCategories("DevOps Best Practices") // required for putPolicy
             .build()
-        Services.updatePolicy(newPolicy)
+        Services.updatePolicy(update)
 
         and:
         "Request Image Scan with sendNotifications"
@@ -323,13 +344,13 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "verify violation matches expected violation status and notification sent"
-        assert scanResults.getAlertsList().findAll { it.getPolicy().name == policyName }.size() == 1
+        assert scanResults.getAlertsList().findAll { it.getPolicy().name == clone.name }.size() == 1
         withRetry(2, 3) {
             def genericViolation = GenericNotifier.getMostRecentViolationAndValidateCommonFields()
             log.info "Most recent violation sent: ${genericViolation}"
             def alert = genericViolation["data"]["alert"]
             assert alert != null
-            assert alert["policy"]["name"] == policyName
+            assert alert["policy"]["name"] == clone.name
             assert alert["image"] != null
             assert alert["deployment"] == null
             assert alert["image"]["name"]["fullName"] == "docker.io/library/busybox:latest"
@@ -340,10 +361,11 @@ class ImageManagementTest extends BaseSpecification {
 
         cleanup:
         "Revert policy and clean up notifier"
-        if (startPolicy != null) {
-            Services.updatePolicy(startPolicy)
+        if (clone) {
+            PolicyService.deletePolicy(clone.id)
         }
-        notifier.deleteNotifier()
+        if (notifier) {
+            notifier.deleteNotifier()
+        }
     }
-
 }
