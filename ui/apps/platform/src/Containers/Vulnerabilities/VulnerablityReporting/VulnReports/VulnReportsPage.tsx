@@ -160,10 +160,12 @@ function VulnReportsPage() {
                                             onSearch={(_event, value) => {
                                                 setSearchValue(value);
                                                 setSearchFilter({ [reportNameSearchKey]: value });
+                                                setPage(1);
                                             }}
                                             onClear={() => {
                                                 setSearchValue('');
                                                 setSearchFilter({});
+                                                setPage(1);
                                             }}
                                         />
                                     </ToolbarItem>
