@@ -19,7 +19,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return cobra.ExactArgs(1)(cmd, args)
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			return errors.Wrap(cmd.RunE(c, args), "running 'generate netpol' command")
+			return errors.Wrap(cmd.RunE(c, args), "generating netpols")
 		},
 	}
 	return cmd.AddFlags(c)
