@@ -74,5 +74,5 @@ type ReportConfigurationsNotifiers struct {
 	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey;index:reportconfigurationsnotifiers_idx,type:btree"`
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
 }
