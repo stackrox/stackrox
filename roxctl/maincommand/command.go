@@ -19,11 +19,11 @@ import (
 	connectivitymap "github.com/stackrox/rox/roxctl/connectivity-map"
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
-	generateL1 "github.com/stackrox/rox/roxctl/generate"
+	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
-	netpolL1 "github.com/stackrox/rox/roxctl/netpol"
+	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
@@ -83,8 +83,8 @@ func Command() *cobra.Command {
 		connectivitymap.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
-		c.AddCommand(generateL1.Command(cliEnvironment))
-		c.AddCommand(netpolL1.Command(cliEnvironment))
+		c.AddCommand(generate.Command(cliEnvironment))
+		c.AddCommand(netpol.Command(cliEnvironment))
 	}
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))
