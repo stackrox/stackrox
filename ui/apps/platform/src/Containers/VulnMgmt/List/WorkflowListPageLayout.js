@@ -8,6 +8,7 @@ import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
+import entityTypes from 'constants/entityTypes';
 import useCaseLabels from 'messages/useCase';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import parseURL from 'utils/URLParser';
@@ -74,18 +75,21 @@ const WorkflowListPageLayout = ({ location }) => {
                     classes="pr-0 ignore-react-onclickoutside"
                 >
                     <div className="flex flex-1 justify-end h-full">
-                        <div className="flex items-center pr-2">
-                            <ExportButton
-                                fileName={exportFilename}
-                                type={pageListType}
-                                page={useCase}
-                                disabled={!!sidePanelEntityId}
-                                pdfId="capture-list"
-                                customCsvExportHandler={customCsvExportHandler}
-                                isExporting={isExporting}
-                                setIsExporting={setIsExporting}
-                            />
-                        </div>
+                        {(pageListType === entityTypes.IMAGE_CVE ||
+                            pageListType === entityTypes.NODE_CVE ||
+                            pageListType === entityTypes.CLUSTER_CVE) && (
+                            <div className="flex items-center pr-2">
+                                <ExportButton
+                                    fileName={exportFilename}
+                                    type={pageListType}
+                                    page={useCase}
+                                    disabled={!!sidePanelEntityId}
+                                    customCsvExportHandler={customCsvExportHandler}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
+                                />
+                            </div>
+                        )}
                         <div className="flex items-center pl-2">
                             <EntitiesMenu
                                 text="All Entities"

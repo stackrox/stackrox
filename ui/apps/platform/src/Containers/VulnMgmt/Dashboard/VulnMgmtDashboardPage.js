@@ -1,12 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
 import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
 import DashboardLayout from 'Components/DashboardLayout';
-import ExportButton from 'Components/ExportButton';
-import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import PageTitle from 'Components/PageTitle';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -30,7 +28,6 @@ const entityMenuTypes = [
 ];
 
 const VulnDashboardPage = ({ history }) => {
-    const [isExporting, setIsExporting] = useState(false);
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
 
@@ -89,13 +86,6 @@ const VulnDashboardPage = ({ history }) => {
                     onClick={handleCveFilterToggle}
                     selected={cveFilter}
                 />
-                <ExportButton
-                    fileName="Vulnerability Management Dashboard Report"
-                    page={workflowState.useCase}
-                    pdfId="capture-dashboard"
-                    isExporting={isExporting}
-                    setIsExporting={setIsExporting}
-                />
             </div>
         </>
     );
@@ -127,7 +117,6 @@ const VulnDashboardPage = ({ history }) => {
                     <ClustersWithMostClusterVulnerabilities />
                 </div>
             </DashboardLayout>
-            {isExporting && <BackdropExporting />}
         </>
     );
 };
