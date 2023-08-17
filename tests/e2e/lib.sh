@@ -723,7 +723,7 @@ update_public_config() {
     info "Updating public config to ensure that it is overridden by restore"
 
     roxcurl /v1/config | jq . > ORIGINAL_CONFIG
-    new_config=$(cat ORIGINAL_CONFIG | jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }')
+    new_config=$(jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }' < ORIGINAL_CONFIG)
     roxcurl /v1/config -X PUT -d "{ \"config\": $new_config }" > /dev/null || touch DB_TEST_FAIL
 }
 
