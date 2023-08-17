@@ -150,7 +150,8 @@ export function getReportFormValuesFromConfiguration(
         cvesDiscoveredSince = 'SINCE_LAST_REPORT';
     } else if ('sinceStartDate' in vulnReportFilters) {
         cvesDiscoveredSince = 'START_DATE';
-        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate;
+        // Strip off the google.protobuf.Timestamp time portion of the date string
+        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate.substring(0, 10);
     } else {
         // we'll default to this if none of these fields are present
         cvesDiscoveredSince = 'ALL_VULN';
