@@ -43,7 +43,7 @@ func (c *periodicDisconnect) Run(proxy *toxiproxy.Proxy) {
 				log.Warnf("Failed to disable chaos proxy: %s", err)
 				return
 			}
-			log.Debugf("Chaos proxy disabled")
+			log.Info("Periodic timer reached: chaos proxy disabled")
 		}
 
 		select {
@@ -54,7 +54,7 @@ func (c *periodicDisconnect) Run(proxy *toxiproxy.Proxy) {
 				log.Warnf("Failed to re-enable chaos proxy: %s", err)
 				return
 			}
-			log.Debugf("Chaos proxy re-enabled")
+			log.Info("Periodic timer reached: chaos proxy re-enabled")
 		}
 	}
 }
