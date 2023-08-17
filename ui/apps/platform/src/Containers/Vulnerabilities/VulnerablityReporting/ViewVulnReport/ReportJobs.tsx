@@ -179,6 +179,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                 variant="link"
                                                 onClick={() => {
                                                     setFilteredStatuses([]);
+                                                    setPage(1);
                                                 }}
                                             >
                                                 Clear filters
