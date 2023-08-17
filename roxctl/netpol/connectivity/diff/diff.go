@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	diffNetpolCmd := &diffNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "diff",
-		Short: "(Technology Preview) Report connectivity-diff based on two directories of network policies and workload resources YAML manifests.",
+		Short: "(Technology Preview) Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources.",
 		Long: `Based on given two folders containing Kubernetes workloads and network policy YAMLs, will report all differences in allowed connections between the directories.
 Will write to stdout if no output flags are provided.
 
