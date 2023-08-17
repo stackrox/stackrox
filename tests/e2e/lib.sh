@@ -47,8 +47,6 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
         die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
-    ci_export CENTRAL_CHART_VERSION_OVERRIDE "$1"
-    ci_export SENSOR_CHART_VERSION_OVERRIDE "$2"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
     ci_export DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS "true"
@@ -58,63 +56,65 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     helm repo add "${helm_repo_name}" https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource
     helm repo update
 
-    latest_tag=$(make tag)
+    current_tag="$(make tag--quiet --no-print-directory)"
 
-    helm_charts=$(helm search repo ${helm_repo_name} -l)
+    helm_charts="$(helm search repo "${helm_repo_name}" -l)"
     central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
     sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
     # If the central version is the latest the default behavior of deploy_central() is correct for compatibility tests
+    chart_parent_dir="./central-chart-dir-compatibility-tests"
+    chart_name="stackrox-central-services"
     if  [[ $helm_charts =~ $central_regex ]]; then
-        ci_export CENTRAL_CHART_DIR_OVERRIDE "./central-chart-dir-compatibility-tests"
-        central_chart="${helm_repo_name}/stackrox-central-services"
-        helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${CENTRAL_CHART_DIR_OVERRIDE}"
-        echo >&2 "Pulled helm chart for central-services to ${CENTRAL_CHART_DIR_OVERRIDE}, running ls -a"
+        central_chart=""${helm_repo_name}"/"${chart_name}""
+        ci_export CENTRAL_CHART_DIR_OVERRIDE ""${chart_parent_dir}"/"${chart_name}""
+        helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${chart_parent_dir}"
+        echo >&2 "Pulled helm chart for "${chart_name}" to ${CENTRAL_CHART_DIR_OVERRIDE}, running ls -a"
         set -x
         ls -la "${CENTRAL_CHART_DIR_OVERRIDE}"
         set +x
-    elif [[ "$latest_tag" != "$CENTRAL_CHART_VERSION_OVERRIDE" ]]; then
-        echo "stackrox-central-services helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
+    elif [[ "$current_tag" != "$CENTRAL_CHART_VERSION_OVERRIDE" ]]; then
+        echo ""${chart_name}" helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the current tag."
         exit 1
     fi
 
     # If the sensor version is the latest the default behavior of deploy_sensor() is incorrect, because it will deploy
     # a sensor version to match the central version. In our tests we want to test latest sensor vs older central too,
     # and since latest sensor is not available in the repo either the chart is created here in the elif case.
+    chart_parent_dir="./sensor-chart-dir-compatibility-tests"
+    chart_name="stackrox-secured-cluster-services"
     if [[ $helm_charts =~ $sensor_regex ]]; then
-        sensor_chart="${helm_repo_name}/stackrox-secured-cluster-services"
-        ci_export SENSOR_CHART_DIR_OVERRIDE "./sensor-chart-dir-compatibility-tests"
-        helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${SENSOR_CHART_DIR_OVERRIDE}"
-        echo "Pulled helm chart for central-services to ${SENSOR_CHART_DIR_OVERRIDE}, running ls -a"
+        sensor_chart=""${helm_repo_name}"/"${chart_name}""
+        ci_export SENSOR_CHART_DIR_OVERRIDE ""${chart_parent_dir}"/"${chart_name}""
+        helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${chart_parent_dir}"
+        echo "Pulled helm chart for "${chart_name}" to ${SENSOR_CHART_DIR_OVERRIDE}, running ls -a"
         set -x
         ls -la "${SENSOR_CHART_DIR_OVERRIDE}"
         set +x
-    elif [[ "$latest_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
+    elif [[ "$current_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
         if [[ $(roxctl version) != "$latest_tag" ]]; then
-            echo >&2 "Roxctl version $(roxctl version) is not equal to latest tag ${latest_tag}"
+            echo >&2 "Roxctl version $(roxctl version) is not equal to latest tag ${current_tag}"
             exit 1
         fi
-        ci_export SENSOR_CHART_DIR_OVERRIDE "./sensor-chart-dir-compatibility-tests"
+        ci_export SENSOR_CHART_DIR_OVERRIDE ""${chart_parent_dir}"/"${chart_name}""
         roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} to ${SENSOR_CHART_DIR_OVERRIDE}"
+        echo "Downloaded "${chart_name}" helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} to ${SENSOR_CHART_DIR_OVERRIDE}"
     else
-        echo >&2 "stackrox-secured-cluster-services helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
+        echo >&2 ""${chart_name}" helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
     fi
 
     deploy_stackrox
 
     if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
-        rm -r "${CENTRAL_CHART_DIR_OVERRIDE}"
+        rm -rf "${CENTRAL_CHART_DIR_OVERRIDE}"
     fi
     if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
-        rm -r "${SENSOR_CHART_DIR_OVERRIDE}"
+        rm -rf "${SENSOR_CHART_DIR_OVERRIDE}"
     fi
     helm repo remove "${helm_repo_name}"
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
     ci_export SENSOR_CHART_DIR_OVERRIDE ""
-    ci_export CENTRAL_CHART_VERSION_OVERRIDE ""
-    ci_export SENSOR_CHART_VERSION_OVERRIDE ""
 }
 
 # export_test_environment() - Persist environment variables for the remainder of

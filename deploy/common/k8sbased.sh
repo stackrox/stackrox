@@ -365,14 +365,14 @@ function launch_central {
 
       local helm_chart="$unzip_dir/chart"
 
+      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
+        helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n stackrox
         helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
-      fi
-
-      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
-        helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
 
       set -x
@@ -625,6 +625,10 @@ function launch_sensor {
 
       local helm_chart="$k8s_dir/sensor-deploy/chart"
 
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n stackrox
@@ -634,10 +638,6 @@ function launch_sensor {
       if [[ "$sensor_namespace" != "stackrox" ]]; then
         kubectl create namespace "$sensor_namespace" &>/dev/null || true
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
-      fi
-
-      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
-        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
 
       set -x
