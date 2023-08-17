@@ -42,6 +42,7 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptySt
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
+import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 
 const CreateReportsButton = () => {
     return (
@@ -80,7 +81,7 @@ function VulnReportsPage() {
     });
 
     const {
-        reports,
+        reportConfigurations,
         totalReports,
         isLoading,
         error: fetchError,
@@ -91,6 +92,7 @@ function VulnReportsPage() {
         perPage,
         sortOption,
     });
+    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
     const { isRunning, runError, runReport } = useRunReport({
         onCompleted: fetchReports,
     });
@@ -129,11 +131,13 @@ function VulnReportsPage() {
                             </FlexItem>
                         </Flex>
                     </FlexItem>
-                    {reports.length > 0 && canCreateReports && (
-                        <FlexItem>
-                            <CreateReportsButton />
-                        </FlexItem>
-                    )}
+                    {reportConfigurations &&
+                        reportConfigurations.length > 0 &&
+                        canCreateReports && (
+                            <FlexItem>
+                                <CreateReportsButton />
+                            </FlexItem>
+                        )}
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
@@ -177,7 +181,7 @@ function VulnReportsPage() {
                                     </ToolbarItem>
                                 </ToolbarContent>
                             </Toolbar>
-                            {isLoading && (
+                            {isLoading && !reportConfigurations && (
                                 <div className="pf-u-p-md">
                                     <Bullseye>
                                         <Spinner isSVG />
@@ -196,7 +200,7 @@ function VulnReportsPage() {
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
-                            {!isLoading && !fetchError && (
+                            {reportConfigurations && (
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
@@ -253,7 +257,7 @@ function VulnReportsPage() {
                                             <Td />
                                         </Tr>
                                     </Thead>
-                                    {reports.length === 0 && isEmpty(searchFilter) && (
+                                    {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={4}>
@@ -286,61 +290,66 @@ function VulnReportsPage() {
                                             </Tr>
                                         </Tbody>
                                     )}
-                                    {reports.length === 0 && !isEmpty(searchFilter) && (
-                                        <Tbody>
-                                            <Tr>
-                                                <Td colSpan={8}>
-                                                    <Bullseye>
-                                                        <EmptyStateTemplate
-                                                            title="No results found"
-                                                            headingLevel="h2"
-                                                            icon={SearchIcon}
-                                                        >
-                                                            {canCreateReports && (
-                                                                <Flex
-                                                                    direction={{
-                                                                        default: 'column',
-                                                                    }}
-                                                                >
-                                                                    <FlexItem>
-                                                                        <Text>
-                                                                            No results match this
-                                                                            filter criteria. Clear
-                                                                            the filter and try
-                                                                            again.
-                                                                        </Text>
-                                                                    </FlexItem>
-                                                                    <FlexItem>
-                                                                        <Button
-                                                                            variant="link"
-                                                                            onClick={() => {
-                                                                                setSearchValue('');
-                                                                                setSearchFilter({});
-                                                                            }}
-                                                                        >
-                                                                            Clear filter
-                                                                        </Button>
-                                                                    </FlexItem>
-                                                                </Flex>
-                                                            )}
-                                                        </EmptyStateTemplate>
-                                                    </Bullseye>
-                                                </Td>
-                                            </Tr>
-                                        </Tbody>
-                                    )}
-                                    {reports.map((report) => {
+                                    {reportConfigurations.length === 0 &&
+                                        !isEmpty(searchFilter) && (
+                                            <Tbody>
+                                                <Tr>
+                                                    <Td colSpan={8}>
+                                                        <Bullseye>
+                                                            <EmptyStateTemplate
+                                                                title="No results found"
+                                                                headingLevel="h2"
+                                                                icon={SearchIcon}
+                                                            >
+                                                                {canCreateReports && (
+                                                                    <Flex
+                                                                        direction={{
+                                                                            default: 'column',
+                                                                        }}
+                                                                    >
+                                                                        <FlexItem>
+                                                                            <Text>
+                                                                                No results match
+                                                                                this filter
+                                                                                criteria. Clear the
+                                                                                filter and try
+                                                                                again.
+                                                                            </Text>
+                                                                        </FlexItem>
+                                                                        <FlexItem>
+                                                                            <Button
+                                                                                variant="link"
+                                                                                onClick={() => {
+                                                                                    setSearchValue(
+                                                                                        ''
+                                                                                    );
+                                                                                    setSearchFilter(
+                                                                                        {}
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Clear filter
+                                                                            </Button>
+                                                                        </FlexItem>
+                                                                    </Flex>
+                                                                )}
+                                                            </EmptyStateTemplate>
+                                                        </Bullseye>
+                                                    </Td>
+                                                </Tr>
+                                            </Tbody>
+                                        )}
+                                    {reportConfigurations.map((report) => {
                                         const vulnReportURL = generatePath(
                                             vulnerabilityReportPath,
                                             {
                                                 reportId: report.id,
                                             }
                                         ) as string;
+                                        const reportSnapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
-                                            report.reportSnapshot?.reportStatus.runState ===
-                                                'PREPARING' ||
-                                            report.reportSnapshot?.reportStatus.runState ===
-                                                'WAITING';
+                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
+                                            reportSnapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -428,7 +437,7 @@ function VulnReportsPage() {
                                                     <Td>
                                                         <MyActiveJobStatus
                                                             reportStatus={
-                                                                report.reportSnapshot?.reportStatus
+                                                                reportSnapshot?.reportStatus
                                                             }
                                                         />
                                                     </Td>

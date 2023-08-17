@@ -23,6 +23,7 @@ import { getDateTime } from 'utils/dateUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
+import useInterval from 'hooks/useInterval';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 import useURLSort from 'hooks/useURLSort';
@@ -81,6 +82,8 @@ function ReportJobs({ reportId }: RunHistoryProps) {
     const handleChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
     };
+
+    useInterval(fetchReportSnapshots, 10000);
 
     return (
         <>
@@ -147,12 +150,12 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
-            {isLoading && (
+            {isLoading && !reportSnapshots && (
                 <Bullseye className="pf-u-background-color-100 pf-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
-            {!error && !isLoading && (
+            {reportSnapshots && (
                 <TableComposable aria-label="Simple table" variant="compact">
                     <Thead>
                         <Tr>
@@ -314,7 +317,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 error={deleteDownloadError}
             >
                 All data in this downloadable report will be deleted. Regenerating a downloadable
-                report will requre the download process to start over.
+                report will require the download process to start over.
             </DeleteModal>
         </>
     );
