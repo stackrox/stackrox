@@ -136,8 +136,7 @@ func getRunResultsCache() expiringLru.Cache[string, *storage.ComplianceRunResult
 }
 
 func getRunResultCacheKey(ctx context.Context, runID string, flags types.GetFlags) (string, error) {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(resources.Compliance))
+	scopeTree, err := effectiveAccessScopeTree(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "getting effective access scope to compute ComplianceRunResults cache key")
 	}
