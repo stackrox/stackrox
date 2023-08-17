@@ -33,7 +33,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:   "diff",
 		Short: "(Technology Preview) Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources.",
 		Long: `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.
-Will write to stdout if no output flags are provided.
 
 ** This is a Technology Preview feature **
 Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete.
