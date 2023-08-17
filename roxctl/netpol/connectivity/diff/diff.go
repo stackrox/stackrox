@@ -99,7 +99,7 @@ func (cmd *diffNetpolCommand) setupPath(path string) error {
 	if _, err := os.Stat(path); err == nil && !cmd.removeOutputPath {
 		return errox.AlreadyExists.Newf("path %q already exists. Use --remove to overwrite or select a different path.", path)
 	} else if !os.IsNotExist(err) {
-		return errors.Wrapf(err, "failed to check if path %s exists", path)
+		return errors.Wrapf(err, "failed to check whether path %q exists", path)
 	}
 	return nil
 }
