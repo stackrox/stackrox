@@ -123,7 +123,7 @@ deploy_stackrox_operator() {
         info "Deploying ACS operator via midstream image"
         # hardcoding values for testing
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
-        export OPERATOR_VERSION="1.0.0"
+        export OPERATOR_VERSION=$(cat operator/midstream/iib.json | jq '.version')
         export VERSION=$(cat operator/midstream/iib.json | jq -r --arg version "$ocp_version" '.iibs[$version]')
         export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
 
