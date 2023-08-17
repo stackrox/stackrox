@@ -29,14 +29,14 @@ teardown() {
   run roxctl-development netpol connectivity diff
   assert_failure
   assert_line --partial "ERROR:"
-  assert_line --partial "flag dir1 is required"
+  assert_line --partial "dir1 is required"
 }
 
 @test "roxctl-development netpol connectivity diff only one input directory" {
   run roxctl-development netpol connectivity diff --dir1="dir1"
   assert_failure
   assert_line --partial "ERROR:"
-  assert_line --partial "flag dir2 is required"
+  assert_line --partial "dir2 is required"
 }
 
 @test "roxctl-development netpol connectivity diff non existing dirs" {
