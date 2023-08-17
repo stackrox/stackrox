@@ -104,14 +104,14 @@ service NotificationService {
     // dedicated fields.
     rpc GetNotifications(GetNotificationsRequest) returns (NotificationsResponse) {
         option (google.api.http) = {
-            get: "/v1/events"
+            get: "/v1/notifications"
         };
     }
 
     // GetNotification retrieves a notification by ID.
     rpc GetNotification(ResourceByID) returns (Notification) {
         option(google.api.http) = {
-            get: "/v1/events/{id}"
+            get: "/v1/notifications/{id}"
         };
     }
 }

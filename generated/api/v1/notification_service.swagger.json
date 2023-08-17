@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/events": {
+    "/v1/notifications": {
       "get": {
         "summary": "GetNotifications returns the list of notifications. The events may be filtered by\ndedicated fields.",
         "operationId": "NotificationService_GetNotifications",
@@ -93,7 +93,7 @@
         ]
       }
     },
-    "/v1/events/{id}": {
+    "/v1/notifications/{id}": {
       "get": {
         "summary": "GetNotification retrieves a notification by ID.",
         "operationId": "NotificationService_GetNotification",
