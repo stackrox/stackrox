@@ -18,6 +18,13 @@ type DataStore interface {
 	// Walk calls fn on every record found in the storage. Stops iterating if
 	// fn returns an error, and returns this error.
 	Walk(ctx context.Context, from time.Time, to time.Time, fn func(*storage.SecuredUnits) error) error
+
+	// GetMaxNumNodes returns the record with the maximum value of NumNodes.
+	GetMaxNumNodes(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error)
+
+	// GetMaxNumCPUUnits returns the record with the maximum value of NumCpuUnits.
+	GetMaxNumCPUUnits(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error)
+
 	// Add appends metrics to the persistent storage.
 	Add(ctx context.Context, metrics *storage.SecuredUnits) error
 

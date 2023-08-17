@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -84,19 +83,20 @@ func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeR
 	if !from.Before(to) {
 		return nil, errox.InvalidArgs.New("bad combination of from and to parameters")
 	}
-	if err := s.datastore.Walk(ctx, from, to,
-		func(metrics *storage.SecuredUnits) error {
-			if nodes := metrics.GetNumNodes(); nodes >= max.MaxNodes {
-				max.MaxNodes = nodes
-				max.MaxNodesAt = metrics.GetTimestamp()
-			}
-			if cpus := metrics.GetNumCpuUnits(); cpus >= max.MaxCpuUnits {
-				max.MaxCpuUnits = cpus
-				max.MaxCpuUnitsAt = metrics.GetTimestamp()
-			}
-			return nil
-		}); err != nil {
-		return nil, errors.Wrap(err, "cannot get product usage")
+
+	maxNumNodes, err := s.datastore.GetMaxNumNodes(ctx, from, to)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get maximum nodes usage")
 	}
+	max.MaxNodes = maxNumNodes.GetNumNodes()
+	max.MaxNodesAt = maxNumNodes.GetTimestamp()
+
+	maxNumCPUUnits, err := s.datastore.GetMaxNumCPUUnits(ctx, from, to)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get maximum CPU usage")
+	}
+	max.MaxCpuUnits = maxNumCPUUnits.GetNumCpuUnits()
+	max.MaxCpuUnitsAt = maxNumCPUUnits.GetTimestamp()
+
 	return max, nil
 }

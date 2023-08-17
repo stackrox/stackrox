@@ -61,15 +61,11 @@ func (s *usageSvcSuite) TestGetMaxUsage() {
 
 	req := &v1.TimeRange{From: ts, To: protoconv.ConvertTimeToTimestamp(to)}
 
-	s.store.EXPECT().Walk(context.Background(),
-		from.UTC(), to.UTC(), gomock.Any()).Times(1).
-		DoAndReturn(
-			func(_ context.Context, _ time.Time, _ time.Time, fn func(*storage.SecuredUnits) error) error {
-				_ = fn(stored[0])
-				_ = fn(stored[1])
-				return nil
-			},
-		)
+	s.store.EXPECT().GetMaxNumNodes(context.Background(),
+		from.UTC(), to.UTC()).Times(1).Return(stored[0], nil)
+	s.store.EXPECT().GetMaxNumCPUUnits(context.Background(),
+		from.UTC(), to.UTC()).Times(1).Return(stored[1], nil)
+
 	svc := New(s.store)
 	res, err := svc.GetMaxSecuredUnitsUsage(context.Background(), req)
 	s.Require().NoError(err)

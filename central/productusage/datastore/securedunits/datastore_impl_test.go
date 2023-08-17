@@ -120,6 +120,27 @@ func (suite *UsageDataStoreTestSuite) TestWalk() {
 	suite.Equal(int64((N-1)*N), totalCPUUnits)
 }
 
+func (suite *UsageDataStoreTestSuite) TestGetMax() {
+	var zeroTime time.Time
+	_, err := suite.datastore.GetMaxNumNodes(suite.hasNoneCtx, zeroTime, zeroTime)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+	_, err = suite.datastore.GetMaxNumNodes(suite.hasBadCtx, zeroTime, zeroTime)
+	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	data := &storage.SecuredUnits{
+		Timestamp:   nil,
+		NumNodes:    1,
+		NumCpuUnits: 10,
+	}
+
+	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
+		Return([]*storage.SecuredUnits{data}, nil)
+
+	units, err := suite.datastore.GetMaxNumNodes(suite.hasReadCtx, zeroTime, zeroTime)
+	suite.NoError(err)
+	suite.Equal(data, units)
+}
+
 func (suite *UsageDataStoreTestSuite) TestAdd() {
 	err := suite.datastore.Add(suite.hasNoneCtx, &storage.SecuredUnits{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)

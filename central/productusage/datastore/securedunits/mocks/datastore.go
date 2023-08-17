@@ -80,6 +80,36 @@ func (mr *MockDataStoreMockRecorder) GetCurrentUsage(ctx interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUsage", reflect.TypeOf((*MockDataStore)(nil).GetCurrentUsage), ctx)
 }
 
+// GetMaxNumCPUUnits mocks base method.
+func (m *MockDataStore) GetMaxNumCPUUnits(ctx context.Context, from, to time.Time) (*storage.SecuredUnits, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxNumCPUUnits", ctx, from, to)
+	ret0, _ := ret[0].(*storage.SecuredUnits)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMaxNumCPUUnits indicates an expected call of GetMaxNumCPUUnits.
+func (mr *MockDataStoreMockRecorder) GetMaxNumCPUUnits(ctx, from, to interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxNumCPUUnits", reflect.TypeOf((*MockDataStore)(nil).GetMaxNumCPUUnits), ctx, from, to)
+}
+
+// GetMaxNumNodes mocks base method.
+func (m *MockDataStore) GetMaxNumNodes(ctx context.Context, from, to time.Time) (*storage.SecuredUnits, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMaxNumNodes", ctx, from, to)
+	ret0, _ := ret[0].(*storage.SecuredUnits)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMaxNumNodes indicates an expected call of GetMaxNumNodes.
+func (mr *MockDataStoreMockRecorder) GetMaxNumNodes(ctx, from, to interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMaxNumNodes", reflect.TypeOf((*MockDataStore)(nil).GetMaxNumNodes), ctx, from, to)
+}
+
 // UpdateUsage mocks base method.
 func (m *MockDataStore) UpdateUsage(ctx context.Context, clusterID string, metrics *storage.SecuredUnits) error {
 	m.ctrl.T.Helper()
