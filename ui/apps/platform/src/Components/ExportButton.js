@@ -133,7 +133,7 @@ class ExportButton extends Component {
 
         const wrapperClass = !!this.props.pdfId && !this.isCsvSupported() ? 'min-w-64' : '';
 
-        return (
+        return !!this.props.pdfId || this.isCsvSupported() ? (
             <div className={`absolute right-0 z-20 flex flex-col text-base-600 ${wrapperClass}`}>
                 <div className="arrow-up self-end mr-5" />
                 <ul className=" bg-base-100 border-2 border-primary-600 rounded">
@@ -171,7 +171,7 @@ class ExportButton extends Component {
                     </li>
                 </ul>
             </div>
-        );
+        ) : null;
     };
 
     toggleWidget = () => {
