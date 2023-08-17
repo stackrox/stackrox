@@ -27,7 +27,7 @@ import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilityReportsPath } from 'routePaths';
+import { collectionsPath, isRouteEnabled, vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
@@ -39,6 +39,8 @@ import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
@@ -62,6 +64,7 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
@@ -73,12 +76,18 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
+    const isCollectionsRouteEnabled = isRouteEnabled(
+        { hasReadAccess, isFeatureFlagEnabled },
+        collectionsPath
+    );
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [searchValue, setSearchValue] = useState(() => {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
     });
+    const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
 
     const {
         reportConfigurations,
@@ -157,10 +166,12 @@ function VulnReportsPage() {
                                             onSearch={(_event, value) => {
                                                 setSearchValue(value);
                                                 setSearchFilter({ [reportNameSearchKey]: value });
+                                                setPage(1);
                                             }}
                                             onClear={() => {
                                                 setSearchValue('');
                                                 setSearchFilter({});
+                                                setPage(1);
                                             }}
                                         />
                                     </ToolbarItem>
@@ -413,6 +424,8 @@ function VulnReportsPage() {
                                                 isDisabled: isReportStatusPending,
                                             },
                                         ];
+                                        const { collectionName, collectionId } =
+                                            report.resourceScope.collectionScope;
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -428,10 +441,20 @@ function VulnReportsPage() {
                                                         </Link>
                                                     </Td>
                                                     <Td>
-                                                        {
-                                                            report.resourceScope.collectionScope
-                                                                .collectionName
-                                                        }
+                                                        {isCollectionsRouteEnabled ? (
+                                                            <Button
+                                                                variant="link"
+                                                                onClick={() =>
+                                                                    setCollectionModalId(
+                                                                        collectionId
+                                                                    )
+                                                                }
+                                                            >
+                                                                {collectionName}
+                                                            </Button>
+                                                        ) : (
+                                                            collectionName
+                                                        )}
                                                     </Td>
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
@@ -468,6 +491,13 @@ function VulnReportsPage() {
                 This report and any attached downloadable reports will be permanently deleted. The
                 action cannot be undone.
             </DeleteModal>
+            {collectionModalId && (
+                <CollectionsFormModal
+                    hasWriteAccessForCollections={false}
+                    modalAction={{ type: 'view', collectionId: collectionModalId }}
+                    onClose={() => setCollectionModalId(null)}
+                />
+            )}
         </>
     );
 }

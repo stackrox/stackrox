@@ -81,6 +81,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
 
     const handleChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
+        setPage(1);
     };
 
     useInterval(fetchReportSnapshots, 10000);
@@ -100,6 +101,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     (val) => runStates[val] !== undefined
                                 ) as RunState[];
                                 setFilteredStatuses(newRunStates);
+                                setPage(1);
                             }}
                             placeholderText="Filter by status"
                         >
@@ -180,6 +182,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                 variant="link"
                                                 onClick={() => {
                                                     setFilteredStatuses([]);
+                                                    setPage(1);
                                                 }}
                                             >
                                                 Clear filters
