@@ -77,31 +77,6 @@ spec:
 
 ---
 
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: collector-monitor
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "srox.labels" (list . "podmonitor" "collector-monitor") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
-  annotations:
-    {{- include "srox.annotations" (list . "podmonitor" "collector-monitor") | nindent 4 }}
-spec:
-  podMetricsEndpoints:
-  - interval: 30s
-    port: monitoring
-    scheme: http
-    path: metrics
-  selector:
-    matchLabels:
-      app.kubernetes.io/component: collector
-  namespaceSelector:
-    matchNames:
-      - "{{ .Release.Namespace }}"
-
----
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
