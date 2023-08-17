@@ -267,7 +267,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     <Td dataLabel="Status">
                                         <ReportJobStatus
                                             reportSnapshot={reportSnapshot}
-                                            areDownloadActionsDisabled={!areDownloadActionsDisabled}
+                                            areDownloadActionsDisabled={areDownloadActionsDisabled}
                                             onDownload={onDownload}
                                         />
                                     </Td>
@@ -276,7 +276,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                         {hasDownloadableReport && (
                                             <ActionsColumn
                                                 items={rowActions}
-                                                isDisabled={!areDownloadActionsDisabled}
+                                                isDisabled={areDownloadActionsDisabled}
                                             />
                                         )}
                                     </Td>
