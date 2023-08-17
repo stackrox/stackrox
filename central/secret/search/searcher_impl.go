@@ -112,7 +112,8 @@ func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchRes
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := secretSACPostgresSearchHelper.FilteredSearcher(searcher)
+	// filteredSearcher := secretSACPostgresSearchHelper.FilteredSearcher(searcher)
+	filteredSearcher := searcher
 	defaultSortedSearcher := paginated.WithDefaultSortOption(filteredSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

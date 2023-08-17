@@ -54,7 +54,8 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(searcher)
+	// filteredSearcher := deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(searcher)
+	filteredSearcher := searcher
 	defaultSortedSearcher := paginated.WithDefaultSortOption(filteredSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

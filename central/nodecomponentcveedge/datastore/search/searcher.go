@@ -39,6 +39,7 @@ func New(storage pgStore.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(searcher))
+	// scopedSafeSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(searcher))
+	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
 	return sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
 }

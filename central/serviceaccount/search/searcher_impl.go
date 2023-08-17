@@ -54,11 +54,13 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return serviceAccountsSACPostgresSearchHelper.FilteredSearcher(ds.indexer).Search(ctx, q)
+	// return serviceAccountsSACPostgresSearchHelper.FilteredSearcher(ds.indexer).Search(ctx, q)
+	return ds.indexer.Search(ctx, q)
 }
 
 func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (int, error) {
-	return serviceAccountsSACPostgresSearchHelper.FilteredSearcher(ds.indexer).Count(ctx, q)
+	// return serviceAccountsSACPostgresSearchHelper.FilteredSearcher(ds.indexer).Count(ctx, q)
+	return ds.indexer.Count(ctx, q)
 }
 
 func (ds *searcherImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []search.Result, error) {

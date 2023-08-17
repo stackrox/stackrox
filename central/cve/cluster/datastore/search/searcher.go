@@ -40,6 +40,7 @@ func New(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(searcher))
+	// scopedSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(searcher))
+	scopedSearcher := pkgPostgres.WithScoping(searcher)
 	return edgefields.TransformFixableFields(scopedSearcher)
 }

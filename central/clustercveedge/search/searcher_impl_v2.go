@@ -28,7 +28,8 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(searcher))
+	// scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(searcher))
+	scopedSearcher := postgres.WithScoping(searcher)
 	return edgefields.TransformFixableFields(scopedSearcher)
 }
 

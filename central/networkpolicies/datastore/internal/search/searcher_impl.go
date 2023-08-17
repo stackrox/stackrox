@@ -20,5 +20,6 @@ type searcherImpl struct {
 
 // Count returns the number of search results from the query.
 func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return sacHelper.FilteredSearcher(s.index).Count(ctx, q)
+	// return sacHelper.FilteredSearcher(s.index).Count(ctx, q)
+	return s.index.Count(ctx, q)
 }

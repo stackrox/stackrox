@@ -128,7 +128,8 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := alertPostgresSACSearchHelper.FilteredSearcher(searcher)
+	// filteredSearcher := alertPostgresSACSearchHelper.FilteredSearcher(searcher)
+	filteredSearcher := searcher
 	withDefaultViolationState := withDefaultActiveViolations(filteredSearcher)
 	return withDefaultViolationState
 }

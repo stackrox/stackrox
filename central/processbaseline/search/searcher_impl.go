@@ -46,6 +46,7 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher)
+	// filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher)
+	filteredSearcher := searcher
 	return filteredSearcher
 }

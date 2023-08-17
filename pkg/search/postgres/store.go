@@ -110,25 +110,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil {
-			return false, err
-		} else if !ok {
-			return false, nil
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return false, err
-		}
-		sacQueryFilter = filter
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
 	count, err := RunCountRequestForSchema(ctx, s.schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
@@ -140,20 +122,7 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return 0, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return 0, err
-		}
-		sacQueryFilter = filter
-	}
-
-	return RunCountRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+	return RunCountRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
@@ -225,19 +194,7 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 // GetIDs returns all the IDs for the store.
 func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, err
-		}
-		sacQueryFilter = filter
-	}
-	result, err := RunSearchRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+	result, err := RunSearchRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return nil, err
 	}

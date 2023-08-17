@@ -49,7 +49,8 @@ func (ds *searcherImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*stor
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
 func formatSearcher(podIndexer search.Searcher) search.Searcher {
-	filteredSearcher := podsSACPostgresSearchHelper.FilteredSearcher(podIndexer)
+	// filteredSearcher := podsSACPostgresSearchHelper.FilteredSearcher(podIndexer)
+	filteredSearcher := podIndexer
 	defaultSortedSearcher := paginated.WithDefaultSortOption(filteredSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

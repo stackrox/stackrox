@@ -33,7 +33,8 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	safeSearcher := sacHelper.FilteredSearcher(searcher)
+	// safeSearcher := sacHelper.FilteredSearcher(searcher)
+	safeSearcher := searcher
 	scopedSafeSearcher := postgres.WithScoping(safeSearcher)
 	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
