@@ -7,18 +7,24 @@ import {
     InProgressIcon,
     PendingIcon,
 } from '@patternfly/react-icons';
-import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
 import { ReportSnapshot } from 'services/ReportsService.types';
 
 export type ReportJobStatusProps = {
     reportSnapshot: ReportSnapshot;
+    areDownloadActionsDisabled: boolean;
+    onDownload: () => void;
 };
 
 const genericMsg =
     'An issue was encountered. Please try again later. If the issue persists, please contact support';
 
-function ReportJobStatus({ reportSnapshot }: ReportJobStatusProps): ReactElement {
+function ReportJobStatus({
+    reportSnapshot,
+    areDownloadActionsDisabled,
+    onDownload,
+}: ReportJobStatusProps): ReactElement {
     const { reportStatus, isDownloadAvailable } = reportSnapshot;
 
     let statusColorClass = '';
@@ -28,11 +34,53 @@ function ReportJobStatus({ reportSnapshot }: ReportJobStatusProps): ReactElement
     if (
         reportStatus.runState === 'SUCCESS' &&
         reportStatus.reportNotificationMethod === 'DOWNLOAD' &&
-        isDownloadAvailable
+        isDownloadAvailable &&
+        areDownloadActionsDisabled
+    ) {
+        statusColorClass = 'pf-u-disabled-color-100';
+        statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
+        statusText = (
+            <Flex
+                direction={{ default: 'row' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
+                alignItems={{ default: 'alignItemsCenter' }}
+            >
+                <FlexItem>
+                    <p>Ready for download</p>
+                </FlexItem>
+                <FlexItem>
+                    <Tooltip
+                        content={
+                            <div>
+                                Only the requestor of the download has the authority to access or
+                                remove it.
+                            </div>
+                        }
+                    >
+                        <HelpIcon />
+                    </Tooltip>
+                </FlexItem>
+            </Flex>
+        );
+    } else if (
+        reportStatus.runState === 'SUCCESS' &&
+        reportStatus.reportNotificationMethod === 'DOWNLOAD' &&
+        isDownloadAvailable &&
+        !areDownloadActionsDisabled
     ) {
         statusColorClass = 'pf-u-info-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
-        statusText = <p>Ready for download</p>;
+        statusText = (
+            <Button
+                variant="link"
+                color="info"
+                isInline
+                className={statusColorClass}
+                onClick={onDownload}
+            >
+                Ready for download
+            </Button>
+        );
     } else if (
         reportStatus.runState === 'SUCCESS' &&
         reportStatus.reportNotificationMethod === 'DOWNLOAD' &&
@@ -47,7 +95,7 @@ function ReportJobStatus({ reportSnapshot }: ReportJobStatusProps): ReactElement
                 alignItems={{ default: 'alignItemsCenter' }}
             >
                 <FlexItem>
-                    <p>Ready for download</p>
+                    <p>Download deleted</p>
                 </FlexItem>
                 <FlexItem>
                     <Tooltip
