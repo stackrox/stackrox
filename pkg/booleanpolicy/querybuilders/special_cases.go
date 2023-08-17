@@ -148,6 +148,21 @@ func ForWriteableHostMount() QueryBuilder {
 	})
 }
 
+// ForFixable returns a specific query builder for whether a CVE is fixable or not.
+func ForFixable() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		values := mapValues(group, nil)
+		_, err := strconv.ParseBool(values[0])
+		if err != nil {
+			utils.Should(errors.Wrap(err, "invalid value for fixable criterion"))
+			return nil
+		}
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.FixedBy, mapFixable),
+		}
+	})
+}
+
 // ForFixedBy returns a query builder specific to the FixedBy field. It's a regular regex field,
 // except that for historic reasons, .* is special-cased and translated to .+.
 func ForFixedBy() QueryBuilder {
@@ -156,6 +171,13 @@ func ForFixedBy() QueryBuilder {
 			fieldQueryFromGroup(group, search.FixedBy, mapFixedByValue),
 		}
 	})
+}
+
+func mapFixable(s string) string {
+	if asBool, _ := strconv.ParseBool(s); asBool {
+		return valueToStringRegex(".+")
+	}
+	return valueToStringRegex("^$")
 }
 
 func mapFixedByValue(s string) string {
