@@ -68,16 +68,10 @@ function ReportJobStatus({
         isDownloadAvailable &&
         !areDownloadActionsDisabled
     ) {
-        statusColorClass = 'pf-u-info-color-100';
+        statusColorClass = 'pf-u-primary-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
-            <Button
-                variant="link"
-                color="info"
-                isInline
-                className={statusColorClass}
-                onClick={onDownload}
-            >
+            <Button variant="link" isInline className={statusColorClass} onClick={onDownload}>
                 Ready for download
             </Button>
         );
