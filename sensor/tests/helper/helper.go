@@ -598,7 +598,7 @@ func (c *TestContext) LastViolationState(t *testing.T, name string, assertion Al
 func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
-	var lastErr error
+	lastErr := errors.Errorf("no alerts found for deployment %s", name)
 	for {
 		select {
 		case <-timer.C:
@@ -607,6 +607,9 @@ func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, a
 			messages := c.GetFakeCentral().GetAllMessages()
 			alerts := GetAllAlertsForDeploymentName(messages, name)
 			var lastViolationState *central.AlertResults
+			if len(alerts) == 0 {
+				continue
+			}
 			if len(alerts) > 0 {
 				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
 			}
@@ -616,6 +619,43 @@ func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, a
 			}
 		}
 	}
+}
+
+// AssertViolationsMatch creates a matcher function that checks the state of violation matches violations.
+func AssertViolationsMatch(violations ...string) func(result *central.AlertResults) error {
+	return func(result *central.AlertResults) error {
+		return alertResultMatchesFn(result, violations...)
+	}
+}
+
+// AssertNoViolations creates a matcher function that checks no violations are sent.
+func AssertNoViolations() func(result *central.AlertResults) error {
+	return func(result *central.AlertResults) error {
+		return alertResultMatchesFn(result)
+	}
+}
+
+func alertResultMatchesFn(result *central.AlertResults, violations ...string) error {
+	expectedSet := set.NewStringSet(violations...)
+	actualSet := set.NewStringSet()
+	for _, alertMessage := range result.GetAlerts() {
+		actualSet.Add(alertMessage.GetPolicy().GetName())
+	}
+
+	if !actualSet.Equal(expectedSet) {
+		return errors.Errorf("expected set (%s) differs from actual (%s)", expectedSet.AsSlice(), actualSet.AsSlice())
+	}
+	return nil
+}
+
+// NoViolations checks that no alerts are raised for deployment.
+func (c *TestContext) NoViolations(t *testing.T, name string, message string) {
+	var lastState []*central.MsgFromSensor
+	assert.Eventually(t, func() bool {
+		messages := c.GetFakeCentral().GetAllMessages()
+		lastState = GetAllAlertsForDeploymentName(messages, name)
+		return len(lastState) == 0
+	}, defaultWaitTimeout, defaultTicker, message)
 }
 
 // LastViolationStateByID checks the violation state by deployment ID
