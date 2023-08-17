@@ -15,6 +15,8 @@ If any of these don't apply, please comment below.
 
 ## Testing Performed
 
+### Here I tell how I validated my change
+
 TODO(replace-me)  
 Use this space to explain **how you validated** that **your change functions exactly how you expect it**.
 Feel free to attach JSON snippets, curl commands, screenshots, etc. Apply a simple benchmark: would the information you
@@ -27,6 +29,8 @@ It is also acceptable to skip testing for changes that are too taxing to test be
 responsible for the change after it gets merged which includes reverting, fixing, etc. Make sure you validate the change
 ASAP after it gets merged or explain in PR when the validation will be performed.  
 Explain here why you skipped testing in case you did so.
+
+Have you created automated tests for your change? Explain here which validation activities you did manually and why so.
 
 ### Reminder for reviewers
 
