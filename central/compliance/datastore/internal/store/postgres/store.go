@@ -26,7 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	lru "github.com/stackrox/rox/pkg/expiringlru"
+	expiringLru "github.com/stackrox/rox/pkg/expiringlru"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
@@ -52,7 +52,7 @@ var (
 	domainCache       = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets)
 	targetResource    = resources.Compliance
 
-	runResultsCache   lru.Cache[string, *storage.ComplianceRunResults]
+	runResultsCache   expiringLru.Cache[string, *storage.ComplianceRunResults]
 	onceforRunResults sync.Once
 )
 
@@ -124,9 +124,9 @@ func (s *storeImpl) GetConfig(ctx context.Context, id string) (*storage.Complian
 	return s.config.Get(ctx, id)
 }
 
-func getRunResultsCache() lru.Cache[string, *storage.ComplianceRunResults] {
+func getRunResultsCache() expiringLru.Cache[string, *storage.ComplianceRunResults] {
 	onceforRunResults.Do(func() {
-		runResultsCache = lru.NewExpirableLRU[string, *storage.ComplianceRunResults](
+		runResultsCache = expiringLru.NewExpirableLRU[string, *storage.ComplianceRunResults](
 			runResultsCacheSize,
 			nil,
 			runResultsCacheRetention,
