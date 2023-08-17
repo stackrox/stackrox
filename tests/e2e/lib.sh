@@ -722,10 +722,9 @@ restore_56_1_backup() {
 update_public_config() {
     info "Updating public config to ensure that it is overridden by restore"
 
-    config=$(roxcurl /v1/config)
-    new_config=$(echo "$config" | jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }')
+    roxcurl /v1/config | jq . > ORIGINAL_CONFIG
+    new_config=$(cat ORIGINAL_CONFIG | jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }')
     roxcurl /v1/config -X PUT -d "{ \"config\": $new_config }" > /dev/null || touch DB_TEST_FAIL
-    echo "$config"
 }
 
 db_backup_and_restore_test() {
@@ -747,7 +746,7 @@ db_backup_and_restore_test() {
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     info "Updating public config"
-    original_config=$(update_public_config)
+    update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
@@ -763,9 +762,10 @@ db_backup_and_restore_test() {
 
     info "Checking to see if restore overwrote previous config"
 
-    post_restore_config=$(roxcurl /v1/config)
-    if [[ "${original_config}" != "${post_restore_config}" ]]; then
-        info "config prior to backup is different from config after restore: ${original_config} vs. ${post_restore_config}"
+    roxcurl /v1/config | jq . > POST_RESTORE_CONFIG
+    if [[ "$(cat ORIGINAL_CONFIG)" != "$(cat POST_RESTORE_CONFIG)" ]]; then
+        info "config prior to backup is different from config after restore"
+        diff ORIGINAL_CONFIG POST_RESTORE_CONFIG
         touch DB_TEST_FAIL
     fi
 
