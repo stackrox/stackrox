@@ -161,7 +161,7 @@ function RuleGroups({
                                         </SelectSingle>
                                     </FormGroup>
                                 </FlexItem>
-                                {!isDisabled(group) ? (
+                                {!isDisabled(group) && (
                                     <FlexItem>
                                         <Button
                                             variant="plain"
@@ -172,7 +172,8 @@ function RuleGroups({
                                             <TrashIcon />
                                         </Button>
                                     </FlexItem>
-                                ) : (
+                                )}
+                                {!isUserResource(group?.props?.traits) && (
                                     <FlexItem>
                                         <Tooltip content="This rule is managed declaratively and can only be edited declaratively.">
                                             <Button
