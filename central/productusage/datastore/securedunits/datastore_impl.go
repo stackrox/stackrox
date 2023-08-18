@@ -60,7 +60,7 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time,
 				return errors.Wrap(err, "error while processing usage data")
 			}
 		}
-		if len(units) == 0 {
+		if len(units) < page {
 			break
 		}
 	}
@@ -89,7 +89,7 @@ func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, fr
 	}
 
 	pagination := search.NewPagination().
-		AddSortOption(search.NewSortOption(label)).Limit(1)
+		AddSortOption(search.NewSortOption(label).Reversed(true)).Limit(1)
 
 	query := search.NewQueryBuilder().AddTimeRangeField(
 		search.ProductUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
