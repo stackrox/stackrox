@@ -39,7 +39,7 @@ function apply_operator_manifests() {
   local -r index_version="$3"
   local -r operator_version="$4"
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-    operator_channel=$(< ../midstream/iib.json jq '.channel')
+    operator_channel=$(< midstream/iib.json jq '.channel')
     env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
     IMAGE_TAG_BASE="${image_tag_base}" \
