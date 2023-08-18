@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -6,8 +8,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	mockStore "github.com/stackrox/rox/central/productusage/store/mocks"
+	"github.com/stackrox/rox/central/productusage/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -22,7 +25,7 @@ type UsageDataStoreTestSuite struct {
 	suite.Suite
 
 	datastore DataStore
-	store     *mockStore.MockStore
+	store     *pgtest.TestPostgres
 	ctrl      *gomock.Controller
 
 	hasNoneCtx  context.Context
@@ -44,8 +47,12 @@ func (tcs *testCluStore) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 
 func (suite *UsageDataStoreTestSuite) SetupTest() {
 	suite.ctrl = gomock.NewController(suite.T())
-	suite.store = mockStore.NewMockStore(suite.ctrl)
-	suite.datastore = New(suite.store, &testCluStore{
+
+	suite.store = pgtest.ForT(suite.T())
+	suite.Require().NotNil(suite.store)
+	store := postgres.New(suite.store)
+
+	suite.datastore = New(store, &testCluStore{
 		clusters: []*storage.Cluster{{
 			Id: "existingCluster1",
 		}, {
@@ -68,7 +75,8 @@ func (suite *UsageDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Administration)))
 }
 
-func (suite *UsageDataStoreTestSuite) TearDownSuite() {
+func (suite *UsageDataStoreTestSuite) TearDownTest() {
+	suite.store.Close()
 }
 
 func makeSource(n int64, c int64) *storage.SecuredUnits {
@@ -85,27 +93,19 @@ func (suite *UsageDataStoreTestSuite) TestWalk() {
 	err = suite.datastore.Walk(suite.hasBadCtx, zeroTime, zeroTime, nil)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 
-	const page = 10
 	const N = page + 2
-	data := make([]*storage.SecuredUnits, 0, N)
-	now := time.Now()
-	from := now
+	first := time.Now()
+	last := first
 	for i := 0; i < N; i++ {
-		ts, _ := types.TimestampProto(from)
-		data = append(data, &storage.SecuredUnits{
+		ts, _ := types.TimestampProto(last)
+		err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{
 			Timestamp:   ts,
 			NumNodes:    int64(i),
 			NumCpuUnits: int64(i * 2),
 		})
-		from = from.Add(5 * time.Minute)
+		suite.Require().NoError(err)
+		last = last.Add(5 * time.Minute)
 	}
-
-	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
-		Return(data[0:page], nil)
-	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
-		Return(data[page:N], nil)
-	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
-		Return(nil, nil)
 
 	var totalNodes, totalCPUUnits int64
 	fn := func(su *storage.SecuredUnits) error {
@@ -114,7 +114,7 @@ func (suite *UsageDataStoreTestSuite) TestWalk() {
 		return nil
 	}
 
-	err = suite.datastore.Walk(suite.hasReadCtx, now, from, fn)
+	err = suite.datastore.Walk(suite.hasReadCtx, first, last, fn)
 	suite.NoError(err)
 	suite.Equal(int64((N-1)*N/2), totalNodes)
 	suite.Equal(int64((N-1)*N), totalCPUUnits)
@@ -127,18 +127,34 @@ func (suite *UsageDataStoreTestSuite) TestGetMax() {
 	_, err = suite.datastore.GetMaxNumNodes(suite.hasBadCtx, zeroTime, zeroTime)
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 
-	data := &storage.SecuredUnits{
-		Timestamp:   nil,
-		NumNodes:    1,
-		NumCpuUnits: 10,
+	const N = page + 2
+	first := time.Now()
+	last := first
+	for i := 0; i < N; i++ {
+		ts, _ := types.TimestampProto(last)
+		err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{
+			Timestamp:   ts,
+			NumNodes:    int64(i),
+			NumCpuUnits: int64(i * 2),
+		})
+		suite.Require().NoError(err)
+		last = last.Add(5 * time.Minute)
 	}
 
-	suite.store.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(1).
-		Return([]*storage.SecuredUnits{data}, nil)
-
-	units, err := suite.datastore.GetMaxNumNodes(suite.hasReadCtx, zeroTime, zeroTime)
+	// Overall maximum (last entry):
+	units, err := suite.datastore.GetMaxNumNodes(suite.hasReadCtx, first, last)
 	suite.NoError(err)
-	suite.Equal(data, units)
+	suite.Equal(last.Add(-5*time.Minute).Unix(), units.Timestamp.Seconds)
+	suite.Equal(int64(N-1), units.NumNodes)
+	suite.Equal(int64((N-1)*2), units.NumCpuUnits)
+
+	// Maximum in a range:
+	last = first.Add(3 * 5 * time.Minute)
+	units, err = suite.datastore.GetMaxNumCPUUnits(suite.hasReadCtx, first, last)
+	suite.NoError(err)
+	suite.Equal(last.Add(-5*time.Minute).Unix(), units.Timestamp.Seconds)
+	suite.Equal(int64(3-1), units.NumNodes)
+	suite.Equal(int64((3-1)*2), units.NumCpuUnits)
 }
 
 func (suite *UsageDataStoreTestSuite) TestAdd() {
@@ -149,7 +165,6 @@ func (suite *UsageDataStoreTestSuite) TestAdd() {
 	err = suite.datastore.Add(suite.hasReadCtx, &storage.SecuredUnits{})
 	suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 
-	suite.store.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Times(1).Return(nil)
 	err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{})
 	suite.NoError(err)
 }
