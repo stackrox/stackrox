@@ -7,12 +7,12 @@ import React, { useState, useEffect } from 'react';
 import { Button, Select, SelectOption, TextInput } from '@patternfly/react-core';
 import {
     TableComposable,
-    Thead,
     Tbody,
-    Tr,
-    Th,
-    Td,
     TbodyProps,
+    Td,
+    Th,
+    Thead,
+    Tr,
     TrProps,
 } from '@patternfly/react-table';
 import styles from '@patternfly/react-styles/css/components/Table/table';
@@ -237,10 +237,7 @@ function DelegatedRegistriesTable({
             >
                 {registries.map((registry, rowIndex) => (
                     <Tr
-                        // note: in spite of best practice, we have to use the array index as key here,
-                        //       because the value of path changes as the user types, and the input would lose focus
                         key={registry.uuid}
-                        // id={itemOrder[rowIndex]}
                         id={registry.uuid}
                         draggable
                         onDrop={onDrop}
@@ -266,11 +263,7 @@ function DelegatedRegistriesTable({
                             <Select
                                 className="cluster-select"
                                 placeholderText={
-                                    <span>
-                                        <span style={{ position: 'relative', top: '1px' }}>
-                                            None
-                                        </span>
-                                    </span>
+                                    <span style={{ position: 'relative', top: '1px' }}>None</span>
                                 }
                                 toggleAriaLabel="Select a cluster"
                                 onToggle={() => toggleSelect(rowIndex)}
