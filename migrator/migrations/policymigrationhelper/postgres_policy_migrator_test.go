@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper/policypostgresstorefortest/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,7 +32,7 @@ type postgresPolicyMigratorTestSuite struct {
 
 func (s *postgresPolicyMigratorTestSuite) SetupTest() {
 	s.db = pghelper.ForT(s.T(), false)
-	s.ctx = context.Background()
+	s.ctx = sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTablePoliciesStmt)
 	s.store = policypostgresstore.New(s.db, s.T())
 }
