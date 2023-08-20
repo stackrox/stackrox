@@ -1,6 +1,7 @@
-package structured
+package logging
 
 import (
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"go.uber.org/zap"
 )
 
@@ -13,10 +14,10 @@ const (
 
 var (
 	resourceTypeFields = map[string]string{
-		imageField:     "Image",
-		imageIDField:   "Image",
-		clusterIDField: "Cluster",
-		nodeIDField:    "Node",
+		imageField:     resources.Image.String(),
+		imageIDField:   resources.Image.String(),
+		clusterIDField: resources.Cluster.String(),
+		nodeIDField:    resources.Node.String(),
 	}
 )
 
@@ -45,9 +46,9 @@ func NodeID(id string) zap.Field {
 	return zap.String(nodeIDField, id)
 }
 
-// IsResourceTypeField returns whether the given zap.Field is related to a resource.
+// isResourceTypeField returns whether the given zap.Field is related to a resource.
 // If it is, it will return true and the name of the resource.
-func IsResourceTypeField(field zap.Field) (bool, string) {
+func isResourceTypeField(field zap.Field) (bool, string) {
 	resource, exists := resourceTypeFields[field.Key]
 	return exists, resource
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/logging/structured"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -77,9 +76,9 @@ func init() {
 		go func() {
 			switch err := notifier.run(ctx); err {
 			case nil, context.Canceled, context.DeadlineExceeded:
-				log.Debug("ceasing notifier operation", structured.Err(err))
+				log.Debug("ceasing notifier operation", logging.Err(err))
 			default:
-				log.Error("encountered unexpected error", structured.Err(err))
+				log.Error("encountered unexpected error", logging.Err(err))
 			}
 		}()
 
@@ -265,7 +264,7 @@ func (n *notifier) processAlert(alert *storage.Alert) {
 		case tsCachedErr != nil || tsCached.Before(tsAlert):
 			n.cache[alert.GetId()] = alert
 		case tsAlertErr != nil:
-			log.Warn("dropping incoming alert with invalid timestamp", structured.Err(tsAlertErr))
+			log.Warn("dropping incoming alert with invalid timestamp", logging.Err(tsAlertErr))
 		}
 	} else {
 		n.cache[alert.GetId()] = alert
@@ -296,7 +295,7 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 
 	result, err := n.securityHub.BatchImportFindingsWithContext(ctx, batch)
 	if err != nil {
-		log.Warn("failed to upload batch", structured.Err(err))
+		log.Warn("failed to upload batch", logging.Err(err))
 		return
 	}
 

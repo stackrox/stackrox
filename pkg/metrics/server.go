@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/logging/structured"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -103,19 +102,19 @@ func (s *Server) Stop(ctx context.Context) {
 
 	if metricsEnabled() {
 		if err := s.metricsServer.Shutdown(ctx); err != nil {
-			log.Errorw("Failed to shutdown metrics server", structured.Err(err))
+			log.Errorw("Failed to shutdown metrics server", logging.Err(err))
 			err := s.metricsServer.Close()
 			if err != nil {
-				log.Errorw("Failed to close metrics server", structured.Err(err))
+				log.Errorw("Failed to close metrics server", logging.Err(err))
 			}
 		}
 	}
 	if secureMetricsEnabled() {
 		if err := s.secureMetricsServer.Shutdown(ctx); err != nil {
-			log.Errorw("Failed to shutdown secure metrics server", structured.Err(err))
+			log.Errorw("Failed to shutdown secure metrics server", logging.Err(err))
 			err := s.secureMetricsServer.Close()
 			if err != nil {
-				log.Errorw("Failed to close metrics server", structured.Err(err))
+				log.Errorw("Failed to close metrics server", logging.Err(err))
 			}
 		}
 	}

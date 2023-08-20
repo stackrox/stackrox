@@ -1,4 +1,4 @@
-package structured
+package logging
 
 import (
 	"testing"

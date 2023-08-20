@@ -36,7 +36,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/notifications"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -62,15 +61,6 @@ const (
 	// WarnLevel log level
 	WarnLevel = zapcore.WarnLevel
 )
-
-// Options for the logger.
-type Options struct {
-	notificationStream    notifications.Stream
-	notificationConverter notifications.LogConverter
-}
-
-// OptionsFunc allows setting log options for a logger.
-type OptionsFunc = func(option *Options)
 
 var (
 	console = struct {
@@ -351,7 +341,7 @@ func createLoggerWithConfig(lc *zap.Config, module *Module, skip int, opts ...Op
 		panic(errors.Wrap(err, "failed to instantiate logger"))
 	}
 
-	o := &Options{}
+	o := &options{}
 	for _, opt := range opts {
 		opt(o)
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/logging/structured"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -40,7 +39,7 @@ func NewConfigMapWatcher(k8sClient kubernetes.Interface, modifiedFunc func(*v1.C
 func (w *ConfigMapWatcher) Watch(ctx concurrency.Waitable, namespace string, name string) {
 	err := w.init(ctx, namespace, name)
 	if err != nil {
-		log.Errorw(fmt.Sprintf("Failed initial get of config map %s/%s", name, namespace), structured.Err(err))
+		log.Errorw(fmt.Sprintf("Failed initial get of config map %s/%s", name, namespace), logging.Err(err))
 	}
 	go w.run(ctx, namespace, name)
 }
@@ -74,7 +73,7 @@ func (w *ConfigMapWatcher) startWatcher(ctx concurrency.Waitable, namespace stri
 		metav1.SingleObject(metav1.ObjectMeta{Name: name, Namespace: namespace}),
 	)
 	if err != nil {
-		log.Errorw(fmt.Sprintf("Unable to start watching config map %s/%s", name, namespace), structured.Err(err))
+		log.Errorw(fmt.Sprintf("Unable to start watching config map %s/%s", name, namespace), logging.Err(err))
 		return
 	}
 	defer watcher.Stop()
