@@ -42,8 +42,8 @@ const routeMatcherMapForDelegateScanning = {
     },
 };
 
-const basePath = '/main/clusters';
-export const delegatedScanningPath = `${basePath}/delegated-image-scanning`;
+export const clustersPath = '/main/clusters';
+export const delegatedScanningPath = `${clustersPath}/delegated-image-scanning`;
 
 const title = 'Clusters';
 
@@ -67,7 +67,7 @@ export function interactAndVisitClusters(interactionCallback, staticResponseMap)
 
     interactionCallback();
 
-    cy.location('pathname').should('eq', basePath);
+    cy.location('pathname').should('eq', clustersPath);
     cy.get(`h1:contains("${title}")`);
 
     waitForResponses(routeMatcherMapForClusters);
@@ -76,7 +76,7 @@ export function interactAndVisitClusters(interactionCallback, staticResponseMap)
 export function visitClustersFromLeftNav() {
     visitFromLeftNavExpandable('Platform Configuration', title, routeMatcherMapForClusters);
 
-    cy.location('pathname').should('eq', basePath);
+    cy.location('pathname').should('eq', clustersPath);
     cy.get(`h1:contains("${title}")`);
 }
 
@@ -84,7 +84,7 @@ export function visitClustersFromLeftNav() {
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitClusters(staticResponseMap) {
-    visit(basePath, routeMatcherMapForClusters, staticResponseMap);
+    visit(clustersPath, routeMatcherMapForClusters, staticResponseMap);
 
     cy.get(`h1:contains("${title}")`);
 }
@@ -109,7 +109,7 @@ export function visitClusterById(clusterId, staticResponseMap) {
             url: `/v1/clusters/${clusterId}`,
         },
     };
-    visit(`${basePath}/${clusterId}`, routeMatcherMapForClusterById, staticResponseMap);
+    visit(`${clustersPath}/${clusterId}`, routeMatcherMapForClusterById, staticResponseMap);
 
     cy.get(`h1:contains("${title}")`);
 }
