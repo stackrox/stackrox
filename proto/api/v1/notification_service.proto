@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message NotificationsResponse {
+    repeated Notification notifications = 1;
+    Pagination pagination               = 2;
+}
+
+message GetNotificationsRequest {
+    // For filtering notifications starting from a specific timestamp, i.e. the lower boundary.
+    google.protobuf.Timestamp from      = 1;
+
+    // For filtering notifications up until a specific timestamp, i.e. the upper boundary.
+    google.protobuf.Timestamp until     = 2;
+
+    // For filtering notifications from a specific domain.
+    string domain                       = 3;
+
+    // For filtering notifications associated with a specific resource type.
+    string resource_type                = 4;
+
+    // For filtering notifications based on their type.
+    NotificationType notification_type  = 5;
+
+    // For filtering notifications based on their level.
+    NotificationLevel level             = 6;
+}
+
+// Notifications are emitted by Central. They are used to create transparency for users
+// for asynchronous, background tasks.
+// Currently, notifications only cover logs emitted by Central.
+message Notification {
+    // UUID of the notification.
+    string id                               = 1;
+
+    // Type of the notification.
+    NotificationType type                   = 2;
+
+    // Level associated with the notification. The level is categorized into danger, warn, info,
+    // success.
+    NotificationLevel level                 = 3;
+
+    // Message associated with the notification. The message may include detailed information
+    // for this particular notification.
+    string message                          = 4;
+
+    // Hint associated with the notification. The hint may include different information based
+    // on the type of notification. It can include instructions to resolve a notification, or
+    // informational hints.
+    string hint                             = 5;
+
+    // Domain associated with the notification. A notification's domain outlines the feature domain where
+    // the notification was created from. As an example, this might be "Image Scanning".
+    // In case of notifications that cannot be tied to a specific domain, this will be "General".
+    string domain                           = 6;
+
+    // Resource type associated with the notification. A notification may refer to an underlying resource
+    // such as a particular image. In that case, the resource type will be filled here.
+    string resource_type                    = 7;
+
+    // Resource ID associated with the notification. If a notification refers to an underlying resource,
+    // the resource ID identifies the underlying resource.
+    string resource_id                      = 8;
+
+    // Occurrences associated with the notification. Notifications may occur multiple times, the occurrences
+    // will track the amount.
+    int64 occurrences                       = 9;
+
+    // Specifies the time the notification has last occurred.
+    google.protobuf.Timestamp last_occurred = 10;
+
+    // Specifies the time the notification has been created.
+    google.protobuf.Timestamp created_at    = 11;
+}
+
+// Notification type exposes the different types of notifications.
+// Currently, the notification type is either generic or contains a log message.
+enum NotificationType {
+    NOTIFICATION_TYPE_GENERIC     = 0;
+    NOTIFICATION_TYPE_LOG_MESSAGE = 1;
+}
+
+// Notification level exposes the different levels which a notification can have.
+enum NotificationLevel {
+    NOTIFICATION_LEVEL_UNKNOWN = 0;
+    NOTIFICATION_LEVEL_INFO    = 1;
+    NOTIFICATION_LEVEL_SUCCESS = 2;
+    NOTIFICATION_LEVEL_WARN    = 3;
+    NOTIFICATION_LEVEL_DANGER  = 4;
+}
+
+service NotificationService {
+    // GetNotifications returns the list of notifications. The events may be filtered by
+    // dedicated fields.
+    rpc GetNotifications(GetNotificationsRequest) returns (NotificationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/notifications"
+        };
+    }
+
+    // GetNotification retrieves a notification by ID.
+    rpc GetNotification(ResourceByID) returns (Notification) {
+        option(google.api.http) = {
+            get: "/v1/notifications/{id}"
+        };
+    }
+}

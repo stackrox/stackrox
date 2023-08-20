@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/event_service.proto",
+    "title": "api/v1/notification_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,15 +11,15 @@
     "application/json"
   ],
   "paths": {
-    "/v1/events": {
+    "/v1/notifications": {
       "get": {
-        "summary": "GetEvents returns the list of events. The events may be filtered by\ntimestamp or labels.",
-        "operationId": "EventService_GetEvents",
+        "summary": "GetNotifications returns the list of notifications. The events may be filtered by\ndedicated fields.",
+        "operationId": "NotificationService_GetNotifications",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1EventsResponse"
+              "$ref": "#/definitions/v1NotificationsResponse"
             }
           },
           "default": {
@@ -32,7 +32,7 @@
         "parameters": [
           {
             "name": "from",
-            "description": "For filtering events starting from a specific timestamp, i.e. the lower boundary.",
+            "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -40,27 +40,68 @@
           },
           {
             "name": "until",
-            "description": "For filtering events up until a specific timestamp, i.e. the upper boundary.",
+            "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary.",
             "in": "query",
             "required": false,
             "type": "string",
             "format": "date-time"
+          },
+          {
+            "name": "domain",
+            "description": "For filtering notifications from a specific domain.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "resourceType",
+            "description": "For filtering notifications associated with a specific resource type.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "notificationType",
+            "description": "For filtering notifications based on their type.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_TYPE_GENERIC",
+              "NOTIFICATION_TYPE_LOG_MESSAGE"
+            ],
+            "default": "NOTIFICATION_TYPE_GENERIC"
+          },
+          {
+            "name": "level",
+            "description": "For filtering notifications based on their level.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_LEVEL_UNKNOWN",
+              "NOTIFICATION_LEVEL_INFO",
+              "NOTIFICATION_LEVEL_SUCCESS",
+              "NOTIFICATION_LEVEL_WARN",
+              "NOTIFICATION_LEVEL_DANGER"
+            ],
+            "default": "NOTIFICATION_LEVEL_UNKNOWN"
           }
         ],
         "tags": [
-          "EventService"
+          "NotificationService"
         ]
       }
     },
-    "/v1/events/{id}": {
+    "/v1/notifications/{id}": {
       "get": {
-        "summary": "GetEvent retrieves an event by ID.",
-        "operationId": "EventService_GetEvent",
+        "summary": "GetNotification retrieves a notification by ID.",
+        "operationId": "NotificationService_GetNotification",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1Event"
+              "$ref": "#/definitions/v1Notification"
             }
           },
           "default": {
@@ -79,7 +120,7 @@
           }
         ],
         "tags": [
-          "EventService"
+          "NotificationService"
         ]
       }
     }
@@ -142,39 +183,87 @@
       ],
       "default": "UNSET"
     },
-    "v1Event": {
+    "v1Notification": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "UUID of the event."
+          "description": "UUID of the notification."
+        },
+        "type": {
+          "$ref": "#/definitions/v1NotificationType",
+          "description": "Type of the notification."
+        },
+        "level": {
+          "$ref": "#/definitions/v1NotificationLevel",
+          "description": "Level associated with the notification. The level is categorized into danger, warn, info,\nsuccess."
         },
         "message": {
           "type": "string",
-          "description": "Message associated with the event. The message may include detailed information\nas well as potential actions that can be taken for this particular event."
+          "description": "Message associated with the notification. The message may include detailed information\nfor this particular notification."
         },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "Contain labels associated with the event. Labels may contain information such as:\n- the specific component where the event was created.\n- additional metadata associated with the event (e.g. in case of an event related\n  to images, the image reference)."
+        "hint": {
+          "type": "string",
+          "description": "Hint associated with the notification. The hint may include different information based\non the type of notification. It can include instructions to resolve a notification, or\ninformational hints."
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain associated with the notification. A notification's domain outlines the feature domain where\nthe notification was created from. As an example, this might be \"Image Scanning\".\nIn case of notifications that cannot be tied to a specific domain, this will be \"General\"."
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Resource type associated with the notification. A notification may refer to an underlying resource\nsuch as a particular image. In that case, the resource type will be filled here."
+        },
+        "resourceId": {
+          "type": "string",
+          "description": "Resource ID associated with the notification. If a notification refers to an underlying resource,\nthe resource ID identifies the underlying resource."
+        },
+        "occurrences": {
+          "type": "string",
+          "format": "int64",
+          "description": "Occurrences associated with the notification. Notifications may occur multiple times, the occurrences\nwill track the amount."
+        },
+        "lastOccurred": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Specifies the time the notification has last occurred."
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Specifies the time the event has been created."
+          "description": "Specifies the time the notification has been created."
         }
       },
-      "description": "Events are emitted by Central. They are used to create transparency for users\nfor asynchronous, background tasks.\nCurrently, events only cover logs emitted by Central."
+      "description": "Notifications are emitted by Central. They are used to create transparency for users\nfor asynchronous, background tasks.\nCurrently, notifications only cover logs emitted by Central."
     },
-    "v1EventsResponse": {
+    "v1NotificationLevel": {
+      "type": "string",
+      "enum": [
+        "NOTIFICATION_LEVEL_UNKNOWN",
+        "NOTIFICATION_LEVEL_INFO",
+        "NOTIFICATION_LEVEL_SUCCESS",
+        "NOTIFICATION_LEVEL_WARN",
+        "NOTIFICATION_LEVEL_DANGER"
+      ],
+      "default": "NOTIFICATION_LEVEL_UNKNOWN",
+      "description": "Notification level exposes the different levels which a notification can have."
+    },
+    "v1NotificationType": {
+      "type": "string",
+      "enum": [
+        "NOTIFICATION_TYPE_GENERIC",
+        "NOTIFICATION_TYPE_LOG_MESSAGE"
+      ],
+      "default": "NOTIFICATION_TYPE_GENERIC",
+      "description": "Notification type exposes the different types of notifications.\nCurrently, the notification type is either generic or contains a log message."
+    },
+    "v1NotificationsResponse": {
       "type": "object",
       "properties": {
-        "events": {
+        "notifications": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1Event"
+            "$ref": "#/definitions/v1Notification"
           }
         },
         "pagination": {
