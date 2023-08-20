@@ -3,35 +3,36 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
 import "gogoproto/gogo.proto";
 import "storage/traits.proto";
 
 package storage;
 
-// Next Tag: 13
+// Next Tag: 15.
 message AuthProvider {
-    string id                   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string name                 = 2 [(gogoproto.moretags) = 'sql:"unique"'];
-    string type                 = 3;
-    string ui_endpoint          = 4;
-    bool enabled                = 5;
-    map<string, string> config  = 6 [(gogoproto.moretags) = 'scrub:"map-values"'];
+    string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+    string type = 3;
+    string ui_endpoint = 4;
+    bool enabled = 5;
+    map<string, string> config = 6 [(gogoproto.moretags) = 'scrub:"map-values"'];
     // The login URL will be provided by the backend, and may not be specified in a request.
-    string login_url            = 7;
-    bool validated              = 8 [deprecated = true];
+    string login_url = 7;
+    bool validated = 8 [deprecated = true];
 
     // UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
     // is coming from any of these, the auth request will use these for the callback URL,
     // not ui_endpoint.
     repeated string extra_ui_endpoints = 9;
-    bool active                 = 10;
+    bool active = 10;
 
     // RequiredAttribute allows to specify a set of attributes which ALL are required to be returned
     // by the auth provider.
     // If any attribute is missing within the external claims of the token issued by Central, the
     // authentication request to this IdP is considered failed.
     message RequiredAttribute {
-        string attribute_key   = 1;
+        string attribute_key = 1;
         string attribute_value = 2;
     }
     repeated RequiredAttribute required_attributes = 11;
@@ -83,4 +84,10 @@ message AuthProvider {
     //
     // Note: we only support this feature for OIDC auth provider.
     map<string, string> claim_mappings = 13;
+
+    // Last update indicates the last time the auth provider has been updated.
+    //
+    // In case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered
+    // invalid. Subsequently, all users have to re-login when an auth provider is updated.
+    google.protobuf.Timestamp last_updated = 14;
 }
