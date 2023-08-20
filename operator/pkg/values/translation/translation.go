@@ -131,7 +131,8 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 // GetGlobalMonitoring converts *platform.GlobalMonitoring into *ValuesBuilder
 func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	openshiftMonitoring := NewValuesBuilder()
-	openshiftMonitoring.SetBoolValue("enabled", m.IsOpenShiftMonitoringEnabled())
+	// Default to true if undefined. Only set to false if explicitly disabled.
+	openshiftMonitoring.SetBoolValue("enabled", !m.IsOpenShiftMonitoringDisabled())
 	globalMonitoring := NewValuesBuilder()
 	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
 	return &globalMonitoring

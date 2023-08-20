@@ -138,7 +138,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -173,7 +173,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -210,7 +210,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
