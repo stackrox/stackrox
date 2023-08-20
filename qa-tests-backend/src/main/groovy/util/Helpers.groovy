@@ -105,6 +105,7 @@ class Helpers {
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
             shellCmd("./scripts/ci/collect-service-logs.sh kube-system ${collectionDir}/kube-system-k8s-logs")
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
+            shellCmd("./scripts/ci/collect-splunk-logs.sh ${Constants.SPLUNK_TEST_NAMESPACE} ${collectionDir}/splunk-logs")
             shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }
         catch (Exception e) {

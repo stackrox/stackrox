@@ -9,12 +9,14 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import common.Constants
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import services.PolicyService
 import util.Env
 import util.NetworkGraphUtil
 import util.SplunkUtil
@@ -24,6 +26,7 @@ import util.Timer
 import org.junit.Rule
 import org.junit.rules.Timeout
 import spock.lang.IgnoreIf
+import spock.lang.Shared
 import spock.lang.Tag
 
 // ROX-14228 skipping tests for 1st release on power & z
@@ -42,20 +45,40 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     "splunk-common-information-model-cim_511.tgz")
     private static final String STACKROX_REMOTE_LOCATION = "/tmp/stackrox.spl"
     private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
-    private static final String TEST_NAMESPACE = "qa-splunk-violation"
+    private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
 
     private SplunkDeployment splunkDeployment
+
+    @Shared
+    private Policy processTargettingKubelet
+    @Shared
+    private Policy unauthorizedNetworkFlow
 
     def setupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
         addStackroxImagePullSecret(TEST_NAMESPACE)
+
+        processTargettingKubelet = Services.clonePolicyAndScopeByTestNamespace(
+            "Process Targeting Cluster Kubelet Endpoint",
+            TEST_NAMESPACE
+        )
+        assert processTargettingKubelet
+
+        unauthorizedNetworkFlow = Services.clonePolicyAndScopeByTestNamespace(
+            "Unauthorized Network Flow",
+            TEST_NAMESPACE
+        )
+        assert unauthorizedNetworkFlow
     }
 
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
+
+        PolicyService.deletePolicy(processTargettingKubelet.getId())
+        PolicyService.deletePolicy(unauthorizedNetworkFlow.getId())
     }
 
     def setup() {
@@ -106,6 +129,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
+    @Tag("Parallel")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -308,7 +332,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
         orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/ --max-time 2")
         assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(),
-                                        "86804b96-e87e-4eae-b56e-1718a8a55763")
+                                        processTargettingKubelet.getId())
     }
 
     def triggerNetworkFlowViolation(SplunkUtil.SplunkDeployment splunkDeployment, String centralService) {
@@ -345,11 +369,11 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }, 15)
 
         assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(),
-                "1b74ffdd-8e67-444c-9814-1c23863c8ccb")
+                                        unauthorizedNetworkFlow.getId())
     }
 
     private boolean waitForAlertWithPolicyId(String deploymentName, String policyId) {
-        retryUntilTrue({
+        return retryUntilTrue({
             AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest.newBuilder()
                     .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*+Deployment:${deploymentName}")
                     .build())

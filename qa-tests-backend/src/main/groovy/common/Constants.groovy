@@ -45,6 +45,7 @@ class Constants {
     // common functionality that occurs for all tests such as debug gathering when
     // tests fail.
     static final TEST_FEATURE_TIMEOUT_PAD = 360
+    static final String SPLUNK_TEST_NAMESPACE = "qa-splunk"
 
     /*
         StackRox Product Feature Flags
