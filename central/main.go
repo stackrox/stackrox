@@ -92,6 +92,8 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
+	notificationHandler "github.com/stackrox/rox/central/notifications/handler"
+	notificationService "github.com/stackrox/rox/central/notifications/service"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -342,6 +344,10 @@ func startServices() {
 	apiTokenExpiration.Singleton().Start()
 	productUsageInjector.Singleton().Start()
 
+	if features.CentralNotifications.Enabled() {
+		notificationHandler.Singleton().Start()
+	}
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -420,6 +426,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+	}
+
+	if features.CentralNotifications.Enabled() {
+		servicesToRegister = append(servicesToRegister, notificationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -852,6 +862,10 @@ func waitForTerminationSignal() {
 
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	}
+
+	if features.CentralNotifications.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{notificationHandler.Singleton(), "notification handler"})
 	}
 
 	var wg sync.WaitGroup

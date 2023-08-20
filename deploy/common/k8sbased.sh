@@ -351,6 +351,12 @@ function launch_central {
         )
       fi
 
+      if [[ -n "$ROX_CENTRAL_NOTIFICATIONS" ]]; then
+        helm_args+=(
+          --set customize.central.envVars.ROX_CENTRAL_NOTIFICATIONS="${ROX_CENTRAL_NOTIFICATIONS}"
+        )
+      fi
+
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         helm_args+=(
           --set env.managedServices=true

@@ -11,31 +11,6 @@ import "google/protobuf/timestamp.proto";
 
 package v1;
 
-message NotificationsResponse {
-    repeated Notification notifications = 1;
-    Pagination pagination               = 2;
-}
-
-message GetNotificationsRequest {
-    // For filtering notifications starting from a specific timestamp, i.e. the lower boundary.
-    google.protobuf.Timestamp from      = 1;
-
-    // For filtering notifications up until a specific timestamp, i.e. the upper boundary.
-    google.protobuf.Timestamp until     = 2;
-
-    // For filtering notifications from a specific domain.
-    string domain                       = 3;
-
-    // For filtering notifications associated with a specific resource type.
-    string resource_type                = 4;
-
-    // For filtering notifications based on their type.
-    NotificationType notification_type  = 5;
-
-    // For filtering notifications based on their level.
-    NotificationLevel level             = 6;
-}
-
 // Notifications are emitted by Central. They are used to create transparency for users
 // for asynchronous, background tasks.
 // Currently, notifications only cover logs emitted by Central.
@@ -86,8 +61,9 @@ message Notification {
 // Notification type exposes the different types of notifications.
 // Currently, the notification type is either generic or contains a log message.
 enum NotificationType {
-    NOTIFICATION_TYPE_GENERIC     = 0;
-    NOTIFICATION_TYPE_LOG_MESSAGE = 1;
+    NOTIFICATION_TYPE_UNKNOWN     = 0;
+    NOTIFICATION_TYPE_GENERIC     = 1;
+    NOTIFICATION_TYPE_LOG_MESSAGE = 2;
 }
 
 // Notification level exposes the different levels which a notification can have.
@@ -99,19 +75,71 @@ enum NotificationLevel {
     NOTIFICATION_LEVEL_DANGER  = 4;
 }
 
+message NotificationsFilter {
+    // For filtering notifications starting from a specific timestamp, i.e. the lower boundary.
+    google.protobuf.Timestamp from     = 1;
+
+    // For filtering notifications up until a specific timestamp, i.e. the upper boundary.
+    google.protobuf.Timestamp until    = 2;
+
+    // For filtering notifications from a specific domain.
+    string domain                      = 3;
+
+    // For filtering notifications associated with a specific resource type.
+    string resource_type               = 4;
+
+    // For filtering notifications based on their type.
+    NotificationType notification_type = 5;
+
+    // For filtering notifications based on their level.
+    NotificationLevel level            = 6;
+}
+
+message CountNotificationsRequest {
+    // For filtering the notifications based on the requested fields.
+    NotificationsFilter filter = 1;
+}
+
+message CountNotificationsResponse {
+    // The total number of notifications after filtering and deduplication.
+    int64 count = 1;
+}
+
+message GetNotificationResponse {
+    Notification notification = 1;
+}
+
+message ListNotificationsRequest {
+    // For dividing the notifications response into chunks.
+    Pagination pagination      = 1;
+
+    // For filtering the notifications based on the requested fields.
+    NotificationsFilter filter = 2;
+}
+
+message ListNotificationsResponse {
+    repeated Notification notifications = 1;
+}
+
 service NotificationService {
-    // GetNotifications returns the list of notifications. The events may be filtered by
-    // dedicated fields.
-    rpc GetNotifications(GetNotificationsRequest) returns (NotificationsResponse) {
+    // CountNotifications returns the number of notifications after filtered by requested fields.
+    rpc CountNotifications(CountNotificationsRequest) returns (CountNotificationsResponse) {
         option (google.api.http) = {
-            get: "/v1/notifications"
+            get: "/v1/notificationscount"
         };
     }
 
     // GetNotification retrieves a notification by ID.
-    rpc GetNotification(ResourceByID) returns (Notification) {
+    rpc GetNotification(ResourceByID) returns (GetNotificationResponse) {
         option(google.api.http) = {
             get: "/v1/notifications/{id}"
+        };
+    }
+
+    // ListNotifications returns the list of notifications after filtered by requested fields.
+    rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/notifications"
         };
     }
 }

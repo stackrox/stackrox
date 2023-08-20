@@ -13,11 +13,11 @@ var (
 
 // Singleton returns an instance of the notification stream.
 func Singleton() Stream {
-	if !features.CentralEvents.Enabled() {
+	if !features.CentralNotifications.Enabled() {
 		return nil
 	}
 	once.Do(func() {
-		stream = newStream()
+		stream = NewStream()
 	})
 	return stream
 }
