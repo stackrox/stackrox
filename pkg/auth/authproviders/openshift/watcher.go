@@ -52,6 +52,8 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 		log.Info("No updated CA bytes found, using the default system CA cert pool.")
 		return
 	}
+
+	log.Info("Found an update to the root CAs for Openshift auth providers. Updating the providers.")
 	h.notifyBackend()
 }
 
