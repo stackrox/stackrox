@@ -11,13 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 func certFilePath() string {
@@ -91,7 +91,7 @@ func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 		return &nilTLSConfigurer{}
 	}
 
-	config, err := rest.InClusterConfig()
+	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		log.Errorw("Failed to get in-cluster config", zap.Error(err))
 		return &nilTLSConfigurer{}
