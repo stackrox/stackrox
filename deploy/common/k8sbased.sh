@@ -165,14 +165,6 @@ function launch_central {
 
     add_args "--offline=$OFFLINE_MODE"
 
-    if [[ -n "$SCANNER_IMAGE" ]]; then
-        add_args "--scanner-image=$SCANNER_IMAGE"
-    fi
-
-    if [[ -n "$SCANNER_DB_IMAGE" ]]; then
-        add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
-    fi
-
     if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
     	add_args "--default-tls-cert"
     	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
