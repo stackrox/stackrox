@@ -55,7 +55,7 @@ const SystemHealthDashboardPage = () => {
                                     <GenerateDiagnosticBundle />
                                 </FlexItem>
                             )}
-                        <Flex>
+                        </Flex>
                     </FlexItem>
                 </Flex>
             </PageSection>

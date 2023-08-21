@@ -32,7 +32,7 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
 export function downloadProductUsageCsv({ from, to }: TimeRange): Promise<void> {
     return saveFile({
         method: 'post',
-        url: '/api/product/usage/csv',
+        url: '/api/product/usage/secured-units/csv',
         data: { from, to },
     });
 }

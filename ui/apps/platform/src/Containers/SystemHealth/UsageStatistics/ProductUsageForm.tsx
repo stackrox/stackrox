@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Alert,
@@ -21,7 +20,7 @@ import {
 } from 'services/ProductUsageService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-function UsageStatisticsForm(): ReactElement {
+function ProductUsageForm(): ReactElement {
     const initialStartDate = new Date();
     initialStartDate.setDate(initialStartDate.getDate() - 30);
     const [startDate, setStartDate] = useState(initialStartDate);
@@ -165,4 +164,4 @@ function UsageStatisticsForm(): ReactElement {
     );
 }
 
-export default UsageStatisticsForm;
+export default ProductUsageForm;
