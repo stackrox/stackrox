@@ -3,17 +3,11 @@
 export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
 
-export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/main}"
-echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
-
 export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/collector}"
 echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
 
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
-
-export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
-echo "StackRox image set to $MAIN_IMAGE"
 
 export ROX_POSTGRES_DATASTORE="true"
 echo "ROX_POSTGRES_DATASTORE set to $ROX_POSTGRES_DATASTORE"
@@ -122,11 +116,10 @@ function get_cluster_zip {
     LOCAL_API_ENDPOINT="$1"
     CLUSTER_NAME="$2"
     CLUSTER_TYPE="$3"
-    CLUSTER_IMAGE="$4"
-    CLUSTER_API_ENDPOINT="$5"
-    OUTPUT_DIR="$6"
-    COLLECTION_METHOD="$7"
-    EXTRA_JSON="$8"
+    CLUSTER_API_ENDPOINT="$4"
+    OUTPUT_DIR="$5"
+    COLLECTION_METHOD="$6"
+    EXTRA_JSON="$7"
 
     COLLECTION_METHOD_ENUM="default"
     if [[ "$COLLECTION_METHOD" == "core_bpf" ]]; then
@@ -140,7 +133,7 @@ function get_cluster_zip {
     fi
 
     echo "Creating a new cluster"
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
 
     TMP=$(mktemp)
     STATUS=$(curl_central -X POST \

@@ -121,8 +121,6 @@ setup_deployment_env() {
 
     ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
 
-    REPO=rhacs-eng
-    ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
     ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
 }

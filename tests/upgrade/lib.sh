@@ -191,6 +191,7 @@ test_upgrader() {
 
     info "Creating a 'sensor-remote-new' cluster"
 
+    # TODO: figure MAIN_IMAGE_REPO and COLLECTOR_IMAGE_REPO
     rm -rf sensor-remote-new
     "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
         --main-image-repository "${MAIN_IMAGE_REPO:-$REGISTRY/main}" \

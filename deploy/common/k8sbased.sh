@@ -150,8 +150,6 @@ function launch_central {
     	add_file_arg "$ROX_DEFAULT_TLS_KEY_FILE"
     fi
 
-    add_args -i "${MAIN_IMAGE}"
-
     if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
         add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
     fi
@@ -542,7 +540,6 @@ function launch_sensor {
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
-        --set "image.main.repository=${MAIN_IMAGE_REPO}"
         --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
       )
@@ -602,7 +599,7 @@ function launch_sensor {
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
         set -x
-        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
@@ -610,7 +607,7 @@ function launch_sensor {
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
       else
         set -x
-        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
+        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         set +x
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
