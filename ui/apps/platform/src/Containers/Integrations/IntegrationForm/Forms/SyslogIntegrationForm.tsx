@@ -220,11 +220,11 @@ function SyslogIntegrationForm({
                                             }
                                         />
                                         <ToggleGroupItem
-                                            key='UNDEFINED'
+                                            key='LEGACY'
                                             text="CEF (legacy field order)"
-                                            isSelected={values.syslog.messageFormat === 'UNDEFINED' || !values.syslog.messageFormat}
+                                            isSelected={values.syslog.messageFormat === 'LEGACY' || !values.syslog.messageFormat}
                                             onChange={() =>
-                                                setFieldValue('messageFormat', 'UNDEFINED')
+                                                setFieldValue('messageFormat', 'LEGACY')
                                             }
                                         />
                             </ToggleGroup>
