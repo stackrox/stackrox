@@ -123,13 +123,19 @@ func (s *Sensor) startProfilingServer() *http.Server {
 	return srv
 }
 
-func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error) {
+// offlineAwareProbeSource is an interface that abstracts the functionality of loading a kernel probe.
+type offlineAwareProbeSource interface {
+	probeupload.ProbeSource
+	offlineAware
+}
+
+func createKOCacheSource(centralEndpoint string) (offlineAwareProbeSource, error) {
 	kernelObjsBaseURL := "/kernel-objects"
 	kernelObjsClient, err := clientconn.NewHTTPClient(mtls.CentralSubject, centralEndpoint, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
-	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.Options{}), nil
+	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.StartOffline()), nil
 }
 
 // Start registers APIs and starts background tasks.
@@ -179,7 +185,8 @@ func (s *Sensor) Start() {
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)
-		s.AddNotifiable(WrapNotifiable(probeDownloadHandler, "Kernel probe server handler"))
+		s.AddNotifiable(wrapNotifiable(probeDownloadHandler, "Kernel probe server handler"))
+		s.AddNotifiable(wrapNotifiable(koCacheSource, "Kernel object cache"))
 	}
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
