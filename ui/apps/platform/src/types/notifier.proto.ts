@@ -167,7 +167,10 @@ export type SyslogNotifierIntegration = {
 // Eventually this will support TCP, UDP, and local endpoints
 export type Syslog = SyslogTCP;
 
+export type SyslogCEFOptions = 'CEF' | 'UNDEFINED' | null;
+
 export type SyslogBase = {
+    messageFormat?: SyslogCEFOptions;
     localFacility?: SyslogLocalFacility;
     extraFields: KeyValuePair[];
 };
