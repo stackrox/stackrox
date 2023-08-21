@@ -170,13 +170,7 @@ push_image_manifest_lists() {
     local main_image_set=("main" "roxctl" "central-db")
 
     local registry
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry="quay.io/stackrox-io"
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry="quay.io/rhacs-eng"
-    else
-        die "$brand is not a supported brand"
-    fi
+    registry="$(branding_to_registry "$brand")"
 
     local tag
     tag="$(make --quiet --no-print-directory tag)"
@@ -232,27 +226,35 @@ push_main_image_set() {
         done
     }
 
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        local destination_registries=("quay.io/stackrox-io")
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local destination_registries=("quay.io/rhacs-eng")
-    else
-        die "$brand is not a supported brand"
-    fi
+    local registry
+    registry="$(branding_to_registry "$brand")"
 
     local tag
     tag="$(make --quiet --no-print-directory tag)"
-    for registry in "${destination_registries[@]}"; do
-        registry_rw_login "$registry"
 
-        _tag_main_image_set "$tag" "$registry" "$tag-$arch"
-        _push_main_image_set "$registry" "$tag-$arch"
+    registry_rw_login "$registry"
 
-        if [[ "$push_context" == "merge-to-master" ]]; then
-            _tag_main_image_set "$tag" "$registry" "latest-${arch}"
-            _push_main_image_set "$registry" "latest-${arch}"
-        fi
-    done
+    _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+    _push_main_image_set "$registry" "$tag-$arch"
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        _tag_main_image_set "$tag" "$registry" "latest-${arch}"
+        _push_main_image_set "$registry" "latest-${arch}"
+    fi
+}
+
+branding_to_registry() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: branding_to_registry <branding>"
+    fi
+    local branding="$1"
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        echo "quay.io/stackrox-io"
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        echo "quay.io/rhacs-eng"
+    else
+        die "$brand is not a supported branding"
+    fi
 }
 
 registry_rw_login() {
@@ -304,15 +306,9 @@ push_matching_collector_scanner_images() {
     local brand="$1"
     local arch="$2"
 
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        local source_registry="quay.io/stackrox-io"
-        local target_registries=( "quay.io/stackrox-io" )
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "quay.io/rhacs-eng" )
-    else
-        die "$brand is not a supported brand"
-    fi
+    local source_registry
+    source_registry="$(branding_to_registry "$brand")"
+    target_registries=( "$source_registry" )
 
     _retag_or_mirror() {
         if is_OPENSHIFT_CI; then
