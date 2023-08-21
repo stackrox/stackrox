@@ -200,11 +200,12 @@ function SyslogIntegrationForm({
                             />
                         </FormLabelGroup>
                         <FormLabelGroup
-                            label="Type"
+                            label="Message Format"
                             isRequired
                             fieldId="messageFormat"
                             touched={touched}
                             errors={errors}
+                            helperText="For new integrations, choose CEF. If you have an existing integration that relies on the old behavior, leave Legacy selected."
                         >
                             <ToggleGroup id="messageFormat" areAllGroupsDisabled={!isEditable}>
                                         <ToggleGroupItem
