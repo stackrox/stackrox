@@ -44,9 +44,11 @@ const SystemHealthDashboardPage = () => {
                     <FlexItem>
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
-                    <FlexItem align={{ default: 'alignRight' }}>
-                        <GenerateDiagnosticBundle />
-                    </FlexItem>
+                    {hasReadAccessForAdministration && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            <GenerateDiagnosticBundle />
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             <PageSection>
