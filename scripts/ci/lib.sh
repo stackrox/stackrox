@@ -119,6 +119,8 @@ setup_deployment_env() {
         ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
 
+    ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
+
     REPO=rhacs-eng
     ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
     ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"

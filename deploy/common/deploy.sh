@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-quay.io/stackrox-io}"
+export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
 
 export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/main}"
