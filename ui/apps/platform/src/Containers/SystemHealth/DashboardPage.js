@@ -46,13 +46,17 @@ const SystemHealthDashboardPage = () => {
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
-                        <ShowProductUsage />
+                        <Flex>
+                            <FlexItem>
+                                <ShowProductUsage />
+                            </FlexItem>
+                            {hasReadAccessForAdministration && (
+                                <FlexItem>
+                                    <GenerateDiagnosticBundle />
+                                </FlexItem>
+                            )}
+                        <Flex>
                     </FlexItem>
-                    {hasReadAccessForAdministration && (
-                        <FlexItem>
-                            <GenerateDiagnosticBundle />
-                        </FlexItem>
-                    )}
                 </Flex>
             </PageSection>
             <PageSection>
