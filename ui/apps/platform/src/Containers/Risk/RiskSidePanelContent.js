@@ -18,7 +18,6 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForAlert = hasReadAccess('Alert');
-
     const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
 
     if (isFetching) {

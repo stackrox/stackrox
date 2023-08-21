@@ -27,7 +27,6 @@ import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
 function ViolationDetailsPage(): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadAccess } = usePermissions();
-
     const hasReadAccessForDeployment = hasReadAccess('Deployment');
     const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 

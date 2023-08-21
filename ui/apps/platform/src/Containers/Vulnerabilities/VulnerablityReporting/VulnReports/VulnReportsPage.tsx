@@ -66,6 +66,7 @@ function VulnReportsPage() {
 
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
     const hasAccessScopeReadAccess = hasReadAccess('Access');
