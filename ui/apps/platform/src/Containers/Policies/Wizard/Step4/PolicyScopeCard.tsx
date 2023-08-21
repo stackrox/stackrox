@@ -18,13 +18,13 @@ import {
 import { TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
-import { Cluster } from 'types/cluster.proto';
+import { ClusterScopeObject } from 'services/RolesService';
 import { ListDeployment } from 'types/deployment.proto';
 
 type PolicyScopeCardProps = {
     type: 'exclusion' | 'inclusion';
     name: string;
-    clusters: Cluster[];
+    clusters: ClusterScopeObject[];
     deployments?: ListDeployment[];
     onDelete: () => void;
     hasAuditLogEventSource: boolean;

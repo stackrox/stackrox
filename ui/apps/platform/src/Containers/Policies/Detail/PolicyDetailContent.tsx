@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Formik } from 'formik';
 import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
 
-import { fetchClustersAsArray } from 'services/ClustersService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { Policy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
@@ -21,18 +19,7 @@ function PolicyDetailContent({
     policy,
     isReview = false,
 }: PolicyDetailContentProps): React.ReactElement {
-    const [clusters, setClusters] = useState<Cluster[]>([]);
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
-
-    useEffect(() => {
-        fetchClustersAsArray()
-            .then((data) => {
-                setClusters(data as Cluster[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
 
     useEffect(() => {
         fetchNotifierIntegrations()
@@ -78,11 +65,7 @@ function PolicyDetailContent({
                             Policy scope
                         </Title>
                         <Divider component="div" />
-                        <PolicyScopeSection
-                            scope={scope}
-                            exclusions={exclusions}
-                            clusters={clusters}
-                        />
+                        <PolicyScopeSection scope={scope} exclusions={exclusions} />
                     </>
                 )}
             </Flex>
