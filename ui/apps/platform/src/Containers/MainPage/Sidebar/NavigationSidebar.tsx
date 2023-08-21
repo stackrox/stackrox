@@ -13,7 +13,6 @@ import {
     collectionsBasePath,
     complianceBasePath,
     complianceEnhancedBasePath,
-    compliancePath,
     configManagementPath,
     dashboardPath,
     integrationsPath,
@@ -109,7 +108,7 @@ const navDescriptions: NavDescription[] = [
         content: (navDescriptionsFiltered) =>
             navDescriptionsFiltered.some(
                 (navDescription) =>
-                    navDescription.type === 'child' && navDescription.path === compliancePath
+                    navDescription.type === 'child' && navDescription.routeKey === 'compliance'
             )
                 ? 'Compliance (2.0)'
                 : 'Compliance',
@@ -122,7 +121,7 @@ const navDescriptions: NavDescription[] = [
             navDescriptionsFiltered.some(
                 (navDescription) =>
                     navDescription.type === 'child' &&
-                    navDescription.path === complianceEnhancedBasePath
+                    navDescription.routeKey === 'compliance-enhanced'
             )
                 ? 'Compliance (1.0)'
                 : 'Compliance',
