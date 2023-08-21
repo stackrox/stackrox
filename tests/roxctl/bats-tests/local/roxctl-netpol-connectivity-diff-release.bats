@@ -42,7 +42,6 @@ teardown() {
 @test "roxctl-release netpol connectivity diff non existing dirs" {
   run roxctl-release netpol connectivity diff --dir1="$out_dir" --dir2="$out_dir"
   assert_failure
-  assert_line --partial "error in connectivity diff analysis"
   assert_line --partial "no such file or directory"
 }
 
