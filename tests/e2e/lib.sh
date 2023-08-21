@@ -115,7 +115,7 @@ deploy_stackrox_operator() {
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "false" ]]; then
         return
     fi
-    
+
     export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
     export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
 
