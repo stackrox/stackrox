@@ -576,6 +576,19 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			},
 			isValidationError: true,
 		},
+		{
+			desc: "Report config with invalid vuln report filters : image types not set",
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.ImageTypes = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
+
+				s.mockCollectionStoreCalls(ret, true, true, isUpdate)
+				return ret
+			},
+			isValidationError: true,
+		},
 	}
 
 	if isUpdate {
