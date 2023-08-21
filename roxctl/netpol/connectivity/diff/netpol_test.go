@@ -28,8 +28,6 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzeNetpol() {
 		name                  string
 		inputFolderPath1      string
 		inputFolderPath2      string
-		expectedAnalysisError error
-		expectedValidateError error
 		strict                bool
 		stopOnFirstErr        bool
 		outFile               string
@@ -37,21 +35,37 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzeNetpol() {
 		outputFormat          string
 		removeOutputPath      bool
 		errStringContainment  bool
+		expectedValidateError error
+		expectedAnalysisError error
 	}{
 		{
-			name:                  "not existing input folder paths error 'os.ErrNotExist'",
+			name:                  "Empty dir1 input should return validation error",
+			inputFolderPath1:      "",
+			inputFolderPath2:      "",
+			expectedValidateError: errox.InvalidArgs,
+		},
+		{
+			name:                  "Empty dir2 should return validation error",
+			inputFolderPath1:      "/dev/null",
+			inputFolderPath2:      "",
+			expectedValidateError: errox.InvalidArgs,
+		},
+		{
+			name:                  "Not existing input folder paths should result in error 'os.ErrNotExist'",
 			inputFolderPath1:      "/tmp/xxx",
 			inputFolderPath2:      "/tmp/xxx",
+			expectedValidateError: nil,
 			expectedAnalysisError: os.ErrNotExist,
 		},
 		{
-			name:                  "empty input paths errors with no resources found",
+			name:                  "Inputs with no resources errors should result in general NP-Guard error",
 			inputFolderPath1:      "testdata/empty-yamls",
 			inputFolderPath2:      "testdata/empty-yamls",
+			expectedValidateError: nil,
 			expectedAnalysisError: npg.ErrErrors,
 		},
 		{
-			name:                  "treating warnings as errors",
+			name:                  "Treating warnings as errors should result in error of type 'npg.ErrWarnings'",
 			inputFolderPath1:      "testdata/acs-zeroday-with-invalid-doc",
 			inputFolderPath2:      "testdata/acs-zeroday-with-invalid-doc",
 			expectedAnalysisError: npg.ErrWarnings,

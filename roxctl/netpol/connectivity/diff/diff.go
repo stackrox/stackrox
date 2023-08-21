@@ -84,10 +84,10 @@ func (cmd *diffNetpolCommand) construct() (diffAnalyzer, error) {
 
 func (cmd *diffNetpolCommand) validate() error {
 	if cmd.inputFolderPath1 == "" {
-		return errors.New("dir1 is required")
+		return errox.InvalidArgs.Newf("--dir1 is required")
 	}
 	if cmd.inputFolderPath2 == "" {
-		return errors.New("dir2 is required")
+		return errox.InvalidArgs.Newf("--dir2 is required")
 	}
 	if err := cmd.setupPath(cmd.outputFilePath); err != nil {
 		return errors.Wrap(err, "failed to set up file path")

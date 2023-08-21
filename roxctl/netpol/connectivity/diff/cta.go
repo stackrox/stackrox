@@ -30,7 +30,7 @@ func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) err
 	if err != nil {
 		return errors.Wrap(err, "error in formatting connectivity diff")
 	}
-	if err := cmd.ouputConnsDiff(connsDiffStr); err != nil {
+	if err := cmd.outputConnsDiff(connsDiffStr); err != nil {
 		return err
 	}
 	var roxerr error
@@ -48,7 +48,7 @@ func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) err
 	return roxerr
 }
 
-func (cmd *diffNetpolCommand) ouputConnsDiff(connsDiffStr string) error {
+func (cmd *diffNetpolCommand) outputConnsDiff(connsDiffStr string) error {
 	if cmd.outputToFile {
 		if cmd.outputFilePath == "" { // save-to-file is true, but output file path is not provided
 			cmd.outputFilePath = cmd.getDefaultFileName()
