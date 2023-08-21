@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/roxctl/netpol/connectivity/diff"
 )
 
-// Command defines the netpol command tree
+// Command defines the netpol connectivity command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "connectivity",

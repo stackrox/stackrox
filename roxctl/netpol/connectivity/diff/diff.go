@@ -26,7 +26,7 @@ type diffNetpolCommand struct {
 	env environment.Environment
 }
 
-// Command defines the connectivity-diff command tree
+// Command defines the netpol connectivity diff command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	diffNetpolCmd := &diffNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
