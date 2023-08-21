@@ -150,10 +150,6 @@ function launch_central {
     	add_file_arg "$ROX_DEFAULT_TLS_KEY_FILE"
     fi
 
-    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
-        add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
-    fi
-
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs

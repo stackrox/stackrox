@@ -121,7 +121,6 @@ setup_deployment_env() {
 
     ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
 
-    ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
 }
 
@@ -197,6 +196,7 @@ push_image_manifest_lists() {
     done
 }
 
+# TODO: clean up
 push_main_image_set() {
     info "Pushing main, roxctl and central-db images"
 

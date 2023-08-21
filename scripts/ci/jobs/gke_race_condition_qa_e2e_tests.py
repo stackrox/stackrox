@@ -12,6 +12,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
 
 # use -rcd image for stackrox/main
+# TODO: figure out
 os.environ["MAIN_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"] + "-rcd"
 os.environ["CENTRAL_DB_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"]
 os.environ["USE_LOCAL_ROXCTL"] = "true"
