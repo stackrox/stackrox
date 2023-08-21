@@ -7,6 +7,7 @@ import (
 
 	npguard "github.com/np-guard/netpol-analyzer/pkg/netpol/diff"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
@@ -24,6 +25,9 @@ type diffAnalyzer interface {
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
 	connsDiff, err := analyzer.ConnDiffFromDirPaths(cmd.inputFolderPath1, cmd.inputFolderPath2)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return errox.NotFound.Newf(err.Error())
+		}
 		return errors.Wrap(err, "error in connectivity diff analysis")
 	}
 	connsDiffStr, err := analyzer.ConnectivityDiffToString(connsDiff)

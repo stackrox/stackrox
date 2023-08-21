@@ -121,10 +121,10 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 		expectedErrorMsgContains string
 	}{
 		{
-			name:                  "Not existing input folder paths should result in error 'os.ErrNotExist'",
+			name:                  "Not existing input folder paths should result in error 'errox.NotFound'",
 			inputFolderPath1:      "/tmp/xxx",
 			inputFolderPath2:      "/tmp/xxx",
-			expectedAnalysisError: os.ErrNotExist,
+			expectedAnalysisError: errox.NotFound,
 		},
 		{
 			name:                  "Inputs with no resources should result in general NP-Guard error",
