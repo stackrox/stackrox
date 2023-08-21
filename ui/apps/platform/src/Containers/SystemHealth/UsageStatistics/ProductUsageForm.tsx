@@ -132,7 +132,7 @@ function ProductUsageForm(): ReactElement {
                 <DescriptionListGroup>
                     <DescriptionListTerm>CPU units collection date</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {maxUsage && maxUsage?.maxCpuUnitsAt
+                        {maxUsage?.maxCpuUnitsAt
                             ? yyyyMMddFormat(new Date(maxUsage.maxCpuUnitsAt))
                             : '-'}
                     </DescriptionListDescription>
@@ -140,9 +140,7 @@ function ProductUsageForm(): ReactElement {
                 <DescriptionListGroup>
                     <DescriptionListTerm>Nodes count collection date</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {maxUsage && maxUsage?.maxNodesAt
-                            ? yyyyMMddFormat(new Date(maxUsage.maxNodesAt))
-                            : '-'}
+                        {maxUsage?.maxNodesAt ? yyyyMMddFormat(new Date(maxUsage.maxNodesAt)) : '-'}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
