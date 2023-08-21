@@ -21,8 +21,6 @@ type diffAnalyzeNetpolTestSuite struct {
 }
 
 func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
-	tmpOutFileName := d.T().TempDir() + "/out"
-	outFileTxt := tmpOutFileName + ".txt"
 	cases := []struct {
 		name                  string
 		inputFolderPath1      string
@@ -45,30 +43,18 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 			expectedValidateError: errox.InvalidArgs,
 		},
 		{
-			name:                  "Valid inputs should write output to a provided output file",
+			name:                  "Valid inputs should not raise any validate error",
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			expectedValidateError: nil,
-			outFile:               outFileTxt,
-			runCommand:            true, // to write the output - critic for next tests
-			removeOutputPath:      false,
 		},
 		{
-			name:                  "Existing output file input without using remove flag should return error that the file already exists",
+			name:                  "Existing output file without using remove flag should return validate error that the file already exists",
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			expectedValidateError: errox.AlreadyExists,
-			outFile:               outFileTxt,
+			outFile:               "testdata/netpol-diff-example-minimal/diff_output.txt", // an existing file
 			removeOutputPath:      false,
-		},
-		{
-			name:                  "Existing output file input with using remove flag should override existing file",
-			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			expectedValidateError: nil,
-			runCommand:            true,
-			outFile:               outFileTxt,
-			removeOutputPath:      true,
 		},
 	}
 
@@ -84,7 +70,7 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 				env:              env,
 			}
 
-			analyzer, err := diffNetpolCmd.construct()
+			_, err := diffNetpolCmd.construct()
 			d.NoError(err)
 
 			err = diffNetpolCmd.validate()
@@ -94,21 +80,25 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 				return
 			}
 			d.NoError(err)
-
-			if tt.runCommand {
-				err := diffNetpolCmd.analyzeConnectivityDiff(analyzer)
-				d.NoError(err)
-			}
-
-			if tt.outFile != "" {
-				_, err := os.Stat(tt.outFile)
-				d.NoError(err) // out file should exist
-			}
 		})
 	}
 }
 
+func (d *diffAnalyzeNetpolTestSuite) createOutFile() string {
+	tempDir := d.T().TempDir()
+	tmpOutFile, err := os.CreateTemp(tempDir, "out")
+	d.NoError(err)
+	return tmpOutFile.Name()
+}
+
+func (d *diffAnalyzeNetpolTestSuite) compareActualVsExpectedOutput(actualOutput, actualDir, actualFormat string) {
+	expectedOutput, err := os.ReadFile(path.Join(actualDir, "diff_output."+actualFormat))
+	d.NoError(err)
+	d.Equal(string(expectedOutput), actualOutput)
+}
+
 func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
+	outFileName := d.createOutFile()
 	cases := []struct {
 		name                     string
 		inputFolderPath1         string
@@ -116,6 +106,8 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 		strict                   bool
 		stopOnFirstErr           bool
 		outputToFile             bool
+		outFile                  string
+		removeOutputPath         bool
 		outputFormat             string
 		expectedAnalysisError    error
 		expectedErrorMsgContains string
@@ -165,7 +157,14 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			expectedAnalysisError: nil,
 		},
-
+		{
+			name:                  "Existing output file input with using remove flag should override existing output file",
+			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
+			outFile:               outFileName, // existing file
+			removeOutputPath:      true,
+			expectedAnalysisError: nil,
+		},
 		{
 			name:                  "Testing Diff between two dirs output should be written to default txt output file",
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
@@ -225,6 +224,8 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 				inputFolderPath1:      tt.inputFolderPath1,
 				inputFolderPath2:      tt.inputFolderPath2,
 				outputToFile:          tt.outputToFile,
+				outputFilePath:        tt.outFile,
+				removeOutputPath:      tt.removeOutputPath,
 				outputFormat:          tt.outputFormat,
 				env:                   env,
 			}
@@ -257,12 +258,16 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 				}
 				output, err := os.ReadFile(defaultFile)
 				d.NoError(err)
-
-				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+formatSuffix))
-				d.NoError(err)
-				d.Equal(string(expectedOutput), string(output))
-
+				d.compareActualVsExpectedOutput(string(output), tt.inputFolderPath2, formatSuffix)
 				d.NoError(os.Remove(defaultFile))
+			}
+
+			if tt.outFile != "" {
+				_, err := os.Stat(tt.outFile)
+				d.NoError(err) // out file should exist
+				output, err := os.ReadFile(tt.outFile)
+				d.NoError(err)
+				d.compareActualVsExpectedOutput(string(output), tt.inputFolderPath2, defaultOutputFormat)
 			}
 		})
 	}
