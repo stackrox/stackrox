@@ -14,9 +14,8 @@ import {
 import { fetchAlert } from 'services/AlertsService';
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
-import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
 
 import DeploymentDetails from './Deployment/DeploymentDetails';
 import EnforcementDetails from './EnforcementDetails';
@@ -26,15 +25,11 @@ import ViolationDetails from './ViolationDetails';
 import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
 
 function ViolationDetailsPage(): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadAccess } = usePermissions();
 
     const hasReadAccessForDeployment = hasReadAccess('Deployment');
-
-    const hasReadAccessForPolicy = isRouteEnabled(
-        { isFeatureFlagEnabled, hasReadAccess },
-        policyManagementBasePath
-    );
+    const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 
     const [activeTabKey, setActiveTabKey] = useState(0);
     const [alert, setAlert] = useState<Alert>();
@@ -114,7 +109,7 @@ function ViolationDetailsPage(): ReactElement {
                             </PageSection>
                         </Tab>
                     )}
-                    {hasReadAccessForPolicy && (
+                    {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
                                 <>
