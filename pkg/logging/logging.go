@@ -65,7 +65,7 @@ const (
 
 // Options for the logger.
 type Options struct {
-	notificationWriter    notifications.Writer
+	notificationStream    notifications.Stream
 	notificationConverter notifications.LogConverter
 }
 
