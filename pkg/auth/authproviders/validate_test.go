@@ -17,6 +17,8 @@ func TestValidateTokenProviderUpdate(t *testing.T) {
 	require.NoError(t, err)
 	after, err := timestamp.TimestampProto(time.Now().Add(1 * time.Hour))
 	require.NoError(t, err)
+	leeway, err := timestamp.TimestampProto(time.Now().Add(5 * time.Second))
+	require.NoError(t, err)
 
 	cases := map[string]struct {
 		provider *storage.AuthProvider
@@ -51,6 +53,16 @@ func TestValidateTokenProviderUpdate(t *testing.T) {
 				LastUpdated: after,
 			},
 			fails: true,
+		},
+		"non-empty timestamp higher than issued at but within leeway should lead to no error": {
+			claims: &tokens.Claims{
+				Claims: jwt.Claims{
+					IssuedAt: jwt.NewNumericDate(time.Now()),
+				},
+			},
+			provider: &storage.AuthProvider{
+				LastUpdated: leeway,
+			},
 		},
 	}
 
