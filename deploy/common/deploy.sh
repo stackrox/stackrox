@@ -27,12 +27,6 @@ echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 export ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED:-true}"
 echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
 
-export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
-if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-  export SCANNER_DB_IMAGE
-fi
-
 function curl_central() {
 	cmd=(curl -k)
 	local admin_user="${ROX_ADMIN_USER:-admin}"
