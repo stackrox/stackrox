@@ -55,9 +55,9 @@ var (
 		user.Authenticated(): {
 			"/v1.RoleService/GetClustersForPermissions",
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
+			"/v1.RoleService/GetResources",
 		},
 		allow.Anonymous(): {
-			"/v1.RoleService/GetResources",
 			"/v1.RoleService/GetMyPermissions",
 		},
 	})
