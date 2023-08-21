@@ -287,7 +287,7 @@ deploy_sensor_via_operator() {
     if [[ "${REMOTE_CLUSTER_ARCH}" == "ppc64le" ]]; then
         ROX_CENTRAL_ADDR=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host'):443
         ROX_CENTRAL_PASS=$(kubectl -n stackrox get secret central-admin-pass -o go-template='{{index .data "password" | base64decode}}')
-        SUPPORT_URL=$(< operator/midstream/iib.json jq '.support_url')
+        SUPPORT_URL=$(< operator/midstream/iib.json jq -r '.support_url')
         wget -O support-pkg.zip $SUPPORT_URL
         roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg.zip
     fi
