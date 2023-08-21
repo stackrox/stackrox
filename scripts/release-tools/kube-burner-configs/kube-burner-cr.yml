@@ -1,0 +1,20 @@
+---
+apiVersion: ripsaw.cloudbulldozer.io/v1alpha1
+kind: Benchmark
+metadata:
+  name: kube-burner-configmap-cfg
+  namespace: benchmark-operator
+spec:
+  metadata:
+    collection: false
+  workload:
+    name: kube-burner
+    args:
+      configmap: kube-burner-config
+      cleanup: true
+      pin_server: {"kubernetes.io/hostname": "__NODE_NAME__"}
+      image: quay.io/cloud-bulldozer/kube-burner:latest
+      log_level: info
+      step: 30s
+      node_selector:
+        beta.kubernetes.io/os: linux
