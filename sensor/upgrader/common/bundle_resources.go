@@ -22,6 +22,8 @@ var OrderedBundleResourceTypes = []schema.GroupVersionKind{
 	{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"},
 	{Group: "security.openshift.io", Version: "v1", Kind: "SecurityContextConstraints"},
 	{Group: "networking.k8s.io", Version: "v1", Kind: "NetworkPolicy"},
+	{Group: "monitoring.coreos.com", Version: "v1", Kind: "ServiceMonitor"},
+	{Group: "monitoring.coreos.com", Version: "v1", Kind: "PrometheusRule"},
 
 	// Might depend on objects above (e.g., referencing podsecuritypolicies)
 	{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "Role"},
