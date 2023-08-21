@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Card, CardBody, DescriptionList } from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { Deployment } from 'types/deployment.proto';
@@ -19,7 +19,8 @@ function SecurityContext({ deployment }: SecurityContextProps): ReactElement {
                 )
         ) ?? [];
     return (
-        <Card isFlat aria-label="Security context">
+        <Card isFlat>
+            <CardTitle component="h3">Security context</CardTitle>
             <CardBody>
                 {securityContextContainers?.length > 0
                     ? securityContextContainers.map((container, idx) => {
