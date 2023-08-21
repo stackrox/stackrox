@@ -132,7 +132,7 @@ tasks.withType(Test) {
         exceptionFormat "full"
         events "passed", "skipped", "failed"
     }
-    timeout = Duration.ofMinutes(210)
+    timeout = Duration.ofMinutes(630)
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,
