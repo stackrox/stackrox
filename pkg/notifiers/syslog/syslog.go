@@ -216,6 +216,10 @@ func getNamespaceFromAlert(alert *storage.Alert) string {
 }
 
 func (s *syslog) getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
+	// As seen in the GitHub issue (https://github.com/stackrox/stackrox/pull/5414) by @yrro, ACS swapped severity and name in the headers
+	// The change here is to flip it as done in his PR (https://github.com/stackrox/stackrox/pull/5414), however that cannot be done for all users
+	// because it is backwards incompatible. If the new message format field is set to "CEF" format it will send it in the right way.
+	// Otherwise, assume it's an existing old one and send the legacy (incorrect) way.
 	switch s.GetSyslog().GetMessageFormat() {
 	case storage.Syslog_CEF:
 		return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%s|%d|%s", version.GetMainVersion(), deviceEventClassID, name, severity, extension)
