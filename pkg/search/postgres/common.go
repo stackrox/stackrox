@@ -345,27 +345,6 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
 		query.Pagination = pagination
 		return query, nil
-		/*
-			case GET:
-				if schema.PermissionChecker != nil {
-					if ok, err := schema.PermissionChecker.ReadAllowed(ctx); err != nil {
-						return nil, err
-					} else if !ok {
-						return getMatchNoneQuery(), nil
-					}
-					return q, nil
-				} else {
-					sacFilter, err := GetReadSACQuery(ctx, schema.ScopingResource)
-					if err != nil {
-						return nil, err
-					}
-					pagination := q.GetPagination()
-					query := searchPkg.ConjunctionQuery(sacFilter, q)
-					query.Pagination = pagination
-					return query, nil
-				}
-
-		*/
 	}
 	return q, nil
 }
