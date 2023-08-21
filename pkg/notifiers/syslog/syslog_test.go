@@ -65,6 +65,7 @@ func makeNotifier() *storage.Notifier {
 						Hostname: "hostname",
 					},
 				},
+				MessageFormat: storage.Syslog_CEF,
 			},
 		},
 	}
@@ -82,7 +83,8 @@ func makeNotifierExtrafields(keyVals []*storage.KeyValuePair) *storage.Notifier 
 						Hostname: "hostname",
 					},
 				},
-				ExtraFields: keyVals,
+				MessageFormat: storage.Syslog_CEF,
+				ExtraFields:   keyVals,
 			},
 		},
 	}
@@ -347,4 +349,16 @@ func (s *SyslogNotifierTestSuite) TestValidateRemoteConfig() {
 	}
 	_, errURLValidIP := validateRemoteConfig(tcpConfigValidIP)
 	s.NoError(errURLValidIP)
+}
+
+func (s *SyslogNotifierTestSuite) TestHeaderFormat() {
+	notifier := makeNotifier()
+	syslog := s.makeSyslog(notifier)
+	header := syslog.getCEFHeaderWithExtension("deviceEventClassID", "alertnameunique", 999, "extension")
+	s.Equal("CEF:0|StackRox|Kubernetes Security Platform||deviceEventClassID|alertnameunique|999|extension", header)
+
+	// Legacy format
+	syslog.Notifier.GetSyslog().MessageFormat = storage.Syslog_UNDEFINED
+	header = syslog.getCEFHeaderWithExtension("deviceEventClassID", "alertnameunique", 999, "extension")
+	s.Equal("CEF:0|StackRox|Kubernetes Security Platform||deviceEventClassID|999|alertnameunique|extension", header)
 }
