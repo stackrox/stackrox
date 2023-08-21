@@ -135,6 +135,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     def cleanupSpec() {
         PolicyService.deletePolicy(unauthorizedProcessExecution.getId())
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     @Unroll

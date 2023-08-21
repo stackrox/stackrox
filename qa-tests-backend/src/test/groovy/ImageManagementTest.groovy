@@ -321,7 +321,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Clone and scope the policy for test"
-        Policy clone = PolicyService.clonePolicyAndScopeByNamespace("Latest tag", TEST_NAMESPACE)
+        Policy clone = PolicyService.clonePolicy("Latest tag", "Latest tag - ${TEST_NAMESPACE}")
 
         and:
         "Create a notifier"
@@ -336,6 +336,7 @@ class ImageManagementTest extends BaseSpecification {
             .addLifecycleStages(LifecycleStage.BUILD)
             .addNotifiers(notifier.id)
             .addCategories("DevOps Best Practices") // required for putPolicy
+            .clearExclusions()
             .build()
         Services.updatePolicy(update)
 
