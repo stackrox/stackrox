@@ -9,15 +9,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 var (
-	log       = logging.LoggerForModule()
-	sacHelper = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
+	log = logging.LoggerForModule()
 )
 
 // Searcher provides search functionality on existing cves.
@@ -40,7 +37,6 @@ func New(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	// scopedSearcher := pkgPostgres.WithScoping(sacHelper.FilteredSearcher(searcher))
 	scopedSearcher := pkgPostgres.WithScoping(searcher)
 	return edgefields.TransformFixableFields(scopedSearcher)
 }

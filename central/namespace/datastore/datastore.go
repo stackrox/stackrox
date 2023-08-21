@@ -64,8 +64,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 }
 
 var (
-	namespaceSAC                     = sac.ForResource(resources.Namespace)
-	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
+	namespaceSAC = sac.ForResource(resources.Namespace)
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.Namespace.String(),
@@ -248,7 +247,6 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 ///////////////////////////////////////////////
 
 func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	// scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(searcher))
 	scopedSearcher := pkgPostgres.WithScoping(searcher)
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
 	// This is currently required due to the priority searcher

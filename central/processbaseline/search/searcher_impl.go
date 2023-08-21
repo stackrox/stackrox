@@ -6,13 +6,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	deploymentExtensionPostgresSACSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {
@@ -46,7 +40,6 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	// filteredSearcher := deploymentExtensionPostgresSACSearchHelper.FilteredSearcher(searcher)
 	filteredSearcher := searcher
 	return filteredSearcher
 }

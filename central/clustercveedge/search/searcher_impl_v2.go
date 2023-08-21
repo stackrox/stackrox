@@ -8,14 +8,8 @@ import (
 	"github.com/stackrox/rox/central/cve/edgefields"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
-)
-
-var (
-	sacHelper = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -28,7 +22,6 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	// scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(searcher))
 	scopedSearcher := postgres.WithScoping(searcher)
 	return edgefields.TransformFixableFields(scopedSearcher)
 }

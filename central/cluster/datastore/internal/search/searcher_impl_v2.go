@@ -9,8 +9,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
@@ -18,7 +16,6 @@ import (
 )
 
 var (
-	sacHelper         = sac.ForResource(resources.Cluster).MustCreatePgSearchHelper()
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.Cluster.String(),
 		Reversed: false,
@@ -35,7 +32,6 @@ func NewV2(storage store.Store, indexer index.Indexer, clusterRanker *ranking.Ra
 }
 
 func formatSearcherV2(searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
-	// scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(searcher))
 	scopedSearcher := postgres.WithScoping(searcher)
 	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.ClusterPriority, clusterRanker)
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)

@@ -9,8 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
@@ -18,7 +16,6 @@ import (
 )
 
 var (
-	sacHelper         = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper()
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.DeploymentPriority.String(),
 		Reversed: false,
@@ -35,7 +32,6 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	// scopedSearcher := postgres.WithScoping(sacHelper.FilteredSearcher(searcher))
 	scopedSearcher := postgres.WithScoping(searcher)
 	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.DeploymentsSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
