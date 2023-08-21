@@ -91,6 +91,7 @@ function launch_central {
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
+    check_central_exists
 
     echo "Generating central config..."
 
