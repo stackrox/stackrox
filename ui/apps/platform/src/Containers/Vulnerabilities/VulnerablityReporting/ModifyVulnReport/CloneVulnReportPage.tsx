@@ -12,6 +12,7 @@ import {
     Bullseye,
     Spinner,
 } from '@patternfly/react-core';
+import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';
 import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
@@ -39,14 +40,14 @@ function CloneVulnReportPage() {
     const { reportId } = useParams();
 
     const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
-    const { formValues, setFormValues, setFormFieldValue, clearFormValues } = useReportFormValues();
+    const formik = useReportFormValues();
     const {
         isLoading: isCreating,
         error: createError,
         createReport,
     } = useCreateReport({
         onCompleted: () => {
-            clearFormValues();
+            formik.resetForm();
             history.push(vulnerabilityReportsPath);
         },
     });
@@ -58,39 +59,52 @@ function CloneVulnReportPage() {
             // We need to clear the reportId and modify the name
             reportFormValues.reportId = '';
             reportFormValues.reportParameters.reportName = `${reportFormValues.reportParameters.reportName} (copy)`;
-            setFormValues(reportFormValues);
+            formik.setValues(reportFormValues);
         }
-    }, [reportConfiguration, setFormValues]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reportConfiguration, formik.setValues]);
 
     function onCreate() {
-        createReport(formValues);
+        createReport(formik.values);
+    }
+
+    // @TODO: This is reused in the Edit and Clone components so we can try to refactor this soon
+    function isStepDisabled(stepName: string | undefined): boolean {
+        if (stepName === wizardStepNames[0]) {
+            return false;
+        }
+        if (stepName === wizardStepNames[1]) {
+            return !isEmpty(formik.errors.reportParameters);
+        }
+        if (stepName === wizardStepNames[2]) {
+            return (
+                !isEmpty(formik.errors.reportParameters) ||
+                !isEmpty(formik.errors.deliveryDestinations) ||
+                !isEmpty(formik.errors.schedule)
+            );
+        }
+        return false;
+    }
+
+    function onClose() {
+        history.push(vulnerabilityReportsPath);
     }
 
     const wizardSteps = [
         {
             name: wizardStepNames[0],
-            component: (
-                <ReportParametersForm
-                    title={wizardStepNames[0]}
-                    formValues={formValues}
-                    setFormFieldValue={setFormFieldValue}
-                />
-            ),
+            component: <ReportParametersForm title={wizardStepNames[0]} formik={formik} />,
         },
         {
             name: wizardStepNames[1],
-            component: (
-                <DeliveryDestinationsForm
-                    title={wizardStepNames[1]}
-                    formValues={formValues}
-                    setFormFieldValue={setFormFieldValue}
-                />
-            ),
+            component: <DeliveryDestinationsForm title={wizardStepNames[1]} formik={formik} />,
+            isDisabled: isStepDisabled(wizardStepNames[1]),
         },
         {
             name: wizardStepNames[2],
-            component: <ReportReviewForm title={wizardStepNames[2]} formValues={formValues} />,
+            component: <ReportReviewForm title={wizardStepNames[2]} formValues={formik.values} />,
             nextButtonText: 'Create',
+            isDisabled: isStepDisabled(wizardStepNames[2]),
         },
     ];
 
@@ -145,12 +159,14 @@ function CloneVulnReportPage() {
                     hasNoBodyPadding
                     steps={wizardSteps}
                     onSave={onCreate}
+                    onClose={onClose}
                     footer={
                         <ReportFormWizardFooter
                             wizardSteps={wizardSteps}
                             saveText="Create"
                             onSave={onCreate}
                             isSaving={isCreating}
+                            isStepDisabled={isStepDisabled}
                         />
                     }
                 />

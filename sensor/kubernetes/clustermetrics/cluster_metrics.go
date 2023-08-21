@@ -114,7 +114,7 @@ func (cm *clusterMetricsImpl) runPipeline() {
 				ClusterMetrics: metrics,
 			},
 		})
-		metricsPkg.SetInfoMetric(metrics)
+		metricsPkg.SetTelemetryMetrics(metrics)
 	} else {
 		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
 	}

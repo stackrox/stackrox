@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,9 +30,7 @@ var (
 			"/v1.ReportConfigurationService/GetReportConfiguration",
 			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
-		or.Or(
-			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Access)),
-			user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration))): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
 			"/v1.ReportConfigurationService/UpdateReportConfiguration",
 		},
@@ -58,10 +56,12 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.Raw
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, query.GetPagination(), 1000)
+	filteredQ := common.WithoutV2ReportConfigs(parsedQuery)
 
-	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, parsedQuery)
+	// Fill in pagination.
+	paginated.FillPagination(filteredQ, query.GetPagination(), 1000)
+
+	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, filteredQ)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve report configurations")
 	}
@@ -75,6 +75,9 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.Resourc
 	}
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", id)
+	}
+	if !common.IsV1ReportConfig(reportConfig) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 1.0")
 	}
 	return &v1.GetReportConfigurationResponse{
 		ReportConfig: reportConfig,
@@ -119,6 +122,18 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *v1.Reso
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
+
+	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	if err != nil {
+		return nil, errors.Wrap(err, "Error finding report config")
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' not found", id.GetId())
+	}
+	if !common.IsV1ReportConfig(config) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 1.0")
+	}
+
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
 		return &v1.Empty{}, err
 	}
@@ -130,8 +145,9 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *v1
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	filteredQ := common.WithoutV2ReportConfigs(parsedQuery)
 
-	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
+	numReportConfigs, err := s.reportConfigStore.Count(ctx, filteredQ)
 	if err != nil {
 		return nil, err
 	}

@@ -1,22 +1,22 @@
 import React, { ReactElement } from 'react';
 import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 
-import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useMultiSelect from 'hooks/useMultiSelect';
 import { IntervalType } from 'types/report.proto';
 
 export type DayPickerDropdownProps = {
-    label: string;
     fieldId: string;
     value: string[];
     handleSelect: (id, selection) => void;
     isEditable?: boolean;
-    isRequired?: boolean;
     intervalType: IntervalType | null;
 };
 
-export type DayOfWeek = '0' | '1' | '2' | '3' | '4' | '5' | '6';
-export type DayOfMonth = '1' | '15';
+export const daysOfWeek = ['0', '1', '2', '3', '4', '5', '6'] as const;
+export const daysOfMonth = ['1', '15'] as const;
+
+export type DayOfWeek = (typeof daysOfWeek)[number];
+export type DayOfMonth = (typeof daysOfMonth)[number];
 
 export const daysOfWeekMap: Record<DayOfWeek, string> = {
     '0': 'Sunday',
@@ -34,12 +34,10 @@ export const daysOfMonthMap: Record<DayOfMonth, string> = {
 } as const;
 
 function DayPickerDropdown({
-    label,
     fieldId,
     value,
     handleSelect,
     isEditable = true,
-    isRequired = false,
     intervalType,
 }: DayPickerDropdownProps): ReactElement {
     const selectSafeValue = value.map((item) => item.toString());
@@ -92,20 +90,18 @@ function DayPickerDropdown({
     }
 
     return (
-        <FormLabelGroup isRequired={isRequired} label={label} fieldId={fieldId} errors={{}}>
-            <Select
-                variant={SelectVariant.checkbox}
-                aria-label="Select one or more days"
-                onToggle={onToggleDaySelect}
-                onSelect={onSelectDay}
-                selections={selectSafeValue}
-                isOpen={isDaySelectOpen}
-                isDisabled={!isEditable}
-                placeholderText={value.length ? 'Selected days' : 'Select days'}
-            >
-                {selectOptions}
-            </Select>
-        </FormLabelGroup>
+        <Select
+            variant={SelectVariant.checkbox}
+            aria-label="Select one or more days"
+            onToggle={onToggleDaySelect}
+            onSelect={onSelectDay}
+            selections={selectSafeValue}
+            isOpen={isDaySelectOpen}
+            isDisabled={!isEditable}
+            placeholderText={value.length ? 'Selected days' : 'Select days'}
+        >
+            {selectOptions}
+        </Select>
     );
 }
 

@@ -7,6 +7,8 @@ import useFetchReport from 'hooks/useFetchReport';
 import usePermissions from 'hooks/usePermissions';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getQueryObject } from 'utils/queryStringUtils';
+
+import { getWriteAccessForReport } from './VulnMgmtReport.utils';
 import VulnMgmtReportDetail from './Detail/VulnMgmtReportDetail';
 import VulnMgmtEditReportPage from './Detail/VulnMgmtEditReportPage';
 
@@ -18,8 +20,8 @@ function VulnMgmtReportPage(): ReactElement {
         setRefresh(new Date().getTime());
     }
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
@@ -44,7 +46,7 @@ function VulnMgmtReportPage(): ReactElement {
                     {getAxiosErrorMessage(error)}
                 </Alert>
             )}
-            {action === 'edit' && hasWorkflowAdministrationWriteAccess && !!report ? (
+            {action === 'edit' && hasWriteAccessForReport && !!report ? (
                 <VulnMgmtEditReportPage
                     report={report}
                     reportScope={reportScope}

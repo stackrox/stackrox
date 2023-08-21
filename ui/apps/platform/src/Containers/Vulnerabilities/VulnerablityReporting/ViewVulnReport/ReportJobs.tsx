@@ -23,26 +23,34 @@ import { getDateTime } from 'utils/dateUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
+import useInterval from 'hooks/useInterval';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
+import useURLSort from 'hooks/useURLSort';
+import { saveFile } from 'services/DownloadService';
+import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
-import { saveFile } from 'services/DownloadService';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import ReportJobStatus from './ReportJobStatus';
 import JobDetails from './JobDetails';
-import useDeleteDownloadModal from '../hooks/useDeleteDownloadModal';
 import DeleteModal from '../components/DeleteModal';
 
 export type RunHistoryProps = {
     reportId: string;
 };
 
+const sortOptions = {
+    sortFields: ['Report Completion Time'],
+    defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
+};
+
 function ReportJobs({ reportId }: RunHistoryProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
     const [showOnlyMyJobs, setShowOnlyMyJobs] = React.useState<boolean>(false);
     const expandedRowSet = useSet<string>();
@@ -56,6 +64,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
         query,
         page,
         perPage,
+        sortOption,
         showMyHistory: showOnlyMyJobs,
     });
 
@@ -72,7 +81,10 @@ function ReportJobs({ reportId }: RunHistoryProps) {
 
     const handleChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
+        setPage(1);
     };
+
+    useInterval(fetchReportSnapshots, 10000);
 
     return (
         <>
@@ -89,6 +101,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     (val) => runStates[val] !== undefined
                                 ) as RunState[];
                                 setFilteredStatuses(newRunStates);
+                                setPage(1);
                             }}
                             placeholderText="Filter by status"
                         >
@@ -139,17 +152,17 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
-            {isLoading && (
+            {isLoading && !reportSnapshots && (
                 <Bullseye className="pf-u-background-color-100 pf-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
-            {!error && !isLoading && (
+            {reportSnapshots && (
                 <TableComposable aria-label="Simple table" variant="compact">
                     <Thead>
                         <Tr>
                             <Td>{/* Header for expanded column */}</Td>
-                            <Th>Completed</Th>
+                            <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
                             <Th>Status</Th>
                             <Th>Requestor</Th>
                             <Td>{/* Header for table actions column */}</Td>
@@ -169,6 +182,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                 variant="link"
                                                 onClick={() => {
                                                     setFilteredStatuses([]);
+                                                    setPage(1);
                                                 }}
                                             >
                                                 Clear filters
@@ -306,7 +320,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 error={deleteDownloadError}
             >
                 All data in this downloadable report will be deleted. Regenerating a downloadable
-                report will requre the download process to start over.
+                report will require the download process to start over.
             </DeleteModal>
         </>
     );

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
 import { ReportSnapshot } from 'services/ReportsService.types';
+import { ApiSortOption } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseFetchReportHistory = {
@@ -10,11 +11,12 @@ export type UseFetchReportHistory = {
     query: string;
     page: number;
     perPage: number;
+    sortOption: ApiSortOption;
     showMyHistory: boolean;
 };
 
 type Result = {
-    reportSnapshots: ReportSnapshot[];
+    reportSnapshots: ReportSnapshot[] | null;
     isLoading: boolean;
     error: string | null;
 };
@@ -24,7 +26,7 @@ export type FetchReportsResult = {
 } & Result;
 
 const defaultResult = {
-    reportSnapshots: [],
+    reportSnapshots: null,
     isLoading: false,
     error: null,
 };
@@ -34,17 +36,18 @@ function useFetchReportHistory({
     query,
     page,
     perPage,
+    sortOption,
     showMyHistory,
 }: UseFetchReportHistory): FetchReportsResult {
     const [result, setResult] = useState<Result>(defaultResult);
 
     const fetchReportSnapshots = useCallback(() => {
-        setResult({
-            reportSnapshots: [],
+        setResult((prevResult) => ({
+            reportSnapshots: prevResult.reportSnapshots,
             isLoading: true,
             error: null,
-        });
-        fetchReportHistory(id, query, page, perPage, showMyHistory)
+        }));
+        fetchReportHistory({ id, query, page, perPage, sortOption, showMyHistory })
             .then((reportSnapshots) => {
                 setResult({
                     reportSnapshots,
@@ -54,12 +57,12 @@ function useFetchReportHistory({
             })
             .catch((error) => {
                 setResult({
-                    reportSnapshots: [],
+                    reportSnapshots: null,
                     isLoading: false,
                     error: getAxiosErrorMessage(error),
                 });
             });
-    }, [id, query, page, perPage, showMyHistory]);
+    }, [id, query, page, perPage, sortOption, showMyHistory]);
 
     useEffect(() => {
         void fetchReportSnapshots();

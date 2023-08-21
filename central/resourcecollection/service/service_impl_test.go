@@ -193,7 +193,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 
-	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return("fake-id", nil)
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NoError(err)
 	suite.NotNil(resp.GetCollection())
@@ -212,7 +212,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	mockID.EXPECT().FullName().Return("name").Times(1)
 	mockID.EXPECT().FriendlyName().Return("name").Times(1)
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
-	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return(errors.New("test error"))
+	suite.dataStore.EXPECT().AddCollection(gomock.Any(), gomock.Any()).Times(1).Return("", errors.New("test error"))
 	_, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.Error(err)
 }
@@ -315,11 +315,11 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
-	// test error when ID is empty
+	// Test error when ID is empty
 	_, err := suite.collectionService.DeleteCollection(allAccessCtx, &v1.ResourceByID{})
 	suite.Error(err)
 
-	// test error when collectionId is in use by report config
+	// Test error when collectionId is in use by report config v1.
 	reportConfig := &storage.ReportConfiguration{
 		Name:    "config0",
 		ScopeId: "col0",
@@ -329,10 +329,12 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	idRequest := &v1.ResourceByID{Id: "col0"}
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.Error(err)
+
+	// Remove report configuration and test successful deletion of collection.
 	err = suite.resourceConfigDS.RemoveReportConfiguration(allAccessCtx, id)
 	suite.NoError(err)
 
-	// test successful deletion
+	// Test successful deletion
 	idRequest = &v1.ResourceByID{Id: "a"}
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
@@ -342,6 +344,31 @@ func (suite *CollectionServiceTestSuite) TestDeleteCollection() {
 	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(errors.New("test error"))
 	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
 	suite.Error(err)
+
+	// Test error when collectionId is in use by report config v2.
+	reportConfig = &storage.ReportConfiguration{
+		Name: "config0",
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{
+				CollectionId: "col0",
+			},
+		},
+	}
+	id, err = suite.resourceConfigDS.AddReportConfiguration(allAccessCtx, reportConfig)
+	suite.NoError(err)
+	idRequest = &v1.ResourceByID{Id: "col0"}
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.Error(err)
+
+	// Remove report configuration and test successful deletion of collection.
+	err = suite.resourceConfigDS.RemoveReportConfiguration(allAccessCtx, id)
+	suite.NoError(err)
+
+	// Test successful deletion
+	idRequest = &v1.ResourceByID{Id: "a"}
+	suite.dataStore.EXPECT().DeleteCollection(allAccessCtx, idRequest.GetId()).Times(1).Return(nil)
+	_, err = suite.collectionService.DeleteCollection(allAccessCtx, idRequest)
+	suite.NoError(err)
 }
 
 func (suite *CollectionServiceTestSuite) TestListCollections() {

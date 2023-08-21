@@ -5,7 +5,7 @@ import { ReportNotificationMethod } from 'services/ReportsService.types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 export type UseSaveReportProps = {
-    onCompleted: () => void;
+    onCompleted: (context: { reportNotificationMethod: ReportNotificationMethod }) => void;
 };
 
 type Result = {
@@ -42,7 +42,7 @@ function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                         isRunning: false,
                         runError: null,
                     });
-                    onCompleted();
+                    onCompleted({ reportNotificationMethod });
                 })
                 .catch((err) => {
                     setResult({

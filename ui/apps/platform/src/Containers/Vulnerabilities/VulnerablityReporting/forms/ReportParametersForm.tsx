@@ -5,18 +5,15 @@ import {
     Flex,
     FlexItem,
     Form,
-    FormGroup,
     PageSection,
     SelectOption,
     TextArea,
     TextInput,
     Title,
 } from '@patternfly/react-core';
+import { FormikProps } from 'formik';
 
-import {
-    ReportFormValues,
-    SetReportFormFieldValue,
-} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import usePermissions from 'hooks/usePermissions';
 import { fixabilityLabels } from 'constants/reportConstants';
 import {
@@ -27,40 +24,36 @@ import {
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
     title: string;
-    formValues: ReportFormValues;
-    setFormFieldValue: SetReportFormFieldValue;
+    formik: FormikProps<ReportFormValues>;
 };
 
-function ReportParametersForm({
-    title,
-    formValues,
-    setFormFieldValue,
-}: ReportParametersFormParams): ReactElement {
+function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
 
     const handleTextChange = (fieldName: string) => (value: string) => {
-        setFormFieldValue(fieldName, value);
+        formik.setFieldValue(fieldName, value);
     };
 
     const handleSelectChange = (name: string, value: string) => {
-        setFormFieldValue(name, value);
+        formik.setFieldValue(name, value);
     };
 
     const handleCheckboxSelectChange = (fieldName: string) => (selection: string[]) => {
-        setFormFieldValue(fieldName, selection);
+        formik.setFieldValue(fieldName, selection);
     };
 
     const handleDateSelection = (fieldName: string) => (_event, selection) => {
-        setFormFieldValue(fieldName, selection);
+        formik.setFieldValue(fieldName, selection);
     };
 
     const handleCollectionSelection = (fieldName: string) => (selection) => {
-        setFormFieldValue(fieldName, selection);
+        formik.setFieldValue(fieldName, selection);
     };
 
     const handleCVEsDiscoveredStartDate = handleDateSelection(
@@ -78,30 +71,49 @@ function ReportParametersForm({
             </PageSection>
             <Divider component="div" />
             <Form className="pf-u-py-lg pf-u-px-lg">
-                <FormGroup label="Report name" isRequired fieldId="reportParameters.reportName">
+                <FormLabelGroup
+                    label="Report name"
+                    isRequired
+                    fieldId="reportParameters.reportName"
+                    errors={formik.errors}
+                >
                     <TextInput
                         isRequired
                         type="text"
-                        id="reportName"
-                        name="reportName"
-                        value={formValues.reportParameters.reportName}
+                        id="reportParameters.reportName"
+                        name="reportParameters.reportName"
+                        value={formik.values.reportParameters.reportName}
                         onChange={handleTextChange('reportParameters.reportName')}
+                        onBlur={formik.handleBlur}
                     />
-                </FormGroup>
-                <FormGroup label="Description" fieldId="reportParameters.description">
+                </FormLabelGroup>
+                <FormLabelGroup
+                    label="Description"
+                    fieldId="reportParameters.description"
+                    errors={formik.errors}
+                >
                     <TextArea
                         type="text"
-                        id="description"
-                        name="description"
-                        value={formValues.reportParameters.description}
+                        id="reportParameters.description"
+                        name="reportParameters.description"
+                        value={formik.values.reportParameters.description}
                         onChange={handleTextChange('reportParameters.description')}
+                        onBlur={formik.handleBlur}
                     />
-                </FormGroup>
-                <FormGroup label="CVE severity" isRequired fieldId="reportParameters.cveSeverities">
+                </FormLabelGroup>
+                <FormLabelGroup
+                    label="CVE severity"
+                    isRequired
+                    fieldId="reportParameters.cveSeverities"
+                    errors={formik.errors}
+                >
                     <CheckboxSelect
+                        toggleId="reportParameters.cveSeverities"
+                        name="reportParameters.cveSeverities"
                         ariaLabel="CVE severity checkbox select"
-                        selections={formValues.reportParameters.cveSeverities}
+                        selections={formik.values.reportParameters.cveSeverities}
                         onChange={handleCheckboxSelectChange('reportParameters.cveSeverities')}
+                        onBlur={formik.handleBlur}
                         placeholderText="CVE severity"
                     >
                         <SelectOption value="CRITICAL_VULNERABILITY_SEVERITY">
@@ -141,12 +153,20 @@ function ReportParametersForm({
                             </Flex>
                         </SelectOption>
                     </CheckboxSelect>
-                </FormGroup>
-                <FormGroup label="CVE status" isRequired fieldId="reportParameters.cveStatus">
+                </FormLabelGroup>
+                <FormLabelGroup
+                    label="CVE status"
+                    isRequired
+                    fieldId="reportParameters.cveStatus"
+                    errors={formik.errors}
+                >
                     <CheckboxSelect
+                        toggleId="reportParameters.cveStatus"
+                        name="reportParameters.cveStatus"
                         ariaLabel="CVE status checkbox select"
-                        selections={formValues.reportParameters.cveStatus}
+                        selections={formik.values.reportParameters.cveStatus}
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
+                        onBlur={formik.handleBlur}
                         placeholderText="CVE status"
                     >
                         <SelectOption value="FIXABLE">{fixabilityLabels.FIXABLE}</SelectOption>
@@ -154,27 +174,37 @@ function ReportParametersForm({
                             {fixabilityLabels.NOT_FIXABLE}
                         </SelectOption>
                     </CheckboxSelect>
-                </FormGroup>
-                <FormGroup label="Image type" isRequired fieldId="reportParameters.imageType">
+                </FormLabelGroup>
+                <FormLabelGroup
+                    label="Image type"
+                    isRequired
+                    fieldId="reportParameters.imageType"
+                    errors={formik.errors}
+                >
                     <CheckboxSelect
+                        toggleId="reportParameters.imageType"
+                        name="reportParameters.imageType"
                         ariaLabel="Image type checkbox select"
-                        selections={formValues.reportParameters.imageType}
+                        selections={formik.values.reportParameters.imageType}
                         onChange={handleCheckboxSelectChange('reportParameters.imageType')}
+                        onBlur={formik.handleBlur}
                         placeholderText="Image type"
                     >
                         <SelectOption value="DEPLOYED">{imageTypeLabelMap.DEPLOYED}</SelectOption>
                         <SelectOption value="WATCHED">{imageTypeLabelMap.WATCHED}</SelectOption>
                     </CheckboxSelect>
-                </FormGroup>
-                <FormGroup
+                </FormLabelGroup>
+                <FormLabelGroup
                     label="CVEs discovered since"
                     isRequired
                     fieldId="reportParameters.cvesDiscoveredSince"
+                    errors={formik.errors}
                 >
                     <SelectSingle
                         id="reportParameters.cvesDiscoveredSince"
-                        value={formValues.reportParameters.cvesDiscoveredSince}
+                        value={formik.values.reportParameters.cvesDiscoveredSince}
                         handleSelect={handleSelectChange}
+                        onBlur={formik.handleBlur}
                     >
                         <SelectOption
                             value="SINCE_LAST_REPORT"
@@ -195,23 +225,37 @@ function ReportParametersForm({
                             {cvesDiscoveredSinceLabelMap.ALL_VULN}
                         </SelectOption>
                     </SelectSingle>
-                </FormGroup>
-                {formValues.reportParameters.cvesDiscoveredSince === 'START_DATE' && (
-                    <FormGroup isRequired fieldId="reportParameters.cvesDiscoveredStartDate">
+                </FormLabelGroup>
+                {formik.values.reportParameters.cvesDiscoveredSince === 'START_DATE' && (
+                    <FormLabelGroup
+                        isRequired
+                        fieldId="reportParameters.cvesDiscoveredStartDate"
+                        errors={formik.errors}
+                    >
                         <DatePicker
-                            value={formValues.reportParameters.cvesDiscoveredStartDate}
-                            onBlur={handleCVEsDiscoveredStartDate}
+                            name="reportParameters.cvesDiscoveredStartDate"
+                            value={formik.values.reportParameters.cvesDiscoveredStartDate}
+                            onBlur={formik.handleBlur}
                             onChange={handleCVEsDiscoveredStartDate}
                         />
-                    </FormGroup>
+                    </FormLabelGroup>
                 )}
-                <FormGroup isRequired fieldId="reportParameters.reportScope">
+                <FormLabelGroup
+                    label="Configure report scope"
+                    isRequired
+                    fieldId="reportParameters.reportScope"
+                    errors={formik.errors}
+                >
                     <CollectionSelection
-                        selectedScope={formValues.reportParameters.reportScope}
+                        toggleId="reportParameters.reportScope"
+                        id="reportParameters.reportScope"
+                        selectedScope={formik.values.reportParameters.reportScope}
                         onChange={handleCollectionSelection('reportParameters.reportScope')}
                         allowCreate={canWriteCollections}
+                        onBlur={formik.handleBlur}
+                        onValidateField={formik.validateField}
                     />
-                </FormGroup>
+                </FormLabelGroup>
             </Form>
         </>
     );

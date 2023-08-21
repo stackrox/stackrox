@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	infoMocks "github.com/stackrox/rox/central/metrics/info/mocks"
+	telemetryMocks "github.com/stackrox/rox/central/metrics/telemetry/mocks"
 	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -18,18 +18,18 @@ func TestPipeline(t *testing.T) {
 
 type PipelineTestSuite struct {
 	suite.Suite
-	pipeline     *pipelineImpl
-	metricsStore *metricsMocks.MockMetricsStore
-	infoMetric   *infoMocks.MockInfo
-	mockCtrl     *gomock.Controller
+	pipeline         *pipelineImpl
+	metricsStore     *metricsMocks.MockMetricsStore
+	telemetryMetrics *telemetryMocks.MockTelemetry
+	mockCtrl         *gomock.Controller
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.metricsStore = metricsMocks.NewMockMetricsStore(suite.mockCtrl)
-	suite.infoMetric = infoMocks.NewMockInfo(suite.mockCtrl)
-	suite.pipeline = NewPipeline(suite.metricsStore, suite.infoMetric).(*pipelineImpl)
+	suite.telemetryMetrics = telemetryMocks.NewMockTelemetry(suite.mockCtrl)
+	suite.pipeline = NewPipeline(suite.metricsStore, suite.telemetryMetrics).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -42,7 +42,7 @@ func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor() {
 	expectedMetrics := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10}
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
-	suite.infoMetric.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
+	suite.telemetryMetrics.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
 
 	err := suite.pipeline.Run(context.Background(), clusterID, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterMetrics{
@@ -58,7 +58,7 @@ func (suite *PipelineTestSuite) TestClusterMetricsResetOnPipelineFinish() {
 	expectedMetrics := &central.ClusterMetrics{}
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
-	suite.infoMetric.EXPECT().DeleteClusterMetrics(clusterID)
+	suite.telemetryMetrics.EXPECT().DeleteClusterMetrics(clusterID)
 
 	suite.pipeline.OnFinish(clusterID)
 }

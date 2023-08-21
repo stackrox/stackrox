@@ -2,8 +2,10 @@ package common
 
 import (
 	rolePkg "github.com/stackrox/rox/central/role"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ExtractAccessScopeRules extracts simple access scope rules from the given authenticated user identity
@@ -33,4 +35,28 @@ func ExtractAccessScopeRules(identity authn.Identity) []*storage.SimpleAccessSco
 		accessScopeRulesList = append(accessScopeRulesList, rolePkg.AccessScopeExcludeAll.GetRules())
 	}
 	return accessScopeRulesList
+}
+
+// IsV1ReportConfig returns true if the given config belongs to reporting version 1.0
+func IsV1ReportConfig(config *storage.ReportConfiguration) bool {
+	return config.GetResourceScope() == nil
+}
+
+// IsV2ReportConfig returns true if the given config belongs to reporting version 2.0
+func IsV2ReportConfig(config *storage.ReportConfiguration) bool {
+	return config.GetResourceScope() != nil
+}
+
+// WithoutV2ReportConfigs adds a conjunction query to exclude v2 report configs
+func WithoutV2ReportConfigs(query *v1.Query) *v1.Query {
+	return search.ConjunctionQuery(
+		query,
+		search.NewQueryBuilder().AddExactMatches(search.CollectionID, "").ProtoQuery())
+}
+
+// WithoutV1ReportConfigs adds a conjunction query to exclude v1 report configs
+func WithoutV1ReportConfigs(query *v1.Query) *v1.Query {
+	return search.ConjunctionQuery(
+		query,
+		search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, "").ProtoQuery())
 }

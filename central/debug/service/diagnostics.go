@@ -15,9 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -125,7 +125,7 @@ func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[str
 func pullCentralClusterDiagnostics(ctx context.Context, filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup, since time.Time) {
 	defer wg.Add(-1)
 
-	restCfg, err := rest.InClusterConfig()
+	restCfg, err := k8sutil.GetK8sInClusterConfig()
 	if err == nil {
 		err = k8sintrospect.Collect(ctx, mainClusterConfig, restCfg, k8sintrospect.SendToChan(filesC), since)
 	}

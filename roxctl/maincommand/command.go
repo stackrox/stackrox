@@ -85,6 +85,7 @@ func Command() *cobra.Command {
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
+		c.AddCommand(netpol.Command(cliEnvironment))
 	}
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))

@@ -62,7 +62,7 @@ export function getReportConfigurationFromFormValues(
     if (reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
         vulnReportFilters = {
             ...vulnReportFiltersBase,
-            lastSuccessfulReport: true,
+            sinceLastSentScheduledReport: true,
         };
     } else if (
         reportParameters.cvesDiscoveredSince === 'START_DATE' &&
@@ -70,7 +70,7 @@ export function getReportConfigurationFromFormValues(
     ) {
         vulnReportFilters = {
             ...vulnReportFiltersBase,
-            startDate: new Date(reportParameters.cvesDiscoveredStartDate).toISOString(),
+            sinceStartDate: new Date(reportParameters.cvesDiscoveredStartDate).toISOString(),
         };
     } else {
         vulnReportFilters = {
@@ -89,25 +89,27 @@ export function getReportConfigurationFromFormValues(
         };
     });
 
-    let schedule: Schedule;
+    let schedule: Schedule | null;
     if (formSchedule.intervalType === 'WEEKLY') {
         schedule = {
             intervalType: 'WEEKLY',
             hour: 0,
             minute: 0,
             daysOfWeek: {
-                days: formSchedule.daysOfWeek.map((day) => Number(day)),
+                days: formSchedule.daysOfWeek?.map((day) => Number(day)) || [],
             },
         };
-    } else {
+    } else if (formSchedule.intervalType === 'MONTHLY') {
         schedule = {
             intervalType: 'MONTHLY',
             hour: 0,
             minute: 0,
             daysOfMonth: {
-                days: formSchedule.daysOfMonth.map((day) => Number(day)),
+                days: formSchedule.daysOfMonth?.map((day) => Number(day)) || [],
             },
         };
+    } else {
+        schedule = null;
     }
 
     const reportConfiguration: ReportConfiguration = {
@@ -144,11 +146,12 @@ export function getReportFormValuesFromConfiguration(
 
     if ('allVuln' in vulnReportFilters) {
         cvesDiscoveredSince = 'ALL_VULN';
-    } else if ('lastSuccessfulReport' in vulnReportFilters) {
+    } else if ('sinceLastSentScheduledReport' in vulnReportFilters) {
         cvesDiscoveredSince = 'SINCE_LAST_REPORT';
-    } else if ('startDate' in vulnReportFilters) {
+    } else if ('sinceStartDate' in vulnReportFilters) {
         cvesDiscoveredSince = 'START_DATE';
-        cvesDiscoveredStartDate = vulnReportFilters.startDate;
+        // Strip off the google.protobuf.Timestamp time portion of the date string
+        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate.substring(0, 10);
     } else {
         // we'll default to this if none of these fields are present
         cvesDiscoveredSince = 'ALL_VULN';
@@ -166,7 +169,13 @@ export function getReportFormValuesFromConfiguration(
     });
 
     let formSchedule: ReportFormValues['schedule'];
-    if (schedule.intervalType === 'WEEKLY') {
+    if (!schedule) {
+        formSchedule = {
+            intervalType: null,
+            daysOfWeek: [],
+            daysOfMonth: [],
+        };
+    } else if (schedule.intervalType === 'WEEKLY') {
         formSchedule = {
             intervalType: 'WEEKLY',
             daysOfWeek: schedule.daysOfWeek.days.map((day) => String(day) as DayOfWeek),

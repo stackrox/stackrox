@@ -392,7 +392,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 		return
 	}
 	log.Infof("Successfully reprocessed %d/%d images", nReprocessed.Load(), len(results))
-	log.Infof("Resyncing deployments now that images have been reprocessed...")
+	log.Info("Resyncing deployments now that images have been reprocessed...")
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {

@@ -707,8 +707,7 @@ spec:
       - description: The method for system-level data collection. EBPF is recommended.
           If you select "NoCollection", you will not be able to see any information
           about network activity and process executions. The remaining settings in
-          these section will not have any effect. Note that CORE_BPF is on Tech Preview
-          stage.
+          these section will not have any effect.
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:

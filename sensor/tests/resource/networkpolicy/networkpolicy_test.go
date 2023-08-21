@@ -1,15 +1,15 @@
 package networkpolicy
 
 import (
+	"context"
 	"log"
 	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stackrox/rox/sensor/testutils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
@@ -56,52 +56,26 @@ var (
 	egressNetpolViolationName  = "Deployments should have at least one egress Network Policy"
 )
 
-func checkViolations(violations []string) func(result *central.AlertResults) error {
-	return func(result *central.AlertResults) error {
-		missing := set.NewStringSet(violations...)
-		for _, alertMessage := range result.GetAlerts() {
-			missing.Remove(alertMessage.GetPolicy().GetName())
-		}
+func (s *NetworkPolicySuite) Test_NetworkPolicyViolations() {
+	s.testContext.RunTest(s.T(),
+		helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, objects map[string]k8s.Object) {
+			ctx := context.Background()
+			k8sDeployment := &appsv1.Deployment{}
+			_, err := tc.ApplyResourceAndWait(ctx, t, helper.DefaultNamespace, &NginxDeployment, k8sDeployment, nil)
+			require.NoError(t, err)
 
-		if len(missing) != 0 {
-			return errors.Errorf("expected violations not found: %v", missing.AsSlice())
-		}
-		return nil
-	}
-}
+			deploymentID := string(k8sDeployment.GetUID())
 
-func (s *NetworkPolicySuite) Test_Deployment_NetpolViolations() {
-	testCases := map[string]struct {
-		netpolsApplied     []helper.K8sResourceInfo
-		violationsExpected []string
-	}{
-		"No policies applied: should have two violations": {
-			netpolsApplied:     []helper.K8sResourceInfo{},
-			violationsExpected: []string{ingressNetpolViolationName, egressNetpolViolationName},
-		},
-		"Both policies applied: should have no violations": {
-			netpolsApplied:     []helper.K8sResourceInfo{IngressPolicyAllow443, EgressPolicyBlockAllEgress},
-			violationsExpected: []string{},
-		},
-		"Ingress applied: egress violation": {
-			netpolsApplied:     []helper.K8sResourceInfo{IngressPolicyAllow443},
-			violationsExpected: []string{egressNetpolViolationName},
-		},
-		"Egress applied: ingress violation": {
-			netpolsApplied:     []helper.K8sResourceInfo{EgressPolicyBlockAllEgress},
-			violationsExpected: []string{ingressNetpolViolationName},
-		},
-	}
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(egressNetpolViolationName, ingressNetpolViolationName), "", true)
 
-	for name, testCase := range testCases {
-		s.T().Run(name, func(t *testing.T) {
-			resourcesToApply := append(testCase.netpolsApplied, NginxDeployment)
-			s.testContext.RunTest(t,
-				helper.WithResources(resourcesToApply),
-				helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, objects map[string]k8s.Object) {
-					tc.LastViolationState(t, "nginx-deployment", checkViolations(testCase.violationsExpected), name)
-				}))
-		})
+			_, err = tc.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, EgressPolicyBlockAllEgress, nil)
+			require.NoError(t, err)
 
-	}
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(ingressNetpolViolationName), "", true)
+
+			_, err = tc.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, IngressPolicyAllow443, nil)
+			require.NoError(t, err)
+
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertNoViolations(), "", true)
+		}))
 }

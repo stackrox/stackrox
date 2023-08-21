@@ -136,7 +136,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	if storagePath := env.FakeWorkloadStoragePath.Setting(); storagePath != "" {
 		db, err = pebble.Open(storagePath, &pebble.Options{})
 		if err != nil {
-			log.Panicf("could not open id storage")
+			log.Panic("could not open id storage")
 		}
 	}
 
@@ -147,7 +147,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	mgr.initializePreexistingResources()
 
-	log.Infof("Created Workload manager for workload")
+	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
 	log.Infof("Rendered workload: %+v", workload)
 	return mgr

@@ -21,7 +21,7 @@ export const apidocsPath = `${mainPath}/apidocs`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
-export const clustersDelegateScanningPath = `${clustersBasePath}/delegate-scanning`;
+export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
@@ -115,14 +115,14 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
     [apidocsPath]: {
         resourceAccessRequirements: everyResource([]),
     },
-    [clustersDelegateScanningPath]: {
+    [clustersDelegatedScanningPath]: {
         resourceAccessRequirements: everyResource(['Administration']),
     },
     [clustersPathWithParam]: {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     [collectionsPath]: {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
     },
     [compliancePath]: {
         resourceAccessRequirements: everyResource([
@@ -172,7 +172,12 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     [networkPath]: {
-        resourceAccessRequirements: everyResource(['NetworkGraph', 'NetworkPolicy']),
+        resourceAccessRequirements: everyResource([
+            'Deployment',
+            'DeploymentExtension',
+            'NetworkGraph',
+            'NetworkPolicy',
+        ]),
     },
     [policyManagementBasePath]: {
         resourceAccessRequirements: everyResource([
@@ -203,7 +208,7 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
     },
     // Reporting and Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     [vulnManagementReportsPath]: {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
     [vulnManagementRiskAcceptancePath]: {
         resourceAccessRequirements: everyResource([

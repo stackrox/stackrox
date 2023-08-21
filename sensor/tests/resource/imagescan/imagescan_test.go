@@ -95,13 +95,7 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 			}, "myapp should have started the container and have an imageID", 2*time.Minute)
 
 			// There should be no violation yet, because there are no components provided for this image
-			tc.LastViolationState(t, "myapp", func(result *central.AlertResults) error {
-				if checkIfAlertsHaveViolation(result, Policies[0].GetName()) {
-					return errors.New("violation found for deployment")
-				}
-				return nil
-			}, "Should not have violation")
-
+			tc.NoViolations(t, "myapp", "violation found for deployment")
 			tc.GetFakeCentral().StubMessage(&central.MsgToSensor{
 				Msg: &central.MsgToSensor_UpdatedImage{
 					UpdatedImage: &storage.Image{

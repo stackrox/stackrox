@@ -107,7 +107,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
 	}
 
-	protoReportConfig := convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
+	protoReportConfig := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
 
 	id, err := s.reportConfigStore.AddReportConfiguration(ctx, protoReportConfig)
 	if err != nil {
@@ -124,7 +124,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, err
 	}
 
-	resp, err := convertProtoReportConfigurationToV2(createdReportConfig, s.collectionDatastore, s.notifierDatastore)
+	resp, err := s.convertProtoReportConfigurationToV2(createdReportConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "Report config created, but encountered error generating the response")
 	}
@@ -147,7 +147,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
 	}
 
-	updatedConfig := convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
+	updatedConfig := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
 		currentConfig.GetVulnReportFilters().GetAccessScopeRules())
 
 	err = s.reportConfigStore.UpdateReportConfiguration(ctx, updatedConfig)
@@ -168,18 +168,19 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
 
 	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(filteredQ, query.GetPagination(), maxPaginationLimit)
 
-	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, parsedQuery)
+	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, filteredQ)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve report configurations")
 	}
 	v2Configs := make([]*apiV2.ReportConfiguration, 0, len(reportConfigs))
 
 	for _, config := range reportConfigs {
-		converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
+		converted, err := s.convertProtoReportConfigurationToV2(config)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage report configuration with id %s to response", config.GetId())
 		}
@@ -199,8 +200,11 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
+	if !common.IsV2ReportConfig(config) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
 
-	converted, err := convertProtoReportConfigurationToV2(config, s.collectionDatastore, s.notifierDatastore)
+	converted, err := s.convertProtoReportConfigurationToV2(config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Error converting storage report configuration with id %s to response", config.GetId())
 	}
@@ -212,8 +216,9 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
 
-	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
+	numReportConfigs, err := s.reportConfigStore.Count(ctx, filteredQ)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +229,17 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
+	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	if err != nil {
+		return nil, errors.Wrap(err, "Error finding report config")
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' not found", id.GetId())
+	}
+	if !common.IsV2ReportConfig(config) {
+		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
+
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
 		return nil, err
 	}
@@ -243,7 +259,7 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
 	}
-	status := convertPrototoV2Reportstatus(rep.GetReportStatus())
+	status := s.convertPrototoV2Reportstatus(rep.GetReportStatus())
 	return &apiV2.ReportStatusResponse{Status: status}, err
 }
 
@@ -255,6 +271,7 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
 		parsedQuery,
@@ -266,7 +283,10 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if err != nil {
 		return nil, err
 	}
-	snapshots := convertProtoReportSnapshotstoV2(results)
+	snapshots, err := s.convertProtoReportSnapshotstoV2(results)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
+	}
 	res := apiV2.ReportHistoryResponse{
 		ReportSnapshots: snapshots,
 	}
@@ -306,7 +326,10 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 	if err != nil {
 		return nil, err
 	}
-	snapshots := convertProtoReportSnapshotstoV2(results)
+	snapshots, err := s.convertProtoReportSnapshotstoV2(results)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
+	}
 	res := apiV2.ReportHistoryResponse{
 		ReportSnapshots: snapshots,
 	}
@@ -409,9 +432,9 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 	blobName := common.GetReportBlobPath(rep.GetReportConfigurationId(), req.GetId())
 	switch status.GetRunState() {
 	case storage.ReportStatus_FAILURE:
-		return nil, errors.Errorf("Report job %q has failed and no downloadable report to delete", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report job %q has failed and no downloadable report to delete", req.GetId())
 	case storage.ReportStatus_PREPARING, storage.ReportStatus_WAITING:
-		return nil, errors.Errorf("Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Report job %q is still running. Please cancel it or wait for its completion.", req.GetId())
 	}
 
 	ctx = sac.WithGlobalAccessScopeChecker(ctx,

@@ -739,7 +739,7 @@ func (m *ReportSchedule) Clone() *ReportSchedule {
 	return cloned
 }
 
-// Sunday = 1, Monday = 2, .... Saturday =  7
+// Sunday = 0, Monday = 1, .... Saturday =  6
 type ReportSchedule_DaysOfWeek struct {
 	Days                 []int32  `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`

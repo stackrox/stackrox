@@ -25,13 +25,15 @@ func convertToIndexReport(r *claircore.IndexReport) *v4.IndexReport {
 		}
 	}
 	return &v4.IndexReport{
-		State:         r.State,
-		Success:       r.Success,
-		Err:           r.Err,
-		Packages:      convertMapToSlice(convertToPackage, r.Packages),
-		Distributions: convertMapToSlice(convertToDistribution, r.Distributions),
-		Repositories:  convertMapToSlice(convertToRepository, r.Repositories),
-		Environments:  environments,
+		State:   r.State,
+		Success: r.Success,
+		Err:     r.Err,
+		Contents: &v4.Contents{
+			Packages:      convertMapToSlice(convertToPackage, r.Packages),
+			Distributions: convertMapToSlice(convertToDistribution, r.Distributions),
+			Repositories:  convertMapToSlice(convertToRepository, r.Repositories),
+			Environments:  environments,
+		},
 	}
 }
 

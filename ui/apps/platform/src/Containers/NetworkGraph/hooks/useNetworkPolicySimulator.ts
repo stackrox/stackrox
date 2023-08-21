@@ -7,6 +7,7 @@ import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { Simulation } from '../utils/getSimulation';
+import { getSearchFilterFromScopeHierarchy } from '../utils/simulatorUtils';
 import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export type NetworkPolicySimulator =
@@ -109,11 +110,9 @@ function useNetworkPolicySimulator({
                 networkService
                     .generateNetworkModification(
                         options.scopeHierarchy.cluster.id,
-                        getRequestQueryStringForSearchFilter({
-                            Namespace: options.scopeHierarchy.namespaces,
-                            Deployment: options.scopeHierarchy.deployments,
-                            ...options.scopeHierarchy.remainingQuery,
-                        }),
+                        getRequestQueryStringForSearchFilter(
+                            getSearchFilterFromScopeHierarchy(scopeHierarchy)
+                        ),
                         options.networkDataSince,
                         options.excludePortsAndProtocols
                     )

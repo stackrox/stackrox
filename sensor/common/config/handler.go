@@ -93,10 +93,10 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 			}
 
 			if c.config.DisableAuditLogs {
-				log.Infof("Stopping audit log collection")
+				log.Info("Stopping audit log collection")
 				c.auditLogCollectionManager.DisableCollection()
 			} else {
-				log.Infof("Starting audit log collection")
+				log.Info("Starting audit log collection")
 				c.auditLogCollectionManager.EnableCollection()
 			}
 		})
