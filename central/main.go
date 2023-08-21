@@ -176,7 +176,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -716,7 +715,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/db/backup",
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedWithExternalDatabase(
+			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
 			),
 			Compression: true,
@@ -724,7 +723,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/api/extensions/backup",
 			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedWithExternalDatabase(
+			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
 			),
 			Compression: true,
@@ -795,22 +794,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
-}
-
-func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() {
-		return httputil.NotImplementedHandler("api is not supported in a managed central environment.")
-	}
-
-	return fn
-}
-
-func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
-		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
-	}
-
-	return fn
 }
 
 func debugRoutes() []routes.CustomRoute {
