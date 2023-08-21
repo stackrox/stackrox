@@ -167,10 +167,17 @@ func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) err
 }
 
 func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) error {
-	if config.GetVulnReportFilters() == nil {
+	filters := config.GetVulnReportFilters()
+	if filters == nil {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must include Vulnerability report filters")
 	}
-	if config.GetVulnReportFilters().GetCvesSince() == nil {
+
+	if len(filters.GetImageTypes()) == 0 {
+		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters should specify which image types to scan for CVEs. "+
+			"The valid options are 'DEPLOYED' and 'WATCHED'.")
+	}
+
+	if filters.GetCvesSince() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
 			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
 	}
