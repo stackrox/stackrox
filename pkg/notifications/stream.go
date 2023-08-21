@@ -4,9 +4,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/retry"
 )
-
-const bufferSize = 100
 
 // Stream is an interface for the notifications stream.
 type Stream interface {
@@ -15,7 +15,9 @@ type Stream interface {
 }
 
 func newStream() Stream {
-	return &streamImpl{notificationChan: make(chan *storage.Notification, bufferSize)}
+	return &streamImpl{
+		notificationChan: make(chan *storage.Notification, env.NotificationsStreamBufferSize.IntegerSetting()),
+	}
 }
 
 type streamImpl struct {
@@ -29,12 +31,12 @@ func (s *streamImpl) Consume() <-chan *storage.Notification {
 
 // Produce adds a notification to the stream.
 //
-// Should be retried if an error is returned.
+// Should be retried with `retry.WithRetry(s.Produce(notification))`.
 func (s *streamImpl) Produce(notification *storage.Notification) error {
 	select {
 	case s.notificationChan <- notification:
 		return nil
 	default:
-		return errors.New("failed to add notification to the stream")
+		return retry.MakeRetryable(errors.New("failed to add notification to the stream"))
 	}
 }
