@@ -28,6 +28,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - RBAC risk was deprecated in release 4.0 due to poor performance.
 - (Tech preview feature) CLI command `roxctl generate netpol` is deprecated in favor of `roxctl netpol generate`
 - The CIS Docker v1.2.0 standard will be removed from RHACS Compliance checks starting in RHACS version 4.4.
+- The Syslog notifier used to send the message header incorrect - the severity and name fields were flipped. Starting in this release, there is now an option
+  to choose which format the header should be sent it: `CEF` which is the correct order or `CEF (Legacy)` which is the older incorrect way.
+  The UI will default to `CEF` but when using the API if a value isn't selected, it will default to `CEF (Legacy)`.
+  Starting in version 4.4 the notifier will default to `CEF`.
 
 ### Technical Changes
 
