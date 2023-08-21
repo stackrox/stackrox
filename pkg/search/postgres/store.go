@@ -35,12 +35,6 @@ type Deleter interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
 }
 
-// PermissionChecker is a permission checker that could be used by GenericStore
-type PermissionChecker interface {
-	ReadAllowed(ctx context.Context) (bool, error)
-	WriteAllowed(ctx context.Context) (bool, error)
-}
-
 type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
 type inserter[T any, PT unmarshaler[T]] func(batch *pgx.Batch, obj PT) error
@@ -57,7 +51,7 @@ type GenericStore[T any, PT unmarshaler[T]] struct {
 	copyFromObj                      copier[T, PT]
 	setAcquireDBConnDuration         durationTimeSetter
 	setPostgresOperationDurationTime durationTimeSetter
-	permissionChecker                PermissionChecker
+	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
 }
@@ -98,7 +92,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
-	checker PermissionChecker,
+	checker walker.PermissionChecker,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,

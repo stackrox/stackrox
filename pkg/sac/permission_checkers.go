@@ -3,8 +3,10 @@ package sac
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
@@ -14,13 +16,9 @@ type anyGlobalResourceAllowed struct {
 
 // NewAnyGlobalResourceAllowedPermissionChecker returns a permission checker that allows actions if the user has
 // global access to at least one of the requested resources.
-func NewAnyGlobalResourceAllowedPermissionChecker(targetResources ...permissions.ResourceMetadata) *anyGlobalResourceAllowed {
-	subHelpers := make([]ForResourceHelper, 0, len(targetResources))
-	for _, md := range targetResources {
-		subHelpers = append(subHelpers, ForResource(md))
-	}
+func NewAnyGlobalResourceAllowedPermissionChecker(targetResources ...permissions.ResourceMetadata) walker.PermissionChecker {
 	return &anyGlobalResourceAllowed{
-		helper: ForResources(subHelpers...),
+		helper: getForResourcesHelper(targetResources...),
 	}
 }
 
@@ -38,13 +36,9 @@ type allGlobalResourcesAllowed struct {
 
 // NewAllGlobalResourceAllowedPermissionChecker returns a permission checker that allows actions if the user has
 // global access to all the requested resources.
-func NewAllGlobalResourceAllowedPermissionChecker(targetResources ...permissions.ResourceMetadata) *allGlobalResourcesAllowed {
-	subHelpers := make([]ForResourceHelper, 0, len(targetResources))
-	for _, md := range targetResources {
-		subHelpers = append(subHelpers, ForResource(md))
-	}
+func NewAllGlobalResourceAllowedPermissionChecker(targetResources ...permissions.ResourceMetadata) walker.PermissionChecker {
 	return &allGlobalResourcesAllowed{
-		helper: ForResources(subHelpers...),
+		helper: getForResourcesHelper(targetResources...),
 	}
 }
 
@@ -62,7 +56,7 @@ type notGloballyDenied struct {
 
 // NewNotGloballyDeniedPermissionChecker returns a permission checker that allows actions if the user scope
 // for the target permission is not deny-all.
-func NewNotGloballyDeniedPermissionChecker(targetResource permissions.ResourceMetadata) *notGloballyDenied {
+func NewNotGloballyDeniedPermissionChecker(targetResource permissions.ResourceMetadata) walker.PermissionChecker {
 	return &notGloballyDenied{
 		targetResource: targetResource,
 	}
@@ -83,7 +77,7 @@ func (a *notGloballyDenied) accessAllowed(ctx context.Context, access storage.Ac
 		Access:   access,
 	})
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "retrieving effective access scope")
 	}
 	if eas == nil {
 		return false, nil
@@ -92,4 +86,12 @@ func (a *notGloballyDenied) accessAllowed(ctx context.Context, access storage.Ac
 		return false, nil
 	}
 	return true, nil
+}
+
+func getForResourcesHelper(targetResources ...permissions.ResourceMetadata) ForResourcesHelper {
+	subHelpers := make([]ForResourceHelper, 0, len(targetResources))
+	for _, md := range targetResources {
+		subHelpers = append(subHelpers, ForResource(md))
+	}
+	return ForResources(subHelpers...)
 }
