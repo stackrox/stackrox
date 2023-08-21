@@ -13,29 +13,29 @@ import {
     GridItem,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
-import { MaxSecuredUnitsUsageResponse, SecuredUnitsUsage } from '../../../types/productUsage.proto';
+import { MaxSecuredUnitsUsageResponse, SecuredUnitsUsage } from 'types/productUsage.proto';
 import {
     downloadProductUsageCsv,
     fetchCurrentProductUsage,
     fetchMaxCurrentUsage,
-} from '../../../services/ProductUsageService';
-import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
+} from 'services/ProductUsageService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 function UsageStatisticsForm(): ReactElement {
     const initialStartDate = new Date();
     initialStartDate.setDate(initialStartDate.getDate() - 30);
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(new Date());
-    const [currentUsage, setCurrentUsage] = useState({
+    const [currentUsage, setCurrentUsage] = useState<SecuredUnitsUsage>({
         numNodes: 0,
         numCpuUnits: 0,
-    } as SecuredUnitsUsage);
-    const [maxUsage, setMaxUsage] = useState({
+    });
+    const [maxUsage, setMaxUsage] = useState<MaxSecuredUnitsUsageResponse>({
         maxNodes: 0,
         maxNodesAt: '-',
         maxCpuUnits: 0,
         maxCpuUnitsAt: '-',
-    } as MaxSecuredUnitsUsageResponse);
+    });
     const [errorFetchingCurrent, setErrorFetchingCurrent] = useState<string>('');
     const [errorFetchingMax, setErrorFetchingMax] = useState<string>('');
 

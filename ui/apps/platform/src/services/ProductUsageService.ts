@@ -19,6 +19,7 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
         },
         {
             allowDots: true,
+            arrayFormat: 'repeat',
         }
     );
     return axios

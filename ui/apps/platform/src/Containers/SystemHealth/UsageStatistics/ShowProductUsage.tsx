@@ -23,7 +23,7 @@ function ShowProductUsage(): ReactElement {
             </Button>
             <Modal
                 title="Product usage"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin blandit augue est. Duis fermentum lacinia consequat. Donec id felis elit. Donec nec nunc felis. Morbi quis enim scelerisque, ullamcorper velit."
+                description="The page shows the collected product usage data. The current usage is computed from the last metrics received from sensors, and can be accurate to about 5 minutes. The maximum usage is aggregated hourly."
                 isOpen={isModalOpen}
                 variant={ModalVariant.large}
                 onClose={onCloseModalHandler}
