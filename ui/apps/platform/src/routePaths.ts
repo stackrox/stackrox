@@ -145,7 +145,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Access']),
     },
     apidocs: {
-        resourceAccessRequirements: everyResource([]),
+        resourceAccessRequirements: everyResource(['Integration']), // why?
     },
     clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),
