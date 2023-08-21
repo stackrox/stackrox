@@ -139,8 +139,8 @@ export type RouteKey =
     | 'workload-cves'
     ;
 
-// However, add properties in same order as type to minimize merge conflicts when multiple people add strings.
-const routeDescriptionMap: Record<RouteKey, RouteRequirements> = {
+// Add properties in same order as type to minimize merge conflicts when multiple people add strings.
+const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'access-control': {
         resourceAccessRequirements: everyResource(['Access']),
     },
@@ -293,7 +293,7 @@ export function isRouteEnabled(
     { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
     routeKey: RouteKey
 ) {
-    const { featureFlagDependency, resourceAccessRequirements } = routeDescriptionMap[routeKey];
+    const { featureFlagDependency, resourceAccessRequirements } = routeRequirementsMap[routeKey];
 
     if (Array.isArray(featureFlagDependency)) {
         if (

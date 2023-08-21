@@ -59,8 +59,8 @@ type RouteComponent = {
     path: string;
 };
 
-// routeComponentMap corresponds to routeDescriptionMap in src/routePaths.ts file.
-// Add path keys in alphabetical order to minimize merge conflicts when multiple people add routes.
+// routeComponentMap corresponds to routeRequirementsMap in src/routePaths.ts file.
+// Add route keys in alphabetical order to minimize merge conflicts when multiple people add routes.
 const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
