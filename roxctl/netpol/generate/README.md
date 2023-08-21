@@ -14,15 +14,15 @@ The static network policy generator is a tool that analyzes k8s manifests and ge
 
 ### Generating Network Policies from yaml manifests
 
-To generate network policies, `roxctl generate netpol` requires a folder containing K8s manifests.
+To generate network policies, `roxctl netpol generate` requires a folder containing K8s manifests.
 The manifests must not be templated (e.g., Helm) to be considered.
-All yaml files that could be accepted by `kubectl apply -f` will be accepted as as valid input and searched by `roxctl generate netpol`.
+All yaml files that could be accepted by `kubectl apply -f` will be accepted as as valid input and searched by `roxctl netpol generate`.
 
 Example run with the output generated to `stdout`:
 
 ```shell
 $ git clone --depth=1 https://github.com/stackrox/stackrox.git && cd stackrox
-$ bin/darwin_amd64/roxctl generate netpol tests/roxctl/bats-tests/test-data/np-guard/scenario-minimal-service
+$ bin/darwin_amd64/roxctl netpol generate tests/roxctl/bats-tests/test-data/np-guard/scenario-minimal-service
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -78,8 +78,12 @@ spec:
 
 The output can be redirected to a single file by using `--output-file=out.yaml` parameter.
 
-When expecting multiple network policies to be generated on the output, the user can choose the `--output-dir=<name>` option to generate the policies into a folder where each network policy will be output to a separate file.
+When expecting multiple network policies to be generated on the output, the user can choose the `--output-dir=<name>`
+option to generate the policies into a folder where each network policy will be output to a separate file.
 
-When running in a CI pipeline, `roxctl generate netpol` may benefit from the `--fail` option that stops the processing on the first encountered error.
+When running in a CI pipeline, `roxctl netpol generate` may benefit from the `--fail` option that stops the processing
+on the first encountered error.
 
-Using the `--strict` parameter produces an error "_there were errors during execution_" if any warnings appeared during the processing. Note that the combination of `--strict` and `--fail` will not stop on the first warning, as the interpretation of warnings as errors happens at the end of execution.
+Using the `--strict` parameter produces an error "_there were errors during execution_"if any warnings
+appeared during the processing. Note that the combination of `--strict` and `--fail` will not stop on the first warning,
+as the interpretation of warnings as errors happens at the end of execution.
