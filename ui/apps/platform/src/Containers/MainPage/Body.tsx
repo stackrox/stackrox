@@ -70,6 +70,13 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Docs/ApiPage')),
         path: apidocsPath,
     },
+    // Delegated image scanning must precede generic Clusters.
+    'clusters/delegated-image-scanning': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
+        ),
+        path: clustersDelegatedScanningPath,
+    },
     clusters: {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
         path: clustersPathWithParam,
@@ -95,12 +102,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     dashboard: {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
-    },
-    'delegated-image-scanning': {
-        component: asyncComponent(
-            () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
-        ),
-        path: clustersDelegatedScanningPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),

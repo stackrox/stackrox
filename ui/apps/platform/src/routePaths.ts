@@ -113,13 +113,14 @@ type RouteRequirements = {
 export type RouteKey =
     | 'access-control'
     | 'apidocs'
+    // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/delegated-image-scanning'
     | 'clusters'
     | 'collections'
     | 'compliance'
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
-    | 'delegated-image-scanning'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
@@ -146,6 +147,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     apidocs: {
         resourceAccessRequirements: everyResource(['Integration']), // why?
+    },
+    // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
+    'clusters/delegated-image-scanning': {
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),
@@ -193,9 +198,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     dashboard: {
         resourceAccessRequirements: everyResource([]),
-    },
-    'delegated-image-scanning': {
-        resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
