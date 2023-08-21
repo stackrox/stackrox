@@ -133,7 +133,7 @@ func NewSyslog(notifier *storage.Notifier, metadataGetter notifiers.MetadataGett
 	}, nil
 }
 
-func auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Notifier) string {
+func (s *syslog) auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Notifier) string {
 	// There will be 8+len(extra fields) different key/value pairs in this message.
 	extensionList := make([]string, 0, 8+len(notifier.GetSyslog().GetExtraFields()))
 
@@ -154,7 +154,7 @@ func auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Notifier) strin
 		}
 	}
 
-	return getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
+	return s.getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
 }
 
 func joinRoleNames(roles []*storage.UserInfo_Role) string {
@@ -197,7 +197,7 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 
 	severity := alertToCEFSeverityMap[alert.GetPolicy().GetSeverity()]
 
-	return getCEFHeaderWithExtension("Alert", alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
+	return s.getCEFHeaderWithExtension("Alert", alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
 }
 
 func getNamespaceFromAlert(alert *storage.Alert) string {
@@ -215,8 +215,13 @@ func getNamespaceFromAlert(alert *storage.Alert) string {
 	}
 }
 
-func getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
-	return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%d|%s|%s", version.GetMainVersion(), deviceEventClassID, severity, name, extension)
+func (s *syslog) getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
+	switch s.GetSyslog().GetMessageFormat() {
+	case storage.Syslog_CEF:
+		return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%s|%d|%s", version.GetMainVersion(), deviceEventClassID, name, severity, extension)
+	default:
+		return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%d|%s|%s", version.GetMainVersion(), deviceEventClassID, severity, name, extension)
+	}
 }
 
 func makeExtensionPair(key, value string) string {
@@ -271,12 +276,12 @@ func (s *syslog) ProtoNotifier() *storage.Notifier {
 }
 
 func (s *syslog) Test(context.Context) error {
-	data := getCEFHeaderWithExtension("Test", "Test", 0, "stackroxKubernetesSecurityPlatformTestMessage=test")
+	data := s.getCEFHeaderWithExtension("Test", "Test", 0, "stackroxKubernetesSecurityPlatformTestMessage=test")
 	return s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data)
 }
 
 func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {
-	unstructuredData := auditLogToCEF(msg, s.Notifier)
+	unstructuredData := s.auditLogToCEF(msg, s.Notifier)
 	timestamp, err := types.TimestampFromProto(msg.GetTime())
 	if err != nil {
 		return err

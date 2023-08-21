@@ -277,8 +277,9 @@ func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
 			Payload:  nil,
 		},
 	}
+	syslog := s.makeSyslog(notifier)
 
-	m := auditLogToCEF(testAuditMessage, notifier)
+	m := syslog.auditLogToCEF(testAuditMessage, notifier)
 	s.Contains(m, "foo=bar")
 }
 

@@ -149,4 +149,10 @@ message Syslog {
         TCPConfig tcp_config = 2;
     }
     repeated KeyValuePair extra_fields = 3;
+
+    enum MessageFormat {
+        UNDEFINED = 0;
+        CEF = 1;
+    }
+    MessageFormat message_format = 4;
 }
