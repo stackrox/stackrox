@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { PageHeaderTools, PageHeaderToolsGroup, PageHeaderToolsItem } from '@patternfly/react-core';
 
 import useCases from 'constants/useCaseTypes';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import parseURL from 'utils/URLParser';
 import { searchPath } from 'routePaths';
 
@@ -19,6 +20,9 @@ import ThemeToggleButton from './ThemeToggleButton';
 import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForSearch = isRouteEnabled(searchPath);
+
     const location = useLocation();
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
@@ -34,9 +38,11 @@ function MastheadToolbar(): ReactElement {
                         <OrchestratorComponentsToggle />
                     </PageHeaderToolsItem>
                 )}
-                <PageHeaderToolsItem>
-                    <GlobalSearchButton />
-                </PageHeaderToolsItem>
+                {isRouteEnabledForSearch && (
+                    <PageHeaderToolsItem>
+                        <GlobalSearchButton />
+                    </PageHeaderToolsItem>
+                )}
                 <PageHeaderToolsItem>
                     <CLIDownloadMenu />
                 </PageHeaderToolsItem>
