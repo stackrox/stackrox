@@ -1,4 +1,4 @@
-# Coding style guide
+# Go coding style guide
 
 An overview of coding idioms and practiced style in stackrox/stackrox.
 
@@ -31,12 +31,12 @@ var (
 )
 ...
 func (w *widget) Update(x X) error {
-    w.mutex.Lock()
+	w.mutex.Lock()
 	defer w.mutex.Unlock()
-	
+
 	if cache.Contains(x) {
-	    ...	
-    }
+		...	
+	}
 	...
 }
 ```
@@ -46,16 +46,16 @@ func (w *widget) Update(x X) error {
 // synchronization might miss future changes to this contract. 
 var (
 	cache = NewCache()
-    mutex sync.RWMutex
+	mutex sync.RWMutex
 )
 ...
 func (w *widget) Update(x X) error {
-    mutex.Lock()
+	mutex.Lock()
 	defer mutex.Unlock()
-	
+
 	if cache.Contains(x) {
-	    ...	
-    }
+		...	
+	}
 	...
 }
 ```
@@ -63,17 +63,31 @@ func (w *widget) Update(x X) error {
 ```go
 // Good: `cache` is only used by `widget` methods likely living in the same file.
 type widget struct {
-  cache Cache
-  mutex sync.RWMutex
+	cache Cache
+	mutex sync.RWMutex
 }
 ...
 func (w *widget) Update(x X) error {
-    w.mutex.Lock()
+	w.mutex.Lock()
 	defer w.mutex.Unlock()
-	
+
 	if w.cache.Contains(x) {
-	    ...	
-    }
+		...	
+	}
+	...
+}
+```
+
+```go
+// Good: code clearly relies on the fact that `cache` synchronizes inside.
+type widget struct {
+	cache sync.Cache // can be used concurrently 
+}
+...
+func (w *widget) Update(x X) error {
+	if w.cache.Contains(x) {
+		...	
+	}
 	...
 }
 ```
@@ -95,7 +109,9 @@ var (
 
 ## Guidelines
 
-- Always use `defer mutex.Unlock()` instead of explicitly calling `Unlock()`.
+- **Always** use `defer mutex.Unlock()` instead of explicitly calling `Unlock()`.
+  If you need to unlock before the function returns, use `concurrency.WithLock()`
+  or `concurrency.WithRLock()`.
 - A `Close()` on a file etc. should only be deferred and wrapped in
   `utils.IgnoreError` if you exclusively _read_. If you write to a file, you
   **must** check for a `nil` error upon close, otherwise you cannot be certain
@@ -116,6 +132,8 @@ var (
   block, everything else. If you define struct types and methods of this type in
   the same file, the order should be: type declaration, new/constructor function,
   methods. Do not interleave methods of different types.
+- Right next to a `struct` definition, if applicable, declare which interfaces
+  the struct implements: `var _ Interface = (*structImplementingInterface)(nil)`.
 - If you are registering packages via `_` then extract this line into its own
   import block and preface it with a comment explaining what this import does.
 - Scope variables as low as possible.
@@ -155,7 +173,8 @@ var (
 - Prefer `RoxError.New[f]()` from `pkg/errox` over `errors.Errorf()` from
   `github.com/pkg/errors` and `errors.New()` from the _builtin_ errors package
   to assign the error one of the standard classes.
-- Define designated error conditions in the package as global variables.
+- If you must define designated error conditions, do this in the package as
+  global variables.
 - When calling a function that returns an error, always check for `err != nil`
   before doing anything else with the results.
 - When panic’ing, always use `error` objects as the argument.

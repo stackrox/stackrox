@@ -35,6 +35,7 @@
 - The only case in which you need to force-push to your branch is after rebasing on top of latest master changes.
 
 ### Interaction with reviewers
+- Consult the relevant style guide ([golang](go-coding-style.md)) before creating a PR.  
 - It is preferable to respond to reviewer comments in the "Files changed" view. In contrast to the "Conversation" view, this allows you
   to store your responses as drafts and submit them in a single batch. It is advisable to only submit your responses in GitHub after
   pushing the changes addressing the reviewers's comments, this avoids confusion.
