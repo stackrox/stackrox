@@ -29,6 +29,7 @@ import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityRe
 import useURLSort from 'hooks/useURLSort';
 import { saveFile } from 'services/DownloadService';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
+import useAuthStatus from 'hooks/useAuthStatus';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
@@ -49,6 +50,7 @@ const sortOptions = {
 };
 
 function ReportJobs({ reportId }: RunHistoryProps) {
+    const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
@@ -229,20 +231,19 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             isDownloadAvailable &&
                             reportStatus.runState === 'SUCCESS' &&
                             reportStatus.reportNotificationMethod === 'DOWNLOAD';
+                        const areDownloadActionsDisabled = currentUser.userId !== user.id;
+
+                        function onDownload() {
+                            return saveFile({
+                                method: 'get',
+                                url: `/api/reports/jobs/download?id=${reportJobId}`,
+                                data: null,
+                                timeout: 300000,
+                                name: `${name}-report.zip`,
+                            });
+                        }
+
                         const rowActions = [
-                            {
-                                title: 'Download report',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    return saveFile({
-                                        method: 'get',
-                                        url: `/api/reports/jobs/download?id=${reportJobId}`,
-                                        data: null,
-                                        timeout: 300000,
-                                        name: `${name}-report.zip`,
-                                    });
-                                },
-                            },
                             {
                                 title: (
                                     <span className="pf-u-danger-color-100">Delete download</span>
@@ -270,12 +271,19 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                             : '-'}
                                     </Td>
                                     <Td dataLabel="Status">
-                                        <ReportJobStatus reportSnapshot={reportSnapshot} />
+                                        <ReportJobStatus
+                                            reportSnapshot={reportSnapshot}
+                                            areDownloadActionsDisabled={areDownloadActionsDisabled}
+                                            onDownload={onDownload}
+                                        />
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>
                                     <Td isActionCell>
                                         {hasDownloadableReport && (
-                                            <ActionsColumn items={rowActions} />
+                                            <ActionsColumn
+                                                items={rowActions}
+                                                isDisabled={areDownloadActionsDisabled}
+                                            />
                                         )}
                                     </Td>
                                 </Tr>
@@ -284,7 +292,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                         <Card className="pf-u-m-md pf-u-p-md" isFlat>
                                             <Flex>
                                                 <FlexItem>
-                                                    <JobDetails reportStatus={reportStatus} />
+                                                    <JobDetails reportSnapshot={reportSnapshot} />
                                                 </FlexItem>
                                                 <Divider component="div" className="pf-u-my-md" />
                                                 <FlexItem>
