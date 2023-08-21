@@ -293,29 +293,24 @@ registry_ro_login() {
 }
 
 push_matching_collector_scanner_images() {
-    info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
+    if is_OPENSHIFT_CI; then
+        die "Retagging images isn't supported in OSCI."
+    fi
+
+    info "Pushing collector & scanner images tagged with main-version"
 
     if [[ "$#" -ne 2 ]]; then
         die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
     fi
 
-    if is_OPENSHIFT_CI; then
-        oc registry login
-    fi
-
     local brand="$1"
     local arch="$2"
 
-    local source_registry
-    source_registry="$(branding_to_registry "$brand")"
-    target_registries=( "$source_registry" )
+    local registry
+    registry="$(branding_to_registry "$brand")"
 
-    _retag_or_mirror() {
-        if is_OPENSHIFT_CI; then
-            oc_image_mirror "$1" "$2"
-        else
-            "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
-        fi
+    _retag() {
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
     }
 
     if [[ "$arch" != "amd64" ]]; then
@@ -330,17 +325,15 @@ push_matching_collector_scanner_images() {
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
 
-    for target_registry in "${target_registries[@]}"; do
-        registry_rw_login "${target_registry}"
+    registry_rw_login "${registry}"
 
-        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}-${arch}"
+    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
-        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}-${arch}"
-    done
+    _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
+    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 oc_image_mirror() {

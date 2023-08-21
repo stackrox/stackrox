@@ -13,8 +13,6 @@ fi
 SRC="$1"
 DEST="$2"
 
-[[ "${OPENSHIFT_CI:-false}" == "false" ]] || { die "Not supported in OpenShift CI"; }
-
 docker pull "${SRC}" | cat
 docker tag "${SRC}" "${DEST}"
 docker push "${DEST}" | cat
