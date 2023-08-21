@@ -120,8 +120,6 @@ setup_deployment_env() {
     fi
 
     ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
-
-    ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
 }
 
 get_central_debug_dump() {

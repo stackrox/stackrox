@@ -3,9 +3,6 @@
 export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
 
-export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/collector}"
-echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
-
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
