@@ -142,7 +142,7 @@ var (
   `sync.Mutex` at the `struct` level. `obj.Lock()` suggests that Lock would be
   part of the public interface, which it should not be.
 - When using `append`, preallocate whenever possible.
-- When setting elements in a slice, instantiate like `s := make([]string, 0, size)`
+- When setting elements in a slice, instantiate like `s := make([]string, 0, capacity)`
   and use `append` because this greatly decreases potential index out of bounds
   errors.
 
