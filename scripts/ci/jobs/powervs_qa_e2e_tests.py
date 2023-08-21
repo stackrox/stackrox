@@ -14,4 +14,5 @@ os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["USE_MIDSTREAM_IMAGES"] = "true"
 os.environ["REMOTE_CLUSTER_ARCH"] = "ppc64le"
 
+# Trigger tests
 make_qa_e2e_test_runner_midstream(cluster=AutomationFlavorsCluster()).run()

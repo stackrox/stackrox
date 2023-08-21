@@ -116,20 +116,20 @@ deploy_stackrox_operator() {
         return
     fi
     
+    export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
+    export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
+
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        info "Deploying ACS operator via midstream image"
+        info "Deploying ACS operator via midstream images"
         # Retrieving values from json map
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
-        export OPERATOR_VERSION=$(< operator/midstream/iib.json jq '.version')
+        export OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
         export VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
         export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
 
         make -C operator kuttl deploy-via-olm-midstream
     else
         info "Deploying ACS operator"
-
-        export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
-        export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
 
         ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
     fi
@@ -176,6 +176,7 @@ deploy_central_via_operator() {
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        # Load balancer not available for ppc64le/s390x
         LOAD_BALANCER="route"
     fi
     case "${LOAD_BALANCER}" in
@@ -202,29 +203,22 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
-    
+
+    CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
+    # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        env - \
-        centralAdminPasswordBase64="$centralAdminPasswordBase64" \
-        centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
-        centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
-        central_exposure_route_enabled="$central_exposure_route_enabled" \
-        customize_envVars="$customize_envVars" \
-        envsubst \
-        < tests/e2e/yaml/central-cr-midstream.envsubst.yaml \
-        > /tmp/central-cr.yaml
-    else
-        env - \
-        centralAdminPasswordBase64="$centralAdminPasswordBase64" \
-        centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
-        centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
-        central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
-        central_exposure_route_enabled="$central_exposure_route_enabled" \
-        customize_envVars="$customize_envVars" \
-        envsubst \
-        < tests/e2e/yaml/central-cr.envsubst.yaml \
-        > /tmp/central-cr.yaml
+        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
     fi
+    env - \
+    centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+    centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+    centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
+    central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
+    central_exposure_route_enabled="$central_exposure_route_enabled" \
+    customize_envVars="$customize_envVars" \
+    envsubst \
+    < "${CENTRAL_YAML_PATH}" \
+    > /tmp/central-cr.yaml
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
@@ -293,9 +287,9 @@ deploy_sensor_via_operator() {
     if [[ "${REMOTE_CLUSTER_ARCH}" == "ppc64le" ]]; then
         ROX_CENTRAL_ADDR=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host'):443
         ROX_CENTRAL_PASS=$(kubectl -n stackrox get secret central-admin-pass -o go-template='{{index .data "password" | base64decode}}')
-        SUPPORT_URL="https://install.stackrox.io/collector/support-packages/ppc64le/2.5.0/support-pkg-2.5.0-latest.zip"
-        wget $SUPPORT_URL
-        roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg-2.5.0-latest.zip
+        SUPPORT_URL=$(< operator/midstream/iib.json jq '.support_url')
+        wget -O support-pkg.zip $SUPPORT_URL
+        roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg.zip
     fi
 
     kubectl -n stackrox exec deploy/central -- \

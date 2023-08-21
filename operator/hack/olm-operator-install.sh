@@ -41,12 +41,12 @@ function main() {
   create_pull_secret "${operator_ns}" "${image_registry}"
   apply_operator_manifests "${operator_ns}" "${image_tag_base}" "${index_version}" "${operator_version}"
 
-  if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-    nurse_deployment_until_available "${operator_ns}" "${operator_version}"
-  else
+  if ! [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     approve_install_plan "${operator_ns}" "${operator_version}"
-    nurse_deployment_until_available "${operator_ns}" "${operator_version}"
   fi
+  
+  nurse_deployment_until_available "${operator_ns}" "${operator_version}"
+
 }
 
 main "$@"

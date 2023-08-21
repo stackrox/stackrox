@@ -11,7 +11,7 @@ spec:
       name: central-default-tls-secret
     exposure:
       loadBalancer:
-        enabled: false
+        enabled: $central_exposure_loadBalancer_enabled
       route:
         enabled: $central_exposure_route_enabled
     declarativeConfiguration:
