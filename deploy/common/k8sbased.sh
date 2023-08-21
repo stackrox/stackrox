@@ -528,12 +528,6 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ -n "$COLLECTOR_IMAGE_REPO" && ${DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS:-false} != "true" ]]; then
-        extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
-        extra_json_config+=", \"collectorImage\": \"${COLLECTOR_IMAGE_REPO}\""
-        extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
-    fi
-
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
