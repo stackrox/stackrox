@@ -6,11 +6,6 @@ kind: RoleBinding
 metadata:
   name: secured-cluster-prometheus-k8s
 ---
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: collector-monitor
----
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 commands:
