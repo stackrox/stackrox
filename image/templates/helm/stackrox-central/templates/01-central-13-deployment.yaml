@@ -109,6 +109,8 @@ spec:
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"
         {{- end }}
+        - name: ROX_INSTALL_METHOD
+          value: {{ ._rox.env.installMethod | quote }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog
