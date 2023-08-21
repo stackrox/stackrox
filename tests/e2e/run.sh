@@ -96,8 +96,6 @@ test_preamble() {
 
     local registry="quay.io/rhacs-eng"
 
-    SCANNER_IMAGE="$registry/scanner:$(cat "$ROOT"/SCANNER_VERSION)"
-    export SCANNER_IMAGE
     SCANNER_DB_IMAGE="$registry/scanner-db:$(cat "$ROOT"/SCANNER_VERSION)"
     export SCANNER_DB_IMAGE
 
