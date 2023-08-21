@@ -75,19 +75,10 @@ func Test_applyDefaults(t *testing.T) {
 }
 
 func Test_koCache_GoOffline(t *testing.T) {
-	tests := map[string]struct {
-		startOnline bool
-	}{
-		"Starting online":  {startOnline: true},
-		"Starting offline": {startOnline: false},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, startOnline := range []bool{true, false} {
+		t.Run(fmt.Sprintf("Start online: %t", startOnline), func(t *testing.T) {
 			fn := func(o *options) {
-				if tt.startOnline {
-					o.StartOnline = true
-				}
+				o.StartOnline = startOnline
 			}
 			ctx, cancel := context.WithCancelCause(context.Background())
 			defer cancel(errors.New("test ended"))
