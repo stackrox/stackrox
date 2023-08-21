@@ -198,7 +198,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
-        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+        resourceAccessRequirements: everyResource(['Integration']),
     },
     'listening-endpoints': {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
