@@ -6,8 +6,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +22,7 @@ const (
 // It focuses on testing the probeServerHandler, but not on the impl. of ProbeSource
 func Test_probeServerHandler_Sensor(t *testing.T) {
 	tests := map[string]struct {
-		source             ProbeSource
+		source             *mockLoadProbe
 		isOnline           bool
 		reqMethod          string
 		reqURL             string
@@ -44,7 +46,7 @@ func Test_probeServerHandler_Sensor(t *testing.T) {
 			expectBodyContains: "invalid",
 		},
 		"Valid kernel path for non-existing kernel should return code 404": {
-			source:             mockLoadProbe{},
+			source:             &mockLoadProbe{},
 			isOnline:           true,
 			reqMethod:          "GET",
 			reqURL:             "/" + validPath,
@@ -60,24 +62,35 @@ func Test_probeServerHandler_Sensor(t *testing.T) {
 			expectBodyContains: "not found",
 		},
 		"Valid kernel path for existing kernel should return code 200 in online mode": {
-			source:             mockLoadProbe{availableProbe: validPath},
+			source:             &mockLoadProbe{availableProbe: validPath},
 			isOnline:           true,
 			reqMethod:          "GET",
 			reqURL:             "/" + validPath,
 			expectCode:         200,
 			expectBodyContains: "",
 		},
-		"Valid kernel path for existing kernel should return code 503 in offline mode": {
-			source:             mockLoadProbe{availableProbe: validPath},
+		"Valid kernel path for existing kernel should return code 503 in offline mode on cache miss": {
+			source:             &mockLoadProbe{availableProbe: validPath, hasInCache: false},
 			isOnline:           false,
 			reqMethod:          "GET",
 			reqURL:             "/" + validPath,
 			expectCode:         503,
 			expectBodyContains: "sensor running in offline mode",
+		}, "Valid kernel path for existing kernel should return code 200 in offline mode on cache hit": {
+			source:             &mockLoadProbe{availableProbe: validPath, hasInCache: true},
+			isOnline:           false,
+			reqMethod:          "GET",
+			reqURL:             "/" + validPath,
+			expectCode:         200,
+			expectBodyContains: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			// Set mode for source
+			if tt.source != nil && tt.isOnline {
+				tt.source.GoOnline()
+			}
 			h := NewConnectionAwareProbeHandler(func(err error) {
 				assert.NoError(t, err)
 			}, tt.source)
@@ -106,14 +119,16 @@ func Test_probeServerHandler_Sensor(t *testing.T) {
 
 // Test_probeServerHandler_Central tests the behavior of the handler created from `NewProbeServerHandler`.
 func Test_probeServerHandler_Central(t *testing.T) {
+	abTrue := &atomic.Bool{}
+	abTrue.Store(true)
 	tests := map[string]struct {
-		source             ProbeSource
+		source             *mockLoadProbe
 		reqURL             string
 		expectCode         int
 		expectBodyContains string
 	}{
 		"NewProbeServerHandler should return a handler that is in online mode": {
-			source:             mockLoadProbe{availableProbe: validPath},
+			source:             &mockLoadProbe{availableProbe: validPath},
 			reqURL:             "/" + validPath,
 			expectCode:         200,
 			expectBodyContains: "",
@@ -121,6 +136,7 @@ func Test_probeServerHandler_Central(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			tt.source.GoOnline() // koCache should be online by default
 			h := NewProbeServerHandler(func(err error) {
 				assert.NoError(t, err)
 			}, tt.source)
@@ -143,21 +159,39 @@ func Test_probeServerHandler_Central(t *testing.T) {
 	}
 }
 
-var _ ProbeSource = (*mockLoadProbe)(nil)
+var (
+	_                     ProbeSource = (*mockLoadProbe)(nil)
+	errCentralUnreachable             = errors.New("central is unreachable")
+)
 
 type mockLoadProbe struct {
 	availableProbe string
+	hasInCache     bool
+	centralReady   atomic.Bool
 }
 
-func (m mockLoadProbe) LoadProbe(_ context.Context, fileName string) (io.ReadCloser, int64, error) {
+func (m *mockLoadProbe) LoadProbe(_ context.Context, fileName string) (io.ReadCloser, int64, error) {
 	kernelData := &bytes.Buffer{}
 	if m.availableProbe == fileName {
-		size, err := kernelData.WriteString("I am the kernel")
-		return io.NopCloser(kernelData), int64(size), err // simulate finding kernel
+		// simulate finding kernel in cache or in Central
+		if m.hasInCache || m.centralReady.Load() {
+			size, err := kernelData.WriteString("I am the kernel")
+			return io.NopCloser(kernelData), int64(size), err
+		}
+		// simulate cache-miss when central is offline
+		return nil, 0, errCentralUnreachable
 	}
-	return nil, 0, nil // simulate not finding the kernel
+	return nil, 0, nil // simulate not finding the kernel at all
 }
 
-func (m mockLoadProbe) IsAvailable(_ context.Context) (bool, error) {
+func (m *mockLoadProbe) IsAvailable(_ context.Context) (bool, error) {
 	return true, nil
+}
+
+func (m *mockLoadProbe) GoOnline() {
+	m.centralReady.Store(true)
+}
+
+func (m *mockLoadProbe) GoOffline() {
+	m.centralReady.Store(false)
 }

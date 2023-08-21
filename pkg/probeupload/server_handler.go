@@ -120,16 +120,15 @@ func (h *probeServerHandler) ServeHTTP(w http.ResponseWriter, req *http.Request)
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		if !h.centralReady.IsDone() {
+			log.Error("sensor is running in offline mode")
+			http.Error(w, "sensor running in offline mode", http.StatusServiceUnavailable)
+			return
+		}
 		http.Error(w, firstErr.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer utils.IgnoreError(data.Close)
-
-	if !h.centralReady.IsDone() {
-		log.Error("sensor is running in offline mode")
-		http.Error(w, "sensor running in offline mode", http.StatusServiceUnavailable)
-		return
-	}
 
 	hdr := w.Header()
 	if size >= 0 { // size < 0 means unknown
