@@ -58,8 +58,10 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (h *handler) OnWatchError(err error) {
-	log.Errorw("Failed watching CAs. Not updating any CAs for Openshift auth providers",
-		logging.Err(err))
+	if !os.IsNotExist(err) {
+		log.Errorw("Failed watching CAs.",
+			logging.Err(err))
+	}
 }
 
 func internalCAs() ([][]byte, error) {
