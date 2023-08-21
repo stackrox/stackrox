@@ -90,7 +90,14 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_EMAIL {
+	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
+	case storage.ReportStatus_DOWNLOAD:
+		err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
+		if err != nil {
+			rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to GENERATED"), req)
+		}
+	case storage.ReportStatus_EMAIL:
 		err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_DELIVERED)
 		if err != nil {
 			rg.logAndUpsertError(errors.Wrap(err, "Error changing report status to DELIVERED"), req)
@@ -112,12 +119,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		return err
 	}
 
-	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
-	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
-	if err != nil {
-		return errors.Wrap(err, "Error changing report status to GENERATED")
-	}
-
+	// TODO (ROX-19093) : Store 'GENERATED' state for both emailed and downloaded reports here
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
 		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
