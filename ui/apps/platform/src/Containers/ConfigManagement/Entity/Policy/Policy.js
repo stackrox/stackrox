@@ -15,7 +15,7 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
-import useIsRouteEnabled from 'hooks/usePermissions';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
@@ -27,7 +27,6 @@ import PolicyFindings from './PolicyFindings';
 
 const Policy = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const isRouteEnabled = useIsRouteEnabled();
-
     const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 
     const searchParam = useContext(searchContext);
