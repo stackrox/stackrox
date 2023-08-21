@@ -28,7 +28,7 @@ dump_logs() {
         if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
             exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${jpath}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
             if [ "$exit_code" -eq "0" ]; then
-            mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
+                mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
             fi
         fi
     done
