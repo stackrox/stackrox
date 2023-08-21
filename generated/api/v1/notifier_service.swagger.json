@@ -323,10 +323,10 @@
     "SyslogMessageFormat": {
       "type": "string",
       "enum": [
-        "UNDEFINED",
+        "LEGACY",
         "CEF"
       ],
-      "default": "UNDEFINED"
+      "default": "LEGACY"
     },
     "SyslogTCPConfig": {
       "type": "object",

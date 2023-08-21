@@ -151,7 +151,7 @@ message Syslog {
     repeated KeyValuePair extra_fields = 3;
 
     enum MessageFormat {
-        UNDEFINED = 0;
+        LEGACY = 0;
         CEF = 1;
     }
     MessageFormat message_format = 4;

@@ -358,7 +358,7 @@ func (s *SyslogNotifierTestSuite) TestHeaderFormat() {
 	s.Equal("CEF:0|StackRox|Kubernetes Security Platform||deviceEventClassID|alertnameunique|999|extension", header)
 
 	// Legacy format
-	syslog.Notifier.GetSyslog().MessageFormat = storage.Syslog_UNDEFINED
+	syslog.Notifier.GetSyslog().MessageFormat = storage.Syslog_LEGACY
 	header = syslog.getCEFHeaderWithExtension("deviceEventClassID", "alertnameunique", 999, "extension")
 	s.Equal("CEF:0|StackRox|Kubernetes Security Platform||deviceEventClassID|999|alertnameunique|extension", header)
 }
