@@ -93,6 +93,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.2.1
 	github.com/sergi/go-diff v1.3.1
+	github.com/Shopify/toxiproxy/v2 v2.5.0
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.4
 	github.com/spf13/cobra v1.7.0
@@ -147,8 +148,6 @@ require (
 	sigs.k8s.io/e2e-framework v0.2.0
 	sigs.k8s.io/yaml v1.3.0
 )
-
-require github.com/Shopify/toxiproxy/v2 v2.5.0
 
 require (
 	cloud.google.com/go v0.110.6 // indirect

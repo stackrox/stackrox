@@ -19,8 +19,11 @@ func GetConfig(ctx context.Context, name string) Controller {
 		return newPeriodicDisconnect(ctx, 5*time.Minute, 10*time.Second)
 	case "droppedpackets":
 		return newDroppedPackets(ctx, 0.01)
+	case "none":
+		return &none{}
 	default:
-		return newPeriodicDisconnect(ctx, 5*time.Minute, 10*time.Second)
+		log.Warnf("Profile not set. Chaos proxy profile set to 'none'")
+		return &none{}
 	}
 
 }

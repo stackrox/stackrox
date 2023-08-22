@@ -40,7 +40,7 @@ func (c *periodicDisconnect) Run(proxy *toxiproxy.Proxy) {
 			return
 		case <-time.After(c.disconnectEvery):
 			if err := proxy.Disable(); err != nil {
-				log.Warnf("Failed to disable chaos proxy: %s", err)
+				log.Warnf("Failed to disable chaos proxy: %v", err)
 				return
 			}
 			log.Info("Periodic timer reached: chaos proxy disabled")
@@ -51,7 +51,7 @@ func (c *periodicDisconnect) Run(proxy *toxiproxy.Proxy) {
 			return
 		case <-time.After(c.disconnectedTime):
 			if err := proxy.Enable(); err != nil {
-				log.Warnf("Failed to re-enable chaos proxy: %s", err)
+				log.Warnf("Failed to re-enable chaos proxy: %v", err)
 				return
 			}
 			log.Info("Periodic timer reached: chaos proxy re-enabled")

@@ -686,7 +686,6 @@ function launch_sensor {
 
         echo "Patching sensor with toxiproxy container"
         kubectl -n stackrox patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
-        kubectl -n stackrox set env deploy/sensor ROX_CHAOS_PROXY_ENABLED="true"
         kubectl -n stackrox set env deploy/sensor ROX_CHAOS_PROFILE="${CHAOS_PROFILE:-periodicdisconnect}"
         kubectl -n stackrox set env deploy/sensor ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint"
         kubectl -n stackrox set env deploy/sensor ROX_CENTRAL_ENDPOINT="localhost:8989"

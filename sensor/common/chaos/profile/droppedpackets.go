@@ -25,7 +25,7 @@ func (c *droppedPackets) Run(proxy *toxiproxy.Proxy) {
 	})
 
 	if err != nil {
-		log.Warnf("Failed to create toxic for dropping packets: %s", err)
+		log.Warnf("Failed to create toxic for dropping packets: %v", err)
 		return
 	}
 }
