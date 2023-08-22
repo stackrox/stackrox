@@ -1,6 +1,7 @@
 package connectivitymap
 
 import (
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
@@ -21,7 +22,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			return cmd.RunE(c, args)
+			return errors.Wrap(cmd.RunE(c, args), "building connectivity map")
 		},
 	}
 	return cmd.AddFlags(c)

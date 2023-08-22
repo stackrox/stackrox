@@ -24,6 +24,7 @@ type netpolAnalyzer interface {
 	Errors() []npguard.ConnlistError
 }
 
+// Cmd represents netpol connectivity map command
 type Cmd struct {
 	// Properties that are bound to cobra flags.
 	stopOnFirstError      bool
@@ -39,6 +40,7 @@ type Cmd struct {
 	env environment.Environment
 }
 
+// NewCmd constructs the command
 func NewCmd(env environment.Environment) *Cmd {
 	return &Cmd{env: env}
 }
@@ -80,6 +82,7 @@ func (cmd *Cmd) setupPath(path string) error {
 	return nil
 }
 
+// RunE executes the command and returns potential errors
 func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
 	cmd.env.Logger().WarnfLn("This is a Technology Preview feature. Red Hat does not recommend using Technology Preview features in production.")
 	analyzer, err := cmd.construct(args)
@@ -92,6 +95,7 @@ func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
 	return cmd.analyzeNetpols(analyzer)
 }
 
+// AddFlags is for parsing flags and storing their values
 func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	c.Flags().BoolVar(&cmd.treatWarningsAsErrors, "strict", false, "treat warnings as errors")
 	c.Flags().BoolVar(&cmd.stopOnFirstError, "fail", false, "fail on the first encountered error")
