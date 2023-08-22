@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -111,11 +111,6 @@ func run() error {
 	}
 	defer restore()
 
-	var webhookServer webhook.Server
-	if enableWebhooks.BooleanSetting() {
-		webhookServer = webhook.NewServer(getWebhookOptions())
-	}
-
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -123,7 +118,6 @@ func run() error {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
-		WebhookServer:          webhookServer,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create manager")
@@ -132,6 +126,7 @@ func run() error {
 	if !enableWebhooks.BooleanSetting() {
 		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
 	} else {
+		maybeUseLegacyTLSFileLocation(mgr)
 		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
@@ -179,7 +174,7 @@ func run() error {
 	return nil
 }
 
-func getWebhookOptions() webhook.Options {
+func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
 	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
 	// provide the TLS certificate/key in the location referenced by default by the controller runtime
 	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
@@ -187,13 +182,12 @@ func getWebhookOptions() webhook.Options {
 	// If the files are missing at the default location, then we explicitly set the settings as follows
 	// to force usage of the legacy location, which is provided both by old and new OLM, but not
 	// by the "make deploy" scaffolding.
-	opts := webhook.Options{}
 	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
-		return opts
+		return
 	}
 	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
-	opts.CertDir = "/apiserver.local.config/certificates"
-	opts.CertName = "apiserver.crt"
-	opts.KeyName = "apiserver.key"
-	return opts
+	server := mgr.GetWebhookServer()
+	server.CertDir = "/apiserver.local.config/certificates"
+	server.CertName = "apiserver.crt"
+	server.KeyName = "apiserver.key"
 }
