@@ -139,7 +139,7 @@ spec:
         - mountPath: /host
           name: host-root-ro
           readOnly: true
-          {{- if eq ._rox.env.openshift }}
+          {{- if ._rox.env.openshift }}
           mountPropagation: HostToContainer
           {{- end }}
         - mountPath: /run/secrets/stackrox.io/certs/
@@ -166,7 +166,7 @@ spec:
          - mountPath: /host
            name: host-root-ro
            readOnly: true
-           {{- if eq ._rox.env.openshift }}
+           {{- if ._rox.env.openshift }}
            mountPropagation: HostToContainer
            {{- end }}
          - mountPath: /tmp/
