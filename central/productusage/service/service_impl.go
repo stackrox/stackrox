@@ -72,12 +72,12 @@ func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeR
 	var err error
 	if req.GetFrom() != nil {
 		if from, err = types.TimestampFromProto(req.GetFrom()); err != nil {
-			return nil, errox.InvalidArgs.New("invalid value in from parameter")
+			return nil, errox.InvalidArgs.New("invalid value in from parameter").CausedBy(err)
 		}
 	}
 	if req.GetTo() != nil {
 		if to, err = types.TimestampFromProto(req.GetTo()); err != nil {
-			return nil, errox.InvalidArgs.New("invalid value in to parameter")
+			return nil, errox.InvalidArgs.New("invalid value in to parameter").CausedBy(err)
 		}
 	}
 	if !from.Before(to) {
