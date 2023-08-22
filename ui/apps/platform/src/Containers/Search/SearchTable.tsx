@@ -9,8 +9,8 @@ import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
 import {
     SearchNavCategory,
-    searchResultCategoryMapFilteredIsRouteEnabled,
     searchNavMap,
+    searchResultCategoryMapFilteredIsRouteEnabled,
 } from './searchCategories';
 
 function getLocationTextForCategory(location: string, category: SearchResultCategory) {
