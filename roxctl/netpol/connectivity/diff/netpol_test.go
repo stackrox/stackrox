@@ -32,18 +32,21 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 			name:                  "Empty dir1 input should return validation error",
 			inputFolderPath1:      "",
 			inputFolderPath2:      "",
+			outFile:               "",
 			expectedValidateError: errox.InvalidArgs,
 		},
 		{
 			name:                  "Empty dir2 should return validation error",
 			inputFolderPath1:      "/dev/null",
 			inputFolderPath2:      "",
+			outFile:               "",
 			expectedValidateError: errox.InvalidArgs,
 		},
 		{
 			name:                  "Valid inputs should not raise any validate error",
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
+			outFile:               "",
 			expectedValidateError: nil,
 		},
 		{
@@ -52,6 +55,13 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			outFile:               "testdata/netpol-diff-example-minimal/diff_output.txt", // an existing file
 			expectedValidateError: errox.AlreadyExists,
+		},
+		{
+			name:                  "Non existing output file should not raise any validate error",
+			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
+			outFile:               "testdata/netpol-diff-example-minimal/nonexisting", // an non-existing file
+			expectedValidateError: nil,
 		},
 	}
 
@@ -187,6 +197,7 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {
 			name:                           "Not supported output format should result an error in formatting connectivity diff",
 			inputFolderPath1:               "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:               "testdata/netpol-diff-example-minimal",
+			outFile:                        "",
 			outputFormat:                   "docx",
 			expectedWrongFormatErrContains: "docx output format is not supported.",
 		},
@@ -195,42 +206,49 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {
 			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2: "testdata/netpol-diff-example-minimal",
 			outFile:          outFileName, // existing file
+			outputFormat:     "",
 			removeOutputPath: true,
 		},
 		{
 			name:             "Testing Diff between two dirs output should be written to default txt output file",
 			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outFile:          "",
 			outputFormat:     defaultOutputFormat,
 		},
 		{
 			name:             "Testing Diff between two dirs output should be written to default md output file",
 			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outFile:          "",
 			outputFormat:     "md",
 		},
 		{
 			name:             "Testing Diff between two dirs output should be written to default csv output file",
 			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outFile:          "",
 			outputFormat:     "csv",
 		},
 		{
 			name:             "ACS example output should be written to default txt output file",
 			inputFolderPath1: "testdata/acs-security-demos",
 			inputFolderPath2: "testdata/acs-security-demos-new-version",
+			outFile:          "",
 			outputFormat:     "txt",
 		},
 		{
 			name:             "ACS example output should be written to default md output file",
 			inputFolderPath1: "testdata/acs-security-demos",
 			inputFolderPath2: "testdata/acs-security-demos-new-version",
+			outFile:          "",
 			outputFormat:     "md",
 		},
 		{
 			name:             "ACS example output should be written to default csv output file",
 			inputFolderPath1: "testdata/acs-security-demos",
 			inputFolderPath2: "testdata/acs-security-demos-new-version",
+			outFile:          "",
 			outputFormat:     "csv",
 		},
 	}
