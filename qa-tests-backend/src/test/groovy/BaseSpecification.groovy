@@ -262,9 +262,6 @@ class BaseSpecification extends Specification {
             LOG.warn "Could not create the core image integration."
             LOG.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
-        // This sleep is required due to tests that can execute before the
-        // product has fully digested the integration.
-        sleep(5 * 1000)
     }
 
     private static void recordResourcesAtRunStart(OrchestratorMain orchestrator) {
