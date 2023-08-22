@@ -2,9 +2,7 @@ package notifications
 
 import (
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/retry"
 )
 
@@ -16,7 +14,7 @@ type Stream interface {
 
 func newStream() Stream {
 	return &streamImpl{
-		notificationChan: make(chan *storage.Notification, env.NotificationsStreamBufferSize.IntegerSetting()),
+		notificationChan: make(chan *storage.Notification, 100),
 	}
 }
 
