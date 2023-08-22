@@ -46,10 +46,10 @@ function apply_operator_manifests() {
   fi
 
   env -i PATH="${PATH}" \
-  INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
-  IMAGE_TAG_BASE="${image_tag_base}" \
-  envsubst < "${ROOT_DIR}/${OPERATOR_YAML_PATH}" \
-  | kubectl -n "${operator_ns}" apply -f -
+   INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
+   IMAGE_TAG_BASE="${image_tag_base}" \
+   envsubst < "${ROOT_DIR}/${OPERATOR_YAML_PATH}" \
+   | kubectl -n "${operator_ns}" apply -f -
 
 }
 

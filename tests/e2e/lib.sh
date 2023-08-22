@@ -121,16 +121,18 @@ deploy_stackrox_operator() {
 
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
         info "Deploying ACS operator via midstream images"
-        # Retrieving values from json map
+        # Retrieving values from json map for operator and iib
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
-        export OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
-        export VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
+        OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
+        VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
+        #Exporting the above vars
         export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
+        export OPERATOR_VERSION
+        export VERSION
 
         make -C operator kuttl deploy-via-olm-midstream
     else
         info "Deploying ACS operator"
-
         ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
     fi
 }
@@ -210,15 +212,15 @@ deploy_central_via_operator() {
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
     fi
     env - \
-    centralAdminPasswordBase64="$centralAdminPasswordBase64" \
-    centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
-    centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
-    central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
-    central_exposure_route_enabled="$central_exposure_route_enabled" \
-    customize_envVars="$customize_envVars" \
-    envsubst \
-    < "${CENTRAL_YAML_PATH}" \
-    > /tmp/central-cr.yaml
+     centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+     centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+     centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
+     central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
+     central_exposure_route_enabled="$central_exposure_route_enabled" \
+     customize_envVars="$customize_envVars" \
+     envsubst \
+     < "${CENTRAL_YAML_PATH}" \
+     > /tmp/central-cr.yaml
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
@@ -288,7 +290,7 @@ deploy_sensor_via_operator() {
         ROX_CENTRAL_ADDR=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host'):443
         ROX_CENTRAL_PASS=$(kubectl -n stackrox get secret central-admin-pass -o go-template='{{index .data "password" | base64decode}}')
         SUPPORT_URL=$(< operator/midstream/iib.json jq -r '.support_url')
-        wget -O support-pkg.zip $SUPPORT_URL
+        wget -O support-pkg.zip "$SUPPORT_URL"
         roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg.zip
     fi
 
