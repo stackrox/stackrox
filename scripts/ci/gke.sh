@@ -86,6 +86,10 @@ choose_cluster_version() {
         gcloud container get-server-config --format json | jq .validMasterVersions
         unset GKE_CLUSTER_VERSION
     fi
+    # ROX-19109: Use v1.26 to get a more stable GKE clusters
+    if [[ -z "${GKE_CLUSTER_VERSION:-}" ]]; then
+        GKE_CLUSTER_VERSION="1.26"
+    fi
 }
 
 create_cluster() {
