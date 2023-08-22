@@ -54,6 +54,9 @@ describe('Delegated Image Scanning', () => {
         getInputByLabel('All registries').should('not.be.checked');
         getInputByLabel('Specified registries').should('be.checked');
 
+        // None shoudl be value for default cluster
+        cy.get('.cluster-select').should('have.text', 'None').should('have.value', '');
+
         // choose the first cluster in the list as the default
         cy.get('.cluster-select').click();
         cy.get('.cluster-select .pf-c-select__menu .pf-c-select__menu-item').then(
@@ -62,21 +65,22 @@ describe('Delegated Image Scanning', () => {
             }
         );
         cy.get('.cluster-select .pf-c-select__menu .pf-c-select__menu-item')
-            .first()
-            .then(($firstCluster) => {
-                const firstClusterName = $firstCluster.text();
+            .last()
+            .then(($lastCluster) => {
+                const lastClusterName = $lastCluster.text();
+                cy.log('lastClusterName', lastClusterName);
 
-                $firstCluster.click();
+                $lastCluster.click();
 
-                cy.get('.cluster-select').should('have.text', firstClusterName);
+                cy.get('.cluster-select').should('have.text', lastClusterName);
+
+                // save the configuration
+                saveDelegatedRegistryConfig();
+
+                cy.get(
+                    '.pf-c-alert.pf-m-success .pf-c-alert__title:contains("Delegated scanning configuration saved successfully")'
+                );
             });
-
-        // save the configuration
-        saveDelegatedRegistryConfig();
-
-        cy.get(
-            '.pf-c-alert.pf-m-success .pf-c-alert__title:contains("Delegated scanning configuration saved successfully")'
-        );
     });
 
     describe('when user does not have permission to see page', () => {

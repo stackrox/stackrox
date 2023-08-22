@@ -33,13 +33,15 @@ function DelegatedScanningSettings({
         setSelectedClusterId(value);
     };
 
+    const selectedClusterName =
+        clusters.find((cluster) => selectedClusterId === cluster.id)?.name ?? 'None';
+
     return (
         <Card className="pf-u-mb-lg">
             <CardBody>
                 <FormLabelGroup
                     label="Select default cluster to delegate to"
                     helperText="Select a cluster to process CLI and API-originated scanning requests"
-                    isRequired
                     fieldId="selectedClusterId"
                     touched={{}}
                     errors={{}}
@@ -59,9 +61,12 @@ function DelegatedScanningSettings({
                                 onToggle={toggleIsClusterOpen}
                                 onSelect={onClusterSelect}
                                 isOpen={isClusterOpen}
-                                selections={selectedClusterId}
+                                selections={selectedClusterName}
                             >
-                                {clusterSelectOptions}
+                                <SelectOption key="no-cluster-selected" value="" isPlaceholder>
+                                    <span>None</span>
+                                </SelectOption>
+                                <>{clusterSelectOptions}</>
                             </Select>
                         </FlexItem>
                     </Flex>
