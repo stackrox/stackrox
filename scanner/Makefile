@@ -32,10 +32,8 @@ ifeq ($(UNAME_S),Darwin)
 	HOST_OS := darwin
 endif
 
-ARCH := x86_64
 GOARCH := amd64
 ifeq ($(UNAME_M),arm64)
-	ARCH := aarch64
 	GOARCH := arm64
 endif
 
@@ -95,13 +93,13 @@ endif
 scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner:$(TAG)"
-	$(SILENT)GOARCH=$(GOARCH) $(DOCKERBUILD) -t scanner:$(TAG) -f image/scanner/Dockerfile image/scanner
+	$(SILENT)$(DOCKERBUILD) -t scanner:$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-sigs
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner-db:$(TAG)"
-	$(SILENT)GOARCH=$(GOARCH) $(DOCKERBUILD) -t scanner-db:$(TAG) --build-arg POSTGRESQL_ARCH=${ARCH} -f image/db/Dockerfile image/db
+	$(SILENT)$(DOCKERBUILD) -t scanner-db:$(TAG) -f image/db/Dockerfile image/db
 
 ###########
 ## Tests ##
@@ -141,7 +139,6 @@ copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	$(SILENT)echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
 
-DB_SCRIPTS := download.sh
 .PHONY: copy-db-scripts
 copy-db-scripts: ../image/postgres/download.sh
 	$(SILENT)echo "+ $@"

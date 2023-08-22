@@ -26,8 +26,6 @@ COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-ARG POSTGRESQL_ARCH=x86_64
-
 RUN microdnf upgrade -y && \
     # groupadd is in shadow-utils package that is not installed by default.
     microdnf install -y shadow-utils && \
