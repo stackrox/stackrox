@@ -212,15 +212,15 @@ deploy_central_via_operator() {
         CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
     fi
     env - \
-     centralAdminPasswordBase64="$centralAdminPasswordBase64" \
-     centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
-     centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
-     central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
-     central_exposure_route_enabled="$central_exposure_route_enabled" \
-     customize_envVars="$customize_envVars" \
-     envsubst \
-     < "${CENTRAL_YAML_PATH}" \
-     > /tmp/central-cr.yaml
+      centralAdminPasswordBase64="$centralAdminPasswordBase64" \
+      centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
+      centralDefaultTlsSecretCertBase64="$centralDefaultTlsSecretCertBase64" \
+      central_exposure_loadBalancer_enabled="$central_exposure_loadBalancer_enabled" \
+      central_exposure_route_enabled="$central_exposure_route_enabled" \
+      customize_envVars="$customize_envVars" \
+    envsubst \
+      < "${CENTRAL_YAML_PATH}" \
+      > /tmp/central-cr.yaml
 
     kubectl apply -n stackrox -f /tmp/central-cr.yaml
 
