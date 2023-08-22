@@ -51,9 +51,9 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 			name:                  "Existing output file without using remove flag should return validate error that the file already exists",
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			expectedValidateError: errox.AlreadyExists,
 			outFile:               "testdata/netpol-diff-example-minimal/diff_output.txt", // an existing file
 			removeOutputPath:      false,
+			expectedValidateError: errox.AlreadyExists,
 		},
 	}
 
