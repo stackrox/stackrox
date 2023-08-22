@@ -13,6 +13,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.7.0
 	github.com/RoaringBitmap/roaring v1.3.0
+	github.com/Shopify/toxiproxy/v2 v2.5.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.6.5
 	github.com/andygrunwald/go-jira v1.16.0
@@ -93,7 +94,6 @@ require (
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.2.1
 	github.com/sergi/go-diff v1.3.1
-	github.com/Shopify/toxiproxy/v2 v2.5.0
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.4
 	github.com/spf13/cobra v1.7.0
