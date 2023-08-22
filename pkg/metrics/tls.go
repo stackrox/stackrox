@@ -12,10 +12,10 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
-	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -93,12 +93,12 @@ func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		log.Errorw("Failed to get in-cluster config", zap.Error(err))
+		log.Errorw("Failed to get in-cluster config", logging.Err(err))
 		return &nilTLSConfigurer{}
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Errorw("Failed to create Kubernetes client", zap.Error(err))
+		log.Errorw("Failed to create Kubernetes client", logging.Err(err))
 		return &nilTLSConfigurer{}
 	}
 	certDir := env.SecureMetricsCertDir.Setting()
@@ -129,7 +129,7 @@ func (t *tlsConfigurerImpl) getCertificateFromDirectory(dir string) (*tls.Certif
 	certFile := filepath.Join(dir, env.TLSCertFileName)
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
-			log.Errorw("Error checking if monitoring TLS certificate file exists", zap.Error(err))
+			log.Errorw("Error checking if monitoring TLS certificate file exists", logging.Err(err))
 			return nil, err
 		}
 		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping TLS watcher cycle.", certFile)
@@ -139,7 +139,7 @@ func (t *tlsConfigurerImpl) getCertificateFromDirectory(dir string) (*tls.Certif
 	keyFile := filepath.Join(dir, env.TLSKeyFileName)
 	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
 		if err != nil {
-			log.Errorw("Error checking if monitoring TLS key file exists", zap.Error(err))
+			log.Errorw("Error checking if monitoring TLS key file exists", logging.Err(err))
 			return nil, err
 		}
 		log.Infof("Monitoring TLS key file %q does not exist. Skipping TLS watcher cycle.", keyFile)
@@ -176,7 +176,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 		log.Infof("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
 		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {
-			log.Errorw("Unable to parse client CAs", zap.Error(err))
+			log.Errorw("Unable to parse client CAs", logging.Err(err))
 			return
 		}
 		if len(signerCAs) == 0 {
