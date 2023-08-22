@@ -33,6 +33,7 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
@@ -161,6 +162,7 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -174,7 +176,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -411,6 +412,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 	}
 
+	if features.ComplianceEnhancements.Enabled() {
+		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -642,7 +647,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/docs/swagger",
-			Authorizer:    user.With(permissions.View(resources.Integration)),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
@@ -710,7 +715,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/db/backup",
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedWithExternalDatabase(
+			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
 			),
 			Compression: true,
@@ -718,7 +723,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/api/extensions/backup",
 			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedWithExternalDatabase(
+			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
 			),
 			Compression: true,
@@ -789,22 +794,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
-}
-
-func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() {
-		return httputil.NotImplementedHandler("api is not supported in a managed central environment.")
-	}
-
-	return fn
-}
-
-func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
-		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
-	}
-
-	return fn
 }
 
 func debugRoutes() []routes.CustomRoute {

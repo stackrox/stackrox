@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
@@ -93,6 +94,29 @@ func Test_pipelineImpl_Run(t *testing.T) {
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
 					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+				)
+			},
+		},
+		{
+			name:                "when event has inventory for unknown node then no ACK should be sent",
+			wantInjectorContain: []*central.NodeInventoryACK{},
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				a.msg = createMsg("node1")
+				a.injector = &recordingInjector{}
+				gomock.InOrder(
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq("node1")).Times(1).Return(nil, false, nil),
+				)
+			},
+		},
+		{
+			name:                "when fetching node errors then no ACK should be sent",
+			wantInjectorContain: []*central.NodeInventoryACK{},
+			wantErr:             "fetching error from DB",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				a.msg = createMsg("node1")
+				a.injector = &recordingInjector{}
+				gomock.InOrder(
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq("node1")).Times(1).Return(nil, false, errors.New("fetching error from DB")),
 				)
 			},
 		},

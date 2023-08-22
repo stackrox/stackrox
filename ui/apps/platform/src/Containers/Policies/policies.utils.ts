@@ -4,7 +4,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
-import { Cluster } from 'types/cluster.proto';
+import { ClusterScopeObject } from 'services/RolesService';
 import { NotifierIntegration } from 'types/notifier.proto';
 import {
     EnforcementAction,
@@ -249,7 +249,7 @@ export function getLabelAndNotifierIdsForTypes(
 
 // scope
 
-export function getClusterName(clusters: Cluster[], clusterId: string): string {
+export function getClusterName(clusters: ClusterScopeObject[], clusterId: string): string {
     const cluster = clusters.find(({ id }) => id === clusterId);
     return cluster?.name ?? clusterId;
 }

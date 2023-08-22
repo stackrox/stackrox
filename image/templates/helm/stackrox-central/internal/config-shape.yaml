@@ -8,6 +8,7 @@ imagePullSecrets:
 image:
   registry: null # string
 env:
+  installMethod: null # string
   openshift: null # bool
   istio: null # bool
   platform: null # string

@@ -4,14 +4,24 @@ import { getInputByLabel } from '../../helpers/formHelpers';
 import { visitWithStaticResponseForPermissions } from '../../helpers/visit';
 
 import {
+    visitClusters,
     visitDelegateScanning,
     saveDelegatedRegistryConfig,
     delegatedScanningPath,
+    clustersPath,
 } from './Clusters.helpers';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
 describe('Delegated Image Scanning', () => {
     withAuth();
+
+    it(`should have a link on the clusters main page`, () => {
+        visitClusters();
+
+        cy.get('a:contains("Manage delegated scanning")').click();
+
+        cy.location('pathname').should('eq', '/main/clusters/delegated-image-scanning');
+    });
 
     it(`should load the page in the cluster hierarchy`, () => {
         visitDelegateScanning();
@@ -85,6 +95,21 @@ describe('Delegated Image Scanning', () => {
 
                 // make sure page does not load
                 cy.get('h1:contains("Delegated Image Scanning")').should('not.exist');
+            });
+        });
+
+        it(`should not have a link on the Clusters page`, () => {
+            cy.fixture('auth/mypermissionsNoAdminAccess.json').then(({ resourceToAccess }) => {
+                const staticResponseForPermissions = {
+                    body: {
+                        resourceToAccess: { ...resourceToAccess },
+                    },
+                };
+
+                visitWithStaticResponseForPermissions(clustersPath, staticResponseForPermissions);
+
+                // make sure link is not present
+                cy.get('a:contains("Manage delegated scanning")').should('not.exist');
             });
         });
     });

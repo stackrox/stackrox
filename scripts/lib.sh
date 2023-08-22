@@ -25,6 +25,12 @@ die() {
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
 
+roxcurl() {
+  local url="$1"
+  shift
+  curl -sk -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
+}
+
 is_release_version() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: is_release_version <version>"

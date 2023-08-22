@@ -298,7 +298,6 @@
 #  #   - EBPF
 #  #   - CORE_BPF
 #  #   - NO_COLLECTION
-#  # Note that CORE_BPF method is in Tech Preview stage.
 #  collectionMethod: EBPF
 #
 #  # Configure usage of taint tolerations. If `false`, tolerations are applied to collector,

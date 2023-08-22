@@ -43,8 +43,9 @@ export type DecommissionedClusterRetentionConfig = {
 };
 
 export type ReportRetentionConfig = {
-    historyRetentionDurationDays: number; // int32
-    downloadableReportGlobalRetentionBytes: number; // int64
+    historyRetentionDurationDays: number; // uint32
+    downloadableReportGlobalRetentionBytes: number; // uint32
+    downloadableReportRetentionDays: number; // uint32
 };
 
 export type PrivateConfig = {

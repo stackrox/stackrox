@@ -138,7 +138,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -173,7 +173,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -210,7 +210,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -377,6 +377,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Misc: &platform.MiscSpec{
 							CreateSCCs: pointer.Bool(true),
 						},
+						RegistryOverride: "my.registry.override.com",
 					},
 				},
 			},
@@ -549,6 +550,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"enabled": true,
 					},
 				},
+				"registryOverride": "my.registry.override.com",
 			},
 		},
 	}

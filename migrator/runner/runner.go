@@ -58,7 +58,7 @@ func Run(databases *types.Databases) error {
 		log.WriteToStderrf("DB sequence number %d is greater than the latest one we have (%d). This means "+
 			"we are in a rollback.", dbSeqNum, currSeqNum)
 	}
-	if dbSeqNum <= currSeqNum {
+	if dbSeqNum < currSeqNum {
 		log.WriteToStderrf("Found DB at version %d, which is less than what we expect (%d). Running migrations...", dbSeqNum, currSeqNum)
 		if err := runMigrations(databases, dbSeqNum); err != nil {
 			return err

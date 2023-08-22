@@ -1,0 +1,106 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: cluster-density-{{.Replica}}
+spec:
+  replicas: {{.podReplicas}}
+  selector:
+    matchLabels:
+      app: cluster-density-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: cluster-density-{{.Replica}}
+    spec:
+      imagePullSecrets:
+        - name: {{.JobName}}-{{.Replica}}
+      containers:
+      - args:
+        - sleep
+        - infinity
+        image: quay.io/rhacs-eng/qa:berserker-1.0-26-g56b1cf4e5d
+        resources:
+          requests:
+            memory: "150Mi"
+            cpu: "250m"
+          limits:
+            memory: "150Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: secret-1
+          mountPath: /secret1
+        - name: secret-2
+          mountPath: /secret2
+        - name: secret-3
+          mountPath: /secret3
+        - name: secret-4
+          mountPath: /secret4
+        - name: configmap-1
+          mountPath: /configmap1
+        - name: configmap-2
+          mountPath: /configmap2
+        - name: configmap-3
+          mountPath: /configmap3
+        - name: configmap-4
+          mountPath: /configmap4
+        - name: podinfo
+          mountPath: /etc/podlabels
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        name: cluster-density
+        env:
+        - name: ENVVAR1
+          value: "250"
+        - name: ENVVAR2
+          value: "250"
+        - name: ENVVAR3
+          value: "250"
+        - name: ENVVAR4
+          value: "250"
+      volumes:
+      - name: secret-1
+        secret:
+          secretName: {{.JobName}}-1
+      - name: secret-2
+        secret:
+          secretName: {{.JobName}}-2
+      - name: secret-3
+        secret:
+          secretName: {{.JobName}}-3
+      - name: secret-4
+        secret:
+          secretName: {{.JobName}}-4
+      - name: configmap-1
+        configMap:
+          name: {{.JobName}}-1
+      - name: configmap-2
+        configMap:
+          name: {{.JobName}}-2
+      - name: configmap-3
+        configMap:
+          name: {{.JobName}}-3
+      - name: configmap-4
+        configMap:
+          name: {{.JobName}}-4
+      - name: podinfo
+        downwardAPI:
+          items:
+            - path: "labels"
+              fieldRef:
+                fieldPath: metadata.labels
+      # Add not-ready/unreachable tolerations for 15 minutes so that node
+      # failure doesn't trigger pod deletion.
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900

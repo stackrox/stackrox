@@ -31,7 +31,7 @@ import ReportFormWizardFooter from './ReportFormWizardFooter';
 
 const wizardStepNames = [
     'Configure report parameters',
-    'Configure delivery destinations (Optional)',
+    'Configure delivery destinations',
     'Review and save',
 ];
 
@@ -39,7 +39,7 @@ function EditVulnReportPage() {
     const history = useHistory();
     const { reportId } = useParams();
 
-    const { report, isLoading, error } = useFetchReport(reportId);
+    const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
     const formik = useReportFormValues();
     const { isSaving, saveError, saveReport } = useSaveReport({
         onCompleted: () => {
@@ -50,12 +50,12 @@ function EditVulnReportPage() {
 
     // We fetch the report configuration for the edittable report and then populate the form values
     useEffect(() => {
-        if (report) {
-            const reportFormValues = getReportFormValuesFromConfiguration(report);
+        if (reportConfiguration) {
+            const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
             formik.setValues(reportFormValues);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [report, formik.setValues]);
+    }, [reportConfiguration, formik.setValues]);
 
     function onSave() {
         saveReport(reportId, formik.values);

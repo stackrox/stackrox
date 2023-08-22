@@ -23,11 +23,13 @@ import { getDateTime } from 'utils/dateUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
+import useInterval from 'hooks/useInterval';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 import useURLSort from 'hooks/useURLSort';
 import { saveFile } from 'services/DownloadService';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
+import useAuthStatus from 'hooks/useAuthStatus';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
@@ -48,6 +50,7 @@ const sortOptions = {
 };
 
 function ReportJobs({ reportId }: RunHistoryProps) {
+    const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
@@ -80,7 +83,10 @@ function ReportJobs({ reportId }: RunHistoryProps) {
 
     const handleChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
+        setPage(1);
     };
+
+    useInterval(fetchReportSnapshots, 10000);
 
     return (
         <>
@@ -97,6 +103,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     (val) => runStates[val] !== undefined
                                 ) as RunState[];
                                 setFilteredStatuses(newRunStates);
+                                setPage(1);
                             }}
                             placeholderText="Filter by status"
                         >
@@ -147,12 +154,12 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
-            {isLoading && (
+            {isLoading && !reportSnapshots && (
                 <Bullseye className="pf-u-background-color-100 pf-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
-            {!error && !isLoading && (
+            {reportSnapshots && (
                 <TableComposable aria-label="Simple table" variant="compact">
                     <Thead>
                         <Tr>
@@ -177,6 +184,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                 variant="link"
                                                 onClick={() => {
                                                     setFilteredStatuses([]);
+                                                    setPage(1);
                                                 }}
                                             >
                                                 Clear filters
@@ -223,20 +231,19 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             isDownloadAvailable &&
                             reportStatus.runState === 'SUCCESS' &&
                             reportStatus.reportNotificationMethod === 'DOWNLOAD';
+                        const areDownloadActionsDisabled = currentUser.userId !== user.id;
+
+                        function onDownload() {
+                            return saveFile({
+                                method: 'get',
+                                url: `/api/reports/jobs/download?id=${reportJobId}`,
+                                data: null,
+                                timeout: 300000,
+                                name: `${name}.zip`,
+                            });
+                        }
+
                         const rowActions = [
-                            {
-                                title: 'Download report',
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    return saveFile({
-                                        method: 'get',
-                                        url: `/api/reports/jobs/download?id=${reportJobId}`,
-                                        data: null,
-                                        timeout: 300000,
-                                        name: `${name}-report.zip`,
-                                    });
-                                },
-                            },
                             {
                                 title: (
                                     <span className="pf-u-danger-color-100">Delete download</span>
@@ -264,12 +271,19 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                             : '-'}
                                     </Td>
                                     <Td dataLabel="Status">
-                                        <ReportJobStatus reportSnapshot={reportSnapshot} />
+                                        <ReportJobStatus
+                                            reportSnapshot={reportSnapshot}
+                                            areDownloadActionsDisabled={areDownloadActionsDisabled}
+                                            onDownload={onDownload}
+                                        />
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>
                                     <Td isActionCell>
                                         {hasDownloadableReport && (
-                                            <ActionsColumn items={rowActions} />
+                                            <ActionsColumn
+                                                items={rowActions}
+                                                isDisabled={areDownloadActionsDisabled}
+                                            />
                                         )}
                                     </Td>
                                 </Tr>
@@ -278,7 +292,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                         <Card className="pf-u-m-md pf-u-p-md" isFlat>
                                             <Flex>
                                                 <FlexItem>
-                                                    <JobDetails reportStatus={reportStatus} />
+                                                    <JobDetails reportSnapshot={reportSnapshot} />
                                                 </FlexItem>
                                                 <Divider component="div" className="pf-u-my-md" />
                                                 <FlexItem>
@@ -314,7 +328,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 error={deleteDownloadError}
             >
                 All data in this downloadable report will be deleted. Regenerating a downloadable
-                report will requre the download process to start over.
+                report will require the download process to start over.
             </DeleteModal>
         </>
     );

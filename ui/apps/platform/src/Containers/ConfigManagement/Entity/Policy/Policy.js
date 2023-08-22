@@ -15,25 +15,19 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import useCases from 'constants/useCaseTypes';
 import searchContext from 'Containers/searchContext';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import usePermissions from 'hooks/usePermissions';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
-import { isRouteEnabled, policyManagementBasePath, policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 
 import { getConfigMgmtCountQuery } from '../../ConfigMgmt.utils';
 import EntityList from '../../List/EntityList';
 import PolicyFindings from './PolicyFindings';
 
 const Policy = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess } = usePermissions();
-
-    const isRouteEnabledForPolicyManagement = isRouteEnabled(
-        { hasReadAccess, isFeatureFlagEnabled },
-        policyManagementBasePath
-    );
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 
     const searchParam = useContext(searchContext);
     const variables = {
@@ -176,7 +170,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                     return [...acc, datum];
                 }, []);
 
-                const headerComponents = isRouteEnabledForPolicyManagement ? (
+                const headerComponents = isRouteEnabledForPolicy ? (
                     <Link
                         className="no-underline text-base-600 mx-4 btn btn-base"
                         to={`${policiesBasePath}/${id}`}

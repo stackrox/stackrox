@@ -131,23 +131,27 @@ class ExportButton extends Component {
 
         const fileName = addBrandedTimestampToString(headerText);
 
-        return (
-            <div className="absolute right-0 z-20 flex flex-col text-base-600 min-w-64">
+        const wrapperClass = !!this.props.pdfId && !this.isCsvSupported() ? 'min-w-64' : '';
+
+        return !!this.props.pdfId || this.isCsvSupported() ? (
+            <div className={`absolute right-0 z-20 flex flex-col text-base-600 ${wrapperClass}`}>
                 <div className="arrow-up self-end mr-5" />
                 <ul className=" bg-base-100 border-2 border-primary-600 rounded">
                     <li className="p-4 border-b border-base-400">
                         <div className="flex">
-                            <WorkflowPDFExportButton
-                                id={this.props.pdfId}
-                                className={`${btnClassName}  ${
-                                    this.isCsvSupported() ? 'mr-2' : 'w-full'
-                                }`}
-                                tableOptions={this.props.tableOptions}
-                                fileName={fileName}
-                                pdfTitle={headerText}
-                                isExporting={this.props.isExporting}
-                                setIsExporting={this.props.setIsExporting}
-                            />
+                            {!!this.props.pdfId && (
+                                <WorkflowPDFExportButton
+                                    id={this.props.pdfId}
+                                    className={`${btnClassName}  min-w-48 ${
+                                        this.isCsvSupported() ? 'mr-2' : 'w-full'
+                                    }`}
+                                    tableOptions={this.props.tableOptions}
+                                    fileName={fileName}
+                                    pdfTitle={headerText}
+                                    isExporting={this.props.isExporting}
+                                    setIsExporting={this.props.setIsExporting}
+                                />
+                            )}
                             {this.isCsvSupported() && (
                                 <Button
                                     data-testid="download-csv-button"
@@ -167,7 +171,7 @@ class ExportButton extends Component {
                     </li>
                 </ul>
             </div>
-        );
+        ) : null;
     };
 
     toggleWidget = () => {

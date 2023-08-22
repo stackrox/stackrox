@@ -150,7 +150,8 @@ export function getReportFormValuesFromConfiguration(
         cvesDiscoveredSince = 'SINCE_LAST_REPORT';
     } else if ('sinceStartDate' in vulnReportFilters) {
         cvesDiscoveredSince = 'START_DATE';
-        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate;
+        // Strip off the google.protobuf.Timestamp time portion of the date string
+        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate.substring(0, 10);
     } else {
         // we'll default to this if none of these fields are present
         cvesDiscoveredSince = 'ALL_VULN';
@@ -213,7 +214,10 @@ export function getReportFormValuesFromConfiguration(
     return reportFormValues;
 }
 
-export function getReportStatusText(reportStatus: ReportStatus | null): string {
+export function getReportStatusText(
+    reportStatus: ReportStatus | null,
+    isDownloadAvailable: boolean
+): string {
     let statusText = '-';
 
     if (
@@ -223,9 +227,16 @@ export function getReportStatusText(reportStatus: ReportStatus | null): string {
         statusText = 'Emailed';
     } else if (
         reportStatus?.runState === 'SUCCESS' &&
-        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
+        reportStatus?.reportNotificationMethod === 'DOWNLOAD' &&
+        isDownloadAvailable
     ) {
         statusText = 'Download prepared';
+    } else if (
+        reportStatus?.runState === 'SUCCESS' &&
+        reportStatus?.reportNotificationMethod === 'DOWNLOAD' &&
+        !isDownloadAvailable
+    ) {
+        statusText = 'Download deleted';
     } else if (
         reportStatus?.runState === 'FAILURE' &&
         reportStatus?.reportNotificationMethod === 'EMAIL'

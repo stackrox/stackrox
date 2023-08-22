@@ -390,7 +390,7 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			CollectionSnapshot: s.convertProtoReportCollectiontoV2(snapshot.GetCollection()),
 			User: &apiV2.SlimUser{
 				Id:   snapshot.GetRequester().GetId(),
-				Name: snapshot.GetRequester().GetId(),
+				Name: snapshot.GetRequester().GetName(),
 			},
 			Schedule: s.convertProtoScheduleToV2(snapshot.GetSchedule()),
 			Filter: &apiV2.ReportSnapshot_VulnReportFilters{

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
@@ -32,8 +33,8 @@ func (ds *datastoreImpl) GetComplianceIntegration(ctx context.Context, id string
 	return ds.storage.Get(ctx, id)
 }
 
-// GetComplianceIntegrations provides an in memory layer on top of the underlying DB based storage.
-func (ds *datastoreImpl) GetComplianceIntegrations(ctx context.Context, clusterID string) ([]*storage.ComplianceIntegration, error) {
+// GetComplianceIntegrationByCluster provides an in memory layer on top of the underlying DB based storage.
+func (ds *datastoreImpl) GetComplianceIntegrationByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceIntegration, error) {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -42,6 +43,17 @@ func (ds *datastoreImpl) GetComplianceIntegrations(ctx context.Context, clusterI
 
 	return ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+}
+
+// GetComplianceIntegrations provides an in memory layer on top of the underlying DB based storage.
+func (ds *datastoreImpl) GetComplianceIntegrations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceIntegration, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	return ds.storage.GetByQuery(ctx, query)
 }
 
 // AddComplianceIntegration is pass-through to the underlying store.

@@ -36,27 +36,25 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 		return nil, 0, nil
 	}
 
-	entry := c.GetOrAddEntry(filePath)
-	if entry == nil {
-		msg := "kernel object cache is shutting down"
-		log.Error(msg)
-		return nil, 0, errors.New(msg)
+	e, err := c.getOrAddEntry(filePath)
+	if err != nil || e == nil {
+		return nil, 0, err
 	}
 	releaseRef := true
 	defer func() {
 		if releaseRef {
-			entry.ReleaseRef()
+			e.ReleaseRef()
 		}
 	}()
 
-	if !concurrency.WaitInContext(entry.DoneSig(), ctx) {
+	if !concurrency.WaitInContext(e.DoneSig(), ctx) {
 		log.Errorf("context error waiting for download of %s from upstream: %v", filePath, ctx.Err())
 		return nil, 0, errors.Wrap(ctx.Err(), "context error waiting for download from upstream")
 	}
 
-	data, size, err := entry.Contents()
+	data, size, err := e.Contents()
 	if err != nil {
-		if err == errNotFound {
+		if errors.Is(err, errProbeNotFound) {
 			log.Errorf("probe %s does not exist in upstream %s", filePath, c.upstreamBaseURL)
 			err = nil
 		}
@@ -64,12 +62,12 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 	}
 
 	log.Infof("loading probe %s from upstream %s", filePath, c.upstreamBaseURL)
-	// We need to make sure that `entry` does not get destroyed before reading from the reader is complete, so shift
+	// We need to make sure that `e` does not get destroyed before reading from the reader is complete, so shift
 	// the responsibility to release the reference to the `Close()` method of the returned reader.
 	dataReader := io.NewSectionReader(data, 0, size)
 
 	dataReaderWithCloser := ioutils.ReaderWithCloser(dataReader, func() error {
-		entry.ReleaseRef()
+		e.ReleaseRef()
 		return nil
 	})
 	releaseRef = false // prevent releasing reference upon return

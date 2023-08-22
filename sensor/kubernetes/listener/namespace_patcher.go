@@ -36,7 +36,7 @@ type namespacePatchHandler struct {
 	ctx      context.Context
 }
 
-func (h *namespacePatchHandler) OnAdd(obj interface{}, _ bool) {
+func (h *namespacePatchHandler) OnAdd(obj interface{}) {
 	h.checkAndPatchNamespace(obj)
 }
 

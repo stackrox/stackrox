@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+    AlertActionCloseButton,
+    AlertGroup,
     PageSection,
     Title,
     Flex,
@@ -30,6 +32,7 @@ import isEmpty from 'lodash/isEmpty';
 import { vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
@@ -39,9 +42,12 @@ import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
+import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 
 const CreateReportsButton = () => {
     return (
@@ -61,7 +67,9 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
+    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
     const hasAccessScopeReadAccess = hasReadAccess('Access');
@@ -72,15 +80,20 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
+    const isCollectionsRouteEnabled = isRouteEnabled('collections');
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [searchValue, setSearchValue] = useState(() => {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
     });
+    const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
+
+    const { toasts, addToast, removeToast } = useToasts();
 
     const {
-        reports,
+        reportConfigurations,
         totalReports,
         isLoading,
         error: fetchError,
@@ -91,8 +104,19 @@ function VulnReportsPage() {
         perPage,
         sortOption,
     });
+    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
     const { isRunning, runError, runReport } = useRunReport({
-        onCompleted: fetchReports,
+        onCompleted: ({ reportNotificationMethod }) => {
+            if (reportNotificationMethod === 'EMAIL') {
+                addToast('The report has been sent to the configured email notifier', 'success');
+            } else if (reportNotificationMethod === 'DOWNLOAD') {
+                addToast(
+                    'The report generation has started and will be available for download once complete',
+                    'success'
+                );
+            }
+            fetchReports();
+        },
     });
 
     const {
@@ -108,6 +132,26 @@ function VulnReportsPage() {
 
     return (
         <>
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        timeout
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
             <PageTitle title="Vulnerability reporting" />
             {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
@@ -129,11 +173,13 @@ function VulnReportsPage() {
                             </FlexItem>
                         </Flex>
                     </FlexItem>
-                    {reports.length > 0 && canCreateReports && (
-                        <FlexItem>
-                            <CreateReportsButton />
-                        </FlexItem>
-                    )}
+                    {reportConfigurations &&
+                        reportConfigurations.length > 0 &&
+                        canCreateReports && (
+                            <FlexItem>
+                                <CreateReportsButton />
+                            </FlexItem>
+                        )}
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
@@ -153,10 +199,12 @@ function VulnReportsPage() {
                                             onSearch={(_event, value) => {
                                                 setSearchValue(value);
                                                 setSearchFilter({ [reportNameSearchKey]: value });
+                                                setPage(1);
                                             }}
                                             onClear={() => {
                                                 setSearchValue('');
                                                 setSearchFilter({});
+                                                setPage(1);
                                             }}
                                         />
                                     </ToolbarItem>
@@ -177,7 +225,7 @@ function VulnReportsPage() {
                                     </ToolbarItem>
                                 </ToolbarContent>
                             </Toolbar>
-                            {isLoading && (
+                            {isLoading && !reportConfigurations && (
                                 <div className="pf-u-p-md">
                                     <Bullseye>
                                         <Spinner isSVG />
@@ -196,7 +244,7 @@ function VulnReportsPage() {
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
-                            {!isLoading && !fetchError && (
+                            {reportConfigurations && (
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
@@ -253,7 +301,7 @@ function VulnReportsPage() {
                                             <Td />
                                         </Tr>
                                     </Thead>
-                                    {reports.length === 0 && isEmpty(searchFilter) && (
+                                    {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={4}>
@@ -286,61 +334,66 @@ function VulnReportsPage() {
                                             </Tr>
                                         </Tbody>
                                     )}
-                                    {reports.length === 0 && !isEmpty(searchFilter) && (
-                                        <Tbody>
-                                            <Tr>
-                                                <Td colSpan={8}>
-                                                    <Bullseye>
-                                                        <EmptyStateTemplate
-                                                            title="No results found"
-                                                            headingLevel="h2"
-                                                            icon={SearchIcon}
-                                                        >
-                                                            {canCreateReports && (
-                                                                <Flex
-                                                                    direction={{
-                                                                        default: 'column',
-                                                                    }}
-                                                                >
-                                                                    <FlexItem>
-                                                                        <Text>
-                                                                            No results match this
-                                                                            filter criteria. Clear
-                                                                            the filter and try
-                                                                            again.
-                                                                        </Text>
-                                                                    </FlexItem>
-                                                                    <FlexItem>
-                                                                        <Button
-                                                                            variant="link"
-                                                                            onClick={() => {
-                                                                                setSearchValue('');
-                                                                                setSearchFilter({});
-                                                                            }}
-                                                                        >
-                                                                            Clear filter
-                                                                        </Button>
-                                                                    </FlexItem>
-                                                                </Flex>
-                                                            )}
-                                                        </EmptyStateTemplate>
-                                                    </Bullseye>
-                                                </Td>
-                                            </Tr>
-                                        </Tbody>
-                                    )}
-                                    {reports.map((report) => {
+                                    {reportConfigurations.length === 0 &&
+                                        !isEmpty(searchFilter) && (
+                                            <Tbody>
+                                                <Tr>
+                                                    <Td colSpan={8}>
+                                                        <Bullseye>
+                                                            <EmptyStateTemplate
+                                                                title="No results found"
+                                                                headingLevel="h2"
+                                                                icon={SearchIcon}
+                                                            >
+                                                                {canCreateReports && (
+                                                                    <Flex
+                                                                        direction={{
+                                                                            default: 'column',
+                                                                        }}
+                                                                    >
+                                                                        <FlexItem>
+                                                                            <Text>
+                                                                                No results match
+                                                                                this filter
+                                                                                criteria. Clear the
+                                                                                filter and try
+                                                                                again.
+                                                                            </Text>
+                                                                        </FlexItem>
+                                                                        <FlexItem>
+                                                                            <Button
+                                                                                variant="link"
+                                                                                onClick={() => {
+                                                                                    setSearchValue(
+                                                                                        ''
+                                                                                    );
+                                                                                    setSearchFilter(
+                                                                                        {}
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Clear filter
+                                                                            </Button>
+                                                                        </FlexItem>
+                                                                    </Flex>
+                                                                )}
+                                                            </EmptyStateTemplate>
+                                                        </Bullseye>
+                                                    </Td>
+                                                </Tr>
+                                            </Tbody>
+                                        )}
+                                    {reportConfigurations.map((report) => {
                                         const vulnReportURL = generatePath(
                                             vulnerabilityReportPath,
                                             {
                                                 reportId: report.id,
                                             }
                                         ) as string;
+                                        const reportSnapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
-                                            report.reportSnapshot?.reportStatus.runState ===
-                                                'PREPARING' ||
-                                            report.reportSnapshot?.reportStatus.runState ===
-                                                'WAITING';
+                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
+                                            reportSnapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -404,6 +457,8 @@ function VulnReportsPage() {
                                                 isDisabled: isReportStatusPending,
                                             },
                                         ];
+                                        const { collectionName, collectionId } =
+                                            report.resourceScope.collectionScope;
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -419,16 +474,26 @@ function VulnReportsPage() {
                                                         </Link>
                                                     </Td>
                                                     <Td>
-                                                        {
-                                                            report.resourceScope.collectionScope
-                                                                .collectionName
-                                                        }
+                                                        {isCollectionsRouteEnabled ? (
+                                                            <Button
+                                                                variant="link"
+                                                                onClick={() =>
+                                                                    setCollectionModalId(
+                                                                        collectionId
+                                                                    )
+                                                                }
+                                                            >
+                                                                {collectionName}
+                                                            </Button>
+                                                        ) : (
+                                                            collectionName
+                                                        )}
                                                     </Td>
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
                                                         <MyActiveJobStatus
                                                             reportStatus={
-                                                                report.reportSnapshot?.reportStatus
+                                                                reportSnapshot?.reportStatus
                                                             }
                                                         />
                                                     </Td>
@@ -459,6 +524,13 @@ function VulnReportsPage() {
                 This report and any attached downloadable reports will be permanently deleted. The
                 action cannot be undone.
             </DeleteModal>
+            {collectionModalId && (
+                <CollectionsFormModal
+                    hasWriteAccessForCollections={false}
+                    modalAction={{ type: 'view', collectionId: collectionModalId }}
+                    onClose={() => setCollectionModalId(null)}
+                />
+            )}
         </>
     );
 }

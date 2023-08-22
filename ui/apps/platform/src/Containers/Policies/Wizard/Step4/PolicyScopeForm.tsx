@@ -17,8 +17,7 @@ import {
 import { ClientPolicy } from 'types/policy.proto';
 import { ListImage } from 'types/image.proto';
 import { ListDeployment } from 'types/deployment.proto';
-import { Cluster } from 'types/cluster.proto';
-import { fetchClustersAsArray } from 'services/ClustersService';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { getImages } from 'services/imageService';
 import { fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
@@ -27,7 +26,7 @@ function PolicyScopeForm() {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = React.useState(false);
     const [images, setImages] = React.useState<ListImage[]>([]);
     const [deployments, setDeployments] = React.useState<ListDeployment[]>([]);
-    const [clusters, setClusters] = React.useState<Cluster[]>([]);
+    const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
@@ -63,16 +62,6 @@ function PolicyScopeForm() {
             setFieldValue('excludedImageNames', [...excludedImageNames, selectedImage]);
         }
     }
-
-    React.useEffect(() => {
-        fetchClustersAsArray()
-            .then((data) => {
-                setClusters(data as Cluster[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
 
     React.useEffect(() => {
         getImages()

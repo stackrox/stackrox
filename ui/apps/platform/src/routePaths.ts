@@ -102,29 +102,63 @@ export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
 
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
 
-type RouteDescription = {
+type RouteRequirements = {
     featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
     resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
 };
 
-// Add path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
-const routeDescriptionMap: Record<string, RouteDescription> = {
-    [accessControlPath]: {
+// Semicolon on separate line following the strings prevents an extra changed line to add a string at the end.
+// However, add strings in alphabetical order to minimize merge conflicts when multiple people add strings.
+// prettier-ignore
+export type RouteKey =
+    | 'access-control'
+    | 'apidocs'
+    // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/delegated-image-scanning'
+    | 'clusters'
+    | 'collections'
+    | 'compliance'
+    | 'compliance-enhanced'
+    | 'configmanagement'
+    | 'dashboard'
+    | 'integrations'
+    | 'listening-endpoints'
+    | 'network-graph'
+    | 'policy-management'
+    | 'risk'
+    | 'search'
+    | 'system-health'
+    | 'systemconfig'
+    | 'user'
+    | 'violations'
+    | 'vulnerabilities/reports' // add prefix because reports might become ambiguous in the future
+    // Reports must precede generic Vulnerability Management in Body and so here for consistency.
+    | 'vulnerability-management/reports'
+    // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
+    | 'vulnerability-management/risk-acceptance'
+    | 'vulnerability-management'
+    | 'workload-cves'
+    ;
+
+// Add properties in same order as type to minimize merge conflicts when multiple people add strings.
+const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
+    'access-control': {
         resourceAccessRequirements: everyResource(['Access']),
     },
-    [apidocsPath]: {
+    apidocs: {
         resourceAccessRequirements: everyResource([]),
     },
-    [clustersDelegatedScanningPath]: {
+    // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
+    'clusters/delegated-image-scanning': {
         resourceAccessRequirements: everyResource(['Administration']),
     },
-    [clustersPathWithParam]: {
+    clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
-    [collectionsPath]: {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+    collections: {
+        resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
     },
-    [compliancePath]: {
+    compliance: {
         resourceAccessRequirements: everyResource([
             'Alert', // for Deployment
             'Cluster',
@@ -141,11 +175,11 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
             'ServiceAccount', // for Cluster and Deployment
         ]),
     },
-    [complianceEnhancedBasePath]: {
+    'compliance-enhanced': {
         featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
         resourceAccessRequirements: everyResource(['Compliance']),
     },
-    [configManagementPath]: {
+    configmanagement: {
         resourceAccessRequirements: everyResource([
             'Alert',
             'Cluster',
@@ -162,16 +196,16 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
             'WorkflowAdministration',
         ]),
     },
-    [dashboardPath]: {
+    dashboard: {
         resourceAccessRequirements: everyResource([]),
     },
-    [integrationsPath]: {
-        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+    integrations: {
+        resourceAccessRequirements: everyResource(['Integration']),
     },
-    [listeningEndpointsBasePath]: {
+    'listening-endpoints': {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
-    [networkPath]: {
+    'network-graph': {
         resourceAccessRequirements: everyResource([
             'Deployment',
             'DeploymentExtension',
@@ -179,44 +213,62 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
             'NetworkPolicy',
         ]),
     },
-    [policyManagementBasePath]: {
+    'policy-management': {
         resourceAccessRequirements: everyResource([
-            'Cluster',
             'Deployment',
             'Image',
             'Integration',
             'WorkflowAdministration',
         ]),
     },
-    [riskPath]: {
+    risk: {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
-    [searchPath]: {
-        resourceAccessRequirements: everyResource([]),
+    search: {
+        resourceAccessRequirements: everyResource([
+            'Alert', // ALERTS
+            'Cluster', // CLUSTERS
+            'Deployment', // DEPLOYMENTS
+            'Image', // IMAGES
+            'Integration', // IMAGE_INTEGRATIONS
+            'K8sRole', // ROLES
+            'K8sRoleBinding', // ROLEBINDINGS
+            'K8sSubject', // SUBJECTS
+            'Namespace', // NAMESPACES
+            'Node', // NODES
+            'Secret', // SECRETS
+            'ServiceAccount', // SERVICE_ACCOUNTS
+            'WorkflowAdministration', // POLICIES POLICY_CATEGORIES
+        ]),
     },
-    [systemConfigPath]: {
-        resourceAccessRequirements: everyResource(['Administration']),
-    },
-    [systemHealthPath]: {
+    'system-health': {
         resourceAccessRequirements: someResource(['Administration', 'Cluster', 'Integration']),
     },
-    [userBasePath]: {
+    systemconfig: {
+        resourceAccessRequirements: everyResource(['Administration']),
+    },
+    user: {
         resourceAccessRequirements: everyResource([]),
     },
-    [violationsPath]: {
+    violations: {
         resourceAccessRequirements: everyResource(['Alert']),
     },
-    // Reporting and Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
-    [vulnManagementReportsPath]: {
+    'vulnerabilities/reports': {
+        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
+        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+    },
+    // Reports must precede generic Vulnerability Management in Body and so here for consistency.
+    'vulnerability-management/reports': {
         resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
-    [vulnManagementRiskAcceptancePath]: {
+    // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
+    'vulnerability-management/risk-acceptance': {
         resourceAccessRequirements: everyResource([
             'VulnerabilityManagementApprovals',
             'VulnerabilityManagementRequests',
         ]),
     },
-    [vulnManagementPath]: {
+    'vulnerability-management': {
         resourceAccessRequirements: everyResource([
             'Alert', // for Cluster and Deployment and Namespace
             'Cluster',
@@ -228,13 +280,9 @@ const routeDescriptionMap: Record<string, RouteDescription> = {
             'WorkflowAdministration', // TODO obsolete because of policies for Cluster and Namespace?
         ]),
     },
-    [vulnerabilitiesWorkloadCvesPath]: {
+    'workload-cves': {
         featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
         resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
-    },
-    [vulnerabilityReportsPath]: {
-        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
 };
 
@@ -245,17 +293,9 @@ type RoutePredicates = {
 
 export function isRouteEnabled(
     { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
-    path: string
+    routeKey: RouteKey
 ) {
-    const routeDescription = routeDescriptionMap[path];
-
-    if (!routeDescription) {
-        // eslint-disable-next-line no-console
-        console.warn(`isRouteEnabled for unknown path ${path}`);
-        return false; // better to find mistakes than allow loopholes
-    }
-
-    const { featureFlagDependency, resourceAccessRequirements } = routeDescription;
+    const { featureFlagDependency, resourceAccessRequirements } = routeRequirementsMap[routeKey];
 
     if (Array.isArray(featureFlagDependency)) {
         if (

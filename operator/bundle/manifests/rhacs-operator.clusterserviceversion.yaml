@@ -586,6 +586,12 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Set this parameter to override the default registry in images.
+          For example, nginx:latest -> <registry override>/library/nginx:latest
+        displayName: Custom Default Image Registry
+        path: registryOverride
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Set this to 'true' to enable preventive policy enforcement for
           object creations.
         displayName: Listen On Creates
@@ -707,8 +713,7 @@ spec:
       - description: The method for system-level data collection. EBPF is recommended.
           If you select "NoCollection", you will not be able to see any information
           about network activity and process executions. The remaining settings in
-          these section will not have any effect. Note that CORE_BPF is on Tech Preview
-          stage.
+          these section will not have any effect.
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:

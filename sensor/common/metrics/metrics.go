@@ -4,11 +4,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/branding"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/installmethod"
 )
 
 var (
@@ -151,10 +151,9 @@ var (
 	telemetryLabels = prometheus.Labels{
 		"branding":       branding.GetProductNameShort(),
 		"build":          metrics.GetBuildType(),
-		"hosting":        getHosting(),
-		"install_method": env.InstallMethod.Setting(),
 		"sensor_version": version.GetMainVersion(),
 	}
+
 	telemetrySecuredNodes = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
@@ -163,7 +162,7 @@ var (
 			Help:        "The number of nodes secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "sensor_id"},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
 	telemetrySecuredVCPU = prometheus.NewGaugeVec(
@@ -174,7 +173,7 @@ var (
 			Help:        "The number of vCPUs secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "sensor_id"},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 )
 
@@ -281,11 +280,15 @@ func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 	telemetrySecuredNodes.Reset()
 	telemetrySecuredNodes.WithLabelValues(
 		centralid.Get(),
+		getHosting(),
+		installmethod.Get(),
 		clusterid.GetNoWait(),
 	).Set(float64(cm.GetNodeCount()))
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(
 		centralid.Get(),
+		getHosting(),
+		installmethod.Get(),
 		clusterid.GetNoWait(),
 	).Set(float64(cm.GetCpuCapacity()))
 }
