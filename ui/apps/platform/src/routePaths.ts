@@ -146,7 +146,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Access']),
     },
     apidocs: {
-        resourceAccessRequirements: everyResource(['Integration']), // why?
+        resourceAccessRequirements: everyResource([]),
     },
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     'clusters/delegated-image-scanning': {
