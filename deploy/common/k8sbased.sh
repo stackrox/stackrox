@@ -119,7 +119,9 @@ function launch_central {
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
-    prompt_if_central_exists
+    if [[ -z "$CI" ]]; then
+        prompt_if_central_exists
+    fi
 
     echo "Generating central config..."
 
