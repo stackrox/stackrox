@@ -664,6 +664,10 @@ spec:
                     - AvoidTaints
                     type: string
                 type: object
+              registryOverride:
+                description: Set this parameter to override the default registry in
+                  images. For example, nginx:latest -> <registry override>/library/nginx:latest
+                type: string
               scanner:
                 description: Settings for the Scanner component, which is responsible
                   for vulnerability scanning of container images stored in a cluster-local
