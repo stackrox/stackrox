@@ -208,6 +208,7 @@ class NotifierService extends BaseService {
                                 .setSkipTlsVerify(true)
                                 .build()
                         )
+                        .setMessageFormat(NotifierOuterClass.Syslog.MessageFormat.CEF)
                         .build()
                 )
                 .build()

@@ -1333,6 +1333,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Syslog", []string{
 		"extraFields: [KeyValuePair]!",
 		"localFacility: Syslog_LocalFacility!",
+		"messageFormat: Syslog_MessageFormat!",
 		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
 	}))
@@ -1340,6 +1341,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Syslog_TCPConfig",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_LocalFacility(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_MessageFormat(0)))
 	utils.Must(builder.AddType("Syslog_TCPConfig", []string{
 		"hostname: String!",
 		"port: Int!",
@@ -14418,6 +14420,11 @@ func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *syslogResolver) MessageFormat(ctx context.Context) string {
+	value := resolver.data.GetMessageFormat()
+	return value.String()
+}
+
 func (resolver *syslogResolver) TcpConfig(ctx context.Context) (*syslog_TCPConfigResolver, error) {
 	value := resolver.data.GetTcpConfig()
 	return resolver.root.wrapSyslog_TCPConfig(value, true, nil)
@@ -14455,6 +14462,24 @@ func toSyslog_LocalFacilities(values *[]string) []storage.Syslog_LocalFacility {
 	output := make([]storage.Syslog_LocalFacility, len(*values))
 	for i, v := range *values {
 		output[i] = toSyslog_LocalFacility(&v)
+	}
+	return output
+}
+
+func toSyslog_MessageFormat(value *string) storage.Syslog_MessageFormat {
+	if value != nil {
+		return storage.Syslog_MessageFormat(storage.Syslog_MessageFormat_value[*value])
+	}
+	return storage.Syslog_MessageFormat(0)
+}
+
+func toSyslog_MessageFormats(values *[]string) []storage.Syslog_MessageFormat {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Syslog_MessageFormat, len(*values))
+	for i, v := range *values {
+		output[i] = toSyslog_MessageFormat(&v)
 	}
 	return output
 }
