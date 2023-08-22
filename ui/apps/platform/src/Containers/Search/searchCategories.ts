@@ -1,21 +1,26 @@
+import cloneDeep from 'lodash/cloneDeep';
+
+import { IsRouteEnabled } from 'hooks/useIsRouteEnabled';
 import { SearchResultCategory } from 'services/SearchService';
-import { ResourceName } from 'types/roleResources';
 import {
     RouteKey,
     clustersBasePath,
-    configManagementRolesPath,
-    configManagementSecretsPath,
-    configManagementServiceAccountsPath,
+    configManagementPath,
     policiesBasePath,
     riskBasePath,
     violationsBasePath,
-    vulnManagementImagesPath,
-    vulnManagementNamespacesPath,
-    vulnManagementNodesPath,
+    vulnManagementPath,
 } from 'routePaths';
 
+const configManagementRolesPath = `${configManagementPath}/roles`;
+const configManagementSecretsPath = `${configManagementPath}/secrets`;
+const configManagementServiceAccountsPath = `${configManagementPath}/serviceaccounts`;
+
+const vulnManagementImagesPath = `${vulnManagementPath}/images`;
+const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
+const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
+
 type SearchResultCategoryDescriptor = {
-    resourceName: ResourceName;
     filterOn: FilterOnDescriptor | null;
     viewLinks: SearchLinkDescriptor[];
 };
@@ -47,13 +52,14 @@ const filterOnViolations: SearchLinkDescriptor = {
     routeKey: 'violations',
 };
 
+export type SearchResultCategoryMap = Record<SearchResultCategory, SearchResultCategoryDescriptor>;
+
+// Global search route has conditional rendering according to resourceAccessRequirements in routePaths.ts file.
+// Therefore update that property if response ever adds search categories.
+
 // prettier-ignore
-export const searchResultCategoryMap: Record<
-    SearchResultCategory,
-    SearchResultCategoryDescriptor
-> = {
+export const searchResultCategoryMap: SearchResultCategoryMap = {
     ALERTS: {
-        resourceName: 'Alert',
         filterOn: null,
         viewLinks: [
             {
@@ -64,7 +70,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     CLUSTERS: {
-        resourceName: 'Cluster',
         filterOn: null,
         viewLinks: [
             {
@@ -75,7 +80,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     DEPLOYMENTS: {
-        resourceName: 'Deployment',
         filterOn: {
             filterCategory: 'Deployment',
             filterLinks: [filterOnViolations],
@@ -89,7 +93,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     IMAGES: {
-        resourceName: 'Image',
         filterOn: {
             filterCategory: 'Image',
             filterLinks: [filterOnViolations, filterOnRisk],
@@ -103,7 +106,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     NAMESPACES: {
-        resourceName: 'Namespace',
         filterOn: null,
         viewLinks: [
             {
@@ -114,7 +116,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     NODES: {
-        resourceName: 'Node',
         filterOn: null,
         viewLinks: [
             {
@@ -125,7 +126,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     POLICIES: {
-        resourceName: 'WorkflowAdministration',
         filterOn: {
             filterCategory: 'Policy',
             filterLinks: [filterOnViolations],
@@ -139,12 +139,10 @@ export const searchResultCategoryMap: Record<
         ],
     },
     POLICY_CATEGORIES: {
-        resourceName: 'WorkflowAdministration',
         filterOn: null,
         viewLinks: [],
     },
     ROLES: {
-        resourceName: 'K8sRole',
         filterOn: null,
         viewLinks: [
             {
@@ -155,12 +153,10 @@ export const searchResultCategoryMap: Record<
         ],
     },
     ROLEBINDINGS: {
-        resourceName: 'K8sRoleBinding',
         filterOn: null,
         viewLinks: [],
     },
     SECRETS: {
-        resourceName: 'Secret',
         filterOn: {
             filterCategory: 'Secret',
             filterLinks: [filterOnRisk],
@@ -174,7 +170,6 @@ export const searchResultCategoryMap: Record<
         ],
     },
     SERVICE_ACCOUNTS: {
-        resourceName: 'ServiceAccount',
         filterOn: null,
         viewLinks: [
             {
@@ -185,11 +180,37 @@ export const searchResultCategoryMap: Record<
         ],
     },
     SUBJECTS: {
-        resourceName: 'K8sSubject',
         filterOn: null,
         viewLinks: [], // because search result id property value is not the id, but the name
     },
 };
+
+// Given isRouteEnabled predicate function from useIsRouteEnabled hook,
+// return copy of map with filter and view links only for routes that are enabled.
+export function searchResultCategoryMapFilteredIsRouteEnabled(
+    isRouteEnabled: IsRouteEnabled
+): SearchResultCategoryMap {
+    const searchResultCategoryMapFiltered = cloneDeep(searchResultCategoryMap);
+
+    Object.keys(searchResultCategoryMapFiltered).forEach((searchResultKey) => {
+        const value = searchResultCategoryMapFiltered[searchResultKey];
+
+        if (value.filterOn) {
+            const { filterLinks } = value.filterOn;
+            if (filterLinks.length !== 0) {
+                value.filterOn.filterLinks = filterLinks.filter(({ routeKey }) =>
+                    isRouteEnabled(routeKey)
+                );
+            }
+        }
+
+        if (value.viewLinks.length !== 0) {
+            value.viewLinks = value.viewLinks.filter(({ routeKey }) => isRouteEnabled(routeKey));
+        }
+    });
+
+    return searchResultCategoryMapFiltered;
+}
 
 export type SearchNavCategory = 'SEARCH_UNSET' | SearchResultCategory;
 

@@ -3,7 +3,9 @@ import { RouteKey, isRouteEnabled } from 'routePaths';
 import useFeatureFlags from './useFeatureFlags';
 import usePermissions from './usePermissions';
 
-function useIsRouteEnabled() {
+export type IsRouteEnabled = (routeKey: RouteKey) => boolean;
+
+function useIsRouteEnabled(): IsRouteEnabled {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
 

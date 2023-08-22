@@ -7,18 +7,20 @@ import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import NotApplicable from './NotApplicable';
-import { searchResultCategoryMap } from './searchCategories';
+import { SearchResultCategoryMap } from './searchCategories';
 
 type FilterLinksProps = {
     filterValue: string;
     resultCategory: SearchResultCategory;
     searchFilter: SearchFilter;
+    searchResultCategoryMap: SearchResultCategoryMap;
 };
 
 function FilterLinks({
     filterValue,
     resultCategory,
     searchFilter,
+    searchResultCategoryMap,
 }: FilterLinksProps): ReactElement {
     const { filterOn } = searchResultCategoryMap[resultCategory] ?? {};
 
