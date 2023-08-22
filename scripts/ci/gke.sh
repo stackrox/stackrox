@@ -369,7 +369,7 @@ HEAD
     project="$(gcloud config get project --quiet)"
 
     for authUser in {0..2}; do
-    cat >> "$artifact_file" << LINK
+    cat << LINK |
       <li>
         <a href="https://console.cloud.google.com/logs/query
 ;query=
@@ -383,6 +383,7 @@ resource.labels.namespace_name%3D%22stackrox%22%0A
 &orgonly=true&supportedpurview=organizationId" target="_blank">authUser $authUser</a>
       </li>
 LINK
+tr -d '\n' >> "$artifact_file"
     done
 
     cat >> "$artifact_file" <<- FOOT
