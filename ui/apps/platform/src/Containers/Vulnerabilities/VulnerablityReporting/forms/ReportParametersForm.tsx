@@ -115,6 +115,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         onChange={handleCheckboxSelectChange('reportParameters.cveSeverities')}
                         onBlur={formik.handleBlur}
                         placeholderText="CVE severity"
+                        menuAppendTo={() => document.body}
                     >
                         <SelectOption value="CRITICAL_VULNERABILITY_SEVERITY">
                             <Flex
@@ -168,6 +169,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
                         onBlur={formik.handleBlur}
                         placeholderText="CVE status"
+                        menuAppendTo={() => document.body}
                     >
                         <SelectOption value="FIXABLE">{fixabilityLabels.FIXABLE}</SelectOption>
                         <SelectOption value="NOT_FIXABLE">
@@ -189,6 +191,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         onChange={handleCheckboxSelectChange('reportParameters.imageType')}
                         onBlur={formik.handleBlur}
                         placeholderText="Image type"
+                        menuAppendTo={() => document.body}
                     >
                         <SelectOption value="DEPLOYED">{imageTypeLabelMap.DEPLOYED}</SelectOption>
                         <SelectOption value="WATCHED">{imageTypeLabelMap.WATCHED}</SelectOption>
@@ -205,6 +208,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         value={formik.values.reportParameters.cvesDiscoveredSince}
                         handleSelect={handleSelectChange}
                         onBlur={formik.handleBlur}
+                        menuAppendTo={() => document.body}
                     >
                         <SelectOption
                             value="SINCE_LAST_REPORT"

@@ -176,7 +176,6 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                             <Flex direction={{ default: 'row' }}>
                                 <FlexItem>
                                     <FormLabelGroup
-                                        isRequired={formik.values.deliveryDestinations.length !== 0}
                                         label="Repeat every"
                                         fieldId="schedule.intervalType"
                                         errors={formik.errors}

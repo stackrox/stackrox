@@ -145,22 +145,7 @@ const validationSchema = yup.object().shape({
         })
         .notRequired(),
     schedule: yup.object().shape({
-        intervalType: yup
-            .string()
-            .oneOf(intervalTypes)
-            .strict()
-            .test(
-                'non-empty-delivery-destinations',
-                'A schedule frequency is required',
-                (value, context) => {
-                    const deliveryDestinations = context?.from?.[1].value.deliveryDestinations;
-                    if (deliveryDestinations.length !== 0) {
-                        return value === 'MONTHLY' || value === 'WEEKLY';
-                    }
-                    return true;
-                }
-            )
-            .notRequired(),
+        intervalType: yup.string().oneOf(intervalTypes).nullable(),
         daysOfWeek: yup
             .array()
             .of(yup.string().oneOf(daysOfWeek))

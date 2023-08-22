@@ -31,7 +31,7 @@ import ReportFormWizardFooter from './ReportFormWizardFooter';
 
 const wizardStepNames = [
     'Configure report parameters',
-    'Configure delivery destinations (Optional)',
+    'Configure delivery destinations',
     'Review and create',
 ];
 

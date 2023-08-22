@@ -7,7 +7,7 @@ import { getRequestQueryString } from './apiUtils';
 import { getErrorMessage } from '../errorUtils';
 
 type Result = {
-    reportSnapshots: Record<string, ReportSnapshot>;
+    reportSnapshots: Record<string, ReportSnapshot | null>;
     isLoading: boolean;
     error: string | null;
 };

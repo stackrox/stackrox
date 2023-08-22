@@ -140,9 +140,6 @@ function CollectionSelection({
                 direction={{ default: 'row' }}
                 spaceItems={{ default: 'spaceItemsNone' }}
                 alignItems={{ default: 'alignItemsFlexEnd' }}
-                // Workaround to ensure there is enough space for the select menu when opened
-                // at the bottom of a wizard step body (May no longer be needed after upgrade to PF5)
-                className={isOpen ? 'pf-u-mb-3xl' : ''}
             >
                 <FlexItem>
                     <Select
@@ -169,6 +166,7 @@ function CollectionSelection({
                             overflowY: 'auto',
                         }}
                         validated={ValidatedOptions.default}
+                        menuAppendTo={() => document.body}
                     >
                         {sortedCollections.map((collection) => (
                             <SelectOption

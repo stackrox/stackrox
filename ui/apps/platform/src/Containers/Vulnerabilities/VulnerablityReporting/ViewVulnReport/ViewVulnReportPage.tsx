@@ -198,6 +198,7 @@ function ViewVulnReportPage() {
                                     onClick={() => {
                                         history.push(`${vulnReportPageURL}?action=edit`);
                                     }}
+                                    isDisabled={isReportStatusPending || isRunning}
                                 >
                                     Edit report
                                 </DropdownItem>,
@@ -244,6 +245,7 @@ function ViewVulnReportPage() {
                                     onClick={() => {
                                         openDeleteModal(reportConfiguration.id);
                                     }}
+                                    isDisabled={isReportStatusPending || isRunning}
                                 >
                                     Delete report
                                 </DropdownItem>,
