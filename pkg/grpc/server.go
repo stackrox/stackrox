@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	maxMsgSize                = 12 * 1024 * 1024
+	defaultMaxMsgSize         = 12 * 1024 * 1024
 	defaultMaxResponseMsgSize = 256 * 1024 * 1024 // 256MB
 )
 
@@ -55,6 +55,7 @@ func init() {
 var (
 	log = logging.LoggerForModule()
 
+	maxMsgSizeSetting         = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
 	maxResponseMsgSizeSetting = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
 	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
@@ -344,7 +345,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
-		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxRecvMsgSize(maxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time: 40 * time.Second,
 		}),
