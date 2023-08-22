@@ -1,0 +1,155 @@
+{{- include "srox.init" . -}}
+{{- if not ._rox.scannerV4.disable -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: scanner-v4-db
+    {{- include "srox.labels" (list . "deployment" "scanner-v4-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "scanner-v4-db") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: scanner-v4-db
+        {{- include "srox.podLabels" (list . "deployment" "scanner-v4-db") | nindent 8 }}
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+        {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-db") | nindent 8 }}
+    spec:
+      {{- if ._rox.scannerV4.db._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.scannerV4.db._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.scannerV4.db.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.scannerV4.db.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Scanner v4 DB is single-homed, so avoid preemptible nodes.
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: NotIn
+                values:
+                - "true"
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+          - weight: 25
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+      serviceAccountName: scanner-v4
+      terminationGracePeriodSeconds: 120
+      initContainers:
+      - name: init-db
+        image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        command:
+        - init-entrypoint.sh
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: scanner-v4-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
+        resources:
+          {{- ._rox.scannerV4.db._resources | nindent 10 }}
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+      containers:
+      - name: db
+        image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        ports:
+        - name: tcp-postgresql
+          containerPort: 5432
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - |
+              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          {{- ._rox.scannerV4.db._resources | nindent 10 }}
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: config-volume
+          mountPath: /etc/stackrox.d/config/
+        - name: scanner-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+        - name: shared-memory
+          mountPath: /dev/shm
+      securityContext:
+        fsGroup: 70
+      volumes:
+      - name: disk
+        {{- toYaml ._rox.scannerV4.db.persistence._volumeCfg | nindent 8 }}
+      - name: config-volume
+        configMap:
+          name: {{ default "scanner-v4-db-config" ._rox.scannerV4.db.configOverride }}
+      - name: scanner-db-tls-volume
+        secret:
+          secretName: scanner-v4-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: shared-memory
+        emptyDir:
+          medium: Memory
+          {{- /* Keep this in sync with shared_buffers in config-templates/scanner-v4-db/postgresql.conf.default */}}
+          sizeLimit: 250Mi
+{{- end }}

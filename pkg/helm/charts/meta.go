@@ -24,6 +24,9 @@ type MetaValues struct {
 	ScannerImageTag                  string
 	ScannerDBImageRemote             string
 	ScannerDBSlimImageRemote         string
+	ScannerV4ImageRemote             string
+	ScannerV4DBImageRemote           string
+	ScannerV4ImageTag                string
 	RenderMode                       string
 	ChartRepo                        defaults.ChartRepo
 	ImagePullSecrets                 defaults.ImagePullSecrets
@@ -80,6 +83,9 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ScannerImageTag:          imageFlavor.ScannerImageTag,
 		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
 		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
+		ScannerV4ImageRemote:     imageFlavor.ScannerV4ImageName,
+		ScannerV4DBImageRemote:   imageFlavor.ScannerV4DBImageName,
+		ScannerV4ImageTag:        imageFlavor.ScannerV4ImageTag,
 		RenderMode:               "renderAll",
 		ChartRepo:                imageFlavor.ChartRepo,
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,

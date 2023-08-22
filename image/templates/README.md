@@ -12,7 +12,7 @@ Location: `./helm/stackrox-central`
 
 Installs:
  - `central`
- - `scanner`
+ - `scanner`, if enabled
 
 ## StackRox secured cluster services
 
@@ -22,6 +22,7 @@ Installs:
  - `admission-controller`
  - `sensor`
  - `collector`
+ - `scanner`, if enabled
 
 ## Developing helm charts
 
