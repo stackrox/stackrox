@@ -86,12 +86,40 @@ function local_dev {
       echo "${is_local_dev}"
 }
 
+# Checks if central already exists in this cluster.
+# If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
+function prompt_if_central_exists() {
+    central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}' 2> /dev/null)"
+    if [ $? -eq 0 ] && [[ -n "$central_pod" ]]; then
+        yes_no_prompt "Detected there is already a central running on this cluster. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
+    fi
+}
+
+# yes_no_prompt "<message>" displays the given message and prompts the user to
+# input 'yes' or 'no'. The return value is 0 if the user has entered 'yes', 1
+# if they answered 'no', and 2 if the read was aborted (^C/^D) or no valid
+# answer was given after three tries.
+function yes_no_prompt() {
+  local prompt="$1"
+  local tries=0
+  [[ -z "$prompt" ]] || echo >&2 "$prompt"
+  local answer=""
+  while (( tries < 3 )) && { echo -n "Type 'yes' or 'no': "; read answer; } ; do
+    answer="$(echo "$answer" | tr '[:upper:]' '[:lower:]')"
+    [[ "$answer" == "yes" ]] && return 0
+    [[ "$answer" == "no" ]] && return 1
+    tries=$((tries + 1))
+  done
+  echo "Aborted."
+  return 2
+}
+
 function launch_central {
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
-    check_central_exists
+    prompt_if_central_exists
 
     echo "Generating central config..."
 
