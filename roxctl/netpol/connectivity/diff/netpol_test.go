@@ -26,7 +26,6 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 		inputFolderPath1      string
 		inputFolderPath2      string
 		outFile               string
-		removeOutputPath      bool
 		expectedValidateError error
 	}{
 		{
@@ -52,7 +51,6 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			outFile:               "testdata/netpol-diff-example-minimal/diff_output.txt", // an existing file
-			removeOutputPath:      false,
 			expectedValidateError: errox.AlreadyExists,
 		},
 	}
@@ -65,7 +63,6 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 				inputFolderPath1: tt.inputFolderPath1,
 				inputFolderPath2: tt.inputFolderPath2,
 				outputFilePath:   tt.outFile,
-				removeOutputPath: tt.removeOutputPath,
 				env:              env,
 			}
 
@@ -108,8 +105,8 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
 			name:                  "Treating warnings as errors should result in error of type 'npg.ErrWarnings'",
 			inputFolderPath1:      "testdata/acs-zeroday-with-invalid-doc",
 			inputFolderPath2:      "testdata/acs-zeroday-with-invalid-doc",
-			expectedAnalysisError: npg.ErrWarnings,
 			strict:                true,
+			expectedAnalysisError: npg.ErrWarnings,
 		},
 		{
 			name:                  "Warnings on invalid input docs without using strict flag should not indicate warnings as errors",
@@ -121,8 +118,8 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
 			name:                  "Stop on first error with malformed yaml inputs should stop with general NP-Guard error",
 			inputFolderPath1:      "testdata/dirty", // yaml document malformed
 			inputFolderPath2:      "testdata/dirty",
-			expectedAnalysisError: npg.ErrErrors,
 			stopOnFirstErr:        true,
+			expectedAnalysisError: npg.ErrErrors,
 		},
 		{
 			name:                  "Testing Diff between two dirs should run successfully without errors",
@@ -245,9 +242,9 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {
 			diffNetpolCmd := diffNetpolCommand{
 				inputFolderPath1: tt.inputFolderPath1,
 				inputFolderPath2: tt.inputFolderPath2,
-				outputToFile:     true,
 				outputFilePath:   tt.outFile,
 				removeOutputPath: tt.removeOutputPath,
+				outputToFile:     true,
 				outputFormat:     tt.outputFormat,
 				env:              env,
 			}
