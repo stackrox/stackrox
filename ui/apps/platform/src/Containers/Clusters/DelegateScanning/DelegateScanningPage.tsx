@@ -121,21 +121,6 @@ function DelegateScanningPage() {
             });
     }
 
-    function toggleDelegation() {
-        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
-
-        if (delegatedRegistryConfig.enabledFor === 'NONE') {
-            if (delegatedRegistryConfig.registries.length > 0) {
-                newState.enabledFor = 'SPECIFIC';
-            } else {
-                newState.enabledFor = 'ALL';
-            }
-        } else {
-            newState.enabledFor = 'NONE';
-        }
-        setDedicatedRegistryConfig(newState);
-    }
-
     function onChangeEnabledFor(newEnabledState) {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
@@ -290,14 +275,12 @@ function DelegateScanningPage() {
                 <Form>
                     <ToggleDelegatedScanning
                         enabledFor={delegatedRegistryConfig.enabledFor}
-                        toggleDelegation={toggleDelegation}
+                        onChangeEnabledFor={onChangeEnabledFor}
                     />
                     {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
                     {delegatedRegistryConfig.enabledFor !== 'NONE' && (
                         <>
                             <DelegatedScanningSettings
-                                enabledFor={delegatedRegistryConfig.enabledFor}
-                                onChangeEnabledFor={onChangeEnabledFor}
                                 clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
                                 setSelectedClusterId={onChangeDefaultCluster}

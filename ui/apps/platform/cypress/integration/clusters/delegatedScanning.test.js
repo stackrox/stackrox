@@ -38,13 +38,13 @@ describe('Delegated Image Scanning', () => {
         cy.get('.pf-c-breadcrumb__item:contains("Delegated Image Scanning")');
 
         // check the initial state of the delegate config
-        getInputByLabel('Enable delegated image scanning').should('not.be.checked');
+        getInputByLabel('None').should('be.checked');
 
-        cy.get('label:contains("All registries")').should('not.be.exist');
-        cy.get('label:contains("Specified registries")').should('not.be.exist');
+        cy.get('label:contains("All registries")').should('not.be.checked');
+        cy.get('label:contains("Specified registries")').should('not.be.checked');
 
         // Enable delegate scanning with default
-        getInputByLabel('Enable delegated image scanning').click();
+        getInputByLabel('All registries').click();
 
         getInputByLabel('All registries').should('be.checked');
         getInputByLabel('Specified registries').should('not.be.checked');
