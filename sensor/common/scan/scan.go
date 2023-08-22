@@ -110,7 +110,7 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 // to central even if errors occur pulling metadata, scanning, or fetching signatures so that the error may be
 // recorded.
 //
-// Will use the first registry that succeeds in pulling metadata from sync'd image integrations, pull secrets
+// Will use the first registry that succeeds in pulling metadata from sync'd image integrations, pull secrets,
 // the OCP global pull secret, or no auth if no registry found.
 //
 // Will return any errors that may occur during scanning or when reaching out to Central.
@@ -164,7 +164,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	}
 
 	if errorList.Empty() {
-		log.Debugf("Retrieved image enrichment results from Central for %q with id %q (%v) components", srcImage.GetName().GetFullName(), srcImage.GetId(), centralResp.GetImage().GetComponents())
+		log.Debugf("Retrieved image enrichment results from Central for %q with id %q (%d) components", srcImage.GetName().GetFullName(), srcImage.GetId(), centralResp.GetImage().GetComponents())
 	}
 
 	return centralResp.GetImage(), errorList.ToError()
@@ -188,7 +188,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 			continue
 		}
 
-		log.Debugf("Using %v registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
+		log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
 
 		// Create an image and attempt to enrich it with metadata.
 		pullSourceImage := types.ToImage(pullSource)
@@ -292,7 +292,7 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 		cImages = append(cImages, img)
 	}
 
-	log.Debugf("Using %v pull sources for enriching %q: %v", len(cImages), srcImage.GetName().GetFullName(), pullSources)
+	log.Debugf("Using %d pull sources for enriching %q: %v", len(cImages), srcImage.GetName().GetFullName(), pullSources)
 	return cImages
 }
 
