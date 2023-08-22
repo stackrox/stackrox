@@ -46,9 +46,9 @@ func NodeID(id string) zap.Field {
 	return zap.String(nodeIDField, id)
 }
 
-// isResourceTypeField returns whether the given zap.Field is related to a resource.
+// getResourceTypeField returns whether the given zap.Field is related to a resource.
 // If it is, it will return true and the name of the resource.
-func isResourceTypeField(field zap.Field) (bool, string) {
+func getResourceTypeField(field zap.Field) (string, bool) {
 	resource, exists := resourceTypeFields[field.Key]
-	return exists, resource
+	return resource, exists
 }

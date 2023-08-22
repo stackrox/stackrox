@@ -40,7 +40,7 @@ func (z *stringObjectEncoder) AddString(key, value string) {
 }
 
 func (z *stringObjectEncoder) AddTime(key string, value time.Time) {
-	z.m[key] = value.String()
+	z.m[key] = value.Format(time.RFC3339)
 }
 
 func (z *stringObjectEncoder) AddUint64(key string, value uint64) {
