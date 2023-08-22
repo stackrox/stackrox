@@ -320,6 +320,14 @@
       ],
       "default": "LOCAL0"
     },
+    "SyslogMessageFormat": {
+      "type": "string",
+      "enum": [
+        "LEGACY",
+        "CEF"
+      ],
+      "default": "LEGACY"
+    },
     "SyslogTCPConfig": {
       "type": "object",
       "properties": {
@@ -668,6 +676,9 @@
           "items": {
             "$ref": "#/definitions/storageKeyValuePair"
           }
+        },
+        "messageFormat": {
+          "$ref": "#/definitions/SyslogMessageFormat"
         }
       }
     },
