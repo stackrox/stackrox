@@ -6,9 +6,8 @@ import { Alert } from '@patternfly/react-core';
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import Loader from 'Components/Loader';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
-import { isRouteEnabled, networkPath } from 'routePaths';
 
 import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 import RiskDetails from './RiskDetails';
@@ -16,14 +15,10 @@ import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './Process/Details';
 
 function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, processGroup }) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForAlert = hasReadAccess('Alert');
-
-    const isRouteEnabledForNetworkGraph = isRouteEnabled(
-        { hasReadAccess, isFeatureFlagEnabled },
-        networkPath
-    );
+    const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
 
     if (isFetching) {
         return <Loader />;

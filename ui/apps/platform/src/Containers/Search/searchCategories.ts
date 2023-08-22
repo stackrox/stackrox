@@ -1,6 +1,7 @@
 import { SearchResultCategory } from 'services/SearchService';
 import { ResourceName } from 'types/roleResources';
 import {
+    RouteKey,
     clustersBasePath,
     configManagementRolesPath,
     configManagementSecretsPath,
@@ -31,16 +32,19 @@ type FilterOnDescriptor = {
 type SearchLinkDescriptor = {
     basePath: string;
     linkText: string;
+    routeKey: RouteKey;
 };
 
-const filterOnRisk = {
+const filterOnRisk: SearchLinkDescriptor = {
     basePath: riskBasePath,
     linkText: 'Risk',
+    routeKey: 'risk',
 };
 
-const filterOnViolations = {
+const filterOnViolations: SearchLinkDescriptor = {
     basePath: violationsBasePath,
     linkText: 'Violations',
+    routeKey: 'violations',
 };
 
 // prettier-ignore
@@ -55,6 +59,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: violationsBasePath,
                 linkText: 'Violations',
+                routeKey: 'violations',
             },
         ],
     },
@@ -65,6 +70,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: clustersBasePath,
                 linkText: 'Clusters',
+                routeKey: 'clusters',
             },
         ],
     },
@@ -78,6 +84,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: riskBasePath,
                 linkText: 'Risk',
+                routeKey: 'risk',
             },
         ],
     },
@@ -91,6 +98,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: vulnManagementImagesPath,
                 linkText: 'Images',
+                routeKey: 'vulnerability-management',
             },
         ],
     },
@@ -101,6 +109,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: vulnManagementNamespacesPath,
                 linkText: 'Vulnerability Management',
+                routeKey: 'vulnerability-management',
             },
         ],
     },
@@ -111,6 +120,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: vulnManagementNodesPath,
                 linkText: 'Vulnerability Management',
+                routeKey: 'vulnerability-management',
             },
         ],
     },
@@ -124,6 +134,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: policiesBasePath,
                 linkText: 'Policies',
+                routeKey: 'policy-management',
             },
         ],
     },
@@ -139,6 +150,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: configManagementRolesPath,
                 linkText: 'Configuration Management',
+                routeKey: 'configmanagement',
             },
         ],
     },
@@ -157,6 +169,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: configManagementSecretsPath,
                 linkText: 'Configuration Management',
+                routeKey: 'configmanagement',
             },
         ],
     },
@@ -167,6 +180,7 @@ export const searchResultCategoryMap: Record<
             {
                 basePath: configManagementServiceAccountsPath,
                 linkText: 'Configuration Management',
+                routeKey: 'configmanagement',
             },
         ],
     },

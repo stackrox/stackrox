@@ -22,10 +22,12 @@ import PanelButton from 'Components/PanelButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import queryService from 'utils/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
+import queryService from 'utils/queryService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
@@ -37,10 +39,6 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CveType from 'Components/CveType';
-
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import usePermissions from 'hooks/usePermissions';
-import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
 
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
@@ -283,14 +281,13 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
 
     // Although request requires only WorkflowAdministration,
     // also require require resources for Policies route.
     const hasWriteAccessForAddToPolicy =
-        hasReadWriteAccess('WorkflowAdministration') &&
-        isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, policyManagementBasePath);
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
 
     // Forbidden failures are explicit for Approvals and Requests but only implicit for Image.
     const hasWriteAccessForRiskAcceptance =

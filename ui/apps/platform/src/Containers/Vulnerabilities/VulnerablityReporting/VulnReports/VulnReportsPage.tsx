@@ -27,9 +27,10 @@ import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
-import { collectionsPath, isRouteEnabled, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
@@ -39,7 +40,6 @@ import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
@@ -64,8 +64,9 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
     const hasAccessScopeReadAccess = hasReadAccess('Access');
@@ -76,10 +77,7 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const isCollectionsRouteEnabled = isRouteEnabled(
-        { hasReadAccess, isFeatureFlagEnabled },
-        collectionsPath
-    );
+    const isCollectionsRouteEnabled = isRouteEnabled('collections');
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
