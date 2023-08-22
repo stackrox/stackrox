@@ -10,6 +10,7 @@ import {
     Divider,
     Grid,
     GridItem,
+    Title,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
 import { MaxSecuredUnitsUsageResponse, SecuredUnitsUsage } from 'types/productUsage.proto';
@@ -19,10 +20,10 @@ import {
     fetchMaxCurrentUsage,
 } from 'services/ProductUsageService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import dateFns from 'date-fns';
 
 function ProductUsageForm(): ReactElement {
-    const initialStartDate = new Date();
-    initialStartDate.setDate(initialStartDate.getDate() - 30);
+    const initialStartDate = dateFns.subDays(new Date(), 30);
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(new Date());
     const [currentUsage, setCurrentUsage] = useState<SecuredUnitsUsage>({
@@ -49,7 +50,9 @@ function ProductUsageForm(): ReactElement {
             });
     }, []);
     useEffect(() => {
-        fetchMaxCurrentUsage({ from: startDate.toISOString(), to: endDate.toISOString() })
+        // Add 1 day to include end date completely in the request.
+        const requestedEndDate = dateFns.addDays(endDate, 1);
+        fetchMaxCurrentUsage({ from: startDate.toISOString(), to: requestedEndDate.toISOString() })
             .then((usage) => {
                 setMaxUsage(usage);
                 setErrorFetchingMax('');
@@ -65,8 +68,8 @@ function ProductUsageForm(): ReactElement {
                 <Alert isInline title={errorFetchingCurrent} variant="danger" />
             )}
             {errorFetchingMax && <Alert isInline title={errorFetchingMax} variant="danger" />}
-            <div className="pf-u-font-size-lg">Currently secured</div>
-            <Divider style={{ padding: '5px 0px 10px 0px' }} />
+            <Title headingLevel="h2">Currently secured</Title>
+            <Divider className="pf-u-pt-xs pf-u-pb-sm" />
             <DescriptionList
                 columnModifier={{
                     default: '2Col',
@@ -84,10 +87,10 @@ function ProductUsageForm(): ReactElement {
                 </DescriptionListGroup>
             </DescriptionList>
 
-            <div className="pf-u-font-size-lg" style={{ padding: '20px 0px 0px 0px' }}>
+            <Title headingLevel="h2" className="pf-u-pt-sm">
                 Maximum secured
-            </div>
-            <Divider style={{ padding: '5px 0px 10px 0px' }} />
+            </Title>
+            <Divider className="pf-u-pt-xs pf-u-pb-sm" />
             <DescriptionList
                 columnModifier={{
                     default: '2Col',
@@ -113,8 +116,6 @@ function ProductUsageForm(): ReactElement {
                             value={yyyyMMddFormat(endDate)}
                             onChange={(_str, _, date) => {
                                 if (date) {
-                                    // Add 23 hours 59 minutes to include end date completely in the request.
-                                    date.setTime(date.getTime() + (24 * 60 - 1) * 60 * 1000);
                                     setEndDate(date);
                                 }
                             }}
@@ -144,15 +145,17 @@ function ProductUsageForm(): ReactElement {
                     </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
-            <Grid hasGutter style={{ padding: '20px 0px 0px 0px' }}>
+            <Grid hasGutter className="pf-u-pt-md">
                 <GridItem span={12}>
                     <Button
-                        onClick={() =>
-                            downloadProductUsageCsv({
+                        onClick={() => {
+                            // Add 1 day to include end date completely in the request.
+                            const requestedEndDate = dateFns.addDays(endDate, 1);
+                            return downloadProductUsageCsv({
                                 from: startDate.toISOString(),
-                                to: endDate.toISOString(),
-                            })
-                        }
+                                to: requestedEndDate.toISOString(),
+                            });
+                        }}
                     >
                         Download CSV
                     </Button>
