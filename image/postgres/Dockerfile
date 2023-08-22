@@ -27,18 +27,18 @@ COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postg
 
 RUN microdnf upgrade --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install shadow-utils && \
+    microdnf --setopt=install_weak_deps=0 --nodocs install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-13 && \
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install \
+    microdnf --setopt=install_weak_deps=0 --nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs reinstall tzdata && \
+    microdnf --setopt=install_weak_deps=0 --nodocs reinstall tzdata && \
     microdnf clean all && \
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \

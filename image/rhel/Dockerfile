@@ -70,7 +70,7 @@ RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && 
     microdnf upgrade --nobest && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
-    microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs lz4 bzip2 util-linux && \
+    microdnf install --setopt=install_weak_deps=0 --nodocs lz4 bzip2 util-linux && \
     microdnf clean all && \
     rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
