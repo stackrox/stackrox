@@ -34,12 +34,12 @@ var (
 			"(*ErrorList).AddStringf": "AddString",
 		},
 		"github.com/stackrox/rox/pkg/logging": {
-			"Logger.Infof":  "Info",
-			"Logger.Warnf":  "Warn",
-			"Logger.Debugf": "Debug",
-			"Logger.Errorf": "Error",
-			"Logger.Panicf": "Panic",
-			"Logger.Fatalf": "Fatal",
+			"(*Logger).Infof":  "Info",
+			"(*Logger).Warnf":  "Warn",
+			"(*Logger).Debugf": "Debug",
+			"(*Logger).Errorf": "Error",
+			"(*Logger).Panicf": "Panic",
+			"(*Logger).Fatalf": "Fatal",
 		},
 		"github.com/pkg/errors": {
 			"Errorf": "New",
