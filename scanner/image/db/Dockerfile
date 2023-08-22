@@ -26,12 +26,12 @@ COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-RUN microdnf upgrade -y && \
+RUN microdnf upgrade && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf install -y shadow-utils && \
+    microdnf install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
-    microdnf install -y \
+    microdnf install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt && \

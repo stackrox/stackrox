@@ -25,13 +25,13 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-RUN microdnf upgrade -y --nobest && \
+RUN microdnf upgrade --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y shadow-utils && \
+    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-13 && \
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
+    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt && \
