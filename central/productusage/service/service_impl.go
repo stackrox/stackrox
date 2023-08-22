@@ -55,7 +55,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Empty) (*v1.SecuredUnitsUsageResponse, error) {
 	m, err := s.datastore.GetCurrentUsage(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "datastore failed to get current product usage metrics")
+		return nil, errors.Wrap(err, "cannot get current product usage")
 	}
 	return &v1.SecuredUnitsUsageResponse{
 		NumNodes:    m.GetNumNodes(),

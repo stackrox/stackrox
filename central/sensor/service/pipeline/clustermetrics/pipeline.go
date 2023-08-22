@@ -74,7 +74,7 @@ func (p *pipelineImpl) Run(
 		NumCpuUnits: clusterMetrics.GetCpuCapacity(),
 	}); err != nil {
 		logging.GetRateLimitedLogger().Warn(
-			"Error while trying to update secured units usage:", err.Error())
+			"Error while trying to update secured units usage: ", err.Error())
 	}
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 	return nil
