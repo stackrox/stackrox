@@ -37,6 +37,12 @@ func getSecuredUnitsConverter() csv.Converter[storage.SecuredUnits] {
 }
 
 // CSVHandler returns an HTTP handler function that serves product usage data as CSV.
+// The handler accepts two optional string parameters "from" and "to", which are
+// expected to represent a timestamp in RFC3339 (or 'ISO') format.
+// The parameters define a time range in which the data is searched. The result
+// includes data not older than "from" and older than "to", i.e., [from, to).
+// If "from" is ommited, an 0 timestamp is taken instead. If "to" is ommited,
+// the current time is taken.
 func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		from, to, err := parseRequest(r)
