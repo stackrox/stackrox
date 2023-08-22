@@ -357,7 +357,7 @@ create_log_explorer_links() {
         </style>
     </head>
     <body>
-    <p>(These links require a 'right-click -> open in new tab'. The authUser is the number for your @stackrox.com account.)</p>
+    <p>(The authUser is the number for your @stackrox.com account.)</p>
     <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
 HEAD
 
@@ -380,7 +380,7 @@ resource.labels.namespace_name%3D%22stackrox%22%0A
 ;cursorTimestamp=$start_ts
 ?authuser=$authUser
 &project=$project
-&orgonly=true&supportedpurview=organizationId">authUser $authUser</a>
+&orgonly=true&supportedpurview=organizationId" target="_blank">authUser $authUser</a>
       </li>
 LINK
     done

@@ -177,9 +177,9 @@ make_artifacts_help() {
         You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
         after following the link.</p>
 
-        <a href="$browser_job_url?authuser=0">authuser=0</a><br>
-        <a href="$browser_job_url?authuser=1">authuser=1</a><br>
-        <a href="$browser_job_url?authuser=2">authuser=2</a><br>
+        <a href="$browser_job_url?authuser=0" target="_blank">authuser=0</a><br>
+        <a href="$browser_job_url?authuser=1" target="_blank">authuser=1</a><br>
+        <a href="$browser_job_url?authuser=2" target="_blank">authuser=2</a><br>
 
         <br><br>
 
