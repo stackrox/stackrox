@@ -179,7 +179,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		tt := tt
 		d.Run(tt.name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
-			analyzeNetpolCmd := analyzeNetpolCommand{
+			analyzeNetpolCmd := Cmd{
 				stopOnFirstError:      tt.stopOnFirstErr,
 				treatWarningsAsErrors: tt.strict,
 				inputFolderPath:       "", // set through construct

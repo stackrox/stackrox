@@ -19,6 +19,11 @@ teardown() {
   rm -f "$ofile"
 }
 
+@test "roxctl-development connectivity-map should show deprecation info" {
+  run roxctl-development connectivity-map
+  assert_failure
+  assert_line --partial "is deprecated"
+}
 
 @test "roxctl-development connectivity-map should return error on empty or non-existing directory" {
   run roxctl-development connectivity-map "$out_dir"
@@ -51,9 +56,10 @@ teardown() {
 
   run roxctl-development connectivity-map "$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
-  assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error
-  assert_line --index 2 --partial 'there were errors during execution'  # last line
+  # Line 0 is the deprecation warning
+  assert_line --index 1 --partial 'This is a Technology Preview feature'
+  assert_line --index 2 --partial 'YAML document is malformed'  # expect only one line with this error
+  assert_line --index 3 --partial 'there were errors during execution'  # last line
 }
 
 @test "roxctl-development connectivity-map produces no output when all yamls are templated" {
@@ -223,7 +229,7 @@ teardown() {
 }
 
 @test "roxctl-development connectivity-map generates empty connlist netpols blocks ingress connections from Routes" {
-  frontend_sec_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/frontend-security"
+  frontend_sec_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/map/testdata/frontend-security"
   assert_file_exist "${frontend_sec_dir}/asset-cache-deployment.yaml"
   assert_file_exist "${frontend_sec_dir}/asset-cache-route.yaml"
   assert_file_exist "${frontend_sec_dir}/frontend-netpols.yaml"
@@ -239,7 +245,7 @@ teardown() {
 }
 
 # following const is used as the directory path of the next tests
-acs_security_demos_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/connectivity-map/testdata/acs-security-demos"
+acs_security_demos_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/map/testdata/acs-security-demos"
 @test "roxctl-development connectivity-map generates connlist for acs-security-demo" {
   check_acs_security_demos_files
   run roxctl-development connectivity-map "${acs_security_demos_dir}"
