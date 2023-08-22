@@ -1,14 +1,17 @@
 import React, { useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { useQuery } from '@apollo/client';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import PageHeader from 'Components/PageHeader';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
+import { clustersDelegatedScanningPath } from 'routePaths';
 import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
@@ -22,7 +25,8 @@ const ClustersPage = ({
         params: { clusterId: selectedClusterId },
     },
 }) => {
-    const { hasReadWriteAccess } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForDelegatedScanning = hasReadAccess('Administration');
     const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
 
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -65,9 +69,22 @@ const ClustersPage = ({
                     placeholder="Filter clusters"
                     handleChangeSearchFilter={setSearchFilter}
                 />
+                {hasReadAccessForDelegatedScanning && (
+                    <div className="flex items-center ml-4 mr-1">
+                        <Button
+                            variant={ButtonVariant.secondary}
+                            component={LinkShim}
+                            href={clustersDelegatedScanningPath}
+                        >
+                            Manage delegated scanning
+                        </Button>
+                    </div>
+                )}
                 {hasWriteAccessForIntegration && (
-                    <div className="flex items-center ml-4 mr-3">
-                        <ManageTokensButton />
+                    <div className="flex items-center ml-1">
+                        <Button variant="tertiary">
+                            <ManageTokensButton />
+                        </Button>
                     </div>
                 )}
             </div>

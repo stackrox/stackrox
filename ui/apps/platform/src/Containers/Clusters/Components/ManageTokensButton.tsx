@@ -5,7 +5,7 @@ import { HashLink } from 'react-router-hash-link';
 const ManageTokensButton = () => (
     <HashLink
         to={`${integrationsPath}#token-integrations`}
-        className="no-underline btn btn-base flex-shrink-0"
+        className="no-underline flex-shrink-0"
         data-testid="manageTokens"
     >
         Manage Tokens
