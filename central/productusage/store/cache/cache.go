@@ -21,9 +21,9 @@ type cacheImpl struct {
 type Cache interface {
 	// UpdateUsage upserts the metrics to the cache for the given cluster id,
 	// keeping maximum and last values.
-	UpdateUsage(id string, cm *storage.SecuredUnits)
+	UpdateUsage(id string, metrics *storage.SecuredUnits)
 	// Cleanup removes the records of the clusters, which are not in the ids set.
-	Cleanup(ids set.StringSet)
+	Cleanup(preserveIDs set.StringSet)
 	// GetCurrent returns the collected values.
 	GetCurrent() *storage.SecuredUnits
 	// AggregateAndFlush returns the maximum usage values and resets them in the cache.
@@ -39,10 +39,10 @@ func NewCache() Cache {
 	}
 }
 
-func (u *cacheImpl) UpdateUsage(id string, cm *storage.SecuredUnits) {
-	u.nodesMap.Store(id, cm.GetNumNodes())
-	u.cpuUnitsMap.Store(id, cm.GetNumCpuUnits())
-	u.lastKnown.Store(id, cm)
+func (u *cacheImpl) UpdateUsage(id string, metrics *storage.SecuredUnits) {
+	u.nodesMap.Store(id, metrics.GetNumNodes())
+	u.cpuUnitsMap.Store(id, metrics.GetNumCpuUnits())
+	u.lastKnown.Store(id, metrics)
 }
 
 // getFilter returns a filter function, that removes all keys absent in the
