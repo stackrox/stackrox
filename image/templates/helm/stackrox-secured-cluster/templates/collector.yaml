@@ -67,20 +67,25 @@ spec:
         - mountPath: /host/proc
           name: proc-ro
           readOnly: true
+          mountPropagation: HostToContainer
         - mountPath: /module
           name: tmpfs-module
         - mountPath: /host/etc
           name: etc-ro
           readOnly: true
+          mountPropagation: HostToContainer
         - mountPath: /host/usr/lib
           name: usr-lib-ro
           readOnly: true
+          mountPropagation: HostToContainer
         - mountPath: /host/sys
           name: sys-ro
           readOnly: true
+          mountPropagation: HostToContainer
         - mountPath: /host/dev
           name: dev-ro
           readOnly: true
+          mountPropagation: HostToContainer
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
@@ -139,9 +144,7 @@ spec:
         - mountPath: /host
           name: host-root-ro
           readOnly: true
-          {{- if ._rox.env.openshift }}
           mountPropagation: HostToContainer
-          {{- end }}
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
@@ -166,9 +169,7 @@ spec:
          - mountPath: /host
            name: host-root-ro
            readOnly: true
-           {{- if ._rox.env.openshift }}
            mountPropagation: HostToContainer
-           {{- end }}
          - mountPath: /tmp/
            name: tmp-volume
          - mountPath: /cache
