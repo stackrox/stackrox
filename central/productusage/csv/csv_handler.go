@@ -40,7 +40,7 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		from, to, err := parseRequest(r)
 		if err != nil {
-			err = errox.InvalidArgs.New("bad CSV usage metrics request").CausedBy(err)
+			err = errox.InvalidArgs.New("bad CSV product usage request").CausedBy(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

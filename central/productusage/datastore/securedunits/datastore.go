@@ -24,7 +24,7 @@ type DataStore interface {
 	//
 	// With a significant number of secured clusters, if we used the persistent
 	// storage as an intermediate location for the collected metrics, the load
-	// on the persistent storage may become noticable. The decision is to use
+	// on the persistent storage may become noticeable. The decision is to use
 	// in-memory cache to aggregate metrics and persist it only periodically.
 
 	// AggregateAndFlush returns the aggregated metrics from the

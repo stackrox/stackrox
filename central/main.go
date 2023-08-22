@@ -757,7 +757,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/api/product/usage/csv",
+			Route:         "/api/product/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: productUsageCSV.CSVHandler(productUsageDataStore.Singleton()),
 			Compression:   true,

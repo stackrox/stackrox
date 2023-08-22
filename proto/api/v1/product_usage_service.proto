@@ -18,8 +18,8 @@ message TimeRange {
 // SecuredUnitsUsageResponse holds the values of the currently observable
 // product usage metrics.
 message SecuredUnitsUsageResponse {
-    int64 num_nodes                     = 1;
-    int64 num_cpu_units                 = 2;
+    int64 num_nodes     = 1;
+    int64 num_cpu_units = 2;
 }
 
 // MaxSecuredUnitsUsageResponse holds the maximum values of the secured nodes
@@ -50,7 +50,7 @@ service ProductUsageService {
     // usage observed during a given time range, together with the time when
     // this maximum was aggregated and stored.
     //
-    // The usage metrics are continously collected from all the connected
+    // The usage metrics are continuously collected from all the connected
     // clusters. The maximum values are kept for some period of time in memory,
     // and then, periodically, are stored to the database.
     // The last data from disconnected clusters are taken into account.
