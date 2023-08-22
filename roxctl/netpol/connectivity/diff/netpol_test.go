@@ -83,34 +83,14 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 	}
 }
 
-func (d *diffAnalyzeNetpolTestSuite) createOutFile() string {
-	tempDir := d.T().TempDir()
-	tmpOutFile, err := os.CreateTemp(tempDir, "out")
-	d.NoError(err)
-	return tmpOutFile.Name()
-}
-
-func (d *diffAnalyzeNetpolTestSuite) assertFileContentsMatch(expectedString, fileName string) {
-	d.FileExists(fileName)
-	fileContents, err := os.ReadFile(fileName)
-	d.NoError(err)
-	d.Equal(string(fileContents), expectedString)
-}
-
-func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
-	outFileName := d.createOutFile()
+func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
 	cases := []struct {
-		name                     string
-		inputFolderPath1         string
-		inputFolderPath2         string
-		strict                   bool
-		stopOnFirstErr           bool
-		outputToFile             bool
-		outFile                  string
-		removeOutputPath         bool
-		outputFormat             string
-		expectedAnalysisError    error
-		expectedErrorMsgContains string
+		name                  string
+		inputFolderPath1      string
+		inputFolderPath2      string
+		strict                bool
+		stopOnFirstErr        bool
+		expectedAnalysisError error
 	}{
 		{
 			name:                  "Not existing input folder paths should result in error 'errox.NotFound'",
@@ -145,75 +125,13 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 			stopOnFirstErr:        true,
 		},
 		{
-			name:                     "Not supported output format should result an error in formatting connectivity diff",
-			inputFolderPath1:         "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:         "testdata/netpol-diff-example-minimal",
-			outputFormat:             "docx",
-			expectedErrorMsgContains: "docx output format is not supported.",
-		},
-		{
 			name:                  "Testing Diff between two dirs should run successfully without errors",
 			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			expectedAnalysisError: nil,
 		},
-		{
-			name:                  "Existing output file input with using remove flag should override existing output file",
-			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			outFile:               outFileName, // existing file
-			removeOutputPath:      true,
-			expectedAnalysisError: nil,
-		},
-		{
-			name:                  "Testing Diff between two dirs output should be written to default txt output file",
-			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			expectedAnalysisError: nil,
-			outputToFile:          true,
-			outputFormat:          defaultOutputFormat,
-		},
-		{
-			name:                  "Testing Diff between two dirs output should be written to default md output file",
-			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			expectedAnalysisError: nil,
-			outputToFile:          true,
-			outputFormat:          "md",
-		},
-		{
-			name:                  "Testing Diff between two dirs output should be written to default csv output file",
-			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			expectedAnalysisError: nil,
-			outputToFile:          true,
-			outputFormat:          "csv",
-		},
-		{
-			name:                  "ACS example output should be written to default txt output file",
-			inputFolderPath1:      "testdata/acs-security-demos",
-			inputFolderPath2:      "testdata/acs-security-demos-new-version",
-			expectedAnalysisError: nil,
-			outputToFile:          true,
-			outputFormat:          "txt",
-		},
-		{
-			name:                  "ACS example output should be written to default md output file",
-			inputFolderPath1:      "testdata/acs-security-demos",
-			inputFolderPath2:      "testdata/acs-security-demos-new-version",
-			expectedAnalysisError: nil,
-			outputToFile:          true,
-			outputFormat:          "md",
-		},
-		{
-			name:                  "ACS example output should be written to default csv output file",
-			inputFolderPath1:      "testdata/acs-security-demos",
-			inputFolderPath2:      "testdata/acs-security-demos-new-version",
-			expectedAnalysisError: nil,
-			outputToFile:          true,
-			outputFormat:          "csv",
-		},
 	}
+
 	for _, tt := range cases {
 		tt := tt
 		d.Run(tt.name, func() {
@@ -223,10 +141,6 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 				treatWarningsAsErrors: tt.strict,
 				inputFolderPath1:      tt.inputFolderPath1,
 				inputFolderPath2:      tt.inputFolderPath2,
-				outputToFile:          tt.outputToFile,
-				outputFilePath:        tt.outFile,
-				removeOutputPath:      tt.removeOutputPath,
-				outputFormat:          tt.outputFormat,
 				env:                   env,
 			}
 
@@ -240,35 +154,132 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 			if tt.expectedAnalysisError != nil {
 				d.Require().Error(err)
 				d.ErrorIs(err, tt.expectedAnalysisError)
-				return
+			} else {
+				d.NoError(err)
 			}
-			if tt.expectedErrorMsgContains != "" {
+		})
+	}
+}
+
+func (d *diffAnalyzeNetpolTestSuite) createOutFile() string {
+	tempDir := d.T().TempDir()
+	tmpOutFile, err := os.CreateTemp(tempDir, "out")
+	d.NoError(err)
+	return tmpOutFile.Name()
+}
+
+func (d *diffAnalyzeNetpolTestSuite) assertFileContentsMatch(expectedString, fileName string) {
+	d.FileExists(fileName)
+	fileContents, err := os.ReadFile(fileName)
+	d.NoError(err)
+	d.Equal(string(fileContents), expectedString)
+}
+
+func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {
+	outFileName := d.createOutFile()
+	cases := []struct {
+		name                           string
+		inputFolderPath1               string
+		inputFolderPath2               string
+		outFile                        string
+		removeOutputPath               bool
+		outputFormat                   string
+		expectedWrongFormatErrContains string
+	}{
+		{
+			name:                           "Not supported output format should result an error in formatting connectivity diff",
+			inputFolderPath1:               "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2:               "testdata/netpol-diff-example-minimal",
+			outputFormat:                   "docx",
+			expectedWrongFormatErrContains: "docx output format is not supported.",
+		},
+		{
+			name:             "Existing output file input with using remove flag should override existing output file",
+			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outFile:          outFileName, // existing file
+			removeOutputPath: true,
+		},
+		{
+			name:             "Testing Diff between two dirs output should be written to default txt output file",
+			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outputFormat:     defaultOutputFormat,
+		},
+		{
+			name:             "Testing Diff between two dirs output should be written to default md output file",
+			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outputFormat:     "md",
+		},
+		{
+			name:             "Testing Diff between two dirs output should be written to default csv output file",
+			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outputFormat:     "csv",
+		},
+		{
+			name:             "ACS example output should be written to default txt output file",
+			inputFolderPath1: "testdata/acs-security-demos",
+			inputFolderPath2: "testdata/acs-security-demos-new-version",
+			outputFormat:     "txt",
+		},
+		{
+			name:             "ACS example output should be written to default md output file",
+			inputFolderPath1: "testdata/acs-security-demos",
+			inputFolderPath2: "testdata/acs-security-demos-new-version",
+			outputFormat:     "md",
+		},
+		{
+			name:             "ACS example output should be written to default csv output file",
+			inputFolderPath1: "testdata/acs-security-demos",
+			inputFolderPath2: "testdata/acs-security-demos-new-version",
+			outputFormat:     "csv",
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		d.Run(tt.name, func() {
+			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
+			diffNetpolCmd := diffNetpolCommand{
+				inputFolderPath1: tt.inputFolderPath1,
+				inputFolderPath2: tt.inputFolderPath2,
+				outputToFile:     true,
+				outputFilePath:   tt.outFile,
+				removeOutputPath: tt.removeOutputPath,
+				outputFormat:     tt.outputFormat,
+				env:              env,
+			}
+
+			analyzer, err := diffNetpolCmd.construct()
+			d.NoError(err)
+
+			err = diffNetpolCmd.validate()
+			d.NoError(err)
+
+			err = diffNetpolCmd.analyzeConnectivityDiff(analyzer)
+			if tt.expectedWrongFormatErrContains != "" {
 				d.Require().Error(err)
-				d.ErrorContains(err, tt.expectedErrorMsgContains)
+				d.ErrorContains(err, tt.expectedWrongFormatErrContains)
 				return
 			}
 			d.NoError(err)
 
-			if tt.outFile != "" {
-				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+defaultOutputFormat))
-				d.NoError(err)
-				d.assertFileContentsMatch(string(expectedOutput), tt.outFile)
-				return
+			formatSuffix := tt.outputFormat
+			if formatSuffix == "" {
+				formatSuffix = defaultOutputFormat
+			}
+			outFileName := tt.outFile
+			if outFileName == "" {
+				outFileName = diffNetpolCmd.getDefaultFileName()
+				d.Contains(outFileName, formatSuffix)
 			}
 
-			if tt.outputToFile {
-				defaultFile := diffNetpolCmd.getDefaultFileName()
-				formatSuffix := defaultOutputFormat
-				if tt.outputFormat != "" {
-					d.Contains(defaultFile, tt.outputFormat)
-					formatSuffix = tt.outputFormat
-				}
-				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+formatSuffix))
-				d.NoError(err)
-				d.assertFileContentsMatch(string(expectedOutput), defaultFile)
-				d.NoError(os.Remove(defaultFile))
-			}
+			expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+formatSuffix))
+			d.NoError(err)
+			d.assertFileContentsMatch(string(expectedOutput), outFileName)
+			d.NoError(os.Remove(outFileName))
 		})
 	}
-
 }
