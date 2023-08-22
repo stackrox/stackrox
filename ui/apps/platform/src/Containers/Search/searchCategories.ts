@@ -58,7 +58,7 @@ export type SearchResultCategoryMap = Record<SearchResultCategory, SearchResultC
 // Therefore update that property if response ever adds search categories.
 
 // prettier-ignore
-export const searchResultCategoryMap: SearchResultCategoryMap = {
+const searchResultCategoryMap: SearchResultCategoryMap = {
     ALERTS: {
         filterOn: null,
         viewLinks: [
