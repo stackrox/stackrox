@@ -81,15 +81,15 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 		select {
 		case msg, ok = <-componentMsgsC:
 			if !ok {
-				log.Infof("componentMsgsC channel closed")
+				log.Info("componentMsgsC channel closed")
 				s.stopper.Flow().StopWithError(errors.New("channel closed"))
 				return
 			}
 		case <-s.stopper.Flow().StopRequested():
-			log.Infof("Stop flow requested")
+			log.Info("Stop flow requested")
 			return
 		case <-stream.Context().Done():
-			log.Infof("Context done")
+			log.Info("Context done")
 			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
 		}

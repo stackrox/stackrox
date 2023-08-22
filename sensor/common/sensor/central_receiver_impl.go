@@ -39,18 +39,18 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
-			log.Infof("Stop flow requested")
+			log.Info("Stop flow requested")
 			return
 
 		case <-stream.Context().Done():
-			log.Infof("Context done")
+			log.Info("Context done")
 			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
 
 		default:
 			msg, err := stream.Recv()
 			if err == io.EOF {
-				log.Infof("EOF on gRPC stream")
+				log.Info("EOF on gRPC stream")
 				s.stopper.Flow().StopWithError(nil)
 				return
 			}
