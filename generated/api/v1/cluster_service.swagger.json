@@ -662,7 +662,8 @@
         "disableAuditLogs": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."
     },
     "storageGoogleProviderMetadata": {
       "type": "object",
@@ -815,7 +816,8 @@
         "admissionControllerEvents": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded."
     },
     "storageTolerationsConfig": {
       "type": "object",

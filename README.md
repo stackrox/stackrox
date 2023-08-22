@@ -493,7 +493,7 @@ configure paths for this plugin. See <https://github.com/jvolkman/intellij-proto
 
 </details>
 
-#### Running `sql_integration` tests
+#### Running sql_integration tests
 
 <details><summary>Click to expand</summary>
 
