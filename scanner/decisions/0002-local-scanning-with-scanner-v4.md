@@ -20,7 +20,7 @@ Currently, Sensor and Central coordinate the calls to Scanner and Scanner Slim. 
 | GetImageComponents      | Indexer/CreateIndexReport  | Retrieve the inventory of artifacts and details on the image content. |
 | GetImageVulnerabilities | Matcher/GetVulnerabilities | Retrieve the matching vulnerabilities for the components provided.    |
 
-Although `GetImageVulnerabilities` and `Matcher/GetVulnerabilities` are similar, they have a crucial difference. `Matcher/GetVulnerabilities` was specifically designed to retrieve the index report to be scanned from a separate service or storage, similar to how [Clair is implemented](https://github.com/quay/clair/blob/main/httptransport/matcher_v1.go#L116). On the other hand, `GetImageVulnerabilities` accepts a list of components in its payload. To fully utilize the clear separation between Indexer and Matcher in Scanner V4's design, changes need to be made to Scanner V4, Central, and Sensor. This includes Central and Sensor's ability to handle Index Reports and also Scanner V4's capability to access reports that are generated in the secured cluster.
+Although `GetImageVulnerabilities` and `Matcher/GetVulnerabilities` are similar, they have a crucial difference. `Matcher/GetVulnerabilities` was specifically designed to retrieve the index report to be scanned from a separate service or storage, similar to how [Clair is implemented](https://github.com/quay/clair/blob/v4.7.1/httptransport/matcher_v1.go#L116). On the other hand, `GetImageVulnerabilities` accepts a list of components in its payload. To fully utilize the clear separation between Indexer and Matcher in Scanner V4's design, changes need to be made to Scanner V4, Central, and Sensor. This includes Central and Sensor's ability to handle Index Reports and also Scanner V4's capability to access reports that are generated in the secured cluster.
 
 ## Decision
 
@@ -48,7 +48,7 @@ message Contents {
 
 But that will be left to the implementation to decide.
 
-Sensor and Central will behave the same as today regarding handling scan requests. Scanner V4 clients will have to make minimal changes to the interfaces of current scanner clients[^1] to support both V2 and V4. In central, a new field for the `IndexReportComponents` will be added [to the `EnrichLocalImageInternalRequest`](https://github.com/stackrox/stackrox/blob/a21793de1842586499e4afb3de68b780753db7f0/proto/api/v1/image_service.proto#L62).
+Sensor and Central will behave the same as today regarding handling scan requests. Scanner V4 clients will have to make minimal changes to the interfaces of current scanner clients[^1] to support both V2 and V4. In central, a new field for the `IndexReportComponents` will be added [to the `EnrichLocalImageInternalRequest`](https://github.com/stackrox/stackrox/blob/4.1.2/proto/api/v1/image_service.proto#L62).
 
 Finally, Index Reports generated in the secured cluster will not be stored in the central cluster. They will be stored in the secured cluster, in Scanner DB.
 
