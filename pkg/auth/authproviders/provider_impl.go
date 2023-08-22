@@ -223,7 +223,6 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 		return errors.Wrap(err, "provider has been updated")
 	}
 
-	// Before Creating or Getting the backend, might as well check the last update and then verify the token.
 	backend, err := p.GetOrCreateBackend(ctx)
 	if err != nil {
 		return errors.Wrap(err, "provider is unavailable")

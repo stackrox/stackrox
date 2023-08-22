@@ -85,9 +85,10 @@ message AuthProvider {
     // Note: we only support this feature for OIDC auth provider.
     map<string, string> claim_mappings = 13;
 
-    // Last update indicates the last time the auth provider has been updated.
+    // Last updated indicates the last time the auth provider has been updated.
     //
     // In case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered
-    // invalid. Subsequently, all users have to re-login when an auth provider is updated.
+    // invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
+    // login attempt).
     google.protobuf.Timestamp last_updated = 14;
 }

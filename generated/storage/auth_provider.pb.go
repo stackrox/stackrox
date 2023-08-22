@@ -87,10 +87,11 @@ type AuthProvider struct {
 	//
 	// Note: we only support this feature for OIDC auth provider.
 	ClaimMappings map[string]string `protobuf:"bytes,13,rep,name=claim_mappings,json=claimMappings,proto3" json:"claim_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Last update indicates the last time the auth provider has been updated.
+	// Last updated indicates the last time the auth provider has been updated.
 	//
 	// In case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered
-	// invalid. Subsequently, all users have to re-login when an auth provider is updated.
+	// invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
+	// login attempt).
 	LastUpdated          *types.Timestamp `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`

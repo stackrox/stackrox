@@ -193,7 +193,7 @@
         "lastUpdated": {
           "type": "string",
           "format": "date-time",
-          "description": "Last update indicates the last time the auth provider has been updated.\n\nIn case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered\ninvalid. Subsequently, all users have to re-login when an auth provider is updated."
+          "description": "Last updated indicates the last time the auth provider has been updated.\n\nIn case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered\ninvalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional\nlogin attempt)."
         }
       },
       "description": "Next Tag: 15."
