@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 type secretVerifyFunc func(t *testing.T, data types.SecretDataMap)
@@ -28,7 +27,7 @@ type secretReconciliationTestCase struct {
 	Existing               []*v1.Secret
 	ExistingManaged        []*v1.Secret
 	Other                  []ctrlClient.Object
-	InterceptedK8sAPICalls interceptor.Funcs
+	InterceptedK8sAPICalls testutils.InterceptorFns
 
 	ExpectedCreatedSecrets     map[string]secretVerifyFunc
 	ExpectedError              string
@@ -96,7 +95,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		WithRuntimeObjects(otherExisting...).
 		Build()
 
-	client = interceptor.NewClient(client, c.InterceptedK8sAPICalls)
+	client = testutils.Interceptor(client, c.InterceptedK8sAPICalls)
 
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.

@@ -22,7 +22,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -40,25 +39,25 @@ func (c *Central) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &Central{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (c *Central) ValidateCreate() (admission.Warnings, error) {
+func (c *Central) ValidateCreate() error {
 	centrallog.Info("validate create", "name", c.Name)
 
 	// TODO(ROX-7683): add validation logic upon object creation.
-	return nil, nil
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (c *Central) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
+func (c *Central) ValidateUpdate(_ runtime.Object) error {
 	centrallog.Info("validate update", "name", c.Name)
 
 	// TODO(ROX-7683): add validation logic upon object update.
-	return nil, nil
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (c *Central) ValidateDelete() (admission.Warnings, error) {
+func (c *Central) ValidateDelete() error {
 	centrallog.Info("validate delete", "name", c.Name)
 
 	// Add a "delete" verb in the +kubebuilder:webhook to enable deletion validation.
-	return nil, errors.New("deletion validation is not implemented")
+	return errors.New("deletion validation is not implemented")
 }
