@@ -8,6 +8,8 @@ import {
     DescriptionListGroup,
     DescriptionListTerm,
     Divider,
+    Flex,
+    FlexItem,
     Grid,
     GridItem,
     Title,
@@ -91,37 +93,35 @@ function ProductUsageForm(): ReactElement {
                 Maximum secured
             </Title>
             <Divider className="pf-u-pt-xs pf-u-pb-sm" />
+            <Flex className="pf-u-pb-md">
+                <FlexItem>
+                    <Title headingLevel="h4">Start date</Title>
+                    <DatePicker
+                        value={yyyyMMddFormat(startDate)}
+                        onChange={(_str, _, date) => {
+                            if (date) {
+                                setStartDate(date);
+                            }
+                        }}
+                    />
+                </FlexItem>
+                <FlexItem>
+                    <Title headingLevel="h4">End date</Title>
+                    <DatePicker
+                        value={yyyyMMddFormat(endDate)}
+                        onChange={(_str, _, date) => {
+                            if (date) {
+                                setEndDate(date);
+                            }
+                        }}
+                    />
+                </FlexItem>
+            </Flex>
             <DescriptionList
                 columnModifier={{
                     default: '2Col',
                 }}
             >
-                <DescriptionListGroup>
-                    <DescriptionListTerm>Start date</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        <DatePicker
-                            value={yyyyMMddFormat(startDate)}
-                            onChange={(_str, _, date) => {
-                                if (date) {
-                                    setStartDate(date);
-                                }
-                            }}
-                        />
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
-                <DescriptionListGroup>
-                    <DescriptionListTerm>End date</DescriptionListTerm>
-                    <DescriptionListDescription>
-                        <DatePicker
-                            value={yyyyMMddFormat(endDate)}
-                            onChange={(_str, _, date) => {
-                                if (date) {
-                                    setEndDate(date);
-                                }
-                            }}
-                        />
-                    </DescriptionListDescription>
-                </DescriptionListGroup>
                 <DescriptionListGroup>
                     <DescriptionListTerm>CPU units</DescriptionListTerm>
                     <DescriptionListDescription>{maxUsage.maxCpuUnits}</DescriptionListDescription>
@@ -131,7 +131,7 @@ function ProductUsageForm(): ReactElement {
                     <DescriptionListDescription>{maxUsage.maxNodes}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>CPU units collection date</DescriptionListTerm>
+                    <DescriptionListTerm>CPU units observation date</DescriptionListTerm>
                     <DescriptionListDescription>
                         {maxUsage?.maxCpuUnitsAt
                             ? yyyyMMddFormat(new Date(maxUsage.maxCpuUnitsAt))
@@ -139,7 +139,7 @@ function ProductUsageForm(): ReactElement {
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Nodes count collection date</DescriptionListTerm>
+                    <DescriptionListTerm>Nodes count observation date</DescriptionListTerm>
                     <DescriptionListDescription>
                         {maxUsage?.maxNodesAt ? yyyyMMddFormat(new Date(maxUsage.maxNodesAt)) : '-'}
                     </DescriptionListDescription>
