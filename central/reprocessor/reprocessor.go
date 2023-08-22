@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/atomic"
+	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -212,7 +213,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 
 	results, err := l.deployments.SearchDeployments(allAccessCtx, query.ProtoQuery())
 	if err != nil {
-		log.Errorf("error getting results for deployment reprocessing: %v", err)
+		log.Errorw("Error getting results for deployment reprocessing", logging.Err(err))
 		return
 	}
 
@@ -259,7 +260,8 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	}
 	ids, err := getIDsFunc()
 	if err != nil {
-		log.Errorf("Reprocessing failed: error retrieving active ids for %s: %v", entityType, err)
+		log.Errorw("Failed to retrieve active IDs for entity", zap.String("entity", entityType),
+			logging.Err(err))
 		return
 	}
 	log.Infof("Found %d %ss to scan", len(ids), entityType)
@@ -270,7 +272,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	for _, id := range ids {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
-			log.Errorf("context cancelled via stop: %v", err)
+			log.Errorw("Reprocessing stopped", logging.Err(err))
 			return
 		}
 		go func(id string) {
@@ -295,7 +297,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
-		log.Errorf("error fetching image %q from the database: %v", id, err)
+		log.Errorw("Error fetching image from database", logging.ImageID(id), logging.Err(err))
 		return nil, false
 	}
 	if !exists || image.GetNotPullable() || image.GetIsClusterLocal() {
@@ -307,12 +309,13 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	}, image)
 
 	if err != nil {
-		log.Errorf("error enriching image: %v", err)
+		log.Errorw("Error enriching image", logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 		return nil, false
 	}
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
-			log.Errorf("error upserting image %q into datastore: %v", image.GetName().GetFullName(), err)
+			log.Errorw("Error upserting image into datastore",
+				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 			return nil, false
 		}
 	}
@@ -336,7 +339,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 	results, err := l.images.Search(allAccessCtx, imageQuery)
 	if err != nil {
-		log.Errorf("error searching for active image IDs: %v", err)
+		log.Errorw("Error searching for active image IDs", logging.Err(err))
 		return
 	}
 
@@ -351,7 +354,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	for _, result := range results {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
-			log.Errorf("context cancelled via stop: %v", err)
+			log.Errorw("Reprocessing stopped", logging.Err(err))
 			return
 		}
 		// Duplicates can exist if the image is within multiple deployments
@@ -380,7 +383,9 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					},
 				})
 				if err != nil {
-					log.Errorf("error injecting updated image %s to Sensor %q: %v", image.GetName().GetFullName(), clusterID, err)
+					log.Errorw("Error sending updated image to sensor",
+						logging.ImageName(image.GetName().GetFullName()),
+						logging.ClusterID(clusterID), logging.Err(err))
 				}
 			}
 		}(result.ID, clusterIDSet)
@@ -407,11 +412,11 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 func (l *loopImpl) reprocessNode(id string) bool {
 	node, exists, err := l.nodes.GetNode(allAccessCtx, id)
 	if err != nil {
-		log.Errorf("fetching node (id: %q) from the database: %v", id, err)
+		log.Errorw("Error fetching node from the database", logging.NodeID(id), logging.Err(err))
 		return false
 	}
 	if !exists {
-		log.Warnf("fetching node (id: %q) from the database: node does not exist", id)
+		log.Warnw("Error fetching non-existing node from the database", logging.NodeID(id))
 		return false
 	}
 
@@ -423,7 +428,7 @@ func (l *loopImpl) reprocessNode(id string) bool {
 
 	err = l.nodeEnricher.EnrichNode(node)
 	if err != nil {
-		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
+		log.Errorw("Error enriching node", zap.String("node", nodeDatastore.NodeString(node)), logging.Err(err))
 		return false
 	}
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
@@ -449,7 +454,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		FetchOpt: imageEnricher.IgnoreExistingImages,
 	}, name)
 	if err != nil {
-		log.Errorf("Error enriching watched image with name %q: %v", name, err)
+		log.Errorw("Error enriching watched image", logging.ImageName(name), logging.Err(err))
 		return false
 	}
 	// Save the image
@@ -458,7 +463,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		return false
 	}
 	if err := l.risk.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorf("Failed to upsert watched image with name %q after enriching: %v", name, err)
+		log.Errorw("Error upserting watched image after enriching", logging.ImageName(name), logging.Err(err))
 		return false
 	}
 	return true

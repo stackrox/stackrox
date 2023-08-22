@@ -25,7 +25,7 @@ type Runner interface {
 	// Err() is guaranteed to be non-nil.
 	MostRecentStage() sensorupgrader.Stage
 	// RunNextStage runs the next stage of the runner.
-	// Callers MUST check r.Finished() and r.Err() before calling this.
+	// Callers MUST check r.Finished() and r.Error() before calling this.
 	RunNextStage()
 }
 
