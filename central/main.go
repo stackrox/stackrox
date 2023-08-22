@@ -648,7 +648,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/docs/swagger",
-			Authorizer:    user.With(permissions.View(resources.Integration)),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
