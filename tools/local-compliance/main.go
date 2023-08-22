@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/retry/handler"
 )
 
 var log = logging.LoggerForModule()
@@ -25,7 +25,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umh := retry.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
+	umh := handler.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
 	c := compliance.NewComplianceApp(np, scanner, umh)
 	c.Start()
 }
