@@ -72,4 +72,6 @@ var (
 
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", true)
+
+	ScannerV4 = registerFeature("Enable Scanner v4", "ROX_SCANNER_V4", true)
 )

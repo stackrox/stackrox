@@ -1,0 +1,17 @@
+{{- include "srox.init" . -}}
+{{- if not ._rox.scannerV4.disable -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-v4-db-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "scanner-v4-db-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "scanner-v4-db-config") | nindent 4 }}
+data:
+  postgresql.conf: |
+    {{- ._rox.scannerV4.db._postgresConfig | nindent 4 }}
+  pg_hba.conf: |
+    {{- ._rox.scannerV4.db._hbaConfig | nindent 4 }}
+{{ end -}}

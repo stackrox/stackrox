@@ -1,0 +1,43 @@
+{{/*
+  srox.scannerV4Init . $scannerV4Config
+
+  Initializes the Scanner v4 configuration. The scanner chart has two modes: Indexer and Matcher.
+  In Indexer mode, the Scanner pulls images and analyzes them to determine the base OS and installed packages
+  (i.e. it indexes the images).
+  In Matcher mode, the Scanner matches the found packages to known vulnerabilities to produce a Vulnerability Report.
+  Both modes require access to a PostgreSQL database.
+
+  StackRox's Central service has two Scanner deployments: a Scanner running in Indexer mode and another
+  running in Matcher mode. In this context, the Helm chart can create its own certificates.
+
+  StackRox's Secured Cluster services may deploy the Scanner in Indexer mode, only.
+  This would be done to access registries inaccessible to the Central cluster.
+  In this context, the Helm chart does not generate its own certificates.
+
+  $scannerV4Config contains all values which are configured by the user. The structures can be viewed in the respective
+  config-shape. See internal/scanner-v4-config-shape.yaml.
+   */}}
+
+{{ define "srox.scannerV4Init" }}
+
+{{ $ := index . 0 }}
+{{ $scannerV4Cfg := index . 1 }}
+
+{{ if not $scannerV4Cfg.indexer.disable }}
+    {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
+    {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+{{ end }}
+{{ if not $scannerV4Cfg.matcher.disable }}
+    {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
+    {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+
+    {{ $scannerCertSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner v4 Indexer" "dnsBase" "scanner-v4" }}
+    {{ include "srox.configureCrypto" (list $ "scanner.serviceTLS" $scannerCertSpec) }}
+
+    {{ $scannerDBCertSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner DB" "dnsBase" "scanner-db" }}
+    {{ include "srox.configureCrypto" (list $ "scanner.dbServiceTLS" $scannerDBCertSpec) }}
+{{ end }}
+
+{{ include "srox.configurePassword" (list $ "scanner-v4.db.password") }}
+
+{{ end }}

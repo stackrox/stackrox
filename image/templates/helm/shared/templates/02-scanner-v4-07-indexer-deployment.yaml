@@ -1,0 +1,142 @@
+{{- include "srox.init" . -}}
+{{- if and (not ._rox.scannerV4.disable) (not ._rox.scannerV4.indexer.disable) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: scanner-v4-indexer
+    {{- include "srox.labels" (list . "deployment" "scanner-v4-indexer") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "scanner-v4-indexer") | nindent 4 }}
+spec:
+  replicas: {{ ._rox.scannerV4.indexer.replicas }}
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-indexer
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: scanner-v4-indexer
+        {{- include "srox.podLabels" (list . "deployment" "scanner-v4-indexer") | nindent 8 }}
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+        {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-indexer") | nindent 8 }}
+    spec:
+      {{- if ._rox.scannerV4.indexer._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.scannerV4.indexer._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.scannerV4.indexer.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.scannerV4.indexer.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- toYaml ._rox.scannerV4.indexer.affinity | nindent 8 }}
+      containers:
+      - name: indexer
+        image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
+        env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- if ._rox.env.openshift }}
+        - name: ROX_OPENSHIFT_API
+          value: "true"
+        {{- end }}
+        {{- include "srox.envVars" (list . "deployment" "scanner-v4-indexer" "scanner-v4-indexer") | nindent 8 }}
+        resources:
+          {{- ._rox.scannerV4.indexer._resources | nindent 10 }}
+        command:
+        - /entrypoint.sh
+        ports:
+        - name: grpc
+          containerPort: 8443
+        {{ if ._rox.scannerV4.exposeMonitoring -}}
+        - name: monitoring
+          containerPort: 9090
+        {{- end}}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          runAsNonRoot: true
+          runAsUser: 65534
+        readinessProbe:
+          grpc:
+            port: 8443
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 6
+          successThreshold: 1
+        volumeMounts:
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: tls-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: config-volume
+          mountPath: /etc/scanner
+          readOnly: true
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: scanner-v4
+      volumes:
+      - name: additional-ca-volume
+        secret:
+          defaultMode: 0644
+          optional: true
+          secretName: additional-ca
+      - name: etc-ssl-volume
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}
+      - name: tls-volume
+        secret:
+          secretName: scanner-v4-indexer-tls
+      - name: config-volume
+        configMap:
+          name: scanner-v4-indexer-config
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
+      - name: tmp-volume
+        emptyDir: {}
+      - name: db-password
+        secret:
+          secretName: scanner-v4-db-password
+      {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
+{{ end -}}

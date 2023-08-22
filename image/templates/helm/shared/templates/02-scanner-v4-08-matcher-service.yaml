@@ -1,0 +1,48 @@
+{{- include "srox.init" . -}}
+{{- if and (not ._rox.scannerV4.disable) (not ._rox.scannerV4.matcher.disable) -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner-v4-matcher
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "scanner-v4-matcher") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "scanner-v4-matcher") | nindent 4 }}
+spec:
+  selector:
+    app: scanner-v4-matcher
+  clusterIP: None
+  ports:
+  - name: grpcs-scanner-v4-matcher
+    port: 8443
+    targetPort: 8443
+  {{ if ._rox.scannerV4.exposeMonitoring -}}
+  - name: monitoring
+    port: 9090
+    targetPort: 9090
+  {{- end }}
+
+{{- if ._rox.env.istio -}}
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: scanner-v4-matcher-internal-no-istio-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "destinationrule" "scanner-v4-matcher-internal-no-istio-mtls") | nindent 4 }}
+  annotations:
+    stackrox.io/description: "Disable Istio mTLS for port 8443, since StackRox services use built-in mTLS."
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-v4-matcher-internal-no-istio-mtls") | nindent 4 }}
+spec:
+  host: scanner-v4-matcher.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+    - port:
+        number: 8443
+      tls:
+        mode: DISABLE
+{{- end -}}
+{{ end -}}

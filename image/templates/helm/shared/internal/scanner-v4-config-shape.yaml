@@ -1,0 +1,80 @@
+scannerV4:
+  disable: null # bool
+  indexer:
+    disable: null # bool
+    logLevel: null # string
+    image:
+      registry: null # string
+      name: null # string
+      tag: null # string
+      fullRef: null # string
+    replicas: null # int
+    autoscaling:
+      disable: null # bool
+      minReplicas: null # int
+      maxReplicas: null # int
+    nodeSelector: null # string | dict
+    tolerations: null # [dict]
+    affinity: null # dict
+    resources: null # string | dict
+    serviceTLS:
+      cert: null # string
+      key: null # string
+      generate: null # bool
+  matcher:
+    disable: null # bool
+    logLevel: null # string
+    image:
+      registry: null # string
+      name: null # string
+      tag: null # string
+      fullRef: null # string
+    replicas: null # int
+    autoscaling:
+      disable: null # bool
+      minReplicas: null # int
+      maxReplicas: null # int
+    nodeSelector: null # string | dict
+    tolerations: null # [dict]
+    affinity: null # dict
+    resources: null # string | dict
+    serviceTLS:
+      cert: null # string
+      key: null # string
+      generate: null # bool
+  db:
+    image:
+      registry: null # string
+      name: null # string
+      tag: null # string
+      fullRef: null # string
+    source:
+      connectionString: null # string
+      minConns: null # int
+      maxConns: null # int
+      statementTimeoutMs: null #int
+    configOverride: null # string
+    password:
+      value: null # string
+      generate: null # bool
+    nodeSelector: null # string | dict
+    tolerations: null # [dict]
+    resources: null # string | dict
+    serviceTLS:
+      cert: null # string
+      key: null # string
+      generate: null # bool
+    persistence:
+      hostPath: null # string
+      persistentVolumeClaim:
+        claimName: null # string
+        createClaim: null # bool
+        storageClass: null # string
+        size: null # int | string
+        volume:
+          volumeSpec: null # dict
+      none: null # bool
+    extraMounts: null # [dict]
+  exposeMonitoring: null # bool
+system:
+  enablePodSecurityPolicies: null # bool
