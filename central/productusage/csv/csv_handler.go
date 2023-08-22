@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errox"
+	grpcErrors "github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -41,7 +42,7 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 		from, to, err := parseRequest(r)
 		if err != nil {
 			err = errox.InvalidArgs.New("bad CSV product usage request").CausedBy(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), grpcErrors.ErrToHTTPStatus(err))
 			return
 		}
 
@@ -55,7 +56,7 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 			getSecuredUnitsConverter(), csvHeader)
 
 		if err := ds.Walk(r.Context(), from, to, csvWriter.Write); err != nil {
-			_ = csvWriter.SetHTTPError(errors.WithMessage(err,
+			_ = csvWriter.SetHTTPError(errors.Wrap(err,
 				"failed to retrieve secured units usage data"))
 			return
 		}
