@@ -7,7 +7,7 @@ import {
     isRouteEnabled, // predicate function
     accessControlPath,
     apidocsPath,
-    clustersDelegateScanningPath,
+    clustersDelegatedScanningPath,
     clustersPathWithParam,
     collectionsPath,
     complianceEnhancedBasePath,
@@ -58,14 +58,14 @@ function NotFoundPage(): ReactElement {
 const routeComponentMap: Record<string, ElementType> = {
     [accessControlPath]: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
     [apidocsPath]: asyncComponent(() => import('Containers/Docs/ApiPage')),
-    [clustersDelegateScanningPath]: asyncComponent(
+    [clustersDelegatedScanningPath]: asyncComponent(
         () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
     ),
     [clustersPathWithParam]: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
     [collectionsPath]: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
     [compliancePath]: asyncComponent(() => import('Containers/Compliance/Page')),
     [complianceEnhancedBasePath]: asyncComponent(
-        () => import('Containers/ComplianceEnhanced/CompliancePage')
+        () => import('Containers/ComplianceEnhanced/Dashboard/ComplianceDashboardPage')
     ),
     [configManagementPath]: asyncComponent(() => import('Containers/ConfigManagement/Page')),
     [dashboardPath]: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),

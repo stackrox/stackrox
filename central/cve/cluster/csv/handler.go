@@ -143,7 +143,7 @@ func ClusterCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.Ra
 
 	res := csvHandler.GetResolver()
 	if res == nil {
-		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		log.Error("Unexpected value (nil) for resolver in Handler")
 		return nil, errors.New("Resolver not initialized in handler")
 	}
 	vulnResolvers, err := res.ClusterVulnerabilities(ctx, paginatedQuery)

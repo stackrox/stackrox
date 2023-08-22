@@ -1,4 +1,6 @@
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
+import { SearchFilter } from 'types/search';
+import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 
 export function getDisplayYAMLFromNetworkPolicyModification(
     modification: NetworkPolicyModification | null
@@ -26,4 +28,15 @@ export function getDisplayYAMLFromNetworkPolicyModification(
     }
 
     return displayYaml;
+}
+
+export function getSearchFilterFromScopeHierarchy(
+    scopeHierarchy: NetworkScopeHierarchy
+): SearchFilter {
+    return {
+        Cluster: scopeHierarchy.cluster.name,
+        Namespace: scopeHierarchy.namespaces,
+        Deployment: scopeHierarchy.deployments,
+        ...scopeHierarchy.remainingQuery,
+    };
 }

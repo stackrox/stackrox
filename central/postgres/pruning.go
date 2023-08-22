@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 const (
@@ -47,6 +48,42 @@ const (
 		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id)) 
 		delete FROM process_indicators pi USING orphan_proc op WHERE pi.id = op.id AND 	
 		(signal_time < now() AT time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time IS NULL)`
+
+	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
+	// ...gives us the report jobs that are in final state.
+	//
+	// (SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
+	// WHERE latest.reportstatus_completedat IS NOT NULL
+	// AND snapshots.reportconfigurationid = latest.reportconfigurationid
+	// AND latest.reportstatus_runstate = 3
+	// GROUP BY latest.reportstatus_reportnotificationmethod, latest.reportstatus_reportrequesttype)
+	//	...gives us the last successful report job for each config, for each notificated method, and each request type.
+	//
+	// (SELECT 1 FROM ` + schema.BlobsTableName + ` blobs
+	//	WHERE blobs.name not ilike '%/snapshots.reportid')
+	// ...tells us if the report still exists in the blob store.
+	//
+	// (reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
+	// ...gives us the reports that are outside the retention window.
+	pruneOldReportHistory = `DELETE FROM ` + schema.ReportSnapshotsTableName + ` WHERE reportid IN
+		(
+			SELECT snapshots.reportid FROM ` + schema.ReportSnapshotsTableName + ` snapshots
+			WHERE (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
+			AND snapshots.reportstatus_completedat NOT IN
+			(
+				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
+				WHERE latest.reportstatus_completedat IS NOT NULL
+				AND snapshots.reportconfigurationid = latest.reportconfigurationid
+				AND latest.reportstatus_runstate = 3
+				GROUP BY latest.reportstatus_reportnotificationmethod, latest.reportstatus_reportrequesttype
+			)
+			AND NOT EXISTS
+			(
+				SELECT 1 FROM ` + schema.BlobsTableName + ` blobs
+				WHERE blobs.name not ilike '%%/snapshots.reportid'
+			)
+			AND (snapshots.reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
+		)`
 )
 
 var (
@@ -136,5 +173,13 @@ func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orpha
 	query = fmt.Sprintf(deleteOrphanedProcesses, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune process indicators: %v", err)
+	}
+}
+
+// PruneReportHistory prunes report history as per specified retentionDuration and a few static criteria.
+func PruneReportHistory(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	query := fmt.Sprintf(pruneOldReportHistory, int(retentionDuration.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune report history: %v", err)
 	}
 }

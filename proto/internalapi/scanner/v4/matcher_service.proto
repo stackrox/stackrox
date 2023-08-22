@@ -5,11 +5,13 @@ package scanner.v4;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "internalapi/scanner/v4/vulnerability_report.proto";
+import "internalapi/scanner/v4/common.proto";
 
 option go_package = "v4";
 
 message GetVulnerabilitiesRequest {
-    string hash_id = 1;
+    string   hash_id = 1;
+    Contents contents = 2;
 }
 
 message Metadata {

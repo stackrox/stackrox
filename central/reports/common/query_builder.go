@@ -9,7 +9,9 @@ import (
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -40,11 +42,18 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 }
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
-func (q *queryBuilder) BuildQuery(ctx context.Context) (*ReportQuery, error) {
+func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Cluster,
+	namespaces []*storage.NamespaceMetadata) (*ReportQuery, error) {
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
 	if err != nil {
 		return nil, err
 	}
+	scopeQuery, err := q.buildAccessScopeQuery(clusters, namespaces)
+	if err != nil {
+		return nil, err
+	}
+	deploymentsQuery = search.ConjunctionQuery(deploymentsQuery, scopeQuery)
+
 	cveQuery, err := q.buildCVEAttributesQuery()
 	if err != nil {
 		return nil, err
@@ -85,8 +94,39 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	return strings.Join(conjuncts, "+"), nil
 }
 
+func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
+	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
+	accessScopeRules := q.vulnFilters.GetAccessScopeRules()
+	if accessScopeRules == nil {
+		// Old(v1) report configurations would have nil access scope rules.
+		// For backward compatibility, nil access scope would mean access to all clusters and namespaces.
+		// To deny access to all clusters and namespaces, the accessScopeRules should be empty.
+		return search.EmptyQuery(), nil
+	}
+	var scopeTree *effectiveaccessscope.ScopeTree
+	for _, rules := range accessScopeRules {
+		sct, err := effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+		if err != nil {
+			return nil, err
+		}
+		if scopeTree == nil {
+			scopeTree = sct
+		} else {
+			scopeTree.Merge(sct)
+		}
+	}
+	scopeQuery, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, err
+	}
+	if scopeQuery == nil {
+		return search.EmptyQuery(), nil
+	}
+	return scopeQuery, nil
+}
+
 func filterVulnsByFirstOccurrenceTime(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
-	if !features.VulnMgmtReportingEnhancements.Enabled() {
+	if !env.VulnReportingEnhancements.BooleanSetting() {
 		return vulnReportFilters.SinceLastReport
 	}
 	return vulnReportFilters.GetSinceLastSentScheduledReport() || vulnReportFilters.GetSinceStartDate() != nil

@@ -10,7 +10,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import Widget from 'Components/Widget';
 import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
-import { policySeverityColorMap } from 'constants/visuals/colors';
+import { policySeverityColorMap } from 'constants/severityColors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
 import { policySeverities } from 'types/policy.proto';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';

@@ -16,8 +16,9 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import exampleReportsCSVData from '../exampleReportsCSVData';
+import exampleReportsCSVData from 'Containers/Vulnerabilities/VulnerablityReporting/exampleReportsCSVData';
 
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -78,6 +79,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                                         <Th>Fixable</Th>
                                         <Th>Component Upgrade</Th>
                                         <Th>Severity</Th>
+                                        <Th>CVSS</Th>
                                         <Th>Discovered At</Th>
                                         <Th>Reference</Th>
                                     </Tr>
@@ -94,6 +96,7 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                                             fixable,
                                             componentUpgrade,
                                             severity,
+                                            cvss,
                                             discoveredAt,
                                             reference,
                                         }) => {
@@ -111,7 +114,12 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                                                     <Td dataLabel="Component Upgrade">
                                                         {componentUpgrade}
                                                     </Td>
-                                                    <Td dataLabel="Severity">{severity}</Td>
+                                                    <Td dataLabel="Severity">
+                                                        <VulnerabilitySeverityIconText
+                                                            severity={severity}
+                                                        />
+                                                    </Td>
+                                                    <Td dataLabel="CVSS">{cvss}</Td>
                                                     <Td dataLabel="Discovered At">
                                                         {discoveredAt}
                                                     </Td>

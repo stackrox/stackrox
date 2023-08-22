@@ -1,5 +1,9 @@
 import withAuth from '../../helpers/basicAuth';
-import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
+import {
+    assertCannotFindThePage,
+    visit,
+    visitWithStaticResponseForPermissions,
+} from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
 import { tryCreateCollection, tryDeleteCollection } from './Collections.helpers';
 import { collectionSelectors } from './Collections.selectors';
@@ -18,25 +22,37 @@ describe('Collection permission checks', () => {
     after(() => tryDeleteCollection(collectionName));
 
     it('should prevent users with no access from viewing collections', () => {
-        // Mock a 'NO_ACCESS' permission response
-        visitWithStaticResponseForPermissions('/main', {
-            body: { resourceToAccess: { WorkflowAdministration: 'NO_ACCESS' } },
-        });
-        // Expand the Platform Config section for ease of debugging
-        cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navSelectors.nestedNavLinks}:contains("Collections")`).should('not.exist');
+        cy.fixture('auth/mypermissionsMinimalAccess.json').then(({ resourceToAccess }) => {
+            const staticResponseForPermissions = {
+                body: {
+                    resourceToAccess: { ...resourceToAccess, WorkflowAdministration: 'NO_ACCESS' },
+                },
+            };
 
-        // Test direct visit via URL
-        visit('/main/collections');
-        // The Collections header should not be present, and a not found 404 message will be displayed
-        cy.get('h1:contains("Collections")').should('not.exist');
-        cy.get('h4:contains("cannot be found")');
+            // Mock a 'NO_ACCESS' permission response
+            visitWithStaticResponseForPermissions('/main', staticResponseForPermissions);
+
+            // Expand the Platform Config section for ease of debugging
+            cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`).click();
+            cy.get(`${navSelectors.nestedNavLinks}:contains("Collections")`).should('not.exist');
+
+            // Test direct visit via URL
+            visit('/main/collections');
+            // The Collections header should not be present, and a not found 404 message will be displayed
+            cy.get('h1:contains("Collections")').should('not.exist');
+            assertCannotFindThePage();
+        });
     });
 
     it('should not provide mutable UI controls to users with read-only access', () => {
         // Mock a 'READ_ACCESS' permission response
         visitWithStaticResponseForPermissions('/main', {
-            body: { resourceToAccess: { WorkflowAdministration: 'READ_ACCESS' } },
+            body: {
+                resourceToAccess: {
+                    Deployment: 'READ_ACCESS',
+                    WorkflowAdministration: 'READ_ACCESS',
+                },
+            },
         });
         // Ensure the collections link is visible and takes the user to the collections table
         cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`).click();
@@ -61,7 +77,12 @@ describe('Collection permission checks', () => {
     it('should provide the full UI to users with read-write access', () => {
         // Mock a 'READ_WRITE_ACCESS' permission response
         visitWithStaticResponseForPermissions('/main', {
-            body: { resourceToAccess: { WorkflowAdministration: 'READ_WRITE_ACCESS' } },
+            body: {
+                resourceToAccess: {
+                    Deployment: 'READ_ACCESS',
+                    WorkflowAdministration: 'READ_WRITE_ACCESS',
+                },
+            },
         });
         // Ensure the collections link is visible and takes the user to the collections table
         cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`).click();

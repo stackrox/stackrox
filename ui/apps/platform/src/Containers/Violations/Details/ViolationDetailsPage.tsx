@@ -14,7 +14,11 @@ import {
 import { fetchAlert } from 'services/AlertsService';
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
-import DeploymentDetails from './DeploymentDetails';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
+import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
+
+import DeploymentDetails from './Deployment/DeploymentDetails';
 import EnforcementDetails from './EnforcementDetails';
 import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
@@ -22,6 +26,16 @@ import ViolationDetails from './ViolationDetails';
 import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
 
 function ViolationDetailsPage(): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadAccess } = usePermissions();
+
+    const hasReadAccessForDeployment = hasReadAccess('Deployment');
+
+    const hasReadAccessForPolicy = isRouteEnabled(
+        { isFeatureFlagEnabled, hasReadAccess },
+        policyManagementBasePath
+    );
+
     const [activeTabKey, setActiveTabKey] = useState(0);
     const [alert, setAlert] = useState<Alert>();
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
@@ -93,24 +107,26 @@ function ViolationDetailsPage(): ReactElement {
                             </PageSection>
                         </Tab>
                     )}
-                    {deployment && (
+                    {hasReadAccessForDeployment && deployment && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
                             <PageSection variant="default">
                                 <DeploymentDetails alertDeployment={deployment} />
                             </PageSection>
                         </Tab>
                     )}
-                    <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
-                        <PageSection variant="default">
-                            <>
-                                <Title headingLevel="h3" className="pf-u-mb-md">
-                                    Policy overview
-                                </Title>
-                                <Divider component="div" className="pf-u-pb-md" />
-                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
-                            </>
-                        </PageSection>
-                    </Tab>
+                    {hasReadAccessForPolicy && (
+                        <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
+                            <PageSection variant="default">
+                                <>
+                                    <Title headingLevel="h3" className="pf-u-mb-md">
+                                        Policy overview
+                                    </Title>
+                                    <Divider component="div" className="pf-u-pb-md" />
+                                    <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
+                                </>
+                            </PageSection>
+                        </Tab>
+                    )}
                 </Tabs>
             </PageSection>
         </>

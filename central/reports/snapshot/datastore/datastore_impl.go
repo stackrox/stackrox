@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -98,13 +99,28 @@ func (ds *datastoreImpl) GetMany(ctx context.Context, ids []string) ([]*storage.
 	return snaps, nil
 }
 
-func (ds *datastoreImpl) AddReportSnapshot(ctx context.Context, snap *storage.ReportSnapshot) error {
+func (ds *datastoreImpl) AddReportSnapshot(ctx context.Context, snap *storage.ReportSnapshot) (string, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "AddReportSnapshot")
+	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
+		return "", err
+	}
+	if snap.ReportId != "" {
+		return "", errors.New("New report snapshot must have an empty report id")
+	}
+	snap.ReportId = uuid.NewV4().String()
+	if err := ds.storage.Upsert(ctx, snap); err != nil {
+		return "", err
+	}
+	return snap.ReportId, nil
+}
+
+func (ds *datastoreImpl) UpdateReportSnapshot(ctx context.Context, snap *storage.ReportSnapshot) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "UpdateReportSnapshot")
 	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 	if snap.ReportId == "" {
-		return errors.New("New report snapshot must have a non-empty report id")
+		return errors.New("Report snapshot must have a non-empty report id")
 	}
 	if err := ds.storage.Upsert(ctx, snap); err != nil {
 		return err

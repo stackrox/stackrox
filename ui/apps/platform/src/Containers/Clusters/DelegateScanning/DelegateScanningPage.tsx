@@ -38,8 +38,28 @@ const initialDelegatedState: DelegatedRegistryConfig = {
     registries: [],
 };
 
+function addUuidstoRegistries(config: DelegatedRegistryConfig) {
+    const newRegistries = config.registries.map((registry) => {
+        // eslint-disable-next-line no-restricted-globals
+        const uuid = self.crypto.randomUUID();
+
+        return {
+            path: registry.path,
+            clusterId: registry.clusterId,
+            uuid,
+        };
+    });
+
+    const newState: DelegatedRegistryConfig = {
+        ...config,
+        registries: newRegistries,
+    };
+
+    return newState;
+}
+
 function DelegateScanningPage() {
-    const displayedPageTitle = 'Delegate Image Scanning';
+    const displayedPageTitle = 'Delegated Image Scanning';
     const [delegatedRegistryConfig, setDedicatedRegistryConfig] =
         useState<DelegatedRegistryConfig>(initialDelegatedState);
     const [delegatedRegistryClusters, setDelegatedRegistryClusters] = useState<
@@ -56,7 +76,8 @@ function DelegateScanningPage() {
         setAlertObj(null);
         fetchDelegatedRegistryConfig()
             .then((configFetched) => {
-                setDedicatedRegistryConfig(configFetched);
+                const configWithUuids = addUuidstoRegistries(configFetched);
+                setDedicatedRegistryConfig(configWithUuids);
             })
             .catch((error) => {
                 const newErrorObj: AlertObj = {
@@ -123,10 +144,81 @@ function DelegateScanningPage() {
         setDedicatedRegistryConfig(newState);
     }
 
-    function onChangeCluster(newClusterId) {
+    function onChangeDefaultCluster(newClusterId) {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
         newState.defaultClusterId = newClusterId;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function addRegistryRow() {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        // eslint-disable-next-line no-restricted-globals
+        const uuid = self.crypto.randomUUID();
+
+        newState.registries.push({
+            path: '',
+            clusterId: delegatedRegistryConfig.defaultClusterId,
+            uuid,
+        });
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function deleteRow(rowIndex) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        const newRegistries = delegatedRegistryConfig.registries.filter((_, i) => i !== rowIndex);
+
+        newState.registries = newRegistries;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function handlePathChange(rowIndex: number, value: string) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        const newRegistries = delegatedRegistryConfig.registries.map((registry, i) => {
+            if (i === rowIndex) {
+                return {
+                    path: value,
+                    clusterId: registry.clusterId,
+                };
+            }
+
+            return registry;
+        });
+
+        newState.registries = newRegistries;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function handleClusterChange(rowIndex: number, value: string) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        const newRegistries = delegatedRegistryConfig.registries.map((registry, i) => {
+            if (i === rowIndex) {
+                return {
+                    path: registry.path,
+                    clusterId: value,
+                };
+            }
+
+            return registry;
+        });
+
+        newState.registries = newRegistries;
+
+        setDedicatedRegistryConfig(newState);
+    }
+
+    function updateRegistriesOrder(newRegistries) {
+        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
+
+        newState.registries = newRegistries;
 
         setDedicatedRegistryConfig(newState);
     }
@@ -208,10 +300,21 @@ function DelegateScanningPage() {
                                 onChangeEnabledFor={onChangeEnabledFor}
                                 clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
-                                setSelectedClusterId={onChangeCluster}
+                                setSelectedClusterId={onChangeDefaultCluster}
                             />
                             <DelegatedRegistriesList
                                 registries={delegatedRegistryConfig.registries}
+                                clusters={delegatedRegistryClusters}
+                                selectedClusterId={delegatedRegistryConfig.defaultClusterId}
+                                handlePathChange={handlePathChange}
+                                handleClusterChange={handleClusterChange}
+                                addRegistryRow={addRegistryRow}
+                                deleteRow={deleteRow}
+                                // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                updateRegistriesOrder={updateRegistriesOrder}
+                                key="delegated-registries-list"
                             />
                         </>
                     )}

@@ -64,6 +64,15 @@
 {{ end }}
 [< end >]
 
+{{ if $._rox.central.db.external }}
+  {{ if not $._rox.central.db.source.connectionString }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its connection string. We are using the default source string. To ensure the connection to your Central DB, you may override it with `--set central.db.source.connectionString=<ConnectionString>`.") }}
+  {{ end }}
+  {{ if not $._rox.central.db.password.value }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its password. We are using a generated password for now. To ensure the connection to your Central DB, you may provide your DB password by `--set central.db.password.value=<DBPassword>`.") }}
+  {{ end }}
+{{ end }}
+
 {{/* Initialize global prefix */}}
 {{- include "srox.initGlobalPrefix" (list $) -}}
 
@@ -102,6 +111,10 @@
   {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
   {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
 {{ end }}
+{{/* Default `monitoring.openshift.enabled = true` unless `env.openshift != 4`. */}}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.enabled }}
+{{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" (eq $._rox.env.openshift 4))) }}
+{{ end }}
 {{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
   {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
   {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
@@ -125,6 +138,14 @@
 {{/* Detect enablePodSecurityPolicies */}}
 {{ include "srox.autoSensePodSecurityPolicies" (list $) }}
 [<- end >]
+
+[< if .Operator >]
+{{ $_ := set $env "installMethod" "operator" }}
+[< else if .KubectlOutput >]
+{{ $_ := set $env "installMethod" "manifest" }}
+[< else >]
+{{ $_ := set $env "installMethod" "helm" }}
+[< end >]
 
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}

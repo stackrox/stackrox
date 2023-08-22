@@ -283,8 +283,8 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	authResp, err := backend.ProcessHTTPRequest(w, req)
 	if err != nil {
-		log.Errorf(fmt.Sprintf("error processing HTTP request for provider %s of type %s: %v",
-			provider.Name(), provider.Type(), err))
+		log.Errorf("error processing HTTP request for provider %s of type %s: %v",
+			provider.Name(), provider.Type(), err)
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}

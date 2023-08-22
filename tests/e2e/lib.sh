@@ -104,6 +104,7 @@ export_test_environment() {
     ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
+    ci_export ROX_CENTRAL_EVENTS "${ROX_CENTRAL_EVENTS:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -754,6 +755,14 @@ restore_56_1_backup() {
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
 
+update_public_config() {
+    info "Updating public config to ensure that it is overridden by restore"
+
+    roxcurl /v1/config | jq . > ORIGINAL_CONFIG
+    new_config=$(jq '. + { publicConfig: { header: { enabled: true, text: "hello" } } }' < ORIGINAL_CONFIG)
+    roxcurl /v1/config -X PUT -d "{ \"config\": $new_config }" > /dev/null || touch DB_TEST_FAIL
+}
+
 db_backup_and_restore_test() {
     info "Running a central database backup and restore test"
 
@@ -772,6 +781,9 @@ db_backup_and_restore_test() {
     mkdir -p "$output_dir"
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
+    info "Updating public config"
+    update_public_config
+
     if [[ ! -e DB_TEST_FAIL ]]; then
         if [ "${ROX_POSTGRES_DATASTORE:-}" == "true" ]; then
             info "Restoring from ${output_dir}/postgres_db_*"
@@ -780,6 +792,17 @@ db_backup_and_restore_test() {
             info "Restoring from ${output_dir}/stackrox_db_*"
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
         fi
+    fi
+
+    wait_for_api
+
+    info "Checking to see if restore overwrote previous config"
+
+    roxcurl /v1/config | jq . > POST_RESTORE_CONFIG
+    if [[ "$(cat ORIGINAL_CONFIG)" != "$(cat POST_RESTORE_CONFIG)" ]]; then
+        info "config prior to backup is different from config after restore"
+        diff ORIGINAL_CONFIG POST_RESTORE_CONFIG
+        touch DB_TEST_FAIL
     fi
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"

@@ -13,7 +13,7 @@ package storage;
 message RequestComment {
     string                    id         = 1;
     string                    message    = 2;
-    SlimUser                  user       = 3;
+    SlimUser                  user       = 3 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
     google.protobuf.Timestamp created_at = 4;
 }
 
@@ -85,8 +85,8 @@ message VulnerabilityRequest {
     // Indicates if this request is a historical request that is no longer in effect
     // due to deferral expiry, cancellation, or restarting cve observation.
     bool                             expired            = 4 [(gogoproto.moretags) = 'search:"Expired Request"'];
-    SlimUser                         requestor          = 5;
-    repeated SlimUser                approvers          = 6;
+    SlimUser                         requestor          = 5 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    repeated SlimUser                approvers          = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
     google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = 'search:"Created Time"'];
     google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = 'search:"Last Updated"'];
     repeated RequestComment          comments           = 9;

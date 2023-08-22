@@ -22,10 +22,12 @@ import (
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 const (
 	rootBlobPathPrefix = `/offline/probe-uploads/`
+	rootBlobPathRegex  = `/offline/probe-uploads/.+`
 
 	defaultFreeStorageThreshold = 1 << 30 // 1 GB
 	metadataSizeOverhead        = 16384   // 16KB of overhead for blob metadata and indexes etc.
@@ -57,16 +59,10 @@ func newManager(datastore blobstore.Datastore) *manager {
 }
 
 func (m *manager) getAllProbeBlobs() ([]string, error) {
-	ids, err := m.blobStore.GetIDs(blobReadAccessCtx)
+	q := search.NewQueryBuilder().AddRegexes(search.BlobName, rootBlobPathRegex).ProtoQuery()
+	blobs, err := m.blobStore.SearchIDs(blobReadAccessCtx, q)
 	if err != nil {
 		return nil, err
-	}
-	var blobs []string
-	// TODO(ROX-17285): Replace this with search
-	for _, id := range ids {
-		if strings.HasPrefix(id, rootBlobPathPrefix) {
-			blobs = append(blobs, id)
-		}
 	}
 	return blobs, nil
 }

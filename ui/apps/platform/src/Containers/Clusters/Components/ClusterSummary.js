@@ -38,7 +38,7 @@ const ClusterSummary = ({
     clusterRetentionInfo,
     isManagerTypeNonConfigurable,
 }) => (
-    <CollapsibleSection title="Cluster Summary" titleClassName="text-xl">
+    <CollapsibleSection title="Cluster Summary">
         <div className="grid grid-columns-1 md:grid-columns-2 xl:grid-columns-4 grid-gap-4 xl:grid-gap-6 mb-4 w-full">
             <div className="s-1">
                 <Metadata

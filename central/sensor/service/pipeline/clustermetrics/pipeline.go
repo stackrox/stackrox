@@ -5,7 +5,7 @@ import (
 
 	clusterTelemetry "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/metrics/info"
+	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -35,19 +35,19 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 
 // GetPipeline returns an instantiation of this particular pipeline.
 func GetPipeline() pipeline.Fragment {
-	return &pipelineImpl{metricsStore: &prometheusStore{}, infoMetric: info.Singleton()}
+	return &pipelineImpl{metricsStore: &prometheusStore{}, telemetryMetrics: telemetry.Singleton()}
 }
 
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore, infoMetric info.Info) pipeline.Fragment {
-	return &pipelineImpl{metricsStore: metricsStore, infoMetric: infoMetric}
+func NewPipeline(metricsStore MetricsStore, telemetryMetrics telemetry.Telemetry) pipeline.Fragment {
+	return &pipelineImpl{metricsStore: metricsStore, telemetryMetrics: telemetryMetrics}
 }
 
 type pipelineImpl struct {
 	pipeline.Fragment
 
-	metricsStore MetricsStore
-	infoMetric   info.Info
+	metricsStore     MetricsStore
+	telemetryMetrics telemetry.Telemetry
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -67,12 +67,12 @@ func (p *pipelineImpl) Run(
 ) error {
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
-	p.infoMetric.SetClusterMetrics(clusterID, clusterMetrics)
+	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
 	return nil
 }
 
 func (p *pipelineImpl) OnFinish(clusterID string) {
 	p.metricsStore.Set(clusterID, &central.ClusterMetrics{})
-	p.infoMetric.DeleteClusterMetrics(clusterID)
+	p.telemetryMetrics.DeleteClusterMetrics(clusterID)
 }

@@ -86,10 +86,8 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                     .url();
 
                 const viewAllLink = (
-                    <Link to={viewAllURL} className="no-underline">
-                        <button className="btn-sm btn-base" type="button">
-                            View All
-                        </button>
+                    <Link to={viewAllURL} className="no-underline btn-sm btn-base">
+                        View all
                     </Link>
                 );
 

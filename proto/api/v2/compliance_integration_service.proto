@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.api.v2";
 
 import weak "google/api/annotations.proto";
 import "api/v2/common.proto";
+import "api/v2/search_query.proto";
 
 package v2;
 
@@ -15,7 +16,7 @@ message ComplianceIntegration {
     string cluster_id             = 3;
     string cluster_name           = 4;
     string namespace              = 5;
-    // Collection of errors that occurred while trying to obtain collector health info.
+    // Collection of errors that occurred while trying to obtain comliance operator health info.
     repeated string status_errors = 6;
 }
 
@@ -29,16 +30,9 @@ message ListComplianceIntegrationsResponse {
 
 service ComplianceIntegrationService {
     // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
-    rpc ListComplianceIntegrations (Empty) returns (ListComplianceIntegrationsResponse) {
+    rpc ListComplianceIntegrations (RawQuery) returns (ListComplianceIntegrationsResponse) {
         option (google.api.http) = {
-            get: "/v2/complianceintegrations"
-        };
-    }
-
-    // GetComplianceIntegration retrieves the compliance operator metadata for the specified cluster
-    rpc GetComplianceIntegration (ComplianceIntegrationStatusRequest) returns (ComplianceIntegration) {
-        option (google.api.http) = {
-            get: "/v2/complianceintegrations/{cluster_id}"
+            get: "/v2/compliance/integrations"
         };
     }
 }

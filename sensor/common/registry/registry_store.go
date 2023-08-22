@@ -85,15 +85,38 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	return store
 }
 
-// Cleanup deletes all entries from store
+// Cleanup deletes all entries from store.
 func (rs *Store) Cleanup() {
+	// Separate cleanup methods are used to ensure only one lock is obtained at a time
+	// to avoid accidental deadlock.
+	rs.cleanupRegistries()
+	rs.cleanupClusterLocalRegistryHosts()
+	rs.cleanupDelegatedRegistryConfig()
+}
+
+func (rs *Store) cleanupRegistries() {
+	// These Sets have an internal mutex for controlling access.
+	rs.centralRegistryIntegrations.Clear()
+	rs.globalRegistries.Clear()
+
 	rs.mutex.Lock()
 	defer rs.mutex.Unlock()
 
 	rs.store = make(map[string]registries.Set)
-	rs.globalRegistries = registries.NewSet(rs.factory)
-	rs.centralRegistryIntegrations = registries.NewSet(rs.factory)
+}
+
+func (rs *Store) cleanupClusterLocalRegistryHosts() {
+	rs.clusterLocalRegistryHostsMutex.Lock()
+	defer rs.clusterLocalRegistryHostsMutex.Unlock()
+
 	rs.clusterLocalRegistryHosts = set.NewStringSet()
+}
+
+func (rs *Store) cleanupDelegatedRegistryConfig() {
+	rs.delegatedRegistryConfigMutex.Lock()
+	defer rs.delegatedRegistryConfigMutex.Unlock()
+
+	rs.delegatedRegistryConfig = nil
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {

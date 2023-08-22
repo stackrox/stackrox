@@ -7,19 +7,26 @@ import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
+import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
+
 type DataRetentionValueProps = {
     value: number | undefined;
     suffix: string;
+    shouldPluralize?: boolean;
 };
 
-function DataRetentionValue({ value, suffix }: DataRetentionValueProps): ReactElement {
+function DataRetentionValue({
+    value,
+    suffix,
+    shouldPluralize = true,
+}: DataRetentionValueProps): ReactElement {
     let content = 'Unknown';
 
     if (typeof value === 'number') {
         if (value === 0) {
             content = 'Never deleted';
         } else if (value > 0) {
-            content = `${value} ${pluralize(suffix, value)}`;
+            content = `${value} ${shouldPluralize ? pluralize(suffix, value) : suffix}`;
         }
     }
 
@@ -112,6 +119,39 @@ const PrivateConfigDataRetentionDetails = ({
                         <DataRetentionValue
                             value={privateConfig?.expiredVulnReqRetentionDurationDays}
                             suffix="day"
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Vulnerability report run history retention</CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={
+                                privateConfig?.reportRetentionConfig?.historyRetentionDurationDays
+                            }
+                            suffix="day"
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Vulnerability report run history retention</CardTitle>
+                    <CardBody>
+                        Set a total limit for all prepared downloadable vulnerability reports. Once
+                        the limit is reached, the oldest report in download queue will be removed.
+                    </CardBody>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={convertBetweenBytesAndMB(
+                                privateConfig?.reportRetentionConfig
+                                    ?.downloadableReportGlobalRetentionBytes,
+                                'B'
+                            )}
+                            suffix="MB"
+                            shouldPluralize={false}
                         />
                     </CardBody>
                 </Card>

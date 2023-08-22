@@ -46,9 +46,14 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop(_ error) {
+	s.processPipeline.Shutdown()
+}
 
-func (s *serviceImpl) Notify(common.SensorComponentEvent) {}
+func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	s.processPipeline.Notify(e)
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil

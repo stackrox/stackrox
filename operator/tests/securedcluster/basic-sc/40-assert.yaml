@@ -1,0 +1,14 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secured-cluster-prometheus-k8s
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    # Test that Sensor auth reader rolebinding exists in kube-system.
+    kubectl get rolebinding rhacs-sensor-auth-reader-${NAMESPACE} -n kube-system

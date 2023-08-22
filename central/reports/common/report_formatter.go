@@ -28,8 +28,9 @@ var (
 		"Component",
 		"CVE",
 		"Fixable",
-		"Component Upgrade",
+		"CVE Fixed In",
 		"Severity",
+		"CVSS",
 		"Discovered At",
 		"Reference",
 	}
@@ -43,6 +44,7 @@ type ImageVulnerability struct {
 	IsFixable         bool          `json:"isFixable,omitempty"`
 	DiscoveredAtImage *graphql.Time `json:"discoveredAtImage,omitempty"`
 	Link              string        `json:"link,omitempty"`
+	Cvss              float64       `json:"cvss,omitempty"`
 }
 
 // ImageComponent data for vuln report
@@ -80,7 +82,7 @@ type WatchedImagesResult struct {
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
 // a flag if the report is empty or not
-func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult) (*bytes.Buffer, error) {
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult) (*bytes.Buffer, bool, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
@@ -101,6 +103,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							strconv.FormatBool(v.IsFixable),
 							v.FixedByVersion,
 							strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 							discoveredTs,
 							v.Link,
 						})
@@ -128,6 +131,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						strconv.FormatBool(v.IsFixable),
 						v.FixedByVersion,
 						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 						discoveredTs,
 						v.Link,
 					})
@@ -136,32 +140,30 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 		}
 	}
 
-	if csvWriter.IsEmpty() {
-		return nil, nil
-	}
+	empty := csvWriter.IsEmpty()
 
 	var buf bytes.Buffer
 	err := csvWriter.WriteBytes(&buf)
 	if err != nil {
-		return nil, errors.Wrap(err, "error creating csv report")
+		return nil, true, errors.Wrap(err, "error creating csv report")
 	}
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	zipFile, err := zipWriter.Create(fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006")))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
 
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	err = zipWriter.Close()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
-	return &zipBuf, nil
+	return &zipBuf, empty, nil
 }
 
 // GetClusterName returns name of cluster containing the Deployment

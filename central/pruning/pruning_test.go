@@ -97,6 +97,7 @@ var (
 				},
 			},
 			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
+			ReportRetentionConfig:      &storage.ReportRetentionConfig{},
 		},
 	}
 )
@@ -539,8 +540,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			alerts, config, images, deployments, pods := s.generateImageDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
-
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
@@ -798,7 +798,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -921,7 +921,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1094,7 +1094,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			alerts, config, images, deployments := s.generateAlertDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil, nil, nil, nil, nil, config, nil, nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1871,8 +1871,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
 			assert.NoError(t, err)
 			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
-			k8sRoleBindings, err := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
-			assert.NoError(t, err)
+			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
 
 			for _, sa := range c.serviceAccts {
 				assert.NoError(t, serviceAccounts.UpsertServiceAccount(pruningCtx, sa))

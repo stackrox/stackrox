@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -206,7 +207,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		}
 	} else {
 		// No sensor hello :(
-		log.Warnf("Central is running a legacy version that might not support all current features")
+		log.Warn("Central is running a legacy version that might not support all current features")
 	}
 
 	clusterID := centralHello.GetClusterId()
@@ -217,6 +218,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	}
 
 	managedcentral.Set(centralHello.GetManagedCentral())
+	centralid.Set(centralHello.GetCentralId())
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
@@ -262,7 +264,7 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	if msg.GetPolicySync() == nil {
 		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
 	}
-	if err := detector.ProcessPolicySync(msg.GetPolicySync()); err != nil {
+	if err := detector.ProcessPolicySync(context.Background(), msg.GetPolicySync()); err != nil {
 		return errors.Wrap(err, "policy sync could not be successfully processed")
 	}
 

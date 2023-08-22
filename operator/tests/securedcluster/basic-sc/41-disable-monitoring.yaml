@@ -1,0 +1,9 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+spec:
+  clusterName: testing-cluster
+  monitoring:
+    openshift:
+      enabled: false

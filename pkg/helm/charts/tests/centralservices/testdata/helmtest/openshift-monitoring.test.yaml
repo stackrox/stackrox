@@ -16,8 +16,8 @@ tests:
       expect: |
         .roles["central-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["central-prometheus-k8s"] | assertThat(. != null)
-        .rolebindings["rhacs-central-auth-reader"] | assertThat(. != null)
-        .servicemonitors["central-monitor-stackrox-central-services-stackrox"] | [
+        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. != null)
+        .servicemonitors["central-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
@@ -42,6 +42,11 @@ tests:
     env.openshift: 4
   tests: *enabled-test
 
+- name: "When enabled via default value"
+  set:
+    env.openshift: 4
+  tests: *enabled-test
+
 - name: "When disabled"
   set:
     monitoring.openshift.enabled: false
@@ -51,8 +56,8 @@ tests:
       expect: |
         .roles["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
-        .rolebindings["rhacs-central-auth-reader"] | assertThat(. == null)
-        .servicemonitors["central-monitor-stackrox-central-services-stackrox"] | assertThat(. == null)
+        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"
       expect: |
@@ -67,6 +72,11 @@ tests:
 - name: "Disable override when on explicit OpenShift 3 environment"
   set:
     monitoring.openshift.enabled: true
+    env.openshift: 3
+  tests: *disabled-test
+
+- name: "Disable override with default value when on explicit OpenShift 3 environment"
+  set:
     env.openshift: 3
   tests: *disabled-test
 

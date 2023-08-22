@@ -9,6 +9,7 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 
+import usePermissions from 'hooks/usePermissions';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import { DiagnosticBundleRequest } from 'services/DebugService';
 import FilterByStartingTimeValidationMessage from './FilterByStartingTimeValidationMessage';
@@ -38,16 +39,20 @@ function DiagnosticBundleForm({
 }: DiagnosticBundleFormProps): ReactElement {
     const [availableClusterOptions, setAvailableClusterOptions] = useState<string[]>([]);
     const [clusterSelectOpen, setClusterSelectOpen] = useState(false);
+    const { hasReadAccess } = usePermissions();
 
+    const hasReadAccessForCluster = hasReadAccess('Cluster');
     useEffect(() => {
-        fetchClustersAsArray()
-            .then((clusters) => {
-                setAvailableClusterOptions(clusters.map(({ name }) => name));
-            })
-            .catch(() => {
-                // TODO display message when there is a place for minor errors
-            });
-    }, []);
+        if (hasReadAccessForCluster) {
+            fetchClustersAsArray()
+                .then((clusters) => {
+                    setAvailableClusterOptions(clusters.map(({ name }) => name));
+                })
+                .catch(() => {
+                    // TODO display message when there is a place for minor errors
+                });
+        }
+    }, [hasReadAccessForCluster]);
 
     function toggleClusterSelect() {
         setClusterSelectOpen(!clusterSelectOpen);
@@ -75,26 +80,28 @@ function DiagnosticBundleForm({
     return (
         <Form>
             <p>You can filter which platform data to include in the Zip file (max size 50MB)</p>
-            <FormGroup
-                label="Filter by clusters"
-                fieldId="filterByClusters"
-                helperText="No clusters selected will include all clusters"
-            >
-                <Select
-                    id="filterByClusters"
-                    variant={SelectVariant.typeaheadMulti}
-                    typeAheadAriaLabel="Type a cluster name"
-                    onToggle={toggleClusterSelect}
-                    onSelect={onSelect}
-                    onClear={clearSelection}
-                    selections={values.filterByClusters}
-                    isOpen={clusterSelectOpen}
+            {hasReadAccessForCluster && (
+                <FormGroup
+                    label="Filter by clusters"
+                    fieldId="filterByClusters"
+                    helperText="No clusters selected will include all clusters"
                 >
-                    {availableClusterOptions.map((cluster) => (
-                        <SelectOption key={cluster} value={cluster} />
-                    ))}
-                </Select>
-            </FormGroup>
+                    <Select
+                        id="filterByClusters"
+                        variant={SelectVariant.typeaheadMulti}
+                        typeAheadAriaLabel="Type a cluster name"
+                        onToggle={toggleClusterSelect}
+                        onSelect={onSelect}
+                        onClear={clearSelection}
+                        selections={values.filterByClusters}
+                        isOpen={clusterSelectOpen}
+                    >
+                        {availableClusterOptions.map((cluster) => (
+                            <SelectOption key={cluster} value={cluster} />
+                        ))}
+                    </Select>
+                </FormGroup>
+            )}
             <FormGroup
                 label="Filter by starting time"
                 labelInfo={

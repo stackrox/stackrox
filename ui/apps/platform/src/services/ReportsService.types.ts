@@ -10,7 +10,7 @@ export type ReportConfiguration = {
     type: ReportType;
     vulnReportFilters: VulnerabilityReportFilters;
     notifiers: NotifierConfiguration[];
-    schedule: Schedule;
+    schedule: Schedule | null;
     resourceScope: ResourceScope;
 };
 
@@ -27,15 +27,17 @@ export type VulnerabilityReportFilters =
           allVuln: boolean;
       })
     | (VulnerabilityReportFiltersBase & {
-          lastSuccessfulReport: boolean;
+          sinceLastSentScheduledReport: boolean;
       })
     | (VulnerabilityReportFiltersBase & {
-          startDate: string; // in the format of google.protobuf.Timestamp};
+          sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       });
 
 export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
 
-export type ImageType = 'DEPLOYED' | 'WATCHED';
+export const imageTypes = ['DEPLOYED', 'WATCHED'] as const;
+
+export type ImageType = (typeof imageTypes)[number];
 
 export type NotifierConfiguration = {
     emailConfig: {
@@ -59,7 +61,9 @@ export type Schedule =
           daysOfMonth: DaysOfMonth;
       };
 
-export type IntervalType = 'WEEKLY' | 'MONTHLY';
+export const intervalTypes = ['WEEKLY', 'MONTHLY'] as const;
+
+export type IntervalType = (typeof intervalTypes)[number];
 
 export type Interval = DaysOfWeek | DaysOfMonth;
 
@@ -90,7 +94,14 @@ export type ReportStatus = {
     reportNotificationMethod: ReportNotificationMethod;
 };
 
-export type RunState = 'WAITING' | 'PREPARING' | 'SUCCESS' | 'FAILURE';
+export const runStates = {
+    WAITING: 'WAITING',
+    PREPARING: 'PREPARING',
+    SUCCESS: 'SUCCESS',
+    FAILURE: 'FAILURE',
+} as const;
+
+export type RunState = (typeof runStates)[keyof typeof runStates];
 
 export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
 
@@ -103,7 +114,8 @@ export type ReportHistoryResponse = {
 };
 
 export type ReportSnapshot = {
-    id: string;
+    reportConfigId: string;
+    reportJobId: string;
     name: string;
     description: string;
     vulnReportFilters: VulnerabilityReportFilters;
@@ -112,9 +124,17 @@ export type ReportSnapshot = {
     reportStatus: ReportStatus;
     notifiers: NotifierConfiguration[];
     user: SlimUser;
+    isDownloadAvailable: boolean;
 };
 
 export type CollectionSnapshot = {
     id: string;
     name: string;
+};
+
+// Misc types
+
+export type RunReportResponse = {
+    reportConfigId: string;
+    reportId: string;
 };

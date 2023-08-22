@@ -28,3 +28,6 @@ values:
   createSecrets: false
   ca:
     cert: "DUMMY CA CERTIFICATE"
+  monitoring:
+    openshift:
+      enabled: false

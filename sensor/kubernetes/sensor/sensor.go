@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/installmethod"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
@@ -60,7 +61,7 @@ var (
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if env.ResyncDisabled.BooleanSetting() {
-		log.Infof("Running sensor with Kubernetes re-sync disabled")
+		log.Info("Running sensor with Kubernetes re-sync disabled")
 	} else {
 		log.Infof("Running sensor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
 	}
@@ -95,6 +96,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
 		}
 	}
+
+	installmethod.Set(helmManagedConfig.GetManagedBy())
 
 	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))

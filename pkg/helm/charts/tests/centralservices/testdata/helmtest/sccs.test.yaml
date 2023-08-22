@@ -5,6 +5,9 @@ values:
   central:
     persistence:
       none: true
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - name: Should create SCCs
   expect: |

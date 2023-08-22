@@ -118,7 +118,6 @@ type TestCallback func(t *testing.T, testContext *TestContext, objects map[strin
 // messages emitted by Sensor. Each Go test should use a single TestContext instance to manage cluster interaction
 // and assertions.
 type TestContext struct {
-	t               *testing.T
 	r               *resources.Resources
 	env             *envconf.Config
 	fakeCentral     *centralDebug.FakeService
@@ -163,7 +162,6 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}
 
 	tc := TestContext{
-		t:                t,
 		r:                r,
 		env:              envConfig,
 		centralStopped:   atomic.Bool{},
@@ -172,7 +170,7 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 	}
 
 	tc.StartFakeGRPC()
-	tc.startSensorInstance(envConfig)
+	tc.startSensorInstance(t, envConfig)
 
 	return &tc, nil
 }
@@ -206,12 +204,12 @@ func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
 }
 
 // RunTest runs a test case. Fails the test if the testRun cannot be created.
-func (c *TestContext) RunTest(options ...TestRunFunc) {
+func (c *TestContext) RunTest(t *testing.T, options ...TestRunFunc) {
 	tr, err := newTestRun(options...)
 	if err != nil {
-		c.t.Fatal(err)
+		t.Fatal(err)
 	}
-	c.run(tr)
+	c.run(t, tr)
 }
 
 // Stop test context and sensor.
@@ -224,7 +222,7 @@ func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
 
-func (c *TestContext) deleteNs(ctx context.Context, name string) error {
+func (c *TestContext) deleteNs(ctx context.Context, t *testing.T, name string) error {
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
 	err := c.r.Delete(ctx, &nsObj)
@@ -234,7 +232,7 @@ func (c *TestContext) deleteNs(ctx context.Context, name string) error {
 
 	// wait for deletion to be finished
 	if err := wait.For(conditions.New(c.r).ResourceDeleted(&nsObj)); err != nil {
-		c.t.Logf("failed to wait for namespace %s deletion\n", nsObj.Name)
+		t.Logf("failed to wait for namespace %s deletion\n", nsObj.Name)
 	}
 	return nil
 }
@@ -244,9 +242,9 @@ func (c *TestContext) SensorStopped() bool {
 	return c.sensorStopped.IsDone()
 }
 
-func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namespace, func() error, error) {
+func (c *TestContext) createTestNs(ctx context.Context, t *testing.T, name string) (*v1.Namespace, func() error, error) {
 	utils.IgnoreError(func() error {
-		return c.deleteNs(ctx, name)
+		return c.deleteNs(ctx, t, name)
 	})
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
@@ -254,7 +252,7 @@ func (c *TestContext) createTestNs(ctx context.Context, name string) (*v1.Namesp
 		return nil, nil, err
 	}
 	return &nsObj, func() error {
-		return c.deleteNs(ctx, name)
+		return c.deleteNs(ctx, t, name)
 	}, nil
 }
 
@@ -307,15 +305,15 @@ func (c *TestContext) GetFakeCentral() *centralDebug.FakeService {
 
 // run calls the test function depending on the configuration of the testRun.
 // For example, if permutation is set to true, it will run call runWithResourcesPermutation.
-func (c *TestContext) run(t *testRun) {
-	if t.resources == nil {
-		c.runBare(t.testCase)
+func (c *TestContext) run(t *testing.T, tr *testRun) {
+	if tr.resources == nil {
+		c.runBare(t, tr.testCase)
 	} else {
-		if t.permutation {
-			c.runWithResourcesPermutation(t)
+		if tr.permutation {
+			c.runWithResourcesPermutation(t, tr)
 		} else {
-			if err := c.runWithResources(t.resources, t.testCase, t.retryCallback); err != nil {
-				c.t.Fatalf(err.Error())
+			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
+				t.Fatalf(err.Error())
 			}
 		}
 	}
@@ -323,8 +321,8 @@ func (c *TestContext) run(t *testRun) {
 
 // runWithResources runs the test case applying resources in `resources` slice in order.
 // If it is set, the RetryCallback will be called if the application of a resource fails.
-func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase TestCallback, retryFn RetryCallback) error {
-	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
+func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo, testCase TestCallback, retryFn RetryCallback) error {
+	_, removeNamespace, err := c.createTestNs(context.Background(), t, DefaultNamespace)
 	if err != nil {
 		return errors.Errorf("failed to create namespace: %s", err)
 	}
@@ -333,7 +331,7 @@ func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase Tes
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
 		obj := objByKind(resources[i].Kind)
-		removeFn, err := c.ApplyResourceAndWait(context.Background(), DefaultNamespace, &resources[i], obj, retryFn)
+		removeFn, err := c.ApplyResourceAndWait(context.Background(), t, DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
 			return errors.Errorf("fail to apply resource: %s", err)
 		}
@@ -345,31 +343,31 @@ func (c *TestContext) runWithResources(resources []K8sResourceInfo, testCase Tes
 			utils.IgnoreError(fn)
 		}
 	}()
-	testCase(c.t, c, fileToObj)
+	testCase(t, c, fileToObj)
 	return nil
 }
 
 // runBare runs a test case without applying any resources to the cluster.
-func (c *TestContext) runBare(testCase TestCallback) {
-	_, removeNamespace, err := c.createTestNs(context.Background(), DefaultNamespace)
+func (c *TestContext) runBare(t *testing.T, testCase TestCallback) {
+	_, removeNamespace, err := c.createTestNs(context.Background(), t, DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
 	if err != nil {
-		c.t.Fatalf("failed to create namespace: %s", err)
+		t.Fatalf("failed to create namespace: %s", err)
 	}
-	testCase(c.t, c, nil)
+	testCase(t, c, nil)
 }
 
 // runWithResourcesPermutation runs the test cases using `resources` similarly to `runWithResources` but it will run the
 // test case for each possible permutation of `resources` slice.
-func (c *TestContext) runWithResourcesPermutation(t *testRun) {
-	runPermutation(t.resources, 0, func(f []K8sResourceInfo) {
+func (c *TestContext) runWithResourcesPermutation(t *testing.T, tr *testRun) {
+	runPermutation(tr.resources, 0, func(f []K8sResourceInfo) {
 		newF := make([]K8sResourceInfo, len(f))
 		copy(newF, f)
-		newTestRun := t.copy()
+		newTestRun := tr.copy()
 		newTestRun.resources = newF
-		c.t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(_ *testing.T) {
-			if err := c.runWithResources(t.resources, t.testCase, t.retryCallback); err != nil {
-				c.t.Fatal(err.Error())
+		t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(_ *testing.T) {
+			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
+				t.Fatal(err.Error())
 			}
 		})
 	})
@@ -406,19 +404,19 @@ type MatchResource func(resource *central.MsgFromSensor) bool
 type AssertFuncAny func(resource interface{}) error
 
 // LastResourceState same as LastResourceStateWithTimeout with a 3s default timeout.
-func (c *TestContext) LastResourceState(matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
-	c.LastResourceStateWithTimeout(matchResourceFn, assertFn, message, defaultWaitTimeout)
+func (c *TestContext) LastResourceState(t *testing.T, matchResourceFn MatchResource, assertFn AssertFuncAny, message string) {
+	c.LastResourceStateWithTimeout(t, matchResourceFn, assertFn, message, defaultWaitTimeout)
 }
 
 // LastResourceStateWithTimeout filters all messages by `matchResourceFn` and checks that the last message matches `assertFn`. Timeouts after `timeout`.
-func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
+func (c *TestContext) LastResourceStateWithTimeout(t *testing.T, matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.New("no resource found for matching function")
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			t.Fatalf("timeout reached waiting for state: (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			msg := GetLastMessageMatching(messages, matchResourceFn)
@@ -433,13 +431,13 @@ func (c *TestContext) LastResourceStateWithTimeout(matchResourceFn MatchResource
 }
 
 // WaitForHello will wait until sensor transmits a `SensorHello` message to central and returns that message.
-func (c *TestContext) WaitForHello(timeout time.Duration) *central.SensorHello {
+func (c *TestContext) WaitForHello(t *testing.T, timeout time.Duration) *central.SensorHello {
 	ticker := time.NewTicker(defaultTicker)
 	timeoutTimer := time.NewTicker(timeout)
 	for {
 		select {
 		case <-timeoutTimer.C:
-			c.t.Errorf("timeout (%s) reached waiting for hello event", timeout)
+			t.Errorf("timeout (%s) reached waiting for hello event", timeout)
 			return nil
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -453,13 +451,13 @@ func (c *TestContext) WaitForHello(timeout time.Duration) *central.SensorHello {
 }
 
 // WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
-func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
+func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) {
 	ticker := time.NewTicker(defaultTicker)
 	timeoutTimer := time.NewTicker(timeout)
 	for {
 		select {
 		case <-timeoutTimer.C:
-			c.t.Errorf("timeout (%s) reached waiting for sync event", timeout)
+			t.Errorf("timeout (%s) reached waiting for sync event", timeout)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -473,19 +471,19 @@ func (c *TestContext) WaitForSyncEvent(timeout time.Duration) {
 }
 
 // WaitForDeploymentEvent waits until sensor process a given deployment
-func (c *TestContext) WaitForDeploymentEvent(name string) {
-	c.WaitForDeploymentEventWithTimeout(name, defaultWaitTimeout)
+func (c *TestContext) WaitForDeploymentEvent(t *testing.T, name string) {
+	c.WaitForDeploymentEventWithTimeout(t, name, defaultWaitTimeout)
 }
 
 // WaitForDeploymentEventWithTimeout waits until sensor process a given deployment
-func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout time.Duration) {
+func (c *TestContext) WaitForDeploymentEventWithTimeout(t *testing.T, name string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.Errorf("the deployment %s was not sent", name)
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for deployment: %s", lastErr)
+			t.Fatalf("timeout reached waiting for deployment: %s", lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
@@ -499,13 +497,13 @@ func (c *TestContext) WaitForDeploymentEventWithTimeout(name string, timeout tim
 }
 
 // FirstDeploymentStateMatchesWithTimeout checks that the first deployment received with name matches the assertion function.
-func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
+func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(t *testing.T, name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	for {
 		select {
 		case <-timer.C:
-			c.t.Errorf("timeout reached waiting for state: (%s): no deployment found", message)
+			t.Errorf("timeout reached waiting for state: (%s): no deployment found", message)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -517,7 +515,7 @@ func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assert
 				// that matches assertion. If it isn't, the test should fail immediately. There's no point in waiting.
 				err := assertion(deployment, action)
 				if err != nil {
-					c.t.Errorf("first deployment found didn't meet expected state: %s", err)
+					t.Errorf("first deployment found didn't meet expected state: %s", err)
 				}
 				return
 			}
@@ -526,20 +524,20 @@ func (c *TestContext) FirstDeploymentStateMatchesWithTimeout(name string, assert
 }
 
 // LastDeploymentState checks the deployment state similarly to `LastDeploymentStateWithTimeout` with a default 3 seconds timeout.
-func (c *TestContext) LastDeploymentState(name string, assertion AssertFunc, message string) {
-	c.LastDeploymentStateWithTimeout(name, assertion, message, defaultWaitTimeout)
+func (c *TestContext) LastDeploymentState(t *testing.T, name string, assertion AssertFunc, message string) {
+	c.LastDeploymentStateWithTimeout(t, name, assertion, message, defaultWaitTimeout)
 }
 
 // LastDeploymentStateWithTimeout checks that a deployment reaches a state asserted by `assertion`. If the deployment does not reach
 // that state until `timeout` the test fails.
-func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion AssertFunc, message string, timeout time.Duration) {
+func (c *TestContext) LastDeploymentStateWithTimeout(t *testing.T, name string, assertion AssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.New("no deployment found")
 	for {
 		select {
 		case <-timer.C:
-			c.t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
+			t.Errorf("timeout reached waiting for state: (%s): %s", message, lastErr)
 			return
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
@@ -556,13 +554,13 @@ func (c *TestContext) LastDeploymentStateWithTimeout(name string, assertion Asse
 }
 
 // DeploymentCreateReceived checks if a deployment object was received with CREATE action.
-func (c *TestContext) DeploymentCreateReceived(name string) {
-	c.FirstDeploymentReceivedWithAction(name, central.ResourceAction_CREATE_RESOURCE)
+func (c *TestContext) DeploymentCreateReceived(t *testing.T, name string) {
+	c.FirstDeploymentReceivedWithAction(t, name, central.ResourceAction_CREATE_RESOURCE)
 }
 
 // FirstDeploymentReceivedWithAction checks if a deployment object was received with specific action type.
-func (c *TestContext) FirstDeploymentReceivedWithAction(name string, expectedAction central.ResourceAction) {
-	c.FirstDeploymentStateMatchesWithTimeout(name, func(_ *storage.Deployment, action central.ResourceAction) error {
+func (c *TestContext) FirstDeploymentReceivedWithAction(t *testing.T, name string, expectedAction central.ResourceAction) {
+	c.FirstDeploymentStateMatchesWithTimeout(t, name, func(_ *storage.Deployment, action central.ResourceAction) error {
 		if action != expectedAction {
 			return errors.Errorf("event action is %s, but expected %s", action, expectedAction)
 		}
@@ -571,10 +569,10 @@ func (c *TestContext) FirstDeploymentReceivedWithAction(name string, expectedAct
 }
 
 // DeploymentNotReceived checks that a deployment event for deployment with name should not have been received by fake central.
-func (c *TestContext) DeploymentNotReceived(name string) {
+func (c *TestContext) DeploymentNotReceived(t *testing.T, name string) {
 	messages := c.GetFakeCentral().GetAllMessages()
 	lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
-	assert.Nilf(c.t, lastDeploymentUpdate, "should not have found deployment with name %s: %+v", name, lastDeploymentUpdate)
+	assert.Nilf(t, lastDeploymentUpdate, "should not have found deployment with name %s: %+v", name, lastDeploymentUpdate)
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -591,24 +589,27 @@ func GetLastMessageMatching(messages []*central.MsgFromSensor, matchFn MatchReso
 type AlertAssertFunc func(alertResults *central.AlertResults) error
 
 // LastViolationState checks the violation state similarly to `LastViolationStateWithTimeout` with a default 3 seconds timeout.
-func (c *TestContext) LastViolationState(name string, assertion AlertAssertFunc, message string) {
-	c.LastViolationStateWithTimeout(name, assertion, message, defaultWaitTimeout)
+func (c *TestContext) LastViolationState(t *testing.T, name string, assertion AlertAssertFunc, message string) {
+	c.LastViolationStateWithTimeout(t, name, assertion, message, defaultWaitTimeout)
 }
 
 // LastViolationStateWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
 // until `timeout` the test fails.
-func (c *TestContext) LastViolationStateWithTimeout(name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
+func (c *TestContext) LastViolationStateWithTimeout(t *testing.T, name string, assertion AlertAssertFunc, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
-	var lastErr error
+	lastErr := errors.Errorf("no alerts found for deployment %s", name)
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
+			t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			alerts := GetAllAlertsForDeploymentName(messages, name)
 			var lastViolationState *central.AlertResults
+			if len(alerts) == 0 {
+				continue
+			}
 			if len(alerts) > 0 {
 				lastViolationState = alerts[len(alerts)-1].GetEvent().GetAlertResults()
 			}
@@ -618,24 +619,60 @@ func (c *TestContext) LastViolationStateWithTimeout(name string, assertion Alert
 			}
 		}
 	}
+}
 
+// AssertViolationsMatch creates a matcher function that checks the state of violation matches violations.
+func AssertViolationsMatch(violations ...string) func(result *central.AlertResults) error {
+	return func(result *central.AlertResults) error {
+		return alertResultMatchesFn(result, violations...)
+	}
+}
+
+// AssertNoViolations creates a matcher function that checks no violations are sent.
+func AssertNoViolations() func(result *central.AlertResults) error {
+	return func(result *central.AlertResults) error {
+		return alertResultMatchesFn(result)
+	}
+}
+
+func alertResultMatchesFn(result *central.AlertResults, violations ...string) error {
+	expectedSet := set.NewStringSet(violations...)
+	actualSet := set.NewStringSet()
+	for _, alertMessage := range result.GetAlerts() {
+		actualSet.Add(alertMessage.GetPolicy().GetName())
+	}
+
+	if !actualSet.Equal(expectedSet) {
+		return errors.Errorf("expected set (%s) differs from actual (%s)", expectedSet.AsSlice(), actualSet.AsSlice())
+	}
+	return nil
+}
+
+// NoViolations checks that no alerts are raised for deployment.
+func (c *TestContext) NoViolations(t *testing.T, name string, message string) {
+	var lastState []*central.MsgFromSensor
+	assert.Eventually(t, func() bool {
+		messages := c.GetFakeCentral().GetAllMessages()
+		lastState = GetAllAlertsForDeploymentName(messages, name)
+		return len(lastState) == 0
+	}, defaultWaitTimeout, defaultTicker, message)
 }
 
 // LastViolationStateByID checks the violation state by deployment ID
-func (c *TestContext) LastViolationStateByID(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
-	c.LastViolationStateByIDWithTimeout(id, assertion, message, checkEmptyAlertResults, defaultWaitTimeout)
+func (c *TestContext) LastViolationStateByID(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool) {
+	c.LastViolationStateByIDWithTimeout(t, id, assertion, message, checkEmptyAlertResults, defaultWaitTimeout)
 }
 
 // LastViolationStateByIDWithTimeout checks that a violation state for a deployment must match `assertion`. If violation state does not match
 // until `timeout` the test fails.
-func (c *TestContext) LastViolationStateByIDWithTimeout(id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
+func (c *TestContext) LastViolationStateByIDWithTimeout(t *testing.T, id string, assertion AlertAssertFunc, message string, checkEmptyAlertResults bool, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	lastErr := errors.Errorf("no alerts sent for deployment ID %s", id)
 	for {
 		select {
 		case <-timer.C:
-			c.t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
+			t.Fatalf("timeout reached waiting for violation state (%s): %s", message, lastErr)
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			lastAlert := GetLastAlertsWithDeploymentID(messages, id, checkEmptyAlertResults)
@@ -672,11 +709,11 @@ type CentralConfig struct {
 	CertFilePath          string
 }
 
-func (c *TestContext) startSensorInstance(env *envconf.Config) {
-	c.t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
-	c.t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
-	c.t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
-	c.t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
+func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
+	t.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.CertFilePath, "/cert.pem"))
+	t.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.CertFilePath, "/key.pem"))
+	t.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.CertFilePath, "/caCert.pem"))
+	t.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.CertFilePath, "/caKey.pem"))
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
@@ -729,14 +766,14 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 // ApplyResourceAndWaitNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
 // Use this if there is no need to get or manipulate the data in the YAML file.
-func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
+func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, t *testing.T, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
 	obj := objByKind(resource.Kind)
-	return c.ApplyResourceAndWait(ctx, ns, &resource, obj, retryFn)
+	return c.ApplyResourceAndWait(ctx, t, ns, &resource, obj, retryFn)
 }
 
 // ApplyResourceAndWait calls ApplyResource and waits for the resource if it's "waitable" (e.g. Deployment or Pod).
-func (c *TestContext) ApplyResourceAndWait(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
-	fn, err := c.ApplyResource(ctx, ns, resource, obj, retryFn)
+func (c *TestContext) ApplyResourceAndWait(ctx context.Context, t *testing.T, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+	fn, err := c.ApplyResource(ctx, t, ns, resource, obj, retryFn)
 	if err != nil {
 		return nil, err
 	}
@@ -755,7 +792,7 @@ func (c *TestContext) ApplyResourceAndWait(ctx context.Context, ns string, resou
 // with the properties from the resource definition. In case the creation fails (due to the client
 // API rejecting the definition), a `RetryCallback` function can be provided to manipulate the
 // object prior to the retry.
-func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
+func (c *TestContext) ApplyResource(ctx context.Context, t *testing.T, ns string, resource *K8sResourceInfo, obj k8s.Object, retryFn RetryCallback) (func() error, error) {
 	if resource.Obj != nil {
 		var ok bool
 		obj, ok = resource.Obj.(k8s.Object)
@@ -781,7 +818,7 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 			err := c.r.Create(ctx, obj)
 			if err != nil && retryFn != nil {
 				if retryErr := retryFn(err, obj); retryErr != nil {
-					c.t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr))
+					t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr))
 				}
 			}
 			return err
@@ -803,7 +840,7 @@ func (c *TestContext) ApplyResource(ctx context.Context, ns string, resource *K8
 
 			// wait for deletion to be finished
 			if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
-				c.t.Logf("failed to wait for resource deletion")
+				t.Logf("failed to wait for resource deletion")
 			}
 			return nil
 		}

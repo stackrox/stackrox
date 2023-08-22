@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/react-core';
 
-import useInterval from 'hooks/useInterval';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
+import useInterval from 'hooks/useInterval';
+import usePermissions from 'hooks/usePermissions';
 
 import CertificateCard from './CertificateHealth/CertificateCard';
 import ClustersHealthCards from './ClustersHealth/ClustersHealthCards';
@@ -19,6 +20,11 @@ const SystemHealthDashboardPage = () => {
     const isDeclarativeConfigHealthAvailable = isCentralCapabilityAvailable(
         'centralCanDisplayDeclarativeConfigHealth'
     );
+
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAdministration = hasReadAccess('Administration');
+    const hasReadAccessForCluster = hasReadAccess('Cluster');
+    const hasReadAccessForIntegration = hasReadAccess('Integration');
 
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);
@@ -38,27 +44,39 @@ const SystemHealthDashboardPage = () => {
                     <FlexItem>
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
-                    <FlexItem align={{ default: 'alignRight' }}>
-                        <GenerateDiagnosticBundle />
-                    </FlexItem>
+                    {hasReadAccessForAdministration && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            <GenerateDiagnosticBundle />
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             <PageSection>
                 <Grid hasGutter>
-                    <ClustersHealthCards pollingCount={pollingCountFaster} />
-                    <GridItem span={12}>
-                        <VulnerabilityDefinitionsHealthCard pollingCount={pollingCountSlower} />
-                    </GridItem>
-                    <GridItem span={12}>
-                        <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
-                    </GridItem>
-                    <GridItem span={12}>
-                        <NotifierIntegrationHealthWidget pollingCount={pollingCountFaster} />
-                    </GridItem>
-                    <GridItem span={12}>
-                        <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
-                    </GridItem>
-                    {isDeclarativeConfigHealthAvailable && (
+                    {hasReadAccessForCluster && (
+                        <ClustersHealthCards pollingCount={pollingCountFaster} />
+                    )}
+                    {hasReadAccessForAdministration && (
+                        <GridItem span={12}>
+                            <VulnerabilityDefinitionsHealthCard pollingCount={pollingCountSlower} />
+                        </GridItem>
+                    )}
+                    {hasReadAccessForIntegration && (
+                        <>
+                            <GridItem span={12}>
+                                <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
+                            </GridItem>
+                            <GridItem span={12}>
+                                <NotifierIntegrationHealthWidget
+                                    pollingCount={pollingCountFaster}
+                                />
+                            </GridItem>
+                            <GridItem span={12}>
+                                <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
+                            </GridItem>
+                        </>
+                    )}
+                    {hasReadAccessForIntegration && isDeclarativeConfigHealthAvailable && (
                         <GridItem span={12}>
                             <DeclarativeConfigurationHealthCard pollingCount={pollingCountFaster} />
                         </GridItem>

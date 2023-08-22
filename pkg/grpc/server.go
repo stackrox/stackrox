@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
@@ -165,9 +164,9 @@ func (a *apiImpl) Stop() bool {
 		return false
 	}
 
-	log.Infof("Starting stop procedure")
+	log.Info("Starting stop procedure")
 	a.grpcServer.GracefulStop()
-	log.Infof("gRPC server fully stopped")
+	log.Info("gRPC server fully stopped")
 	for _, listener := range a.listeners {
 		if listener.stopper != nil {
 			listener.stopper()
@@ -357,7 +356,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		}
 	}
 	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
 	}
 	if err := prometheus.Register(mux); err != nil {

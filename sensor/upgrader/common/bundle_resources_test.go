@@ -29,5 +29,7 @@ func TestEnsureBundleResourcesTypesAreCorrect(t *testing.T) {
 		{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"},
 		{Group: "apps", Version: "v1", Kind: "DaemonSet"},
 		{Group: "apps", Version: "v1", Kind: "Deployment"},
+		{Group: "monitoring.coreos.com", Version: "v1", Kind: "ServiceMonitor"},
+		{Group: "monitoring.coreos.com", Version: "v1", Kind: "PrometheusRule"},
 	})
 }

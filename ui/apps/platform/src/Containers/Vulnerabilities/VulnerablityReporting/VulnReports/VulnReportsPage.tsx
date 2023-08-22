@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
-    Divider,
     Flex,
     FlexItem,
     Button,
@@ -15,24 +14,37 @@ import {
     EmptyStateBody,
     EmptyStateVariant,
     Text,
+    Alert,
+    AlertVariant,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
+    SearchInput,
+    Pagination,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link, generatePath } from 'react-router-dom';
-import { ExclamationCircleIcon, FileIcon } from '@patternfly/react-icons';
+import { Link, generatePath, useHistory } from 'react-router-dom';
+import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
+import isEmpty from 'lodash/isEmpty';
 
+import { collectionsPath, isRouteEnabled, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportsPath } from 'routePaths';
+import useURLPagination from 'hooks/useURLPagination';
+import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
+import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-
-import { vulnerabilityReportPath } from '../pathsForVulnerabilityReporting';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
 import HelpIconTh from './HelpIconTh';
-import LastRunStatusState from './LastRunStatusState';
-import LastRunState from './LastRunState';
-import useDeleteModal from '../hooks/useDeleteModal';
-import DeleteReportModal from '../components/DeleteReportModal';
+import MyActiveJobStatus from './MyActiveJobStatus';
+import DeleteModal from '../components/DeleteModal';
+import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 
 const CreateReportsButton = () => {
     return (
@@ -42,7 +54,17 @@ const CreateReportsButton = () => {
     );
 };
 
+const reportNameSearchKey = 'Report Name';
+
+const sortOptions = {
+    sortFields: [reportNameSearchKey],
+    defaultSortOption: { field: reportNameSearchKey, direction: 'asc' } as const,
+};
+
 function VulnReportsPage() {
+    const history = useHistory();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
@@ -54,7 +76,35 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const { reports, isLoading, error: fetchError, fetchReports } = useFetchReports();
+    const isCollectionsRouteEnabled = isRouteEnabled(
+        { hasReadAccess, isFeatureFlagEnabled },
+        collectionsPath
+    );
+
+    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const [searchValue, setSearchValue] = useState(() => {
+        return (searchFilter?.[reportNameSearchKey] as string) || '';
+    });
+    const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
+
+    const {
+        reportConfigurations,
+        totalReports,
+        isLoading,
+        error: fetchError,
+        fetchReports,
+    } = useFetchReports({
+        searchFilter,
+        page,
+        perPage,
+        sortOption,
+    });
+    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
+    const { isRunning, runError, runReport } = useRunReport({
+        onCompleted: fetchReports,
+    });
 
     const {
         openDeleteModal,
@@ -64,15 +114,13 @@ function VulnReportsPage() {
         onDelete,
         deleteError,
     } = useDeleteModal({
-        onCompleted: () => {
-            fetchReports();
-        },
+        onCompleted: fetchReports,
     });
 
     return (
         <>
             <PageTitle title="Vulnerability reporting" />
-            <Divider component="div" />
+            {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex
                     direction={{ default: 'row' }}
@@ -82,7 +130,9 @@ function VulnReportsPage() {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Flex direction={{ default: 'column' }}>
                             <FlexItem>
-                                <Title headingLevel="h1">Vulnerability reporting</Title>
+                                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                                    <Title headingLevel="h1">Vulnerability reporting</Title>
+                                </Flex>
                             </FlexItem>
                             <FlexItem>
                                 Configure reports, define report scopes, and assign delivery
@@ -90,18 +140,59 @@ function VulnReportsPage() {
                             </FlexItem>
                         </Flex>
                     </FlexItem>
-                    {reports.length > 0 && canCreateReports && (
-                        <FlexItem>
-                            <CreateReportsButton />
-                        </FlexItem>
-                    )}
+                    {reportConfigurations &&
+                        reportConfigurations.length > 0 &&
+                        canCreateReports && (
+                            <FlexItem>
+                                <CreateReportsButton />
+                            </FlexItem>
+                        )}
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody className="pf-u-p-0">
-                            {isLoading && (
+                            <Toolbar>
+                                <ToolbarContent>
+                                    <ToolbarItem
+                                        variant="search-filter"
+                                        className="pf-u-flex-grow-1"
+                                    >
+                                        <SearchInput
+                                            placeholder="Filter by report name"
+                                            value={searchValue}
+                                            onChange={(_event, value) => setSearchValue(value)}
+                                            onSearch={(_event, value) => {
+                                                setSearchValue(value);
+                                                setSearchFilter({ [reportNameSearchKey]: value });
+                                                setPage(1);
+                                            }}
+                                            onClear={() => {
+                                                setSearchValue('');
+                                                setSearchFilter({});
+                                                setPage(1);
+                                            }}
+                                        />
+                                    </ToolbarItem>
+                                    <ToolbarItem
+                                        variant="pagination"
+                                        alignment={{ default: 'alignRight' }}
+                                    >
+                                        <Pagination
+                                            itemCount={totalReports}
+                                            page={page}
+                                            perPage={perPage}
+                                            onSetPage={(_, newPage) => setPage(newPage)}
+                                            onPerPageSelect={(_, newPerPage) =>
+                                                setPerPage(newPerPage)
+                                            }
+                                            isCompact
+                                        />
+                                    </ToolbarItem>
+                                </ToolbarContent>
+                            </Toolbar>
+                            {isLoading && !reportConfigurations && (
                                 <div className="pf-u-p-md">
                                     <Bullseye>
                                         <Spinner isSVG />
@@ -120,22 +211,64 @@ function VulnReportsPage() {
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
-                            {!isLoading && !fetchError && (
+                            {reportConfigurations && (
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
-                                            <Th>Report</Th>
-                                            <HelpIconTh tooltip="A set of user-configured rules for selecting deployments as part of the report scope">
+                                            <Th sort={getSortParams(reportNameSearchKey)}>
+                                                Report
+                                            </Th>
+                                            <HelpIconTh
+                                                popoverContent={
+                                                    <div>
+                                                        A set of user-configured rules for selecting
+                                                        deployments as part of the report scope
+                                                    </div>
+                                                }
+                                            >
                                                 Collection
                                             </HelpIconTh>
-                                            <Th>Last run status</Th>
-                                            <HelpIconTh tooltip="The report that was last run by a schedule or an on-demand action including 'send report now' and 'generate a downloadable report'">
-                                                Last run
+                                            <Th>Description</Th>
+                                            <HelpIconTh
+                                                popoverContent={
+                                                    <Flex
+                                                        direction={{ default: 'column' }}
+                                                        spaceItems={{ default: 'spaceItemsMd' }}
+                                                    >
+                                                        <FlexItem>
+                                                            <p>
+                                                                The status of your last requested
+                                                                job from the active job queue. An
+                                                                active job queue includes any
+                                                                requested job with the status of
+                                                                preparing or waiting until completed
+                                                            </p>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <p>Preparing:</p>
+                                                            <p>
+                                                                Your last requested job is still
+                                                                being processed
+                                                            </p>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <p>Waiting:</p>
+                                                            <p>
+                                                                Your last requested job is in the
+                                                                queue and waiting to be processed
+                                                                since other users requested their
+                                                                jobs before you.
+                                                            </p>
+                                                        </FlexItem>
+                                                    </Flex>
+                                                }
+                                            >
+                                                My active job status
                                             </HelpIconTh>
                                             <Td />
                                         </Tr>
                                     </Thead>
-                                    {reports.length === 0 && (
+                                    {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={4}>
@@ -168,49 +301,119 @@ function VulnReportsPage() {
                                             </Tr>
                                         </Tbody>
                                     )}
-                                    {reports.map((report) => {
+                                    {reportConfigurations.length === 0 &&
+                                        !isEmpty(searchFilter) && (
+                                            <Tbody>
+                                                <Tr>
+                                                    <Td colSpan={8}>
+                                                        <Bullseye>
+                                                            <EmptyStateTemplate
+                                                                title="No results found"
+                                                                headingLevel="h2"
+                                                                icon={SearchIcon}
+                                                            >
+                                                                {canCreateReports && (
+                                                                    <Flex
+                                                                        direction={{
+                                                                            default: 'column',
+                                                                        }}
+                                                                    >
+                                                                        <FlexItem>
+                                                                            <Text>
+                                                                                No results match
+                                                                                this filter
+                                                                                criteria. Clear the
+                                                                                filter and try
+                                                                                again.
+                                                                            </Text>
+                                                                        </FlexItem>
+                                                                        <FlexItem>
+                                                                            <Button
+                                                                                variant="link"
+                                                                                onClick={() => {
+                                                                                    setSearchValue(
+                                                                                        ''
+                                                                                    );
+                                                                                    setSearchFilter(
+                                                                                        {}
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Clear filter
+                                                                            </Button>
+                                                                        </FlexItem>
+                                                                    </Flex>
+                                                                )}
+                                                            </EmptyStateTemplate>
+                                                        </Bullseye>
+                                                    </Td>
+                                                </Tr>
+                                            </Tbody>
+                                        )}
+                                    {reportConfigurations.map((report) => {
                                         const vulnReportURL = generatePath(
                                             vulnerabilityReportPath,
                                             {
                                                 reportId: report.id,
                                             }
                                         ) as string;
+                                        const reportSnapshot = reportSnapshots[report.id];
+                                        const isReportStatusPending =
+                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
+                                            reportSnapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
-                                                title: (
-                                                    <Link to={`${vulnReportURL}?action=edit`}>
-                                                        Edit report
-                                                    </Link>
-                                                ),
+                                                title: 'Edit report',
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                    history.push(`${vulnReportURL}?action=edit`);
+                                                },
+                                                isDisabled: isReportStatusPending,
                                             },
                                             {
                                                 isSeparator: true,
                                             },
                                             {
                                                 title: 'Send report now',
+                                                description:
+                                                    report.notifiers.length === 0
+                                                        ? 'No delivery destinations set'
+                                                        : '',
                                                 onClick: (event) => {
                                                     event.preventDefault();
+                                                    runReport(report.id, 'EMAIL');
                                                 },
+                                                isDisabled:
+                                                    isReportStatusPending ||
+                                                    report.notifiers.length === 0,
                                             },
                                             {
                                                 title: 'Generate download',
                                                 onClick: (event) => {
                                                     event.preventDefault();
+                                                    runReport(report.id, 'DOWNLOAD');
                                                 },
+                                                isDisabled: isReportStatusPending,
                                             },
                                             {
-                                                title: (
-                                                    <Link to={`${vulnReportURL}?action=clone`}>
-                                                        Clone report
-                                                    </Link>
-                                                ),
+                                                title: 'Clone report',
+                                                onClick: (event) => {
+                                                    event.preventDefault();
+                                                    history.push(`${vulnReportURL}?action=clone`);
+                                                },
                                             },
                                             {
                                                 isSeparator: true,
                                             },
                                             {
                                                 title: (
-                                                    <span className="pf-u-danger-color-100">
+                                                    <span
+                                                        className={
+                                                            !isReportStatusPending
+                                                                ? 'pf-u-danger-color-100'
+                                                                : ''
+                                                        }
+                                                    >
                                                         Delete report
                                                     </span>
                                                 ),
@@ -218,8 +421,11 @@ function VulnReportsPage() {
                                                     event.preventDefault();
                                                     openDeleteModal(report.id);
                                                 },
+                                                isDisabled: isReportStatusPending,
                                             },
                                         ];
+                                        const { collectionName, collectionId } =
+                                            report.resourceScope.collectionScope;
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -235,25 +441,34 @@ function VulnReportsPage() {
                                                         </Link>
                                                     </Td>
                                                     <Td>
-                                                        {
-                                                            report.resourceScope.collectionScope
-                                                                .collectionName
-                                                        }
+                                                        {isCollectionsRouteEnabled ? (
+                                                            <Button
+                                                                variant="link"
+                                                                onClick={() =>
+                                                                    setCollectionModalId(
+                                                                        collectionId
+                                                                    )
+                                                                }
+                                                            >
+                                                                {collectionName}
+                                                            </Button>
+                                                        ) : (
+                                                            collectionName
+                                                        )}
                                                     </Td>
+                                                    <Td>{report.description || '-'}</Td>
                                                     <Td>
-                                                        <LastRunStatusState
+                                                        <MyActiveJobStatus
                                                             reportStatus={
-                                                                report.reportLastRunStatus
+                                                                reportSnapshot?.reportStatus
                                                             }
                                                         />
                                                     </Td>
-                                                    <Td>
-                                                        <LastRunState
-                                                            reportStatus={report.reportStatus}
-                                                        />
-                                                    </Td>
                                                     <Td isActionCell>
-                                                        <ActionsColumn items={rowActions} />
+                                                        <ActionsColumn
+                                                            items={rowActions}
+                                                            isDisabled={isRunning}
+                                                        />
                                                     </Td>
                                                 </Tr>
                                             </Tbody>
@@ -265,13 +480,24 @@ function VulnReportsPage() {
                     </Card>
                 </PageSection>
             </PageSection>
-            <DeleteReportModal
+            <DeleteModal
+                title="Permanently delete report?"
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
                 isDeleting={isDeleting}
                 onDelete={onDelete}
                 error={deleteError}
-            />
+            >
+                This report and any attached downloadable reports will be permanently deleted. The
+                action cannot be undone.
+            </DeleteModal>
+            {collectionModalId && (
+                <CollectionsFormModal
+                    hasWriteAccessForCollections={false}
+                    modalAction={{ type: 'view', collectionId: collectionModalId }}
+                    onClose={() => setCollectionModalId(null)}
+                />
+            )}
         </>
     );
 }

@@ -22,7 +22,7 @@ defaults:
         preferredDuringSchedulingIgnoredDuringExecution:
         # Central is single-homed, so avoid preemptible nodes.
         - weight: 100
-          preference: 
+          preference:
             matchExpressions:
             - key: cloud.google.com/gke-preemptible
               operator: NotIn
@@ -39,7 +39,7 @@ defaults:
             - key: node-role.kubernetes.io/compute
               operator: Exists
         # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.    
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
         - weight: 100
           preference:
             matchExpressions:
@@ -169,10 +169,6 @@ defaults:
     [<- if not .AutoSensePodSecurityPolicies >]
     enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
     [<- end >]
-
-  monitoring:
-    openshift:
-      enabled: false
 
 pvcDefaults:
   claimName: "stackrox-db"

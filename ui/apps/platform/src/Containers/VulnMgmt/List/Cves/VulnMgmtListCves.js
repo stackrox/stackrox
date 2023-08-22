@@ -37,6 +37,11 @@ import {
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CveType from 'Components/CveType';
+
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
+import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
+
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
@@ -278,6 +283,21 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+
+    // Although request requires only WorkflowAdministration,
+    // also require require resources for Policies route.
+    const hasWriteAccessForAddToPolicy =
+        hasReadWriteAccess('WorkflowAdministration') &&
+        isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, policyManagementBasePath);
+
+    // Forbidden failures are explicit for Approvals and Requests but only implicit for Image.
+    const hasWriteAccessForRiskAcceptance =
+        hasReadWriteAccess('Image') &&
+        hasReadWriteAccess('VulnerabilityManagementApprovals') &&
+        hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
 
@@ -433,77 +453,73 @@ const VulnMgmtCves = ({
         });
     };
 
-    const renderRowActionButtons = ({ cve }) => (
-        <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
-            {(cveType === entityTypes.CVE || cveType === entityTypes.IMAGE_CVE) && (
-                <RowActionButton
-                    text="Add to Policy"
-                    onClick={addToPolicy(cve)}
-                    date-testid="row-action-add-to-policy"
-                    icon={<Icon.Plus className="my-1 h-4 w-4" />}
-                />
-            )}
-            {!viewingSuppressed && (
-                <RowActionMenu
-                    className="h-full min-w-30"
-                    border="border-l-2 border-base-400"
-                    icon={<Icon.BellOff className="h-4 w-4" />}
-                    options={snoozeOptions(cve)}
-                    text="Defer and Approve CVE"
-                    dataTestId="row-action-suppress"
-                />
-            )}
-            {viewingSuppressed && (
-                <RowActionButton
-                    text="Reobserve CVE"
-                    border="border-l-2 border-base-400"
-                    onClick={unsuppressCves(cve)}
-                    date-testid="row-action-unsuppress"
-                    icon={<Icon.Bell className="my-1 h-4 w-4" />}
-                    dataTestId="row-action-unsuppress"
-                />
-            )}
-        </div>
-    );
+    const renderRowActionButtons =
+        hasWriteAccessForAddToPolicy || hasWriteAccessForRiskAcceptance
+            ? ({ cve }) => (
+                  <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
+                      {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
+                          <RowActionButton
+                              text="Add to policy"
+                              onClick={addToPolicy(cve)}
+                              icon={<Icon.Plus className="my-1 h-4 w-4" />}
+                          />
+                      )}
+                      {hasWriteAccessForRiskAcceptance && !viewingSuppressed && (
+                          <RowActionMenu
+                              className="h-full min-w-30"
+                              border="border-l-2 border-base-400"
+                              icon={<Icon.BellOff className="h-4 w-4" />}
+                              options={snoozeOptions(cve)}
+                              text="Defer and approve CVE"
+                          />
+                      )}
+                      {hasWriteAccessForRiskAcceptance && viewingSuppressed && (
+                          <RowActionButton
+                              text="Reobserve CVE"
+                              border="border-l-2 border-base-400"
+                              onClick={unsuppressCves(cve)}
+                              icon={<Icon.Bell className="my-1 h-4 w-4" />}
+                          />
+                      )}
+                  </div>
+              )
+            : null;
 
-    const viewButtonText = viewingSuppressed ? 'View Observed' : 'View Deferred';
+    const viewButtonText = viewingSuppressed ? 'View observed' : 'View deferred';
 
     const tableHeaderComponents = (
         <>
-            {(cveType === entityTypes.CVE || cveType === entityTypes.IMAGE_CVE) && (
+            {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
                 <PanelButton
                     icon={<Icon.Plus className="h-4 w-4" />}
                     className="btn-icon btn-tertiary"
                     onClick={addToPolicy()}
                     disabled={selectedCveIds.length === 0}
                     tooltip="Add Selected CVEs to Policy"
-                    dataTestId="panel-button-add-cves-to-policy"
                 >
-                    Add to Policy
+                    Add to policy
                 </PanelButton>
             )}
-            {!viewingSuppressed && (
+            {hasWriteAccessForRiskAcceptance && !viewingSuppressed && (
                 <Menu
                     className="h-full min-w-30 ml-2"
                     menuClassName="bg-base-100 min-w-28"
                     buttonClass="btn-icon btn-tertiary"
-                    buttonText="Defer and Approve"
+                    buttonText="Defer and approve"
                     buttonIcon={<Icon.BellOff className="h-4 w-4 mr-2" />}
                     options={snoozeOptions()}
                     disabled={selectedCveIds.length === 0}
-                    tooltip="Defer and Approve Selected CVEs"
-                    dataTestId="panel-button-suppress-selected-cves"
+                    tooltip="Defer and approve selected CVEs"
                 />
             )}
 
-            {viewingSuppressed && (
+            {hasWriteAccessForRiskAcceptance && viewingSuppressed && (
                 <PanelButton
                     icon={<Icon.Bell className="h-4 w-4" />}
                     className="btn-icon btn-tertiary ml-2"
                     onClick={unsuppressCves()}
                     disabled={selectedCveIds.length === 0}
-                    tooltip="Reobserve Selected CVEs"
-                    dataTestId="panel-button-unsuppress-selected-cves"
+                    tooltip="Reobserve selected CVEs"
                 >
                     Reobserve
                 </PanelButton>
@@ -521,7 +537,6 @@ const VulnMgmtCves = ({
                 className="btn-icon btn-tertiary ml-2"
                 onClick={toggleSuppressedView}
                 tooltip={`${viewButtonText} CVEs`}
-                dataTestId="panel-button-toggle-suppressed-cves-view"
             >
                 {viewButtonText}
             </PanelButton>

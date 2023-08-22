@@ -1,3 +1,96 @@
-{"policies":[
-  {"id":"38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3","name":"Deployments should have at least one ingress Network Policy","description":"Alerts if deployments are missing an ingress Network Policy","rationale":"","remediation":"","disabled":false,"categories":["Security Best Practices"],"lifecycleStages":["DEPLOY"],"eventSource":"NOT_APPLICABLE","exclusions":[{"name":"Don't alert on kube-system namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"kube-system","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-kube-apiserver namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-kube-apiserver","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-kube-scheduler namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-kube-scheduler","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-kube-controller-manager namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-kube-controller-manager","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-sdn namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-sdn","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-network-operator namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-network-operator","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-multus namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-multus","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-cluster-version namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-cluster-version","label":null}},"image":null,"expiration":null},{"name":"Don't alert on node-ca DaemonSet in the openshift-image-registry namespace","deployment":{"name":"node-ca","scope":{"cluster":"","namespace":"openshift-image-registry","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-etcd namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-etcd","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-machine-config-operator namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-machine-config-operator","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-monitoring namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-monitoring","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-machine-api namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-machine-api","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-cluster-node-tuning-operator namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-cluster-node-tuning-operator","label":null}},"image":null,"expiration":null}],"scope":[],"severity":"MEDIUM_SEVERITY","enforcementActions":[],"notifiers":[],"lastUpdated":"2022-07-20T07:29:24.578090548Z","SORTName":"Deployments should have at least one ingress Network Policy","SORTLifecycleStage":"DEPLOY","SORTEnforcement":false,"policyVersion":"1.1","policySections":[{"sectionName":"Alert on missing ingres Network Policy","policyGroups":[{"fieldName":"Has Ingress Network Policy","booleanOperator":"OR","negate":false,"values":[{"value":"false"}]}]}],"mitreAttackVectors":[],"criteriaLocked":true,"mitreVectorsLocked":true,"isDefault":true},
-  {"id":"32d770b9-c6ba-4398-b48a-0c3e807644ed","name":"Deployments should have at least one egress Network Policy","description":"Alerts if deployments are missing an egress Network Policy","rationale":"","remediation":"","disabled":false,"categories":["Security Best Practices"],"lifecycleStages":["DEPLOY"],"eventSource":"NOT_APPLICABLE","exclusions":[{"name":"Don't alert on kube-system namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"kube-system","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-kube-apiserver namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-kube-apiserver","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-kube-scheduler namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-kube-scheduler","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-kube-controller-manager namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-kube-controller-manager","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-sdn namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-sdn","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-network-operator namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-network-operator","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-multus namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-multus","label":null}},"image":null,"expiration":null},{"name":"Don't alert on openshift-cluster-version namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-cluster-version","label":null}},"image":null,"expiration":null},{"name":"Don't alert on node-ca DaemonSet in the openshift-image-registry namespace","deployment":{"name":"node-ca","scope":{"cluster":"","namespace":"openshift-image-registry","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-etcd namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-etcd","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-machine-config-operator namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-machine-config-operator","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-monitoring namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-monitoring","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-machine-api namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-machine-api","label":null}},"image":null,"expiration":null},{"name":"Don't alert on host network usage within the openshift-cluster-node-tuning-operator namespace","deployment":{"name":"","scope":{"cluster":"","namespace":"openshift-cluster-node-tuning-operator","label":null}},"image":null,"expiration":null}],"scope":[],"severity":"MEDIUM_SEVERITY","enforcementActions":[],"notifiers":[],"lastUpdated":"2022-07-20T07:29:24.578090548Z","SORTName":"Deployments should have at least one ingress Network Policy","SORTLifecycleStage":"DEPLOY","SORTEnforcement":false,"policyVersion":"1.1","policySections":[{"sectionName":"Alert on missing ingres Network Policy","policyGroups":[{"fieldName":"Has Ingress Network Policy","booleanOperator":"OR","negate":false,"values":[{"value":"false"}]}]}],"mitreAttackVectors":[],"criteriaLocked":true,"mitreVectorsLocked":true,"isDefault":true}]}
+{
+  "policies": [
+    {
+      "id": "38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3",
+      "name": "Deployments should have at least one ingress Network Policy",
+      "description": "Alerts if deployments are missing an ingress Network Policy",
+      "rationale": "",
+      "remediation": "",
+      "disabled": false,
+      "categories": [
+        "Security Best Practices"
+      ],
+      "lifecycleStages": [
+        "DEPLOY"
+      ],
+      "eventSource": "NOT_APPLICABLE",
+      "exclusions": [],
+      "scope": [],
+      "severity": "MEDIUM_SEVERITY",
+      "enforcementActions": [],
+      "notifiers": [],
+      "lastUpdated": "2022-07-20T07:29:24.578090548Z",
+      "SORTName": "Deployments should have at least one ingress Network Policy",
+      "SORTLifecycleStage": "DEPLOY",
+      "SORTEnforcement": false,
+      "policyVersion": "1.1",
+      "policySections": [
+        {
+          "sectionName": "Alert on missing ingres Network Policy",
+          "policyGroups": [
+            {
+              "fieldName": "Has Ingress Network Policy",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": "false"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "mitreAttackVectors": [],
+      "criteriaLocked": true,
+      "mitreVectorsLocked": true,
+      "isDefault": true
+    },
+    {
+      "id": "32d770b9-c6ba-4398-b48a-0c3e807644ed",
+      "name": "Deployments should have at least one egress Network Policy",
+      "description": "Alerts if deployments are missing an egress Network Policy",
+      "rationale": "",
+      "remediation": "",
+      "disabled": false,
+      "categories": [
+        "Security Best Practices"
+      ],
+      "lifecycleStages": [
+        "DEPLOY"
+      ],
+      "eventSource": "NOT_APPLICABLE",
+      "exclusions": [],
+      "scope": [],
+      "severity": "MEDIUM_SEVERITY",
+      "enforcementActions": [],
+      "notifiers": [],
+      "lastUpdated": "2022-07-20T07:29:24.578090548Z",
+      "SORTName": "Deployments should have at least one ingress Network Policy",
+      "SORTLifecycleStage": "DEPLOY",
+      "SORTEnforcement": false,
+      "policyVersion": "1.1",
+      "policySections": [
+        {
+          "sectionName": "Alert on missing egress Network Policy",
+          "policyGroups": [
+            {
+              "fieldName": "Has Egress Network Policy",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": "false"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "mitreAttackVectors": [],
+      "criteriaLocked": true,
+      "mitreVectorsLocked": true,
+      "isDefault": true
+    }
+  ]
+}

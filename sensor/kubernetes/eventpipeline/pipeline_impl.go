@@ -78,6 +78,12 @@ func (p *eventPipeline) stopCurrentContext() {
 	}
 }
 
+func (p *eventPipeline) getCurrentContext() context.Context {
+	p.contextMtx.Lock()
+	defer p.contextMtx.Unlock()
+	return p.context
+}
+
 func (p *eventPipeline) createNewContext() {
 	p.contextMtx.Lock()
 	defer p.contextMtx.Unlock()
@@ -115,13 +121,13 @@ func (p *eventPipeline) Stop(_ error) {
 	p.stopSig.Signal()
 }
 
-func (p *eventPipeline) Notify(event common.SensorComponentEvent) {
-	log.Infof("Received notify: %s", event)
-	switch event {
+func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	switch e {
 	case common.SensorComponentEventCentralReachable:
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {
-			log.Infof("Connection established: Starting Kubernetes listener")
+			log.Info("Connection established: Starting Kubernetes listener")
 			// TODO(ROX-18613): use contextProvider to provide context for listener
 			p.createNewContext()
 			if err := p.listener.StartWithContext(p.context); err != nil {
@@ -155,7 +161,7 @@ func (p *eventPipeline) forwardMessages() {
 
 func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 	log.Debug("PolicySync message received from central")
-	return p.detector.ProcessPolicySync(sync)
+	return p.detector.ProcessPolicySync(p.getCurrentContext(), sync)
 }
 
 func (p *eventPipeline) processReassessPolicies() error {
@@ -168,6 +174,7 @@ func (p *eventPipeline) processReassessPolicies() error {
 		// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
 		msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
 			component.WithForceDetection())
+		msg.Context = p.getCurrentContext()
 		p.resolver.Send(msg)
 	}
 	return nil
@@ -183,6 +190,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 		// TODO(ROX-14310): Add WithSkipResolving to the DeploymentReference (Revert: https://github.com/stackrox/stackrox/pull/5551)
 		msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
 			component.WithForceDetection())
+		msg.Context = p.getCurrentContext()
 		p.resolver.Send(msg)
 	}
 	return nil
@@ -198,6 +206,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 		msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
 			component.WithForceDetection(),
 			component.WithSkipResolving())
+		msg.Context = p.getCurrentContext()
 		p.resolver.Send(msg)
 	}
 	return nil
@@ -213,6 +222,7 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 		msg.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
 			component.WithForceDetection(),
 			component.WithSkipResolving())
+		msg.Context = p.getCurrentContext()
 		p.resolver.Send(msg)
 	}
 	return nil
@@ -237,6 +247,7 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 		msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),
 			component.WithForceDetection(),
 			component.WithSkipResolving())
+		msg.Context = p.getCurrentContext()
 		p.resolver.Send(msg)
 	}
 	return nil

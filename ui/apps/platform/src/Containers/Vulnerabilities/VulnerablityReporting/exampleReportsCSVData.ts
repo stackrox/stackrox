@@ -1,3 +1,5 @@
+import { VulnerabilitySeverity } from 'types/cve.proto';
+
 export type ExampleReportCSVData = {
     cluster: string;
     namespace: string;
@@ -7,7 +9,8 @@ export type ExampleReportCSVData = {
     cve: string;
     fixable: string;
     componentUpgrade: string;
-    severity: string;
+    severity: VulnerabilitySeverity;
+    cvss: number;
     discoveredAt: string;
     reference: string;
 };
@@ -22,7 +25,8 @@ const exampleReportsCSVData: ExampleReportCSVData[] = [
         cve: 'CVE-2019-12900',
         fixable: 'false',
         componentUpgrade: '',
-        severity: 'LOW',
+        severity: 'LOW_VULNERABILITY_SEVERITY',
+        cvss: 3.3,
         discoveredAt: 'January 26, 2022',
         reference: 'https://access.redhat.com/security/cve/CVE-2019-12900',
     },
@@ -35,7 +39,8 @@ const exampleReportsCSVData: ExampleReportCSVData[] = [
         cve: 'CVE-2021-4122',
         fixable: 'false',
         componentUpgrade: '',
-        severity: 'MODERATE',
+        severity: 'MODERATE_VULNERABILITY_SEVERITY',
+        cvss: 5.5,
         discoveredAt: 'January 26, 2022',
         reference: 'https://access.redhat.com/security/cve/CVE-2021-4122',
     },
@@ -48,7 +53,8 @@ const exampleReportsCSVData: ExampleReportCSVData[] = [
         cve: 'RHSA-2021:4511',
         fixable: 'true',
         componentUpgrade: '0:7.61.1-22.el8',
-        severity: 'MODERATE',
+        severity: 'MODERATE_VULNERABILITY_SEVERITY',
+        cvss: 5.8,
         discoveredAt: 'January 26, 2022',
         reference: 'https://access.redhat.com/errata/RHSA-2021:4511',
     },

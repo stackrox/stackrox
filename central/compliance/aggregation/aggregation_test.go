@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/set"
@@ -25,27 +24,34 @@ func qualifiedNamespaceID(clusterID, namespace string) string {
 	return qualifiedNamespace(clusterID, namespace) + "ID"
 }
 
-type mockStandardsRepo struct {
-	standards.Repository
-}
+// we register only standard1, standard2 will not be found in controlsByID map.
+const registeredStandardID = "standard1"
 
-func (mockStandardsRepo) Control(controlID string) *v1.ComplianceControl {
-	return &v1.ComplianceControl{
-		Id: controlID,
+func mockStandardsRepo(t require.TestingT) standards.Repository {
+	controls := make([]metadata.Control, 0, 8)
+	for i := 0; i < 9; i++ {
+		controls = append(controls, metadata.Control{
+			ID: fmt.Sprintf("control%d", i),
+		})
 	}
-}
 
-func (mockStandardsRepo) GetCategoryByControl(_ string) *standards.Category {
-	return &standards.Category{
-		Category: metadata.Category{
-			ID: "",
-		},
-		Standard: &standards.Standard{
-			Standard: metadata.Standard{
-				ID: "standard1",
+	repo, err := standards.NewRegistry(nil, metadata.Standard{
+		ID:          registeredStandardID,
+		Name:        "",
+		Description: "",
+		Dynamic:     false,
+		Categories: []metadata.Category{
+			{
+				ID:          "",
+				Name:        "",
+				Description: "",
+				Controls:    controls,
 			},
 		},
-	}
+	})
+
+	require.NoError(t, err)
+	return repo
 }
 
 func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
@@ -88,13 +94,13 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 		},
 		ClusterResults: &storage.ComplianceRunResults_EntityResults{
 			ControlResults: map[string]*storage.ComplianceResultValue{
-				"control1": {
+				standard + ":control1": {
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 				},
-				"control2": {
+				standard + ":control2": {
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 				},
-				"control7": {
+				standard + ":control7": {
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 				},
 			},
@@ -102,20 +108,20 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 		NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			cluster + "node1": {
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"control3": {
+					standard + ":control3": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_ERROR,
 					},
-					"control4": {
+					standard + ":control4": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
 				},
 			},
 			cluster + "node2": {
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"control3": {
+					standard + ":control3": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 					},
-					"control4": {
+					standard + ":control4": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
 				},
@@ -124,42 +130,42 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			cluster + "deployment1": {
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"control5": {
+					standard + ":control5": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 					},
-					"control6": {
+					standard + ":control6": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
-					"control7": {
+					standard + ":control7": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
 				},
 			},
 			cluster + "deployment2": {
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"control5": {
+					standard + ":control5": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 					},
-					"control6": {
+					standard + ":control6": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
-					"control7": {
+					standard + ":control7": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 					},
-					"control8": {
+					standard + ":control8": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
 					},
 				},
 			},
 			cluster + "deployment3": {
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"control5": {
+					standard + ":control5": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 					},
-					"control6": {
+					standard + ":control6": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 					},
-					"control7": {
+					standard + ":control7": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 					},
 				},
@@ -231,9 +237,9 @@ func TestGetAggregatedResults(t *testing.T) {
 		},
 		{
 			unit:          storage.ComplianceAggregation_CONTROL,
-			failPerResult: 4,
-			passPerResult: 3,
-			skipPerResult: 1,
+			failPerResult: 8,
+			passPerResult: 6,
+			skipPerResult: 2,
 			numResults:    1,
 		},
 		{
@@ -271,9 +277,9 @@ func TestGetAggregatedResults(t *testing.T) {
 		{
 			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
 			unit:          storage.ComplianceAggregation_CONTROL,
-			failPerResult: 4,
-			passPerResult: 3,
-			skipPerResult: 1,
+			failPerResult: 8,
+			passPerResult: 6,
+			skipPerResult: 2,
 			numResults:    2,
 		},
 		{
@@ -314,16 +320,16 @@ func TestGetAggregatedResults(t *testing.T) {
 		},
 	}
 	runResults := []*storage.ComplianceRunResults{
-		mockRunResult("cluster1", "standard1"),
+		mockRunResult("cluster1", registeredStandardID),
 		mockRunResult("cluster1", "standard2"),
-		mockRunResult("cluster2", "standard1"),
+		mockRunResult("cluster2", registeredStandardID),
 		mockRunResult("cluster2", "standard2"),
 	}
 
 	for _, c := range cases {
 		t.Run(testName(c.groupBy, c.unit), func(t *testing.T) {
 			ag := &aggregatorImpl{
-				standards: mockStandardsRepo{},
+				standards: mockStandardsRepo(t),
 			}
 			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, c.mask)
 			require.Equal(t, c.numResults, len(results))
@@ -338,7 +344,7 @@ func TestGetAggregatedResults(t *testing.T) {
 
 func TestDomainAttribution(t *testing.T) {
 	ag := &aggregatorImpl{
-		standards: mockStandardsRepo{},
+		standards: mockStandardsRepo(t),
 	}
 	complianceRunResults := []*storage.ComplianceRunResults{
 		{
@@ -543,7 +549,7 @@ func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
 		}
 		for i := 0; i < 50; i++ {
-			results.ControlResults[fmt.Sprintf("%d", i)] = &storage.ComplianceResultValue{
+			results.ControlResults[fmt.Sprintf("%s:control%d", registeredStandardID, i)] = &storage.ComplianceResultValue{
 				OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			}
 		}
@@ -569,7 +575,7 @@ func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 			Deployments: deployments,
 		},
 		RunMetadata: &storage.ComplianceRunMetadata{
-			StandardId: "standard",
+			StandardId: registeredStandardID,
 		},
 		DeploymentResults: deploymentResults,
 	}
@@ -580,7 +586,7 @@ func BenchmarkAggregatedResults(b *testing.B) {
 
 	b.ResetTimer()
 	a := &aggregatorImpl{
-		standards: mockStandardsRepo{},
+		standards: mockStandardsRepo(b),
 	}
 	for i := 0; i < b.N; i++ {
 		a.getAggregatedResults(nil, storage.ComplianceAggregation_CHECK, []*storage.ComplianceRunResults{result}, &mask{})

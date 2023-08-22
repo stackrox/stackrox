@@ -86,6 +86,10 @@ choose_cluster_version() {
         gcloud container get-server-config --format json | jq .validMasterVersions
         unset GKE_CLUSTER_VERSION
     fi
+    # ROX-19109: Use v1.26 to get a more stable GKE clusters
+    if [[ -z "${GKE_CLUSTER_VERSION:-}" ]]; then
+        GKE_CLUSTER_VERSION="1.26"
+    fi
 }
 
 create_cluster() {
@@ -345,7 +349,7 @@ create_log_explorer_links() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>GKE Logs Explorer</h4></title>
+        <title>GKE Logs Explorer</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }

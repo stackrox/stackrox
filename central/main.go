@@ -33,6 +33,7 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
@@ -74,13 +75,14 @@ import (
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	installationStore "github.com/stackrox/rox/central/installation/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
-	"github.com/stackrox/rox/central/metrics/info"
+	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
@@ -105,12 +107,12 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
-	reportConfigurationService "github.com/stackrox/rox/central/reportconfigurations/service"
-	reportConfigurationServiceV2 "github.com/stackrox/rox/central/reportconfigurations/service/v2"
+	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
 	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
+	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -279,8 +281,8 @@ func main() {
 		log.Fatalf("Failed to remove backup DB: %v", err)
 	}
 
-	// Register cluster info metric.
-	info.Singleton().Start()
+	// Register telemetry prometheus metrics.
+	telemetry.Singleton().Start()
 	// Start the prometheus metrics server
 	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
@@ -388,7 +390,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
-		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
@@ -406,9 +408,13 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 	}
 
-	if features.VulnMgmtReportingEnhancements.Enabled() {
-		// TODO Remove (deprecated) v1 report configuration service when Reporting enhancements are enabled by default.
-		servicesToRegister = append(servicesToRegister, reportConfigurationServiceV2.Singleton(), reportServiceV2.Singleton())
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		// TODO Remove (deprecated) v1 report configuration service when Reporting 2.0 is GA.
+		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+	}
+
+	if features.ComplianceEnhancements.Enabled() {
+		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -776,6 +782,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		// Append report custom routes
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/jobs/download",
+			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+			ServerHandler: v2Service.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
+
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
@@ -835,12 +851,11 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
 
-	if features.VulnMgmtReportingEnhancements.Enabled() {
+	if env.VulnReportingEnhancements.BooleanSetting() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
-	} else {
-		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup

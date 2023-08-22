@@ -167,3 +167,7 @@ export function visitWithStaticResponseForCapabilities(
     waitForResponses(routeMatcherMapForAuthenticatedRoutes);
     waitForResponses(routeMatcherMap);
 }
+
+export function assertCannotFindThePage() {
+    cy.get('h1:contains("Cannot find the page")');
+}

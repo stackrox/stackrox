@@ -6,10 +6,12 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
+	"github.com/stackrox/rox/central/reports/common"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/central/reports/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -20,7 +22,8 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Access), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Integration),
+			permissions.View(resources.Image)): {
 			"/v1.ReportService/RunReport",
 		},
 	})
@@ -56,7 +59,10 @@ func (s *serviceImpl) RunReport(ctx context.Context, id *v1.ResourceByID) (*v1.E
 		return &v1.Empty{}, errors.Wrapf(err, "error finding report configuration %s", id)
 	}
 	if !found {
-		return &v1.Empty{}, errors.Errorf("unable to find report configuration %s", id)
+		return &v1.Empty{}, errors.Wrapf(errox.NotFound, "unable to find report configuration %s", id)
+	}
+	if !common.IsV1ReportConfig(rc) {
+		return &v1.Empty{}, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 1.0")
 	}
 
 	if err := s.manager.RunReport(ctx, rc); err != nil {

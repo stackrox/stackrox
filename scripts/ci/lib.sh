@@ -157,15 +157,56 @@ get_central_diagnostics() {
     ls -l "${output_dir}"
 }
 
-push_main_image_set() {
-    info "Pushing main, roxctl and central-db images"
+push_image_manifest_lists() {
+    info "Pushing main, roxctl and central-db images as manifest lists"
 
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: push_main_image_set <push_context> <brand>"
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_image_manifest_lists <push_context> <brand> <architectures (CSV)>"
     fi
 
     local push_context="$1"
     local brand="$2"
+    local architectures="$3"
+
+    local main_image_set=("main" "roxctl" "central-db")
+
+    local registry
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        registry="quay.io/stackrox-io"
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        registry="quay.io/rhacs-eng"
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local tag
+    tag="$(make --quiet --no-print-directory tag)"
+
+    registry_rw_login "$registry"
+    for image in "${main_image_set[@]}"; do
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+        if [[ "$push_context" == "merge-to-master" ]]; then
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
+        fi
+    done
+
+    # Push manifest lists for scanner and collector for amd64 only
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
+    for image in "${amd64_image_set[@]}"; do
+        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
+    done
+}
+
+push_main_image_set() {
+    info "Pushing main, roxctl and central-db images"
+
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_main_image_set <push_context> <brand> <arch>"
+    fi
+
+    local push_context="$1"
+    local brand="$2"
+    local arch="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
     if is_OPENSHIFT_CI; then
@@ -178,7 +219,7 @@ push_main_image_set() {
         local tag="$2"
 
         for image in "${main_image_set[@]}"; do
-            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+            docker push "${registry}/${image}:${tag}" | cat
         done
     }
 
@@ -219,15 +260,15 @@ push_main_image_set() {
         if is_OPENSHIFT_CI; then
             _mirror_main_image_set "$registry" "$tag"
         else
-            _tag_main_image_set "$tag" "$registry" "$tag"
-            _push_main_image_set "$registry" "$tag"
+            _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+            _push_main_image_set "$registry" "$tag-$arch"
         fi
         if [[ "$push_context" == "merge-to-master" ]]; then
             if is_OPENSHIFT_CI; then
-                _mirror_main_image_set "$registry" "latest"
+                _mirror_main_image_set "$registry" "latest-${arch}"
             else
-                _tag_main_image_set "$tag" "$registry" "latest"
-                _push_main_image_set "$registry" "latest"
+                _tag_main_image_set "$tag" "$registry" "latest-${arch}"
+                _push_main_image_set "$registry" "latest-${arch}"
             fi
         fi
     done
@@ -271,8 +312,8 @@ registry_ro_login() {
 push_matching_collector_scanner_images() {
     info "Pushing collector & scanner images tagged with main-version to quay.io/rhacs-eng"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_matching_collector_scanner_images <brand>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
     fi
 
     if is_OPENSHIFT_CI; then
@@ -280,6 +321,7 @@ push_matching_collector_scanner_images() {
     fi
 
     local brand="$1"
+    local arch="$2"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
         local source_registry="quay.io/stackrox-io"
@@ -299,6 +341,11 @@ push_matching_collector_scanner_images() {
         fi
     }
 
+    if [[ "$arch" != "amd64" ]]; then
+        echo "Skipping rebundling for non-amd64 arch"
+        exit 0
+    fi
+
     local main_tag
     main_tag="$(make --quiet --no-print-directory tag)"
     local scanner_version
@@ -309,13 +356,13 @@ push_matching_collector_scanner_images() {
     for target_registry in "${target_registries[@]}"; do
         registry_rw_login "${target_registry}"
 
-        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
-        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
-        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
-        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}-${arch}"
 
-        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
-        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}-${arch}"
+        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}-${arch}"
     done
 }
 
@@ -1009,7 +1056,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
 
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.9/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.10/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
@@ -1021,6 +1068,7 @@ post_process_test_results() {
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
+            -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
             "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
@@ -1468,7 +1516,7 @@ highlight_cluster_versions() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Cluster Versions</h4></title>
+        <title>Cluster Versions</title>
         <style>
           body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
           a { color: #ff8caa }

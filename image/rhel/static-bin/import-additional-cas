@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Note: This is also used for Scanner.
+
 set -euo pipefail
 
 # The function copies everything that could be found under the path provided in

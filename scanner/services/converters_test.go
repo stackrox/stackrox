@@ -22,7 +22,7 @@ func Test_convertToIndexReport(t *testing.T) {
 		{
 			name: "when default values",
 			arg:  &claircore.IndexReport{},
-			want: &v4.IndexReport{},
+			want: &v4.IndexReport{Contents: &v4.Contents{}},
 		},
 		{
 			name: "when happy sample values",
@@ -52,34 +52,36 @@ func Test_convertToIndexReport(t *testing.T) {
 			},
 			want: &v4.IndexReport{
 				State: "sample_state",
-				Packages: []*v4.Package{
-					{
-						Name: "sample_package",
-						NormalizedVersion: &v4.NormalizedVersion{
-							Kind: "",
-							V:    make([]int32, 10),
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Name: "sample_package",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "",
+								V:    make([]int32, 10),
+							},
+							Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 						},
-						Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 					},
+					Distributions: []*v4.Distribution{
+						{
+							Name: "sample_distribution",
+							Cpe:  "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+						},
+					},
+					Repositories: []*v4.Repository{
+						{
+							Name: "sample_repository",
+							Cpe:  "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{"sample_env_key": {Environments: []*v4.Environment{
+						{
+							PackageDb:    "sample_db",
+							IntroducedIn: sampleDigest.String(),
+						},
+					}}},
 				},
-				Distributions: []*v4.Distribution{
-					{
-						Name: "sample_distribution",
-						Cpe:  "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-					},
-				},
-				Repositories: []*v4.Repository{
-					{
-						Name: "sample_repository",
-						Cpe:  "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-					},
-				},
-				Environments: map[string]*v4.Environment_List{"sample_env_key": {Environments: []*v4.Environment{
-					{
-						PackageDb:    "sample_db",
-						IntroducedIn: sampleDigest.String(),
-					},
-				}}},
 				Success: true,
 				Err:     "",
 			},

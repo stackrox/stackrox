@@ -22,6 +22,7 @@ import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScan
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
+import usePermissions from 'hooks/usePermissions';
 import queryService from 'utils/queryService';
 import WatchedImagesDialog from './WatchedImagesDialog';
 import WorkflowListPage from '../WorkflowListPage';
@@ -199,6 +200,9 @@ const VulnMgmtImages = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
     const fragmentToUse = IMAGE_LIST_FRAGMENT;
@@ -236,11 +240,12 @@ const VulnMgmtImages = ({
 
         setShowWatchedImagesDialog(!showWatchedImagesDialog);
     }
-    const tableHeaderComponents = inactiveImageScanningEnabled ? (
-        <Button variant="secondary" onClick={toggleWatchedImagesDialog}>
-            Manage watches
-        </Button>
-    ) : null;
+    const tableHeaderComponents =
+        hasWriteAccessForWatchedImage && inactiveImageScanningEnabled ? (
+            <Button variant="secondary" onClick={toggleWatchedImagesDialog}>
+                Manage watches
+            </Button>
+        ) : null;
 
     const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
 

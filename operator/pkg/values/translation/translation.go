@@ -128,6 +128,16 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 	return &v
 }
 
+// GetGlobalMonitoring converts *platform.GlobalMonitoring into *ValuesBuilder
+func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
+	openshiftMonitoring := NewValuesBuilder()
+	// Default to true if undefined. Only set to false if explicitly disabled.
+	openshiftMonitoring.SetBoolValue("enabled", !m.IsOpenShiftMonitoringDisabled())
+	globalMonitoring := NewValuesBuilder()
+	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
+	return &globalMonitoring
+}
+
 // SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
 func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
 	if analyzer.GetScaling() != nil {

@@ -15,7 +15,7 @@ message AuthProvider {
     string type                 = 3;
     string ui_endpoint          = 4;
     bool enabled                = 5;
-    map<string, string> config  = 6;
+    map<string, string> config  = 6 [(gogoproto.moretags) = 'scrub:"map-values"'];
     // The login URL will be provided by the backend, and may not be specified in a request.
     string login_url            = 7;
     bool validated              = 8 [deprecated = true];

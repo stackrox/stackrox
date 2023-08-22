@@ -10,7 +10,7 @@ import { Link, withRouter } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import max from 'lodash/max';
 import { severityValues, severities } from 'constants/severities';
-import { policySeverityColorMap } from 'constants/visuals/colors';
+import { policySeverityColorMap } from 'constants/severityColors';
 import { severityLabels as policySeverityLabels } from 'messages/common';
 import { policySeverities } from 'types/policy.proto';
 import policyStatus from 'constants/policyStatus';
@@ -261,10 +261,8 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                         .url();
 
                     viewAllLink = (
-                        <Link to={linkTo} className="no-underline">
-                            <button className="btn-sm btn-base" type="button">
-                                View All
-                            </button>
+                        <Link to={linkTo} className="no-underline btn-sm btn-base">
+                            View all
                         </Link>
                     );
 

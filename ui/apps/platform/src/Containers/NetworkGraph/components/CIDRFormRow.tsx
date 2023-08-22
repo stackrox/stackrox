@@ -46,7 +46,12 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
                 />
             </FormGroup>
             <FlexItem className={buttonClassName}>
-                <Button onClick={onRemoveRow} variant="plain" icon={<TrashIcon />} />
+                <Button
+                    name={`entities.${idx as string}.entity.delete`}
+                    onClick={onRemoveRow}
+                    variant="plain"
+                    icon={<TrashIcon />}
+                />
             </FlexItem>
         </Flex>
     );

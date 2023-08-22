@@ -1,10 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
     Bullseye,
     Button,
     Divider,
-    Flex,
-    FlexItem,
     PageSection,
     Pagination,
     Select,
@@ -31,8 +29,10 @@ import { searchValueAsArray } from 'utils/searchUtils';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
+import useRestQuery from 'hooks/useRestQuery';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
+import { fetchDeploymentsCount } from 'services/DeploymentsService';
 import { SearchFilter } from 'types/search';
 import { useDeploymentListeningEndpoints } from './hooks/useDeploymentListeningEndpoints';
 import ListeningEndpointsTable from './ListeningEndpointsTable';
@@ -87,6 +87,13 @@ function ListeningEndpointsPage() {
     const [searchValue, setSearchValue] = useState('');
     const [entity, setEntity] = useState('Deployment');
 
+    const deploymentCountFetcher = useCallback(
+        () => fetchDeploymentsCount(searchFilter),
+        [searchFilter]
+    );
+
+    const countQuery = useRestQuery(deploymentCountFetcher);
+
     const { data, error, loading } = useDeploymentListeningEndpoints(
         searchFilter,
         sortOption,
@@ -96,6 +103,8 @@ function ListeningEndpointsPage() {
 
     const entityToggle = useSelectToggle();
     const autocompleteToggle = useSelectToggle();
+
+    const [areAllRowsExpanded, setAllRowsExpanded] = useState(false);
 
     const variables = {
         query: getRequestQueryStringForAutocomplete(searchFilter, entity, searchValue),
@@ -138,8 +147,11 @@ function ListeningEndpointsPage() {
             >
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem variant="search-filter" className="pf-u-flex-grow-1">
-                            <Flex spaceItems={{ default: 'spaceItemsNone' }}>
+                        <ToolbarGroup className="pf-u-flex-grow-1">
+                            <ToolbarItem
+                                variant="search-filter"
+                                className="pf-u-display-flex pf-u-flex-grow-1"
+                            >
                                 <Select
                                     variant="single"
                                     toggleAriaLabel="Search entity selection menu toggle"
@@ -160,48 +172,46 @@ function ListeningEndpointsPage() {
                                         Cluster
                                     </SelectOption>
                                 </Select>
-                                <FlexItem flex={{ default: 'flex_1' }}>
-                                    <Select
-                                        typeAheadAriaLabel={`Search by ${entity}`}
-                                        aria-label={`Filter by ${entity}`}
-                                        onSelect={(e, value) => {
-                                            onSelectAutocompleteValue(value);
-                                        }}
-                                        onToggle={autocompleteToggle.onToggle}
-                                        isOpen={autocompleteToggle.isOpen}
-                                        placeholderText={`Filter results by ${entity}`}
-                                        variant="typeaheadmulti"
-                                        isCreatable
-                                        createText="Add"
-                                        selections={searchFilter[entity]}
-                                        onTypeaheadInputChanged={(val: string) => {
-                                            updateSearchValue(val);
-                                        }}
-                                        className="pf-u-flex-grow-1"
-                                    >
-                                        {autoCompleteData?.searchAutocomplete?.map((value) => (
-                                            <SelectOption key={value} value={value} />
-                                        ))}
-                                    </Select>
-                                </FlexItem>
-                            </Flex>
-                        </ToolbarItem>
-                        <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
-                            <Pagination
-                                toggleTemplate={({ firstIndex, lastIndex }) => (
-                                    <span>
-                                        <b>
-                                            {firstIndex} - {lastIndex}
-                                        </b>{' '}
-                                        of <b>many</b>
-                                    </span>
-                                )}
-                                page={page}
-                                perPage={perPage}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
-                            />
-                        </ToolbarItem>
+                                <Select
+                                    typeAheadAriaLabel={`Search by ${entity}`}
+                                    aria-label={`Filter by ${entity}`}
+                                    onSelect={(e, value) => {
+                                        onSelectAutocompleteValue(value);
+                                    }}
+                                    onToggle={autocompleteToggle.onToggle}
+                                    isOpen={autocompleteToggle.isOpen}
+                                    placeholderText={`Filter results by ${entity}`}
+                                    variant="typeaheadmulti"
+                                    isCreatable
+                                    createText="Add"
+                                    selections={searchFilter[entity]}
+                                    onTypeaheadInputChanged={(val: string) => {
+                                        updateSearchValue(val);
+                                    }}
+                                    className="pf-u-flex-grow-1"
+                                >
+                                    {autoCompleteData?.searchAutocomplete?.map((value) => (
+                                        <SelectOption key={value} value={value} />
+                                    ))}
+                                </Select>
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                        <ToolbarGroup>
+                            <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                                <Pagination
+                                    itemCount={countQuery.data ?? 0}
+                                    page={page}
+                                    perPage={perPage}
+                                    onSetPage={(_, newPage) => setPage(newPage)}
+                                    onPerPageSelect={(_, newPerPage) => {
+                                        if ((countQuery.data ?? 0) < (page - 1) * newPerPage) {
+                                            setPage(1);
+                                        }
+                                        setPerPage(newPerPage);
+                                    }}
+                                />
+                            </ToolbarItem>
+                        </ToolbarGroup>
 
                         <ToolbarGroup className="pf-u-w-100">
                             <SearchFilterChips
@@ -257,6 +267,8 @@ function ListeningEndpointsPage() {
                                 <ListeningEndpointsTable
                                     deployments={data}
                                     getSortParams={getSortParams}
+                                    areAllRowsExpanded={areAllRowsExpanded}
+                                    setAllRowsExpanded={setAllRowsExpanded}
                                 />
                             )}
                         </>

@@ -58,6 +58,7 @@ type ReportSnapshots struct {
 	ReportStatusCompletedAt              *time.Time                              `gorm:"column:reportstatus_completedat;type:timestamp"`
 	ReportStatusReportRequestType        storage.ReportStatus_RunMethod          `gorm:"column:reportstatus_reportrequesttype;type:integer"`
 	ReportStatusReportNotificationMethod storage.ReportStatus_NotificationMethod `gorm:"column:reportstatus_reportnotificationmethod;type:integer"`
+	RequesterID                          string                                  `gorm:"column:requester_id;type:varchar"`
 	RequesterName                        string                                  `gorm:"column:requester_name;type:varchar"`
 	Serialized                           []byte                                  `gorm:"column:serialized;type:bytea"`
 	ReportConfigurationsRef              ReportConfigurations                    `gorm:"foreignKey:reportconfigurationid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

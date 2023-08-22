@@ -16,7 +16,7 @@ var (
 	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", true)
 
 	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
-	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
+	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl netpol generate' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
 	// RoxSyslogExtraFields enables user to add additional key value pairs in syslog alert notification in cef format.
 	RoxSyslogExtraFields = registerFeature("Enable extra fields for syslog integration", "ROX_SYSLOG_EXTRA_FIELDS", true)
@@ -30,18 +30,18 @@ var (
 	// PostgresBlobStore enables the creation of the Postgres Blob Store
 	PostgresBlobStore = registerFeature("Postgres Blob Store", "ROX_POSTGRES_BLOB_STORE", false)
 
-	// VulnMgmtReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
-	VulnMgmtReportingEnhancements = registerFeature("Vuln Mgmt Reporting Enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", false)
-
 	// StoreEventHashes stores the hashes of successfully processed objects we receive from Sensor into the database
 	StoreEventHashes = registerFeature("Store Event Hashes", "ROX_STORE_EVENT_HASHES", true)
 
 	// PreventSensorRestartOnDisconnect enables a new behavior in Sensor where it avoids restarting when the gRPC connection with Central ends.
-	PreventSensorRestartOnDisconnect = registerFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", false)
+	PreventSensorRestartOnDisconnect = registerFeature("Prevent Sensor restart on disconnect", "ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", true)
 
 	// SyslogNamespaceLabels enables sending namespace labels as part of the syslog alert notification.
 	SyslogNamespaceLabels = registerFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", true)
 
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
+
+	// CentralEvents enables APIs (including collection) and UI pages for Central events.
+	CentralEvents = registerFeature("Enable Central events", "ROX_CENTRAL_EVENTS", false)
 )

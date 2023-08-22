@@ -23,11 +23,10 @@ const (
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
-
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
-			&source.Kind{Type: &platform.SecuredCluster{}},
+			source.Kind(mgr.GetCache(), &platform.SecuredCluster{}),
 			reconciler.HandleSiblings(platform.CentralGVK, mgr),
 			// Only appearance and disappearance of a SecuredCluster resource can influence whether
 			// an init bundle should be created by the Central controller.

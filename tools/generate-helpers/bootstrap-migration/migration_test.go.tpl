@@ -24,7 +24,7 @@ type migrationTestSuite struct {
 }
 
 func TestMigration(t *testing.T) {
-	suite.Run(T, new(migrationTestSuite))
+	suite.Run(t, new(migrationTestSuite))
 }
 
 

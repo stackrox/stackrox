@@ -59,6 +59,6 @@ func (n *LoadGeneratingNodeScanner) ScanNode(_ context.Context) (*sensor.MsgFrom
 				Notes: nil,
 			}},
 	}
-	log.Infof("Generating Node Inventory")
+	log.Info("Generating Node Inventory")
 	return msg, nil
 }

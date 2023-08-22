@@ -6,6 +6,8 @@ import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.ScopeOuterClass
 
 @Slf4j
 class PolicyService extends BaseService {
@@ -38,6 +40,15 @@ class PolicyService extends BaseService {
         return policyID
     }
 
+    static PolicyOuterClass.Policy createAndFetchPolicy(PolicyOuterClass.Policy policy) {
+        return getPolicyClient().postPolicy(
+                PolicyServiceOuterClass.PostPolicyRequest.newBuilder().
+                        setPolicy(policy).
+                        setEnableStrictValidation(true).
+                        build()
+        )
+    }
+
     static deletePolicy(String policyID) {
         try {
             getPolicyClient().deletePolicy(
@@ -61,5 +72,18 @@ class PolicyService extends BaseService {
         catch (Exception e) {
             log.error("error patching policy", e)
         }
+    }
+
+    static Policy clonePolicyAndScopeByNamespace(String name, String namespace) {
+        Policy policy = getPolicyClient().getPolicy(getResourceByID(
+                getPolicies().find { it.name == name }.id
+        ))
+        Policy scopedPolicyForTest = policy.toBuilder()
+            .clearId()
+            .setName("${name} - ${namespace}")
+            .clearScope()
+            .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(namespace))
+            .build()
+        return createAndFetchPolicy(scopedPolicyForTest)
     }
 }

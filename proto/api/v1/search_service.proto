@@ -8,7 +8,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 58
+// Next available tag: 59
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -67,6 +67,7 @@ enum SearchCategory {
     COMPLIANCE_SCAN_SETTINGS  = 55;
     COMPLIANCE_SCAN   = 56;
     COMPLIANCE_CHECK_RESULTS  = 57;
+    BLOB                      = 58;
 }
 
 enum SearchDataType {

@@ -123,13 +123,19 @@ func (s *Sensor) startProfilingServer() *http.Server {
 	return srv
 }
 
-func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error) {
+// offlineAwareProbeSource is an interface that abstracts the functionality of loading a kernel probe.
+type offlineAwareProbeSource interface {
+	probeupload.ProbeSource
+	offlineAware
+}
+
+func createKOCacheSource(centralEndpoint string) (offlineAwareProbeSource, error) {
 	kernelObjsBaseURL := "/kernel-objects"
 	kernelObjsClient, err := clientconn.NewHTTPClient(mtls.CentralSubject, centralEndpoint, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
-	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.Options{}), nil
+	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.StartOffline()), nil
 }
 
 // Start registers APIs and starts background tasks.
@@ -171,7 +177,7 @@ func (s *Sensor) Start() {
 	if err != nil {
 		utils.Should(errors.Wrap(err, "Failed to create kernel object download/caching layer"))
 	} else {
-		probeDownloadHandler := probeupload.NewProbeServerHandler(probeupload.LogCallback(log), koCacheSource)
+		probeDownloadHandler := probeupload.NewConnectionAwareProbeHandler(probeupload.LogCallback(log), koCacheSource)
 		koCacheRoute := routes.CustomRoute{
 			Route:         "/kernel-objects/",
 			Authorizer:    idcheck.CollectorOnly(),
@@ -179,6 +185,8 @@ func (s *Sensor) Start() {
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)
+		s.AddNotifiable(wrapNotifiable(probeDownloadHandler, "Kernel probe server handler"))
+		s.AddNotifiable(wrapNotifiable(koCacheSource, "Kernel object cache"))
 	}
 
 	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
@@ -240,10 +248,10 @@ func (s *Sensor) Start() {
 	errSig := s.centralConnectionFactory.StopSignal()
 
 	if features.PreventSensorRestartOnDisconnect.Enabled() {
-		log.Infof("Running Sensor with connection retry: preventing sensor restart on disconnect")
+		log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
 		go s.communicationWithCentralWithRetries(&centralReachable)
 	} else {
-		log.Infof("Running Sensor without connection retries: sensor will restart on disconnect")
+		log.Info("Running Sensor without connection retries: sensor will restart on disconnect")
 		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
 		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
 		// crash if it fails.
@@ -364,6 +372,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// suddenly broke.
 		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+		// Reset the exponential back-off if the connection successes
+		exponential.Reset()
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
@@ -389,7 +399,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
 	})
 
-	log.Infof("Stopping gRPC connection retry loop.")
+	log.Info("Stopping gRPC connection retry loop.")
 
 	if err != nil {
 		log.Warnf("Backoff returned error: %s", err)

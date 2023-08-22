@@ -137,7 +137,7 @@ export type ListDeploymentWithProcessInfo = {
 /**
  * Fetches count of registered deployments.
  */
-export function fetchDeploymentsCount(options: RestSearchOption[]): Promise<number> {
+export function fetchDeploymentsCountLegacy(options: RestSearchOption[]): Promise<number> {
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
         searchOptions = [...options, ...orchestratorComponentsOption];
@@ -149,6 +149,15 @@ export function fetchDeploymentsCount(options: RestSearchOption[]): Promise<numb
                   query,
               }
             : {};
+    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat' });
+    return axios
+        .get<{ count: number }>(`${deploymentsCountUrl}?${params}`)
+        .then((response) => response?.data?.count ?? 0);
+}
+
+export function fetchDeploymentsCount(searchFilter: SearchFilter): Promise<number> {
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const queryObject = query ? { query } : {};
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat' });
     return axios
         .get<{ count: number }>(`${deploymentsCountUrl}?${params}`)

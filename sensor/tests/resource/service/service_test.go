@@ -51,15 +51,6 @@ func assertAlertTriggered(alert *storage.Alert) helper.AlertAssertFunc {
 	}
 }
 
-func assertAlertNotTriggered(alert *storage.Alert) helper.AlertAssertFunc {
-	return func(results *central.AlertResults) error {
-		if err := checkAlert(alert, results); err != nil {
-			return nil
-		}
-		return errors.Errorf("alert '%s' should not be triggered", alert.GetPolicy().GetName())
-	}
-}
-
 func checkPortConfig(deployment *storage.Deployment, ports []*storage.PortConfig) error {
 	for _, expectedPort := range ports {
 		foundPortConfig := false
@@ -148,45 +139,32 @@ func (s *DeploymentExposureSuite) SetupSuite() {
 }
 
 func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
-	s.testContext.RunTest(
-		helper.WithResources([]helper.K8sResourceInfo{
-			NginxDeployment,
-			NginxServiceClusterIP,
-		}),
-		helper.WithPermutation(),
-		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(nginxDeploymentName,
-				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-					{
-						Protocol:      "TCP",
-						ContainerPort: 9376,
-						Exposure:      storage.PortConfig_INTERNAL,
-						ExposureInfos: []*storage.PortConfig_ExposureInfo{
-							{
-								ServiceName: "nginx-svc-cluster-ip",
-								ServicePort: 80,
-								Level:       storage.PortConfig_INTERNAL,
-							},
+	s.testContext.RunTest(s.T(), helper.WithResources([]helper.K8sResourceInfo{
+		NginxDeployment,
+		NginxServiceClusterIP,
+	}), helper.WithPermutation(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+		// Test context already takes care of creating and destroying resources
+		testC.LastDeploymentState(t, nginxDeploymentName,
+			assertLastDeploymentHasPortExposure([]*storage.PortConfig{
+				{
+					Protocol:      "TCP",
+					ContainerPort: 9376,
+					Exposure:      storage.PortConfig_INTERNAL,
+					ExposureInfos: []*storage.PortConfig_ExposureInfo{
+						{
+							ServiceName: "nginx-svc-cluster-ip",
+							ServicePort: 80,
+							Level:       storage.PortConfig_INTERNAL,
 						},
 					},
 				},
-				),
-				"'PortConfig' for Cluster IP service test not found",
-			)
-			testC.LastViolationState(nginxDeploymentName,
-				assertAlertNotTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
-				fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
-			testC.GetFakeCentral().ClearReceivedBuffer()
-		}),
-	)
+			},
+			),
+			"'PortConfig' for Cluster IP service test not found",
+		)
+		testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+		testC.GetFakeCentral().ClearReceivedBuffer()
+	}))
 }
 
 func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
@@ -228,37 +206,33 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
-		s.testContext.RunTest(
-			helper.WithResources(c.orderedResources),
-			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-				// Test context already takes care of creating and destroying resources
-				testC.LastDeploymentState(nginxDeploymentName,
-					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-				testC.LastViolationState(nginxDeploymentName,
-					assertAlertTriggered(
-						&storage.Alert{
-							Policy: &storage.Policy{
-								Name: servicePolicyName,
-							},
-							State: storage.ViolationState_ACTIVE,
+		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+			// Test context already takes care of creating and destroying resources
+			testC.LastDeploymentState(t, nginxDeploymentName,
+				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
+			testC.LastViolationState(t, nginxDeploymentName,
+				assertAlertTriggered(
+					&storage.Alert{
+						Policy: &storage.Policy{
+							Name: servicePolicyName,
 						},
-					),
-					fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
-				testC.GetFakeCentral().ClearReceivedBuffer()
-			}),
-			helper.WithRetryCallback(func(err error, obj k8s.Object) error {
-				// Only checking services
-				if _, ok := obj.(*v1.Service); !ok {
-					return nil
-				}
-				// If the error is different from "provided port is already allocated" we fail the test
-				if !strings.Contains(err.Error(), "provided port is already allocated") {
-					return err
-				}
-				setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
+						State: storage.ViolationState_ACTIVE,
+					},
+				),
+				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
+			testC.GetFakeCentral().ClearReceivedBuffer()
+		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
+			// Only checking services
+			if _, ok := obj.(*v1.Service); !ok {
 				return nil
-			}),
-		)
+			}
+			// If the error is different from "provided port is already allocated" we fail the test
+			if !strings.Contains(err.Error(), "provided port is already allocated") {
+				return err
+			}
+			setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
+			return nil
+		}))
 	}
 }
 
@@ -301,130 +275,11 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
-		s.testContext.RunTest(
-			helper.WithResources(c.orderedResources),
-			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-				// Test context already takes care of creating and destroying resources
-				testC.LastDeploymentState(nginxDeploymentName,
-					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-				testC.LastViolationState(nginxDeploymentName,
-					assertAlertTriggered(
-						&storage.Alert{
-							Policy: &storage.Policy{
-								Name: servicePolicyName,
-							},
-							State: storage.ViolationState_ACTIVE,
-						},
-					),
-					fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
-				testC.GetFakeCentral().ClearReceivedBuffer()
-			}),
-			helper.WithRetryCallback(func(err error, obj k8s.Object) error {
-				// Only checking services
-				if _, ok := obj.(*v1.Service); !ok {
-					return nil
-				}
-				// If the error is different from "provided port is already allocated" we fail the test
-				if !strings.Contains(err.Error(), "provided port is already allocated") {
-					return err
-				}
-				setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
-				return nil
-			}),
-		)
-	}
-}
-
-func (s *DeploymentExposureSuite) Test_NoExposure() {
-	s.testContext.RunTest(
-		helper.WithResources([]helper.K8sResourceInfo{
-			NginxDeployment,
-		}),
-		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(nginxDeploymentName,
-				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-					{
-						Protocol:      "TCP",
-						ContainerPort: 80,
-						Exposure:      0,
-					},
-				},
-				),
-				"PortConfig",
-			)
-			testC.LastViolationState(nginxDeploymentName,
-				assertAlertNotTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
-				fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
-			testC.GetFakeCentral().ClearReceivedBuffer()
-		}),
-	)
-}
-
-func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
-	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
-	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
-	// Adding retries on creation helped a lot, but it's still not enough.
-	s.testContext.RunTest(
-		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-			deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, NginxDeployment, nil)
-			defer utils.IgnoreError(deleteDep)
-			require.NoError(t, err)
-
-			port := getPort(t)
-			svc := &v1.Service{}
-			sel := map[string]string{
-				"app": "nginx",
-			}
-			nginxServiceNodePort := helper.K8sResourceInfo{
-				Kind: "Service",
-				Obj:  svc,
-			}
-			setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
-
-			deleteService, err := testC.ApplyResourceAndWaitNoObject(context.Background(), helper.DefaultNamespace, nginxServiceNodePort,
-				func(err error, obj k8s.Object) error {
-					// Only checking services
-					if _, ok := obj.(*v1.Service); !ok {
-						return nil
-					}
-					// If the error is different from "provided port is already allocated" we fail the test
-					if !strings.Contains(err.Error(), "provided port is already allocated") {
-						return err
-					}
-					port = getPort(t)
-					setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
-					return nil
-				})
-			require.NoError(t, err)
-
-			testC.LastDeploymentState(nginxDeploymentName,
-				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-					{
-						Protocol:      "TCP",
-						ContainerPort: 80,
-						Exposure:      storage.PortConfig_NODE,
-						ExposureInfos: []*storage.PortConfig_ExposureInfo{
-							{
-								ServiceName: fmt.Sprintf(serviceNodePortFmt, port),
-								ServicePort: 80,
-								NodePort:    port,
-								Level:       storage.PortConfig_NODE,
-							},
-						},
-					},
-				},
-				),
-				"'PortConfig' for Multiple Deployment Updates test not found",
-			)
-			testC.LastViolationState(nginxDeploymentName,
+			testC.LastDeploymentState(t, nginxDeploymentName,
+				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
+			testC.LastViolationState(t, nginxDeploymentName,
 				assertAlertTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -435,41 +290,135 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 				),
 				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 			testC.GetFakeCentral().ClearReceivedBuffer()
+		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
+			// Only checking services
+			if _, ok := obj.(*v1.Service); !ok {
+				return nil
+			}
+			// If the error is different from "provided port is already allocated" we fail the test
+			if !strings.Contains(err.Error(), "provided port is already allocated") {
+				return err
+			}
+			setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
+			return nil
+		}))
+	}
+}
 
-			require.NoError(t, deleteService())
-
-			testC.LastDeploymentState(nginxDeploymentName,
-				assertLastDeploymentMissingPortExposure([]*storage.PortConfig{
+func (s *DeploymentExposureSuite) Test_NoExposure() {
+	s.testContext.RunTest(s.T(),
+		helper.WithResources([]helper.K8sResourceInfo{
+			NginxDeployment,
+		}),
+		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+			// Test context already takes care of creating and destroying resources
+			testC.LastDeploymentState(t, nginxDeploymentName,
+				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
 					{
 						Protocol:      "TCP",
 						ContainerPort: 80,
-						Exposure:      storage.PortConfig_NODE,
-						ExposureInfos: []*storage.PortConfig_ExposureInfo{
-							{
-								ServiceName: fmt.Sprintf(serviceNodePortFmt, port),
-								ServicePort: 80,
-								NodePort:    port,
-								Level:       storage.PortConfig_NODE,
-							},
-						},
+						Exposure:      0,
 					},
 				},
 				),
-				"'PortConfig' for Multiple Deployment Updates test found",
+				"PortConfig",
 			)
-			testC.LastViolationState(nginxDeploymentName,
-				assertAlertNotTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_RESOLVED,
-					},
-				),
-				fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+			testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}),
 	)
+}
+
+func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
+	// We need to use different ports in each NodePort/LoadBalancer test otherwise k8s could throw an error when the service is being created (provided port is already allocated).
+	// Waiting for the resources to get Deleted is not enough, k8s reports that the resource has been deleted but on creation sometimes we still get the same error.
+	// Adding retries on creation helped a lot, but it's still not enough.
+	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+		deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, NginxDeployment, nil)
+		defer utils.IgnoreError(deleteDep)
+		require.NoError(t, err)
+
+		port := getPort(t)
+		svc := &v1.Service{}
+		sel := map[string]string{
+			"app": "nginx",
+		}
+		nginxServiceNodePort := helper.K8sResourceInfo{
+			Kind: "Service",
+			Obj:  svc,
+		}
+		setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
+
+		deleteService, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, helper.DefaultNamespace, nginxServiceNodePort, func(err error, obj k8s.Object) error {
+			// Only checking services
+			if _, ok := obj.(*v1.Service); !ok {
+				return nil
+			}
+			// If the error is different from "provided port is already allocated" we fail the test
+			if !strings.Contains(err.Error(), "provided port is already allocated") {
+				return err
+			}
+			port = getPort(t)
+			setDynamicFields(svc, serviceNodePortFmt, port, sel, setNodePort)
+			return nil
+		})
+		require.NoError(t, err)
+
+		testC.LastDeploymentState(t, nginxDeploymentName,
+			assertLastDeploymentHasPortExposure([]*storage.PortConfig{
+				{
+					Protocol:      "TCP",
+					ContainerPort: 80,
+					Exposure:      storage.PortConfig_NODE,
+					ExposureInfos: []*storage.PortConfig_ExposureInfo{
+						{
+							ServiceName: fmt.Sprintf(serviceNodePortFmt, port),
+							ServicePort: 80,
+							NodePort:    port,
+							Level:       storage.PortConfig_NODE,
+						},
+					},
+				},
+			},
+			),
+			"'PortConfig' for Multiple Deployment Updates test not found",
+		)
+		testC.LastViolationState(t, nginxDeploymentName,
+			assertAlertTriggered(
+				&storage.Alert{
+					Policy: &storage.Policy{
+						Name: servicePolicyName,
+					},
+					State: storage.ViolationState_ACTIVE,
+				},
+			),
+			fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
+		testC.GetFakeCentral().ClearReceivedBuffer()
+
+		require.NoError(t, deleteService())
+
+		testC.LastDeploymentState(t, nginxDeploymentName,
+			assertLastDeploymentMissingPortExposure([]*storage.PortConfig{
+				{
+					Protocol:      "TCP",
+					ContainerPort: 80,
+					Exposure:      storage.PortConfig_NODE,
+					ExposureInfos: []*storage.PortConfig_ExposureInfo{
+						{
+							ServiceName: fmt.Sprintf(serviceNodePortFmt, port),
+							ServicePort: 80,
+							NodePort:    port,
+							Level:       storage.PortConfig_NODE,
+						},
+					},
+				},
+			},
+			),
+			"'PortConfig' for Multiple Deployment Updates test found",
+		)
+		testC.NoViolations(t, nginxDeploymentName, fmt.Sprintf("Alert '%s' should not be triggered", servicePolicyName))
+		testC.GetFakeCentral().ClearReceivedBuffer()
+	}))
 }
 
 func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
@@ -511,37 +460,33 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
-		s.testContext.RunTest(
-			helper.WithResources(c.orderedResources),
-			helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
-				// Test context already takes care of creating and destroying resources
-				testC.LastDeploymentState(nginxPodName,
-					assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-				testC.LastViolationState(nginxPodName,
-					assertAlertTriggered(
-						&storage.Alert{
-							Policy: &storage.Policy{
-								Name: servicePolicyName,
-							},
-							State: storage.ViolationState_ACTIVE,
+		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
+			// Test context already takes care of creating and destroying resources
+			testC.LastDeploymentState(t, nginxPodName,
+				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
+			testC.LastViolationState(t, nginxPodName,
+				assertAlertTriggered(
+					&storage.Alert{
+						Policy: &storage.Policy{
+							Name: servicePolicyName,
 						},
-					),
-					fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
-				testC.GetFakeCentral().ClearReceivedBuffer()
-			}),
-			helper.WithRetryCallback(func(err error, obj k8s.Object) error {
-				// Only checking services
-				if _, ok := obj.(*v1.Service); !ok {
-					return nil
-				}
-				// If the error is different from "provided port is already allocated" we fail the test
-				if !strings.Contains(err.Error(), "provided port is already allocated") {
-					return err
-				}
-				setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
+						State: storage.ViolationState_ACTIVE,
+					},
+				),
+				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
+			testC.GetFakeCentral().ClearReceivedBuffer()
+		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
+			// Only checking services
+			if _, ok := obj.(*v1.Service); !ok {
 				return nil
-			}),
-		)
+			}
+			// If the error is different from "provided port is already allocated" we fail the test
+			if !strings.Contains(err.Error(), "provided port is already allocated") {
+				return err
+			}
+			setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceNodePortFmt, getPort(s.T()), c.selector, setNodePort, setPortConfigNode)
+			return nil
+		}))
 	}
 }
 
