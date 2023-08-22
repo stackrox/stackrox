@@ -93,7 +93,7 @@ function ProductUsageForm(): ReactElement {
                 Maximum secured
             </Title>
             <Divider className="pf-u-pt-xs pf-u-pb-sm" />
-            <Flex className="pf-u-pb-md">
+            <Flex className="pf-u-pb-xl">
                 <FlexItem>
                     <Title headingLevel="h4">Start date</Title>
                     <DatePicker
