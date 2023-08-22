@@ -14,6 +14,6 @@ RUN mkdir /app && wget -q ${DROOLS_URL} -O /app/${OUTFILE} && chmod 755 /app/${O
 
 # =============
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.8
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 COPY --from=builder /app/${OUTFILE} /${OUTFILE}

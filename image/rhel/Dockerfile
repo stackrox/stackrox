@@ -1,7 +1,7 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG RPMS_BASE_IMAGE=ubi8
-ARG BASE_TAG=8.6
+ARG BASE_TAG=latest
 
 FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${BASE_TAG} AS downloads
 
