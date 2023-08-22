@@ -56,7 +56,7 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 
 		if err := ds.Walk(r.Context(), from, to, csvWriter.Write); err != nil {
 			_ = csvWriter.SetHTTPError(errors.WithMessage(err,
-				"failed to retreive secured units usage data"))
+				"failed to retrieve secured units usage data"))
 			return
 		}
 		csvWriter.Flush()
