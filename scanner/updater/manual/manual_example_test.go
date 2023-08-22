@@ -2,7 +2,6 @@ package manual
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -35,9 +34,9 @@ var manuallyTestVulns = []*claircore.Vulnerability{
 
 func ManualUpdater(t *testing.T) {
 	ctx := context.Background()
-	var updaters []driver.Updater
+	updaters := make([]driver.Updater, 0, 1)
 
-	// Append updater sets directly to the updaters
+	// Append updater sets directly to the updaters.
 	appendUpdaterSet := func(updaterSet driver.UpdaterSet, err error) {
 		if err != nil {
 			zlog.Error(ctx).Msg(err.Error())
@@ -45,24 +44,22 @@ func ManualUpdater(t *testing.T) {
 		}
 		updaters = append(updaters, updaterSet.Updaters()...)
 	}
+
 	integration.NeedDB(t)
 	pool := pgtest.TestMatcherDB(ctx, t)
 	store := postgres.NewMatcherStore(pool)
 	appendUpdaterSet(UpdaterSet(ctx, manuallyTestVulns))
+
 	updaterSetMgr, err := updates.NewManager(ctx, store, updates.NewLocalLockSource(), http.DefaultClient,
 		updates.WithOutOfTree(updaters),
 	)
 	if err != nil {
-		fmt.Println(err)
+		zlog.Error(ctx).Msg(err.Error())
 		return
 	}
-	if err = updaterSetMgr.Run(ctx); err != nil {
-		fmt.Println(err)
-		return
-	}
-}
 
-// TestExampleManualUpdater: go test -run ExampleManualUpdater
-func TestExampleManualUpdater(t *testing.T) {
-	ManualUpdater(t)
+	if err = updaterSetMgr.Run(ctx); err != nil {
+		zlog.Error(ctx).Msg(err.Error())
+		return
+	}
 }

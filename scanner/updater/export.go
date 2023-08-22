@@ -11,9 +11,11 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"golang.org/x/time/rate"
 
+	// default updaters
 	_ "github.com/quay/claircore/updater/defaults"
 )
 
@@ -25,9 +27,8 @@ func Export(ctx context.Context, outputDir string) error {
 	if err != nil {
 		return err
 	}
-
 	// create output json file
-	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.zst"))
+	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.ztd"))
 	if err != nil {
 		return err
 	}
@@ -44,18 +45,21 @@ func Export(ctx context.Context, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	defer zstdWriter.Close()
+	defer func() {
+		closeErr := zstdWriter.Close()
+		if closeErr != nil {
+			zlog.Error(ctx).Err(closeErr).Msg("Failed to closing zstdWriter")
+		}
+	}()
 
-	//add out of tree updater
 	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	if err != nil {
+		return err
+	}
 	outOfTree := [][]driver.Updater{
 		make([]driver.Updater, 0),
 	}
-	if err != nil {
-		return err
-	} else {
-		outOfTree = append(outOfTree, updaterSet.Updaters())
-	}
+	outOfTree = append(outOfTree, updaterSet.Updaters())
 
 	for i, uSet := range [][]string{
 		{"oracle", "photon", "suse", "aws", "rhcc"},

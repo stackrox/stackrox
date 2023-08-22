@@ -54,11 +54,11 @@ jobs:
             echo "Scanner directory not found. Terminating current matrix step."
             exit 1
           fi
-          
+
           cd scanner
           go run cmd/updater/main.go -output-dir=${{ env.ROX_PRODUCT_VERSION }}
           gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
-        
+
   send-notification:
     needs:
       - read-versions
@@ -68,4 +68,4 @@ jobs:
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in job ${{ github.job }} of workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
