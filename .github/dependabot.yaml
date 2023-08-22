@@ -101,6 +101,22 @@ updates:
       include: scope
       prefix: chore
 
+  - package-ecosystem: 'gomod'
+    directory: '/scanner/tools/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    - "area/scanner"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/scanner"
+    commit-message:
+      include: scope
+      prefix: chore
+
   - package-ecosystem: 'docker'
     directory: 'operator/'
     schedule:
@@ -143,6 +159,36 @@ updates:
     - "dependencies"
     reviewers:
     - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'scanner/image/scanner'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
+    reviewers:
+    - "stackrox/scanner"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'scanner/image/db'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
+    reviewers:
+    - "stackrox/scanner"
     commit-message:
       include: scope
       prefix: chore
