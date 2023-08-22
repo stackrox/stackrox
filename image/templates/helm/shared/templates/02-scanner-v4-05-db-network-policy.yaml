@@ -1,0 +1,33 @@
+{{- include "srox.init" . -}}
+{{- if not ._rox.scannerV4.disable -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-v4-db") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: scanner-v4-db
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: scanner-v4-indexer
+    ports:
+    - port: 5432
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: scanner-v4-matcher
+    ports:
+    - port: 5432
+      protocol: TCP
+  policyTypes:
+  - Ingress
+{{ end -}}

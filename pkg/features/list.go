@@ -47,4 +47,6 @@ var (
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
+
+	ScannerV4 = registerFeature("Enable Scanner v4", "ROX_SCANNER_V4", true)
 )

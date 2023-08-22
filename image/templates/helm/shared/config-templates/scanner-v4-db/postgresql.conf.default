@@ -30,7 +30,7 @@ ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
 # - Memory -
 
-shared_buffers = 128MB
+shared_buffers = 250MB
 dynamic_shared_memory_type = posix
 
 #------------------------------------------------------------------------------

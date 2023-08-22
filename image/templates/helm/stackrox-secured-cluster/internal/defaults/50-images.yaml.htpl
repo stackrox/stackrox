@@ -13,10 +13,18 @@ image:
   scanner:
     name: [< required "" .ScannerSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
-  [< if (not .KubectlOutput) >]
+  [< if not .KubectlOutput >]
   scannerDb:
     name: [< required "" .ScannerDBSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
+  [< end >]
+  [< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 >]
+  scannerV4:
+    name: [< required "" .ScannerV4ImageRemote >]
+    tag: [< required "" .ScannerV4ImageTag >]
+  scannerV4DB:
+    name: [< required "" .ScannerV4DBImageRemote >]
+    tag: [< required "" .ScannerV4ImageTag >]
   [< end >]
 ---
 # Add registry defaults
@@ -27,8 +35,14 @@ image:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
   scanner:
     registry: {{ ._rox.image.registry }}
-  [< if (not .KubectlOutput) >]
+  [< if not .KubectlOutput >]
   scannerDb:
+    registry: {{ ._rox.image.registry }}
+  [< end >]
+  [< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 >]
+  scannerV4:
+    registry: {{ ._rox.image.registry }}
+  scannerV4DB:
     registry: {{ ._rox.image.registry }}
   [< end >]
 ---
@@ -48,9 +62,15 @@ image:
     {{- end }}
   scanner:
     repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
-  [< if (not .KubectlOutput) >]
+  [< if not .KubectlOutput >]
   scannerDb:
     repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
+  [< end >]
+  [< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 >]
+  scannerV4:
+    repository: {{ list ._rox.image.scannerV4.registry ._rox.image.scannerV4.name | compact | join "/" }}
+  scannerV4DB:
+    repository: {{ list ._rox.image.scannerV4DB.registry ._rox.image.scannerV4DB.name | compact | join "/" }}
   [< end >]
 ---
 # Configure collector slim image full ref
@@ -101,9 +121,15 @@ image:
     fullRef: {{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}
   scanner:
     fullRef: {{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}
-  [< if (not .KubectlOutput) >]
+  [< if not .KubectlOutput >]
   scannerDb:
     fullRef: {{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}
+  [< end >]
+  [< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 >]
+  scannerV4:
+    fullRef: {{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}
+  scannerV4DB:
+    fullRef: {{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}
   [< end >]
 collector:
   imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}

@@ -144,7 +144,7 @@
 #         <PEM-encoded Central DB cert private key>
 #         -----END RSA PRIVATE KEY-----
 #
-# # Secret configuration options for the StackRox Central deployment.
+# # Secret configuration options for the StackRox Scanner deployment.
 # scanner:
 #   # The password to be used for authenticating database access. This is not user-relevant
 #   # and only serves to properly secure the database with a pre-shared secret. If this

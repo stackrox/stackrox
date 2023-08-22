@@ -1,10 +1,16 @@
 [< if eq .RenderMode "scannerOnly" >]
 !templates/_*.tpl
-!templates/02-scanner-*.yaml
+!templates/02-scanner-[0-9]*.yaml
+[< if .FeatureFlags.ROX_SCANNER_V4 >]
+!templates/02-scanner-v4-*.yaml
+[< end >]
 templates/*
 [< else if eq .RenderMode "scannerTLSOnly" >]
 !templates/_*.tpl
 !templates/02-scanner-03-tls-secret.yaml
+[< if .FeatureFlags.ROX_SCANNER_V4 >]
+!templates/02-scanner-v4-03-tls-secret.yaml
+[< end >]
 templates/*
 [< else if eq .RenderMode "centralTLSOnly" >]
 !templates/_*.tpl

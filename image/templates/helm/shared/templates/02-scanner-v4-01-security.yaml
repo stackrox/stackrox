@@ -1,0 +1,78 @@
+{{- include "srox.init" . -}}
+{{- if not ._rox.scannerV4.disable }}
+{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-v4") }}
+  labels:
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-scanner-v4") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-scanner-v4") | nindent 4 }}
+    kubernetes.io/description: stackrox-scanner-v4 is the security constraint for the Scanner v4 containers
+priority: 0
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+users:
+- system:serviceaccount:{{ .Release.Namespace }}:scanner-v4
+volumes:
+- '*'
+allowHostDirVolumePlugin: false
+allowedCapabilities: []
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+
+{{- else if eq ._rox.env.openshift 4 }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-scanner-v4-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-scanner-v4-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-scanner-v4-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - anyuid
+  verbs:
+  - use
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scanner-v4-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "scanner-v4-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "scanner-v4-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-scanner-v4-scc
+subjects:
+- kind: ServiceAccount
+  name: scanner-v4
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}
