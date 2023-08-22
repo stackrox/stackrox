@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	_   notifications.LogConverter = (*zapLogConverter)(nil)
-	log                            = LoggerForModule()
+	_ notifications.LogConverter = (*zapLogConverter)(nil)
 )
 
 type zapLogConverter struct{}
@@ -30,7 +29,7 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 			field.AddTo(enc)
 			if resource, exists := getResourceTypeField(field); exists {
 				if resourceType != "" {
-					log.Warnf("Received multiple resource field in structured log."+
+					thisModuleLogger.Warnf("Received multiple resource field in structured log."+
 						" Previous resource %q will be overwritten by %q", resourceType, resource)
 				}
 				resourceType = resource
