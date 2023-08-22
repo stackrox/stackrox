@@ -220,7 +220,7 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 	}
 
 	if err := validateTokenProviderUpdate(p.StorageView(), claims); err != nil {
-		return errors.Wrap(err, "provider has been updated")
+		return errors.Wrap(err, "token issued prior to provider update cannot be used")
 	}
 
 	backend, err := p.GetOrCreateBackend(ctx)
