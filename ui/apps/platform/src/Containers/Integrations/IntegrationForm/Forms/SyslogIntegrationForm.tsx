@@ -217,7 +217,7 @@ function SyslogIntegrationForm({
                                             text="CEF"
                                             isSelected={values.syslog.messageFormat === 'CEF'}
                                             onChange={() =>
-                                                setFieldValue('messageFormat', 'CEF')
+                                                setFieldValue('syslog.messageFormat', 'CEF')
                                             }
                                         />
                                         <ToggleGroupItem
@@ -225,7 +225,7 @@ function SyslogIntegrationForm({
                                             text="CEF (legacy field order)"
                                             isSelected={values.syslog.messageFormat === 'LEGACY' || !values.syslog.messageFormat}
                                             onChange={() =>
-                                                setFieldValue('messageFormat', 'LEGACY')
+                                                setFieldValue('syslog.messageFormat', 'LEGACY')
                                             }
                                         />
                             </ToggleGroup>

@@ -568,6 +568,12 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Receiver host').click().blur();
             getInputByLabel('Receiver port').click().clear().blur();
 
+            // check format toggle
+            cy.get('.pf-c-form__group-label .pf-c-form__label-text:contains("Message Format")');
+            cy.get(
+                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button.pf-m-selected:contains("CEF")'
+            );
+
             getHelperElementByLabel('Integration name').contains('Integration name is required');
             getHelperElementByLabel('Logging facility').contains('Logging facility is required');
             getHelperElementByLabel('Receiver host').contains('Receiver host is required');
@@ -592,6 +598,12 @@ describe('Notifier Integrations', () => {
             cy.get('button:contains("Add new extra field")').click();
             getInputByLabel('Key').type('vehicle');
             getInputByLabel('Value').type('vanagon').blur();
+            cy.get(
+                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button:contains("CEF (legacy field order)")'
+            ).click();
+            cy.get(
+                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button:contains("CEF (legacy field order)")'
+            ).should('have.class', 'pf-m-selected');
 
             testIntegrationInFormWithoutStoredCredentials(
                 integrationSource,
