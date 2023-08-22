@@ -26,7 +26,6 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 		inputFolderPath1      string
 		inputFolderPath2      string
 		outFile               string
-		runCommand            bool
 		removeOutputPath      bool
 		expectedValidateError error
 	}{
@@ -91,10 +90,11 @@ func (d *diffAnalyzeNetpolTestSuite) createOutFile() string {
 	return tmpOutFile.Name()
 }
 
-func (d *diffAnalyzeNetpolTestSuite) compareActualVsExpectedOutput(actualOutput, actualDir, actualFormat string) {
-	expectedOutput, err := os.ReadFile(path.Join(actualDir, "diff_output."+actualFormat))
-	d.NoError(err)
-	d.Equal(string(expectedOutput), actualOutput)
+func assertFileContentsMatch(t *diffAnalyzeNetpolTestSuite, expectedString, fileName string) {
+	t.FileExists(fileName)
+	fileContents, err := os.ReadFile(fileName)
+	t.NoError(err)
+	t.Equal(string(fileContents), expectedString)
 }
 
 func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
@@ -249,6 +249,13 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 			}
 			d.NoError(err)
 
+			if tt.outFile != "" {
+				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+defaultOutputFormat))
+				d.NoError(err)
+				assertFileContentsMatch(d, string(expectedOutput), tt.outFile)
+				return
+			}
+
 			if tt.outputToFile {
 				defaultFile := diffNetpolCmd.getDefaultFileName()
 				formatSuffix := defaultOutputFormat
@@ -256,18 +263,10 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 					d.Contains(defaultFile, tt.outputFormat)
 					formatSuffix = tt.outputFormat
 				}
-				output, err := os.ReadFile(defaultFile)
+				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+formatSuffix))
 				d.NoError(err)
-				d.compareActualVsExpectedOutput(string(output), tt.inputFolderPath2, formatSuffix)
+				assertFileContentsMatch(d, string(expectedOutput), defaultFile)
 				d.NoError(os.Remove(defaultFile))
-			}
-
-			if tt.outFile != "" {
-				_, err := os.Stat(tt.outFile)
-				d.NoError(err) // out file should exist
-				output, err := os.ReadFile(tt.outFile)
-				d.NoError(err)
-				d.compareActualVsExpectedOutput(string(output), tt.inputFolderPath2, defaultOutputFormat)
 			}
 		})
 	}
