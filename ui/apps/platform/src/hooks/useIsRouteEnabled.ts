@@ -1,13 +1,14 @@
-import { isRouteEnabled } from 'routePaths';
+import { RouteKey, isRouteEnabled } from 'routePaths';
 
 import useFeatureFlags from './useFeatureFlags';
 import usePermissions from './usePermissions';
 
-function useIsRouteEnabled(): (path: string) => boolean {
+function useIsRouteEnabled() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
 
-    return (path: string) => isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, path);
+    return (routeKey: RouteKey) =>
+        isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, routeKey);
 }
 
 export default useIsRouteEnabled;

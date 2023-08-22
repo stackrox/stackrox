@@ -16,14 +16,13 @@ import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import { GetSortParams } from 'hooks/useURLSort';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 import { TableColumn } from 'types/table';
-import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
 
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
@@ -61,13 +60,12 @@ function ViolationsTablePanel({
     getSortParams,
     columns,
 }: ViolationsTablePanelProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForAlert = hasReadWriteAccess('Alert');
     // Require READ_WRITE_ACCESS to exclude plus READ_ACCESS to other resources for Policies route.
     const hasWriteAccessForExcludeDeploymentsFromPolicy =
-        hasReadWriteAccess('WorkflowAdministration') &&
-        isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, policyManagementBasePath);
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
     const hasActions = hasWriteAccessForAlert || hasWriteAccessForExcludeDeploymentsFromPolicy;
 
     // Handle confirmation modal being open.
