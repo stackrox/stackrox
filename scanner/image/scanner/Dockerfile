@@ -16,7 +16,7 @@ COPY scripts/ /
 COPY bin/scanner /
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 
-RUN microdnf upgrade && \
+RUN microdnf upgrade --nobest && \
     microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
