@@ -90,11 +90,11 @@ func (d *diffAnalyzeNetpolTestSuite) createOutFile() string {
 	return tmpOutFile.Name()
 }
 
-func assertFileContentsMatch(t *diffAnalyzeNetpolTestSuite, expectedString, fileName string) {
-	t.FileExists(fileName)
+func (d *diffAnalyzeNetpolTestSuite) assertFileContentsMatch(expectedString, fileName string) {
+	d.FileExists(fileName)
 	fileContents, err := os.ReadFile(fileName)
-	t.NoError(err)
-	t.Equal(string(fileContents), expectedString)
+	d.NoError(err)
+	d.Equal(string(fileContents), expectedString)
 }
 
 func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
@@ -252,7 +252,7 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 			if tt.outFile != "" {
 				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+defaultOutputFormat))
 				d.NoError(err)
-				assertFileContentsMatch(d, string(expectedOutput), tt.outFile)
+				d.assertFileContentsMatch(string(expectedOutput), tt.outFile)
 				return
 			}
 
@@ -265,7 +265,7 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeDiffCommand() {
 				}
 				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath2, "diff_output."+formatSuffix))
 				d.NoError(err)
-				assertFileContentsMatch(d, string(expectedOutput), defaultFile)
+				d.assertFileContentsMatch(string(expectedOutput), defaultFile)
 				d.NoError(os.Remove(defaultFile))
 			}
 		})
