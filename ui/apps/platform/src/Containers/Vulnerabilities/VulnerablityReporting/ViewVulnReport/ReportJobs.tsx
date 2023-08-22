@@ -239,7 +239,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                 url: `/api/reports/jobs/download?id=${reportJobId}`,
                                 data: null,
                                 timeout: 300000,
-                                name: `${name}-report.zip`,
+                                name: `${name}.zip`,
                             });
                         }
 
