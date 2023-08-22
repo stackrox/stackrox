@@ -44,12 +44,12 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return errors.Wrap(v1.RegisterProductUsageServiceHandler(ctx, mux, conn), "failed to register the product usage service handler")
+	return v1.RegisterProductUsageServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, errors.Wrapf(authorizer.Authorized(ctx, fullMethodName), "failed to authorize a call to %s", fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Empty) (*v1.SecuredUnitsUsageResponse, error) {
@@ -65,14 +65,14 @@ func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Emp
 
 func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeRange) (*v1.MaxSecuredUnitsUsageResponse, error) {
 	max := &v1.MaxSecuredUnitsUsageResponse{}
-	err := s.datastore.Walk(ctx, req.GetFrom(), req.GetTo(), func(m *storage.SecuredUnits) error {
-		if n := m.GetNumNodes(); n >= max.MaxNodes {
-			max.MaxNodes = n
-			max.MaxNodesAt = m.GetTimestamp()
+	err := s.datastore.Walk(ctx, req.GetFrom(), req.GetTo(), func(metrics *storage.SecuredUnits) error {
+		if nodes := metrics.GetNumNodes(); nodes >= max.MaxNodes {
+			max.MaxNodes = nodes
+			max.MaxNodesAt = metrics.GetTimestamp()
 		}
-		if ms := m.GetNumCpuUnits(); ms >= max.MaxCpuUnits {
-			max.MaxCpuUnits = ms
-			max.MaxCpuUnitsAt = m.GetTimestamp()
+		if cpus := metrics.GetNumCpuUnits(); cpus >= max.MaxCpuUnits {
+			max.MaxCpuUnits = cpus
+			max.MaxCpuUnitsAt = metrics.GetTimestamp()
 		}
 		return nil
 	})
