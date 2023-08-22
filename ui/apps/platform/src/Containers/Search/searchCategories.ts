@@ -196,11 +196,14 @@ export function searchResultCategoryMapFilteredIsRouteEnabled(
         const value = searchResultCategoryMapFiltered[searchResultKey];
 
         if (value.filterOn) {
-            const { filterLinks } = value.filterOn;
+            const filterLinks = value.filterOn.filterLinks.filter(({ routeKey }) =>
+                isRouteEnabled(routeKey)
+            );
+
             if (filterLinks.length !== 0) {
-                value.filterOn.filterLinks = filterLinks.filter(({ routeKey }) =>
-                    isRouteEnabled(routeKey)
-                );
+                value.filterOn.filterLinks = filterLinks;
+            } else {
+                value.filterOn = null;
             }
         }
 
