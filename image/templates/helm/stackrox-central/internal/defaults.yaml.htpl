@@ -15,7 +15,7 @@ defaults:
     config: "@config/central/config.yaml|config/central/config.yaml.default"
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
 
-    exposeMonitoring: false
+    exposeMonitoring: true
 
     affinity:
       nodeAffinity:

@@ -7,7 +7,7 @@ createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
 createSecrets: true
 {{- end }}
 
-exposeMonitoring: false
+exposeMonitoring: true
 
 helmManaged: [< not .KubectlOutput >]
 
