@@ -13,18 +13,20 @@ type DataRetentionValueProps = {
     value: number | undefined;
     suffix: string;
     shouldPluralize?: boolean;
+    canRetainForever?: boolean;
 };
 
 function DataRetentionValue({
     value,
     suffix,
+    canRetainForever = true,
     shouldPluralize = true,
 }: DataRetentionValueProps): ReactElement {
     let content = 'Unknown';
 
     if (typeof value === 'number') {
         if (value === 0) {
-            content = 'Never deleted';
+            content = canRetainForever ? 'Never deleted' : 'Deleted in every pruning cycle';
         } else if (value > 0) {
             content = `${value} ${shouldPluralize ? pluralize(suffix, value) : suffix}`;
         }
@@ -132,13 +134,31 @@ const PrivateConfigDataRetentionDetails = ({
                                 privateConfig?.reportRetentionConfig?.historyRetentionDurationDays
                             }
                             suffix="day"
+                            canRetainForever={false}
                         />
                     </CardBody>
                 </Card>
             </GridItem>
             <GridItem>
                 <Card isFlat>
-                    <CardTitle>Vulnerability report run history retention</CardTitle>
+                    <CardTitle>
+                        Prepared downloadable vulnerability reports retention days
+                    </CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={
+                                privateConfig?.reportRetentionConfig
+                                    ?.downloadableReportRetentionDays
+                            }
+                            suffix="day"
+                            canRetainForever={false}
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Prepared downloadable vulnerability reports limit</CardTitle>
                     <CardBody>
                         Set a total limit for all prepared downloadable vulnerability reports. Once
                         the limit is reached, the oldest report in download queue will be removed.
