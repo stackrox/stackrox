@@ -51,7 +51,7 @@ func TestHTTPCSVWriter(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, ContentType, httpWriterMock.header["Content-Type"][0])
+	assert.Equal(t, contentType, httpWriterMock.header["Content-Type"][0])
 	assert.NoError(t, err)
 	w.Flush()
 	assert.Equal(t, "\uFEFFa,b\r\na1,b1\r\na2,b2\r\n", buf.String())
@@ -106,9 +106,9 @@ func TestHTTPCSVWriterLateError(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, ContentType, httpWriterMock.header["Content-Type"][0])
+	assert.Equal(t, contentType, httpWriterMock.header["Content-Type"][0])
 	assert.NoError(t, err)
 	w.Flush()
-	assert.Equal(t, UTF8BOM, buf.String())
+	assert.Equal(t, utf8BOM, buf.String())
 	assert.Equal(t, 0, httpWriterMock.status)
 }
