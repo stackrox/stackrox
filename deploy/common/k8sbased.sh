@@ -89,8 +89,7 @@ function local_dev {
 # Checks if central already exists in this cluster.
 # If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
 function prompt_if_central_exists() {
-    central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}' 2> /dev/null)"
-    if [ $? -eq 0 ] && [[ -n "$central_pod" ]]; then
+    if "${ORCH_CMD}" -n stackrox get deployment central 2>&1; then
         yes_no_prompt "Detected there is already a central running on this cluster. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
     fi
 }
