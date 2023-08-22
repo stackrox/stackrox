@@ -235,56 +235,65 @@ function DelegatedRegistriesTable({
                 onDrop={onDragOver}
                 onDragLeave={onDragLeave}
             >
-                {registries.map((registry, rowIndex) => (
-                    <Tr
-                        key={registry.uuid}
-                        id={registry.uuid}
-                        draggable
-                        onDrop={onDrop}
-                        onDragEnd={onDragEnd}
-                        onDragStart={onDragStart}
-                    >
-                        <Td
-                            draggableRow={{
-                                id: `draggable-row-${registry.path}`,
-                            }}
-                        />
-                        <Td dataLabel="Source registry">
-                            <TextInput
-                                isRequired
-                                type="email"
-                                id="simple-form-email-01"
-                                name="simple-form-email-01"
-                                value={registry.path}
-                                onChange={(value) => handlePathChange(rowIndex, value)}
+                {registries.map((registry, rowIndex) => {
+                    const selectedClusterName =
+                        clusters.find((cluster) => registry.clusterId === cluster.id)?.name ??
+                        'None';
+
+                    return (
+                        <Tr
+                            key={registry.uuid}
+                            id={registry.uuid}
+                            draggable
+                            onDrop={onDrop}
+                            onDragEnd={onDragEnd}
+                            onDragStart={onDragStart}
+                        >
+                            <Td
+                                draggableRow={{
+                                    id: `draggable-row-${registry.path}`,
+                                }}
                             />
-                        </Td>
-                        <Td dataLabel="Destination cluster (CLI/API only)">
-                            <Select
-                                className="cluster-select"
-                                placeholderText={
-                                    <span style={{ position: 'relative', top: '1px' }}>None</span>
-                                }
-                                toggleAriaLabel="Select a cluster"
-                                onToggle={() => toggleSelect(rowIndex)}
-                                onSelect={(_, value) => onSelect(rowIndex, value)}
-                                isOpen={openRow === rowIndex}
-                                selections={registry.clusterId}
-                            >
-                                {clusterSelectOptions}
-                            </Select>
-                        </Td>
-                        <Td dataLabel="Delete row" isActionCell>
-                            <Button
-                                variant="plain"
-                                aria-label="Delete row"
-                                onClick={() => deleteRow(rowIndex)}
-                            >
-                                <MinusCircleIcon />
-                            </Button>
-                        </Td>
-                    </Tr>
-                ))}
+                            <Td dataLabel="Source registry">
+                                <TextInput
+                                    isRequired
+                                    type="text"
+                                    value={registry.path}
+                                    onChange={(value) => handlePathChange(rowIndex, value)}
+                                />
+                            </Td>
+                            <Td dataLabel="Destination cluster (CLI/API only)">
+                                <Select
+                                    className="cluster-select"
+                                    placeholderText={
+                                        <span style={{ position: 'relative', top: '1px' }}>
+                                            None
+                                        </span>
+                                    }
+                                    toggleAriaLabel="Select a cluster"
+                                    onToggle={() => toggleSelect(rowIndex)}
+                                    onSelect={(_, value) => onSelect(rowIndex, value)}
+                                    isOpen={openRow === rowIndex}
+                                    selections={selectedClusterName}
+                                >
+                                    <SelectOption key="no-cluster-selected" value="" isPlaceholder>
+                                        <span>None</span>
+                                    </SelectOption>
+                                    <>{clusterSelectOptions}</>
+                                </Select>
+                            </Td>
+                            <Td dataLabel="Delete row" isActionCell>
+                                <Button
+                                    variant="plain"
+                                    aria-label="Delete row"
+                                    onClick={() => deleteRow(rowIndex)}
+                                >
+                                    <MinusCircleIcon />
+                                </Button>
+                            </Td>
+                        </Tr>
+                    );
+                })}
             </Tbody>
         </TableComposable>
     );
