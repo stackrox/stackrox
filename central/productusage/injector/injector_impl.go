@@ -41,16 +41,13 @@ func (i *injectorImpl) gather(ctx context.Context) {
 func (i *injectorImpl) gatherLoop() {
 	ticker := time.NewTicker(aggregationPeriod)
 	defer ticker.Stop()
-	ctx, cancel := context.WithCancel(context.Background())
 	// There will most probably be no data on startup: sensors won't have time
-	// to report:
-	// i.gather(ctx)
+	// to report.
 	for {
 		select {
 		case <-ticker.C:
-			go i.gather(ctx)
+			i.gather(context.Background())
 		case <-i.stop.Done():
-			cancel()
 			log.Info("Usage reporting stopped")
 			i.stop.Reset()
 			return
