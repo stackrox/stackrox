@@ -21,12 +21,10 @@ func TestGetTimeParam(t *testing.T) {
 		}
 		v, err := getTimeParameter(formValues, "from", zeroTime)
 		assert.NoError(t, err)
-		assert.Equal(t, from.Unix(), v.GetSeconds())
-		assert.Equal(t, int32(from.Nanosecond()), v.GetNanos())
+		assert.Equal(t, 0, from.Compare(v))
 		v, err = getTimeParameter(formValues, "to", zeroTime)
 		assert.NoError(t, err)
-		assert.Equal(t, to.Unix(), v.GetSeconds())
-		assert.Equal(t, int32(to.Nanosecond()), v.GetNanos())
+		assert.Equal(t, 0, to.Compare(v))
 	})
 	t.Run("good from, bad to", func(t *testing.T) {
 		from, _ := time.Parse(time.RFC3339Nano, "2023-07-24T10:13:21.702316Z")
@@ -36,8 +34,7 @@ func TestGetTimeParam(t *testing.T) {
 		}
 		v, err := getTimeParameter(formValues, "from", zeroTime)
 		assert.NoError(t, err)
-		assert.Equal(t, from.Unix(), v.GetSeconds())
-		assert.Equal(t, int32(from.Nanosecond()), v.GetNanos())
+		assert.Equal(t, 0, from.Compare(v))
 	})
 	t.Run("bad from", func(t *testing.T) {
 		formValues := url.Values{
@@ -48,7 +45,7 @@ func TestGetTimeParam(t *testing.T) {
 		now := time.Now()
 		to, err := getTimeParameter(formValues, "to", now)
 		assert.NoError(t, err)
-		assert.Equal(t, now.Unix(), to.GetSeconds())
+		assert.Equal(t, 0, now.Compare(to))
 	})
 	t.Run("bad from, bad to", func(t *testing.T) {
 		formValues := url.Values{
