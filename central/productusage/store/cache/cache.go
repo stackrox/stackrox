@@ -26,8 +26,8 @@ type Cache interface {
 	Cleanup(preserveIDs set.StringSet)
 	// GetCurrent returns the collected values.
 	GetCurrent() *storage.SecuredUnits
-	// AggregateAndFlush returns the maximum usage values and resets them in the cache.
-	AggregateAndFlush() *storage.SecuredUnits
+	// AggregateAndReset returns the maximum usage values and resets them in the cache.
+	AggregateAndReset() *storage.SecuredUnits
 }
 
 // NewCache initializes and returns a cache instance.
@@ -59,7 +59,7 @@ func getFilter[T any](ids set.StringSet) func(m *map[string]T) {
 }
 
 // Cleanup removes the last known metrics values for the cluster IDs
-// not present in the ids, and returns the total values for other IDs.
+// not present in the ids.
 func (u *cacheImpl) Cleanup(ids set.StringSet) {
 	{
 		fn := getFilter[int64](ids)
@@ -82,13 +82,13 @@ func (u *cacheImpl) GetCurrent() *storage.SecuredUnits {
 	return &result
 }
 
-// AggregateAndFlush resets the metrics and returns the collected values since
+// AggregateAndReset resets the metrics and returns the collected values since
 // the previous invocation.
 // The cluster ids are provided to Cleanup the result, so it aggregates only the
 // collected metrics of the currently known clusters. This is to avoid double
 // usage counting when customers remove and add clusters within one collection
 // period.
-func (u *cacheImpl) AggregateAndFlush() *storage.SecuredUnits {
+func (u *cacheImpl) AggregateAndReset() *storage.SecuredUnits {
 	result := storage.SecuredUnits{
 		Timestamp: gogoTypes.TimestampNow(),
 	}
