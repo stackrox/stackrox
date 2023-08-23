@@ -62,17 +62,15 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
     sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
+    charts_dir="$(mktemp -d ./charts-dir.XXXXXX)"
+
     # If the central version is the latest the default behavior of deploy_central() is correct for compatibility tests
-    chart_parent_dir="./central-chart-dir-compatibility-tests"
     chart_name="stackrox-central-services"
     if  [[ $helm_charts =~ $central_regex ]]; then
         central_chart="${helm_repo_name}/${chart_name}"
-        ci_export CENTRAL_CHART_DIR_OVERRIDE "${chart_parent_dir}/${chart_name}"
-        helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${chart_parent_dir}"
-        echo >&2 "Pulled helm chart for ${chart_name} to ${CENTRAL_CHART_DIR_OVERRIDE}, running ls -la"
-        set -x
-        ls -la "${CENTRAL_CHART_DIR_OVERRIDE}"
-        set +x
+        ci_export CENTRAL_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
+        helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${charts_dir}"
+        echo "Pulled helm chart for ${chart_name} to ${CENTRAL_CHART_DIR_OVERRIDE}"
     elif [[ "$current_tag" != "$CENTRAL_CHART_VERSION_OVERRIDE" ]]; then
         echo "${chart_name} helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the current tag."
         exit 1
@@ -81,22 +79,18 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     # If the sensor version is the latest the default behavior of deploy_sensor() is incorrect, because it will deploy
     # a sensor version to match the central version. In our tests we want to test latest sensor vs older central too,
     # and since latest sensor is not available in the repo either the chart is created here in the elif case.
-    chart_parent_dir="./sensor-chart-dir-compatibility-tests"
     chart_name="stackrox-secured-cluster-services"
     if [[ $helm_charts =~ $sensor_regex ]]; then
         sensor_chart="${helm_repo_name}/${chart_name}"
-        ci_export SENSOR_CHART_DIR_OVERRIDE "${chart_parent_dir}/${chart_name}"
-        helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${chart_parent_dir}"
-        echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}, running ls -a"
-        set -x
-        ls -la "${SENSOR_CHART_DIR_OVERRIDE}"
-        set +x
+        ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
+        helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${charts_dir}"
+        echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}"
     elif [[ "$current_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
         if [[ $(roxctl version) != "$current_tag" ]]; then
             >&2 echo "Reported roxctl version "$(roxctl version)" is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
             exit 1
         fi
-        ci_export SENSOR_CHART_DIR_OVERRIDE "${chart_parent_dir}/${chart_name}"
+        ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
         roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
         echo "Downloaded ${chart_name} helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} to ${SENSOR_CHART_DIR_OVERRIDE}"
     else
@@ -106,12 +100,8 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 
     deploy_stackrox
 
-    if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
-        rm -rf "${CENTRAL_CHART_DIR_OVERRIDE}"
-    fi
-    if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
-        rm -rf "${SENSOR_CHART_DIR_OVERRIDE}"
-    fi
+    rm -rf "$charts_dir"
+
     helm repo remove "${helm_repo_name}"
     ci_export CENTRAL_CHART_DIR_OVERRIDE ""
     ci_export SENSOR_CHART_DIR_OVERRIDE ""
