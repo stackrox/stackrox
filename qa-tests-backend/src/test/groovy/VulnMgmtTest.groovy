@@ -1,7 +1,6 @@
 import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 
 import services.GraphQLService
-import services.ImageIntegrationService
 import services.ImageService
 
 import spock.lang.Tag

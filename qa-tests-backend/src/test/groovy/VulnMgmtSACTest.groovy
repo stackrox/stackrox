@@ -6,7 +6,6 @@ import io.stackrox.proto.storage.RoleOuterClass
 import services.ApiTokenService
 import services.BaseService
 import services.GraphQLService
-import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
 

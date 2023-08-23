@@ -11,7 +11,6 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import services.CVEService
 import services.ClusterService
-import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
 import util.ApplicationHealth
