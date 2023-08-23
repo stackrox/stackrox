@@ -1,6 +1,6 @@
 # 0000 - Adopt ADRs
 
-- **Status:** Accepted
+- **Author(s):** J. Victor Martins <jvdm@sdf.org>
 - **Created:** [2023-08-23 Wed]
 
 ## Status
