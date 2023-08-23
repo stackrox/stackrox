@@ -27,12 +27,12 @@ type injectorImpl struct {
 }
 
 func (i *injectorImpl) gather(ctx context.Context) {
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC)
 	newMetrics, err := i.ds.AggregateAndFlush(ctx)
 	if err != nil {
 		log.Info("Failed to get and flush the aggregated product usage metrics: ", err)
 		return
 	}
-	ctx = sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC)
 	if err := i.ds.Upsert(ctx, newMetrics); err != nil {
 		log.Info("Failed to store a usage snapshot: ", err)
 	}
@@ -48,7 +48,7 @@ func (i *injectorImpl) gatherLoop() {
 	for {
 		select {
 		case <-ticker.C:
-			i.gather(ctx)
+			go i.gather(ctx)
 		case <-i.stop.Done():
 			cancel()
 			log.Info("Usage reporting stopped")
