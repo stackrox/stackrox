@@ -16,7 +16,7 @@ func TestEncoder(t *testing.T) {
 		"false":    "false",
 		"duration": d.String(),
 		"test":     "test",
-		"now":      date.String(),
+		"now":      date.Format(time.RFC3339),
 		"uint":     "50000",
 		"float":    "2.5",
 		"count":    "20",
