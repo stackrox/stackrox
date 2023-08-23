@@ -1,6 +1,8 @@
 package injector
 
 import (
+	"sync"
+
 	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
@@ -14,7 +16,8 @@ type Injector interface {
 // NewInjector creates an injector instance.
 func NewInjector(ds datastore.DataStore) Injector {
 	return &injectorImpl{
-		ds:   ds,
-		stop: concurrency.NewSignal(),
+		ds:             ds,
+		stop:           concurrency.NewSignal(),
+		gatherersGroup: &sync.WaitGroup{},
 	}
 }

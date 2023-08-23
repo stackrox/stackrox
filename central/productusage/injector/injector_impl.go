@@ -23,8 +23,9 @@ var (
 )
 
 type injectorImpl struct {
-	ds   datastore.DataStore
-	stop concurrency.Signal
+	ds             datastore.DataStore
+	stop           concurrency.Signal
+	gatherersGroup *sync.WaitGroup
 }
 
 func (i *injectorImpl) gather(ctx context.Context) {
@@ -66,10 +67,15 @@ func (i *injectorImpl) gatherLoop() {
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
-	go i.gatherLoop()
+	i.gatherersGroup.Add(1)
+	go func() {
+		defer i.gatherersGroup.Done()
+		i.gatherLoop()
+	}()
 }
 
-// Stop stops the scheduled timer
+// Stop stops the scheduled timer and wait for the gatherer to stop.
 func (i *injectorImpl) Stop() {
 	i.stop.Signal()
+	i.gatherersGroup.Wait()
 }
