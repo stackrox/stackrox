@@ -324,7 +324,7 @@ type ProductUsageServiceClient interface {
 	// usage observed during a given time range, together with the time when
 	// this maximum was aggregated and stored.
 	//
-	// The usage metrics are continously collected from all the connected
+	// The usage metrics are continuously collected from all the connected
 	// clusters. The maximum values are kept for some period of time in memory,
 	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
@@ -371,7 +371,7 @@ type ProductUsageServiceServer interface {
 	// usage observed during a given time range, together with the time when
 	// this maximum was aggregated and stored.
 	//
-	// The usage metrics are continously collected from all the connected
+	// The usage metrics are continuously collected from all the connected
 	// clusters. The maximum values are kept for some period of time in memory,
 	// and then, periodically, are stored to the database.
 	// The last data from disconnected clusters are taken into account.
