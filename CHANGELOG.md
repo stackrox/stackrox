@@ -12,7 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Telemetry collection enabled by default for self-managed installations. Opt-out is available on bundle generation, or at any time via the System Configuration UI.
 - Integration with OpenShift Container Platform monitoring is configured and enabled by default for OpenShift 4 installations. The flag `monitoring.openshift.enabled: false` disables the integration.
 - A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central (defaults to `false`). When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
-- A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added that when set to `true` will enable processing registry mirrors during image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
+- A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added to Sensor that is set to `true` by default and enables processing registry mirrors during Sensor image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
 - ROX-17112: CORE_BPF collection is now generally available.
 
 ### Removed Features
