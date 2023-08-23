@@ -24,7 +24,7 @@ function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDeleg
                             <Radio
                                 label="None"
                                 isChecked={enabledFor === 'NONE'}
-                                id="choose-all-registries"
+                                id="choose-none"
                                 name="enabledFor"
                                 onChange={() => {
                                     onChangeEnabledFor('NONE');
