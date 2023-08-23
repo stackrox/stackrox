@@ -33,6 +33,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   to choose which format the header should be sent it: `CEF` which is the correct order or `CEF (legacy field order)` which is the older incorrect way.
   The UI will default to `CEF` but when using the API if a value isn't selected, it will default to `CEF (legacy field order)`.
   Starting in version 4.4 the notifier will default to `CEF`.
+- A few public endpoints will soon require authentication, ensure that any flow interacting with these endpoints is authenticated going forward:
+  - `/v1/featureflags`
+  - `/v1/resources`
 
 ### Technical Changes
 
@@ -50,16 +53,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The removal of `/v1/report` APIs in this release, that was communicated in release 4.0.0, has been postponed by one release. Consequently, the `/v1/report` APIs will continue to be available in this release.
 - The `/api/docs/swagger` API previously required read on the resource `Integration`.
   Now it only requires users to be authenticated to via the API docs.
-- ROX-18173: A few public endpoints will soon require authentication, ensure that any flow interacting with these endpoints is authenticated going forward:
-  - `/v1/availableauthproviders`
-  - `/v1/config/public`
-  - `/v1/featureflags`
-  - `/v1/internal/dev/certcheck`
-  - `/v1/internal/dev/envvars`
-  - `/v1/internal/dev/random`
-  - `/v1/internal/dev/reconciliationstats`
-  - `/v1/internal/dev/replicate`
-  - `/v1/resources`
 
 ## [4.1.0]
 
