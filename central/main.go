@@ -845,6 +845,7 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
+		{productUsageInjector.Singleton(), "product usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
