@@ -36,19 +36,19 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// AggregateAndFlush mocks base method.
-func (m *MockDataStore) AggregateAndFlush(ctx context.Context) (*storage.SecuredUnits, error) {
+// AggregateAndReset mocks base method.
+func (m *MockDataStore) AggregateAndReset(ctx context.Context) (*storage.SecuredUnits, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AggregateAndFlush", ctx)
+	ret := m.ctrl.Call(m, "AggregateAndReset", ctx)
 	ret0, _ := ret[0].(*storage.SecuredUnits)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AggregateAndFlush indicates an expected call of AggregateAndFlush.
-func (mr *MockDataStoreMockRecorder) AggregateAndFlush(ctx interface{}) *gomock.Call {
+// AggregateAndReset indicates an expected call of AggregateAndReset.
+func (mr *MockDataStoreMockRecorder) AggregateAndReset(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AggregateAndFlush", reflect.TypeOf((*MockDataStore)(nil).AggregateAndFlush), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AggregateAndReset", reflect.TypeOf((*MockDataStore)(nil).AggregateAndReset), ctx)
 }
 
 // GetCurrentUsage mocks base method.

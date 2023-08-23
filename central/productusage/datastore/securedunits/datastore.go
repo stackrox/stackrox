@@ -27,9 +27,9 @@ type DataStore interface {
 	// on the persistent storage may become noticeable. The decision is to use
 	// in-memory cache to aggregate metrics and persist it only periodically.
 
-	// AggregateAndFlush returns the aggregated metrics from the
+	// AggregateAndReset returns the aggregated metrics from the
 	// in-memory storage and resets the storage.
-	AggregateAndFlush(ctx context.Context) (*storage.SecuredUnits, error)
+	AggregateAndReset(ctx context.Context) (*storage.SecuredUnits, error)
 	// GetCurrentUsage returns the currently known usage.
 	GetCurrentUsage(ctx context.Context) (*storage.SecuredUnits, error)
 	// UpdateUsage updates the in-memory storage with the cluster metrics.
