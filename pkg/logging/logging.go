@@ -77,12 +77,10 @@ var (
 		encoding   string
 		encodeTime zapcore.TimeEncoder
 		separator  string
-		fieldOrder string
 	}{
 		encoding:   "console",
 		encodeTime: zapcore.TimeEncoderOfLayout("2006/01/02 15:04:05.000000"),
 		separator:  " ",
-		fieldOrder: "N:TC:L:",
 	}
 
 	json = struct {
@@ -119,8 +117,7 @@ var (
 				}
 				enc.AppendString(fn + ":" + strconv.Itoa(caller.Line))
 			},
-			ConsoleSeparator:  console.separator,
-			ConsoleFieldOrder: console.fieldOrder,
+			ConsoleSeparator: console.separator,
 		},
 	}
 
