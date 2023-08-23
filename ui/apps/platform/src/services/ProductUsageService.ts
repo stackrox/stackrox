@@ -30,9 +30,19 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
 }
 
 export function downloadProductUsageCsv({ from, to }: TimeRange): Promise<void> {
+    const queryString = qs.stringify(
+        {
+            from,
+            to,
+        },
+        {
+            allowDots: true,
+            arrayFormat: 'repeat',
+        }
+    );
     return saveFile({
-        method: 'post',
-        url: '/api/product/usage/secured-units/csv',
-        data: { from, to },
+        method: 'get',
+        url: `/api/product/usage/secured-units/csv?${queryString}`,
+        data: null,
     });
 }
