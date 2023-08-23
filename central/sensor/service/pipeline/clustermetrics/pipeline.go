@@ -69,6 +69,9 @@ func (p *pipelineImpl) Run(
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
+	// ctx is provided WithAllAccess thanks to the sensorConnection
+	// implementation in
+	// central/sensor/service/connection/connection_impl.go.
 	if err := p.usageStore.UpdateUsage(ctx, clusterID, &storage.SecuredUnits{
 		NumNodes:    clusterMetrics.GetNodeCount(),
 		NumCpuUnits: clusterMetrics.GetCpuCapacity(),
@@ -77,9 +80,6 @@ func (p *pipelineImpl) Run(
 			"Error while trying to update secured units usage: ", err.Error())
 	}
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
-
-	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
-
 	return nil
 }
 

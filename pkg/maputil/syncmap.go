@@ -33,9 +33,6 @@ func (m *syncMapImpl[K, V]) Load(k K) (V, bool) {
 func (m *syncMapImpl[K, V]) Store(k K, v V) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
-	if m.data == nil {
-		m.data = make(map[K]V, 1)
-	}
 	m.data[k] = v
 }
 
