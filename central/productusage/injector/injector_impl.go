@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const aggregationPeriod = 1 * time.Hour
@@ -43,11 +44,18 @@ func (i *injectorImpl) gatherLoop() {
 	defer ticker.Stop()
 	// There will most probably be no data on startup: sensors won't have time
 	// to report.
+	wg := &sync.WaitGroup{}
 	for {
 		select {
 		case <-ticker.C:
-			i.gather(context.Background())
+			wg.Add(1)
+			go func() {
+				i.gather(ctx)
+				wg.Done()
+			}()
 		case <-i.stop.Done():
+			cancel()
+			wg.Wait()
 			log.Info("Usage reporting stopped")
 			i.stop.Reset()
 			return
