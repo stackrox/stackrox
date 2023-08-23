@@ -373,14 +373,15 @@ HEAD
       <li>
         <a href="https://console.cloud.google.com/logs/query
 ;query=
-resource.type=%22k8s_container%22%0A
-resource.labels.cluster_name%3D%22$CLUSTER_NAME%22%0A
+resource.type%3D%22k8s_container%22%0A
+resource.labels.cluster_name%3D%22${CLUSTER_NAME}%22%0A
 resource.labels.namespace_name%3D%22stackrox%22%0A
-;timeRange=$start_ts%2F$end_ts
-;cursorTimestamp=$start_ts
-?authuser=$authUser
-&project=$project
-&orgonly=true&supportedpurview=organizationId" target="_blank">authUser $authUser</a>
+;timeRange=${start_ts}%2F${end_ts}
+;cursorTimestamp=${start_ts}
+?authuser=${authUser}
+&amp;project=${project}
+&amp;orgonly=true
+&amp;supportedpurview=organizationId" target="_blank">authUser $authUser</a>
       </li>
 LINK
 tr -d '\n' >> "$artifact_file"
