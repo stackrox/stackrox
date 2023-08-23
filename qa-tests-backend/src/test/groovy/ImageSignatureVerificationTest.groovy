@@ -75,8 +75,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment DISTROLESS_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-distroless")
             // quay.io/rhacs-eng/qa-signatures:distroless-base
-            .setImage("quay.io/rhacs-eng/qa-signatures@" +
-                    "sha256:0e283722d5121a2610ce7fb85fd04800cc3a99fd2321f5678a2aa35f9e98d9c2")
+            .setImage("gcr.io/distroless/base:debug-ppc64le")
             .addLabel("app", "image-with-signature-distroless-test")
             .setCommand(["sleep", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -85,8 +84,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-tekton")
             // quay.io/rhacs-eng/qa-signatures:tekton
-            .setImage("quay.io/rhacs-eng/qa-signatures@" +
-                    "sha256:5bc15c838843506f6aaa6fa8d03b8d83f15b936a0362d6732afa0f45135fcf54")
+            .setImage("gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:latest")
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -95,8 +93,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment UNVERIFIABLE_DEPLOYMENT = new Deployment()
             .setName("with-signature-unverifiable")
             // quay.io/rhacs-eng/qa-signatures:istio-proxy
-            .setImage("quay.io/rhacs-eng/qa-signatures@" +
-                    "sha256:134e99aa9597fdc17305592d13add95e2032609d23b4c508bd5ebd32ed2df47d")
+            .setImage("registry.redhat.io/openshift-service-mesh/proxyv2-rhel8@sha256:5716a22874c9afa06159da127caf28809ae4f3c18a58605ee662021eb8c9099a")
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/usr/local/bin/pilot-agent", "wait", "--timeoutSeconds", "6000"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -105,8 +102,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment WITHOUT_SIGNATURE_DEPLOYMENT = new Deployment()
             .setName("without-signature")
             // quay.io/rhacs-eng/qa:nginx-204a9a8
-            .setImage("quay.io/rhacs-eng/qa@" +
-                    "sha256:7413e4ab770f308c01659dd1015e61dcc1dead3923d4347dbf3c59206594332f")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1")
             .addLabel("app", "image-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -115,8 +111,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment SAME_DIGEST_NO_SIGNATURE = new Deployment()
             .setName("same-digest-without-signature")
             // quay.io/rhacs-eng/qa:enforcement
-            .setImage("quay.io/rhacs-eng/qa@" +
-                    "sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e")
             .addLabel("app", "image-same-digest-without-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 
@@ -125,8 +120,8 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Deployment SAME_DIGEST_WITH_SIGNATURE = new Deployment()
             .setName("same-digest-with-signature")
             // quay.io/rhacs-eng/qa-signatures:nginx
-            .setImage("quay.io/rhacs-eng/qa-signatures@" +
-                    "sha256:3f13b4376446cf92b0cb9a5c46ba75d57c41f627c4edb8b635fa47386ea29e20")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch@" +
+                    "sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e")
             .addLabel("app", "image-same-digest-with-signature")
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
 

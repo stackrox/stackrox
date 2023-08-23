@@ -41,7 +41,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_A =
             createAndRegisterDeployment()
                     .setName("deployment-a")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-more")
                     .setCapabilities(["NET_ADMIN", "SYSLOG"], ["IPC_LOCK", "WAKE_ALARM"])
                     .addLimits("cpu", "0.5")
                     .addRequest("cpu", "0.25")
@@ -111,7 +111,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_B =
             createAndRegisterDeployment()
                     .setName("deployment-b")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
                     .setCapabilities(["NET_ADMIN"], ["IPC_LOCK"])
                     .addLimits("cpu", "1")
                     .addRequest("cpu", "0.5")
@@ -183,7 +183,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_C =
             createAndRegisterDeployment()
                     .setName("deployment-c")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-alpine")
                     .addAnnotation("im-a-key", "with a different value")
                     .addAnnotation("another-key", "and a value")
                     .addLabel("im-a-key", "with_a_different_value")
@@ -216,7 +216,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_D =
             createAndRegisterDeployment()
                     .setName("deployment-d")
-                    .setImage("quay.io/rhacs-eng/qa:apache-dns")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:apache-dns")
                     .setNamespace(NAMESPACE_D)
 
     static final private WITHOUT_ANNOTATIONS = DEP_D

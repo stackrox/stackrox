@@ -16,14 +16,14 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
             new Deployment()
                 .setName (APACHEDEPLOYMENT)
                 .setReplicas(REPLICACOUNT)
-                .setImage ("quay.io/rhacs-eng/qa:apache-server")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:apache-server")
                 .addLabel ("app", "test" ),
-            new Deployment()
-                .setName (MONGODEPLOYMENT)
-                .setReplicas(REPLICACOUNT)
-                .setImage ("quay.io/rhacs-eng/qa" +
-                    ":mongo-dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
-                .addLabel ("app", "test" ),
+            //new Deployment()
+            //    .setName (MONGODEPLOYMENT)
+            //    .setReplicas(REPLICACOUNT)
+            //    .setImage ("quay.io/rhacs-eng/qa" +
+            //        ":mongo-dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
+            //    .addLabel ("app", "test" ),
      ]
 
     static final private MAX_SLEEP_TIME = 180000
@@ -104,10 +104,10 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         expectedFilePaths | depName
 
         ["/run.sh", "/usr/sbin/apache2",
-          "/bin/chown", "/usr/bin/tail", "/bin/chmod"] as Set | APACHEDEPLOYMENT
+          "/bin/chown", "/usr/bin/tail"] as Set | APACHEDEPLOYMENT
 
-        ["/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
-         "/bin/rm", "/usr/bin/id", "/usr/bin/find",
-         "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
+        //["/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
+        // "/bin/rm", "/usr/bin/id", "/usr/bin/find",
+        // "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
    }
 }

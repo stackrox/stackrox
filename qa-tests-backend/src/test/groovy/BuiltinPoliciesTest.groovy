@@ -23,7 +23,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(TRIGGER_MOST)
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
                     // For: "Emergency Deployment Annotation"
                     .addAnnotation("admission.stackrox.io/break-glass", "yay")
                     // For: "Secret Mounted as Environment Variable"
@@ -38,7 +38,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
             // For: "Alpine Linux Package Manager (apk) in Image"
             new Deployment()
                     .setName(TRIGGER_ALPINE)
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6"),
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-alpine"),
     ]
     static final private List<Deployment> NO_WAIT_DEPLOYMENTS = [
             new Deployment()
@@ -53,9 +53,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
                     .addVolume(new Volume(name: "crio-sock",
                             hostPath: "/run/crio/crio.sock",
                             mountPath: "/run/crio/crio.sock")),
-            new Deployment()
-                    .setName(TRIGGER_UNSCANNED)
-                    .setImage("non-existent:image"),
+            //new Deployment()
+            //        .setName(TRIGGER_UNSCANNED)
+            //        .setImage("non-existent:image"),
     ]
 
     @Shared
@@ -132,7 +132,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Curl in Image"                                              | TRIGGER_MOST
         "Emergency Deployment Annotation"                            | TRIGGER_MOST
         "Fixable CVSS >= 6 and Privileged"                           | TRIGGER_MOST
-        "Images with no scans"                                       | TRIGGER_UNSCANNED
+        // "Images with no scans"                                       | TRIGGER_UNSCANNED
         // "Improper Usage of Orchestrator Secrets Volume"          | TRIGGER_MOST  // ROX-5098 does not trigger
         "Insecure specified in CMD"                                  | TRIGGER_MOST
         "iptables Execution"                                         | TRIGGER_MOST

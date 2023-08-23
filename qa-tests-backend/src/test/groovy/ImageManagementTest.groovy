@@ -70,7 +70,7 @@ class ImageManagementTest extends BaseSpecification {
         "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
-        "Wget in Image"                   | "quay.io"     | "rhacs-eng/qa"                   | "struts-app" | ""
+        "Wget in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "trigger-policy-violations-most" | ""
         "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
@@ -227,13 +227,13 @@ class ImageManagementTest extends BaseSpecification {
         when:
         "Scan an image and then grab the image data"
         ImageService.scanImage(
-          "mysql@sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
+          "registry.redhat.io/rhel8/mysql-80@sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
 
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
+                    "sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
             assert image != null && image.riskScore != 0
         }
     }
@@ -247,7 +247,7 @@ class ImageManagementTest extends BaseSpecification {
                 .setName("risk-image")
                 .setNamespace(TEST_NAMESPACE)
                 .setReplicas(1)
-                .setImage("quay.io/rhacs-eng/qa:mysql-from-docker-io")
+                .setImage("registry.redhat.io/rhel8/mysql-80@sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
                 .setCommand(["sleep", "60000"])
                 .setSkipReplicaWait(false)
 
@@ -257,7 +257,7 @@ class ImageManagementTest extends BaseSpecification {
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:5c508e03f7f1987a393816a9ce2358f4abbdd36629972ba870af8f4cfcd031c0")
+                    "sha256:c10fa34c5bcf8cb4ab230aeccd0d2c1cd36505bf551abf67c2a08a53a26f3f60")
             assert image != null && image.riskScore != 0
         }
 

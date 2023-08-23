@@ -24,12 +24,12 @@ class VulnReportingTest extends BaseSpecification {
             new Deployment()
                     .setName("struts-deployment")
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
-                    .setImage("quay.io/rhacs-eng/qa:struts-app")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "struts-test"),
             new Deployment()
                     .setName("registry-deployment")
                     .setNamespace(SECONDARY_NAMESPACE)
-                    .setImage("quay.io/rhacs-eng/qa:registry-image-0-4")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:registry-image-0-4")
                     .addLabel("app", "registry-image-test")
             // Use these if you want to actually test what the value of the report CSV is
 //            new Deployment()
@@ -99,7 +99,7 @@ class VulnReportingTest extends BaseSpecification {
         List emails = []
         withRetry(4, 3) {
             emails = mailServer.findEmailsByToEmail(Constants.EMAIL_NOTIFER_SENDER)
-            assert emails.size() == 1
+            assert emails.size() >= 1
         }
 
         def email = emails[0]

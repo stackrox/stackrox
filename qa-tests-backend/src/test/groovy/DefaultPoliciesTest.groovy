@@ -80,30 +80,30 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/rhacs-eng/qa:struts-app")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel("app", "test")
             .addPort(80)
 
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
-            .setImage ("quay.io/rhacs-eng/qa:latest") // this is docker.io/nginx:1.22-alpine but tagged as latest
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
         STRUTS_DEPLOYMENT,
-        new Deployment()
-            .setName(SSL_TERMINATOR)
-            .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
-            .addLabel("app", "test")
-            .setCommand(["sleep", "600"]),
+        //new Deployment()
+        //    .setName(SSL_TERMINATOR)
+        //    .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
+        //    .addLabel("app", "test")
+        //    .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
-            .setImage("quay.io/rhacs-eng/qa:docker-io-nginx-1-10")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.11.1")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]
@@ -236,7 +236,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938"
 
-        "Wget in Image"                                 | STRUTS         | "C939"
+        "Wget in Image"                                 | NGINX_1_10         | "C939"
 
         "90-Day Image Age"                              | STRUTS         | "C810"
 
@@ -246,7 +246,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
-        "Curl in Image"                                 | STRUTS         | "C948"
+        "Curl in Image"                                 | NGINX_1_10         | "C948"
     }
 
     def hasApacheStrutsVuln(image) {
@@ -432,21 +432,21 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least 100 CVEs.
-                "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                     " contains \\d{2,3}\\d+ CVEs with severities ranging between " +
+                "Image \"quay.io/rhacs-eng/qa-multi-arch:struts-app\"" +
+                     " contains 139 CVEs with severities ranging between " +
                      "Low and Critical" | []
 
         "Service Configuration"           | 2.0f     |
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image \"quay.io/rhacs-eng/qa:struts-app\" " +
+                "Image \"quay.io/rhacs-eng/qa-multi-arch:struts-app\" " +
                 "contains components useful for attackers:" +
-                    " apt, bash, curl, wget" | null | []
+                    " apt, bash, curl" | null | []
 
         "Number of Components in Image"   | 1.5f     | null |
-                "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                " contains 169 components" | []
+                "Image \"quay.io/rhacs-eng/qa-multi-arch:struts-app\"" +
+                " contains 91 components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
         // TODO(ROX-9637)

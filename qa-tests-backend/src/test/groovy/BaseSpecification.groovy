@@ -42,7 +42,7 @@ class BaseSpecification extends Specification {
 
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
-    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
 
     static final String RUN_ID
 

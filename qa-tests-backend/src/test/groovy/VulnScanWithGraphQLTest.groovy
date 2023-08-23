@@ -7,6 +7,7 @@ import util.Timer
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
+import util.Env
 
 @Tag("BAT")
 @Tag("GraphQL")
@@ -14,7 +15,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
-            .setImage ("quay.io/rhacs-eng/qa:struts-app")
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel ("app", "test" )
     static final private List<Deployment> DEPLOYMENTS = [
     STRUTS_DEP,
@@ -161,19 +162,27 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         def imageId = waitForValidImageID(uid)
         log.info "image id ..." + imageId
         assert !StringUtils.isEmpty(imageId)
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            // some breather for few arches
+            //sleep(5000)
+        }
         def resultRet = gqlService.Call(GET_CVES_INFO_WITH_IMAGE_QUERY, [ id: imageId ])
         assert resultRet.getCode() == 200
         log.info "return code " + resultRet.getCode()
         then:
         assert resultRet.getValue() != null
         def image = resultRet.getValue().image
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            // some breather for few arches
+            //sleep(5000)
+        }
         assert image?.scan?.components?.vulns != null
         int cve =  getCVEs(image.scan.components.vulns)
         assert cve >= vuln_cve
         where:
         "Data inputs are :"
         depName | vuln_cve
-        STRUTSDEPLOYMENT_VULN_SCAN | 219
+        STRUTSDEPLOYMENT_VULN_SCAN | 138
     }
 
     @Unroll
@@ -185,12 +194,16 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         then :
         List<Object> imagesReturned = result2Ret.getValue().result.images
         assert imagesReturned != null
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            // some breather for few arches
+            //sleep(5000)
+        }
         String imgName = imagesReturned.find { it.name.fullName == imageToBeVerified }
         assert !(StringUtils.isEmpty(imgName))
         where:
         "Data inputs are :"
         CVEID            | OS         | imageToBeVerified
-        "CVE-2017-18190" | "debian:8" | STRUTS_DEP.getImage()
+        "CVE-2017-12611" | "ubuntu:20.04" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
