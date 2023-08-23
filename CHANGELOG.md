@@ -33,6 +33,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   to choose which format the header should be sent it: `CEF` which is the correct order or `CEF (legacy field order)` which is the older incorrect way.
   The UI will default to `CEF` but when using the API if a value isn't selected, it will default to `CEF (legacy field order)`.
   Starting in version 4.4 the notifier will default to `CEF`.
+- A few public endpoints will soon require authentication, ensure that any flow interacting with these endpoints is authenticated going forward:
+  - `/v1/featureflags`
+  - `/v1/resources`
 
 ### Technical Changes
 
