@@ -38,7 +38,7 @@
     "/v1/product/usage/secured-units/max": {
       "get": {
         "summary": "GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units\nusage observed during a given time range, together with the time when\nthis maximum was aggregated and stored.",
-        "description": "The usage metrics are continously collected from all the connected\nclusters. The maximum values are kept for some period of time in memory,\nand then, periodically, are stored to the database.\nThe last data from disconnected clusters are taken into account.",
+        "description": "The usage metrics are continuously collected from all the connected\nclusters. The maximum values are kept for some period of time in memory,\nand then, periodically, are stored to the database.\nThe last data from disconnected clusters are taken into account.",
         "operationId": "ProductUsageService_GetMaxSecuredUnitsUsage",
         "responses": {
           "200": {
