@@ -151,6 +151,23 @@ var (
   pointer to explicitly call out that the underlying data may be modified in
   that function.
 - Avoid naked returns
+```go
+// bad: naked return requires to look on the func declaration to know what is being returned
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return
+}
+```
+
+```go
+// good: it is known what is being returned by looking only at the return statement
+func split(sum int) (x, y int) {
+	x = sum * 4 / 9
+	y = sum - x
+	return x, y
+}
+```
 
 ### Types and collections
 
