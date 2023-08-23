@@ -49,7 +49,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The removal of `/v1/report` APIs in this release, that was communicated in release 4.0.0, has been postponed by one release. Consequently, the `/v1/report` APIs will continue to be available in this release.
 - The `/api/docs/swagger` API previously required read on the resource `Integration`.
   Now it only requires users to be authenticated to via the API docs.
-- ROX-18660: A new parameter `spec.registeryOverride` has been added to the SecuredCluster` CRD. Setting it will set the corresponding field in the underlying Helm chart, allowing override of the default image registry domain when none is provided (currently docker.io).
+- ROX-18660: A new parameter `spec.registryOverride` has been added to the SecuredCluster` CRD. Setting it will set the corresponding field in the underlying Helm chart, allowing override of the default image registry domain when none is provided (currently docker.io).
 
 ## [4.1.0]
 
