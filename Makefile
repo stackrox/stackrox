@@ -654,7 +654,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 		integration-tests/mock-grpc-server/image
 
 .PHONY: mock-grpc-server-image-push
-mock-grpc-server-image-push:
+mock-grpc-server-image-push: mock-grpc-server-build
 	cp -R bin integration-tests/mock-grpc-server/image
 	docker buildx build --platform $(PLATFORM) --push \
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
