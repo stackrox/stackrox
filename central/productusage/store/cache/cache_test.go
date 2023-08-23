@@ -51,17 +51,17 @@ func TestCleanupCurrent(t *testing.T) {
 	assert.Equal(t, int64(30), bm.NumCpuUnits)
 }
 
-func TestAggregateAndFlush(t *testing.T) {
+func TestAggregateAndReset(t *testing.T) {
 	c := NewCache()
 
 	inject(c)
-	bm := c.AggregateAndFlush()
+	bm := c.AggregateAndReset()
 	assert.Equal(t, int64(3), bm.NumNodes)
 	assert.Equal(t, int64(30), bm.NumCpuUnits)
 
 	ids := set.NewStringSet()
 	c.Cleanup(ids)
-	bm = c.AggregateAndFlush()
+	bm = c.AggregateAndReset()
 	assert.Equal(t, int64(0), bm.NumNodes)
 	assert.Equal(t, int64(0), bm.NumCpuUnits)
 
@@ -69,12 +69,12 @@ func TestAggregateAndFlush(t *testing.T) {
 
 	ids.Add("test1")
 	c.Cleanup(ids)
-	bm = c.AggregateAndFlush()
+	bm = c.AggregateAndReset()
 	assert.Equal(t, int64(1), bm.NumNodes)
 	assert.Equal(t, int64(10), bm.NumCpuUnits)
 
 	c.Cleanup(ids)
-	bm = c.AggregateAndFlush()
+	bm = c.AggregateAndReset()
 	assert.Equal(t, int64(0), bm.NumNodes)
 	assert.Equal(t, int64(0), bm.NumCpuUnits)
 
@@ -82,7 +82,7 @@ func TestAggregateAndFlush(t *testing.T) {
 
 	ids.Add("test2")
 	c.Cleanup(ids)
-	bm = c.AggregateAndFlush()
+	bm = c.AggregateAndReset()
 	assert.Equal(t, int64(3), bm.NumNodes)
 	assert.Equal(t, int64(30), bm.NumCpuUnits)
 }
