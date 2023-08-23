@@ -3,7 +3,7 @@ package connectivity
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
-  "github.com/stackrox/rox/roxctl/netpol/connectivity/diff"
+	"github.com/stackrox/rox/roxctl/netpol/connectivity/diff"
 	connectivitymap "github.com/stackrox/rox/roxctl/netpol/connectivity/map"
 )
 
