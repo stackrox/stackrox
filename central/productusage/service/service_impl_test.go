@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	mockstore "github.com/stackrox/rox/central/productusage/datastore/securedunits/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,10 +36,11 @@ func (s *usageSvcSuite) SetupTest() {
 }
 
 func (s *usageSvcSuite) TestGetMaxUsage() {
-	now := time.Now()
-	ts := protoconv.ConvertTimeToTimestamp(now)
-	ts1 := protoconv.ConvertTimeToTimestamp(now.Add(1 * time.Hour))
-	ts2 := protoconv.ConvertTimeToTimestamp(now.Add(2 * time.Hour))
+	from := time.Now()
+	to := from.Add(2 * time.Hour)
+
+	ts := protoconv.ConvertTimeToTimestamp(from)
+	ts1 := protoconv.ConvertTimeToTimestamp(from.Add(1 * time.Hour))
 
 	stored := []*storage.SecuredUnits{{
 		Timestamp:   ts,
@@ -59,16 +59,13 @@ func (s *usageSvcSuite) TestGetMaxUsage() {
 		MaxCpuUnits:   100,
 	}
 
-	req := &v1.TimeRange{From: ts, To: ts2}
+	req := &v1.TimeRange{From: ts, To: protoconv.ConvertTimeToTimestamp(to)}
 
-	s.store.EXPECT().Walk(context.Background(), ts, ts2, gomock.Any()).Times(1).
-		DoAndReturn(
-			func(_ context.Context, _ *types.Timestamp, _ *types.Timestamp, fn func(*storage.SecuredUnits) error) error {
-				_ = fn(stored[0])
-				_ = fn(stored[1])
-				return nil
-			},
-		)
+	s.store.EXPECT().GetMaxNumNodes(context.Background(),
+		from.UTC(), to.UTC()).Times(1).Return(stored[0], nil)
+	s.store.EXPECT().GetMaxNumCPUUnits(context.Background(),
+		from.UTC(), to.UTC()).Times(1).Return(stored[1], nil)
+
 	svc := New(s.store)
 	res, err := svc.GetMaxSecuredUnitsUsage(context.Background(), req)
 	s.Require().NoError(err)

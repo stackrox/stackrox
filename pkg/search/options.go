@@ -133,6 +133,9 @@ var (
 	PortProtocol   = newFieldLabel("Port Protocol")
 	// Priority is used in risk datastore internally.
 	Priority                      = newFieldLabel("Priority")
+	ProductUsageTimestamp         = newFieldLabel("Product Usage Timestamp")
+	ProductUsageNodes             = newFieldLabel("Product Usage Nodes")
+	ProductUsageCPUUnits          = newFieldLabel("Product Usage CPU Units")
 	ClusterPriority               = newFieldLabel("Cluster Risk Priority")
 	NamespacePriority             = newFieldLabel("Namespace Risk Priority")
 	Privileged                    = newFieldLabel("Privileged")
