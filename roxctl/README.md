@@ -17,8 +17,8 @@ For more information on why this decision was made, [an ADR exists explaining th
 Within the codebase, `roxctl` makes heavy use of [github.com/spf13/cobra](https://pkg.go.dev/github.com/spf13/cobra) as
 the CLI library of choice.
 
-Besides `github.com/spf13/cobra`, one integral part how commands are structure is the [roxctl/common/environment](https://github.com/stackrox/stackrox/tree/master/roxctl/common/environment) package.
-The `Environment` interface provides abstraction for generic functionality that may be required by commands:
+Besides `github.com/spf13/cobra`, one integral part how commands are structured is the [roxctl/common/environment](https://github.com/stackrox/stackrox/tree/master/roxctl/common/environment) package.
+The `Environment` interface provides abstractions for generic functionality that may be required by a command:
 - Printing output.
 - Creating gRPC connections / HTTP client.
 - Logging.
@@ -26,7 +26,7 @@ The `Environment` interface provides abstraction for generic functionality that 
 - Config store.
 
 Each command used in `roxctl` **must** use the `Environment` interface. It provides a clear structure to all commands,
-as well as the possibility to easily mock external dependencies to allow for better unit testing.
+as well as the possibility to easily mock external dependencies to allow for better and sophisticated unit testing.
 
 A typical command structure within Go should look as follows:
 ```go
@@ -83,7 +83,7 @@ func (s *sampleCmd) sample() error {
 One of the most important things about maintaining commands for `roxctl` is to ensure changes of behavior have no side
 effects.
 
-Since `roxctl` is typically used within CI as well as automation (e.g. scripts) by users, they are sensitive to behavior
+Since `roxctl` is typically used within CI as well as automation (e.g. scripts) by users, it is sensitive to behavior
 changes.
 
 A behavior change may consist of:
@@ -92,16 +92,16 @@ A behavior change may consist of:
 - Removing or renaming a command.
 - Changing non-human readable CLI output (e.g. changing returned JSON).
 
-Since this is a sensitive topics, the following points **must** be considered when maintaining commands:
+Since this is a sensitive topic, the following points **must** be considered when maintaining commands:
 - Breaking changes **should** be avoided if possible.
 - A breaking change **must** have an intrinsic value to it. While this may be vague, here are a couple of examples:
   - Allows to introduce new functionality which provides direct value to a majority of users.
   - Increases stability or usability for a majority of users.
   - Reduces the overall maintenance cost (e.g. removing unused commands, removing support for deprecated
     OpenShift versions)
-- When breaking changes are done, a deprecation notice within the `CHANGELOG.md` **must** exist according to our current
-  guidelines for introducing breaking changes.
-- When removing or renaming a command or flag, an alias **must** be introduced (see later section about this).
+- When breaking changes are done, a deprecation notice within the `CHANGELOG.md` **must** exist beforehand
+  according to our current guidelines for introducing breaking changes.
+- When removing or renaming a command or flag, an alias **must** be introduced (see the latter section about this).
 
 ## Creating an alias for deprecated values
 
