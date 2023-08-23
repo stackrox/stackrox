@@ -132,7 +132,7 @@ func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredU
 // for the next iteration.
 func (ds *dataStoreImpl) AggregateAndReset(ctx context.Context) (*storage.SecuredUnits, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
-		return nil, errors.Wrap(err, "cannot permit to get the aggregate usage data")
+		return nil, err
 	}
 	ids, err := getClusterIDs(ctx, ds.clusterDS)
 	if err != nil {
@@ -145,7 +145,7 @@ func (ds *dataStoreImpl) AggregateAndReset(ctx context.Context) (*storage.Secure
 // UpdateUsage updates the cache with the metrics of the clusterID cluster.
 func (ds *dataStoreImpl) UpdateUsage(ctx context.Context, clusterID string, cm *storage.SecuredUnits) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
-		return errors.Wrap(err, "cannot permit to update usage data cache")
+		return err
 	}
 	ds.cache.UpdateUsage(clusterID, cm)
 	return nil

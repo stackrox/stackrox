@@ -87,9 +87,6 @@ func (p *pipelineImpl) Run(
 			"Error while trying to update secured units usage: ", err.Error())
 	}
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
-
-	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, msg.GetClusterMetrics())
-
 	return nil
 }
 
