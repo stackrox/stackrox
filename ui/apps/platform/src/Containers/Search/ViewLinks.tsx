@@ -5,14 +5,15 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { SearchResultCategory } from 'services/SearchService';
 
 import NotApplicable from './NotApplicable';
-import { searchResultCategoryMap } from './searchCategories';
+import { SearchResultCategoryMap } from './searchCategories';
 
 type ViewLinksProps = {
     id: string;
     resultCategory: SearchResultCategory;
+    searchResultCategoryMap: SearchResultCategoryMap;
 };
 
-function ViewLinks({ id, resultCategory }: ViewLinksProps): ReactElement {
+function ViewLinks({ id, resultCategory, searchResultCategoryMap }: ViewLinksProps): ReactElement {
     const { viewLinks } = searchResultCategoryMap[resultCategory] ?? {};
 
     if (viewLinks?.length) {

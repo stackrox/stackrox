@@ -61,17 +61,9 @@ export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
-// Configuration Management paths for links from Search:
-
-export const configManagementRolesPath = `${configManagementPath}/roles`;
-export const configManagementSecretsPath = `${configManagementPath}/secrets`;
-export const configManagementServiceAccountsPath = `${configManagementPath}/serviceaccounts`;
-
-// Vulnerability Management 1.0 paths for links from Dashboard or Search:
+// Vulnerability Management 1.0 path for links from Dashboard:
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
-export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
-export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 // Compose resourceAccessRequirements from resource names and predicates.
 
