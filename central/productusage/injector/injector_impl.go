@@ -50,8 +50,8 @@ func (i *injectorImpl) gatherLoop() {
 		case <-ticker.C:
 			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				i.gather(ctx)
-				wg.Done()
 			}()
 		case <-i.stop.Done():
 			cancel()
