@@ -52,3 +52,7 @@ jobs:
       create-long-cluster: ${{github.event.inputs.create-long-cluster == 'true'}}
       dry-run: ${{github.event.inputs.dry-run == 'true'}}
       workflow-ref: v1
+      kube-burner-config-ref: ${{ github.event.inputs.version }}
+      kube-burner-config-repo: stackrox
+      cluster-with-fake-load-name: gke-long-running-fake-load-${{ github.event.inputs.version }}
+      cluster-with-real-load-name: gke-long-running-real-load-${{ github.event.inputs.version }}
