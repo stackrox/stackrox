@@ -407,6 +407,7 @@ func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
 // represented by the given components and scan notes.
 func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRPCV1.Components, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
 	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
+		Image:      image.GetName().GetFullName(),
 		Components: components,
 		Notes:      notes,
 	}
