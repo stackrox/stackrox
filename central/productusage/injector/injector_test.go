@@ -1,12 +1,12 @@
 package injector
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	mockstore "github.com/stackrox/rox/central/productusage/datastore/securedunits/mocks"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
