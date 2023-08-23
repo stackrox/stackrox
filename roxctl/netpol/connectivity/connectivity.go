@@ -1,18 +1,17 @@
-package netpol
+package connectivity
 
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/netpol/connectivity"
-	"github.com/stackrox/rox/roxctl/netpol/generate"
+	"github.com/stackrox/rox/roxctl/netpol/connectivity/diff"
 )
 
-// Command defines the netpol command tree
+// Command defines the netpol connectivity command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:   "netpol",
-		Short: "(Technology Preview) Commands related to network policies.",
-		Long: `Commands related to to network policies.
+		Use:   "connectivity",
+		Short: "(Technology Preview) Commands related to connectivity analysis of network policy resources.",
+		Long: `Commands related to connectivity analysis of network policy resources.
 
 ** This is a Technology Preview feature **
 Technology Preview features are not supported with Red Hat production service level agreements (SLAs) and might not be functionally complete.
@@ -22,8 +21,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 	}
 
 	c.AddCommand(
-		connectivity.Command(cliEnvironment),
-		generate.Command(cliEnvironment),
+		diff.Command(cliEnvironment),
 	)
 	return c
 }

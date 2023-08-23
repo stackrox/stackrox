@@ -1,0 +1,7 @@
+# Namespace for payments
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments
+  labels:
+    name: payments

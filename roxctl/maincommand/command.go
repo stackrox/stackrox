@@ -82,6 +82,7 @@ func Command() *cobra.Command {
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 		connectivitymap.Command(cliEnvironment),
+		netpol.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
