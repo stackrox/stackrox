@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	zeroTime  = time.Time{}
+	zeroTime  = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 	csvHeader = csv.Row{"Timestamp", "Nodes", "CPU Units"}
 )
 
@@ -56,7 +56,8 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 		{
 			fromts, _ := types.TimestampFromProto(from)
 			tots, _ := types.TimestampFromProto(to)
-			filename = fmt.Sprintf("secured_units_usage-%s-%s.csv", fromts.Format(time.DateOnly), tots.Format(time.DateOnly))
+			filename = fmt.Sprintf("secured_units_usage-%s--%s.csv",
+				fromts.Format(time.DateOnly), tots.Format(time.DateOnly))
 		}
 		csvWriter := csv.NewHTTPWriter(w, filename,
 			getSecuredUnitsConverter(), csvHeader)
