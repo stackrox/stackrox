@@ -1,9 +1,8 @@
 package injector
 
 import (
-	"sync"
-
 	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
