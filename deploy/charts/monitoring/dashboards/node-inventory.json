@@ -20,7 +20,7 @@
   "panels": [
     {
       "datasource": null,
-      "description": "Based on rox_compliance_call_node_inventory_duration_seconds. Aggregated over 4h windows.",
+      "description": "Based on rox_compliance_call_node_inventory_duration_seconds. Aggregated over selected time range.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -68,7 +68,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(rox_compliance_call_node_inventory_duration_seconds_sum[4h])/rate(rox_compliance_call_node_inventory_duration_seconds_count[4h])",
+          "expr": "rate(rox_compliance_call_node_inventory_duration_seconds_sum[$__range])/rate(rox_compliance_call_node_inventory_duration_seconds_count[$__range])",
           "interval": "",
           "legendFormat": "{{exported_node_name}}",
           "refId": "A"
@@ -79,7 +79,7 @@
     },
     {
       "datasource": null,
-      "description": "Based on rox_compliance_protobuf_inventory_message_size_bytes. Aggregated over 4h windows.",
+      "description": "Based on rox_compliance_protobuf_inventory_message_size_bytes. Aggregated over selected time range.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -126,7 +126,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "rate(rox_compliance_protobuf_inventory_message_size_bytes_sum[4h])/rate(rox_compliance_protobuf_inventory_message_size_bytes_count[4h])",
+          "expr": "rate(rox_compliance_protobuf_inventory_message_size_bytes_sum[$__range])/rate(rox_compliance_protobuf_inventory_message_size_bytes_count[$__range])",
           "interval": "",
           "legendFormat": "{{exported_node_name}}",
           "refId": "A"
@@ -363,7 +363,7 @@
           "refId": "A"
         }
       ],
-      "title": "Configured Inventory Rescan Interval",
+      "title": "Inventory Rescan Interval",
       "type": "stat"
     }
   ],
@@ -375,12 +375,12 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-4h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Node Inventory Status",
   "uid": "wdPp0woVz",
-  "version": 5
+  "version": 7
 }
