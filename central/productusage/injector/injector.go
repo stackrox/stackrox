@@ -1,11 +1,11 @@
 package injector
 
 import (
-	"sync"
 	"time"
 
 	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const aggregationPeriod = 1 * time.Hour
