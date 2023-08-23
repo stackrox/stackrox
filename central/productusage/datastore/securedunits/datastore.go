@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/productusage/store"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // DataStore is the datastore for product usage.
@@ -51,5 +52,6 @@ func New(store store.Store, clusterDS clusterDataStore) DataStore {
 		store:     store,
 		clusterDS: clusterDS,
 		cache:     cache.NewCache(),
+		mux:       &sync.RWMutex{},
 	}
 }

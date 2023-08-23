@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -26,6 +27,8 @@ type dataStoreImpl struct {
 	store     store.Store
 	clusterDS clusterDataStore
 	cache     cache.Cache
+
+	mux *sync.RWMutex
 }
 
 var _ DataStore = (*dataStoreImpl)(nil)
@@ -33,6 +36,9 @@ var _ DataStore = (*dataStoreImpl)(nil)
 // Walk calls fn on every record found in the storage. Stops iterating if
 // fn returns an error, and returns this error.
 func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time, fn func(*storage.SecuredUnits) error) error {
+	ds.mux.RLock()
+	defer ds.mux.RUnlock()
+
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to walk through usage data")
 	}
@@ -78,6 +84,9 @@ func (ds *dataStoreImpl) GetMaxNumCPUUnits(ctx context.Context, from time.Time, 
 }
 
 func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
+	ds.mux.RLock()
+	defer ds.mux.RUnlock()
+
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get maximum of usage data")
 	}
@@ -106,6 +115,9 @@ func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, fr
 
 // Upsert saves the current state of an object in storage.
 func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) error {
+	ds.mux.Lock()
+	defer ds.mux.Unlock()
+
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to upsert usage data")
 	}
