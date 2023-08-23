@@ -21,7 +21,7 @@ func validateTokenProviderUpdate(provider *storage.AuthProvider, claims *tokens.
 
 	// Adding a leeway to the time comparison.
 	// Reasoning for this is that during the _first_ time an auth provider is used, the auth provider is marked as
-	// `active` _after_ the token has been issued. This leads to a small different between `IssuedAt` and `LastUpdated`.
+	// `active` _after_ the token has been issued. This leads to a small difference between `IssuedAt` and `LastUpdated`.
 	// While the login attempt could just be retried, we'll add a leeway to the `IssuedAt` value.
 	if claims.IssuedAt.Time().Add(leeway).Before(lastProviderUpdate.GoTime()) {
 		return errors.Errorf("token issued at %s, provider updated at %s",
