@@ -48,6 +48,12 @@ jobs:
           DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
           FILE_NAME=$(basename "$DOWNLOAD_URL")
           wget "$DOWNLOAD_URL" -O "$FILE_NAME"
+          # Check if wget succeeded
+          if [ $? -ne 0 ]; then
+            echo "Download failed. Terminating current matrix step."
+            exit 1
+          fi
+
           unzip "$FILE_NAME" -d "${FILE_NAME}-dir"
           cd "${FILE_NAME}-dir/stackrox-"*
           if [ ! -d "scanner" ]; then
