@@ -239,7 +239,6 @@
 #       preferredDuringSchedulingIgnoredDuringExecution:
 #         - weight: 60
 #           podAffinityTerm:
-#             namespaces: ["stackrox"]
 #             topologyKey: "kubernetes.io/hostname"
 #             labelSelector:
 #               matchLabels:
