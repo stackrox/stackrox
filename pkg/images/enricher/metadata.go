@@ -20,7 +20,7 @@ var (
 	metadataHashToVersion = map[uint64]int{
 		// initial hash of the metadata maps to 0
 		// hash changed when mirror* fields were added to storage.DataSource.
-		15313109102692888684: 0,
+		9091013492931583101: 0,
 	}
 
 	metadataHash uint64
