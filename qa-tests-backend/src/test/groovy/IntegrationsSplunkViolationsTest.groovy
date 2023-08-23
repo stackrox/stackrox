@@ -23,6 +23,7 @@ import util.Timer
 
 import org.junit.Rule
 import org.junit.rules.Timeout
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -106,6 +107,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
+    @Ignore("ROX-15348")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"

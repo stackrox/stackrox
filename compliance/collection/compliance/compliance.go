@@ -83,7 +83,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if env.RHCOSNodeScanning.BooleanSetting() && c.nodeScanner.IsActive() {
+	if c.nodeScanner.IsActive() {
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {

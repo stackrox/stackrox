@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/roxctl/netpol/generate"
 )
 
-// Command defines the generate command tree
+// Command defines the netpol command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "netpol",
@@ -22,6 +22,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 	}
 
 	c.AddCommand(
+		connectivity.Command(cliEnvironment),
 		generate.Command(cliEnvironment),
 		connectivity.Command(cliEnvironment),
 	)

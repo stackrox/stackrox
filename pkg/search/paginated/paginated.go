@@ -13,7 +13,7 @@ func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.Query
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 			// Add pagination sort order if needed.
-			local := FillDefaultSortOption(q, defaultSortOption)
+			local := FillDefaultSortOption(q, defaultSortOption.Clone())
 			return searcher.Search(ctx, local)
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/retry/handler"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	umh := retry.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
+	umh := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
 	c := compliance.NewComplianceApp(np, scanner, umh)
 	c.Start()
 }

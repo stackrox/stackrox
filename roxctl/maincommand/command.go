@@ -48,6 +48,7 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 	c.PersistentFlags().Bool("json", false, "display extended version information as JSON")
+	flags.HideInheritedFlags(c)
 	return c
 }
 
@@ -81,10 +82,10 @@ func Command() *cobra.Command {
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
 		connectivitymapDeprecated.Command(cliEnvironment),
+		netpol.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))
-		c.AddCommand(netpol.Command(cliEnvironment))
 	}
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))
