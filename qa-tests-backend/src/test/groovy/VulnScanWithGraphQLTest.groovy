@@ -58,39 +58,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         }
     }"""
 
-    private static final String GET_IMAGE_INFO_FROM_VULN_QUERY = """
-    query getCve(\$id: ID!) {
-        result: vulnerability(id: \$id) {
-        cve
-        cvss
-        scoreVersion
-        link
-        vectors {
-          __typename
-          ... on CVSSV2 {
-            impactScore
-            exploitabilityScore
-            vector
-          }
-          ... on CVSSV3 {
-            impactScore
-            exploitabilityScore
-            vector
-          }
-        }
-        summary
-        fixedByVersion
-        isFixable
-        lastScanned
-        componentCount
-        imageCount
-        deploymentCount
-        images {
-            id  name {fullName} scan {
-                scanTime
-            }}}
-    }"""
-
     private static final String GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY = """
     query getCve(\$id: ID!) {
         result: imageVulnerability(id: \$id) {
@@ -196,10 +163,9 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
      int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
-        def objId = isPostgresRun() ? cveId + "#" + os : cveId
-        def graphQLQuery = isPostgresRun() ? GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY : GET_IMAGE_INFO_FROM_VULN_QUERY
+        def objId = cveId + "#" + os
         while (t.IsValid()) {
-            def result2Ret = gqlService.Call(graphQLQuery, [id: objId])
+            def result2Ret = gqlService.Call(GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY, [id: objId])
             assert result2Ret.getCode() == 200
             if (result2Ret.getValue().result != null) {
                 log.info "images fetched from cve"

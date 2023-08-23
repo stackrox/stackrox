@@ -203,6 +203,10 @@ class BaseSpecification extends Specification {
         globalSetupDone = true
     }
 
+    static Boolean isPostgresRun() {
+        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
+    }
+
     @Rule
     Timeout globalTimeout = new Timeout(
             isRaceBuild() ? 2500 : 800,
@@ -423,10 +427,6 @@ class BaseSpecification extends Specification {
                 "gcr-image-pull-secret",
                 Constants.ORCHESTRATOR_NAMESPACE)
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
-    }
-
-    static Boolean isPostgresRun() {
-        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
     }
 
     static Boolean isRaceBuild() {

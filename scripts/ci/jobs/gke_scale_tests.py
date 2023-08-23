@@ -17,7 +17,6 @@ os.environ["STORAGE"] = "pvc"
 os.environ["STORAGE_CLASS"] = "faster"
 os.environ["STORAGE_SIZE"] = "100"
 os.environ["STORE_METRICS"] = os.environ["COMPARISON_METRICS"]
-os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 
 ClusterTestRunner(

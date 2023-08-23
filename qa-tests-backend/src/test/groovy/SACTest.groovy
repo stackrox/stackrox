@@ -75,9 +75,7 @@ class SACTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_RISK_RETRIES =
             isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
-    static final private String DENY_ALL = isPostgresRun() ?
-        "ffffffff-ffff-fff4-f5ff-fffffffffffe" :
-        'io.stackrox.authz.accessscope.denyall'
+    static final private String DENY_ALL = "ffffffff-ffff-fff4-f5ff-fffffffffffe"
 
     @Shared
     private Map<String, RoleOuterClass.Access> allResourcesAccess

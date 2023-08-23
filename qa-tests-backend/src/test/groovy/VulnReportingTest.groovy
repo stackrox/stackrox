@@ -9,7 +9,6 @@ import services.CollectionsService
 import services.VulnReportService
 import util.MailServer
 
-import org.junit.Assume
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.IgnoreIf
@@ -68,10 +67,6 @@ class VulnReportingTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:
-        "Central is using postgres"
-        Assume.assumeTrue(isPostgresRun())
-
-        and:
         "a an email notifier is configured"
         EmailNotifier notifier = new EmailNotifier("Vuln Reports Notifier",
                 mailServer.smtpUrl(),

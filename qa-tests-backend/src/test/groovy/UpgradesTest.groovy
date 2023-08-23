@@ -22,15 +22,8 @@ class UpgradesTest extends BaseSpecification {
     private final static String POLICIES_JSON_PATH =
             Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
 
-    private static final String VULNERABILITY_RESOURCE_TYPE =
-        isPostgresRun() ?
-            "nodeVulnerabilities" :
-            "vulnerabilities"
-
-    private static final String COMPONENT_RESOURCE_TYPE =
-        isPostgresRun() ?
-            "nodeComponents" :
-            "components"
+    private static final String VULNERABILITY_RESOURCE_TYPE = "nodeVulnerabilities"
+    private static final String COMPONENT_RESOURCE_TYPE = "nodeComponents"
 
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],
