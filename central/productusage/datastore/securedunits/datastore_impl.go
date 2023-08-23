@@ -34,7 +34,7 @@ var _ DataStore = (*dataStoreImpl)(nil)
 // fn returns an error, and returns this error.
 func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time, fn func(*storage.SecuredUnits) error) error {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
-		return errors.Wrap(err, "cannot permit to walk through usage data")
+		return err
 	}
 	if from.IsZero() {
 		from = time.Unix(0, 0)
@@ -79,7 +79,7 @@ func (ds *dataStoreImpl) GetMaxNumCPUUnits(ctx context.Context, from time.Time, 
 
 func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
-		return nil, errors.Wrap(err, "cannot permit to get maximum of usage data")
+		return nil, err
 	}
 	if from.IsZero() {
 		from = time.Unix(0, 0)
@@ -104,10 +104,10 @@ func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, fr
 	return units[0], nil
 }
 
-// Upsert saves the current state of an object in storage.
+// Add saves the current state of an object in storage.
 func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
-		return errors.Wrap(err, "cannot permit to upsert usage data")
+		return err
 	}
 	if obj.Id == "" {
 		obj.Id = uuid.NewV4().String()
@@ -118,7 +118,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) err
 // GetCurrent returns the current usage.
 func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredUnits, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
-		return nil, errors.Wrap(err, "cannot permit to get current usage data")
+		return nil, err
 	}
 	ids, err := getClusterIDs(ctx, ds.clusterDS)
 	if err != nil {
