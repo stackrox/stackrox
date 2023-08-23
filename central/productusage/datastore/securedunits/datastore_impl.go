@@ -26,7 +26,8 @@ type dataStoreImpl struct {
 
 var _ DataStore = (*dataStoreImpl)(nil)
 
-// Walk returns the object, if it exists from the store.
+// Walk calls fn on every record found in the storage. Stops iterating if
+// fn returns an error, and returns this error.
 func (ds *dataStoreImpl) Walk(ctx context.Context, from *types.Timestamp, to *types.Timestamp, fn func(*storage.SecuredUnits) error) error {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to walk through usage data")
