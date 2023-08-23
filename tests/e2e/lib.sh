@@ -87,7 +87,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}"
     elif [[ "$current_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
         if [[ $(roxctl version) != "$current_tag" ]]; then
-            >&2 echo "Reported roxctl version "$(roxctl version)" is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
+            >&2 echo "Reported roxctl version $(roxctl version) is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
             exit 1
         fi
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
