@@ -7,11 +7,11 @@ export const deploymentBadgeText = 'D';
 export const cidrBlockBadgeText = 'CB';
 export const externalEntitiesBadgeText = 'E';
 
-export const clusterBadgeColor = '#8476d1';
-export const namespaceBadgeColor = '#35842C';
-export const deploymentBadgeColor = '#0566CA';
-export const cidrBlockBadgeColor = '#008DAB';
-export const externalEntitiesBadgeColor = '#000000';
+export const clusterBadgeColor = 'var(--pf-global--palette--purple-500)';
+export const namespaceBadgeColor = 'var(--pf-global--palette--green-500)';
+export const deploymentBadgeColor = 'var(--pf-global--palette--blue-500)';
+export const cidrBlockBadgeColor = 'var(--pf-global--palette--light-blue-600)';
+export const externalEntitiesBadgeColor = 'var(--pf-global--palette--black-850)';
 
 export function DeploymentIcon(props) {
     return (
