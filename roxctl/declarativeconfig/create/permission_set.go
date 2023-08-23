@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
 	"gopkg.in/yaml.v3"
@@ -46,6 +47,8 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 Note: Capitalization matters!`)
 
 	cmd.MarkFlagsRequiredTogether("name", "resource-with-access")
+
+	flags.HideInheritedFlags(cmd, k8sobject.ConfigMapFlag, k8sobject.NamespaceFlag)
 
 	return cmd
 }
