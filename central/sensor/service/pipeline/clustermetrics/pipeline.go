@@ -74,7 +74,13 @@ func (p *pipelineImpl) Run(
 	msg *central.MsgFromSensor,
 	_ common.MessageInjector,
 ) error {
+	logging.LoggerForModule().Info("cluster metrics pipeline start")
+
 	clusterMetrics := msg.GetClusterMetrics()
+	if clusterMetrics == nil {
+		logging.LoggerForModule().Error("no cluster metrics")
+		return nil
+	}
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
 
@@ -87,6 +93,7 @@ func (p *pipelineImpl) Run(
 			"Error while trying to update secured units usage: ", err.Error())
 	}
 	clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
+	logging.LoggerForModule().Info("cluster metrics pipeline done")
 	return nil
 }
 

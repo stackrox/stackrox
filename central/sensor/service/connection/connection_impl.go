@@ -170,7 +170,9 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 }
 
 func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQueue) {
+	log.Info("handleMessages, connection nil? ", c == nil)
 	for msg := queue.pullBlocking(&c.stopSig); msg != nil; msg = queue.pullBlocking(&c.stopSig) {
+		log.Info("message: ", msg)
 		err := safe.Run(func() {
 			if err := c.handleMessage(ctx, msg); err != nil {
 				log.Errorf("Error handling sensor message: %v", err)
