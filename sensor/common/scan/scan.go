@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
@@ -47,8 +46,6 @@ var (
 	ErrEnrichNotStarted = errors.New("enrich was not started")
 
 	log = logging.LoggerForModule()
-
-	clusterIDGetter = clusterid.Get
 )
 
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
@@ -217,7 +214,6 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryTypes.ImageRegistry, targetImg *storage.Image) {
 	ds := reg.DataSource().Clone()
-	ds.ClusterId = clusterIDGetter()
 
 	// If target is a mirror, then add mirror details to the data source.
 	if sourceImage.GetName().GetFullName() != targetImg.GetName().GetFullName() {

@@ -62,10 +62,6 @@ func TestScanSuite(t *testing.T) {
 	suite.Run(t, new(scanTestSuite))
 }
 
-func (suite *scanTestSuite) SetupTest() {
-	clusterIDGetter = func() string { return "cluster-id" }
-}
-
 func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fail bool) *fakeImageServiceClient {
 	return &fakeImageServiceClient{
 		fail: fail,

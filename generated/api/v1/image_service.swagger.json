@@ -936,9 +936,6 @@
         },
         "mirror": {
           "type": "string"
-        },
-        "clusterId": {
-          "type": "string"
         }
       }
     },
