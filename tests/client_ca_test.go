@@ -198,7 +198,8 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	// Token plus matching cert => things should work.
 	authStatusWithToken, err := getAuthStatus(t, tlsConfWithLeaf, token)
 	require.NoError(t, err)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(), cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active")))
+	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(),
+		cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active", "LastUpdated")))
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatusWithToken)
 }
 
