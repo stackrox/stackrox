@@ -19,7 +19,7 @@ func TestStringSlice(t *testing.T) {
 
 	s := StringSlice(in...)
 
-	assert.Equal(t, []string{"these", "are", "test", "values"}, s)
+	assert.Equal(t, []string{"are", "test", "these", "values"}, s)
 }
 
 func TestFromStringSlice(t *testing.T) {
