@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/user"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -66,7 +67,7 @@ func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 func WithID(id string) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		pr.storedInfo.Id = id
 		return nil
@@ -77,7 +78,7 @@ func WithID(id string) ProviderOption {
 func WithType(typ string) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		pr.storedInfo.Type = typ
 		return nil
@@ -88,7 +89,7 @@ func WithType(typ string) ProviderOption {
 func WithName(name string) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		pr.storedInfo.Name = name
 		return nil
@@ -99,7 +100,7 @@ func WithName(name string) ProviderOption {
 func WithEnabled(enabled bool) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		pr.storedInfo.Enabled = enabled
 		return nil
@@ -120,7 +121,7 @@ func WithValidateCallback(store Store) ProviderOption {
 func WithActive(active bool) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		pr.storedInfo.Validated = active
 		pr.storedInfo.Active = active
@@ -132,7 +133,7 @@ func WithActive(active bool) ProviderOption {
 func WithConfig(config map[string]string) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		pr.storedInfo.Config = config
 		return nil
@@ -155,7 +156,7 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 	return func(pr *providerImpl) error {
 		if pr.storedInfo == nil {
-			return errors.New("UNEXPECTED: no storage data for auth provider")
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		if pr.storedInfo.GetTraits() != nil {
 			pr.storedInfo.Traits.Visibility = visibility
