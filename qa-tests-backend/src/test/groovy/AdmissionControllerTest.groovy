@@ -98,7 +98,6 @@ class AdmissionControllerTest extends BaseSpecification {
         sleep(10000 * (ClusterService.isOpenShift4() ? 4 : 1))
 
         // Pre run scan to avoid timeouts with inline scans in the tests below
-        ImageIntegrationService.addStackroxScannerIntegration()
         ImageService.scanImage(NGINX_IMAGE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
