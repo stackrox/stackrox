@@ -47,7 +47,7 @@ func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor() {
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
 	suite.telemetryMetrics.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
-	suite.usageStore.EXPECT().UpdateUsage(context.Background(), clusterID, &storage.SecuredUnits{
+	suite.usageStore.EXPECT().UpdateUsage(gomock.Any(), clusterID, &storage.SecuredUnits{
 		NumNodes:    expectedMetrics.GetNodeCount(),
 		NumCpuUnits: expectedMetrics.GetCpuCapacity(),
 	}).Return(nil)
