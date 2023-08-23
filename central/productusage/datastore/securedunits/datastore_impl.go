@@ -4,18 +4,22 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/productusage/store"
 	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	usageSAC = sac.ForResource(resources.Administration)
+)
+
+const (
+	page = 1000
 )
 
 type dataStoreImpl struct {
@@ -28,29 +32,80 @@ var _ DataStore = (*dataStoreImpl)(nil)
 
 // Walk calls fn on every record found in the storage. Stops iterating if
 // fn returns an error, and returns this error.
-func (ds *dataStoreImpl) Walk(ctx context.Context, from *types.Timestamp, to *types.Timestamp, fn func(*storage.SecuredUnits) error) error {
+func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time, fn func(*storage.SecuredUnits) error) error {
 	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to walk through usage data")
 	}
-	if from == nil {
-		from, _ = types.TimestampProto(time.Time{})
+	if from.IsZero() {
+		from = time.Unix(0, 0)
 	}
-	if to == nil {
-		to = types.TimestampNow()
+	if to.IsZero() {
+		to = time.Now()
 	}
-	if err := ds.store.Walk(ctx, func(record *storage.SecuredUnits) error {
-		if record.GetTimestamp().Compare(from) >= 0 && record.GetTimestamp().Compare(to) < 0 {
-			return fn(record)
+
+	pagination := search.NewPagination().
+		AddSortOption(search.NewSortOption(search.ProductUsageTimestamp)).Limit(page)
+
+	query := search.NewQueryBuilder().AddTimeRangeField(
+		search.ProductUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
+
+	for offset := 0; ; offset += page {
+		pagination.Offset(int32(offset))
+		units, err := ds.store.GetByQuery(ctx, query)
+		if err != nil {
+			return errors.Wrap(err, "failed to walk through usage data")
 		}
-		return nil
-	}); err != nil {
-		log.Info("Error while walking the product usage table:", err)
+		for _, u := range units {
+			if err := fn(u); err != nil {
+				return errors.Wrap(err, "error while processing usage data")
+			}
+		}
+		if len(units) < page {
+			break
+		}
 	}
 	return nil
 }
 
+// GetMaxNodes returns the record with the maximum value of NumNodes.
+func (ds *dataStoreImpl) GetMaxNumNodes(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
+	return ds.getMax(ctx, search.ProductUsageNodes, from, to)
+}
+
+// GetMaxNumCPUUnits returns the record with the maximum value of NumCpuUnits.
+func (ds *dataStoreImpl) GetMaxNumCPUUnits(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
+	return ds.getMax(ctx, search.ProductUsageCPUUnits, from, to)
+}
+
+func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
+	if err := sac.VerifyAuthzOK(usageSAC.ReadAllowed(ctx)); err != nil {
+		return nil, errors.Wrap(err, "cannot permit to get maximum of usage data")
+	}
+	if from.IsZero() {
+		from = time.Unix(0, 0)
+	}
+	if to.IsZero() {
+		to = time.Now()
+	}
+
+	pagination := search.NewPagination().
+		AddSortOption(search.NewSortOption(label).Reversed(true)).Limit(1)
+
+	query := search.NewQueryBuilder().AddTimeRangeField(
+		search.ProductUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
+
+	units, err := ds.store.GetByQuery(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get maximum of usage data")
+	}
+	if len(units) == 0 {
+		return nil, nil
+	}
+	return units[0], nil
+}
+
 // Upsert saves the current state of an object in storage.
-func (ds *dataStoreImpl) Upsert(ctx context.Context, obj *storage.SecuredUnits) error {
+func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) error {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return errors.Wrap(err, "cannot permit to upsert usage data")
 	}

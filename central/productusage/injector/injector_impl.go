@@ -33,7 +33,7 @@ func (i *injectorImpl) gather(ctx context.Context) {
 		log.Info("Failed to get and reset the aggregated product usage metrics: ", err)
 		return
 	}
-	if err := i.ds.Upsert(ctx, newMetrics); err != nil {
+	if err := i.ds.Add(ctx, newMetrics); err != nil {
 		log.Info("Failed to store a usage snapshot: ", err)
 	}
 }
