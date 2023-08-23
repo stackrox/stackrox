@@ -38,9 +38,22 @@ function apply_operator_manifests() {
   local -r image_tag_base="$2"
   local -r index_version="$3"
   local -r operator_version="$4"
+
+  # OCP starting from v4.14 requires either spec.grpcPodConfig.securityContextConfig attribute to be set on the
+  # CatalogSource resource or the namespace of the CatalogSource to have relaxed PSA enforcement, otherwise the
+  # CatalogSource pod does not get deployed with PodSecurity errors.
+  # Here we check if the CatalogSource CRD has securityContextConfig attribute. When it's not available, we emit YAML
+  # comment symbol "# " to hide the securityContextConfig attribute and not get API validation errors.
+  local catalog_source_crd
+  catalog_source_crd="$(kubectl get customresourcedefinitions.apiextensions.k8s.io catalogsources.operators.coreos.com -o yaml)"
+  local disable_security_context_config="# "
+  if [[ "$catalog_source_crd" == *"securityContextConfig:"* ]]; then
+      disable_security_context_config=""
+  fi
+
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
-    IMAGE_TAG_BASE="${image_tag_base}" \
+    IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
 }
