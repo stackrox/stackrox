@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // cacheImpl holds in-memory cache of collected usage metrics.
@@ -15,6 +16,8 @@ type cacheImpl struct {
 	nodesMap maputil.SyncMap[string, int64]
 	// cpuUnitsMap stores the maximum numbers of CPU Units per cluster.
 	cpuUnitsMap maputil.SyncMap[string, int64]
+
+	mux sync.Mutex
 }
 
 // Cache interface provides methods to manipulate a usage metrics cash.
@@ -40,6 +43,8 @@ func NewCache() Cache {
 }
 
 func (u *cacheImpl) UpdateUsage(id string, metrics *storage.SecuredUnits) {
+	u.mux.Lock()
+	defer u.mux.Unlock()
 	u.nodesMap.Store(id, metrics.GetNumNodes())
 	u.cpuUnitsMap.Store(id, metrics.GetNumCpuUnits())
 	u.lastKnown.Store(id, metrics)
@@ -92,6 +97,10 @@ func (u *cacheImpl) AggregateAndReset() *storage.SecuredUnits {
 	result := storage.SecuredUnits{
 		Timestamp: gogoTypes.TimestampNow(),
 	}
+
+	u.mux.Lock()
+	defer u.mux.Unlock()
+
 	u.nodesMap.Access(func(m *map[string]int64) {
 		for _, v := range *m {
 			result.NumNodes += v

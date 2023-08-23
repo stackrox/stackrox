@@ -10,9 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sync"
 )
-
-const aggregationPeriod = 1 * time.Hour
 
 var (
 	productUsageWriteSCC = sac.AllowFixedScopes(
@@ -22,8 +21,13 @@ var (
 )
 
 type injectorImpl struct {
-	ds   datastore.DataStore
-	stop concurrency.Signal
+	// injector gathers data on tick from this channel.
+	tickChan <-chan time.Time
+	// onStop is called after injector has stopped the gathering loop.
+	onStop         func()
+	ds             datastore.DataStore
+	stop           concurrency.Signal
+	gatherersGroup *sync.WaitGroup
 }
 
 func (i *injectorImpl) gather(ctx context.Context) {
@@ -39,15 +43,21 @@ func (i *injectorImpl) gather(ctx context.Context) {
 }
 
 func (i *injectorImpl) gatherLoop() {
-	ticker := time.NewTicker(aggregationPeriod)
-	defer ticker.Stop()
+	ctx, cancel := context.WithCancel(context.Background())
 	// There will most probably be no data on startup: sensors won't have time
 	// to report.
+	wg := &sync.WaitGroup{}
 	for {
 		select {
-		case <-ticker.C:
-			i.gather(context.Background())
+		case <-i.tickChan:
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				i.gather(ctx)
+			}()
 		case <-i.stop.Done():
+			cancel()
+			wg.Wait()
 			log.Info("Usage reporting stopped")
 			i.stop.Reset()
 			return
@@ -58,10 +68,18 @@ func (i *injectorImpl) gatherLoop() {
 // Start initiates periodic data injections to the database with the
 // collected usage.
 func (i *injectorImpl) Start() {
-	go i.gatherLoop()
+	i.gatherersGroup.Add(1)
+	go func() {
+		defer i.gatherersGroup.Done()
+		i.gatherLoop()
+	}()
 }
 
-// Stop stops the scheduled timer
+// Stop stops the scheduled timer and wait for the gatherer to stop.
 func (i *injectorImpl) Stop() {
 	i.stop.Signal()
+	i.gatherersGroup.Wait()
+	if i.onStop != nil {
+		i.onStop()
+	}
 }
