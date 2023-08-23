@@ -24,6 +24,7 @@ For more information about the support scope of Red Hat Technology Preview featu
 	c.AddCommand(
 		connectivity.Command(cliEnvironment),
 		generate.Command(cliEnvironment),
+		connectivity.Command(cliEnvironment),
 	)
 	return c
 }
