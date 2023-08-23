@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	previousMetrics = &storage.SecuredUnits{}
-	usageSAC        = sac.ForResource(resources.Administration)
+	usageSAC = sac.ForResource(resources.Administration)
 )
 
 type dataStoreImpl struct {
@@ -52,9 +51,9 @@ func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredU
 	return ds.cache.GetCurrent(), nil
 }
 
-// AggregateAndFlush returns collected metrics for the known clusters. Resets the cache
+// AggregateAndReset returns collected metrics for the known clusters. Resets the cache
 // for the next iteration.
-func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (*storage.SecuredUnits, error) {
+func (ds *dataStoreImpl) AggregateAndReset(ctx context.Context) (*storage.SecuredUnits, error) {
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return nil, errors.Wrap(err, "cannot permit to get the aggregate usage data")
 	}
@@ -63,7 +62,7 @@ func (ds *dataStoreImpl) AggregateAndFlush(ctx context.Context) (*storage.Secure
 		return nil, errors.Wrap(err, "failed to get cluster IDs for usage snapshot")
 	}
 	ds.cache.Cleanup(ids)
-	return ds.cache.AggregateAndFlush(), nil
+	return ds.cache.AggregateAndReset(), nil
 }
 
 // UpdateUsage updates the cache with the metrics of the clusterID cluster.
