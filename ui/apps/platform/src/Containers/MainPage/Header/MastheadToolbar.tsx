@@ -21,7 +21,7 @@ import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
-    const isRouteEnabledForSearch = isRouteEnabled(searchPath);
+    const isRouteEnabledForSearch = isRouteEnabled('search');
 
     const location = useLocation();
     const workflowState = parseURL(location);

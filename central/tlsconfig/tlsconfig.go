@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/x509utils"
@@ -149,7 +150,7 @@ func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, e
 
 	if exists, err := fileutils.Exists(certFile); err != nil || !exists {
 		if err != nil {
-			log.Warnw("Error checking if default TLS certificate file exists", zap.Error(err))
+			log.Warnw("Error checking if default TLS certificate file exists", logging.Err(err))
 			return nil, err
 		}
 		log.Infof("Default TLS certificate file %q does not exist. Skipping", certFile)
@@ -158,7 +159,7 @@ func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, e
 
 	if exists, err := fileutils.Exists(keyFile); err != nil || !exists {
 		if err != nil {
-			log.Warnw("Error checking if default TLS key file exists", zap.Error(err))
+			log.Warnw("Error checking if default TLS key file exists", logging.Err(err))
 			return nil, err
 		}
 		log.Infof("Default TLS key file %q does not exist. Skipping", keyFile)

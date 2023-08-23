@@ -930,6 +930,7 @@ func (m *TolerationsConfig) Clone() *TolerationsConfig {
 	return cloned
 }
 
+// The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 type StaticClusterConfig struct {
 	Type                       ClusterType        `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
 	MainImage                  string             `protobuf:"bytes,2,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
@@ -1063,6 +1064,7 @@ func (m *StaticClusterConfig) Clone() *StaticClusterConfig {
 	return cloned
 }
 
+// The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 type DynamicClusterConfig struct {
 	AdmissionControllerConfig *AdmissionControllerConfig `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig,proto3" json:"admission_controller_config,omitempty"`
 	RegistryOverride          string                     `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride,proto3" json:"registry_override,omitempty"`

@@ -1,0 +1,19 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/-",
+    "value": {
+      "name": "toxiproxy",
+      "image": "ghcr.io/shopify/toxiproxy:2.5.0",
+      "args": [
+        "-config",
+        "/etc/toxiproxy/config.json"
+      ],
+      "ports": [
+        {
+          "containerPort": 8989
+        }
+      ]
+    }
+  }
+]

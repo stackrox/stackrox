@@ -720,6 +720,12 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Set this parameter to override the default registry in images.
+          For example, nginx:latest -> <registry override>/library/nginx:latest
+        displayName: Custom Default Image Registry
+        path: registryOverride
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.

@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 )
 
 func authorizerHandler(h http.Handler, authorizer authz.Authorizer, postAuthInterceptor httputil.HTTPInterceptor, route string) http.Handler {
@@ -50,4 +52,22 @@ func (c CustomRoute) Handler(postAuthInterceptor httputil.HTTPInterceptor) http.
 		return gziphandler.GzipHandler(h)
 	}
 	return h
+}
+
+// NotImplementedOnManagedServices returns 501 Not Implemented if Central is running as a managed instance.
+func NotImplementedOnManagedServices(fn http.Handler) http.Handler {
+	if env.ManagedCentral.BooleanSetting() {
+		return httputil.NotImplementedHandler("api is not supported in a managed central environment.")
+	}
+
+	return fn
+}
+
+// NotImplementedWithExternalDatabase returns 501 Not Implemented if the database is running externally
+func NotImplementedWithExternalDatabase(fn http.Handler) http.Handler {
+	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
+		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
+	}
+
+	return fn
 }

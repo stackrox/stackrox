@@ -151,7 +151,6 @@ var (
 	telemetryLabels = prometheus.Labels{
 		"branding":       branding.GetProductNameShort(),
 		"build":          metrics.GetBuildType(),
-		"hosting":        getHosting(),
 		"sensor_version": version.GetMainVersion(),
 	}
 
@@ -163,7 +162,7 @@ var (
 			Help:        "The number of nodes secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "install_method", "sensor_id"},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
 	telemetrySecuredVCPU = prometheus.NewGaugeVec(
@@ -174,7 +173,7 @@ var (
 			Help:        "The number of vCPUs secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "install_method", "sensor_id"},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 )
 
@@ -281,12 +280,14 @@ func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 	telemetrySecuredNodes.Reset()
 	telemetrySecuredNodes.WithLabelValues(
 		centralid.Get(),
+		getHosting(),
 		installmethod.Get(),
 		clusterid.GetNoWait(),
 	).Set(float64(cm.GetNodeCount()))
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(
 		centralid.Get(),
+		getHosting(),
 		installmethod.Get(),
 		clusterid.GetNoWait(),
 	).Set(float64(cm.GetCpuCapacity()))

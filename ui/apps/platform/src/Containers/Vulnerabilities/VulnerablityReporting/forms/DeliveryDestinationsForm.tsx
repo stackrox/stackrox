@@ -106,7 +106,10 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                 {formik.values.deliveryDestinations.map(
                                     (deliveryDestination, index) => {
                                         return (
-                                            <li className="pf-u-mb-md">
+                                            <li
+                                                key={deliveryDestination.notifier?.id}
+                                                className="pf-u-mb-md"
+                                            >
                                                 <Card>
                                                     <CardTitle>
                                                         <Flex
@@ -176,7 +179,6 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                             <Flex direction={{ default: 'row' }}>
                                 <FlexItem>
                                     <FormLabelGroup
-                                        isRequired={formik.values.deliveryDestinations.length !== 0}
                                         label="Repeat every"
                                         fieldId="schedule.intervalType"
                                         errors={formik.errors}

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+    AlertActionCloseButton,
+    AlertGroup,
     PageSection,
     Title,
     Flex,
@@ -27,9 +29,10 @@ import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
-import { collectionsPath, isRouteEnabled, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
@@ -39,8 +42,8 @@ import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
@@ -64,8 +67,9 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+
     const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
     const hasImageReadAccess = hasReadAccess('Image');
     const hasAccessScopeReadAccess = hasReadAccess('Access');
@@ -76,10 +80,7 @@ function VulnReportsPage() {
         hasAccessScopeReadAccess &&
         hasNotifierIntegrationReadAccess;
 
-    const isCollectionsRouteEnabled = isRouteEnabled(
-        { hasReadAccess, isFeatureFlagEnabled },
-        collectionsPath
-    );
+    const isCollectionsRouteEnabled = isRouteEnabled('collections');
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
@@ -88,6 +89,8 @@ function VulnReportsPage() {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
     });
     const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
+
+    const { toasts, addToast, removeToast } = useToasts();
 
     const {
         reportConfigurations,
@@ -103,7 +106,17 @@ function VulnReportsPage() {
     });
     const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
     const { isRunning, runError, runReport } = useRunReport({
-        onCompleted: fetchReports,
+        onCompleted: ({ reportNotificationMethod }) => {
+            if (reportNotificationMethod === 'EMAIL') {
+                addToast('The report has been sent to the configured email notifier', 'success');
+            } else if (reportNotificationMethod === 'DOWNLOAD') {
+                addToast(
+                    'The report generation has started and will be available for download once complete',
+                    'success'
+                );
+            }
+            fetchReports();
+        },
     });
 
     const {
@@ -119,6 +132,26 @@ function VulnReportsPage() {
 
     return (
         <>
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        timeout
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
             <PageTitle title="Vulnerability reporting" />
             {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>

@@ -99,6 +99,7 @@ function DayPickerDropdown({
             isOpen={isDaySelectOpen}
             isDisabled={!isEditable}
             placeholderText={value.length ? 'Selected days' : 'Select days'}
+            menuAppendTo={() => document.body}
         >
             {selectOptions}
         </Select>

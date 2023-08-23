@@ -27,7 +27,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - RBAC risk was deprecated in release 4.0 due to poor performance.
 - (Tech preview feature) CLI command `roxctl generate netpol` is deprecated in favor of `roxctl netpol generate`
+- (Tech preview feature) CLI command `roxctl connextivity-map` is deprecated in favor of `roxctl netpol connectivity map`
 - The CIS Docker v1.2.0 standard will be removed from RHACS Compliance checks starting in RHACS version 4.4.
+- The Syslog notifier used to send the message header incorrect - the severity and name fields were flipped. Starting in this release, there is now an option
+  to choose which format the header should be sent it: `CEF` which is the correct order or `CEF (legacy field order)` which is the older incorrect way.
+  The UI will default to `CEF` but when using the API if a value isn't selected, it will default to `CEF (legacy field order)`.
+  Starting in version 4.4 the notifier will default to `CEF`.
 
 ### Technical Changes
 
@@ -43,6 +48,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-18477: Fixed an issue that breaks operator installations if a `Central` or `SecuredCluster` CR configures egress proxy environment variables while openshift cluster-wide proxy is enabled.
 - ROX-15969: The column `Component Upgrade` in vulnerability reports has been renamed to `CVE Fixed In`.
 - The removal of `/v1/report` APIs in this release, that was communicated in release 4.0.0, has been postponed by one release. Consequently, the `/v1/report` APIs will continue to be available in this release.
+- The `/api/docs/swagger` API previously required read on the resource `Integration`.
+  Now it only requires users to be authenticated to via the API docs.
 
 ## [4.1.0]
 

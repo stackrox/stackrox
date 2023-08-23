@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 var (
@@ -63,7 +64,7 @@ PowerShell:
 
 // Command provides the shell completion cobra command
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		DisableFlagsInUseLine: true,
 		Use:                   "completion [bash|zsh|fish|powershell]",
 		Short:                 "Generate shell completion scripts.",
@@ -86,4 +87,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return errors.Wrap(gen(cliEnvironment.InputOutput().Out()), "could not generate completion")
 		},
 	}
+	flags.HideInheritedFlags(cmd)
+	return cmd
 }

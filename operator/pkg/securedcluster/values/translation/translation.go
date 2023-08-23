@@ -122,6 +122,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
 
+	if sc.Spec.RegistryOverride != "" {
+		v.SetStringValue("registryOverride", sc.Spec.RegistryOverride)
+	}
+
 	return v.Build()
 }
 

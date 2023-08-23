@@ -23,6 +23,7 @@ function RepeatScheduleDropdown({
             handleSelect={handleSelect}
             isDisabled={!isEditable}
             placeholderText="Select frequency"
+            menuAppendTo={() => document.body}
         >
             <SelectOption isNoResultsOption>None</SelectOption>
             <SelectOption value="WEEKLY">Weekly</SelectOption>
