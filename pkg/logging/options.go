@@ -20,6 +20,6 @@ type OptionsFunc = func(option *options)
 func EnableNotifications() OptionsFunc {
 	return func(option *options) {
 		option.notificationConverter = &zapLogConverter{}
-		// TODO(18485): Store events here as well.
+		option.notificationStream = notifications.Singleton()
 	}
 }
