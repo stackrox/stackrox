@@ -152,7 +152,10 @@ var (
   that function.
 - Avoid naked returns
 ```go
-// bad: naked return requires to look on the func declaration to know what is being returned
+// Bad: naked return requires to look on the func declaration
+// to know what is being returned. Moreover, there is a danger of
+// shadowing a variable defined in the return arguments
+// (e.g., `err`) later in the code.
 func split(sum int) (x, y int) {
 	x = sum * 4 / 9
 	y = sum - x
@@ -161,7 +164,7 @@ func split(sum int) (x, y int) {
 ```
 
 ```go
-// good: it is known what is being returned by looking only at the return statement
+// Good: it is clear what is returned by looking only at the return statement
 func split(sum int) (x, y int) {
 	x = sum * 4 / 9
 	y = sum - x
