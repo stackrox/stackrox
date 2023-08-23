@@ -17,23 +17,23 @@ var (
 	_ k8scfgwatch.Handler = (*handler)(nil)
 )
 
-type notifyOnCertPoolUpdate = func()
+type notifyCertPoolUpdate = func()
 
-func watchCertPool(n notifyOnCertPoolUpdate) {
+func watchCertPool(n notifyCertPoolUpdate) {
 	opts := k8scfgwatch.Options{
 		Interval: 5 * time.Second,
 		Force:    true,
 	}
 
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(serviceOperatorCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, notifyBackend: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: n}), opts)
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(injectedCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, notifyBackend: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: n}), opts)
 }
 
 type handler struct {
-	notifyBackend func()
-	readCAs       func() ([][]byte, error)
+	onCertPoolUpdate func()
+	readCAs          func() ([][]byte, error)
 }
 
 func (h *handler) OnChange(_ string) (interface{}, error) {
@@ -54,7 +54,7 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 	}
 
 	log.Info("Found an update to the root CAs for Openshift auth providers. Updating the providers.")
-	h.notifyBackend()
+	h.onCertPoolUpdate()
 }
 
 func (h *handler) OnWatchError(err error) {
