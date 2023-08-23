@@ -24,6 +24,7 @@ function WorkloadCvesPage() {
             <TechPreviewBanner
                 featureURL={vulnManagementPath}
                 featureName="Vulnerability Management (1.0)"
+                routeKey="vulnerability-management"
             />
             <Switch>
                 <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
