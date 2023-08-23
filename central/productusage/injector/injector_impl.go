@@ -13,8 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const aggregationPeriod = 1 * time.Hour
-
 var (
 	productUsageWriteSCC = sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -23,6 +21,10 @@ var (
 )
 
 type injectorImpl struct {
+	// injector gathers data on tick from this channel.
+	tickChan <-chan time.Time
+	// onStop is called after injector has stopped the gathering loop.
+	onStop         func()
 	ds             datastore.DataStore
 	stop           concurrency.Signal
 	gatherersGroup *sync.WaitGroup
@@ -41,14 +43,13 @@ func (i *injectorImpl) gather(ctx context.Context) {
 }
 
 func (i *injectorImpl) gatherLoop() {
-	ticker := time.NewTicker(aggregationPeriod)
-	defer ticker.Stop()
+	ctx, cancel := context.WithCancel(context.Background())
 	// There will most probably be no data on startup: sensors won't have time
 	// to report.
 	wg := &sync.WaitGroup{}
 	for {
 		select {
-		case <-ticker.C:
+		case <-i.tickChan:
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -78,4 +79,7 @@ func (i *injectorImpl) Start() {
 func (i *injectorImpl) Stop() {
 	i.stop.Signal()
 	i.gatherersGroup.Wait()
+	if i.onStop != nil {
+		i.onStop()
+	}
 }
