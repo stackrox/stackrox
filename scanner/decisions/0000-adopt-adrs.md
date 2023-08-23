@@ -11,10 +11,10 @@ Accepted.
 
 Currently, decisions about Stackrox Scanner are made using informal slack threads, ad-hoc discussions, and occasionally when the problem is considered complex, design documents. They are:
 
-- **Hard to Navigate:** Finding discussions, decisions, and their context can sometimes be challenging.
+- **Hard to Navigate:** Finding discussions, decisions, and their context can sometimes be challenging. There is no decision log providing context on the implementation and design information.
 - **Opportunistic:** Decisions might be made too fast without all relevant consideration.
 - **Overlooks Long-Term Impact:** Quick decisions might only partially evaluate the long-term effects on the project.
-- **Lacks a Well-Defined Lifecycle:** There's no structured review process to guarantee discussion on the final decision.
+- **Lacks a Well-Defined Lifecycle:** There's no structured review process to guarantee why a decision was accepted or rejected at the end.
 - **Unclear Boundaries:** There's no clear framework to help us understand when the overhead of design documents is worth it.
 
 ## Decision
