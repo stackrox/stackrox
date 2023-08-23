@@ -30,7 +30,7 @@ func (i *injectorImpl) gather(ctx context.Context) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC)
 	newMetrics, err := i.ds.AggregateAndReset(ctx)
 	if err != nil {
-		log.Info("Failed to get and flush the aggregated product usage metrics: ", err)
+		log.Info("Failed to get and reset the aggregated product usage metrics: ", err)
 		return
 	}
 	if err := i.ds.Upsert(ctx, newMetrics); err != nil {
