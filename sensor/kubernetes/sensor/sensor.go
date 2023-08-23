@@ -153,14 +153,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		delegatedRegistryHandler,
 		imageService,
 	}
-	if env.RHCOSNodeScanning.BooleanSetting() {
-		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-		nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
-		complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
-		// complianceMultiplexer must start after all components that implement common.ComplianceComponent
-		// i.e., after nodeInventoryHandler
-		components = append(components, nodeInventoryHandler, complianceMultiplexer)
-	}
+	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
+	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
+	// i.e., after nodeInventoryHandler
+	components = append(components, nodeInventoryHandler, complianceMultiplexer)
+
 	if features.ComplianceEnhancements.Enabled() {
 		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0)
 		components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater))

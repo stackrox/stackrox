@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
@@ -204,9 +203,6 @@ var nodeScanningOSImagePrefixes = []string{"Red Hat Enterprise Linux CoreOS"}
 
 // SupportsNodeScanning returns if the provided node object supports full host node scanning.
 func SupportsNodeScanning(node *storage.Node) bool {
-	if !env.RHCOSNodeScanning.BooleanSetting() {
-		return false
-	}
 	for _, osPrefix := range nodeScanningOSImagePrefixes {
 		if strings.HasPrefix(node.GetOsImage(), osPrefix) {
 			return true
