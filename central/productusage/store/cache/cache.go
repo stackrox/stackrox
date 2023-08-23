@@ -17,7 +17,7 @@ type cacheImpl struct {
 	// cpuUnitsMap stores the maximum numbers of CPU Units per cluster.
 	cpuUnitsMap maputil.SyncMap[string, int64]
 
-	mux *sync.Mutex
+	mux sync.Mutex
 }
 
 // Cache interface provides methods to manipulate a usage metrics cash.
@@ -39,7 +39,6 @@ func NewCache() Cache {
 		lastKnown:   maputil.NewSyncMap[string, *storage.SecuredUnits](),
 		nodesMap:    maputil.NewMaxMap[string, int64](),
 		cpuUnitsMap: maputil.NewMaxMap[string, int64](),
-		mux:         &sync.Mutex{},
 	}
 }
 
