@@ -19,7 +19,7 @@ import { TimesIcon } from '@patternfly/react-icons';
 import { useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
-import { networkBasePath } from 'routePaths';
+import { networkBasePath, nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
 import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
@@ -74,8 +74,6 @@ const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 // This is a query param used to add policy data in the response for the network graph data
 const INCLUDE_POLICIES = true;
 
-const clusterPermissions = ['NetworkGraph', 'Deployment'];
-
 function NetworkGraphPage() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForBlocks =
@@ -108,7 +106,7 @@ function NetworkGraphPage() {
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
-    const { clusters } = useFetchClustersForPermissions(clusterPermissions);
+    const { clusters } = useFetchClustersForPermissions(nonGlobalResourceNamesForNetworkGraph);
     const scopeHierarchy = useScopeHierarchy(clusters);
     const {
         cluster: clusterFromUrl,

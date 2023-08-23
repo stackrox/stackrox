@@ -94,6 +94,15 @@ export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
 
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
 
+// Factor out for useFetchClustersForPermissions and useFetchClusterNamespacesForPermissions.
+// If the route ever requires global resources, spread them in resourceAccessRequirements property.
+export const nonGlobalResourceNamesForNetworkGraph: ResourceName[] = [
+    'Deployment',
+    'DeploymentExtension',
+    'NetworkGraph',
+    'NetworkPolicy',
+];
+
 type RouteRequirements = {
     featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
     resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
@@ -198,12 +207,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     'network-graph': {
-        resourceAccessRequirements: everyResource([
-            'Deployment',
-            'DeploymentExtension',
-            'NetworkGraph',
-            'NetworkPolicy',
-        ]),
+        resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
     },
     'policy-management': {
         resourceAccessRequirements: everyResource([
