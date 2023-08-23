@@ -217,11 +217,11 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryTypes.ImageRegistry, targetImg *storage.Image) {
 	ds := reg.DataSource().Clone()
+	ds.ClusterId = clusterIDGetter()
 
 	// If target is a mirror, then add mirror details to the data source.
 	if sourceImage.GetName().GetFullName() != targetImg.GetName().GetFullName() {
 		ds.Mirror = targetImg.GetName().GetFullName()
-		ds.MirrorClusterId = clusterIDGetter()
 	}
 
 	targetImg.GetMetadata().DataSource = ds

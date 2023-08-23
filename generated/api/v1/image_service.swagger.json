@@ -937,7 +937,7 @@
         "mirror": {
           "type": "string"
         },
-        "mirrorClusterId": {
+        "clusterId": {
           "type": "string"
         }
       }

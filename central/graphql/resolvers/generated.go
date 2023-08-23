@@ -527,9 +527,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
+		"clusterId: String!",
 		"id: ID!",
 		"mirror: String!",
-		"mirrorClusterId: String!",
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("Deployment", []string{
@@ -6541,6 +6541,11 @@ func (resolver *Resolver) wrapDataSourcesWithContext(ctx context.Context, values
 	return output, nil
 }
 
+func (resolver *dataSourceResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
 func (resolver *dataSourceResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -6548,11 +6553,6 @@ func (resolver *dataSourceResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *dataSourceResolver) Mirror(ctx context.Context) string {
 	value := resolver.data.GetMirror()
-	return value
-}
-
-func (resolver *dataSourceResolver) MirrorClusterId(ctx context.Context) string {
-	value := resolver.data.GetMirrorClusterId()
 	return value
 }
 
