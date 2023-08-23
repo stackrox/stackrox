@@ -16,7 +16,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central (defaults to `false`). When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
 - A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added that when set to `true` will enable processing registry mirrors during image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
 - ROX-17112: CORE_BPF collection is now generally available.
-- ROX-17702: Product usage metrics API: `/v1/product/usage/secured-units/current`, `/v1/product/usage/secured-units/max`. New `/api/product/usage/secured-units/csv` endpoint.
+- ROX-17702: Product usage metrics experimental API: `/v1/product/usage/secured-units/current`, `/v1/product/usage/secured-units/max`. New `/api/product/usage/secured-units/csv` endpoint.
 
 ### Removed Features
 
