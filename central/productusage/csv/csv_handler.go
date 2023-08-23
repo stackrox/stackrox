@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errox"
 	grpcErrors "github.com/stackrox/rox/pkg/grpc/errors"
-	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (
@@ -52,14 +51,10 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 			return
 		}
 
-		var filename string
-		{
-			fromts, _ := types.TimestampFromProto(from)
-			tots, _ := types.TimestampFromProto(to)
-			filename = fmt.Sprintf("secured_units_usage-%s--%s.csv",
-				fromts.Format(time.DateOnly), tots.Format(time.DateOnly))
-		}
-		csvWriter := csv.NewHTTPWriter(w, filename,
+		csvWriter := csv.NewHTTPWriter(w,
+			fmt.Sprintf("secured_units_usage-%s--%s.csv",
+				from.Format(time.DateOnly),
+				to.Format(time.DateOnly)),
 			getSecuredUnitsConverter(), csvHeader)
 
 		if err := ds.Walk(r.Context(), from, to, csvWriter.Write); err != nil {
@@ -71,28 +66,28 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	}
 }
 
-func getTimeParameter(values url.Values, param string, defaultValue time.Time) (*types.Timestamp, error) {
+func getTimeParameter(values url.Values, param string, defaultValue time.Time) (time.Time, error) {
 	result := defaultValue
 	if v := values.Get(param); v != "" {
 		var err error
 		if result, err = time.Parse(time.RFC3339Nano, v); err != nil {
-			return nil, errors.Wrapf(err, "failed to parse %q parameter", param)
+			return zeroTime, errors.Wrapf(err, "failed to parse %q parameter", param)
 		}
 	}
-	return protoconv.ConvertTimeToTimestamp(result), nil
+	return result, nil
 }
 
-func parseRequest(r *http.Request) (*types.Timestamp, *types.Timestamp, error) {
+func parseRequest(r *http.Request) (time.Time, time.Time, error) {
 	if err := r.ParseForm(); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to parse request paremeters")
+		return zeroTime, zeroTime, errors.Wrap(err, "failed to parse request paremeters")
 	}
 	var err error
-	var from, to *types.Timestamp
+	var from, to time.Time
 	if from, err = getTimeParameter(r.Form, "from", zeroTime); err != nil {
-		return nil, nil, err
+		return zeroTime, zeroTime, err
 	}
 	if to, err = getTimeParameter(r.Form, "to", time.Now()); err != nil {
-		return nil, nil, err
+		return zeroTime, zeroTime, err
 	}
 	return from, to, nil
 }

@@ -2,8 +2,10 @@ package datastore
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/productusage/store"
+	"github.com/stackrox/rox/central/productusage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -15,9 +17,16 @@ type DataStore interface {
 
 	// Walk calls fn on every record found in the storage. Stops iterating if
 	// fn returns an error, and returns this error.
-	Walk(ctx context.Context, from *types.Timestamp, to *types.Timestamp, fn func(*storage.SecuredUnits) error) error
-	// Upsert puts metrics to the persistent storage.
-	Upsert(ctx context.Context, metrics *storage.SecuredUnits) error
+	Walk(ctx context.Context, from time.Time, to time.Time, fn func(*storage.SecuredUnits) error) error
+
+	// GetMaxNumNodes returns the record with the maximum value of NumNodes.
+	GetMaxNumNodes(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error)
+
+	// GetMaxNumCPUUnits returns the record with the maximum value of NumCpuUnits.
+	GetMaxNumCPUUnits(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error)
+
+	// Add appends metrics to the persistent storage.
+	Add(ctx context.Context, metrics *storage.SecuredUnits) error
 
 	//
 	// In-memory storage access:
@@ -37,6 +46,10 @@ type DataStore interface {
 }
 
 // New initializes a datastore implementation instance.
-func New() DataStore {
-	return nil
+func New(store store.Store, clusterDS clusterDataStore) DataStore {
+	return &dataStoreImpl{
+		store:     store,
+		clusterDS: clusterDS,
+		cache:     cache.NewCache(),
+	}
 }
