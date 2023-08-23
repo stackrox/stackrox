@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { getClustersForPermissions, ClusterScopeObject } from 'services/RolesService';
+import { ResourceName } from 'types/roleResources';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Result = {
@@ -15,7 +16,7 @@ const defaultResultState = {
     isLoading: true,
 };
 
-function useFetchClustersForPermissions(permissions: string[]): Result {
+function useFetchClustersForPermissions(permissions: ResourceName[]): Result {
     const [result, setResult] = useState<Result>({
         clusters: [],
         error: '',
