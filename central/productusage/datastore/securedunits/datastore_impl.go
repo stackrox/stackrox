@@ -124,6 +124,7 @@ func (ds *dataStoreImpl) GetCurrentUsage(ctx context.Context) (*storage.SecuredU
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster IDs for current usage")
 	}
+	// Cleanup inactive clusters, doesn't need to be transactional.
 	ds.cache.Cleanup(ids)
 	return ds.cache.GetCurrent(), nil
 }
@@ -138,6 +139,7 @@ func (ds *dataStoreImpl) AggregateAndReset(ctx context.Context) (*storage.Secure
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster IDs for usage snapshot")
 	}
+	// Cleanup inactive clusters, doesn't need to be transactional.
 	ds.cache.Cleanup(ids)
 	return ds.cache.AggregateAndReset(), nil
 }
