@@ -44,11 +44,11 @@ echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
 
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
-  SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-classic:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi
 export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
 if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db-classic:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
   export SCANNER_DB_IMAGE
 fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
