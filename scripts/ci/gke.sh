@@ -357,7 +357,7 @@ create_log_explorer_links() {
         </style>
     </head>
     <body>
-    <p>(The authUser is the number for your @stackrox.com account.)</p>
+    <p>(These links require a 'right-click -> open in new tab'. The authUser is the number for your @stackrox.com account.)</p>
     <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
 HEAD
 
@@ -371,8 +371,7 @@ HEAD
     for authUser in {0..2}; do
     cat << LINK |
       <li>
-        <a onclick="window.open(this.href,'_blank');return false;" target="_blank"
-           href="https://console.cloud.google.com/logs/query
+        <a target="_blank" href="https://console.cloud.google.com/logs/query
 ;query=
 resource.type%3D%22k8s_container%22%0A
 resource.labels.cluster_name%3D%22${CLUSTER_NAME}%22%0A
