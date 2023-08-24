@@ -1,0 +1,53 @@
+name: Fetch NVD Data
+
+on:
+  push:
+    branches:
+    - main
+  schedule:
+  # This schedule will trigger the action every week at 00:00 UTC on Mondays.
+  - cron: '0 0 * * MON'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Create nvddata directory
+      run: mkdir -p nvddata
+
+    - name: Determine Years for Matrix
+      id: set-matrix
+      run: |
+        echo "::set-output name=matrix::{\"year\":[$(echo {2002..$(date +%Y)} | sed 's/ /,/g')]}"
+
+  fetch-data:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        year: ${{fromJson(needs.setup.outputs.matrix).year}}
+    steps:
+    - name: Fetch meta file and data for each year
+      run: |
+        curl -o nvddata/nvdcve-1.1-${{ matrix.year }}.meta https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-${{ matrix.year }}.meta
+        curl -o nvddata/nvdcve-1.1-${{ matrix.year }}.json.gz https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-${{ matrix.year }}.json.gz
+
+  upload-storage:
+    needs: fetch-data
+    runs-on: ubuntu-latest
+    steps:
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Upload nvddata to Google Storage
+      run: gsutil cp -r "nvddata" "gs://scanner-v4-test/"
