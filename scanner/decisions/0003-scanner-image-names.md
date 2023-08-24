@@ -63,3 +63,5 @@ However, renaming Scanner v2 images comes with its own risks:
 
 The team accepts these consequences and plans to ensure the documentation makes it clear why the images are named this way.
 In the future, when Scanner v2 is completely retired, we may consider renaming the Scanner v4 images back to just `scanner`.
+
+The removal of "slim" and "full" image variants may increase scanner startup times compared to Scanner v2. We will reassess as we learn more about optimizing initialization and its potential implications for CI.
