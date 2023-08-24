@@ -609,11 +609,6 @@ jobs:
       run: |
         echo "TAG=$(make --quiet --no-print-directory tag)" >> "$GITHUB_OUTPUT"
 
-    - name: Build binaries
-      env:
-        PLATFORM: "linux/amd64,linux/s390x,linux/ppc64le"
-      run: make mock-grpc-server-build
-
     - name: Set up Docker Buildx
       # Skip for external contributions.
       if: |
@@ -635,6 +630,7 @@ jobs:
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       env:
         TAG: ${{ steps.tag.outputs.TAG }}
+        PLATFORM: "linux/amd64,linux/s390x,linux/ppc64le"
       run: make mock-grpc-server-image-push
 
   scan-images-with-roxctl:
