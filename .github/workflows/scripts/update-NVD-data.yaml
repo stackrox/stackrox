@@ -1,29 +1,25 @@
-name: Fetch NVD Data
+name: Fetch NVD Data Feeds
 
 on:
-  push:
-    branches:
-    - main
   schedule:
-  # This schedule will trigger the action every week at 00:00 UTC on Mondays.
-  - cron: '0 0 * * MON'
+    - cron: '0 0 * * *'  # this runs every day at midnight
 
 jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+
     steps:
-    - name: Checkout repository
+    - name: Determine years for matrix
+      id: set-matrix
+      run: echo "::set-output name=matrix::{\"year\":[$(echo {2002..$(date +%Y)} | sed 's/ /,/g')]}"
+
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Create nvddata directory
+    - name: Create directory
       run: mkdir -p nvddata
-
-    - name: Determine Years for Matrix
-      id: set-matrix
-      run: |
-        echo "::set-output name=matrix::{\"year\":[$(echo {2002..$(date +%Y)} | sed 's/ /,/g')]}"
 
   fetch-data:
     needs: setup
@@ -31,16 +27,18 @@ jobs:
     strategy:
       matrix:
         year: ${{fromJson(needs.setup.outputs.matrix).year}}
-    steps:
-    - name: Fetch meta file and data for each year
-      run: |
-        curl -o nvddata/nvdcve-1.1-${{ matrix.year }}.meta https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-${{ matrix.year }}.meta
-        curl -o nvddata/nvdcve-1.1-${{ matrix.year }}.json.gz https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-${{ matrix.year }}.json.gz
 
-  upload-storage:
-    needs: fetch-data
-    runs-on: ubuntu-latest
     steps:
+    - name: Fetch meta file
+      run: |
+        curl -s -L -f -o nvddata/nvdcve-1.1-${{ matrix.year }}.meta https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-${{ matrix.year }}.meta || (echo "Error fetching meta file for year ${{ matrix.year }}" && exit 1)
+
+    - name: Download data file
+      run: |
+        CHECKSUM=$(grep 'sha256' nvddata/nvdcve-1.1-${{ matrix.year }}.meta | cut -d':' -f2 | tr -d ' ')
+        curl -s -L -f -o nvddata/nvdcve-1.1-${{ matrix.year }}.json.gz https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-${{ matrix.year }}.json.gz || (echo "Error fetching data file for year ${{ matrix.year }}" && exit 1)
+        echo "$CHECKSUM  nvddata/nvdcve-1.1-${{ matrix.year }}.json.gz" | sha256sum -c || (echo "Checksum verification failed for year ${{ matrix.year }}" && exit 1)
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v1
       with:
@@ -49,5 +47,5 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
 
-    - name: Upload nvddata to Google Storage
+    - name: Upload nvddata to Google Cloud Storage
       run: gsutil cp -r "nvddata" "gs://scanner-v4-test/"
