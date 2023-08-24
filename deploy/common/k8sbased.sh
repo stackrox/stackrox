@@ -366,6 +366,7 @@ function launch_central {
       local helm_chart="$unzip_dir/chart"
 
       if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
+        echo "Using override central helm chart from ${CENTRAL_CHART_DIR_OVERRIDE}"
         helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
 
@@ -376,8 +377,6 @@ function launch_central {
       fi
 
       set -x
-      echo "About to install central, running ls -la"
-      ls -la "${helm_chart}"
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
       set +x
@@ -626,6 +625,7 @@ function launch_sensor {
       local helm_chart="$k8s_dir/sensor-deploy/chart"
 
       if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+        echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
         helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
 
@@ -641,8 +641,6 @@ function launch_sensor {
       fi
 
       set -x
-      echo "About to install sensor, running ls -la"
-      ls -la "${helm_chart}"
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
       set +x

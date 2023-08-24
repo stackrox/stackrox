@@ -64,7 +64,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 
     charts_dir="$(mktemp -d ./charts-dir.XXXXXX)"
 
-    # If the central version is the latest the default behavior of deploy_central() is correct for compatibility tests
+    # If the central version is the same as the current_tag, the default behavior of deploy_central() is correct for compatibility tests
     chart_name="stackrox-central-services"
     if  [[ $helm_charts =~ $central_regex ]]; then
         central_chart="${helm_repo_name}/${chart_name}"
@@ -76,9 +76,9 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
         exit 1
     fi
 
-    # If the sensor version is the latest the default behavior of deploy_sensor() is incorrect, because it will deploy
-    # a sensor version to match the central version. In our tests we want to test latest sensor vs older central too,
-    # and since latest sensor is not available in the repo either the chart is created here in the elif case.
+    # If the sensor version is the same as the current_tag the default behavior of deploy_sensor() is incorrect, because it will deploy
+    # a sensor version to match the central version. In our tests we want to test current sensor vs older central too,
+    # and since current sensor is not available in the repo either the chart is created here in the elif case.
     chart_name="stackrox-secured-cluster-services"
     if [[ $helm_charts =~ $sensor_regex ]]; then
         sensor_chart="${helm_repo_name}/${chart_name}"
