@@ -178,8 +178,8 @@ make_artifacts_help() {
         after following the link.</p>
 
         <a target="_blank" href="$browser_job_url?authuser=0">authuser=0</a><br>
-        <a target="_blank" href="$browser_job_url?authuser=2">authuser=2</a><br>
         <a target="_blank" href="$browser_job_url?authuser=1">authuser=1</a><br>
+        <a target="_blank" href="$browser_job_url?authuser=2">authuser=2</a><br>
 
         <br><br>
 
