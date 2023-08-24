@@ -18,7 +18,7 @@ function ShowProductUsage(): ReactElement {
             </Button>
             <Modal
                 title="Product usage"
-                description="The page shows the collected product usage data. The current usage is computed from the last metrics received from sensors, and can be accurate to about 5 minutes. The maximum usage is aggregated hourly."
+                description="The page shows the collected product usage data: number of secured Kubernetes nodes and CPU units. The current usage is computed from the latest metrics received from sensors, and there can be a delay of about 5 minutes. The maximum usage is aggregated hourly and only includes clusters that are still connected. The date range is inclusive and depends on the user's timezone. Data shown is not sent to Red Hat or displayed as Prometheus metrics."
                 isOpen={isModalOpen}
                 variant={ModalVariant.large}
                 onClose={closeModal}
