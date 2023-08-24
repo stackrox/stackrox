@@ -50,7 +50,7 @@ function apply_operator_manifests() {
   local catalog_source_crd
   catalog_source_crd="$(kubectl get customresourcedefinitions.apiextensions.k8s.io catalogsources.operators.coreos.com -o yaml)"
   local disable_security_context_config="# "
-  if [[ "$(yq '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' <<< "$catalog_source_crd")" == "true" ]]; then
+  if [[ "$(yq eval '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' <<< "$catalog_source_crd")" == "true" ]]; then
       disable_security_context_config=""
   fi
 
