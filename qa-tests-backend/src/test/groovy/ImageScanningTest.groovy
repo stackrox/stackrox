@@ -33,6 +33,7 @@ import org.junit.AssumptionViolatedException
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
 class ImageScanningTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-image-scanning-test"
