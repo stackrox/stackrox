@@ -17,6 +17,8 @@ import { Collection, CollectionSlim, listCollections } from 'services/Collection
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
 import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 
 import CollectionsFormModal, {
@@ -30,7 +32,6 @@ type CollectionSelectionProps = {
     id: string;
     selectedScope: ReportScope | null;
     onChange: (selection: CollectionSlim | null) => void;
-    allowCreate: boolean;
     onBlur?: React.FocusEventHandler<HTMLInputElement>;
     onValidateField: (field: string) => void;
 };
@@ -40,10 +41,14 @@ function CollectionSelection({
     id,
     selectedScope,
     onChange,
-    allowCreate,
     onBlur,
     onValidateField,
 }: CollectionSelectionProps): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForCollections = isRouteEnabled('collections');
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCollections = hasReadWriteAccess('WorkflowAdministration');
+
     const { isOpen, onToggle } = useSelectToggle();
     const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
     const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
@@ -179,16 +184,18 @@ function CollectionSelection({
                         ))}
                     </Select>
                 </FlexItem>
-                <FlexItem spacer={{ default: 'spacerMd' }}>
-                    <Button
-                        variant={ButtonVariant.tertiary}
-                        onClick={onOpenViewCollectionModal}
-                        isDisabled={!selectedScope}
-                    >
-                        View
-                    </Button>
-                </FlexItem>
-                {allowCreate && (
+                {isRouteEnabledForCollections && (
+                    <FlexItem spacer={{ default: 'spacerMd' }}>
+                        <Button
+                            variant={ButtonVariant.tertiary}
+                            onClick={onOpenViewCollectionModal}
+                            isDisabled={!selectedScope}
+                        >
+                            View
+                        </Button>
+                    </FlexItem>
+                )}
+                {hasWriteAccessForCollections && isRouteEnabledForCollections && (
                     <FlexItem>
                         <Button
                             variant={ButtonVariant.secondary}
@@ -201,7 +208,7 @@ function CollectionSelection({
             </Flex>
             {isCollectionModalOpen && (
                 <CollectionsFormModal
-                    hasWriteAccessForCollections={allowCreate}
+                    hasWriteAccessForCollections={hasWriteAccessForCollections}
                     modalAction={modalAction}
                     onClose={() => setIsCollectionModalOpen(false)}
                     configError={configError}

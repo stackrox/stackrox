@@ -14,7 +14,6 @@ import {
 import { FormikProps } from 'formik';
 
 import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
-import usePermissions from 'hooks/usePermissions';
 import { fixabilityLabels } from 'constants/reportConstants';
 import {
     cvesDiscoveredSinceLabelMap,
@@ -33,9 +32,6 @@ export type ReportParametersFormParams = {
 };
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
-    const { hasReadWriteAccess } = usePermissions();
-    const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
-
     const handleTextChange = (fieldName: string) => (value: string) => {
         formik.setFieldValue(fieldName, value);
     };
@@ -255,7 +251,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         id="reportParameters.reportScope"
                         selectedScope={formik.values.reportParameters.reportScope}
                         onChange={handleCollectionSelection('reportParameters.reportScope')}
-                        allowCreate={canWriteCollections}
                         onBlur={formik.handleBlur}
                         onValidateField={formik.validateField}
                     />

@@ -19,31 +19,27 @@ import './VulnReportingPage.css';
 type PageActions = 'create' | 'edit' | 'clone';
 
 function VulnReportingPage() {
-    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const { pageAction } = usePageAction<PageActions>();
 
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasImageReadAccess = hasReadAccess('Image');
-    const hasAccessScopeReadAccess = hasReadAccess('Access');
-    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
-    const canReadWriteReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasImageReadAccess &&
-        hasAccessScopeReadAccess &&
-        hasNotifierIntegrationReadAccess;
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasWriteAccessForReport =
+        hasReadWriteAccess('WorkflowAdministration') &&
+        hasReadAccess('Image') && // for vulnerabilities
+        hasReadAccess('Integration'); // for notifiers
 
     return (
         <>
             <TechPreviewBanner
                 featureURL={vulnManagementReportsPath}
                 featureName="Vulnerability Management (1.0) Reporting"
+                routeKey="vulnerability-management/reports"
             />
             <Switch>
                 <Route
                     exact
                     path={vulnerabilityReportsPath}
                     render={(props) => {
-                        if (pageAction === 'create' && canReadWriteReports) {
+                        if (pageAction === 'create' && hasWriteAccessForReport) {
                             return <CreateVulnReportPage {...props} />;
                         }
                         if (pageAction === undefined) {
@@ -56,10 +52,10 @@ function VulnReportingPage() {
                     exact
                     path={vulnerabilityReportPath}
                     render={(props) => {
-                        if (pageAction === 'edit' && canReadWriteReports) {
+                        if (pageAction === 'edit' && hasWriteAccessForReport) {
                             return <EditVulnReportPage {...props} />;
                         }
-                        if (pageAction === 'clone' && canReadWriteReports) {
+                        if (pageAction === 'clone' && hasWriteAccessForReport) {
                             return <CloneVulnReportPage {...props} />;
                         }
                         return <ViewVulnReportPage {...props} />;
