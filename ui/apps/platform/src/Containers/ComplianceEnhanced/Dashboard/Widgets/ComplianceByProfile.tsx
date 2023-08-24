@@ -4,53 +4,43 @@ import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import HorizontalBarChart from './HorizontalBarChart';
 
-export type ComplianceByClusterData = {
+export type ComplianceByProfileData = {
     name: string;
     passing: number;
     link: string;
 }[];
 
-const mockComplianceData: ComplianceByClusterData = [
+const mockComplianceData: ComplianceByProfileData = [
     {
-        name: 'staging',
-        passing: 100,
+        name: 'HIPPA',
+        passing: 83,
         link: '',
     },
     {
-        name: 'production',
+        name: 'PCI',
         passing: 80,
         link: '',
     },
     {
-        name: 'payments',
+        name: 'CIS Docker',
         passing: 73,
         link: '',
     },
     {
-        name: 'patient-charts',
+        name: 'CIS K8s',
         passing: 69,
-        link: '',
-    },
-    {
-        name: 'another-cluster',
-        passing: 67,
-        link: '',
-    },
-    {
-        name: 'cluster-name',
-        passing: 39,
         link: '',
     },
 ];
 
-function ComplianceByCluster() {
+function ComplianceByProfile() {
     const [complianceData] = useState(mockComplianceData);
 
     return (
-        <WidgetCard isLoading={false} header="Compliance by cluster">
+        <WidgetCard isLoading={false} header="Compliance by profile">
             <HorizontalBarChart passingRateData={complianceData} />
         </WidgetCard>
     );
 }
 
-export default ComplianceByCluster;
+export default ComplianceByProfile;
