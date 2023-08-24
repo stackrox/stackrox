@@ -84,7 +84,7 @@ function ProductUsageForm(): ReactElement {
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Nodes count</DescriptionListTerm>
+                    <DescriptionListTerm>Node count</DescriptionListTerm>
                     <DescriptionListDescription>{currentUsage.numNodes}</DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
@@ -127,7 +127,7 @@ function ProductUsageForm(): ReactElement {
                     <DescriptionListDescription>{maxUsage.maxCpuUnits}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Nodes count</DescriptionListTerm>
+                    <DescriptionListTerm>Node count</DescriptionListTerm>
                     <DescriptionListDescription>{maxUsage.maxNodes}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
@@ -139,7 +139,7 @@ function ProductUsageForm(): ReactElement {
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Nodes count observation date</DescriptionListTerm>
+                    <DescriptionListTerm>Node count observation date</DescriptionListTerm>
                     <DescriptionListDescription>
                         {maxUsage?.maxNodesAt ? yyyyMMddFormat(new Date(maxUsage.maxNodesAt)) : '-'}
                     </DescriptionListDescription>
