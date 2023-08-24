@@ -6,7 +6,6 @@ import io.stackrox.proto.storage.RoleOuterClass
 import services.ApiTokenService
 import services.BaseService
 import services.GraphQLService
-import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
 
@@ -130,7 +129,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     def setupSpec() {
         // Purposefully add an image (centos7-base) that is not running to check the case
         // where an image is orphaned. The image is actually part of the re-scanned image set.
-        ImageIntegrationService.addStackroxScannerIntegration()
         // Re-scan the images used in previous test cases to ensure pruning did not leave orphan CVEs.
         for ( imageToScan in IMAGES_TO_RESCAN ) {
             ImageService.scanImage(imageToScan)
@@ -145,7 +143,6 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     def cleanupSpec() {
         BaseService.useBasicAuth()
-        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         RoleService.deleteRole(NODE_ROLE)
         RoleService.deleteRole(IMAGE_ROLE)
         RoleService.deleteRole(NODE_IMAGE_ROLE)
