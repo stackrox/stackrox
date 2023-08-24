@@ -19,7 +19,7 @@ jobs:
         id: output-matrix
         run: |
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "matrix<<$EOF" >> $GITHUB_OUTPUT
+          echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
           sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
           echo "$EOF" >> "$GITHUB_OUTPUT"
 
