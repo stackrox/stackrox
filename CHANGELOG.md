@@ -17,6 +17,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added to Sensor that is set to `true` by default and enables processing registry mirrors during Sensor image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
 - ROX-17112: CORE_BPF collection is now generally available.
 - ROX-17702: Product usage metrics experimental API: `/v1/product/usage/secured-units/current`, `/v1/product/usage/secured-units/max`. New `/api/product/usage/secured-units/csv` endpoint.
+- ROX-19096, ROX-19098, ROX-19099: StackRox Scanner now supports alpine:v3.18, debian:12, ubuntu:23.04, ubuntu:23.10
 
 ### Removed Features
 
@@ -56,6 +57,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The removal of `/v1/report` APIs in this release, that was communicated in release 4.0.0, has been postponed by one release. Consequently, the `/v1/report` APIs will continue to be available in this release.
 - The `/api/docs/swagger` API previously required read on the resource `Integration`.
   Now it only requires users to be authenticated to via the API docs.
+- StackRox Scanner will now opt to scan the image whose architecture matches the Scanner's architecture instead of always opting for amd64 when scanning a multi-arch image.
+  - For example, if StackRox Scanner is running on arm64, and there is an arm64 version of the multi-arch image, it will scan that arm64 image.
+  - If there is no image which matches Scanner's architecture, then it will attempt to scan the amd64 version, as it did previously.
 
 ## [4.1.0]
 
