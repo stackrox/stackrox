@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { GridItem } from '@patternfly/react-core';
 
-import { fetchClustersAsArray } from 'services/ClustersService';
+import { fetchClusters } from 'services/ClustersService';
 import { Cluster } from 'types/cluster.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -22,7 +22,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
 
     useEffect(() => {
         setIsFetching(true);
-        fetchClustersAsArray()
+        fetchClusters()
             .then((clustersFetched) => {
                 setErrorMessageFetching('');
                 // TODO supersede src/Containers/Clusters/clusterTypes.ts with types/cluster.proto.ts

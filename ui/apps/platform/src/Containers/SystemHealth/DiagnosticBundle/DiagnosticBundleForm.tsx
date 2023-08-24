@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import usePermissions from 'hooks/usePermissions';
-import { fetchClustersAsArray } from 'services/ClustersService';
+import { fetchClusters } from 'services/ClustersService';
 import { DiagnosticBundleRequest } from 'services/DebugService';
 import FilterByStartingTimeValidationMessage from './FilterByStartingTimeValidationMessage';
 
@@ -44,7 +44,7 @@ function DiagnosticBundleForm({
     const hasReadAccessForCluster = hasReadAccess('Cluster');
     useEffect(() => {
         if (hasReadAccessForCluster) {
-            fetchClustersAsArray()
+            fetchClusters()
                 .then((clusters) => {
                     setAvailableClusterOptions(clusters.map(({ name }) => name));
                 })
