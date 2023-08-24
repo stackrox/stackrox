@@ -28,7 +28,7 @@ Upon cutting the related StackRox release, 4.1.3, the images were re-tagged as f
 
 There is an ongoing effort to overhaul the StackRox Scanner to align it more closely with [Clair v4](https://github.com/quay/clair).
 To align with Clair's versioning scheme, we refer to the new StackRox Scanner as StackRox Scanner v4.
-StackRox Scanner v4 is housed in the[stackrox/stackrox repository](https://github.com/stackrox/stackrox) (as opposed to the previous, separate repository) and its release process is more tightly coupled with the StackRox release process.
+StackRox Scanner v4 is housed in the [stackrox/stackrox repository](https://github.com/stackrox/stackrox) (as opposed to the previous, separate repository), and its release process is more tightly coupled with the StackRox release process.
 So, the Scanner v4 images will always be tagged the same as the [main image](https://quay.io/repository/stackrox-io/main).
 
 There will be a period of time when StackRox will ship both the older Scanner, Scanner v2, and the new Scanner, Scanner v4.
