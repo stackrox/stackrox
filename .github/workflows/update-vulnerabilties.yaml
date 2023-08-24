@@ -16,9 +16,9 @@ jobs:
         id: output-matrix
         run: |
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "matrix<<$EOF" >> $GITHUB_OUTPUT
+          echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
           sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
-          echo $EOF >> $GITHUB_OUTPUT
+          echo "$EOF" >> "$GITHUB_OUTPUT"
 
   upload-vulnerabilities:
     needs: read-versions
@@ -44,9 +44,7 @@ jobs:
         run: |
           DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
           FILE_NAME=$(basename "$DOWNLOAD_URL")
-          wget "$DOWNLOAD_URL" -O "$FILE_NAME"
-          # Check if wget succeeded
-          if [ $? -ne 0 ]; then
+          if ! wget "$DOWNLOAD_URL" -O "$FILE_NAME"; then
             echo "Download failed. Terminating current matrix step."
             exit 1
           fi
