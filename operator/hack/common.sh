@@ -39,6 +39,9 @@ function apply_operator_manifests() {
   local -r index_version="$3"
   local -r operator_version="$4"
 
+  # TODO: remove me before merging
+  yq --version
+
   # OCP starting from v4.14 requires either spec.grpcPodConfig.securityContextConfig attribute to be set on the
   # CatalogSource resource or the namespace of the CatalogSource to have relaxed PSA enforcement, otherwise the
   # CatalogSource pod does not get deployed with PodSecurity errors.
