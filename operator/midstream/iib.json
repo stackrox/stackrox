@@ -1,14 +1,15 @@
 {
-    "iibs": {
-        "4.10":"545335",
-        "4.11":"545336",
-        "4.12":"545337",
-        "4.13":"545338",
-        "4.14":"545339"
-    },
-    "operator": {
-        "version":"1.0.0",
-        "channel":"rhacs-1.0"
-    },
-    "support_url":"https://install.stackrox.io/collector/support-packages/ppc64le/2.5.0/support-pkg-2.5.0-latest.zip"
+  "iibs": {
+    "4.10": "545335",
+    "4.11": "545336",
+    "4.12": "545337",
+    "4.13": "545338",
+    "4.14": "545339"
+  },
+  "operator": {
+    "version": "1.0.0",
+    "channel": "rhacs-1.0"
+  },
+  "support_url_ppc64le": "https://install.stackrox.io/collector/support-packages/ppc64le/2.5.0/support-pkg-2.5.0-latest.zip",
+  "support_url_s390x": "https://install.stackrox.io/collector/support-packages/s390x/2.5.0/support-pkg-2.5.0-latest.zip"
 }
