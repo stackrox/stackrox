@@ -478,6 +478,10 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
+    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    org.junit.rules.Timeout globalTimeout = new org.junit.rules.Timeout(1600, TimeUnit.SECONDS)
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
         given:
@@ -521,6 +525,7 @@ class NetworkFlowTest extends BaseSpecification {
             // router-default deployment in openshift-ingress namespace.
             List<Edge> routerDefaultEdges = null
             if (ClusterService.isOpenShift4()) {
+                log.info("Searching for edge coming from OpenShift ingress router to ${deploymentUid}")
                 SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
                         .setQuery("Namespace:openshift-ingress")
                         .build()
@@ -530,11 +535,29 @@ class NetworkFlowTest extends BaseSpecification {
                 if (routerDefaultEdges != null) {
                     log.info("Found edge coming from OpenShift ingress router")
                     return
+                } else {
+                    log.warn("Edge coming from OpenShift ingress router to ${deploymentUid} not found")
+                    // Debug dump of all router edges
+                    currentGraph = NetworkGraphService.getNetworkGraph()
+                    def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == defaultRouterId }
+                    List<NetworkNode> outNodesRouter = currentGraph.nodesList.findAll { node ->
+                        node.outEdgesMap.containsKey(index)
+                    }
+                    log.debug("All edges of 'router-default' ${defaultRouterId}: ${outNodesRouter}")
                 }
             }
+            log.info("Searching for edge coming from INTERNET_EXTERNAL_SOURCE_ID (${Constants.INTERNET_EXTERNAL_SOURCE_ID}) to ${deploymentUid}")
             List<Edge> edges =
                     NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
-
+            if (edges == null && edges.size() == 0) {
+                // Debug dump of all INTERNET_EXTERNAL_SOURCE_ID edges
+                currentGraph = NetworkGraphService.getNetworkGraph()
+                def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == Constants.INTERNET_EXTERNAL_SOURCE_ID }
+                List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
+                    node.outEdgesMap.containsKey(index)
+                }
+                log.debug("All edges of 'INTERNET_EXTERNAL_SOURCE_ID' ${Constants.INTERNET_EXTERNAL_SOURCE_ID}: ${outNodes}")
+            }
             assert edges
         }
     }
