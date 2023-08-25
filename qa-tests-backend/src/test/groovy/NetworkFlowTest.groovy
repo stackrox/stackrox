@@ -32,6 +32,7 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
+import org.junit.Rule
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
