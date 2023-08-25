@@ -1,0 +1,50 @@
+name: Fetch NVD Data Feeds
+
+on:
+  push:
+    branches:
+    - "yli3/**"
+  schedule:
+  - cron: '0 0 * * *'  # this runs every day at midnight
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+    - name: Determine years for matrix
+      id: set-matrix
+      run: |
+        range=""
+        start_year=2002
+        end_year=$(date +%Y)
+        for (( year=start_year; year<=end_year; year++ )); do
+            range="${range},${year}"
+        done
+        echo "::set-output name=matrix::{\"year\":[${range#*,}]}"
+
+  fetch-data:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        year: ${{fromJson(needs.setup.outputs.matrix).year}}
+
+    steps:
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - uses: actions/checkout@v3
+
+    - name: Download data file and verify integrity
+      run: ./.github/workflows/scripts/download-nvd.sh ${{ matrix.year }}
+
